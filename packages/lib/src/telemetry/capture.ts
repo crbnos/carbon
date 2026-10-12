@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CONTROLLED_ENVIRONMENT,
   POSTHOG_API_HOST,
   POSTHOG_PROJECT_PUBLIC_KEY
 } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { async } from "@carbon/utils";
 import {
   WORK_EVENT_MODULE,
   WORK_EVENT_RECORD_KEY,
@@ -23,8 +28,6 @@ const log = getLogger("lib", "telemetry");
  * POST with an api_key, and the two things the SDK adds on top — batching and
  * retry — are the wrong shape for this: a work event is low-frequency, and a
  * retry without a stable id is how you double-count a released job. This mirrors
- * the decision already made for Inngest in
- * `packages/database/supabase/functions/lib/inngest.ts`, and the shape of
  * `packages/stripe/src/gtm-events.server.ts`, which POSTs product events to the
  * GTM endpoint the same way.
  *
@@ -190,15 +193,20 @@ export async function captureWorkEvent<E extends WorkEventName>(
 /**
  * Fire-and-forget form, for call sites that should not await telemetry.
  *
- * Prefer this everywhere in a request path. The returned promise is already
- * handled; ignoring it will not produce an unhandled rejection.
+ * Prefer this everywhere in a request path. The capture runs as background
+ * work (`async.background`), which the apps hand to Vercel's `waitUntil`
+ * (`async.onBackground` in `entry.server.tsx`): a bare unawaited fetch froze
+ * with the instance and finished, or was lost, a request later.
  */
 export function trackWorkEvent<E extends WorkEventName>(
   event: E,
   payload: WorkEvents[E],
   options?: { discriminator?: string | number | null }
 ): void {
-  void captureWorkEvent(event, payload, options);
+  async.background(
+    () => captureWorkEvent(event, payload, options),
+    (error) => log.error("work event failed", { event, error })
+  );
 }
 
 export type {

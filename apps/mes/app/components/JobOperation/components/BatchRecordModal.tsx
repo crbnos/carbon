@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Checkbox,
@@ -17,9 +22,8 @@ import {
 import { datetime, stripSpecialCharacters } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { LuCircleCheck, LuFile } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { BatchStep } from "~/services/operations.service";
 import { usePeople } from "~/stores";
@@ -79,7 +83,13 @@ export function BatchRecordModal({
   const { carbon } = useCarbon();
   const { company } = useUser();
   const [people] = usePeople();
-  const fetcher = useFetcher<{ success?: boolean }>();
+  const fetcher = useAction<{ success?: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
+    }
+  });
   const kind = kindOf(step.type);
   const ticked = kind === "tick" || kind === "file";
 
@@ -94,10 +104,6 @@ export function BatchRecordModal({
   const [file, setFile] = useState<File | null>(null);
   const [passed, setPassed] = useState(true);
   const [uploading, setUploading] = useState(false);
-
-  useEffect(() => {
-    if (fetcher.data?.success) onClose();
-  }, [fetcher.data?.success, onClose]);
 
   const changed = members.filter((m) =>
     ticked

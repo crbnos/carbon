@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAnsiColorFormatter, type TextFormatter } from "@logtape/logtape";
 
 const RESET = "\x1b[0m";
@@ -56,7 +60,7 @@ const PID = typeof process !== "undefined" ? process.pid : 0;
  */
 export const httpDevFormatter: TextFormatter = getAnsiColorFormatter({
   format({ message, record }) {
-    const { method, pathname, search, status, responseTime, body } =
+    const { method, pathname, detail, search, status, responseTime, body } =
       record.properties;
 
     let line = message;
@@ -72,7 +76,9 @@ export const httpDevFormatter: TextFormatter = getAnsiColorFormatter({
           ? ` ${DIM}${Math.trunc(responseTime * 10) / 10} ms${RESET}`
           : "";
       const methodColor = METHOD_COLOR[method] ?? RESET;
-      line = `${BOLD}${methodColor}${method}${RESET} ${statusColor(status)}${status}${RESET} ${pathname}${query}${time}`;
+      const served =
+        typeof detail === "string" ? ` ${BOLD}${detail}${RESET}` : "";
+      line = `${BOLD}${methodColor}${method}${RESET} ${statusColor(status)}${status}${RESET} ${pathname}${query}${served}${time}`;
       // The Morgan line only renders method/path/status/time, so a captured
       // request body (debug only, already redacted) would otherwise be dropped
       // — append it dimmed on its own line.

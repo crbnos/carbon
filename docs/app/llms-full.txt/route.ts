@@ -1,16 +1,19 @@
-import path from "node:path";
-import { readCorpus } from "@/lib/markdown-corpus";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCorpus } from "@/lib/corpus";
 import { SITE } from "@/lib/seo";
 
 /* /llms-full.txt — every docs page as component-stripped markdown in one file, for
  * AI assistants that want the whole corpus rather than the /llms.txt index. Shares
- * its stripper with the in-app agent's KB (docs/lib/markdown-corpus.ts), so the two
+ * its stripper with the in-app agent's KB (@carbon/content/corpus), so the two
  * corpora can never disagree. Built once at build time. */
 
 export const dynamic = "force-static";
 
-export function GET() {
-  const pages = readCorpus(path.join(process.cwd(), "content"));
+export async function GET() {
+  const pages = await getCorpus();
 
   const body = pages
     .map(

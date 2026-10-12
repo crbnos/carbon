@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Accordion,
   AccordionContent,
@@ -18,6 +22,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ScrollArea,
   Status,
   Subheading,
@@ -25,6 +30,7 @@ import {
   VStack
 } from "@carbon/react";
 import type { TargetType, TransactionSurface } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import { memo, useCallback, useMemo } from "react";
 import {
   LuBlocks,
@@ -36,6 +42,7 @@ import {
 import { Link, useNavigate } from "react-router";
 import { Empty } from "~/components";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { NewAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import SurfaceChips from "./SurfaceChips";
@@ -123,9 +130,11 @@ const RuleSectionCard = memo(
             </CardDescription>
           </div>
           {canCreate && (
-            <Button variant="primary" leftIcon={<LuPlus />} asChild>
-              <Link to={newRuleHref}>{newRuleLabel}</Link>
-            </Button>
+            <NewAction label={newRuleLabel} to={newRuleHref}>
+              <Button variant="primary" leftIcon={<LuPlus />} asChild>
+                <Link to={newRuleHref}>{newRuleLabel}</Link>
+              </Button>
+            </NewAction>
           )}
         </div>
       </CardHeader>
@@ -146,6 +155,7 @@ const RuleSectionCard = memo(
 RuleSectionCard.displayName = "RuleSectionCard";
 
 const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const canCreate = permissions.can("create", "inventory");
 
@@ -160,10 +170,13 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] bg-card">
       <VStack
         spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
+        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4 max-md:py-4"
       >
         <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3" className="tracking-tight text-balance">
+          <Heading
+            size="h3"
+            className="tracking-tight text-balance max-md:hidden"
+          >
             Storage Rules
           </Heading>
           <p className="max-w-[72ch] text-sm text-muted-foreground text-pretty">
@@ -177,7 +190,7 @@ const StorageRulesGroups = memo(({ rules }: StorageRulesGroupsProps) => {
           description="Fire on receipts, shipments, transfers, inventory adjustments and bin moves (place/pick)."
           icon={<LuBlocks className="size-4 text-muted-foreground" />}
           newRuleHref={`${path.to.newStorageRule}?targetType=item`}
-          newRuleLabel="Storage Rule"
+          newRuleLabel={t`Storage Rule`}
           canCreate={canCreate}
           rules={itemRules}
         />
@@ -209,10 +222,17 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
         <Accordion type="multiple" className="w-full">
           <AccordionItem value={rule.id} className="border-none">
             <div className="relative">
-              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full">
-                <HStack spacing={4} className="flex-1 justify-between pr-12">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <Heading size="h4" as="h3" className="truncate">
+              <AccordionTrigger className="px-6 py-6 hover:no-underline w-full max-md:px-4 max-md:py-3 max-md:text-left">
+                <HStack
+                  spacing={4}
+                  className="flex-1 justify-between pr-12 max-md:flex-wrap max-md:items-start max-md:gap-y-2 max-md:pr-0"
+                >
+                  <div className="flex items-center gap-3 min-w-0 max-md:flex-wrap max-md:gap-y-1">
+                    <Heading
+                      size="h4"
+                      as="h3"
+                      className="truncate max-md:basis-full max-md:pr-12"
+                    >
                       {rule.name}
                     </Heading>
                     <Badge variant="secondary">
@@ -235,7 +255,7 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                   </Status>
                 </HStack>
               </AccordionTrigger>
-              <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10">
+              <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10 max-md:top-3 max-md:translate-y-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <IconButton
@@ -247,6 +267,7 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.edit}
                       disabled={!canEdit}
                       onClick={(e) => {
                         e.stopPropagation();
@@ -258,6 +279,7 @@ const StorageRuleCard = memo(({ rule }: { rule: RuleListItem }) => {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       destructive
                       disabled={!canDelete}
                       onClick={(e) => {

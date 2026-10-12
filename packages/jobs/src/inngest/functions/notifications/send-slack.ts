@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { resolveIntegrationSecrets } from "@carbon/ee";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { inngest } from "../../client";
+import { slackDeliveryFailure } from "./delivery-failure";
 
 export const sendSlackFunction = inngest.createFunction(
   {
@@ -42,8 +47,22 @@ export const sendSlackFunction = inngest.createFunction(
 
     await step.run("post-message", async () => {
       // Client is a no-op on localhost — see slack.server.ts.
-      const slack = getSlackClient(accessToken);
-      await slack.sendMessage({ blocks, channel, text });
+      // `retries: 0` because Inngest owns the retry policy here: the SDK's
+      // default is ~10 attempts over ~30 minutes, which would both stall this
+      // step and retry the ambiguous failures classified below.
+      // `rejectRateLimitedCalls` so a 429 arrives as a RateLimitedError the
+      // classifier can recognise. Left at its default, the SDK sleeps the
+      // whole Retry-After inside this step and then throws a bare Error with
+      // no `code`, which the classifier would read as ambiguous and drop.
+      const slack = getSlackClient(accessToken, {
+        retryConfig: { retries: 0 },
+        rejectRateLimitedCalls: true
+      });
+      try {
+        await slack.sendMessage({ blocks, channel, text });
+      } catch (err) {
+        throw slackDeliveryFailure(err);
+      }
     });
 
     return { success: true };

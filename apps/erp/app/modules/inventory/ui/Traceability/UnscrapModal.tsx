@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -27,7 +31,7 @@ type UnscrapModalProps = {
 
 /**
  * Restore a Scrapped tracked entity to Available (Oracle Return-from-Scrap).
- * Reuses the manual-adjustment route; the edge function resolves the original
+ * Reuses the manual-adjustment route; the server function resolves the original
  * scrap movement (location, bin, and original cost) from the entity, so no
  * location is submitted here — a Scrapped tracked-entity row carries none.
  */

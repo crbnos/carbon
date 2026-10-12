@@ -29,7 +29,7 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
   RLS resolves the company via the key.
 - `getUserScopedClient(userId)` — mints a short-lived (5m) HS256 JWT with
   `SUPABASE_JWT_SECRET` and returns a user-scoped client (RLS enforced).
-- All clients use `fetchWithRetry` (timeout + retry on 5xx/408/524).
+- All clients set `db: { timeout: 25_000 }` and rely on supabase-js's built-in read retries, plus `storageReadFetch` for storage reads (see `database-patterns.md`).
 
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 
@@ -251,6 +251,18 @@ why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
+- `clearAuthCookies` (which `destroyAuthSession` and the login loader's
+  expired-session branch call) also ends this browser's push notifications: it
+  reads the signed `carbon-push` cookie (`pushEndpointCookie`, set by
+  `api+/push-subscription` when browser notifications are enabled), deletes every
+  `pushSubscription` row of that endpoint with the service role, and clears the
+  cookie. Every sign-out path therefore stops pushes in that browser. A cross-site
+  navigation (`Sec-Fetch-Site: cross-site`, the login GET from another site's
+  link) skips the cleanup, per the GET-write rule; such rows lapse anyway, because
+  `notify` skips rows no page load has refreshed within a session's lifetime. The
+  service-role client is imported inside that cleanup, not at module load, so
+  importing `session.server` builds no Supabase client (the session tests mock
+  `config/env` without the Supabase keys).
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
 - **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
   at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
@@ -290,8 +302,9 @@ Supabase's `auth.mfa_factors` — no app table.
 - **auth-js gotcha**: `supabase.auth.mfa.*` reads the client's INTERNAL session, not the
   `Authorization` header override — `mfa.server.ts` seeds a fresh anon client via
   `auth.setSession` with the cookie's tokens.
-- **Enrollment**: Account → Security (`x+/account+/security.tsx`, which also owns
-  passkeys) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
+- **Enrollment**: Account settings → Security (the modal pane
+  `packages/account/src/ui/SecuritySettings.tsx`, data and passkey writes in
+  `api+/account.security.ts`) → `api+/mfa.enroll` / `mfa.verify` / `mfa.unenroll` (unenroll requires a
   current code as step-up). The enroll→scan→verify state machine, the 6-slot code
   input, and the invalid-code copy are shared with the enforcement gate via
   `~/components/TotpEnrollment` (`useTotpEnrollment`, `OtpInput`,
@@ -407,12 +420,22 @@ writer is the 30s TTL. Then:
 - Rate-limit via `checkApiKeyRateLimit` (`@carbon/database/ratelimit`, Postgres function
   `check_api_key_rate_limit`) using per-key `rateLimit` + `rateLimitWindow`
   (`"1m"|"1h"|"1d"`). 429 with `X-RateLimit-*` + `Retry-After` headers on exceed.
-- Fire-and-forget `lastUsedAt` update.
+  The same function also holds a company to **60/minute across all its keys** (constant
+  in the function, migration `20261002153217`): it sums the keys' counters for the
+  current minute, each capped at its own limit so requests refused on one key do not
+  lock out the others. No separate table — so deleting a key drops its share, and a key
+  on an hourly/daily window is not counted (none exist). A company refusal returns
+  `limit: 60`. Pinned by `supabase/tests/api-key-rate-limit.test.sql`.
+- `lastUsedAt` is written by `check_api_key_rate_limit` itself, at most once a minute per
+  key, so the Node path and the edge functions both record it. (The app used to build
+  this update with `void client.from(…).update(…)`, which never sends: a supabase-js
+  builder only runs when awaited.)
 - Scope check: `scopes` is JSONB `{ "<permission>_<action>": [companyIds] }`; required
   perms must be present and include the active company. `{}` is NOT full access here —
   an empty scope set fails the check. 403 on failure.
 - Cloud edition: Starter-plan companies are blocked from API access (Business+ only),
-  except `STRIPE_BYPASS_COMPANY_IDS`.
+  except `STRIPE_BYPASS_COMPANY_IDS`. The plan comes from the cached `getCompanyPlanId`
+  (see `billing-system.md`), so a plan change made outside the Stripe sync can take up to 5 minutes to bite.
 - Returns a `getCarbonAPIKeyClient(apiKey)` client (RLS resolves company via header).
 
 Key hashing: `hashApiKey` = `createHash("sha256")` hex (same in Node ERP and Deno edge
@@ -454,7 +477,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
   `status` (`ssoDomainStatus` enum: `pending|verified`), `verifiedAt`. Same RLS split as
   `ssoConnection`.
 - `apiKey` — `keyHash` (unique), `keyPreview`, `name`, `companyId`, `createdBy`, `scopes`
-  JSONB, `rateLimit` (default **60**), `rateLimitWindow` (default `'1m'`), `expiresAt`,
+  JSONB, `rateLimit` (default **20**; keys created before `20261002153217` keep 60), `rateLimitWindow` (default `'1m'`), `expiresAt`,
   `lastUsedAt`. The old plaintext `key` column was dropped.
 - `apiKeyRateLimit` — UNLOGGED, PK `(apiKeyId, windowStart)`, `requestCount`.
 - RLS/RPC functions: `get_claims`, `get_company_id_from_api_key`, `get_api_key_scopes`,

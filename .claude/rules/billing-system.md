@@ -118,7 +118,14 @@ users (every invite defaults to the seeded `Admin` employee type) but not author
 roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
 stays in every edition.
 
-Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId)`):
+Server checks (`plan.server.ts`) read `companyPlan.planId` through `getCompanyPlanId`
+(`@carbon/auth/company.server`), the one cached reader the API-key plan gate in
+`requirePermissions` also uses: service role, Redis for 5 minutes, memoized per read request.
+A company with no plan row is cached too (as `""`), and so is the `isCarbonOwnedCompany`
+fallback such a company falls through to. `syncStripeDataToKV` clears the plan key when
+it writes a row; a failed read is never cached. Any other change (a plan row edited by
+hand, the `customer.subscription.deleted` webhook, a group owner change) shows up within
+5 minutes, or at once after `DEL companyPlan:<companyId>` in Redis.
 
 - `companyHasPlan(client, companyId, spec)` → boolean.
 - `requirePlan({ request, client, companyId, redirectTo, message?, ...spec })` → throws a
@@ -194,6 +201,23 @@ whom it deleted.
   - Each warn or delete batch that still fails after its retries is logged and skipped.
     It never ends the run, so the training reminders after it still go out.
 
+- **One exception to "warned first": the manual purge.** `purge-inactive-companies`
+  (`scheduled/purge-inactive-companies.ts`) runs only when someone presses Invoke on it
+  in the Inngest dashboard, on Carbon Cloud. `purgeRefusal` (tested) is the first thing
+  the run checks: any edition but Cloud is refused, and so is any run whose event is not
+  `inngest/function.invoked`, so sending `carbon/purge-inactive-companies` with the event
+  key does nothing. Off Cloud the function is not registered at all
+  (`packages/jobs/src/inngest/index.ts`). It deletes inactive
+  companies immediately, with no email and no waiting period, including ones the weekly
+  job warned for a later date. The inactivity rule is the weekly job's, unchanged
+  (`loadInactiveCompanies` and the in-transaction `inactiveCompanyOwner`, both in
+  `scheduled/company-cleanup.ts`, shared by the two). It is a DRY RUN unless the payload
+  says `{ "dryRun": false }` (`resolvePurgeOptions`, tested): an Invoke with an empty
+  payload returns the companies it would delete and deletes none. `limit` caps a run, 500
+  at most. An ownerless company is still never deleted.
+- **Caps.** Both paths handle at most 500 companies a run, ten per Inngest step
+  (`MAX_COMPANY_DELETIONS_PER_RUN`, `MAX_COMPANIES_PER_RUN`).
+
 - **The group is the unit** (`selectInactiveCompanies`, `inactive-companies.ts`, tested).
   A company goes when it has no `companyPlan` row, no company in its group has one, it is
   over 7 days old, and it is not protected. `companyPlan` rows are written only by Stripe
@@ -212,16 +236,24 @@ whom it deleted.
   - Without replica permission it falls back to the plain cascade. A company with posted
     documents then fails, and is logged and skipped. So does the last company in a group,
     because its group's system accounts refuse deletion and the group would be stranded.
-  - Inside the same transaction, after the wipe and before the commit,
-    `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*` secrets, the
-    per-company bucket (already missing counts as done), and legacy files under
-    `private/<companyId>/` (listed strictly, so a listing error is a failure). Any failure
-    rolls the delete back, so the company row stays as the retry target and nothing is
-    orphaned once a delete commits. A company whose cleanup failed part-way may have
+  - BEFORE the transaction, `removeCompanyFiles` drains and deletes the per-company
+    bucket (already missing counts as done) and legacy files under `private/<companyId>/`
+    (listed strictly, so a listing error is a failure). Never inside it: storage deletes
+    its object rows on its own connection, `delete_orphaned_documents` then deletes the
+    matching `document` rows, and when the open purge transaction has already deleted
+    those rows storage waits on it until it times out (HTTP 544) and the purge rolls
+    back. The bucket is drained by listing, not `emptyBucket`, which only queues the
+    deletes and so makes the `deleteBucket` after it fail as "not empty". Any failure
+    keeps the company (the row is the retry target); `stillDue` is asked before the
+    files go and again in the transaction. `removeCompanySecrets` (the Vault
+    `integration:<companyId>:*` secrets) is plain SQL and stays inside the transaction.
+    A company whose cleanup failed part-way may have
     lost some files; it is still warned and due, so the next run finishes it. The search
-    index is dropped after the commit, and a failure there is only logged. Provider
+    index and audit log tables (`searchIndex_<id>`, `auditLog_<id>`: named after the
+    company, so outside the catalog) are dropped after the commit by `deleteCompanies`
+    (`company-cleanup.ts`), and a failure there is only logged. Provider
     tokens are not revoked at the provider.
-- At most 100 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
+- At most 500 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
 - A company with live intercompany history (`intercompanyTransaction` is NO ACTION) fails
   its delete, is logged, and is retried every week.
 

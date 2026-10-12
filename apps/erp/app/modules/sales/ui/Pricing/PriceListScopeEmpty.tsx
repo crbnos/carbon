@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import { LuList } from "react-icons/lu";
 import { SearchLandingPage } from "~/components";
@@ -22,7 +26,7 @@ export function PriceListScopeEmpty({
       heading={t`Price Lists`}
       description={t`Pick a customer or customer type to view their pricing.`}
     >
-      <div className="flex justify-center [&>[role=combobox]]:!min-w-[400px]">
+      <div className="flex justify-center [&>[role=combobox]]:!min-w-[400px] max-md:[&>[role=combobox]]:!min-w-0 max-md:[&>[role=combobox]]:w-full max-md:[&>[role=combobox]]:h-11 max-md:[&>[role=combobox]]:rounded-md max-md:[&>[role=combobox]]:text-base">
         <ScopePicker
           size="md"
           value={value}

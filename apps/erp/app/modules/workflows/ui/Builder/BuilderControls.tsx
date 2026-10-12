@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   cn,
   IconButton,
@@ -117,7 +121,7 @@ export function BuilderControls({ panOnScroll, onTogglePanOnScroll }: Props) {
       <MiniMap
         pannable
         zoomable
-        className="!static !m-0 rounded-lg border shadow-sm"
+        className="!static !m-0 rounded-lg border shadow-sm max-md:!hidden"
         style={{ width: 180, height: 120 }}
       />
     </Panel>

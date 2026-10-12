@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CalendarDate } from "@internationalized/date";
 import {
   getLocalTimeZone,
@@ -17,11 +21,13 @@ import { Td } from "../../Table";
 export const CalendarCell = ({
   state,
   date,
-  currentMonth
+  currentMonth,
+  isMarked = false
 }: {
   state: CalendarState | RangeCalendarState;
   date: CalendarDate;
   currentMonth: CalendarDate;
+  isMarked?: boolean;
 }) => {
   const ref = useRef<HTMLButtonElement>(null);
   const {
@@ -63,16 +69,25 @@ export const CalendarCell = ({
       >
         {formattedDate}
       </Button>
-      {isToday && !isOutsideMonth && (
-        <span
-          className={clsx(
-            "absolute w-1 h-1 bottom-1 rounded-full left-1/2 transform -translate-x-1/2",
-            {
-              "bg-primary-foreground": isSelected,
-              "bg-primary": !isSelected
-            }
+      {(isToday || isMarked) && !isOutsideMonth && (
+        <span className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5 pointer-events-none">
+          {isToday && (
+            <span
+              className={clsx("w-1 h-1 rounded-full", {
+                "bg-primary-foreground": isSelected,
+                "bg-primary": !isSelected
+              })}
+            />
           )}
-        />
+          {isMarked && (
+            <span
+              className={clsx("w-1 h-1 rounded-full", {
+                "bg-primary-foreground/70": isSelected,
+                "bg-muted-foreground": !isSelected
+              })}
+            />
+          )}
+        </span>
       )}
     </Td>
   );

@@ -244,6 +244,18 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Keep reader-facing headlines even and body copy free of avoidable orphans
+   * without changing wrapping behavior in navigation or interactive controls. */
+  main :where(h1, h2, h3, h4, h5, h6):not(
+      :where(nav, aside, footer, [role="dialog"]) *
+    ) {
+    @apply text-balance;
+  }
+
+  main :where(p):not(:where(nav, aside, footer, [role="dialog"]) *) {
+    @apply text-pretty;
+  }
+
   /* Editorial reading rhythm for the Guide surface (.guide-prose on the article) */
   .guide-prose p,
   .guide-prose li {

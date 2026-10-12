@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Server-only DB helpers for the Implementation Hub. Each takes the supabase
 // client as its first arg and returns the raw { data, error } (does not throw),
 // matching Carbon's service convention. The enrollment + structural writes are
@@ -54,29 +58,38 @@ export function getImplementationRows(client: Client, companyId: string) {
 
 // Cheap existence probes that back the nested product steps' auto-detection.
 // Never persisted — overlaid on stored manual state at read time.
+//
+// `known` skips a probe: pass the signals already seen true (the app caches
+// them), since "this company has a part" does not stop being true from one
+// page load to the next.
 export async function detectImplementationSignals(
   client: Client,
-  companyId: string
+  companyId: string,
+  known: Partial<Signals> = {}
 ): Promise<Signals> {
-  const probe = (
+  const probe = async (
+    signal: keyof Signals,
     table: "item" | "makeMethod" | "job" | "salesOrder" | "trackedEntity"
-  ) => client.from(table).select("id").eq("companyId", companyId).limit(1);
-
-  const [items, methods, jobs, orders, tracked] = await Promise.all([
-    probe("item"),
-    probe("makeMethod"),
-    probe("job"),
-    probe("salesOrder"),
-    probe("trackedEntity")
-  ]);
-
-  return {
-    hasItems: !!items.data?.length,
-    hasMakeMethod: !!methods.data?.length,
-    hasJob: !!jobs.data?.length,
-    hasSalesOrder: !!orders.data?.length,
-    hasTrackedEntity: !!tracked.data?.length
+  ) => {
+    if (known[signal]) return true;
+    const result = await client
+      .from(table)
+      .select("id")
+      .eq("companyId", companyId)
+      .limit(1);
+    return !!result.data?.length;
   };
+
+  const [hasItems, hasMakeMethod, hasJob, hasSalesOrder, hasTrackedEntity] =
+    await Promise.all([
+      probe("hasItems", "item"),
+      probe("hasMakeMethod", "makeMethod"),
+      probe("hasJob", "job"),
+      probe("hasSalesOrder", "salesOrder"),
+      probe("hasTrackedEntity", "trackedEntity")
+    ]);
+
+  return { hasItems, hasMakeMethod, hasJob, hasSalesOrder, hasTrackedEntity };
 }
 
 export function enrollImplementation(

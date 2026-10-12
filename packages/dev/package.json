@@ -10,6 +10,7 @@
     "./vite": "./vite.js"
   },
   "scripts": {
+    "smoke": "bash scripts/smoke.sh",
     "clean": "rimraf node_modules .turbo",
     "lint": "biome lint --write",
     "test": "vitest run",
@@ -19,6 +20,7 @@
   "dependencies": {
     "@bomb.sh/tab": "^0.0.15",
     "@clack/prompts": "^1.3.0",
+    "@medicomind/rolldown-compression": "catalog:",
     "citty": "^0.1.6",
     "cli-table3": "^0.6.5",
     "dotenv": "16.3.1",

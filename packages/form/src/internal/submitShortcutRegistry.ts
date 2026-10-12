@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Registry of Submit buttons currently mounted with an ACTIVE save shortcut,
  * in mount order, each with the <form> it submits. The focus-aware guard uses

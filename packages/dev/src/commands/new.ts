@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { writeFileSync } from "node:fs";
-import { intro, outro, tasks } from "@clack/prompts";
+import { intro, outro } from "@clack/prompts";
 import { basename, dirname, relative, resolve } from "pathe";
 import pc from "picocolors";
 import { addWorktree, currentBranch } from "../git.js";
@@ -7,8 +11,10 @@ import {
   promptBaseRef,
   promptBranch,
   promptCopyEnv,
-  promptDirName
+  promptDirName,
+  requireTerminal
 } from "../prompts.js";
+import { tasks } from "../ui.js";
 import { getWorktreeRoot, slugify } from "../worktree.js";
 import { initWorktree } from "./init.js";
 
@@ -28,6 +34,12 @@ export async function newWorktree(opts?: {
   // Non-interactive (`--yes`): skip every prompt, use flags/defaults.
   // Base defaults to origin/main so loops always branch off latest main.
   const nonInteractive = opts?.yes === true;
+  if (!nonInteractive) {
+    requireTerminal(
+      "crbn new",
+      "Pass --yes with a branch name to run without one."
+    );
+  }
 
   const branch = nonInteractive
     ? opts?.branch

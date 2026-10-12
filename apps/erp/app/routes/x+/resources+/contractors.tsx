@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   ContractorsTable,
   getAbilitiesList,
@@ -71,7 +76,7 @@ export default function Route() {
         // @ts-expect-error TS2322 - TODO: fix type
         abilities={abilities}
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
@@ -1355,6 +1359,17 @@ async function buildEventContent(
       return {
         description: opts?.title ?? "Accounting sync needs attention",
         details: opts?.body ? [{ label: "Detail", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried digest: the recurring-billing job sends the counts as
+    // `body`; documentIds are the invoices it touched, but nothing is read.
+    case NotificationEvent.RecurringInvoicing: {
+      return {
+        description: opts?.body
+          ? `Recurring invoicing: ${opts.body}`
+          : "Recurring invoicing",
+        details: []
       };
     }
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
@@ -52,6 +56,7 @@ const TrialBalanceTable = memo(
           ),
           size: 100,
           meta: {
+            mobile: "P1",
             icon: <LuHash />
           }
         },
@@ -149,6 +154,7 @@ const TrialBalanceTable = memo(
         data={data}
         columns={columns}
         count={count}
+        mobileLayout="table"
         withSimpleSorting={false}
         title={t`Trial Balance`}
       />

@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
+import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
@@ -47,6 +52,20 @@ export type Events = {
     };
   };
 
+  // Web Push events: one per pushSubscription row. userId is the recipient:
+  // send-push only sends when the row still belongs to them.
+  "carbon/send-push": {
+    data: {
+      subscriptionId: string;
+      userId: string;
+      companyId: string;
+      title: string;
+      body: string;
+      url: string;
+      tag: string;
+    };
+  };
+
   // Email events
   "carbon/send-email": {
     data: {
@@ -69,6 +88,11 @@ export type Events = {
         documentIds: string[];
       };
     };
+  };
+
+  // Sent after a changelog entry is published; platform-level, no companyId.
+  "carbon/changelog-dispatch": {
+    data: Record<string, never>;
   };
 
   // Assembly model conversion (CAD → GLB + assembly graph)
@@ -113,6 +137,8 @@ export type Events = {
     data: {
       modelId: string;
       companyId: string;
+      /** Model towards camera (Z up). Absent = the viewer's home view. */
+      direction?: [number, number, number];
     };
   };
 
@@ -413,9 +439,12 @@ export type Events = {
     };
   };
 
-  // Wake event for the PGMQ drainer (event-queue). Pushed by the database via
-  // the event-wake edge function whenever events are enqueued or pending.
+  // Wake events for the PGMQ drainers. Sent by the database itself
+  // (util.send_inngest_event) whenever messages are enqueued or pending.
   "carbon/event-queue.process": {
+    data: Record<string, never>;
+  };
+  "carbon/embedding-queue.process": {
     data: Record<string, never>;
   };
 
@@ -546,9 +575,27 @@ export type Events = {
     };
   };
 
+  // Sent by pg_cron when there is work (`util.sweep_notification_digest`,
+  // `util.sweep_workflow_run_retention`), never by app code.
+  "carbon/notification-digest.process": {
+    data: Record<string, never>;
+  };
+  "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
+  };
+
   // Weekly tasks
   "carbon/weekly": {
     data: Record<string, never>;
+  };
+
+  // The trigger of the manual inactive-company purge. Sending it does nothing:
+  // the function only runs when invoked from the Inngest dashboard, on Cloud.
+  "carbon/purge-inactive-companies": {
+    data: {
+      dryRun?: boolean;
+      limit?: number;
+    };
   };
 
   // Dispatch
@@ -596,11 +643,17 @@ export type Events = {
   };
 
   // Mount publish sweep (the integration's "Push customers / suppliers /
-  // parts" actions): push Carbon records Mount is missing or holds stale
+  // parts" actions, and the daily mount-sweep): push Carbon records Mount is
+  // missing or holds stale
   "carbon/mount-publish": {
     data: {
       companyId: string;
       entityTypes?: Array<"customer" | "supplier" | "item">;
+      // Who pressed Push; notified when the run needs attention.
+      userId?: string;
+      // Echoed into the run record so the page can find its own run.
+      requestId?: string;
+      trigger?: "manual" | "schedule";
     };
   };
 
@@ -749,6 +802,22 @@ export type Events = {
       actorId: string | null;
       /** Output name -> entity id, per the moment's declaration. */
       outputs: Record<string, { id: string }>;
+    };
+  };
+
+  // Invoice automation: post (and email) one drafted recurring invoice.
+  // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II
+  "carbon/invoice.automate": {
+    data: {
+      companyId: string;
+      invoiceId: string;
+      /** Absent = the invoice's recurring source's effective mode. */
+      mode?: InvoiceAutomation;
+      /**
+       * The invoice's Send action: retry a failed send of a posted invoice —
+       * via Stripe when that is the effective mode, else by email.
+       */
+      resend?: boolean;
     };
   };
 };

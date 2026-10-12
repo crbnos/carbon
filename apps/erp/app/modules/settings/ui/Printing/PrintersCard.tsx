@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Input, Select, Submit, ValidatedForm } from "@carbon/form";
 import type { PrinterRoute } from "@carbon/printing";
 import { printerRouteValidator } from "@carbon/printing";
@@ -16,6 +20,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -83,7 +88,7 @@ export function PrintersCard({
   return (
     <>
       <Card>
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:gap-0">
           <CardHeader>
             <CardTitle>
               <Trans>Printers</Trans>
@@ -92,7 +97,7 @@ export function PrintersCard({
               <Trans>Physical printers available for assignment.</Trans>
             </CardDescription>
           </CardHeader>
-          <CardAction className="py-6">
+          <CardAction className="py-6 max-md:pt-0 max-md:pb-4 max-md:px-4">
             <Button
               leftIcon={<LuPlus />}
               onClick={() => {
@@ -148,6 +153,7 @@ export function PrintersCard({
                         <Trans>Test</Trans>
                       </DropdownMenuItem>
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         onSelect={() => {
                           setPrinterToDelete({

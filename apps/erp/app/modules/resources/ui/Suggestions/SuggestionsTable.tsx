@@ -1,4 +1,15 @@
-import { Avatar, Badge, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Avatar,
+  Badge,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -53,6 +64,7 @@ const SuggestionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuFileText />
           }
         },
@@ -70,6 +82,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             exportValue: (row) => row.employeeName,
             filter: {
@@ -94,6 +107,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: tags?.map((tag) => ({
@@ -112,6 +126,7 @@ const SuggestionsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }
@@ -124,6 +139,7 @@ const SuggestionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               onClick={() => {
                 navigate(path.to.suggestion(row.id!));
               }}
@@ -132,6 +148,7 @@ const SuggestionsTable = memo(
               <Trans>View Suggestion</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "resources")}
               onClick={() => {

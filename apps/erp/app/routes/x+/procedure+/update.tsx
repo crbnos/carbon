@@ -1,9 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { getCompanyId, proceduresQuery } from "~/utils/react-query";
+import { unchecked } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, userId } = await requirePermissions(request, {
@@ -26,11 +27,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "processId":
       return await client
         .from("procedure")
-        .update({
-          [field]: value,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
     case "tags":
       return await client
@@ -45,12 +48,4 @@ export async function action({ request }: ActionFunctionArgs) {
     default:
       return { error: { message: "Invalid field" }, data: null };
   }
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    proceduresQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }

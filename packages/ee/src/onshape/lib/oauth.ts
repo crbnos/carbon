@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import {
   getAppUrl,
   ONSHAPE_CLIENT_ID,
@@ -62,14 +66,12 @@ export function getOnshapeOAuthConfig(
     const clientId = metadata?.clientId;
     const clientSecret = metadata?.clientSecret;
     const baseUrl = normalizeOnshapeUrl(metadata?.baseUrl);
-    const oauthUrl = normalizeOnshapeUrl(metadata?.oauthUrl);
     if (
       typeof clientId !== "string" ||
       !clientId.trim() ||
       typeof clientSecret !== "string" ||
       !clientSecret.trim() ||
-      !baseUrl ||
-      !oauthUrl
+      !baseUrl
     ) {
       return null;
     }
@@ -78,7 +80,8 @@ export function getOnshapeOAuthConfig(
       clientSecret: clientSecret.trim(),
       redirectUri: getOnshapeGovernmentRedirectUri(),
       baseUrl,
-      ...oauthEndpoints(oauthUrl)
+      // A Government tenant serves OAuth from its own address.
+      ...oauthEndpoints(baseUrl)
     };
   }
 

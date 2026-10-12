@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getPurchaseInvoice,
   isPurchaseInvoiceLocked,
@@ -43,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
@@ -56,12 +60,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  // Note: Need to add upsertPurchaseInvoiceDelivery to invoicing.service.ts
   const updatePurchaseInvoiceDelivery = await upsertPurchaseInvoiceDelivery(
     client,
     {
       ...validation.data,
       id: invoiceId,
+      companyId,
       updatedBy: userId,
       customFields: setCustomFields(formData)
     }

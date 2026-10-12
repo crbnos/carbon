@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -7,8 +11,8 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  generateHTML,
   HStack,
+  RichTextView,
   Tabs,
   TabsContent,
   TabsList,
@@ -120,11 +124,9 @@ const OpportunityNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(internalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={internalNotes as JSONContent}
+                  empty={<Trans>No internal notes</Trans>}
                 />
               )}
             </TabsContent>
@@ -139,11 +141,9 @@ const OpportunityNotes = ({
                   }}
                 />
               ) : (
-                <div
-                  className="prose dark:prose-invert"
-                  dangerouslySetInnerHTML={{
-                    __html: generateHTML(externalNotes as JSONContent)
-                  }}
+                <RichTextView
+                  content={externalNotes as JSONContent}
+                  empty={<Trans>No external notes</Trans>}
                 />
               )}
             </TabsContent>

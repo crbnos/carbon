@@ -42,3 +42,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+## mattpocock/skills
+
+The `tdd` and `resolving-merge-conflicts` skills under `.claude/skills/` are taken
+from [mattpocock/skills](https://github.com/mattpocock/skills) (commits `d81f3a1`
+and `3216582`).
+
+**License:** MIT License (text above)
+**Copyright:** (c) 2026 Matt Pocock

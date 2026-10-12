@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useButton } from "@react-aria/button";
 import type { AriaButtonProps } from "@react-types/button";
 import { useRef } from "react";
@@ -30,8 +34,8 @@ export const FieldButton = ({ size = "md", ...props }: FieldButtonProps) => {
   const { buttonProps } = useButton(props, ref);
 
   const sizeClasses = {
-    sm: "h-8 w-8 px-2",
-    md: "h-10 w-10 px-3",
+    sm: "h-8 w-8 px-2 max-md:h-11 max-md:w-11",
+    md: "h-10 w-10 px-3 max-md:h-11 max-md:w-11",
     lg: "h-12 w-12 px-4"
   };
 

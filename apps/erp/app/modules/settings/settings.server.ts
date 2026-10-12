@@ -1,12 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
   getIntegrationConfigById,
+  getIntegrationIdsByRole,
+  type IntegrationHealthcheckResult,
   type IntegrationID,
   resolveIntegrationSecrets,
   splitSecrets
 } from "@carbon/ee";
+import { isAccountingSyncEnabled } from "@carbon/ee/accounting";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { redis } from "@carbon/kv";
@@ -465,14 +472,53 @@ export async function updateCustomFieldsSortOrder(
   }
 }
 
+export type IntegrationHealthStatus =
+  | "healthy"
+  | "unhealthy"
+  | "inactive"
+  | "sync-off";
+
+type IntegrationHealthFields = {
+  health: IntegrationHealthStatus;
+  /** Why an unhealthy check failed, when the integration says. */
+  healthReason: string | null;
+};
+
+/**
+ * Connection health, plus `sync-off` for an accounting integration whose
+ * connection works but whose sync switch is off (a new connection still being
+ * set up, or one switched off since). A broken connection still reads
+ * `unhealthy` — that is the more urgent thing to show.
+ */
 export async function getIntegrationHealth(
   companyId: string,
   integration: Integration
-): Promise<Integration & { health: "healthy" | "unhealthy" | "inactive" }> {
+): Promise<Integration & IntegrationHealthFields> {
+  const result = await getConnectionHealth(companyId, integration);
+  if (
+    result.health === "healthy" &&
+    (getIntegrationIdsByRole("accounting") as string[]).includes(
+      integration.id ?? ""
+    ) &&
+    !isAccountingSyncEnabled(integration.metadata)
+  ) {
+    return { ...result, health: "sync-off" };
+  }
+  return result;
+}
+
+async function getConnectionHealth(
+  companyId: string,
+  integration: Integration
+): Promise<
+  Integration &
+    IntegrationHealthFields & { health: "healthy" | "unhealthy" | "inactive" }
+> {
   if (!integration.active) {
     return {
       ...integration,
-      health: "inactive"
+      health: "inactive",
+      healthReason: null
     };
   }
 
@@ -483,7 +529,8 @@ export async function getIntegrationHealth(
   if (!healthcheck) {
     return {
       ...integration,
-      health: "healthy"
+      health: "healthy",
+      healthReason: null
     };
   }
 
@@ -495,7 +542,8 @@ export async function getIntegrationHealth(
   if (cached === "1") {
     return {
       ...integration,
-      health: "healthy"
+      health: "healthy",
+      healthReason: null
     };
   }
 
@@ -518,22 +566,26 @@ export async function getIntegrationHealth(
   } catch {
     return {
       ...integration,
-      health: "unhealthy"
+      health: "unhealthy",
+      healthReason: null
     };
   }
 
-  const status = await (
+  const result = await (
     healthcheck as (
       companyId: string,
       metadata: Record<string, any>
-    ) => Promise<boolean>
+    ) => Promise<boolean | IntegrationHealthcheckResult>
   )(companyId, resolvedMetadata);
+  const healthy = typeof result === "boolean" ? result : result.healthy;
+  const reason = typeof result === "boolean" ? null : (result.reason ?? null);
 
-  await redis.set(key, status ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 minutes
+  await redis.set(key, healthy ? "1" : "0", "EX", INTEGRATION_CACHE_TTL * 5); // Cache for 5 hours
 
   return {
     ...integration,
-    health: status ? "healthy" : "unhealthy"
+    health: healthy ? "healthy" : "unhealthy",
+    healthReason: healthy ? null : reason
   };
 }
 

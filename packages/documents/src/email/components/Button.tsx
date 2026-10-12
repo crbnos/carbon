@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button as ReactEmailButton } from "@react-email/components";
 import type React from "react";
 import { getEmailInlineStyles, getEmailThemeClasses } from "./Theme";

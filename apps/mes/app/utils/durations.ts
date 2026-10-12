@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export function makeDurations<
   T extends {
     setupTime?: number;
@@ -200,7 +204,6 @@ export function makeDurations<
 
   const totalDuration = setupDuration + laborDuration + machineDuration;
 
-  // @ts-ignore
   return {
     ...operation,
     duration: totalDuration,

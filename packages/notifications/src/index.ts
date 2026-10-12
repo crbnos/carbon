@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Notification event taxonomy. Kept as a standalone package because the
 // enums are referenced from app routes, scheduled jobs, and the inngest
 // notify function. Callers dispatch a `carbon/notify` event via
@@ -37,6 +41,10 @@ export enum NotificationEvent {
   PurchasingRfqAssignment = "purchasing-rfq-assignment",
   QuoteAssignment = "quote-assignment",
   QuoteExpired = "quote-expired",
+  // Daily digest from the recurring-billing job, shared by every recurring
+  // invoice source. Payload-carried like IntegrationSync: the counts arrive as
+  // `body` ("2 posted, 1 emailed, 1 need review") and nothing is read.
+  RecurringInvoicing = "recurring-invoicing",
   RiskAssignment = "risk-assignment",
   SalesOrderAssignment = "sales-order-assignment",
   SalesRfqAssignment = "sales-rfq-assignment",
@@ -60,6 +68,8 @@ export enum NotificationEvent {
 // `notification.topic` column, so renaming any of these is a migration.
 export enum NotificationTopic {
   Approval = "approval",
+  // The changelog newsletter: opt-in and email-only.
+  Changelog = "changelog",
   General = "general",
   Inventory = "inventory",
   Items = "items",
@@ -86,8 +96,38 @@ export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Maintenance,
   NotificationTopic.Training,
   NotificationTopic.Suggestion,
-  NotificationTopic.General
+  NotificationTopic.General,
+  NotificationTopic.Changelog
 ] as const satisfies readonly NotificationTopic[];
+
+// In-app is always delivered, so it is not a preference channel. Neither is
+// browser push: it mirrors in-app, every notification to every browser with
+// notifications enabled.
+export type NotificationPreferenceChannel = "email" | "slack";
+
+export function getNotificationTopicChannels(
+  topic: NotificationTopic
+): readonly NotificationPreferenceChannel[] {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return ["email"];
+    default:
+      return ["email", "slack"];
+  }
+}
+
+// What no preference row means. The newsletter is opt-in: its dispatcher only
+// mails users with an enabled row.
+export function isNotificationTopicEnabledByDefault(
+  topic: NotificationTopic
+): boolean {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return false;
+    default:
+      return true;
+  }
+}
 
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.
@@ -116,7 +156,8 @@ export function isRecurringNotificationEvent(
 
 // Fan-out targets understood by the notify Inngest function. inApp is
 // always included regardless of what the caller passes — the topbar reflects
-// every notification. email and slack are opt-in extras.
+// every notification. email and slack are opt-in extras. Browser push is not
+// a destination: it follows in-app, so every notification pushes too.
 export enum NotificationDestination {
   InApp = "inApp",
   Email = "email",
@@ -147,6 +188,7 @@ export function getNotificationTopic(
     case NotificationEvent.SalesOrderAssignment:
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
+    case NotificationEvent.RecurringInvoicing:
       return NotificationTopic.Sales;
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:
@@ -263,6 +305,8 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Workflow";
     case NotificationEvent.IntegrationSync:
       return "Accounting sync needs attention";
+    case NotificationEvent.RecurringInvoicing:
+      return "Recurring invoicing summary";
     default:
       return "You have a new notification";
   }
@@ -301,6 +345,8 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View details";
     case NotificationEvent.IntegrationSync:
       return "View sync activity";
+    case NotificationEvent.RecurringInvoicing:
+      return "Review invoices";
     default:
       return "View details";
   }

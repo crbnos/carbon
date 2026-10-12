@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
@@ -278,7 +282,7 @@ function TransferGrid({ locationId }: { locationId: string }) {
 
   return (
     <>
-      <DrawerBody className="w-full p-0 min-h-0 overflow-y-hidden">
+      <DrawerBody className="w-full p-0 max-md:p-0 min-h-0 overflow-y-hidden">
         <ResizablePanelGroup
           direction="horizontal"
           className="h-full w-full min-h-0"
@@ -405,7 +409,8 @@ function DestinationTable({
               </span>
             </VStack>
           </HStack>
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "storageUnitName",
@@ -533,6 +538,7 @@ function DestinationTable({
       <div className="flex-1 min-h-0 overflow-hidden w-full px-4">
         <Table<BinRow>
           compact
+          mobileLayout="table"
           data={data}
           columns={columns}
           title={t`Transfer To`}

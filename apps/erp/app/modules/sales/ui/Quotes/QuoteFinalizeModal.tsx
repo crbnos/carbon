@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { useRuleViolations } from "@carbon/ee/rules";
@@ -66,6 +70,7 @@ const QuotationFinalizeModal = ({
     onSuccess: onClose
   });
   const { fetcher } = ruleViolations;
+  const isSubmitting = fetcher.state !== "idle";
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
@@ -248,7 +253,11 @@ const QuotationFinalizeModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button isDisabled={loading} type="submit">
+            <Button
+              isDisabled={loading || isSubmitting}
+              isLoading={isSubmitting}
+              type="submit"
+            >
               <Trans>Finalize</Trans>
             </Button>
           </ModalFooter>

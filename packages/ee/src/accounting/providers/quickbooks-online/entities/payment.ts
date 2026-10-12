@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { NormalizedPayment } from "../../../core/payment-application";
 import {
   PAYMENT_TARGET_LABELS,
@@ -16,7 +20,7 @@ import { loadQboAccountRefsById } from "./shared";
  * `PaymentSyncerBase`. QBO `BillPayment` objects settle Carbon purchase
  * invoices (AP); QBO `Payment` objects settle Carbon sales invoices (AR). The
  * base writes a Draft `payment` + `invoiceSettlement` and then invokes the
- * native `post-payment` edge function (GL journal + Posted/Voided status).
+ * native `post-payment` server function (GL journal + Posted/Voided status).
  * Two-way as of Phase G: a Carbon-born Posted payment pushes back out as a QBO
  * Payment (AR) / BillPayment (AP) document (see `pushRemotePayment`).
  *

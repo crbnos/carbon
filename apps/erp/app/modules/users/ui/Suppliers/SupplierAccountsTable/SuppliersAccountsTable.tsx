@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Checkbox,
   DropdownMenuContent,
@@ -113,6 +117,7 @@ const SupplierAccountsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -146,6 +151,7 @@ const SupplierAccountsTable = memo(
           header: t`Supplier`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -160,7 +166,7 @@ const SupplierAccountsTable = memo(
           accessorKey: "supplier.supplierTypeId",
           header: t`Supplier Type`,
           cell: ({ row }) => (
-            // @ts-ignore
+            // @ts-expect-error
             <Enumerable value={row.original.supplier?.supplierType?.name} />
           ),
           meta: {
@@ -179,6 +185,7 @@ const SupplierAccountsTable = memo(
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            mobile: "P2",
             icon: <LuUserCheck />,
             filter: {
               type: "static",

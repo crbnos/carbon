@@ -12,6 +12,68 @@ Syncs Carbon entities <-> external accounting providers. **Three live providers*
 
 Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (v5 — ONE state-shaped decision core; events are hints; the authoritative design of record) and `.ai/specs/implemented/2026-08-05-accounting-document-representation.md` (AR/AP documents replay their posting journal; provider items non-tracked). The superseded v2/v3/v4 specs (engine + ledger + pull sweep + Phase F/G payment sync-back; journal policy/dimensions/tie-out; delivery robustness — converged subscriptions, truthful ledger, outbound sweep, tie-out enforcement) were removed 2026-08-13 — their shipped behavior is documented in THIS rule; their history is in git. **Always-on (implemented 2026-08-13, plan `.ai/plans/2026-08-13-accounting-sync-automated-postings-only.md` Tasks 1–6+8):** posting sync mirrors Carbon's automated GL postings whenever an accounting integration is connected — no master `postingSync.enabled` toggle, no per-source-type on/off, no `journalEntry` entity gate (defaulted on in `DEFAULT_SYNC_CONFIG` and forced on in every `build*SyncConfig`). `Manual` and `Opening Balance` journals NEVER sync (`POSTING_POLICY[...].syncable: false` → the `MANUAL_DISABLED` exclude at `posting.ts`; the external ledger owns manual journals and its own opening balances). Note the exclude `reason`/`message` are still worded "Manual" for both — the gate is `syncable === false`, not a name check. Legacy `enabled` fields stay in the stored schema for parse-compat but are never read; per-type granularity (individual vs daily-summary) remains the only per-type setting. Plan Tasks 7 (reversal/void propagation audit) and 9 (lock AR/AP families to documents) remain open.
 
+## The accounting cutover — what syncs before and after
+
+Every company posts journals; before its accounting cutover they are `Provisional`, and the
+enable turns them into `Posted` (dated on or after the cutover date) or `Superseded` (dated
+before it) — see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover.
+Nothing in the sync engine reads `accountingCutoverDate` (or the unused `accountingEnabled`);
+what syncs follows from the statuses each path already filters on.
+
+- **Journals: a Provisional or Superseded journal never syncs.** Every journal path admits
+  Posted (and Reversed for the `:reversal` push) only: `getJournalPostingDecision`
+  (`accounting-sync-operations.ts` — an INSERT enqueues only when born Posted; an UPDATE only
+  when status moves to Posted or Reversed); `reconcileJournal` (`integrations/reconcile.ts` —
+  any other status decides `nothing`); the outbound sweep's journal candidates and the journal
+  backfill (`status IN ('Posted','Reversed')`); the reconciliation tie-out; the consolidation
+  (skips a non-Posted journal); and each provider's journal syncer, which refuses a non-Posted
+  journal (`xero/entities/journal-entry.ts`, `quickbooks-online/…`, `rillet/…`: "Journal must be
+  Posted before syncing").
+- **Promotion syncs through the ordinary journal event.** `activate-accounting` promotes with a
+  plain `UPDATE` inside its transaction and does not set `app.sync_in_progress`, so the
+  `journal` event trigger queues an UPDATE event per promoted row for the `${provider}-sync`
+  subscription. `events/sync.ts` reconciles each from its current state (Posted) and the shared
+  policy core decides push or exclusion as for any Posted journal. The outbound sweep only
+  re-walks journals whose `postingDate` is inside its 7-day window, so a promoted journal dated
+  earlier that the event path missed reaches the provider only through the journal backfill.
+  The enable's "Cutover recost" journals are inserted Provisional with the source document's
+  `sourceType` and are promoted with the rest.
+- **Every rebuilt legacy journal is recorded `Excluded` (`CUTOVER_REBUILT`).** The legacy
+  backfill (enable step 1a, `activate-accounting/legacy/`) and its repair
+  (`journal-legacy-documents`) write again the journals of legacy documents dated on or after
+  the cutover: invoices, memos, charges, reimbursements, payments, movements, and the
+  depreciation, scrap disposal and revenue recognition runs. The reset deleted those journals
+  and their sync records, not the provider's copy, and the rows cannot tell which documents
+  had one. So `insertProvisionalJournals` (`legacy/write.ts`) calls `keepOutOfProviderSync`
+  for EVERY journal it writes: for each journal and each accounting integration of the company
+  (active or not), it inserts an `Excluded` `journalEntry` `push-to-accounting` operation with
+  `errorCode` `CUTOVER_REBUILT` (`CUTOVER_REBUILT_SYNC_CODE`) and idempotency key
+  `journalEntry:<id>:push-to-accounting:cutover-rebuilt`. The reconciler then decides
+  "journal disposition already recorded", the journal backfill counts it as covered, and the
+  period close's external-GL-sync check counts Excluded as terminal, so nothing pushes it. A
+  user sends the ones the provider lacks from Sync Activity, which pushes on purpose.
+  Journals the ordinary posting paths write, and the "Cutover recost" journals, get no such
+  row: they are promoted and sync by the posting policy.
+- **The opening journal never syncs.** It is a Posted `sourceType 'Opening Balance'` journal,
+  and `POSTING_POLICY['Opening Balance'].syncable` is `false` (same exclusion as `Manual`).
+- **Documents sync by the DOCUMENT's status, not the journal's.** The cutover does not gate
+  them, so before the cutover:
+  - A bill, a charge and an invoice's revenue accounts are replayed from the document's
+    journal, and those reads take `journal.status = 'Posted'` only (`loadBillCostingLines` /
+    `loadChargeCostingLines` in `core/document-costing.ts`, the revenue-account read in
+    `core/sales-invoice-source.ts`). With a Provisional journal they find nothing and park the
+    structured `UNMAPPED_ACCOUNTS` Warning. A bill and a charge word it with
+    `noPostedJournalMessage` (`core/posting.ts`): "Cannot sync <subject>: it has no posted
+    <Purchase Invoice|Charge> journal. Either the <document> is not posted yet (post it, then
+    retry) or it is dated before your accounting cutover, so it never gets one." After the enable a document dated on or after the cutover
+    has a Posted journal again (the bill re-drive picks a parked bill up once its journal is
+    Posted); one dated before it has a Superseded journal and never finds one.
+  - Payments, memos (`creditMemo` / `supplierCredit`) and reimbursements read no journal: each
+    syncer gates on the document's own `Posted` / `Voided` status (plus the documents-mode family
+    gate for payments, and a payment whose settled document has no mapping is skipped). So a
+    Posted payment, memo or reimbursement pushes to a connected provider before the cutover
+    while its Carbon journal is still Provisional.
+
 ## Architecture: class-per-entity syncers, not a handler map
 
 The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/accounting`):
@@ -42,6 +104,36 @@ These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/syn
 | `accounting-consolidation` | — | `accounting-consolidation.ts` | cron `0 2 * * *`; pushes one aggregated provider journal per posting date for daily-consolidation configs (drains hold those journal ops for it) |
 | `accounting-reconciliation` | — | `accounting-reconciliation.ts` | cron `0 3 * * 1` (Mondays 03:00 UTC) — presence drift check + `accountingSyncTieOut` writer; see the tie-out section below |
 | `event-handler-sync` | `carbon/event-sync` | `events/sync.ts` | the SYNC event-system handler (see event-system.md) — DB writes -> push to the provider |
+
+### The sync switch — off until accounts are mapped
+
+`metadata.settings.syncEnabled`, read ONLY through `isAccountingSyncEnabled` (`core/models.ts`).
+Absent reads as ON (rows that predate the switch were already syncing); every connect path writes
+an explicit value. A new connection starts OFF so the customer can map accounts first: the
+OAuth callbacks (`integrations.{xero,quickbooks}.oauth.ts`) use `syncEnabledOnConnect`, which
+keeps the existing value only for a reconnect to the SAME tenant/realm (a dead-grant reconnect
+must not pause a live integration), and the form install (Rillet) writes `false` when
+`!wasInstalled`. It is NOT `companyIntegration.active` — the role trigger, topology, Installed
+badge and account-mapping tabs all key on `active`, and they must keep working while sync is off.
+
+The drawer header's `AccountingSyncControl` posts intent `update-sync-enabled`; the action
+refuses ON while `getUnmappedRequiredAccounts` (`core/account-mapping.ts`) is non-empty. The
+"required" set — `selectRequiredMappingAccountIds`: every `accountDefault` account plus every
+Expense account, among active leaf accounts — is the same one the Account Mapping tab badges.
+
+While off, nothing moves: `events/sync.ts` skips before reconciling, the four crons filter their
+targets, `sync-external-accounting` enqueues nothing, a master-data PUSH and the journal backfill
+refuse (route) and no-op (job), the three webhooks acknowledge before any provider call, and
+`drainSyncOperations` returns before claiming — the backstop for a Retry clicked in Sync
+Activity, which then drains once sync is on. The one thing that runs is **Import customers &
+vendors**: it only writes into Carbon, and the mapping rows it creates are what stop the first
+push after sync is on from duplicating contacts in the ledger. Its drain passes
+`only: { entityTypes: [<customer|vendor>], direction: "pull-from-accounting" }`
+(`claimPendingOperations` filters on both), and that scoped pull is the drain's single exception —
+so the import never flushes a Retry or anything else that is waiting. Period close's external-GL check treats a sync-off
+integration like a disconnected one (it inlines the flag read — `accounting.service.ts` cannot
+import the barrel). Turning sync on starts the pull cursor from `integration.updatedAt` (the
+toggle bumps it); the outbound sweep covers the last 7 days and the journal backfill the rest.
 
 ### Per-tenant isolation and dead OAuth grants
 
@@ -133,8 +225,7 @@ into Carbon as `payment` + `invoiceSettlement` rows that close the
 - `core/payment-syncer.ts` — `PaymentSyncerBase` (pull, plus the Phase G push below). Providers implement
   `mapToNormalized(remote, entityId)` + `fetchRemote`. The base overrides
   `pullFromAccounting`/`pullBatchFromAccounting`: Draft write in the base tx, then
-  **after commit** invokes the native `post-payment` edge fn (`{type:'post'|'void'}`
-  via a lazily-imported `getCarbonServiceRole()`), which builds the GL journal,
+  **after commit** calls the `post-payment` server function (`{type:'post'|'void'}`), which builds the GL journal,
   sets `payment.journalId`, and derives document status. **Pulled payments DO post
   to Carbon's GL** — no double-count because `documents`-mode `Payment` journals are
   DOC_BACKED-excluded from outbound push (the payment journal never re-posts to the
@@ -318,6 +409,59 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     sweep include mapped voided documents/payments, and mapping tombstones stop
     repeated deletes. Compare independent remote GL, including recognition
     and reversal, instead of treating create HTTP200 as accounting parity.
+- **Sales invoice line discount reaches providers at NET.** `salesInvoiceLine.discountPercent`
+  (a 0–1 fraction, merchandise only; add-ons and shipping are never discounted) is loaded by
+  `loadSalesInvoices` (`sales-invoice-source.ts`, `lineAmount = quantity × unitPrice × (1 −
+  discountPercent)`, the expression the `salesInvoices` view and `calculateSalesPostingAmounts`
+  use) and carried on `SalesInvoiceLineSchema.discountPercent` (optional; absent = 0, so a line
+  pulled back from a provider carries its net price). `buildSalesDocumentComponents` sends every
+  provider the NET unit price: `unitPrice` and `convertedUnitPrice` are both LIST prices, the
+  discount is applied to each before they are reconciled, and a discounted converted price is
+  rounded to storage scale. Pinned by `sales-document-components.test.ts` and the Xero / QBO /
+  Rillet invoice tests. Contract invoices (drafted by `create-contract-invoices`) are ordinary
+  `Service` lines with a `discountPercent`, and no mapper treats them differently. But Carbon
+  posts their revenue legs to Contract Assets / Deferred Revenue with `documentType 'Contract'`
+  / `documentId` = the contract (`post-sales-invoice/contract-posting.ts`), never to Sales, so
+  the selection caveat of rental lines below applies to them too: a reader of an invoice's
+  `documentType = 'Invoice'` journal lines never sees a contract revenue leg.
+  <!-- UNVERIFIED: which account each provider books a contract invoice line to remotely -->
+
+- **Rental invoice lines — provider behavior is a spike pending, not a
+  decision.** A rental agreement drafts sales invoices whose lines are
+  `invoiceLineType 'Rental'` with **no item** (`itemId` null;
+  `rentalLineType` Rent / Charge / Purchase Option; an early-return credit
+  is a Rent line with a NEGATIVE unit price). Carbon posts their revenue legs to
+  Contract Assets / Deferred Revenue (Rent of a `Rental` line), Rental Income (Charge) or
+  Net Investment in Leases, an ASSET (Rent and Purchase Option of a `Sale`
+  line, i.e. a sales-type lease), NOT to the Sales default, and those legs carry `documentType 'Rental Agreement'` /
+  `documentId = rentalAgreement.id` — only the AR and tax legs keep
+  `documentType 'Invoice'`. Anything that selects an invoice's journal lines by
+  `documentType = 'Invoice'` (`sales-invoice-source.ts` shipping-account read,
+  `document-costing.ts`, `invoicing.service.ts` control-line totals) therefore
+  never sees a rental revenue leg; today none of them needs it, but a future
+  "replay the invoice's revenue accounts" mapper would miss them. Static read of
+  the current mappers (`sales-document-components.ts` turns an itemless line
+  into a `Merchandise` component with `itemId` null):
+  - **Xero** (`buildXeroSalesInvoiceLines`): the line goes out with
+    `AccountCode` = the company's `accountDefault.salesAccount` code and no
+    `ItemCode`, so the remote invoice books rent to Sales, not to Deferred
+    Revenue / Contract Assets. <!-- UNVERIFIED: not exercised against a Xero
+    tenant; whether a negative early-return line is accepted is also untested -->
+  - **QBO** (`buildQboInvoiceLines`): an itemless component is sent as
+    `SalesItemLineDetail` with NO `ItemRef` (the throw only fires when an item
+    or shipping id fails to resolve). <!-- UNVERIFIED: which income account
+    QuickBooks books an ItemRef-less line to, and whether it accepts it, is
+    untested -->
+  - **Rillet** (`preflightRilletComponents`): refuses the whole invoice with
+    the structured `UNMAPPED_ACCOUNTS` Warning "Cannot sync invoice: Rillet
+    revenue recognition lines require a product and positive quantity; some
+    components have no item or unsupported quantities" — rental invoices park
+    as Warnings. (Static read; not exercised against a Rillet sandbox.)
+  The spec's intent (§1 Sync) is an account-costed line to the deferred-revenue
+  account per provider, or an exclusion with a reason code relying on the
+  `Revenue Recognition` journals (`POSTING_POLICY` `defaultEnabled: false`, so
+  those journals do not push unless the company turns them on). None of that
+  is built; record the outcome per provider here when the spike runs.
 - **Provider items are non-tracked** so the provider never posts inventory
   (bills) or COGS (invoices): Xero pushes `IsTrackedAsInventory: false` on
   create and OMITS the flag on update (Xero rejects untracking an item with
@@ -408,12 +552,11 @@ pushed charge still shows which merchant the spend was at.
 
 **Ramp inbound financial records are staged transactionally.** Charges and bills
 advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
-rows, and mapping before calling the posting edge function; ambiguous responses require a
+rows, and mapping before calling the posting server function; ambiguous responses require a
 tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance
 and quantity, while multi-PO bills remain standalone instead of choosing an arbitrary order.
 Mapped card Drafts refresh their header and coding from validated Ramp input atomically;
-Posted cards cannot be rewritten. The card-post handler binds authenticated permission checks
-to the JWT subject. Payment/Cashback reject coding lines they would otherwise ignore, and
+Posted cards cannot be rewritten. Payment/Cashback reject coding lines they would otherwise ignore, and
 Charge/Credit/Repayment require finite positive line magnitudes. Post and reversal allocate
 journal-line ids before insertion, so dimension linkage never depends on RETURNING order.
 
@@ -422,7 +565,7 @@ Bill payments and reimbursements follow the same rule.
 `syncRampBillPayment` in `ramp-sync-payment.ts`. `stageRampPaymentDraft` writes or resumes
 the Draft `payment`, `invoiceSettlement`, and Ramp mapping in one Kysely transaction while
 preserving the stored source-FX snapshot; `createOrResumeRampPayment` posts and accepts an
-ambiguous edge-function response only when a tenant-scoped reread shows the payment is
+ambiguous server-function response only when a tenant-scoped reread shows the payment is
 Posted. Card-backed bill payments are confirmed without an AP payment because the card
 transaction already represents the cash movement.
 The explicit card set includes `ONE_TIME_CARD_DELIVERY`; only documented bank rails enter
@@ -558,6 +701,27 @@ is dead config for Rillet only, left in place for the capped providers.
   charges implement provider-aware void/delete paths where supported; unsupported or
   unconfirmed deletes fail or park visibly and never receive a false tombstone.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
+- **Default-off journal types are opt-in per source type.** Despite the
+  "no per-source-type on/off" framing above, `getJournalPostingPolicyDecision`
+  (`core/posting.ts`) excludes a source type whose `POSTING_POLICY` entry has
+  `defaultEnabled: false` with `SOURCE_TYPE_DISABLED` ("Source type … is
+  disabled — enable it in the accounting sync settings to push these
+  journals") unless the company's per-type config sets `enabled`. The
+  default-off set (`POSTING_SYNC_DEFAULT_SOURCE_TYPES` excludes them) is the
+  three return types, `'Revenue Recognition'`, `'Asset Transfer'` and
+  `'Lease'`: a new journal type never starts pushing to a customer's external
+  ledger unasked (plan decision 1 of
+  `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I). **`'Lease'`**
+  (migration `20261006220301_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
+  `individual` granularity) carries only a sales-type lease's commencement
+  (Dr Net Investment in Leases / Dr COGS / Dr accumulated depreciation, Cr
+  Lease Revenue / Cr fleet class asset) and its end-of-term residual return
+  (Dr Rental Fleet class asset or inventory / Cr Net Investment in Leases),
+  written by `post-rental-agreement` with `documentType 'Rental Agreement'`;
+  the lease's monthly interest posts inside the `'Revenue Recognition'`
+  journal, and its rent invoices go out through the invoice mappers (the
+  Rental-line spike above). <!-- UNVERIFIED: no provider has been exercised
+  with a Lease journal or a sales-type rental invoice -->
 
 ## Credit memos and supplier credits as provider documents
 

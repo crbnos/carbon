@@ -1,27 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { getLogger } from "@carbon/logger";
+import { redirect, round } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
-  currencyValidator,
+  currencyFormValidator,
   deleteExchangeRateOverride,
   exchangeRateOverrideValidator,
   getCurrency,
   getExchangeRateHistory,
   getExchangeRates,
-  upsertCurrency,
   upsertExchangeRateOverride
 } from "~/modules/accounting";
+import { saveCurrencyWithRateOverride } from "~/modules/accounting/accounting.server";
 import { ExchangeRateForm } from "~/modules/accounting/ui/ExchangeRates";
+import { getDatabaseClient } from "~/services/database.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { currenciesQuery } from "~/utils/react-query";
+
+const logger = getLogger("erp", "accounting-exchange-rate");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -146,30 +150,73 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const validation = await validator(currencyValidator).validate(formData);
+  const validation = await validator(currencyFormValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { id, ...d } = validation.data;
+  const { id, rate, displayedRate, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCurrency = await upsertCurrency(client, {
-    id,
-    ...d,
-    companyGroupId,
-    customFields: setCustomFields(formData),
-    updatedBy: userId
-  });
+  // The rate field is disabled (so not posted) for the base currency. Pin it
+  // only when the user changed it from the rate the drawer showed — a rate
+  // that moved while the drawer was open is not an edit — and when it differs
+  // from the rate in effect, compared at the scale the input shows. Otherwise
+  // saving the config would freeze the market rate.
+  let overrideRate: number | null = null;
+  if (
+    rate !== undefined &&
+    (displayedRate === undefined || round(displayedRate) !== round(rate))
+  ) {
+    const current = await getExchangeRates(client, companyId);
+    if (current.error) {
+      logger.error("Failed to read exchange rates before pinning a rate", {
+        companyId,
+        currencyCode: d.code,
+        error: current.error
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(current.error, "Failed to read the current exchange rate")
+        )
+      );
+    }
+    const resolved = current.data.find((r) => r.currencyCode === d.code);
+    if (
+      resolved?.source !== "base" &&
+      (resolved?.rate == null || round(Number(resolved.rate)) !== round(rate))
+    ) {
+      overrideRate = rate;
+    }
+  }
 
-  if (updateCurrency.error) {
+  try {
+    const saved = await saveCurrencyWithRateOverride(getDatabaseClient(), {
+      currencyId: id,
+      companyId,
+      companyGroupId,
+      userId,
+      config: {
+        decimalPlaces: d.decimalPlaces,
+        historicalExchangeRate: d.historicalExchangeRate ?? null,
+        customFields: setCustomFields(formData)
+      },
+      overrideRate
+    });
+    if (!saved) throw notFound("Currency not found");
+  } catch (err) {
+    if (err instanceof Response) throw err;
+    logger.error("Failed to update currency", {
+      companyId,
+      currencyId: id,
+      error: err
+    });
     return data(
       {},
-      await flash(
-        request,
-        error(updateCurrency.error, "Failed to update currency")
-      )
+      await flash(request, error(err, "Failed to update currency"))
     );
   }
 
@@ -177,11 +224,6 @@ export async function action({ request }: ActionFunctionArgs) {
     `${path.to.exchangeRates}?${getParams(request)}`,
     await flash(request, success("Updated currency"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(currenciesQuery().queryKey, null);
-  return await serverAction();
 }
 
 export default function EditExchangeRateRoute() {

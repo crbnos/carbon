@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Representative sample data for previewing a document template without a real
  * record. Co-located with the PDFs (the "sample" half of Bindery's
@@ -47,6 +51,7 @@ export const SAMPLE_SALES_INVOICE = {
       quantity: 10,
       unitOfMeasureCode: "EA",
       convertedUnitPrice: 24.5,
+      discountPercent: 0.2,
       convertedAddOnCost: 0,
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,
@@ -61,6 +66,7 @@ export const SAMPLE_SALES_INVOICE = {
       quantity: 4,
       unitOfMeasureCode: "EA",
       convertedUnitPrice: 12,
+      discountPercent: 0,
       convertedAddOnCost: 5,
       convertedNonTaxableAddOnCost: 0,
       convertedShippingCost: 0,

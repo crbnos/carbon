@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   ActionMenu,
   Avatar,
@@ -45,11 +49,14 @@ const Contact = ({ contact, url, user, actions }: ContactProps) => {
       <VStack spacing={0}>
         <HStack>
           {url ? (
-            <Link to={url}>
-              <p className="text-sm font-bold">{name}</p>
+            <Link
+              to={url}
+              className="max-md:relative max-md:after:absolute max-md:after:-inset-y-3 max-md:after:inset-x-0"
+            >
+              <p className="text-sm font-bold max-md:font-semibold">{name}</p>
             </Link>
           ) : (
-            <p className="text-sm font-bold">{name}</p>
+            <p className="text-sm font-bold max-md:font-semibold">{name}</p>
           )}
 
           {userStatus === UserStatus.Active && (

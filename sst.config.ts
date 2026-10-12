@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference path="./.sst/platform/config.d.ts" />
 
 
@@ -11,6 +15,10 @@ export default $config({
     };
   },
   async run() {
+    // Where build-images.yml publishes; unset, the account's own private ECR.
+    const imageRegistry =
+      process.env.IMAGE_REGISTRY ||
+      `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com`;
     const vpc = new sst.aws.Vpc("CarbonVpc2");
     const cluster = new sst.aws.Cluster("CarbonCluster", {
       vpc,
@@ -19,7 +27,7 @@ export default $config({
     const erp = cluster.addService("CarbonERPService", {
       cpu: "2 vCPU",
       memory: "4 GB",
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com/carbon/erp:${process.env.IMAGE_TAG}`,
+      image: `${imageRegistry}/carbon/erp:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: process.env.URL_ERP ?? "itar.carbon.ms",
@@ -131,7 +139,7 @@ export default $config({
     const mes = cluster.addService("CarbonMESService", {
       cpu: "2 vCPU",
       memory: "4 GB",
-      image: `${process.env.AWS_ACCOUNT_ID}.dkr.ecr.${process.env.AWS_REGION}.amazonaws.com/carbon/mes:${process.env.IMAGE_TAG}`,
+      image: `${imageRegistry}/carbon/mes:${process.env.IMAGE_TAG}`,
       loadBalancer: {
         domain: {
           name: process.env.URL_MES ?? "mes.itar.carbon.ms",

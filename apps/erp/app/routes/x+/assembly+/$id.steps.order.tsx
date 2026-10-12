@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { updateAssemblyInstructionStepOrder } from "~/modules/production";
-import { parseSortOrderUpdates } from "~/modules/shared/sort-order";
+import { parseStepOrderUpdates } from "~/modules/shared/sort-order";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,7 +19,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!params.id) throw new Error("Could not find id");
 
-  const updates = parseSortOrderUpdates(await request.formData());
+  const updates = parseStepOrderUpdates(await request.formData());
   if (!updates) {
     return data(
       { success: false },

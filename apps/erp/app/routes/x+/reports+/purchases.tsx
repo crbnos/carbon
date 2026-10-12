@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -7,14 +11,15 @@ import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type { PivotState, PurchaseLinePivotLine } from "~/modules/accounting";
 import {

@@ -23,7 +23,7 @@ conventions, the drift check, adding an industry) lives in
 |-------|-------|---------------------|
 | **Data** | `data/<key>/` | Plain TypeScript literals. No SQL, no ids, no `Date`. One file per slice (twelve: `foundation`, `items`, `inventory`, `sales`, `purchasing`, `production` + `assembly.ts`, `quality`, `change-orders`, `accounting`, `ops`, `workflows`, `planning`); `index.ts` assembles them into a `Dataset`. |
 | **Contract** | `types.ts` | One file: the primitives (`DayOffset`, `InstantSpec`), each slice's `…Data` type and its specs in tier order, `Dataset` / `DatasetKey`, the engine types (`Ctx`, `SeedRefs`, `ItemRef`, `Tier`), and the context functions (`buildCtx`, `emptyRefs`, `resolveCompany`, `resolveCompanyTimeZone`). |
-| **Art** | `assets/<industryId>/<readableId>.svg` | One vector thumbnail per item, keyed on the dataset's `industryId` and the item's `readableId`. |
+| **Art** | `assets/<industryId>/<readableId>.svg` | One vector thumbnail per item, keyed on the dataset's `industryId` and the item's `readableId` (or `ItemSpec.thumbnail` when set — a service's readableId is its name, so its art keeps a file-safe key). |
 | **Engine** | `tiers/01-…` … `tiers/12-…`, `sql.ts`, `dates.ts`, `helpers/` | Insertion logic. Industry-agnostic — a tier reads `ctx.dataset.<slice>` and knows nothing about which industry it is inserting. |
 | **Checks** | `validate.ts` (+ `rule-fields.ts`), `coverage.ts`, `verify.ts` | Pure consistency validator; row-count floors; the apply-and-roll-back drift check. |
 
@@ -35,7 +35,7 @@ parameters + content, supplier-process rates; no rule code, no method steps), `r
 (`seedReturnCredit` — the memo a return's "Issue Credit" writes), `posting-journals.ts` (PURE
 journal builders — `salesInvoiceJournal`, `purchaseInvoiceJournal`, `paymentJournal`,
 `memoJournal`, `receiptJournal`, `shipmentJournal`, `scrapJournal`, `voidJournal`,
-`consumeFifo` — wrapping the edge functions' own builders or copying their inline shapes, and
+`consumeFifo` — wrapping the server functions' own builders or copying their inline shapes, and
 imported by BOTH tier 09 and the validator so the two derive identical lines),
 `post-documents.ts` (the DB side tier 09 calls: `loadPostingContext`, `postInventoryDocuments`,
 `postSalesInvoices`, `postPurchaseInvoices`, `postMemos`, `postPayment` — they read the seeded
@@ -47,7 +47,8 @@ scope, which would leak across the drift check's four scratch companies).
 
 ## Part thumbnails are bundled, not uploaded
 
-`createItem` writes `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"`, and
+`createItem` writes `item.thumbnailPath = "_templates/<industryId>/<readableId>.svg"` (the
+spec's `thumbnail` in place of `<readableId>` when set), and
 `assets.ts` (exported as `@carbon/database/dataset-assets`) resolves that prefix to the
 bundled asset via `import.meta.glob`. Both apps' `getPrivateUrl` call it first and fall back
 to the storage proxy for everything else, so a demo thumbnail is never a storage object and

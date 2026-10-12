@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ItemRef, VariableRef } from "@carbon/ee/workflows";
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { VARIABLE_TEXT_CHIP_CLASS } from "@carbon/react/VariableText";

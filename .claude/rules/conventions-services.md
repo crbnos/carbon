@@ -204,6 +204,40 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - **RPCs**: heavy/aggregate logic is `client.rpc("fn_name", { ... })`; the function is
   defined in a migration. See database-patterns.md.
 
+## Exposing a service function as an API tool
+
+An exported function of an ERP `{module}.service.ts` becomes an MCP / v1-API
+tool only when its doc comment declares it (`pnpm run generate:mcp` reads the
+tags; the function's name decides nothing but the tool's name):
+
+```ts
+/**
+ * Creates or updates a customer.
+ * @mcp upsert
+ */
+export async function upsertCustomer(…)
+```
+
+- **Verb**: `read`, `create`, `update`, `upsert`, `delete`, or `action` (a state
+  change that is not a row edit). It sets the permission the caller needs and the
+  audit fields the payload is handed. Add `destructive` after a write verb when
+  the call can remove rows the caller did not name.
+- Leave the tag off unless the function is safe to call with nothing but its
+  payload — whatever gate or orchestration its route performs does not run for
+  an API caller.
+- The first sentence of the doc comment is the tool's description. Write one.
+- An upsert that branches on `"createdBy" in payload` must let the API tell
+  create from update without being told: give the update shape an `id` the create
+  shape does not require, or declare the row it updates with
+  `@mcp key <table> <column>`.
+- Don't spread a payload into a write on a table the payload has extra keys for;
+  build the row. The dispatcher stamps `createdBy`/`updatedBy` onto the payload.
+- Generation fails, naming the function, when a declaration contradicts the body
+  (a `read` that writes, a delete without `destructive`).
+
+Full vocabulary: [mcp-tools-reference.md](mcp-tools-reference.md) and
+`apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts`.
+
 ## Naming conventions
 
 | Operation | Name | First arg |

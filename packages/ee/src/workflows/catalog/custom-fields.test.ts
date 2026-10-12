@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { t } from "../definition/types";
 import {
@@ -40,7 +44,9 @@ describe("buildCatalogOverlay", () => {
       [7, t.entity("customer")],
       [8, t.entity("supplier")],
       // A File field is the stored path — printable, not a link.
-      [9, t.string]
+      [9, t.string],
+      // A Link field is the web address as stored.
+      [10, t.string]
     ];
     for (const [dataTypeId, expected] of cases) {
       const overlay = buildCatalogOverlay([field({ dataTypeId })]);

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { AvatarProps } from "@carbon/react";
 import { HStack } from "@carbon/react";
 import { getFaviconUrl } from "@carbon/utils";
@@ -30,7 +34,7 @@ const SupplierAvatar = ({
     : undefined;
 
   return (
-    <HStack className="truncate ">
+    <HStack className="truncate no-underline hover:no-underline text-sm text-foreground ">
       <Avatar
         size={size ?? "xs"}
         {...props}

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   conditionAstFormField,
   equals,
@@ -95,7 +99,8 @@ export const receiptSourceDocumentType = [
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
-  "Inbound Transfer"
+  "Inbound Transfer",
+  "Rental Agreement"
   // "Outbound Transfer",
   // "Manufacturing Consumption",
   // "Manufacturing Output",
@@ -170,20 +175,30 @@ export const inventoryCountLineValidator = z.object({
   )
 });
 
+// Put a cost of the user's own on one serial unit in stock (FIFO / LIFO).
+export const serialUnitRecostValidator = z.object({
+  trackedEntityId: z.string().min(1, { message: "Unit is required" }),
+  unitCost: zfd.numeric(
+    z.number().min(0, { message: "Unit cost cannot be negative" })
+  ),
+  offsetAccountId: zfd.text(z.string().optional()),
+  postingDate: z.string().min(1, { message: "Posting date is required" })
+});
+
 export const inventoryAdjustmentValidator = z
   .object({
     itemId: z.string().min(1, { message: "Item ID is required" }),
-    // Required for every adjustment except Unscrap, where the edge function
+    // Required for every adjustment except Unscrap, where the server function
     // resolves the location from the original scrap movement (a Scrapped
     // tracked-entity row carries no location). Enforced in the refine below.
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
-    // Exactly the types the post-inventory-adjustment edge function accepts —
+    // Exactly the types the post-inventory-adjustment server function accepts —
     // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
     // schema here, so API/MCP callers were offered "Purchase" etc. and every
     // such call failed with the generic fallback message. Keep in sync with
-    // the edge function's payloadValidator.
+    // the server function's payloadValidator.
     adjustmentType: z.enum([
       "Positive Adjmt.",
       "Negative Adjmt.",
@@ -196,9 +211,9 @@ export const inventoryAdjustmentValidator = z
     readableId: zfd.text(z.string().optional()),
     expirationDate: zfd.text(z.string().optional()),
     comment: zfd.text(z.string().optional()),
-    // Required for Scrap (enforced below); lands on the itemLedger row and,
-    // when accounting is enabled, as a ScrapReason journal dimension. Unscrap
-    // omits it — the edge function inherits the reason from the original scrap
+    // Required for Scrap (enforced below); lands on the itemLedger row and as
+    // a ScrapReason journal dimension. Unscrap
+    // omits it — the server function inherits the reason from the original scrap
     // movement it reverses.
     scrapReasonId: zfd.text(z.string().optional()),
     // Unscrap: the original scrap movement to reverse against (resolved
@@ -236,7 +251,7 @@ export const inventoryAdjustmentValidator = z
   });
 
 // Corrects a posted stock movement: the user enters the SIGNED quantity the
-// movement should have been; the edge function derives the delta against the
+// movement should have been; the server function derives the delta against the
 // movement's current effective quantity and books one opposite movement linked
 // via correctionOfItemLedgerId.
 export const stockMovementCorrectionValidator = z.object({
@@ -354,7 +369,8 @@ export const shipmentSourceDocumentType = [
   // "Purchase Invoice",
   "Purchase Return Order",
   // "Inbound Transfer",
-  "Outbound Transfer"
+  "Outbound Transfer",
+  "Rental Agreement"
 ] as const;
 
 export const shippingCarrierType = [
@@ -378,6 +394,70 @@ export const shipmentValidator = z.object({
   sourceDocumentReadableId: zfd.text(z.string().optional()),
   customerId: zfd.text(z.string().optional())
 });
+
+const meterValue = z
+  .string()
+  .refine((v) => v === "" || (Number.isFinite(Number(v)) && Number(v) >= 0), {
+    message: "Enter a meter reading of 0 or more"
+  });
+
+export const shipmentFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("shipped"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    })
+  ]
+);
+
+export const receiptFixedAssetLineUpdateValidator = z.discriminatedUnion(
+  "field",
+  [
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("received"),
+      value: z.enum(["true", "false"])
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("serialNumber"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("meter"),
+      value: meterValue
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("notes"),
+      value: z.string()
+    }),
+    // "" takes the unit off the out-of-service list; any other text is the reason.
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("outOfService"),
+      value: z.string()
+    }),
+    z.object({
+      id: z.string().min(1),
+      field: z.literal("residualDestination"),
+      value: z.enum(["", "Fleet", "Inventory"])
+    })
+  ]
+);
 
 export const shippingMethodValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -583,16 +663,16 @@ export const stockTransferLineScanValidator = z.object({
     .string()
     .min(1, { message: "Tracked entity ID is required" }),
   // The picker sends the clamped pick quantity and the bin the user chose; the
-  // action forwards both to the edge function (serial always posts 1).
+  // action forwards both to the server function (serial always posts 1).
   quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
   storageUnitId: z.string().nullable().optional()
 });
 
 /**
- * Decide what a stock-transfer scan forwards to the post-stock-transfer edge
+ * Decide what a stock-transfer scan forwards to the post-stock-transfer server
  * function, or refuse the pick before invoking it. Pure so the route's parsing
- * is testable without the edge function or the client graph — the edge function
- * re-checks the same limits under a row lock (see post-stock-transfer/pick-guards).
+ * is testable without the server function or the client graph — the server function
+ * re-checks the same limits under a row lock (`resolvePick` in @carbon/utils).
  *   - A serial scan always moves one unit; a batch scan moves the picker's
  *     clamped quantity.
  *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
@@ -608,7 +688,7 @@ export function resolveStockTransferPickForward(input: {
 }):
   | { ok: true; quantity: number; fromStorageUnitId: string | null }
   | { ok: false; message: string } {
-  // Round like the edge function's resolvePick does, so the pre-check and the
+  // Round like the server function's resolvePick does, so the pre-check and the
   // post-lock re-check cannot disagree about a residue pick.
   const pickQuantity = round(
     input.transferType === "batch" ? input.quantity : 1
@@ -617,7 +697,7 @@ export function resolveStockTransferPickForward(input: {
     round(input.lineQuantity) - round(input.pickedQuantity)
   );
   // Checked first, matching resolvePick's order, so the pre-check and the
-  // edge function name the same refusal for the same input.
+  // server function name the same refusal for the same input.
   if (pickQuantity <= 0) {
     return { ok: false, message: "Enter a quantity to pick" };
   }

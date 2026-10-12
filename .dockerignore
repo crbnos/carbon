@@ -5,7 +5,6 @@
 # VCS / CI / project meta
 .git
 .github
-.husky
 
 # Dependencies & build output
 node_modules
@@ -69,8 +68,9 @@ opencode.json
 **/pkg/
 **/build/
 
-# Not needed inside the image
-docs
+# Not needed inside the image — except @carbon/content (docs/content)
+docs/*
+!docs/content
 contrib
 llm
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Plan-gate overlay for Users → Configure → Employee Types. Mirrors
 // `SalesRulesUpgradeOverlay`: shared overlay chrome via
 // `~/components/RulesUpgradeOverlay`, with an employee-types preview table,

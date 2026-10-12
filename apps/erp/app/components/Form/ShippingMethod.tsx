@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import type { getShippingMethodsList } from "~/modules/inventory";
 import { ShippingMethodForm } from "~/modules/inventory";
@@ -66,12 +70,9 @@ ShippingMethod.displayName = "ShippingMethod";
 export default ShippingMethod;
 
 export const useShippingMethod = () => {
-  const shippingMethodFetcher =
-    useFetcher<Awaited<ReturnType<typeof getShippingMethodsList>>>();
-
-  useMount(() => {
-    shippingMethodFetcher.load(path.to.api.shippingMethods);
-  });
+  const shippingMethodFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getShippingMethodsList>>
+  >(path.to.api.shippingMethods);
 
   const options = useMemo(() => {
     return (shippingMethodFetcher.data?.data ?? []).map((c) => ({

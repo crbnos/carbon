@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Avatar,
@@ -10,13 +14,14 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  useCloseRoute,
   useMode,
   VStack
 } from "@carbon/react";
 import data from "@emoji-mart/data";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { lazy, Suspense, useCallback, useState } from "react";
-import { useFetcher, useNavigate } from "react-router";
+import { useFetcher } from "react-router";
 import z from "zod";
 import { DateTime } from "~/components";
 import { Tags } from "~/components/Form";
@@ -45,8 +50,8 @@ export default function SuggestionDetails({
   tags
 }: SuggestionDetailsProps) {
   const { t } = useLingui();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
   const fetcher = useFetcher();
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const mode = useMode();

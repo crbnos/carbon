@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -27,8 +32,12 @@ import {
   VStack
 } from "@carbon/react";
 import type { AssemblyGraphIndex, ComponentGroup } from "@carbon/viewer";
-import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
-import { Trans, useLingui } from "@lingui/react/macro";
+import {
+  buildSubAssemblyPlan,
+  describeStep,
+  groupComponentNodeIds
+} from "@carbon/viewer";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { MouseEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -278,14 +287,20 @@ export default function AssemblyBomTree({
     [units]
   );
 
+  // Display numbers ("4", "1.2"): steps are numbered within their sub-assembly.
+  const stepNumbers = useMemo(
+    () => buildSubAssemblyPlan(steps.map(toViewerStep)),
+    [steps]
+  );
+
   /** groupKey → steps that install instances of the component */
   const stepUsage = useMemo(() => {
     const usage = new Map<
       string,
-      { stepId: string; index: number; title: string }[]
+      { stepId: string; number: string; title: string }[]
     >();
     if (!graphIndex) return usage;
-    steps.forEach((step, index) => {
+    steps.forEach((step) => {
       const seen = new Set<string>();
       for (const nodeId of step.componentNodeIds ?? []) {
         const group = graphIndex.groupByNodeId.get(nodeId);
@@ -294,16 +309,16 @@ export default function AssemblyBomTree({
         const entry = usage.get(group.key) ?? [];
         entry.push({
           stepId: step.id,
-          index,
+          number: stepNumbers.get(step.id)?.number ?? "",
           title:
             describeStep(toViewerStep(step), graphIndex, namedUnits) ??
-            "Untitled step"
+            t`Untitled step`
         });
         usage.set(group.key, entry);
       }
     });
     return usage;
-  }, [steps, graphIndex, namedUnits]);
+  }, [steps, stepNumbers, graphIndex, namedUnits, t]);
 
   // A subassembly's member instances, grouped by component type — so it expands
   // into "Screw ×4 / Board ×1" child rows the same way a multi-quantity component does.
@@ -383,17 +398,20 @@ export default function AssemblyBomTree({
     conflictTitles: string[];
   } | null>(null);
 
+  // Parts go on ordinary steps only: a sub-assembly's parts come from its steps.
   const stepList = useMemo(
     () =>
-      steps.map((step, index) => ({
-        id: step.id,
-        index,
-        title:
-          describeStep(toViewerStep(step), graphIndex, namedUnits) ??
-          step.title ??
-          "Untitled step"
-      })),
-    [steps, graphIndex, namedUnits]
+      steps
+        .filter((step) => !step.isSubAssembly)
+        .map((step) => ({
+          id: step.id,
+          number: stepNumbers.get(step.id)?.number ?? "",
+          title:
+            describeStep(toViewerStep(step), graphIndex, namedUnits) ??
+            step.title ??
+            t`Untitled step`
+        })),
+    [steps, stepNumbers, graphIndex, namedUnits, t]
   );
 
   const submitAssign = useCallback(
@@ -443,7 +461,7 @@ export default function AssemblyBomTree({
               ?.componentNodeIds?.some((nodeId) => selectedSet.has(nodeId)) ??
               false)
         )
-        .map((entry) => `${entry.index + 1}. ${entry.title}`);
+        .map((entry) => `${entry.number}. ${entry.title}`);
       if (conflictTitles.length === 0) {
         // Not on any other step — nothing to move, just add it here.
         submitAssign(targetStepId, "duplicate");
@@ -655,7 +673,7 @@ export default function AssemblyBomTree({
                         onClick={() => onPickAssignStep(entry.id)}
                       >
                         <span className="text-muted-foreground tabular-nums">
-                          {entry.index + 1}.
+                          {entry.number}.
                         </span>
                         <span className="min-w-0 flex-1 truncate">
                           {entry.title}
@@ -686,14 +704,16 @@ export default function AssemblyBomTree({
             <Tooltip>
               <TooltipTrigger asChild>
                 <IconButton
-                  aria-label="Plan as one component"
+                  aria-label={t`Group as One Component`}
                   icon={<LuMerge />}
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowCreateUnit(true)}
                 />
               </TooltipTrigger>
-              <TooltipContent>Plan as one component</TooltipContent>
+              <TooltipContent>
+                <Trans>Group as One Component</Trans>
+              </TooltipContent>
             </Tooltip>
           )}
           {hasSelection && canHide && (
@@ -898,7 +918,7 @@ export default function AssemblyBomTree({
             onClick={() => setShowCreateUnit(true)}
           >
             <LuMerge className="mr-2 h-4 w-4" />
-            Plan as one component
+            <Trans>Group as One Component</Trans>
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem
@@ -960,7 +980,7 @@ export default function AssemblyBomTree({
           onUpdated={() => {
             setEditingUnit(null);
             toast.success(
-              "Subassembly updated — re-run motion planning to apply the change"
+              t`Component group updated — re-run motion planning to apply the change`
             );
           }}
         />
@@ -1137,11 +1157,11 @@ function UnitListRow({
         />
         {canUpdate && (
           <IconButton
-            aria-label={t`Edit subassembly ${unit.name}`}
+            aria-label={t`Edit component group ${unit.name}`}
             icon={<LuPencil />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               onEdit();
@@ -1150,11 +1170,11 @@ function UnitListRow({
         )}
         {canDelete && (
           <IconButton
-            aria-label={t`Delete subassembly ${unit.name}`}
+            aria-label={t`Delete component group ${unit.name}`}
             icon={<LuTrash />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               deleteFetcher.submit(new FormData(), {
@@ -1260,14 +1280,15 @@ function CreateUnitModal({
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-  const [name, setName] = useState("");
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      onCreated();
+  const { t } = useLingui();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onCreated();
+      }
     }
-  }, [fetcher.state, fetcher.data, onCreated]);
+  });
+  const [name, setName] = useState("");
 
   const onSubmit = () => {
     if (!name.trim()) return;
@@ -1290,18 +1311,22 @@ function CreateUnitModal({
     >
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Plan as one component</ModalTitle>
+          <ModalTitle>
+            <Trans>Group as One Component</Trans>
+          </ModalTitle>
         </ModalHeader>
         <ModalBody>
           <VStack spacing={3} className="w-full">
             <p className="text-sm text-muted-foreground">
-              The planner treats these {componentNodeIds.length} component
-              {componentNodeIds.length === 1 ? "" : "s"} as one rigid body — one
-              step in the instructions. Re-run the plan to apply.
+              <Plural
+                value={componentNodeIds.length}
+                one="The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply."
+                other="The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply."
+              />
             </p>
             <Input
-              aria-label="Subassembly name"
-              placeholder="Subassembly name"
+              aria-label={t`Component group name`}
+              placeholder={t`Component group name`}
               value={name}
               autoFocus
               onChange={(nameEvent) => setName(nameEvent.target.value)}
@@ -1315,7 +1340,7 @@ function CreateUnitModal({
               isLoading={fetcher.state !== "idle"}
               onClick={onSubmit}
             >
-              Create
+              <Trans>Create</Trans>
             </Button>
           </VStack>
         </ModalBody>
@@ -1347,17 +1372,18 @@ function EditUnitModal({
   onClose: () => void;
   onUpdated: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
+  const { t } = useLingui();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onUpdated();
+      }
+    }
+  });
   const [name, setName] = useState(unit.name);
   const [memberIds, setMemberIds] = useState<string[]>(
     unit.componentNodeIds ?? []
   );
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && fetcher.data?.success) {
-      onUpdated();
-    }
-  }, [fetcher.state, fetcher.data, onUpdated]);
 
   const memberSet = useMemo(() => new Set(memberIds), [memberIds]);
   // Distinct components in the unit, so removal is per component type ("drop this cap"),
@@ -1405,13 +1431,15 @@ function EditUnitModal({
     >
       <ModalContent>
         <ModalHeader>
-          <ModalTitle>Edit subassembly</ModalTitle>
+          <ModalTitle>
+            <Trans>Edit Component Group</Trans>
+          </ModalTitle>
         </ModalHeader>
         <ModalBody>
           <VStack spacing={3} className="w-full">
             <Input
-              aria-label="Subassembly name"
-              placeholder="Subassembly name"
+              aria-label={t`Component group name`}
+              placeholder={t`Component group name`}
               value={name}
               autoFocus
               onChange={(nameEvent) => setName(nameEvent.target.value)}
@@ -1422,12 +1450,15 @@ function EditUnitModal({
             <VStack spacing={1} className="w-full">
               <div className="flex w-full items-center justify-between">
                 <span className="text-xs text-muted-foreground">
-                  {memberIds.length} component
-                  {memberIds.length === 1 ? "" : "s"} in this subassembly
+                  <Plural
+                    value={memberIds.length}
+                    one="# component in this group"
+                    other="# components in this group"
+                  />
                 </span>
                 {addableIds.length > 0 && (
                   <Button variant="secondary" size="sm" onClick={addSelected}>
-                    Add {addableIds.length} selected
+                    <Trans>Add {addableIds.length} selected</Trans>
                   </Button>
                 )}
               </div>
@@ -1449,7 +1480,7 @@ function EditUnitModal({
                         ×{group.count}
                       </Badge>
                       <IconButton
-                        aria-label={`Remove ${group.name} from ${unit.name}`}
+                        aria-label={t`Remove ${group.name} from ${unit.name}`}
                         icon={<LuX />}
                         variant="ghost"
                         size="sm"
@@ -1461,14 +1492,16 @@ function EditUnitModal({
               ) : (
                 <p className="text-xs text-muted-foreground">
                   {graphIndex
-                    ? "No components — add a selection or cancel."
-                    : "The model is still loading."}
+                    ? t`No components — add a selection or cancel.`
+                    : t`The model is still loading.`}
                 </p>
               )}
             </VStack>
             <p className="text-xs text-muted-foreground">
-              Changing the components redefines the subassembly. Re-run Motion
-              Planning to apply the change to the steps.
+              <Trans>
+                Changing the components redefines the group. Re-run Motion
+                Planning to apply the change to the steps.
+              </Trans>
             </p>
             <Button
               className="self-end"
@@ -1478,7 +1511,7 @@ function EditUnitModal({
               isLoading={isSubmitting}
               onClick={onSubmit}
             >
-              Save
+              <Trans>Save</Trans>
             </Button>
           </VStack>
         </ModalBody>
@@ -1512,7 +1545,7 @@ function ComponentRow({
   selection: SelectionState;
   hidden: SelectionState;
   isExpanded: boolean;
-  usage: { stepId: string; index: number; title: string }[];
+  usage: { stepId: string; number: string; title: string }[];
   mapping: AssemblyComponentMapping | null;
   bomMaterials: FlattenedBomMaterial[];
   bomByItemId: Map<string, FlattenedBomMaterial>;
@@ -1631,7 +1664,7 @@ function ComponentRow({
               icon={<LuSettings />}
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+              className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
               onClick={(event) => event.stopPropagation()}
             />
           </PopoverTrigger>
@@ -1667,7 +1700,7 @@ function ThisStepIcon() {
   );
 }
 
-/** A subassembly the motion planner found on its own (not authored). */
+/** A component group the motion planner found on its own (not authored). */
 function DetectedIcon() {
   const { t } = useLingui();
   return (
@@ -1718,7 +1751,7 @@ function HideToggle({
         "focus:opacity-100",
         isMarked
           ? "opacity-100 text-muted-foreground"
-          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          : "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
       )}
       onClick={(event) => {
         event.stopPropagation();
@@ -1735,7 +1768,7 @@ function HideToggle({
           className={cn(
             "inline-flex",
             !isMarked &&
-              "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+              "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
           )}
         >
           {button}
@@ -1829,7 +1862,7 @@ function ComponentDetails({
   onSelectStep
 }: {
   group: ComponentGroup;
-  usage: { stepId: string; index: number; title: string }[];
+  usage: { stepId: string; number: string; title: string }[];
   mapping: AssemblyComponentMapping | null;
   bomMaterials: FlattenedBomMaterial[];
   canMap: boolean;
@@ -1943,7 +1976,7 @@ function ComponentDetails({
                   onClick={() => onSelectStep(entry.stepId)}
                 >
                   <span className="text-muted-foreground tabular-nums mr-1">
-                    {entry.index + 1}.
+                    {entry.number}.
                   </span>
                   {entry.title}
                 </button>

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   BarProgress,
   Button,
@@ -18,6 +22,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -116,11 +121,11 @@ export function BatchDetailDrawer({
   );
 
   const isLive = batch.status === "Active" || batch.status === "Completing";
-  // Planned and Active batches stay composable/dissolvable; the edge fn's
+  // Planned and Active batches stay composable/dissolvable; the server fn's
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
 
-  // The edge fn refuses "remove" once production is recorded.
+  // The server fn refuses "remove" once production is recorded.
   const permissions = usePermissions();
   const canRemoveOperations =
     isPreStart &&
@@ -329,7 +334,7 @@ export function BatchDetailDrawer({
                   </a>
                 </DropdownMenuItem>
                 {isLive && (
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link to={path.to.priorityOperation}>
                       <DropdownMenuIcon icon={<LuLayers />} />
                       {t`View on schedule board`}
@@ -364,7 +369,7 @@ export function BatchDetailDrawer({
         {/* One surface (DrawerBody), two panes divided by a rule — the members
             list grows to fill the page and scrolls internally, so the drawer
             never leaves a dead lower half. No nested cards. */}
-        <DrawerBody className="w-full flex-1 min-h-0 overflow-hidden p-0">
+        <DrawerBody className="w-full flex-1 min-h-0 overflow-hidden p-0 max-md:p-0">
           <div className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-3">
             {/* Operations — the batch's contents */}
             <section className="flex min-h-0 flex-col lg:col-span-2">

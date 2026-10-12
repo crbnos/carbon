@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Signed-URL download/upload + temp files — port of `_download`/`_upload`.
 
 use crate::config;
 use crate::error::ApiError;
+use crate::telemetry;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -14,6 +19,25 @@ pub fn temp_path(ext: &str) -> PathBuf {
         .map(|d| d.as_nanos())
         .unwrap_or(0);
     std::env::temp_dir().join(format!("geometry-{}-{n}-{nanos}.{ext}", std::process::id()))
+}
+
+/// Delete the sources an earlier process left behind. A killed process (an OOM
+/// kill above all) skips its actions' own cleanup, and a pod's temp volume
+/// outlives the container restart, so they would pile up. Only for the standing
+/// server at startup, before it has a job of its own.
+pub fn clear_stale_sources() {
+    clear_sources_in(&std::env::temp_dir());
+}
+
+fn clear_sources_in(dir: &std::path::Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        if entry.file_name().to_string_lossy().starts_with("geometry-") {
+            let _ = std::fs::remove_file(entry.path());
+        }
+    }
 }
 
 /// One shared client for the process: reuses connections (keep-alive/h2)
@@ -43,6 +67,14 @@ fn client() -> &'static reqwest::Client {
 /// action consumes it unchanged. The hash + size guard are over the
 /// DECOMPRESSED bytes, so the result-cache key tracks geometry, not container.
 pub async fn download_hashed(
+    url: &str,
+    dest: &std::path::Path,
+    progress: Option<&crate::progress::JobProgress>,
+) -> Result<u128, ApiError> {
+    telemetry::outbound("download source", url, download(url, dest, progress)).await
+}
+
+async fn download(
     url: &str,
     dest: &std::path::Path,
     progress: Option<&crate::progress::JobProgress>,
@@ -156,16 +188,38 @@ pub async fn download_hashed(
     Ok(hasher.digest128())
 }
 
+/// A downloaded source's size, for the memory estimate. 0 if it cannot be read.
+pub async fn file_len(path: &std::path::Path) -> u64 {
+    tokio::fs::metadata(path).await.map_or(0, |m| m.len())
+}
+
+/// A file's bytes, memory-mapped: the page cache backs them, so uploading a
+/// parked or cached artifact does not copy it onto the heap.
+pub fn map_file(path: &std::path::Path) -> std::io::Result<bytes::Bytes> {
+    let file = std::fs::File::open(path)?;
+    if file.metadata()?.len() == 0 {
+        return Ok(bytes::Bytes::new());
+    }
+    // SAFETY: these files are written once by this service and then only read
+    // or unlinked; an unlinked file stays mapped until the map is dropped.
+    let map = unsafe { memmap2::Mmap::map(&file) }?;
+    Ok(bytes::Bytes::from_owner(map))
+}
+
 pub async fn upload(
     url: &str,
     body: impl Into<reqwest::Body>,
     content_type: &str,
 ) -> Result<(), ApiError> {
+    telemetry::outbound("upload artifact", url, put(url, body.into(), content_type)).await
+}
+
+async fn put(url: &str, body: reqwest::Body, content_type: &str) -> Result<(), ApiError> {
     let resp = client()
         .put(url)
         .header("Content-Type", content_type)
         .header("x-upsert", "true") // retried jobs re-upload to the same path
-        .body(body.into())
+        .body(body)
         .send()
         .await
         .map_err(|e| {
@@ -191,6 +245,10 @@ pub async fn upload(
 /// POST a JSON body (the completion-callback delivery). Short timeout; the
 /// caller owns retries.
 pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
+    telemetry::outbound("callback", url, post(url, body)).await
+}
+
+async fn post(url: &str, body: &serde_json::Value) -> Result<(), ApiError> {
     let resp = client()
         .post(url)
         .header("Content-Type", "application/json")
@@ -207,4 +265,23 @@ pub async fn post_json(url: &str, body: &serde_json::Value) -> Result<(), ApiErr
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stale_sources_are_cleared_and_nothing_else() {
+        let dir = tempfile::tempdir().unwrap();
+        let stale = dir.path().join("geometry-1-0-123.step");
+        let other = dir.path().join("asm-cache");
+        std::fs::write(&stale, b"x").unwrap();
+        std::fs::create_dir(&other).unwrap();
+
+        clear_sources_in(dir.path());
+
+        assert!(!stale.exists());
+        assert!(other.exists());
+    }
 }

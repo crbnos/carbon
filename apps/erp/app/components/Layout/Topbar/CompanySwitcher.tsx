@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Avatar,
   Badge,
@@ -18,26 +22,29 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { BsFillHexagonFill } from "react-icons/bs";
 import { LuChevronsUpDown, LuHouse } from "react-icons/lu";
-import { Form, Link } from "react-router";
+import { Form, Link, useLocation, useParams } from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
 import { path } from "~/utils/path";
 
-const CompanySwitcher = () => {
+// Switching company keeps a page that exists in every company (a list, a
+// settings page). A record's page does not, so that goes to the home page.
+export function useCompanySwitchRedirect() {
+  const params = useParams();
+  const { pathname, search } = useLocation();
+  return Object.keys(params).length === 0 ? `${pathname}${search}` : undefined;
+}
+
+/**
+ * The user's companies grouped by company group (single-company groups fold
+ * into "Companies"). Used by the company switcher and the compact Profile sheet.
+ */
+export function useCompanyGroups() {
   const { t } = useLingui();
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
   );
-  const user = useUser();
-  const mode = useMode();
-
-  const hasMultipleCompanies = Boolean(
-    routeData?.companies && routeData?.companies.length > 1
-  );
-
-  const canSwitchCompany = hasMultipleCompanies;
-
-  const companyGroups = useMemo(() => {
+  return useMemo(() => {
     if (!routeData?.companies) return [];
 
     const groups = new Map<string, { name: string; companies: Company[] }>();
@@ -77,6 +84,23 @@ const CompanySwitcher = () => {
 
     return Array.from(result.values());
   }, [routeData?.companies, t]);
+}
+
+const CompanySwitcher = () => {
+  const switchRedirect = useCompanySwitchRedirect();
+  const routeData = useRouteData<{ company: Company; companies: Company[] }>(
+    path.to.authenticatedRoot
+  );
+  const user = useUser();
+  const mode = useMode();
+
+  const hasMultipleCompanies = Boolean(
+    routeData?.companies && routeData?.companies.length > 1
+  );
+
+  const canSwitchCompany = hasMultipleCompanies;
+
+  const companyGroups = useCompanyGroups();
 
   if (!canSwitchCompany) {
     // Just show the company logo without dropdown
@@ -150,6 +174,13 @@ const CompanySwitcher = () => {
                     method="post"
                     action={path.to.companySwitch(c.companyId!)}
                   >
+                    {switchRedirect && (
+                      <input
+                        type="hidden"
+                        name="redirectTo"
+                        value={switchRedirect}
+                      />
+                    )}
                     <DropdownMenuItem
                       className="flex items-center justify-between w-full"
                       asChild

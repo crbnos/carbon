@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CalendarDate, DateDuration } from "@internationalized/date";
 import { endOfMonth, getWeeksInMonth } from "@internationalized/date";
 import { useCalendarGrid } from "@react-aria/calendar";
@@ -74,6 +78,7 @@ export const CalendarGrid = ({
                       state={state as CalendarState}
                       date={date}
                       currentMonth={startDate}
+                      isMarked={isDateMarked?.(date) ?? false}
                     />
                   )
                 ) : (

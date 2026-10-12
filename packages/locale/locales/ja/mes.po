@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(無効)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -64,6 +67,10 @@ msgstr "{0} / {1} 完了済み"
 msgid "{0} queued"
 msgstr "{0}件がキュー待ちです"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} 登録済"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} 実行中"
@@ -86,6 +93,9 @@ msgstr "{completions}個の合格ユニットが完了します。"
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails}件のサンプル不良が記録されており、完了されません — アクションメニューから対応してください。"
 
+msgid "{maxSizeMB}MB limit"
+msgstr "{maxSizeMB}MB の制限"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0}件の製造指図"
@@ -107,6 +117,12 @@ msgstr "ロット承諾"
 
 msgid "Accept lot?"
 msgstr "ロットを承諾しますか？"
+
+msgid "Account"
+msgstr "アカウント"
+
+msgid "Account settings"
+msgstr "アカウント設定"
 
 msgid "Account Settings"
 msgstr "アカウント設定"
@@ -133,8 +149,14 @@ msgstr "追加して払出"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
+msgid "Add Authenticator App"
+msgstr "認証アプリを追加"
+
 msgid "Add Inventory"
 msgstr "在庫追加"
+
+msgid "Add Passkey"
+msgstr "パスキーを追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
@@ -142,11 +164,17 @@ msgstr "サンプルを追加"
 msgid "Add Spare Part"
 msgstr "予備品を追加"
 
+msgid "Added"
+msgstr "追加完了"
+
 msgid "All"
 msgstr "すべて"
 
 msgid "All clear"
 msgstr "異常なし"
+
+msgid "All gauges"
+msgstr "全測定器"
 
 msgid "All jobs"
 msgstr "すべての製造指図"
@@ -161,11 +189,23 @@ msgstr "全て手直し"
 msgid "All scrap"
 msgstr "すべてスクラップ"
 
+msgid "All steps"
+msgstr "全ステップ"
+
 msgid "Allocate failed units"
 msgstr "不合格ユニットを割り当てる"
 
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
+
+msgid "Appearance"
+msgstr "外観"
+
+msgid "Approvals"
+msgstr "承認"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "このパスキーを削除してもよろしいですか？削除後、このパスキーを使ってサインインできなくなります。"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
@@ -176,11 +216,11 @@ msgstr "このタイムカードを削除してもよろしいですか？この
 msgid "Are you sure you want to end all production events? This will end all active operations without completing or finishing them."
 msgstr "すべての生産イベントを終了してもよろしいですか？すべてのアクティブな工程が完了せずに終了します。"
 
-msgid "Are you sure you want to finish this operation? This will end all active production events for this operation."
-msgstr "この操作を終了してもよろしいですか？これにより、この操作のすべてのアクティブな生産イベントが終了します。"
-
 msgid "Are you sure you want to leave this page?"
 msgstr "このページを離れてもよろしいですか？"
+
+msgid "Are you sure you want to mark this operation as done? This will end all active production events for this operation."
+msgstr "この工程を完了としてマークしてもよろしいですか？これにより、この工程のすべてのアクティブな生産イベントが終了します。"
 
 msgid "Assembly steps"
 msgstr "組立ステップ"
@@ -197,14 +237,39 @@ msgstr "担当者"
 msgid "Authentication Error"
 msgstr "認証エラー"
 
+msgid "Authenticator app"
+msgstr "認証アプリ"
+
+msgid "Authenticator QR code"
+msgstr "認証アプリの QR コード"
+
 msgid "available"
 msgstr "利用可能"
 
 msgid "Available"
 msgstr "利用可能"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "アバターオプション {0}"
+
+msgid "Avatar style"
+msgstr "アバタースタイル"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "アバターは <0>{0}</0> から {1} による提供で、<1>{2}</1> ライセンスの下で使用されています。"
+
+msgid "Back"
+msgstr "戻る"
+
 msgid "Back to batch"
 msgstr "バッチへ戻る"
+
+msgid "Background"
+msgstr "背景"
 
 msgid "Batch"
 msgstr "バッチ"
@@ -268,6 +333,18 @@ msgstr "Carbonロゴ"
 msgid "Cards"
 msgstr "カード"
 
+msgid "Change"
+msgstr "変更"
+
+msgid "Changelog newsletter"
+msgstr "チェンジログニュースレター"
+
+msgid "Characteristic"
+msgstr "特性"
+
+msgid "Characteristics"
+msgstr "特性"
+
 msgid "Chat"
 msgstr "チャット"
 
@@ -277,11 +354,23 @@ msgstr "メールを確認してください"
 msgid "Choose a job"
 msgstr "製造指図を選択"
 
+msgid "Choose an option"
+msgstr "オプションを選択"
+
+msgid "Choose avatar"
+msgstr "アバターを選択"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Carbon があなたに連絡する方法を選択します。"
+
 msgid "Clear"
 msgstr "クリア"
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
+
+msgid "Clear gauge"
+msgstr "測定器をクリア"
 
 msgid "Clear Search"
 msgstr "検索をクリア"
@@ -292,8 +381,14 @@ msgstr "既定ステーションをクリア"
 msgid "Clock In"
 msgstr "作業開始"
 
+msgid "Clock out"
+msgstr "作業終了"
+
 msgid "Clock Out"
 msgstr "作業終了"
+
+msgid "Clocked in"
+msgstr "作業中"
 
 msgid "Clocked in since <0/>"
 msgstr "<0/>からクロックイン中"
@@ -301,8 +396,8 @@ msgstr "<0/>からクロックイン中"
 msgid "Close"
 msgstr "閉じる"
 
-msgid "Collapse features table"
-msgstr "機能テーブルを折りたたむ"
+msgid "Collapse characteristics table"
+msgstr "特性テーブルを折りたたむ"
 
 msgid "Collapse panel"
 msgstr "パネルを折りたたむ"
@@ -333,6 +428,10 @@ msgstr "会社"
 msgid "Complete"
 msgstr "完了"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr "{0}を完了しますか?"
+
 msgid "Complete All"
 msgstr "すべて完了"
 
@@ -354,9 +453,6 @@ msgstr "完了処理中"
 msgid "Connecting"
 msgstr "接続中"
 
-msgid "Console"
-msgstr "コンソール"
-
 msgid "Console Mode"
 msgstr "コンソールモード"
 
@@ -369,12 +465,20 @@ msgstr "消費期限切れ"
 msgid "Continue"
 msgstr "続行"
 
+msgid "Copied!"
+msgstr "コピーしました！"
+
+msgid "Copy"
+msgstr "コピー"
+
+msgid "Copy to clipboard"
+msgstr "クリップボードにコピー"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "{0}を作成"
 
@@ -393,8 +497,8 @@ msgstr "現在の作業"
 msgid "Customer"
 msgstr "得意先"
 
-msgid "Dark Mode"
-msgstr "ダークモード"
+msgid "Dark"
+msgstr "ダーク"
 
 msgid "Date"
 msgstr "日付"
@@ -410,6 +514,12 @@ msgstr "デフォルト保管ユニット"
 
 msgid "Delete"
 msgstr "削除"
+
+msgid "Delete passkey"
+msgstr "パスキーを削除"
+
+msgid "Delete Passkey"
+msgstr "パスキーを削除"
 
 msgid "Delete Step"
 msgstr "ステップを削除"
@@ -466,8 +576,8 @@ msgstr "下書き"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "ファイルをここにドラッグ＆ドロップするか、クリックしてファイルを選択してください"
 
-msgid "Drag to resize drawing and features"
-msgstr "描画と機能をリサイズするためにドラッグします"
+msgid "Drag to resize drawing and characteristics"
+msgstr "ドラッグして図面と特性のサイズを変更"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -476,9 +586,9 @@ msgstr "ドラッグ {0} キャンセル済。"
 msgid "Due"
 msgstr "期日"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "期限 {0}"
 
@@ -495,6 +605,9 @@ msgstr "本日が納期か?"
 msgid "Duplicate batch number"
 msgstr "バッチ番号の複製"
 
+msgid "Duplicate or copy"
+msgstr "複製またはコピー"
+
 msgid "Duplicate serial number"
 msgstr "シリアル番号の複製"
 
@@ -507,11 +620,23 @@ msgstr "各製造指図の出力はそれぞれのロット — 各製造指図�
 msgid "Edit"
 msgstr "編集"
 
+msgid "Edit Passkey"
+msgstr "パスキーを編集"
+
 msgid "Elapsed"
 msgstr "経過時間"
 
+msgid "email"
+msgstr "メール"
+
+msgid "Email"
+msgstr "メール"
+
 msgid "Email Address"
 msgstr "メール住所"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "メール通知は会社の現在のプランに含まれていません。有効にすると、メール設定が適用されます。"
 
 msgid "Empty work centers"
 msgstr "作業区が空です"
@@ -544,8 +669,8 @@ msgstr "バッチ内のすべての製造指図がこれらのステップに従
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "すべてのユニットに判定があります: {passes}件が合格し、{fails}件が不合格です。ロットは各ユニットが独自の結果にルーティングされて終了します。"
 
-msgid "Expand features table"
-msgstr "機能テーブルを展開"
+msgid "Expand characteristics table"
+msgstr "特性テーブルを展開"
 
 msgid "Expand panel"
 msgstr "パネルを展開"
@@ -566,8 +691,8 @@ msgstr "最初に期限切れ"
 msgid "Failed"
 msgstr "失敗"
 
-msgid "Failed features"
-msgstr "失敗した機能"
+msgid "Failed characteristics"
+msgstr "不合格特性"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
@@ -583,6 +708,15 @@ msgstr "アクティブな工程の取得に失敗しました"
 
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnitsの取得に失敗しました"
+
+msgid "Failed to get options"
+msgstr "オプションの取得に失敗しました"
+
+msgid "Failed to record gauge"
+msgstr "測定器の記録に失敗しました"
+
+msgid "Failed to register passkey"
+msgstr "パスキーの登録に失敗しました"
 
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
@@ -600,12 +734,6 @@ msgstr "ファイルのアップロードに失敗しました: {0}"
 
 msgid "Failed to upload image"
 msgstr "画像のアップロードに失敗しました"
-
-msgid "Feature"
-msgstr "機能"
-
-msgid "Features"
-msgstr "機能"
 
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
@@ -625,13 +753,6 @@ msgstr "拠点で絞り込み"
 msgid "Finish"
 msgstr "完了"
 
-#. placeholder {0}: operation.itemReadableId
-msgid "Finish {0}"
-msgstr "完了 {0}"
-
-msgid "Finish Anyways"
-msgstr "とにかく完了"
-
 msgid "Finish setting up your account"
 msgstr "アカウントのセットアップを完了する"
 
@@ -642,11 +763,23 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
 
+msgid "First Name"
+msgstr "名"
+
+msgid "Fit"
+msgstr "フィット"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "完了する前に、ハイライトされた数量を修正してください。"
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
+
+msgid "Gauge"
+msgstr "測定器"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "特性 {characteristicLabel} の測定器: {currentGauge}"
 
 msgid "General"
 msgstr "一般"
@@ -657,8 +790,14 @@ msgstr "操作に戻る"
 msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
+msgid "Heading {level}"
+msgstr "見出し {level}"
+
 msgid "Hide description"
 msgstr "説明を非表示"
+
+msgid "How Carbon looks in this browser."
+msgstr "このブラウザでのCarbonの表示方法。"
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
@@ -688,8 +827,17 @@ msgstr "インペリアル"
 msgid "in {0}"
 msgstr "{0}で"
 
+msgid "In an open menu"
+msgstr "開いているメニュー内"
+
 msgid "In Progress"
 msgstr "進行中"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "アプリ内通知は常に配信されます。メールと Slack でも受け取るトピックを選択してください。"
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "アプリ内通知は常に配信されます。メールでも受け取るトピックを選択してください。"
 
 msgid "Inspect Item"
 msgstr "アイテムを検査"
@@ -702,6 +850,9 @@ msgstr "作業手順"
 
 msgid "Insufficient quantity"
 msgstr "数量が不足しています"
+
+msgid "Inventory"
+msgstr "在庫管理"
 
 msgid "Inventory adjustment completed"
 msgstr "在庫調整が完了しました"
@@ -739,6 +890,9 @@ msgstr "品目"
 msgid "Item Master"
 msgstr "品目マスター"
 
+msgid "Items"
+msgstr "品目"
+
 msgid "Job"
 msgstr "ジョブ"
 
@@ -766,6 +920,12 @@ msgstr "労務"
 msgid "Last completed"
 msgstr "最後に完了"
 
+msgid "Last Name"
+msgstr "姓"
+
+msgid "Last used"
+msgstr "最後に使用"
+
 msgid "Learn more"
 msgstr "詳細情報"
 
@@ -775,8 +935,17 @@ msgstr "工程を 0 のままにするとスキップされます — スケジ�
 msgid "Leave this page"
 msgstr "このページを離れる"
 
+msgid "Left to Right"
+msgstr "左から右へ"
+
 msgid "Let's build something"
 msgstr "さあ、何かを作りましょう"
+
+msgid "Light"
+msgstr "ライト"
+
+msgid "Light, dark, or follow your system setting."
+msgstr "ライト、ダーク、またはシステム設定に従う。"
 
 msgid "lines"
 msgstr "行"
@@ -841,6 +1010,9 @@ msgstr "機械"
 msgid "Machine down for maintenance now?"
 msgstr "機械が今保全中ですか？"
 
+msgid "Main"
+msgstr "メイン"
+
 msgid "Maintenance"
 msgstr "保全"
 
@@ -853,11 +1025,24 @@ msgstr "保全が期限超過"
 msgid "Make a replacement"
 msgstr "代替品を作成"
 
+msgid "Manage how you sign in to Carbon."
+msgstr "Carbon へのサインイン方法を管理します。"
+
 msgid "Manually add items to inventory"
 msgstr "手動で在庫に品目を追加"
 
 msgid "Manually remove items from inventory"
 msgstr "在庫から品目を手動で除去"
+
+#. placeholder {0}: operation.itemReadableId
+msgid "Mark {0} as Done"
+msgstr "{0} を完了としてマーク"
+
+msgid "Mark as Done"
+msgstr "完了としてマーク"
+
+msgid "Mark as Done Anyways"
+msgstr "それでも完了としてマーク"
 
 msgid "Mark Short"
 msgstr "短い数量をマーク"
@@ -880,8 +1065,14 @@ msgstr "レコードの最大数に達しました"
 msgid "Metric"
 msgstr "メートル法"
 
+msgid "Mode"
+msgstr "モード"
+
 msgid "Model"
 msgstr "モデル"
+
+msgid "More"
+msgstr "もっと"
 
 msgid "More actions"
 msgstr "その他のアクション"
@@ -962,6 +1153,9 @@ msgstr "あなたに割り当てられた保全指示はありません。"
 msgid "No files"
 msgstr "ファイルなし"
 
+msgid "No gauges found."
+msgstr "測定器が見つかりません。"
+
 msgid "No Impact"
 msgstr "影響なし"
 
@@ -994,6 +1188,9 @@ msgstr "オプションが見つかりません。"
 
 msgid "No options found."
 msgstr "オプションが見つかりません。"
+
+msgid "No passkeys registered yet."
+msgstr "登録済のパスキーはまだありません。"
 
 msgid "No picking lists assigned"
 msgstr "ピッキングリストが割り当てられていません"
@@ -1067,6 +1264,9 @@ msgstr "この作業区には予定がありません。"
 msgid "Nothing to scrap"
 msgstr "スクラップするものがない"
 
+msgid "Notifications"
+msgstr "通知"
+
 msgid "OEE Impact"
 msgstr "OEE影響度"
 
@@ -1109,7 +1309,17 @@ msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを開く"
 
 msgid "Open Jobs"
-msgstr "オープンな製造指図"
+msgstr "オープン製造指図"
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+msgid "Open sub-assembly {0}: {1}"
+msgstr "サブアセンブリ {0} を開く: {1}"
+
+#. placeholder {0}: formatDate( operation.operationDueDate )
+#. placeholder {0}: formatDate( operation.operationDueDate )
+msgid "Operation needed by {0}"
+msgstr "工程の必要期日: {0}"
 
 msgid "Operations"
 msgstr "工程"
@@ -1126,8 +1336,17 @@ msgstr "作業者が実施"
 msgid "Optional"
 msgstr "オプション"
 
+msgid "Options"
+msgstr "オプション"
+
 msgid "or"
 msgstr "または"
+
+msgid "Or enter this secret manually:"
+msgstr "またはこのシークレットを手動で入力してください："
+
+msgid "Out of calibration"
+msgstr "校正対象外"
 
 msgid "Output lot"
 msgstr "出力ロット"
@@ -1156,11 +1375,29 @@ msgstr "検査合格"
 msgid "Passed Inspection"
 msgstr "検査合格"
 
+msgid "Passkey name"
+msgstr "パスキー名"
+
 msgid "Passkey unlock failed"
 msgstr "パスキーのロック解除に失敗しました"
 
+msgid "Passkeys"
+msgstr "パスキー"
+
+msgid "Passkeys are disabled"
+msgstr "パスキーが無効です"
+
 msgid "Pause"
 msgstr "一時停止"
+
+msgid "Pause timer"
+msgstr "タイマーを一時停止"
+
+msgid "Phone"
+msgstr "電話"
+
+msgid "Photo uploaded successfully"
+msgstr "写真がアップロードされました"
 
 msgid "Pick"
 msgstr "ピック"
@@ -1168,6 +1405,9 @@ msgstr "ピック"
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "ピッキング {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "スタイルとアバターを選択するか、新しいものにシャッフルしてください。"
 
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
@@ -1196,6 +1436,9 @@ msgstr "{substitutedFrom}の代わりにピッキング、当ジョブ上の品�
 msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 msgstr "{substitutedAssemblies}個のアセンブリ分、{substitutedFrom}の代わりにピッキング、当ジョブ上の品目"
 
+msgid "Pin or unpin"
+msgstr "ピン留めまたはピン留め解除"
+
 msgid "Pin Out"
 msgstr "ピンアウト"
 
@@ -1213,6 +1456,9 @@ msgstr "PM スケジュール失効"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
+
+msgid "Press '/' for commands"
+msgstr "「/」を押してコマンドを表示"
 
 msgid "Prev"
 msgstr "前へ"
@@ -1250,13 +1496,17 @@ msgstr "プロセスパラメーター"
 msgid "Processes"
 msgstr "プロセス一覧"
 
+msgid "Profile"
+msgstr "プロフィール"
+
 msgid "Progress"
 msgstr "進捗"
 
-#. placeholder {0}: formatDate( projectedCompletionDate )
-#. placeholder {0}: formatDate(projectedCompletionDate)
-msgid "Proj. {0}"
-msgstr "予定 {0}"
+msgid "Purchasing"
+msgstr "購買"
+
+msgid "Quality"
+msgstr "品質"
 
 msgid "Quality Issue"
 msgstr "品質問題"
@@ -1273,11 +1523,17 @@ msgstr "数量は0より大きい値を入力してください"
 msgid "Queue empty"
 msgstr "キューが空です"
 
+msgid "Quotes"
+msgstr "見積"
+
 msgid "Reason for rework"
 msgstr "手直しの理由"
 
 msgid "Recent"
 msgstr "最近"
+
+msgid "Recently used"
+msgstr "最近使用した"
 
 msgid "Record"
 msgstr "記録"
@@ -1299,6 +1555,9 @@ msgstr "一部を記録"
 msgid "Recorded"
 msgstr "記録済"
 
+msgid "Registration failed"
+msgstr "登録に失敗しました"
+
 msgid "Reject"
 msgstr "却下"
 
@@ -1311,6 +1570,9 @@ msgstr "リリース済"
 msgid "Remove"
 msgstr "除去"
 
+msgid "Remove authenticator app"
+msgstr "認証器アプリを除去"
+
 msgid "Remove filter"
 msgstr "絞り込みを除去"
 
@@ -1320,11 +1582,23 @@ msgstr "在庫を除去"
 msgid "Remove part"
 msgstr "部品を除去"
 
+msgid "Remove two-factor authentication"
+msgstr "二要素認証を除去"
+
+msgid "Rename"
+msgstr "名前変更"
+
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "サブアセンブリを再オープンし、代替品を作成"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "サインイン時に認証器アプリからの6桁コードが必要です。"
+
 msgid "Required"
 msgstr "必須"
+
+msgid "Reset"
+msgstr "リセット"
 
 msgid "Result"
 msgstr "結果"
@@ -1343,6 +1617,9 @@ msgstr "手直し数量"
 
 msgid "Running"
 msgstr "実行中"
+
+msgid "Sales"
+msgstr "販売"
 
 msgid "Sales Order"
 msgstr "受注"
@@ -1377,6 +1654,9 @@ msgstr "シリアル番号をスキャンまたは検索..."
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "このロットから追跡対象をスキャンまたは選択してサンプル列として追加し、グリッドに結果を記録します。"
 
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "このQRコードをスキャンしてください（例：Google AuthenticatorまたはOnePassword）、その後に表示される6桁のコードを入力してください。"
+
 msgid "Schedule"
 msgstr "スケジュール"
 
@@ -1410,14 +1690,26 @@ msgstr "選択したシリアルをスクラップ中"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} を検索..."
+
 msgid "Search by job or item ID"
 msgstr "ジョブまたはアイテムIDで検索"
+
+msgid "Search gauges..."
+msgstr "測定器を検索..."
 
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
 msgid "Search..."
 msgstr "検索..."
+
+msgid "Secret copied to clipboard"
+msgstr "シークレットがクリップボードにコピーされました"
+
+msgid "Security"
+msgstr "セキュリティ"
 
 msgid "Select"
 msgstr "選択"
@@ -1446,6 +1738,9 @@ msgstr "品目を選択..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "バッチ {0} を選択"
+
+msgid "Select gauge"
+msgstr "測定器を選択"
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
@@ -1500,11 +1795,14 @@ msgstr "セッションはロック中です。"
 msgid "Set Clock Out"
 msgstr "作業終了を設定"
 
-msgid "Set clock-out time"
-msgstr "退勤時間を設定"
+msgid "Set the time you stopped working, or acknowledge that you're still working."
+msgstr "作業を停止した時刻を設定するか、まだ作業中であることを確認してください。"
 
 msgid "Set up in Carbon"
 msgstr "Carbonで設定"
+
+msgid "Set up two-factor authentication"
+msgstr "二要素認証を設定"
 
 msgid "Set when the batch was planned."
 msgstr "バッチが計画されたときに設定します。"
@@ -1527,6 +1825,12 @@ msgstr "説明を表示"
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
 
+msgid "Shuffle"
+msgstr "シャッフル"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "マジックリンクの代わりに生体認証でサインインしてください。パスキーはFace ID、Touch ID、またはデバイスPINで保護されています。"
+
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
 
@@ -1548,8 +1852,14 @@ msgstr "代わりにサインアウト"
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "サインインにコードが不要になります。確認するために認証器アプリの現在の6桁コードを入力してください。"
+
 msgid "Size"
 msgstr "サイズ"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "ソース"
@@ -1569,6 +1879,9 @@ msgstr "{0}を開始"
 
 msgid "Start or pause the operation"
 msgstr "工程を開始 / 一時停止"
+
+msgid "Start timer"
+msgstr "タイマーを開始"
 
 msgid "Station User"
 msgstr "ステーションユーザー"
@@ -1598,10 +1911,31 @@ msgstr "ステップが未記録です"
 msgid "Storage Unit"
 msgstr "保管ユニット"
 
+msgid "Style default"
+msgstr "スタイルデフォルト"
+
+msgid "Sub-Assembly"
+msgstr "サブアセンブリ"
+
+#. placeholder {0}: subAssemblyNumber(item.headerId)
+#. placeholder {0}: subAssemblyNumber(openSubAssemblyId)
+#. placeholder {1}: subAssemblyTitle(item.headerId)
+#. placeholder {1}: subAssemblyTitle(openSubAssemblyId)
+msgid "Sub-Assembly {0} · {1}"
+msgstr "サブアセンブリ {0} · {1}"
+
+#. placeholder {0}: subAssemblyNumber(playbackInfo.headerId)
+#. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
+msgid "Sub-Assembly {0} · {1} — shown on its own"
+msgstr "サブアセンブリ {0} · {1} — 単独で表示"
+
 msgid "Submit anonymously"
 msgstr "匿名で提出"
 
 msgid "Suggestion"
+msgstr "提案"
+
+msgid "Suggestions"
 msgstr "提案"
 
 msgid "Support Required"
@@ -1610,8 +1944,17 @@ msgstr "サポート必要"
 msgid "Switch Operator"
 msgstr "作業者を切り替える"
 
+msgid "Synced"
+msgstr "同期済み"
+
+msgid "System"
+msgstr "システム"
+
 msgid "Tag"
 msgstr "タグ"
+
+msgid "The accent color used across Carbon."
+msgstr "Carbon全体で使用されるアクセントカラー。"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
@@ -1632,6 +1975,9 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
 
+msgid "Theme color"
+msgstr "テーマカラー"
+
 msgid "then"
 msgstr "その後"
 
@@ -1647,8 +1993,14 @@ msgstr "これらの品目にはまだピッキングする材料があります
 msgid "This batch has no work instructions."
 msgstr "このバッチには作業手順書がありません。"
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "この情報はすべてのユーザーに表示されるため、共有内容に注意してください。"
+
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
+
+msgid "This marks the dispatch as completed."
+msgstr "この操作により保全指示が完了とマークされます。"
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "この部品は受注生産で製造されました。スクラップすると、その工順を再オープンして交換部品を製造できます。"
@@ -1684,11 +2036,29 @@ msgstr "実行待ち"
 msgid "Today"
 msgstr "今日"
 
+msgid "Toggle labor"
+msgstr "労務を切り替える"
+
+msgid "Toggle machine"
+msgstr "機械を切り替える"
+
+msgid "Toggle setup"
+msgstr "段取りを切り替える"
+
 msgid "Toggle the sidebar"
 msgstr "サイドバーの表示/非表示を切り替える"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Top to Bottom"
+msgstr "上から下へ"
+
+msgid "Topic"
+msgstr "トピック"
+
+msgid "Topics"
+msgstr "トピック"
 
 msgid "Total"
 msgstr "合計"
@@ -1713,8 +2083,20 @@ msgstr "追跡対象の明細"
 msgid "Tracking"
 msgstr "追跡"
 
+msgid "Training"
+msgstr "教育訓練"
+
 msgid "Two-factor authentication"
 msgstr "二要素認証"
+
+msgid "Two-factor authentication disabled"
+msgstr "二要素認証が無効です"
+
+msgid "Two-factor authentication enabled"
+msgstr "二要素認証が有効です"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "二要素認証は有効になっていません。"
 
 msgid "Two-factor authentication required"
 msgstr "二要素認証が必要です"
@@ -1730,6 +2112,9 @@ msgstr "未払出のシリアル/バッチ材料"
 
 msgid "Unknown"
 msgstr "不明"
+
+msgid "Unknown gauge"
+msgstr "不明な測定器"
 
 msgid "Unlock"
 msgstr "ロック解除"
@@ -1770,10 +2155,17 @@ msgstr "{0} に更新"
 msgid "Updated successfully"
 msgstr "正常に更新されました"
 
+msgid "Upload"
+msgstr "アップロード"
+
+msgid "Upload completed but no file path returned"
+msgstr "アップロードが完了しましたがファイルパスが返されません"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "アップロード完了: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "{0} をアップロード中"
@@ -1784,14 +2176,25 @@ msgstr "別のアカウントを使用"
 msgid "Used automatically at completion"
 msgstr "完了時に自動使用"
 
+#. placeholder {0}: subAssemblyNumber(headerId)
+#. placeholder {1}: subAssemblyTitle(headerId)
+msgid "Uses {0} · {1}"
+msgstr "{0} · {1} を使用"
+
 msgid "Value"
 msgstr "値"
+
+msgid "Verification failed"
+msgstr "検証に失敗しました"
 
 msgid "Verify"
 msgstr "確認"
 
 msgid "View maintenance dispatch"
 msgstr "保全指示を表示"
+
+msgid "View or open"
+msgstr "表示または開く"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"
@@ -1814,11 +2217,11 @@ msgstr "作業区ディスプレイ"
 msgid "Work instructions"
 msgstr "作業手順書"
 
+msgid "Write a note…"
+msgstr "メモを書く…"
+
 msgid "Yes"
 msgstr "はい"
-
-msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "あなたは<0/>にクロックインしました。下記でクロックアウト時間を編集するか、まだ作業中であることを確認できます。"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "作業開始から{hoursElapsed}時間が経過しています。作業終了を忘れていませんか？"
@@ -1828,6 +2231,9 @@ msgstr "あなたのアカウントはまだ会社に属していません。継
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
+
+msgid "Your profile could not be loaded."
+msgstr "プロフィールを読み込めませんでした。"
 
 msgid "Your session was locked after inactivity."
 msgstr "非アクティビティ後、セッションはロック中になりました。"

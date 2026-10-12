@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   CustomFieldSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
-  OpenTimecardSpec,
   OpsData,
   PeopleAbsenceSpec,
   PeopleAssignmentSpec,
@@ -419,9 +422,6 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "12:01:00", clockOut: "15:34:00" }
 ];
 
-// Clocked in before the first timer on the floor started this morning.
-export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:31:00" };
-
 // None on today, so the MES schedule opens on every work center, not one station.
 export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
   { dayOffset: -2, workCenter: "CNC Mill", shift: "Day Shift" },
@@ -568,7 +568,6 @@ export const satelliteOps: OpsData = {
   replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
-  openTimecard: OPEN_TIMECARD,
   peopleAssignments: PEOPLE_ASSIGNMENTS,
   peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,

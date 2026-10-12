@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DateTimePicker,
   Hidden,
@@ -5,6 +9,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -79,13 +84,12 @@ export function MaintenanceDispatch({
   onClose: () => void;
 }) {
   const fetcher = useFetcher<{ id?: string }>();
-  const failureModeFetcher =
-    useFetcher<
-      PostgrestResponse<{
-        id: string;
-        name: string;
-      }>
-    >();
+  const failureModeFetcher = useLoaderQuery<
+    PostgrestResponse<{
+      id: string;
+      name: string;
+    }>
+  >(isOpen ? path.to.api.failureModes : null);
 
   const [content, setContent] = useState<JSONContent>({});
   const [severity, setSeverity] =
@@ -94,12 +98,6 @@ export function MaintenanceDispatch({
     useState<(typeof oeeImpact)[number]>("No Impact");
 
   const failureModes = failureModeFetcher.data?.data ?? [];
-
-  useEffect(() => {
-    if (isOpen) {
-      failureModeFetcher.load(path.to.api.failureModes);
-    }
-  }, [isOpen, failureModeFetcher.load]);
 
   const handleClose = () => {
     setContent({});

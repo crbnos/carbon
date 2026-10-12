@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import template from "lodash.template";
 
 export const themes = [
@@ -246,24 +250,24 @@ export const themes = [
     name: "yellow",
     label: "Lemon",
     activeColor: {
-      light: "47.9 95.8% 53.1%",
+      light: "59.9 95.8% 53.1%",
       dark: "61 100% 50%"
     },
     cssVars: {
       light: {
-        background: "47.9 4% 95%",
+        background: "59.9 4% 95%",
         foreground: "20 14.3% 4.1%",
         card: "0 0% 100%",
         "card-foreground": "20 14.3% 4.1%",
         popover: "0 0% 100%",
         "popover-foreground": "20 14.3% 4.1%",
-        primary: "47.9 95.8% 53.1%",
-        "primary-foreground": "26 83.3% 14.1%",
-        active: "47.9 95.8% 88%",
-        "active-foreground": "47.9 95.8% 4%",
-        secondary: "47.9 4.8% 95.9%",
-        "secondary-foreground": "24 9.8% 10%",
-        muted: "47.9 4.8% 92.9%",
+        primary: "59.9 95.8% 53.1%",
+        "primary-foreground": "59 83.3% 14.1%",
+        active: "59.9 95.8% 53.1%",
+        "active-foreground": "59.9 95.8% 4%",
+        secondary: "59.9 4.8% 95.9%",
+        "secondary-foreground": "59 9.8% 10%",
+        muted: "59 4.8% 92.9%",
         "muted-foreground": "25 5.3% 44.7%",
         accent: "60 4.8% 95.9%",
         "accent-foreground": "24 9.8% 10%",

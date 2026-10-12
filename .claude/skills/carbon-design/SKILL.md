@@ -151,8 +151,10 @@ Content inside the 3-pane workspace lives in **resizable panes**, so its width h
 do with the viewport: at a 1024 px screen with Explorer and Properties open, the content pane
 is ~470 px. Size grids and row layouts inside panes with **container queries** (`@container`
 on the card/row, then `@md:` / `@xl:` / `@3xl:` — Tailwind v4 built-in, precedent
-`components/Gantt/Gantt.tsx`), not `md:`/`lg:` viewport breakpoints. Let status pills and
-badges wrap (`flex-wrap`) rather than clip.
+`components/Gantt/Gantt.tsx`), not `md:`/`lg:` viewport breakpoints. **Never `@2xl:`** —
+`packages/config/tailwind/theme.css` sets `--container-2xl: 1400px` (for the page `container`),
+so `@2xl:` only fires on a 1400 px container; write `@min-[42rem]:` for the 672 px step. Let
+status pills and badges wrap (`flex-wrap`) rather than clip.
 
 **Verify before you use — every time.** The most common way a Carbon-looking design breaks is
 an invented API. Before writing any of these, open the source and confirm it:

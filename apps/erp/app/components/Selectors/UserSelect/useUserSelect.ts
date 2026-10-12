@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
+import { cachedApiQuery, RefreshRate } from "@carbon/query";
 import { useDisclosure, useOutsideClick } from "@carbon/react";
 import debounce from "lodash/debounce";
 import words from "lodash/words";
@@ -17,14 +22,6 @@ import type {
   UserSelectGroupMembers
 } from "~/modules/users";
 import { path } from "~/utils/path";
-import {
-  cachedApiQuery,
-  getCompanyId,
-  userSelectGroupsQuery,
-  userSelectMembersQuery,
-  userSelectResolveQuery,
-  userSelectSearchQuery
-} from "~/utils/react-query";
 
 import type {
   GroupNode,
@@ -126,8 +123,6 @@ export default function useUserSelect(props: UserSelectProps) {
 
   const loadPage = useCallback(
     async (offset: number, append: boolean) => {
-      const companyId = getCompanyId();
-      const type = innerProps.type ?? null;
       if (append) {
         setLoadingMore(true);
       } else {
@@ -137,10 +132,7 @@ export default function useUserSelect(props: UserSelectProps) {
         const data = await cachedApiQuery<{
           groups: UserSelectGroup[];
           hasMore: boolean;
-        }>(
-          userSelectGroupsQuery(companyId, type, offset),
-          path.to.api.userSelectGroups(innerProps.type, offset, PAGE_SIZE)
-        );
+        }>(path.to.api.userSelectGroups(innerProps.type, offset, PAGE_SIZE));
         setTopLevelGroups((prev) => {
           const base = append ? prev : [];
           const seen = new Set(base.map((g) => g.id));
@@ -179,13 +171,11 @@ export default function useUserSelect(props: UserSelectProps) {
 
   const fetchMembers = useCallback(
     async (groupId: string): Promise<UserSelectGroupMembers | null> => {
-      const companyId = getCompanyId();
       setLoadingGroups((prev) =>
         prev[groupId] ? prev : { ...prev, [groupId]: true }
       );
       try {
         const data = await cachedApiQuery<UserSelectGroupMembers>(
-          userSelectMembersQuery(companyId, groupId),
           path.to.api.userSelectGroupMembers(groupId)
         );
         setMembersById((prev) => ({ ...prev, [groupId]: data }));
@@ -311,15 +301,10 @@ export default function useUserSelect(props: UserSelectProps) {
     missing.forEach((val) => {
       resolveRequested.current.add(val);
     });
-
-    const companyId = getCompanyId();
     cachedApiQuery<{
       users: User[];
       groups: { id: string; name: string }[];
-    }>(
-      userSelectResolveQuery(companyId, missing),
-      path.to.api.userSelectResolve(missing)
-    )
+    }>(path.to.api.userSelectResolve(missing))
       .then((data) => {
         setSelectionItemsById((prev) => {
           let changed = false;
@@ -581,9 +566,6 @@ export default function useUserSelect(props: UserSelectProps) {
         resetFocus();
         return;
       }
-
-      const companyId = getCompanyId();
-      const filtersKey = `${queryFilters?.excludeSelf ?? ""}|${queryFilters?.allowedIds?.join(",") ?? ""}`;
       let searchUrl = path.to.api.userSelectSearch(q, type);
       if (queryFilters?.excludeSelf) {
         searchUrl += "&excludeSelf=true";
@@ -597,10 +579,7 @@ export default function useUserSelect(props: UserSelectProps) {
         const data = await cachedApiQuery<{
           groups: UserSelectGroup[];
           users: User[];
-        }>(
-          userSelectSearchQuery(companyId, type ?? null, q, filtersKey),
-          searchUrl
-        );
+        }>(searchUrl, { staleTime: RefreshRate.High });
         setSearchResults(data);
       } catch (e) {
         logger.error("Failed to search users", { error: e });

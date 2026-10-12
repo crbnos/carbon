@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import type { getMaterialFormsList } from "~/modules/items";
 import { MaterialShapeForm } from "~/modules/items/ui/MaterialShapes";
@@ -19,7 +23,7 @@ const ShapePreview = (
   options: { value: string; label: string | React.ReactNode }[]
 ) => {
   const shape = options.find((o) => o.value === value);
-  // @ts-ignore
+  // @ts-expect-error
   return <Enumerable value={shape?.label ?? null} />;
 };
 
@@ -79,12 +83,9 @@ Shape.displayName = "Shape";
 export default Shape;
 
 export const useShape = () => {
-  const materialFormsLoader =
-    useFetcher<Awaited<ReturnType<typeof getMaterialFormsList>>>();
-
-  useMount(() => {
-    materialFormsLoader.load(path.to.api.materialForms);
-  });
+  const materialFormsLoader = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialFormsList>>
+  >(path.to.api.materialForms);
 
   const options = useMemo(() => {
     return (materialFormsLoader.data?.data ?? []).map((c) => ({

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -12,12 +16,14 @@ import {
 } from "@carbon/ee/audit.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
-import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
+import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
+import { redirect, redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -165,7 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId
         );
         // Redirect to the signed URL for download
-        return redirect(downloadUrl);
+        return redirectExternal(downloadUrl);
       } catch (err) {
         logger.error("Failed to generate audit archive download URL", {
           companyId,
@@ -197,14 +203,11 @@ export default function AuditLogRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <div className="flex items-center justify-between w-full">
-          <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <div className="flex items-center justify-between w-full max-md:justify-end">
+          <SettingsPageHeading>
             <Trans>Audit Logs</Trans>
-          </Heading>
+          </SettingsPageHeading>
           {enabled && (
             <Button variant="secondary" leftIcon={<LuHistory />} asChild>
               <Link to={path.to.auditLogDetails}>
@@ -218,8 +221,8 @@ export default function AuditLogRoute() {
           archives={archives}
           controlled={controlled}
         />
-        {enabled && <Outlet />}
-      </VStack>
+        {enabled && <RecordOutlet />}
+      </SettingsPage>
     </ScrollArea>
   );
 }

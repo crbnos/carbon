@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { async } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { batchStepRecordsValidator } from "~/services/models";
 import {
   backflushUntrackedMaterialsOnStepRecord,
@@ -44,14 +50,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // One backflush per recorded step, as if each job had recorded its own.
-  const backflushes = await Promise.all(
-    validation.data.records.map((record) =>
-      backflushUntrackedMaterialsOnStepRecord(serviceRole, {
-        jobOperationStepId: record.jobOperationStepId,
-        companyId,
-        userId
-      })
-    )
+  // Each backflush is its own transaction on the shared pool: bound them.
+  const backflushes = await async.map(
+    validation.data.records,
+    (record) =>
+      backflushUntrackedMaterialsOnStepRecord(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationStepId: record.jobOperationStepId,
+          companyId,
+          userId
+        }
+      ),
+    { concurrency: 4 }
   );
   for (const [i, backflush] of backflushes.entries()) {
     if (backflush.error) {

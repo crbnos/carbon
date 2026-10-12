@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea, VStack } from "@carbon/react";
+import { ScrollArea } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { SettingsPage } from "~/components/SettingsPage";
 import {
   fiscalYearSettingsValidator,
   getFiscalCalendarCommitted,
@@ -113,15 +119,12 @@ export default function FiscalYearSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
+      <SettingsPage className="gap-4">
         <FiscalYearSettingsForm
           initialValues={initialValues}
           fiscalStartLocked={fiscalStartLocked}
         />
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

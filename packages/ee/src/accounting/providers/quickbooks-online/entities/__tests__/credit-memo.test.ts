@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-item";
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";

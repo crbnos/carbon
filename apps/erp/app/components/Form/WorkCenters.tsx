@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { getWorkCentersList } from "~/modules/resources";
 import WorkCenterForm from "~/modules/resources/ui/WorkCenters/WorkCenterForm";
@@ -72,12 +76,9 @@ WorkCenters.displayName = "WorkCenter";
 export default WorkCenters;
 
 export const useWorkCenters = () => {
-  const workCenterFetcher =
-    useFetcher<Awaited<ReturnType<typeof getWorkCentersList>>>();
-
-  useMount(() => {
-    workCenterFetcher.load(path.to.api.workCenters);
-  });
+  const workCenterFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getWorkCentersList>>
+  >(path.to.api.workCenters);
 
   const options = useMemo(
     () =>

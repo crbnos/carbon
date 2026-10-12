@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { SourceFile } from "../check";
 
 // Directories the numeric-precision checks cover: everywhere app code does
-// arithmetic or builds number formatters. The two image functions are pure
-// binary plumbing and the resizers' `Math.round` is pixel geometry.
+// arithmetic or builds number formatters.
 const TYPESCRIPT_ROOTS = [
   "apps/erp/app/components",
   "apps/erp/app/hooks",
@@ -12,6 +15,8 @@ const TYPESCRIPT_ROOTS = [
   "apps/erp/app/routes",
   "apps/mes/app",
   "packages/database/supabase/functions",
+  "packages/database/src",
+  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/documents/src/pdf",
@@ -23,13 +28,17 @@ const TYPESCRIPT_ROOTS = [
   "packages/files/src",
   "packages/form/src",
   "packages/react/src",
+  "packages/query/src",
   "packages/printing/src"
   // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 
 const EXCLUDED_DIRS = new Set(["node_modules"]);
 
+// `*-test-fixture.ts` is test support code (live-database fixtures), not
+// shipped code, so it is held to the same rules as the tests that import it.
 const isTest = (name: string) =>
+  name.endsWith("-test-fixture.ts") ||
   name.endsWith(".test.ts") ||
   name.endsWith(".test.tsx") ||
   name.endsWith(".spec.ts") ||
@@ -65,10 +74,19 @@ export const REQUEST_HANDLING_ROOTS = [
   "apps/starter/app",
   "packages/auth/src",
   "packages/database/supabase/functions",
+  "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",
   "packages/lib/src",
   "packages/utils/src"
+];
+
+// The route trees of every React Router app: index-redirect-before-loaders.
+export const ROUTE_ROOTS = [
+  "apps/erp/app/routes",
+  "apps/mes/app/routes",
+  "apps/academy/app/routes",
+  "apps/starter/app/routes"
 ];
 
 export function loadTypescriptFiles(

@@ -1,4 +1,8 @@
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -14,9 +18,10 @@ import {
   ChoiceCardGroup,
   type ChoiceCardOption,
   cn,
-  HStack
+  HStack,
+  PrefetchLink
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { type ReactNode, useState } from "react";
 import {
   LuBot,
@@ -31,8 +36,6 @@ import {
 import {
   type ActionFunctionArgs,
   Form,
-  Link,
-  redirect,
   useLoaderData,
   useNavigation
 } from "react-router";
@@ -49,12 +52,12 @@ import {
   getIndustries,
   onboardingCompanyValidator
 } from "~/modules/settings";
-import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import {
   clearOnboardingDraft,
   getOnboardingDraft,
   type OnboardingDraft
-} from "~/services/onboarding-draft.server";
+} from "~/modules/shared/shared.server";
+import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -208,7 +211,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyIdCookie = setCompanyId(companyId);
   const clearDraftCookie = await clearOnboardingDraft(request);
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root), {
+  throw redirect(next || path.to.onboarding.root, {
     headers: [
       ["Set-Cookie", sessionCookie],
       ["Set-Cookie", companyIdCookie],
@@ -415,9 +418,7 @@ export default function OnboardingIndustry() {
                   asChild
                   tabIndex={-1}
                 >
-                  <Link to={previous} prefetch="intent">
-                    Previous
-                  </Link>
+                  <PrefetchLink to={previous}>Previous</PrefetchLink>
                 </Button>
                 {dataChoice === "none" ? (
                   <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>

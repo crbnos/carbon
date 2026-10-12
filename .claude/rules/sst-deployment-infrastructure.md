@@ -25,7 +25,7 @@ alternative deployment, not a replacement. Both build from the same root `Docker
   `forceUpgrade: "v2"`).
 - Two Fargate services on the cluster, each 2 vCPU / 4 GB:
   - **`CarbonERPService`** — image
-    `${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/carbon/erp:${IMAGE_TAG}`,
+    `${IMAGE_REGISTRY}/carbon/erp:${IMAGE_TAG}` (see Images below),
     domain `process.env.URL_ERP ?? "itar.carbon.ms"`, cert `CERT_ARN_ERP`.
   - **`CarbonMESService`** — same shape, `carbon/mes` image, domain
     `process.env.URL_MES ?? "mes.itar.carbon.ms"`, cert `CERT_ARN_MES`.
@@ -47,18 +47,19 @@ alternative deployment, not a replacement. Both build from the same root `Docker
 - `sst-env.d.ts` files (repo root, `ci/`, per app/package) are SST-generated type
   stubs; do not hand-edit.
 
-## Build → push (`.github/workflows/deploy.yml`, job `build`)
-Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`
-(or manual `workflow_dispatch`). Matrix over `[erp, mes]`:
-- `aws-actions/configure-aws-credentials` + `amazon-ecr-login`.
-- `docker/build-push-action` builds the **single root `Dockerfile`** with
-  `--build-arg APP=<erp|mes>` (the old per-app `apps/{erp,mes}/Dockerfile` claim is
-  stale — there is now ONE Dockerfile: `deps`→`build` (`pnpm run build:${APP}`)→
-  `runner` on `node:22-slim`).
-- Pushes `carbon/<app>:latest` **and** `carbon/<app>:${{ github.sha }}` to ECR,
-  `platforms: linux/amd64`, GHA buildx cache.
+## Images (`.github/workflows/deploy.yml`, job `images`)
+Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`,
+`docs/content/**` (or manual `workflow_dispatch`).
+- `deploy.yml` builds nothing. `build-images.yml` runs on the same push and
+  publishes `carbon/erp` and `carbon/mes` tagged with the commit sha to
+  `vars.IMAGE_REGISTRY`; the `images` job polls until both tags exist (30 minute
+  limit), so a failed image build fails the deploy.
+- The services pull `${IMAGE_REGISTRY}/carbon/<app>:${IMAGE_TAG}`. With
+  `IMAGE_REGISTRY` unset `sst.config.ts` falls back to the workspace account's
+  private ECR (`${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com`), which is
+  what a deployment that builds its own images uses.
 
-## Deploy (job `deploy`, needs `build`)
+## Deploy (job `deploy`, needs `images`)
 - Sets `IMAGE_TAG: ${{ github.sha }}` (this is what `sst.config.ts` interpolates
   into the ECR image ref — so prod runs the exact SHA, not `:latest`).
 - Installs Pulumi `3.212.0` (SST v3 uses Pulumi under the hood), `pnpm install

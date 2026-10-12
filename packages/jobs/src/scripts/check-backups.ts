@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Checks that the backups customers already hold would still restore against the
  * current schema.
@@ -178,6 +182,10 @@ function reportBlocking(
 // without GIT_WORK_TREE, so git takes the current directory (packages/jobs) as
 // the worktree top and `git add` would stage the file at the wrong path.
 function git(args: string[]): string {
+  // Always from the repo root. A git hook exports GIT_DIR without GIT_WORK_TREE,
+  // and git then takes the CURRENT directory as the work tree — so `git add` of
+  // the absolute manifest path, run from packages/jobs by `pnpm --filter`,
+  // indexed it as a root-level `manifests/schema.json` on every migration commit.
   return execFileSync("git", args, {
     cwd: REPO_ROOT,
     encoding: "utf8",

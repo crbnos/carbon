@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type {
   SnapshotFieldEntry,
@@ -174,12 +178,15 @@ export const auditFunction = inngest.createFunction(
             for (const entityEntry of entityConfigs) {
               const { entityType, tableConfig } = entityEntry;
 
+              // An extension row is created with its parent (1:1), so its
+              // INSERT would only repeat the parent's "Created". Every other
+              // INSERT is logged: adding a line is part of a document's history.
               if (
                 record.event.operation === "INSERT" &&
-                !isRootTable(tableConfig)
+                isExtensionTable(tableConfig)
               ) {
                 logger.info(
-                  `Skipping: INSERT on non-root table "${tableName}" for entity "${entityType}"`
+                  `Skipping: INSERT on extension table "${tableName}" for entity "${entityType}"`
                 );
                 continue;
               }
@@ -220,27 +227,42 @@ export const auditFunction = inngest.createFunction(
                 entriesCreatedForRecord++;
               } else if (isChildTable(tableConfig)) {
                 const recordData = record.event.new ?? record.event.old;
-                const entityId = recordData?.[tableConfig.entityIdColumn];
+                const columns = (
+                  Array.isArray(tableConfig.entityIdColumn)
+                    ? tableConfig.entityIdColumn
+                    : [tableConfig.entityIdColumn]
+                ) as readonly string[];
+                // One entry per distinct parent the row names.
+                const entityIds = [
+                  ...new Set(
+                    columns
+                      .map((column) => recordData?.[column])
+                      .filter((value) => value !== null && value !== undefined)
+                      .map(String)
+                  )
+                ];
 
-                if (!entityId) {
+                if (entityIds.length === 0) {
                   logger.info(
-                    `Skipping: could not resolve entity ID from column "${tableConfig.entityIdColumn}" for "${tableName}" record ${record.event.recordId}`
+                    `Skipping: could not resolve entity ID from ${columns.join(", ")} for "${tableName}" record ${record.event.recordId}`
                   );
                   continue;
                 }
 
-                entries.push({
-                  tableName,
-                  entityType,
-                  entityId: String(entityId),
-                  recordId: record.event.recordId,
-                  operation,
-                  actorId: entryActorId,
-                  diff: effectiveDiff,
-                  metadata: entryMetadata,
-                  createdAt: record.event.timestamp
-                });
-                entriesCreatedForRecord++;
+                for (const entityId of entityIds) {
+                  entries.push({
+                    tableName,
+                    entityType,
+                    entityId,
+                    recordId: record.event.recordId,
+                    operation,
+                    actorId: entryActorId,
+                    diff: effectiveDiff,
+                    metadata: entryMetadata,
+                    createdAt: record.event.timestamp
+                  });
+                  entriesCreatedForRecord++;
+                }
               } else if (isIndirectTable(tableConfig)) {
                 const { junction, fk, entityIdColumn } = tableConfig.resolve;
 
@@ -464,7 +486,8 @@ async function applyFkSnapshots(
         // A rejected query (e.g. a tenancy filter on a table without
         // companyId) silently degrades the affected diffs to raw ids —
         // make that visible.
-        log.error(`FK snapshot lookup failed for table "${table}"`, {
+        log.error('FK snapshot lookup failed for table "{table}"', {
+          table,
           error,
           tenantScoped
         });
@@ -472,7 +495,8 @@ async function applyFkSnapshots(
       }
       return data as Array<Record<string, unknown>>;
     } catch (err) {
-      log.error(`FK snapshot lookup failed for table "${table}"`, {
+      log.error('FK snapshot lookup failed for table "{table}"', {
+        table,
         error: err
       });
       return null;

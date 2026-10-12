@@ -1,13 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import { upsertQuoteLineMethod } from "~/modules/sales/sales.service";
 import { resolveBuyUnitCost } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -56,14 +61,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId: lineId,
-      itemId: quoteLine.data.itemId,
-      configuration,
-      companyId,
-      userId
-    });
+    const upsertMethod = await upsertQuoteLineMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        quoteId,
+        quoteLineId: lineId,
+        itemId: quoteLine.data.itemId,
+        configuration,
+        companyId,
+        userId
+      }
+    );
 
     if (upsertMethod.error) {
       throw redirect(

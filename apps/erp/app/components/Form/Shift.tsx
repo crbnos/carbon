@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { SelectProps } from "@carbon/form";
 import { Select } from "@carbon/form";
-import { useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { useLoaderQuery } from "@carbon/query";
+import { useMemo } from "react";
 import type { getShiftsList } from "~/modules/people";
 import { path } from "~/utils/path";
 import { useEmptyState } from "./emptyStates";
@@ -30,14 +34,9 @@ const Shift = (props: ShiftSelectProps) => {
 export default Shift;
 
 export const useShifts = (props?: { location?: string }) => {
-  const shiftFetcher = useFetcher<Awaited<ReturnType<typeof getShiftsList>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (props?.location) {
-      shiftFetcher.load(path.to.api.shifts(props.location));
-    }
-  }, [props?.location]);
+  const shiftFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getShiftsList>>
+  >(props?.location ? path.to.api.shifts(props.location) : null);
 
   const options = useMemo(
     () =>

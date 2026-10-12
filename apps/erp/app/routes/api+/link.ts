@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getCompanies } from "~/modules/settings";
 import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
@@ -91,6 +95,10 @@ function resolve(
       return path.to.pickingList(documentId);
     case NotificationEvent.SuggestionResponse:
       return path.to.suggestion(documentId);
+    case NotificationEvent.RecurringInvoicing:
+      // documentId is only the digest's first invoice; land on the list of
+      // invoices that need review (same target as the topbar row).
+      return `${path.to.invoicingSales}?filter=needsReview:eq:true`;
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:
@@ -132,7 +140,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let redirectTo: string;
   if (page === "notification-settings") {
     // Email footer link — no document, but the company-switch below still applies.
-    redirectTo = path.to.notificationSettings;
+    redirectTo = path.to.accountSettings("notifications");
   } else if (event && documentId) {
     const link = resolve(event, documentId, documentType ?? undefined);
     redirectTo = link ?? path.to.authenticatedRoot;

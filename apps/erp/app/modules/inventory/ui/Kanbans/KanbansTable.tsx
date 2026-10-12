@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -13,12 +17,14 @@ import {
   HoverCardContent,
   HoverCardTrigger,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuItem,
   PulsingDot,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -89,6 +95,7 @@ const KanbansTable = memo(
     const [items] = useItems();
     const [suppliers] = useSuppliers();
     const locations = useLocations();
+    const { isPhone } = useViewport();
 
     const columns = useMemo<ColumnDef<Kanban>[]>(
       () => [
@@ -115,6 +122,7 @@ const KanbansTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             filter: {
               type: "static",
               options: items?.map((item) => ({
@@ -149,6 +157,10 @@ const KanbansTable = memo(
                 </Link>
               </Badge>
             );
+          },
+          meta: {
+            mobile: "P2",
+            mobilePill: true
           }
         },
         {
@@ -395,6 +407,7 @@ const KanbansTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuHash />
           }
         },
@@ -405,6 +418,7 @@ const KanbansTable = memo(
             <Enumerable value={row.original.replenishmentSystem} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: ["Buy", "Make", "Transfer"].map((type) => ({
@@ -422,6 +436,7 @@ const KanbansTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuContainer />,
             filter: {
               type: "static",
@@ -556,12 +571,54 @@ const KanbansTable = memo(
         return (
           <>
             {canUpdate && (
-              <MenuItem asChild>
+              <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
                 <Link to={`${path.to.kanban(row.id!)}?${params}`}>
                   <LuPencil className="mr-2 size-4" />
                   <Trans>Edit</Trans>
                 </Link>
               </MenuItem>
+            )}
+            {/* Phone rows drop the label links column; keep them reachable here */}
+            {isPhone && kanbanOutput === "label" && (
+              <>
+                <MenuItem asChild>
+                  <a
+                    href={path.to.file.kanbanLabelsPdf([row.id!], "order")}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <LuTag className="mr-2 size-4" />
+                    <Trans>Create</Trans>
+                  </a>
+                </MenuItem>
+                {row.replenishmentSystem === "Make" && (
+                  <>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf([row.id!], "start")}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Start</Trans>
+                      </a>
+                    </MenuItem>
+                    <MenuItem asChild>
+                      <a
+                        href={path.to.file.kanbanLabelsPdf(
+                          [row.id!],
+                          "complete"
+                        )}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        <LuTag className="mr-2 size-4" />
+                        <Trans>Complete</Trans>
+                      </a>
+                    </MenuItem>
+                  </>
+                )}
+              </>
             )}
             {canViewItems &&
               row.itemId &&
@@ -576,7 +633,7 @@ const KanbansTable = memo(
                 )
                   return null;
                 return (
-                  <MenuItem asChild>
+                  <MenuItem shortcut={MENU_ITEM_SHORTCUTS.view} asChild>
                     <Link to={getLinkToItemDetails(itemType, row.itemId)}>
                       <MethodItemTypeIcon
                         type={itemType}
@@ -588,7 +645,11 @@ const KanbansTable = memo(
                 );
               })()}
             {canDelete && (
-              <MenuItem destructive asChild>
+              <MenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
+                destructive
+                asChild
+              >
                 <Link to={`${path.to.deleteKanban(row.id!)}?${params}`}>
                   <LuTrash className="mr-2 size-4" />
                   Delete
@@ -598,7 +659,7 @@ const KanbansTable = memo(
           </>
         );
       },
-      [params, permissions, items.find]
+      [params, permissions, items.find, isPhone, kanbanOutput]
     );
 
     const renderActions = useCallback((selectedRows: typeof data) => {

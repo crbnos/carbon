@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import {
   LuArrowDownUp,
@@ -15,6 +19,7 @@ import {
   LuTruck,
   LuWarehouse
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -162,4 +167,11 @@ export default function useInventorySubmodules() {
           .map(addSavedViewsToRoutes)
       }))
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function InventorySections() {
+  const { groups } = useInventorySubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ApprovalRequest } from "@carbon/ee/approvals";
 import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -45,7 +50,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
 import type { DateRange } from "@react-types/datepicker";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuClock,
@@ -57,7 +62,7 @@ import {
   LuPackageSearch
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Await, useFetcher, useLoaderData } from "react-router";
+import { Await, useLoaderData } from "react-router";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   DateSelect,
@@ -251,8 +256,6 @@ export default function PurchaseDashboard() {
   ]);
 
   const { t } = useLingui();
-  const kpiFetcher = useFetcher<typeof kpiLoader>();
-  const isFetching = kpiFetcher.state !== "idle" || !kpiFetcher.data;
 
   const dateFormatter = useDateFormatter({
     month: "short",
@@ -295,6 +298,15 @@ export default function PurchaseDashboard() {
 
   const selectedKpiData = KPIs.find((k) => k.key === selectedKpi) || KPIs[0];
 
+  const kpiFetcher = useLoaderQuery<typeof kpiLoader>(
+    `${path.to.api.purchasingKpi(
+      selectedKpiData.key
+    )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
+      supplierId === "all" ? "" : `&supplierId=${supplierId}`
+    }`
+  );
+  const isFetching = kpiFetcher.isFetching || !kpiFetcher.data;
+
   const kpiLabels: Record<string, string> = useMemo(
     () => ({
       supplierQuoteCount: t`Supplier Quotes`,
@@ -305,17 +317,6 @@ export default function PurchaseDashboard() {
     }),
     [t]
   );
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    kpiFetcher.load(
-      `${path.to.api.purchasingKpi(
-        selectedKpiData.key
-      )}?start=${dateRange?.start.toString()}&end=${dateRange?.end.toString()}&interval=${interval}${
-        supplierId === "all" ? "" : `&supplierId=${supplierId}`
-      }`
-    );
-  }, [selectedKpi, dateRange, interval, selectedKpiData.key, supplierId]);
 
   const onIntervalChange = (value: string) => {
     const end = toCalendarDateTime(now("UTC"));
@@ -393,7 +394,7 @@ export default function PurchaseDashboard() {
 
   return (
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
-      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3">
+      <div className="grid w-full gap-4 grid-cols-1 lg:grid-cols-3 max-md:grid-cols-2 max-md:gap-3 max-md:[&>:last-child:nth-child(odd)]:col-span-2">
         <MetricCard
           icon={<LuPackageSearch />}
           title={<Trans>Active Supplier Quotes</Trans>}
@@ -426,9 +427,9 @@ export default function PurchaseDashboard() {
       </div>
 
       <Card>
-        <HStack className="justify-between items-center">
+        <HStack className="justify-between items-center max-md:flex-col max-md:items-stretch">
           <CardHeader>
-            <div className="flex w-full justify-start items-center gap-2">
+            <div className="flex w-full justify-start items-center gap-2 max-md:flex-wrap">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -459,11 +460,11 @@ export default function PurchaseDashboard() {
                 onChange={setSupplierId}
                 options={supplierOptions}
                 size="sm"
-                className="font-medium text-sm min-w-[160px] gap-4"
+                className="font-medium text-sm min-w-[160px] gap-4 max-md:min-w-0"
               />
             </div>
           </CardHeader>
-          <CardAction className="flex-row items-center gap-2">
+          <CardAction className="flex-row items-center gap-2 max-md:pt-0">
             <DateSelect
               value={interval}
               onValueChange={onIntervalChange}
@@ -515,11 +516,11 @@ export default function PurchaseDashboard() {
           </VStack>
           <Loading
             isLoading={isFetching}
-            className="h-[30dvw] md:h-[23dvw] w-full"
+            className="h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
           >
             <ChartContainer
               config={chartConfig}
-              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full"
+              className="aspect-auto h-[30dvw] md:h-[23dvw] w-full max-md:h-[150px]"
             >
               <BarChart accessibilityLayer data={kpiFetcher.data?.data ?? []}>
                 <CartesianGrid vertical={false} />
@@ -797,7 +798,10 @@ function SupplierQuoteRow({ doc }: { doc: SupplierQuote }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.supplierQuote(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.supplierQuote(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuPackageSearch className="size-4" />
             <span>{doc.supplierQuoteId}</span>
@@ -818,7 +822,10 @@ function PurchaseOrderDocumentRow({ doc }: { doc: PurchaseOrder }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.purchaseOrder(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.purchaseOrder(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuLayoutList className="size-4" />
             <span>{doc.purchaseOrderId}</span>
@@ -839,7 +846,10 @@ function PurchaseInvoiceRow({ doc }: { doc: PurchaseInvoice }) {
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.salesRfq(doc.id!)}>
+        <Hyperlink
+          className="max-md:min-h-11"
+          to={path.to.purchaseInvoice(doc.id!)}
+        >
           <HStack spacing={1}>
             <LuCreditCard className="size-4" />
             <span>{doc.invoiceId}</span>
@@ -865,7 +875,7 @@ function SupplierApprovalRow({
   return (
     <Tr>
       <Td>
-        <Hyperlink to={path.to.supplier(doc.id)}>
+        <Hyperlink className="max-md:min-h-11" to={path.to.supplier(doc.id)}>
           <SupplierAvatar supplierId={doc.id} />
         </Hyperlink>
       </Td>

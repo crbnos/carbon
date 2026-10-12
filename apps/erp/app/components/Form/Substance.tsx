@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox, CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { usePermissions } from "~/hooks";
 import type { getMaterialSubstancesList } from "~/modules/items";
 import { MaterialSubstanceForm } from "~/modules/items/ui/MaterialSubstances";
@@ -19,7 +23,7 @@ const SubstancePreview = (
   options: { value: string; label: string | React.ReactNode; helper?: string }[]
 ) => {
   const substance = options.find((o) => o.value === value);
-  // @ts-ignore
+  // @ts-expect-error
   return <Enumerable value={substance?.label ?? null} />;
 };
 
@@ -79,12 +83,9 @@ Substance.displayName = "Substance";
 export default Substance;
 
 export const useSubstance = () => {
-  const materialSubstances =
-    useFetcher<Awaited<ReturnType<typeof getMaterialSubstancesList>>>();
-
-  useMount(() => {
-    materialSubstances.load(path.to.api.materialSubstances);
-  });
+  const materialSubstances = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialSubstancesList>>
+  >(path.to.api.materialSubstances);
 
   const options = useMemo(() => {
     return (materialSubstances.data?.data ?? []).map((c) => ({

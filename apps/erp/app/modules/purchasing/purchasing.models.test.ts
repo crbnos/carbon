@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform. Nothing under test touches the glossary
 // (it's pulled in via the ../shared barrel), so stub the whole package.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",
@@ -73,9 +77,21 @@ describe("canCreatePurchaseOrderRevision", () => {
     ).toBe(expected);
   });
 
-  it("is never eligible for a non-Draft target status", () => {
+  it("follows the same matrix when reopening to Planned", () => {
+    for (const { currentStatus, orderDate, expected } of reopenMatrix) {
+      expect(
+        canCreatePurchaseOrderRevision({
+          newStatus: "Planned",
+          currentStatus,
+          orderDate
+        })
+      ).toBe(expected);
+    }
+  });
+
+  it("is never eligible for a target status that is not a reopen", () => {
     for (const newStatus of purchaseOrderStatusType) {
-      if (newStatus === "Draft") continue;
+      if (newStatus === "Draft" || newStatus === "Planned") continue;
       for (const currentStatus of purchaseOrderStatusType) {
         expect(
           canCreatePurchaseOrderRevision({

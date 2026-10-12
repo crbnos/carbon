@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -8,6 +12,7 @@ import {
   jobOperationValidator,
   upsertJobOperation
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -33,14 +38,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const operationData = validation.data;
 
-  const updateJobOperation = await upsertJobOperation(client, {
-    jobId,
-    ...operationData,
-    id: id,
-    companyId,
-    updatedBy: userId,
-    customFields: setCustomFields(formData)
-  });
+  const updateJobOperation = await upsertJobOperation(
+    client,
+    getDatabaseClient(),
+    {
+      jobId,
+      ...operationData,
+      id: id,
+      companyId,
+      updatedBy: userId,
+      customFields: setCustomFields(formData)
+    }
+  );
   if (updateJobOperation.error) {
     return data(
       {

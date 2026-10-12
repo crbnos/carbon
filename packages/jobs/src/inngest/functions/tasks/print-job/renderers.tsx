@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // This module is .tsx because the built-in renderers render React PDF
 // components (ProductLabelPDF, StorageUnitLabelPDF, KanbanLabelPDF) via
 // renderToStream.
@@ -114,9 +118,9 @@ function requireMediaSize(mediaSizeId: string): LabelSize {
   return mediaSize;
 }
 
-// Not the public storage prefix: nothing here reaches a browser. Both the
-// expanded logo path (fetched by `resolveLabelLogo`) and the logo-resizer
-// call it feeds are server-to-server, so this uses the internal URL.
+// Not the public storage prefix: nothing here reaches a browser. The expanded
+// logo path is fetched server-side by `resolveLabelLogo`, so this uses the
+// internal URL.
 const INTERNAL_STORAGE_URL_PREFIX = `${SUPABASE_INTERNAL_URL}/storage/v1/object/public/public/`;
 
 /**
@@ -155,9 +159,7 @@ async function loadProductLabelContext(
       }
     : null;
 
-  const logo = await resolveLabelLogo(company, template, labelSize, {
-    supabaseUrl: SUPABASE_INTERNAL_URL ?? ""
-  });
+  const logo = await resolveLabelLogo(company, template, labelSize);
 
   return { template, logo };
 }

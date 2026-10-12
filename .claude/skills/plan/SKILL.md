@@ -70,6 +70,11 @@ Every task uses exactly this shape:
 
 Hard rules for task content:
 
+- **Write every sentence in STE-80 from the first draft.** Use the write-time habits in `.claude/rules/writing-ste.md`. Never ask the human to check the style.
+- **Prose follows STE-80** (`.claude/rules/writing-ste.md`): one instruction
+  per step, imperative, at most 20 words. Step 5 makes the STE-80 review pass a gate.
+  Rewrite any subagent report in STE-80 before it goes into a task.
+
 - **Migrations**: create with `pnpm db:migrate:new <name>` (never hand-pick a
   timestamp; never `000000` as HHMMSS). SQL must use `id('prefix')` defaults,
   `companyId` + composite PK `("id", "companyId")`, audit columns
@@ -122,6 +127,12 @@ file. Do not create a separate todo file.
 
 ## Step 5: Self-check, then present
 
+Do the STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement) first.
+Do it again after every later edit to the plan. If you corrected the spec
+while planning, do the pass on the spec too.
+
+- [ ] The STE-80 review pass is done for the plan (and for the spec if you
+      edited it), and every self-check box in the rule is ticked
 - [ ] Every task has exact paths, exact commands, expected output
 - [ ] Every migration task follows the hard rules above and is followed by a
       `generate:types` step
@@ -130,5 +141,6 @@ file. Do not create a separate todo file.
 - [ ] Every acceptance criterion in the spec is covered by at least one task,
       and the final task is browser verification via `/test` for user-facing work
 
-Present the plan path and a one-paragraph summary. Wait for approval, then hand
-off to `/execute`.
+Present the plan path and a one-paragraph summary. Offer the reviewer view in
+one line: "Want an HTML explainer of this plan? (`/explain`)" — run it only on
+a yes. Wait for approval, then hand off to `/execute`.

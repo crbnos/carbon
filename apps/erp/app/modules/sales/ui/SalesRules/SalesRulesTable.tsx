@@ -1,10 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // List table for Sales → Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRulesTable` minus the targetType column;
 // permission checks use `sales`.
 
 import type { Json } from "@carbon/database";
-import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { SALES_RULE_SURFACES, type SalesRuleSurface } from "@carbon/utils";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -29,10 +41,13 @@ type SalesRuleRowView = {
   surfaces?: SalesRuleSurface[];
 };
 
-const SALES_RULE_SURFACE_LABELS: Record<SalesRuleSurface, string> = {
-  quoteLine: "Quote line",
-  salesOrderLine: "Sales order line",
-  salesInvoiceLine: "Sales invoice line"
+export const SALES_RULE_SURFACE_LABELS: Record<
+  SalesRuleSurface,
+  MessageDescriptor
+> = {
+  quoteLine: msg`Quote line`,
+  salesOrderLine: msg`Sales order line`,
+  salesInvoiceLine: msg`Sales invoice line`
 };
 
 type SalesRulesTableProps = {
@@ -61,7 +76,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Enumerable value={row.original.name} />
           </Hyperlink>
         ),
-        meta: { icon: <LuShieldCheck /> }
+        meta: { icon: <LuShieldCheck />, mobile: "P1" }
       },
       {
         accessorKey: "severity",
@@ -75,7 +90,8 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Badge variant="yellow">
               <Trans>Warn</Trans>
             </Badge>
-          )
+          ),
+        meta: { mobile: "P3" }
       },
       {
         accessorKey: "surfaces",
@@ -89,7 +105,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <div className="flex items-center gap-1">
               {surfaces.map((s) => (
                 <Badge key={s} variant="secondary">
-                  {SALES_RULE_SURFACE_LABELS[s]}
+                  {t(SALES_RULE_SURFACE_LABELS[s])}
                 </Badge>
               ))}
             </div>
@@ -108,7 +124,8 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
             <Status color="gray">
               <Trans>Inactive</Trans>
             </Status>
-          )
+          ),
+        meta: { mobile: "P2" }
       },
       {
         accessorKey: "assignmentCount",
@@ -127,6 +144,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
     (row: (typeof rows)[number]) => (
       <>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.edit}
           disabled={!permissions.can("update", "sales")}
           onClick={() => {
             navigate(`${path.to.salesRule(row.id)}?${params.toString()}`);
@@ -136,6 +154,7 @@ const SalesRulesTable = memo(({ data, count }: SalesRulesTableProps) => {
           <Trans>Edit Rule</Trans>
         </MenuItem>
         <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
           disabled={!permissions.can("delete", "sales")}
           destructive
           onClick={() => {

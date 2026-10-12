@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Origin, RunTrigger } from "@carbon/ee/workflows";
 
 /** A workflowTriggerEvent row joined to its workflow's owner. */

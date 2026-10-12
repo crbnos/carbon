@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Anti-drift contract test. Locks the registry (what the builder offers) to the
 // runtime code path (what `buildLineContext` actually populates) per surface.
 //

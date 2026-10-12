@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -204,16 +208,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
+  // Merge planner-authored projections into the forecast series, NET of MRP
+  // forecast consumption: the planning RPCs' demand_data counts
+  // GREATEST(forecastQuantity - consumedQuantity, 0) per projection, and the
+  // chart must agree with the grid. Netting happens here, before the shared
+  // merge, so mergeDemandProjections stays a plain per-period merge.
+  const netProjections = demand.projections.map(
+    ({ consumedQuantity, ...projection }) => ({
+      ...projection,
+      forecastQuantity: Math.max(
+        (projection.forecastQuantity ?? 0) - (consumedQuantity ?? 0),
+        0
+      )
+    })
+  );
   const demandForecast = mergeDemandProjections(
     demand.forecasts,
-    demand.projections,
+    netProjections,
     periods.map((p) => p.id ?? "")
   );
 
-  if (demand.actuals.length === 0 && demandForecast.length === 0) {
+  // An item with no demand yet is not a failure: it still has stock and
+  // supply to chart.
+  if (demand.error) {
     return data(
       defaultResponse,
-      await flash(request, error(null, "Failed to load demand"))
+      await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
 

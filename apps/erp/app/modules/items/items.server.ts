@@ -1,16 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
+import { type Database, fetchAllByIds } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { oncePerRead } from "@carbon/logger/middleware.server";
 import { NotificationEvent } from "@carbon/notifications";
-import { chunkArray } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import {
   activateMethodVersion,
   findChangeNoticesForItem,
+  getChangeNoticeTypesList,
+  getItemSupersededBy,
+  getItemSupersession,
+  getMakeMethodById,
+  getMakeMethods,
   upsertItemSupersession
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
@@ -25,6 +34,51 @@ import {
 } from "./items.models";
 
 const logger = getLogger("erp", "change-orders");
+
+// An item page's layout and its tab loaders run in ONE request and each read the
+// item's methods and change notices. These share that read across the loaders;
+// on a mutation they are plain calls, so a revalidation never sees stale rows.
+
+export const getMakeMethodsOnce = (
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) =>
+  oncePerRead(`makeMethods:${companyId}:${itemId}`, () =>
+    getMakeMethods(client, itemId, companyId)
+  );
+
+export const getMakeMethodByIdOnce = (
+  client: SupabaseClient<Database>,
+  makeMethodId: string,
+  companyId: string
+) =>
+  oncePerRead(`makeMethod:${companyId}:${makeMethodId}`, () =>
+    getMakeMethodById(client, makeMethodId, companyId)
+  );
+
+export const findChangeNoticesForItemOnce = (
+  client: SupabaseClient<Database>,
+  args: { itemId: string; companyId: string }
+) =>
+  oncePerRead(`changeNotices:${args.companyId}:${args.itemId}`, () =>
+    findChangeNoticesForItem(client, args)
+  );
+
+export async function getItemChangeNoticeDataOnce(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  const [changeNotices, changeNoticeTypes] = await Promise.all([
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
+    getChangeNoticeTypesList(client, companyId)
+  ]);
+  return {
+    changeNotices: changeNotices.data,
+    changeNoticeTypes: changeNoticeTypes.data ?? []
+  };
+}
 
 // Release-lock helpers — gate BOM/BOP mutations on a released (Production)
 // revision. A Production revision is the controlled, released make method;
@@ -441,9 +495,9 @@ export async function notifyChangeNoticeTransition(args: {
 // affected item's CO-staged end-state onto a NEW inactive revision, activates
 // it, then auto-writes the oldRev → newRev supersession (Q1/Q2/Q5).
 //
-// Atomicity (G2): createRevision + activateMethodVersion are edge-function
-// (functions.invoke → get-method / convert) calls, so this CANNOT be one Kysely
-// transaction. The apply is therefore an idempotent, CAS-guarded orchestration:
+// Atomicity (G2): createRevision + activateMethodVersion call the get-method /
+// convert operations, each of which commits its own transaction, so this CANNOT
+// be one Kysely transaction. The apply is therefore an idempotent, CAS-guarded orchestration:
 //   - PER-AFFECTED-ITEM idempotency: each changeOrderAffectedItem gets its
 //     created revision id stamped into `newItemId` at the END of its processing.
 //     A re-run skips any affected item whose `newItemId` is already set, so a
@@ -508,7 +562,7 @@ export async function applyChangeNotice(
   );
 
   for (const affected of ordered) {
-    const result = await releaseAffectedItem(client, {
+    const result = await releaseAffectedItem(client, db, {
       changeNoticeId,
       companyId,
       userId,
@@ -560,6 +614,7 @@ export async function applyChangeNotice(
 // -----------------------------------------------------------------------------
 async function releaseAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     companyId: string;
@@ -602,7 +657,7 @@ async function releaseAffectedItem(
   // Version simply appends a new Active version and archives the prior one — the
   // prior version's rows are preserved as method history, so there is nothing to
   // merge even if another CO released a newer version in the meantime.
-  const activated = await activateMethodVersion(client, {
+  const activated = await activateMethodVersion(client, db, {
     id: draftMakeMethodId,
     companyId,
     userId
@@ -711,25 +766,9 @@ export type UnreleasedChangeOrderItem = {
   changeOrderReadableId: string;
 };
 
-// PostgREST caps a response at `max_rows` (1000) and an `in` filter rides in the
-// URL, so both reads walk their ids in batches. Truncating either one would drop
-// an item from the answer, and a missing row reads as "no change order holds it".
-const CHANGE_ORDER_ID_BATCH_SIZE = 500;
-
-async function readIdsInBatches<T>(
-  ids: string[],
-  read: (
-    batch: string[]
-  ) => PromiseLike<{ data: T[] | null; error: unknown | null }>
-): Promise<{ data: T[]; error: unknown | null }> {
-  const rows: T[] = [];
-  for (const batch of chunkArray(ids, CHANGE_ORDER_ID_BATCH_SIZE)) {
-    const result = await read(batch);
-    if (result.error) return { data: [], error: result.error };
-    rows.push(...(result.data ?? []));
-  }
-  return { data: rows, error: null };
-}
+// Both reads go through fetchAllByIds: an `in` filter rides in the URL and a
+// response stops at PostgREST's row cap. Truncating either one would drop an
+// item from the answer, and a missing row reads as "no change order holds it".
 
 // Two queries per batch of ids — the bulk item update can carry a whole table
 // selection.
@@ -743,12 +782,13 @@ export async function getUnreleasedChangeOrderItems(
 ): Promise<{ data: UnreleasedChangeOrderItem[]; error: string | null }> {
   if (args.itemIds.length === 0) return { data: [], error: null };
 
-  const items = await readIdsInBatches(args.itemIds, (batch) =>
+  const items = await fetchAllByIds(args.itemIds, (batch) =>
     client
       .from("item")
       .select("id, readableIdWithRevision, changeOrderId")
       .in("id", batch)
       .eq("companyId", args.companyId)
+      .order("id")
   );
 
   if (items.error) {
@@ -768,7 +808,7 @@ export async function getUnreleasedChangeOrderItems(
   );
   if (owned.length === 0) return { data: [], error: null };
 
-  const changeOrders = await readIdsInBatches(
+  const changeOrders = await fetchAllByIds(
     [...new Set(owned.map((item) => item.changeOrderId))],
     (batch) =>
       client
@@ -776,6 +816,7 @@ export async function getUnreleasedChangeOrderItems(
         .select("id, changeOrderId, status")
         .in("id", batch)
         .eq("companyId", args.companyId)
+        .order("id")
   );
 
   if (changeOrders.error) {
@@ -855,4 +896,37 @@ export function unreleasedChangeOrderItemsMessage(
         `${item.itemName} was created by change order ${item.changeOrderReadableId}, which has not been released yet.`
     )
     .join(" ");
+}
+
+// Not awaited by the item layouts: only the header badge and the properties
+// sidebar read these, so they stream instead of holding the page.
+export function streamItemSupersession(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return {
+    supersession: getItemSupersession(client, itemId, companyId).then(
+      (result) => result.data,
+      (error) => {
+        logger.error("Failed to load item supersession", {
+          companyId,
+          itemId,
+          error
+        });
+        return null;
+      }
+    ),
+    supersededBy: getItemSupersededBy(client, itemId, companyId).then(
+      (result) => result.data ?? [],
+      (error) => {
+        logger.error("Failed to load item predecessors", {
+          companyId,
+          itemId,
+          error
+        });
+        return [];
+      }
+    )
+  };
 }

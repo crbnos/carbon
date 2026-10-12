@@ -1,6 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { Constants } from "@carbon/database";
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -49,7 +58,7 @@ const InventoryCountsTable = memo(
               {row.original.inventoryCountId}
             </Hyperlink>
           ),
-          meta: { icon: <LuBookMarked /> }
+          meta: { mobile: "P1", icon: <LuBookMarked /> }
         },
         {
           accessorKey: "locationId",
@@ -58,6 +67,7 @@ const InventoryCountsTable = memo(
             locations.find((l) => l.id === row.original.locationId)?.name ??
             null,
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: locations.map((location) => ({
@@ -79,6 +89,7 @@ const InventoryCountsTable = memo(
             return <InventoryCountStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: Constants.public.Enums.inventoryCountStatus.map(
@@ -145,6 +156,11 @@ const InventoryCountsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                row.status === "Draft"
+                  ? MENU_ITEM_SHORTCUTS.edit
+                  : MENU_ITEM_SHORTCUTS.view
+              }
               onClick={() => {
                 navigate(
                   `${path.to.inventoryCount(row.id!)}?${params.toString()}`
@@ -155,6 +171,7 @@ const InventoryCountsTable = memo(
               {row.status === "Draft" ? t`Edit Count` : t`View Count`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "inventory") ||
                 row.status === "Posted"

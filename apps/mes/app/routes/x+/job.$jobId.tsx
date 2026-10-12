@@ -1,16 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { Heading, SidebarTrigger } from "@carbon/react";
+import { Heading, SidebarTrigger, useViewport } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import { Trans } from "@lingui/react/macro";
 import { LuArrowLeft } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
+import { MesAppBar } from "~/components/MesAppBar";
 import {
   getJobOperationDependencies,
   getJobOperations
 } from "~/services/operations.service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    { table: "job", column: "id", param: "jobId" },
+    { table: "jobOperation", column: "jobId", param: "jobId" }
+  ]
+};
 
 const logger = getLogger("mes", "job-dag");
 
@@ -53,21 +68,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export default function JobDagRoute() {
   const { readableId, operations, dependencies } =
     useLoaderData<typeof loader>();
+  const { isPhone } = useViewport();
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Link
-            to={path.to.jobs}
-            className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <LuArrowLeft className="w-4 h-4" />
-          </Link>
-          <Heading size="h4">{readableId}</Heading>
-        </div>
-      </header>
+      <MesAppBar
+        title={readableId}
+        subtitle={<Trans>Jobs</Trans>}
+        back={{ to: path.to.jobs }}
+      />
+      {!isPhone && (
+        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card max-md:hidden">
+          <div className="flex items-center gap-2 px-2">
+            <SidebarTrigger />
+            <Link
+              to={path.to.jobs}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <LuArrowLeft className="w-4 h-4" />
+            </Link>
+            <Heading size="h4">{readableId}</Heading>
+          </div>
+        </header>
+      )}
 
       <main className="flex-1 overflow-hidden">
         <JobDag operations={operations} dependencies={dependencies} />

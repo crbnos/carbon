@@ -1,19 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
 import type { PaymentTermCalculationMethod } from "~/modules/accounting";
 import { paymentTermValidator, upsertPaymentTerm } from "~/modules/accounting";
 import { PaymentTermForm } from "~/modules/accounting/ui/PaymentTerms";
 import { setCustomFields } from "~/utils/form";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, paymentTermsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, {
@@ -65,16 +66,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    paymentTermsQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function NewPaymentTermsRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const initialValues = {
     name: "",
     daysDue: 0,
@@ -86,7 +79,7 @@ export default function NewPaymentTermsRoute() {
   return (
     <PaymentTermForm
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

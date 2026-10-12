@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -9,6 +13,7 @@ import {
   DrawerTitle,
   HStack,
   Kbd,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Select,
@@ -84,6 +89,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuTag />
         }
       },
@@ -111,6 +117,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuDatabase />,
           filter: {
             type: "static",
@@ -128,6 +135,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuPercent />
         }
       },
@@ -167,6 +175,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.webhook(row.id!)}?${params?.toString()}`);
             }}
@@ -175,6 +184,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
             <Trans>Edit Webhook</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             onClick={() => {
               navigate(

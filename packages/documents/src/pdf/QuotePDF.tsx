@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
@@ -44,8 +48,8 @@ const QuotePDF = ({
   meta,
   exchangeRate,
   quote,
-  quoteLines,
-  quoteLinePrices,
+  quoteLines: allQuoteLines,
+  quoteLinePrices: allQuoteLinePrices,
   quoteCustomerDetails,
   payment,
   paymentTerms,
@@ -62,6 +66,23 @@ const QuotePDF = ({
   const shouldConvertCurrency =
     !!currencyCode && currencyCode !== company.baseCurrencyCode;
   const numberFormatter = getMoneyFormatter(locale, currencyDecimals);
+
+  // A No Quote line is the company's own decision not to bid — the customer
+  // never sees it, its prices, or its lead time.
+  // Quantity breaks are stored in entry order; the PDF renders them
+  // least-to-most, and the single-quantity totals below use the smallest
+  // break — matching the in-app summary and the share page, which sort too.
+  const quoteLines = allQuoteLines
+    .filter((line) => line.status !== "No Quote")
+    .map((line) =>
+      line.quantity
+        ? { ...line, quantity: [...line.quantity].sort((a, b) => a - b) }
+        : line
+    );
+  const quotedLineIds = new Set(quoteLines.map((line) => line.id));
+  const quoteLinePrices = allQuoteLinePrices.filter((price) =>
+    quotedLineIds.has(price.quoteLineId)
+  );
 
   const pricesByLine = quoteLinePrices.reduce<Record<string, QuoteLinePrice[]>>(
     (acc, price) => {
@@ -80,10 +101,9 @@ const QuotePDF = ({
   const hasSinglePricePerLine = quoteLines.every(
     (line) => (line.quantity ?? []).length === 1
   );
-  const hasAnyLeadTime = quoteLines.some((line) => {
-    if (line.status === "No Quote") return false;
-    return (priceForFirstQty(line)?.leadTime ?? 0) > 0;
-  });
+  const hasAnyLeadTime = quoteLines.some(
+    (line) => (priceForFirstQty(line)?.leadTime ?? 0) > 0
+  );
 
   const columnCount =
     3 + (!hasSinglePricePerLine ? 1 : 0) + (hasAnyLeadTime ? 1 : 0);
@@ -98,19 +118,16 @@ const QuotePDF = ({
   }
 
   const subtotal = quoteLines.reduce((total, line) => {
-    if (line.status === "No Quote") return total;
     return total + (priceForFirstQty(line)?.convertedNetExtendedPrice ?? 0);
   }, 0);
 
   const shipping =
     quoteLines.reduce((total, line) => {
-      if (line.status === "No Quote") return total;
       return total + (priceForFirstQty(line)?.convertedShippingCost ?? 0);
     }, 0) +
     (shipment?.shippingCost ?? 0) * (exchangeRate ?? 1);
 
   const fees = quoteLines.reduce((total, line) => {
-    if (line.status === "No Quote") return total;
     const additionalCharges = line.additionalCharges ?? {};
     const quantity = (line.quantity ?? [])[0];
     const charges = Object.values(additionalCharges).reduce((acc, charge) => {
@@ -122,7 +139,6 @@ const QuotePDF = ({
   }, 0);
 
   const taxes = quoteLines.reduce((total, line) => {
-    if (line.status === "No Quote") return total;
     const price = priceForFirstQty(line);
     const netExtendedPrice = price?.convertedNetExtendedPrice ?? 0;
     const additionalCharges = line.additionalCharges ?? {};

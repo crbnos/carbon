@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
 import { useFetcher } from "react-router";
 import type { getFixedAssetClassesList } from "~/modules/accounting";
@@ -99,12 +104,9 @@ AssetClass.displayName = "AssetClass";
 export default AssetClass;
 
 export const useAssetClasses = () => {
-  const assetClassFetcher =
-    useFetcher<Awaited<ReturnType<typeof getFixedAssetClassesList>>>();
-
-  useMount(() => {
-    assetClassFetcher.load(path.to.api.assetClasses);
-  });
+  const assetClassFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getFixedAssetClassesList>>
+  >(path.to.api.assetClasses);
 
   const assetClasses = useMemo(
     () => assetClassFetcher.data?.data ?? [],

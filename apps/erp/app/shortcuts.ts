@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShortcutDefinition, ShortcutInput } from "@carbon/react";
 import { SHORTCUTS } from "@carbon/react";
 
@@ -83,3 +87,31 @@ export const MODULE_GO_TO: Record<string, string> = {
   users: "y",
   workflows: "w"
 };
+
+/**
+ * c-then-letter create, from anywhere — the Create menu's items, keyed by a
+ * stable id (the menu is filtered by permission, so never by position). `c`
+ * rather than `n`: bare `n` is already the list page's New button.
+ */
+export const CREATE_PREFIX = "c";
+
+export const CREATE_SHORTCUTS = {
+  batch: "b",
+  customer: "c",
+  employee: "e",
+  issue: "i",
+  job: "j",
+  maintenance: "m",
+  part: "p",
+  pickingList: "l",
+  purchaseOrder: "u",
+  quote: "q",
+  rfq: "r",
+  salesOrder: "o",
+  stockTransfer: "x",
+  supplier: "s",
+  warehouseTransfer: "w"
+} as const;
+
+/** Leaves the rail's Customize mode without saving. */
+export const navigationEditCancelShortcut: ShortcutInput = "escape";

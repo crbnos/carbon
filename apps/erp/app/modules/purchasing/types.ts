@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { FileObject } from "@supabase/storage-js";
+import type { PlanningGridColumns } from "../production/types";
 import type {
   getPurchaseOrderDelivery,
   getPurchaseOrderLines,
@@ -55,9 +60,13 @@ export type PurchaseOrderType =
 export type PurchaseOrderTransactionType =
   Database["public"]["Enums"]["purchaseOrderTransactionType"];
 
-export type PurchasingPlanningItem = NonNullable<
-  Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
->[number];
+export type PurchasingPlanningItem = Omit<
+  NonNullable<
+    Awaited<ReturnType<typeof getPurchasingPlanning>>["data"]
+  >[number],
+  keyof PlanningGridColumns
+> &
+  PlanningGridColumns;
 
 export type PurchasingRFQ = NonNullable<
   Awaited<ReturnType<typeof getPurchasingRFQs>>["data"]

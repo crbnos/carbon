@@ -27,7 +27,13 @@ run_mode = "concurrent"
 # flush redis, and release the port slot so the pool doesn't leak entries.
 archive = "./packages/dev/bin/crbn down --purge"
 
+# ERP + MES only. The assembler is a separate script: it needs the one-time
+# OCCT build and a cargo compile, which most workspaces never use.
 [scripts.run.dev]
-command = "./packages/dev/bin/crbn up --all"
+command = "CARBON_DEV_APPS=erp,mes ./packages/dev/bin/crbn up"
 default = true
 icon = "rocket"
+
+[scripts.run.dev-assembler]
+command = "CARBON_DEV_APPS=erp,mes,assembler ./packages/dev/bin/crbn up"
+icon = "box"

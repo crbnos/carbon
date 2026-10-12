@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -16,12 +20,14 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useNavigate } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { Input, Location, Submit } from "~/components/Form";
 import { useUser } from "~/hooks";
 import { createOperatorValidator } from "~/modules/users/users.models";
@@ -131,6 +137,7 @@ export default function NewOperatorRoute() {
   const { t } = useLingui();
   const { defaults } = useUser();
   const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<typeof action>();
   const created =
     formFetcher.data && "pin" in formFetcher.data ? formFetcher.data : null;
@@ -141,7 +148,7 @@ export default function NewOperatorRoute() {
       onOpenChange={(open) => {
         if (open) return;
         if (created) navigate(path.to.operators);
-        else navigate(-1);
+        else closeRoute();
       }}
     >
       <ModalOverlay />

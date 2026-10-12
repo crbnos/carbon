@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { describe, expect, it } from "vitest";
 import type { ActionInputLike } from "./actions";

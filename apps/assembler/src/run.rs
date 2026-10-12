@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! One-shot `run-job` CLI: run ONE action to completion and exit — no HTTP
 //! server. The ECS Fargate overflow entrypoint (and any non-HTTP invoke) for
 //! jobs past Lambda's 15-min cap. It reuses the *exact* compute + finalize path
@@ -8,7 +12,7 @@
 //! Spec (JSON, from `argv[2]` or `$ASSEMBLER_JOB_SPEC`) — the same shape as the
 //! HTTP body plus an `action` and an `upload_urls` map:
 //! ```json
-//! { "action": "optimize"|"convert"|"plan",
+//! { "action": "optimize"|"convert"|"plan"|"compact"|"thumbnail",
 //!   "job_id": "…",                                  // optional
 //!   "source": { "url": "<signed GET>", "format": "auto" },
 //!   "output" | "outputs" | "options" | "quality": { … },   // per action, as HTTP
@@ -19,7 +23,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
-use crate::{actions, build_state, config, optimize_opts, AppState};
+use crate::{actions, build_state, config, optimize_opts, telemetry, thumbnail_req, AppState};
 
 /// Overall wall-clock ceiling for a one-shot job. Generous: ECS has no 15-min
 /// cap (that's exactly why the overflow path exists); Lambda's own timeout bounds
@@ -27,6 +31,7 @@ use crate::{actions, build_state, config, optimize_opts, AppState};
 const RUN_JOB_MAX_SECS: u64 = 60 * 60;
 
 pub async fn run_job_cli() -> ! {
+    telemetry::init();
     let spec = match load_spec() {
         Ok(s) => s,
         Err(m) => fail(&m),
@@ -65,6 +70,7 @@ pub async fn run_job_cli() -> ! {
     // for the receiver).
     state.jobs.send_callback(&job_id).await;
     println!("{result}");
+    telemetry::shutdown();
     let ok = matches!(result["job"]["status"].as_str(), Some("succeeded"));
     std::process::exit(if ok { 0 } else { 1 });
 }
@@ -80,6 +86,8 @@ pub fn spawn_from_spec(
     action: &str,
     spec: &Value,
 ) -> Result<(), String> {
+    // The submitting request's trace, when the spec carries it.
+    let _trace = telemetry::attach(spec);
     let source_url = spec["source"]["url"]
         .as_str()
         .unwrap_or_default()
@@ -140,6 +148,9 @@ pub fn spawn_from_spec(
                 },
             )
         }
+        "thumbnail" => {
+            actions::thumbnail::spawn(state, job_id, thumbnail_req(&source_url, &spec["output"]))
+        }
         other => return Err(format!("unsupported action: {other}")),
     }
     Ok(())
@@ -197,5 +208,6 @@ fn fail(msg: &str) -> ! {
         "{}",
         json!({ "ok": false, "error": { "code": "invalid_input", "message": msg } })
     );
+    telemetry::shutdown();
     std::process::exit(1);
 }

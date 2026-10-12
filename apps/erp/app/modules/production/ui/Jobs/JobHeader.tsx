@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import {
@@ -5,7 +9,6 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -14,9 +17,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
   HStack,
-  IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,6 +31,7 @@ import {
   Status,
   useDisclosure,
   useMount,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -51,11 +54,8 @@ import {
   LuCircleStop,
   LuClipboardList,
   LuClock,
-  LuEllipsisVertical,
   LuList,
   LuLoaderCircle,
-  LuPanelLeft,
-  LuPanelRight,
   LuQrCode,
   LuSettings,
   LuShoppingCart,
@@ -72,6 +72,7 @@ import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
@@ -119,6 +120,7 @@ const JobHeader = () => {
     }
   };
   const permissions = usePermissions();
+  const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
@@ -198,306 +200,330 @@ const JobHeader = () => {
     };
   }, [projectedCompletionAt, jobDueDate]);
 
-  return (
+  const menuItems = (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide ">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Link to={path.to.jobDetails(jobId)}>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{routeData?.job?.jobId}</span>
-            </Heading>
-          </Link>
-          <Copy text={routeData?.job?.jobId ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {auditLogTrigger}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
-                  expediteFetcher.state !== "idle" ||
-                  !permissions.can("view", "production")
-                }
-                onClick={() => {
-                  expediteModal.onOpen();
-                  expediteFetcher.submit(
-                    {},
-                    { method: "post", action: path.to.jobExpedite(jobId) }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuZap />} />
-                {t`Best case…`}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  !["Cancelled", "Completed"].includes(
-                    routeData?.job?.status ?? ""
-                  ) ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
-                }
-                onClick={() => {
-                  statusFetcher.submit(
-                    {
-                      status:
-                        routeData?.job?.status === "Cancelled"
-                          ? "Draft"
-                          : "In Progress"
-                    },
-                    {
-                      method: "post",
-                      action: path.to.jobStatus(jobId)
-                    }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                Reopen
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={
-                  !permissions.can("delete", "production") ||
-                  !permissions.is("employee") ||
-                  isJobLocked(routeData?.job?.status)
-                }
-                destructive
-                onClick={deleteJobModal.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Job
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <JobStatus status={routeData?.job?.status} />
-          {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
-            routeData?.job?.status ?? ""
-          ) && (
-            <>
-              {routeData?.job?.dueDate &&
-                isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
-                  <JobStatus status="Due Today" />
-                )}
-              {routeData?.job?.dueDate &&
-                parseDate(routeData?.job?.dueDate) < todaysDate && (
-                  <JobStatus status="Overdue" />
-                )}
-              {slack && (
-                <Status
-                  color={slack.late ? "red" : "green"}
-                  tooltip={`${t`Projected completion`}: ${slack.projectedDate}`}
-                >
-                  {slack.late
-                    ? t`${slack.absDays}d late`
-                    : t`${slack.absDays}d early`}
-                </Status>
-              )}
-            </>
-          )}
-          {unbatchedBatchableOperations > 0 && (
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
+          expediteFetcher.state !== "idle" ||
+          !permissions.can("view", "production")
+        }
+        onClick={() => {
+          expediteModal.onOpen();
+          expediteFetcher.submit(
+            {},
+            { method: "post", action: path.to.jobExpedite(jobId) }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuZap />} />
+        {t`Best case…`}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          !["Cancelled", "Completed"].includes(routeData?.job?.status ?? "") ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("update", "production")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            {
+              status:
+                routeData?.job?.status === "Cancelled" ? "Draft" : "In Progress"
+            },
+            {
+              method: "post",
+              action: path.to.jobStatus(jobId)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "production") ||
+          !permissions.is("employee") ||
+          isJobLocked(routeData?.job?.status)
+        }
+        destructive
+        onClick={deleteJobModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Job</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const isReleasable = ["Draft", "Planned"].includes(status ?? "");
+  const statusBadges = (
+    <>
+      <JobStatus status={routeData?.job?.status} />
+      {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+        routeData?.job?.status ?? ""
+      ) && (
+        <>
+          {routeData?.job?.dueDate &&
+            isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
+              <JobStatus status="Due Today" />
+            )}
+          {routeData?.job?.dueDate &&
+            parseDate(routeData?.job?.dueDate) < todaysDate && (
+              <JobStatus status="Overdue" />
+            )}
+          {slack && (
             <Status
-              color="gray"
-              tooltip={
-                unbatchedBatchableOperations === 1
-                  ? t`1 batchable operation is not in a batch — it runs individually until batched`
-                  : t`${unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched`
-              }
+              color={slack.late ? "red" : "green"}
+              tooltip={`${t`Projected completion`}: ${slack.projectedDate}`}
             >
-              {t`${unbatchedBatchableOperations} awaiting batching`}
+              {slack.late
+                ? t`${slack.absDays}d late`
+                : t`${slack.absDays}d early`}
             </Status>
           )}
-        </HStack>
-        <HStack>
-          {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
-            <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
-              <Link
-                to={path.to.salesOrderLine(
-                  routeData?.job?.salesOrderId,
-                  routeData?.job?.salesOrderLineId
-                )}
-              >
-                Sales Order
-              </Link>
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                leftIcon={currentValue === "details" ? <LuList /> : <LuTable />}
-                rightIcon={<LuChevronDown />}
-                variant="secondary"
-              >
-                {getExplorerLabel(currentValue)}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuItem asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.jobTravelerByJobId(jobId)}
-                  rel="noreferrer"
-                >
-                  <DropdownMenuIcon icon={<LuQrCode />} />
-                  Job Traveler
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuRadioGroup
-                value={currentValue}
-                onValueChange={(option) => {
-                  navigate(getExplorePath(jobId, option));
-                }}
-              >
-                <DropdownMenuRadioItem value="details">
-                  <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
-                  {getExplorerLabel("details")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuSeparator />
-                {[
-                  "materials",
-                  "operations",
-                  ...(status !== "Draft" && status !== "Planned" ? ["dag"] : [])
-                ].map((i) => (
-                  <DropdownMenuRadioItem value={i} key={i}>
-                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                    {getExplorerLabel(i)}
-                  </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuSeparator />
-                {["events", "quantities", "step-records"].map((i) => (
-                  <DropdownMenuRadioItem value={i} key={i}>
-                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                    {getExplorerLabel(i)}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        </>
+      )}
+      {unbatchedBatchableOperations > 0 && (
+        <Status
+          color="gray"
+          tooltip={
+            unbatchedBatchableOperations === 1
+              ? t`1 batchable operation is not in a batch — it runs individually until batched`
+              : t`${unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched`
+          }
+        >
+          {t`${unbatchedBatchableOperations} awaiting batching`}
+        </Status>
+      )}
+    </>
+  );
 
-          {status !== "Paused" ? (
-            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
-              <input type="hidden" name="status" value="Paused" />
-              <Button
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Paused"
-                }
-                isDisabled={
-                  !["Ready", "In Progress"].includes(status ?? "") ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
-                }
-                leftIcon={<LuCirclePause />}
-                type="submit"
-                variant="secondary"
-              >
-                Pause
-              </Button>
-            </statusFetcher.Form>
-          ) : (
-            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
-              <input type="hidden" name="status" value="Ready" />
-              <Button
+  // Phones: the hero line under the app bar, "item · Qty N".
+  const jobQuantity = routeData?.job?.quantity;
+  const heroSubtitle =
+    [
+      routeData?.job?.itemReadableIdWithRevision,
+      jobQuantity != null ? t`Qty ${jobQuantity}` : null
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+
+  return (
+    <>
+      <RecordHeader
+        title={routeData?.job?.jobId}
+        titleTo={path.to.jobDetails(jobId)}
+        copyValue={routeData?.job?.jobId ?? ""}
+        menu={menuItems}
+        status={statusBadges}
+        subtitle={heroSubtitle}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {routeData?.job?.salesOrderId &&
+              routeData?.job.salesOrderLineId && (
+                <RecordAction slot="overflow">
+                  <Button
+                    leftIcon={<RiProgress8Line />}
+                    variant="secondary"
+                    asChild
+                  >
+                    <Link
+                      to={path.to.salesOrderLine(
+                        routeData?.job?.salesOrderId,
+                        routeData?.job?.salesOrderLineId
+                      )}
+                    >
+                      <Trans>Sales Order</Trans>
+                    </Link>
+                  </Button>
+                </RecordAction>
+              )}
+            <RecordAction slot="overflow">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={
+                      currentValue === "details" ? <LuList /> : <LuTable />
+                    }
+                    rightIcon={<LuChevronDown />}
+                    variant="secondary"
+                  >
+                    {getExplorerLabel(currentValue)}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuItem asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.file.jobTravelerByJobId(jobId)}
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuQrCode />} />
+                      <Trans>Job Traveler</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuRadioGroup
+                    value={currentValue}
+                    onValueChange={(option) => {
+                      navigate(getExplorePath(jobId, option));
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="details">
+                      <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
+                      {getExplorerLabel("details")}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuSeparator />
+                    {[
+                      "materials",
+                      "operations",
+                      ...(status !== "Draft" && status !== "Planned"
+                        ? ["dag"]
+                        : [])
+                    ].map((i) => (
+                      <DropdownMenuRadioItem value={i} key={i}>
+                        <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                        {getExplorerLabel(i)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    {["events", "quantities", "step-records"].map((i) => (
+                      <DropdownMenuRadioItem value={i} key={i}>
+                        <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                        {getExplorerLabel(i)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </RecordAction>
+
+            {status !== "Paused" ? (
+              // Phones: Pause shows only while it can act (Ready or In Progress).
+              isPhone &&
+              !["Ready", "In Progress"].includes(status ?? "") ? null : (
+                <RecordAction slot="secondary">
+                  <statusFetcher.Form
+                    method="post"
+                    action={path.to.jobStatus(jobId)}
+                  >
+                    <input type="hidden" name="status" value="Paused" />
+                    <Button
+                      isLoading={
+                        statusFetcher.state !== "idle" &&
+                        statusFetcher.formData?.get("status") === "Paused"
+                      }
+                      isDisabled={
+                        !["Ready", "In Progress"].includes(status ?? "") ||
+                        statusFetcher.state !== "idle" ||
+                        !permissions.can("update", "production")
+                      }
+                      leftIcon={<LuCirclePause />}
+                      type="submit"
+                      variant="secondary"
+                    >
+                      <Trans>Pause</Trans>
+                    </Button>
+                  </statusFetcher.Form>
+                </RecordAction>
+              )
+            ) : (
+              <RecordAction slot="secondary">
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.jobStatus(jobId)}
+                >
+                  <input type="hidden" name="status" value="Ready" />
+                  <Button
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Ready"
+                    }
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "production")
+                    }
+                    leftIcon={<LuCirclePlay />}
+                    type="submit"
+                  >
+                    <Trans>Resume</Trans>
+                  </Button>
+                </statusFetcher.Form>
+              </RecordAction>
+            )}
+
+            <RecordAction slot={isReleasable ? "primary" : "overflow"}>
+              <SplitButton
+                onClick={releaseModal.onOpen}
                 isLoading={
                   statusFetcher.state !== "idle" &&
                   statusFetcher.formData?.get("status") === "Ready"
                 }
                 isDisabled={
+                  !isReleasable ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production") ||
+                  (routeData?.job?.quantity === 0 &&
+                    routeData?.job?.scrapQuantity === 0)
+                }
+                leftIcon={<LuCirclePlay />}
+                variant={isReleasable ? "primary" : "secondary"}
+                dropdownItems={[
+                  {
+                    label: <JobStatus status="Planned" />,
+                    icon: <LuCheckCheck />,
+                    onClick: markAsPlanned
+                  }
+                ]}
+              >
+                <Trans>Release</Trans>
+              </SplitButton>
+            </RecordAction>
+
+            <RecordAction slot={isReleasable ? "overflow" : "primary"}>
+              <Button
+                onClick={completeModal.onOpen}
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formAction === path.to.jobComplete(jobId)
+                }
+                isDisabled={
+                  ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "production")
                 }
-                leftIcon={<LuCirclePlay />}
-                type="submit"
+                leftIcon={<LuCircleCheck />}
+                variant={status === "Completed" ? "primary" : "secondary"}
               >
-                Resume
+                <Trans>Complete</Trans>
               </Button>
-            </statusFetcher.Form>
-          )}
-
-          <SplitButton
-            onClick={releaseModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
-            }
-            isDisabled={
-              !["Draft", "Planned"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production") ||
-              (routeData?.job?.quantity === 0 &&
-                routeData?.job?.scrapQuantity === 0)
-            }
-            leftIcon={<LuCirclePlay />}
-            variant={
-              ["Draft", "Planned"].includes(status ?? "")
-                ? "primary"
-                : "secondary"
-            }
-            dropdownItems={[
-              {
-                label: <JobStatus status="Planned" />,
-                icon: <LuCheckCheck />,
-                onClick: markAsPlanned
-              }
-            ]}
-          >
-            Release
-          </SplitButton>
-
-          <Button
-            onClick={completeModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formAction === path.to.jobComplete(jobId)
-            }
-            isDisabled={
-              ["Completed", "Cancelled"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production")
-            }
-            leftIcon={<LuCircleCheck />}
-            variant={status === "Completed" ? "primary" : "secondary"}
-          >
-            Complete
-          </Button>
-          <Button
-            onClick={cancelModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Cancelled"
-            }
-            isDisabled={
-              ["Cancelled", "Completed"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production")
-            }
-            leftIcon={<LuCircleStop />}
-            variant="secondary"
-          >
-            Cancel
-          </Button>
-          <IconButton
-            aria-label={t`Toggle Properties`}
-            icon={<LuPanelRight />}
-            onClick={toggleProperties}
-            variant="ghost"
-          />
-        </HStack>
-      </div>
+            </RecordAction>
+            <RecordAction slot="overflow">
+              <Button
+                onClick={cancelModal.onOpen}
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Cancelled"
+                }
+                isDisabled={
+                  ["Cancelled", "Completed"].includes(status ?? "") ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuCircleStop />}
+                variant="secondary"
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            </RecordAction>
+          </>
+        }
+      />
       {releaseModal.isOpen && (
         <JobStartModal
           job={routeData?.job}
@@ -1324,6 +1350,11 @@ function JobCompleteModal({
     useState<number>(0);
 
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
+  // Make to Asset: the completion capitalises the job (class) or sweeps its
+  // cost onto an asset under construction, so nothing is received to a bin
+  // and the location pickers are meaningless. The hidden inputs stay so
+  // jobCompleteValidator still sees both fields.
+  const completesToFixedAsset = !!(job?.fixedAssetClassId || job?.fixedAssetId);
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
   // Serial units are received one at a time; the database refuses a fraction.
@@ -1371,7 +1402,10 @@ function JobCompleteModal({
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
         .eq("companyId", company.id)
-        .order("createdAt", { ascending: true });
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
@@ -1478,13 +1512,15 @@ function JobCompleteModal({
             fetcher={fetcher}
           >
             <ModalHeader>
+              {/* A job that completes to a fixed asset never enters
+                  inventory, so it reads like a make to order job. */}
               <ModalTitle>
-                {makeToOrder
+                {makeToOrder || completesToFixedAsset
                   ? t`Complete Job`
                   : t`Receive ${job.jobId} to Inventory`}
               </ModalTitle>
               <ModalDescription>
-                {makeToOrder
+                {makeToOrder || completesToFixedAsset
                   ? t`This job will no longer be available on the shop floor.`
                   : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
@@ -1500,7 +1536,7 @@ function JobCompleteModal({
               name="leftoverReceiveQuantity"
               value={leftoverReceiveQuantity.toString()}
             />
-            {makeToOrder && (
+            {(makeToOrder || completesToFixedAsset) && (
               <>
                 <Hidden name="locationId" />
                 <Hidden name="storageUnitId" />
@@ -1508,19 +1544,27 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
-                {!makeToOrder && (
-                  <>
-                    <Location
-                      name="locationId"
-                      label={t`Location`}
-                      isReadOnly
-                    />
-                    <StorageUnit
-                      name="storageUnitId"
-                      locationId={job.locationId ?? undefined}
-                      label={t`Storage Unit`}
-                    />
-                  </>
+                {completesToFixedAsset ? (
+                  <p className="text-sm text-muted-foreground">
+                    {job.fixedAssetClassId
+                      ? t`Completes to fixed asset class ${job.fixedAssetClassId}`
+                      : t`Sweeps cost to asset ${job.fixedAssetId ?? ""}`}
+                  </p>
+                ) : (
+                  !makeToOrder && (
+                    <>
+                      <Location
+                        name="locationId"
+                        label={t`Location`}
+                        isReadOnly
+                      />
+                      <StorageUnit
+                        name="storageUnitId"
+                        locationId={job.locationId ?? undefined}
+                        label={t`Storage Unit`}
+                      />
+                    </>
+                  )
                 )}
                 <NumberControlled
                   name="quantityComplete"

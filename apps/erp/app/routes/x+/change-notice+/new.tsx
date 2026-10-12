@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUser } from "~/hooks";
 import {
   addChangeNoticeAffectedItem,
@@ -16,6 +21,7 @@ import {
 } from "~/modules/items";
 import { ChangeNoticeForm } from "~/modules/items/ui/ChangeNotice";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -129,7 +135,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let affectedError: Parameters<typeof error>[0] =
     submittedItems?.error ?? null;
   for (const itemId of affectedItemIds) {
-    const add = await addChangeNoticeAffectedItem(client, {
+    const add = await addChangeNoticeAffectedItem(client, getDatabaseClient(), {
       changeNoticeId: createResult.data.id,
       itemId,
       changeType: "Version",
@@ -178,8 +184,8 @@ export default function ChangeNoticeNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <ChangeNoticeForm initialValues={initialValues} types={types} />
-    </div>
+    </NewRecordPage>
   );
 }

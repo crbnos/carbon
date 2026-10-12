@@ -129,7 +129,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Resolve internal/control accounts by **id** via a column on `accountDefault` scoped to the `companyId` (the same pattern as `receivablesAccount`/`payablesAccount`). If no default column exists, add one to `accountDefault` (+ seed it in `seed.data.ts` and `seed-company`, + one-time backfill migration resolving the seeded number → id), then read `ad.<xxx>Account`. The only legitimate uses of `.where("number"/"eq("number")` on `account` are: building the chart at seed time, and mapping **external** codes in an integration (e.g. Xero AccountCodes) — never resolving an internal control account at posting time.
 
-**Applies to:** `packages/database/supabase/functions/post-*`, `close-job`, `issue`, anything posting to `journalLine`; `accountDefault` schema + `lib/seed.data.ts`.
+**Applies to:** `packages/server-functions/src/post-*`, `close-job`, `issue`, anything posting to `journalLine`; `accountDefault` schema + `lib/seed.data.ts`.
 
 ## Chart-of-accounts group headers have no number — resolve parents by name/key
 
@@ -139,7 +139,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** In migrations that insert `account` rows, resolve the parent group by `"isGroup" = TRUE AND name = '<Group Name>'` (optionally + class), never by number — and treat a NULL parent as an error or explicit fallback, never insert silently orphaned. `20260630093809_ar-ap-payments.sql` is the correct precedent. When a past migration did orphan accounts, ship a follow-up UPDATE re-parenting `parentId IS NULL` rows to the group `seed.data.ts` assigns (see `20260702192816`).
 
-**Applies to:** `packages/database/supabase/migrations/` touching `account`; `packages/database/supabase/functions/lib/seed.data.ts`; anything walking the chart-of-accounts tree.
+**Applies to:** `packages/database/supabase/migrations/` touching `account`; `packages/database/src/seed-data.ts`; anything walking the chart-of-accounts tree.
 
 ## Never fabricate a "best-effort" motion through geometry
 
@@ -285,9 +285,9 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/database/supabase/functions/issue/resolve-tracked-entity-bin.ts`, pure + `deno test`-covered). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
 
-**Applies to:** `packages/database/supabase/functions/issue/index.ts` and any edge function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
+**Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
@@ -347,7 +347,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
-**Applies to:** any change to `packages/database/supabase/functions/lib/seed.data.ts` per-company templates; `seed-company/index.ts`, `seed-dev.ts`.
+**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `packages/server-functions/src/seed-company/index.ts`, `seed-dev.ts`.
 
 ## meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it
 
@@ -426,7 +426,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Before using a `documentType` string, check WHICH enum the target column uses (`\dT+` or grep the migration) — never assume the journal and ledger enums share values. When adding GL posting to an existing subledger flow, keep the subledger rows' shape unchanged (documentType stays whatever it was, usually NULL) and put the new linkage value on the journal lines only.
 
-**Applies to:** `packages/database/supabase/migrations/` enum additions; `functions/shared/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
+**Applies to:** `packages/database/supabase/migrations/` enum additions; `packages/server-functions/src/lib/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
 
 ## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
 
@@ -434,7 +434,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** `deno check` on ANY edge function fails with ~10–20 pre-existing errors from the shared dependency graph (TS2589 in `shared/get-next-sequence.ts`, kysely pool-config type skew, supabase-js generic inference collapsing to implicit-any callbacks). CI never runs `deno check`, so committed, working functions fail it — a red exit code proves nothing about the change, and chasing those errors means rewriting shared files out of scope.
 
-**Rule:** Gate edge-function changes on the DELTA of errors attributed to the touched file: `deno check <file> 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -c "<file>:"` must not exceed the committed baseline (copy the HEAD version beside it to measure, e.g. `git show HEAD:<path> > <dir>/index.orig.ts`, check, delete). New code should contribute zero; annotate supabase-js callbacks with explicit row types instead of leaving implicit-any. Pure logic goes in a small module importing only `lib/types.ts` so `deno test` type-checks clean.
+**Rule:** Obsolete: the two remaining edge functions (`embedding`, `thumbnail`) are self-contained and `deno check`-clean, and CI's `edge-functions` job runs `deno check` on both — keep them clean; a red exit code is now a real failure.
 
 **Applies to:** `packages/database/supabase/functions/**` verification; `.claude/skills/check-and-commit` runs touching edge functions.
 
@@ -447,6 +447,17 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** Before redefining a function, list EVERY migration that touches it (`grep -l '<fn_name>' migrations/*.sql | sort`), and fork from the last one — then diff your new body against that exact file (`diff <(sed -n 'a,bp' newest.sql) <(...)`) so the only hunks are your intended edits. If the timeline shows a branch you don't understand (an `itemTrackingType` guard, a feature flag), it is load-bearing — carry it forward, never re-derive the body from an older file or memory.
 
 **Applies to:** `packages/database/supabase/migrations/` — any `CREATE OR REPLACE FUNCTION` fork; reviews of migrations that redefine shared functions (`complete_job_to_inventory`, `backflush_job_materials`, `get_inventory_quantities`, sync interceptors).
+
+**Also after a merge (2026-09-28):** a branch's migration that added the Make to Asset branch to
+`complete_job_to_inventory` and main's `20260925121735_rpc-function-guards` (forked from the
+definition before it, to add one guard line) merged cleanly — different files. In timestamp
+order main's copy ran last, so every fresh or local database lost the asset branch; production
+pushes with `--include-all`, which applies the older branch file AFTER main's, so there the
+guard went missing instead. `check-clobbers` compares against the merge base and reported
+nothing. After merging main, list main's migrations newer than your branch's oldest and grep
+them for every function and view your migrations define; for any hit, write a NEW migration
+dated after both that carries both changes (here, since folded into
+`20261006221601_complete-job-to-asset.sql`).
 
 ## Job-completion side effects must live in complete_job_to_inventory, not in route actions
 
@@ -578,9 +589,9 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
-**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/... packages/database/supabase/functions/lib/types.ts`). Regenerate deliberately and separately when schema actually changed.
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed.
 
-**Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`, `packages/database/supabase/functions/lib/types.ts`; any branch running turbo tasks that build `@carbon/database`.
+**Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`; any branch running turbo tasks that build `@carbon/database`.
 
 ## Storage keys built from raw filenames break silently — always sanitize, and the portal share route regex is a hidden contract with every upload path shape
 
@@ -618,9 +629,9 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** `lib/database.ts` imports `./driver.ts` — the Deno-postgres driver whose types (`queryObject`, deno `Pool`) don't typecheck under the node tsconfig. Pulling any `shared/*.ts` helper that touches `lib/database.ts` into a `src/*` file breaks `pnpm --filter @carbon/database typecheck`, even though the runtime graph would have been fine.
 
-**Rule:** When making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
+**Rule:** Obsolete: `src/client.ts` is now the Node-only implementation and nothing in `packages/database/src` imports the Deno tree. Original rule: when making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
 
-**Applies to:** `packages/database/src/{client,sampling,quality}.ts`; any future node-side re-export of `packages/database/supabase/functions/{shared,lib}/*`.
+**Applies to:** `packages/database/src/{client,sampling,quality}.ts`.
 
 ## A zod `.refine` that returns an object instead of a boolean silently disables the check
 
@@ -876,7 +887,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Book returns on `pickingListLine.quantityReturned` (added `20260804111631`) and leave `quantityPicked` as gross-picked; net staged at lineside = `quantityPicked − quantityReturned`. Only genuine unpicks (operator reversing work) may decrement `quantityPicked`. Any new writer of `pickingListLine.quantityPicked`/`status` must first check what `update_picking_list_status` will do with the change. `pickingListLineTrackedEntity` allocations are different — returns DO decrement those (availability RPCs net them out; no trigger watches that table).
 
-**Applies to:** `packages/database/supabase/functions/post-picking/index.ts` (all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
+**Applies to:** `packages/server-functions/src/post-picking/index.ts` (all return/unpick cases), `update_picking_list_status` migrations, any code mutating `pickingListLine` quantities.
 
 ## Audit FK snapshots: constraint-less columns are invisible to schema discovery; junction targets need hops
 
@@ -904,9 +915,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` + `functions/lib/types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
-**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `functions/lib/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
+**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
 
 ## A flip/refactor must not add ledger rows to a code path that deliberately posted none
 
@@ -916,7 +927,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** When applying a uniform transformation across N sibling branches, diff each branch against its own pre-change body — don't assume they were symmetric. A branch that posted no ledger, sent no email, fired no event before your change must still post/send/fire nothing after, unless the spec explicitly says otherwise. "It typechecks and the other four branches do it" is not evidence the fifth should. Preserve per-branch behavior; the flip's mandate was which id departs, not to newly introduce inventory movements.
 
-**Applies to:** `packages/database/supabase/functions/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
+**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (PO vs SO split blocks); any refactor threading a shared record-builder through multiple writers (`post-*`, `issue`, sync handlers).
 
 ## Carbon journal amounts are natural-balance-signed, not debit-signed
 
@@ -926,7 +937,7 @@ canvas hosting Radix popovers/selects.
   consolidation, all provider journal mappers) assumed `journalLine.amount`
   is debit-signed (positive = debit, negative = credit, sum = 0). Carbon's
   post-* edge functions actually sign by the account's NATURAL balance
-  (`credit("liability", x)` stores +x — functions/lib/utils.ts), so real
+  (`credit("liability", x)` stores +x — packages/database/src/ledger.ts), so real
   journals balance as debits == credits, not signed-sum-zero. Also:
   Kysely/pg returns DATE columns as JS Date objects — `postingDate.slice`
   crashes; and disabled-config skip results without `localId` make the
@@ -988,7 +999,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** `space-x-*` / `space-y-*` are structural (`:not(:last-child)`) — never use them on a container whose children a component may add to at runtime; use `gap-*`, which only applies between elements that generate boxes and so ignores `display:none`. When a component renders extra DOM next to its main element (React Router prefetch links, portals, measurement nodes), isolate it in a `display: contents` wrapper so it can't perturb the caller's layout. To diagnose "impossible" width changes, diff every computed property between states and count child nodes — a node-count delta with no style delta means injected DOM, not CSS.
 
-**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `<Link prefetch>` placed directly inside a `space-*` container.
+**Applies to:** `apps/erp/app/components/Hyperlink.tsx`; `packages/react/src/{HStack,VStack}.tsx` (still `space-x-*`/`space-y-*`, ~2,500 call sites); any `PrefetchLink` (`@carbon/react`, which injects the same tags on press) or `<Link prefetch>` placed directly inside a `space-*` container.
 
 ## A list-query benchmark that omits the ORDER BY measures a query the app never runs
 
@@ -1016,9 +1027,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** A production snapshot carries whatever the source environment accumulated outside the migration stream, so types generated from it describe *that* database rather than the schema the migrations define. The diff added a `v_readable_id` relation absent from `main` — not a schema object at all, but a plpgsql local (`v_readable_id TEXT;` … `SELECT … INTO v_readable_id, v_company_id`) that ran somewhere in a plain-SQL context, where `SELECT … INTO` is CREATE-TABLE-AS. An accidental artifact table exists in the snapshot, and regenerating baked it into the repo's public type surface, alongside `procedureStep`→`procedureAttribute` FK-name churn.
 
-**Rule:** Never commit `packages/database/src/types.ts` (or `supabase/functions/lib/types.ts`) generated after a `crbn restore` — regenerate against a migration-built database first. `crbn restore` now warns about this. Stage generated types explicitly rather than with `git add -A`, and diff them before committing: any relation appearing that no migration defines is drift from the source environment, not a schema change. Separately, `SELECT … INTO <name>` in a SQL (non-plpgsql) context silently creates a table — a real hazard when copying plpgsql bodies into migrations.
+**Rule:** Never commit `packages/database/src/types.ts` generated after a `crbn restore` — regenerate against a migration-built database first. `crbn restore` now warns about this. Stage generated types explicitly rather than with `git add -A`, and diff them before committing: any relation appearing that no migration defines is drift from the source environment, not a schema change. Separately, `SELECT … INTO <name>` in a SQL (non-plpgsql) context silently creates a table — a real hazard when copying plpgsql bodies into migrations.
 
-**Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`, `packages/database/supabase/functions/lib/types.ts`.
+**Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`.
 
 ## Kysely returns NUMERIC as a string; supabase-js returns it as a number
 
@@ -1026,9 +1037,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
 
-**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number in BOTH runtimes — node-postgres via `setTypeParser` and deno-postgres via `controls.decoders`, registered once in `lib/postgres/index.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
+**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
-**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
+**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, or `packages/server-functions/src/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
 ## The migration ledger must travel with the schema it describes
 
@@ -1084,9 +1095,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** `packages/database/supabase/config.toml` sets `max_rows = 1000`, so PostgREST truncates responses in production. The crbn dev stack runs its own `postgrest` container without `PGRST_DB_MAX_ROWS`, so locally the same query returns everything — verified: a view with 2,497 rows returned all 2,497 locally. Two production tenants exceeded the cap on `openJobMaterialLines` (2,497 and 1,495 rows) and a third on `demandActual` (9,391), so MRP silently planned on truncated demand and its zeroing pass missed stale actuals. The bug is structurally invisible to local testing.
 
-**Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` from `supabase/functions/lib/fetch-all.ts` in edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
+**Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`, source `packages/database/src/fetch-all.ts`) in server functions, `@carbon/planning` and edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
 
-**Applies to:** `packages/database/supabase/functions/mrp/index.ts`, `packages/database/supabase/functions/lib/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/database/supabase/functions/**` or `apps/erp/app/modules/**`.
+**Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/src/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/server-functions/src/**`, `packages/planning/src/**` or `apps/erp/app/modules/**`.
 
 ## `sum(DISTINCT expr)` is not a fan-out dedup — it collapses equal values from different rows
 
@@ -1126,7 +1137,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** In any service-role or Kysely path, confirm which column actually scopes the table before writing the predicate — `companyId` for most, `companyGroupId` for `account` and its children. A `LIMIT 1` with no tenancy predicate in RLS-bypassing code is a cross-tenant bug even when it "works" locally, because a single-tenant dev database cannot show it.
 
-**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `supabase/functions/**`, or a Kysely transaction.
+**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `packages/server-functions/src/**`, or a Kysely transaction.
 ## Appending SQL to an already-applied migration silently does nothing
 
 **Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
@@ -1193,19 +1204,19 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** PostgREST encodes `.in()` filters in the query string. 200 UUID-length ids ≈ 8KB of URL, which exceeded the local gateway's request-line limit — the request failed outright, the prefetch threw, and every job created for a large-BOM item silently landed with an empty BOM (the caller logs the invoke error and continues). A chunk size that works in tests fails on the tenant with the most data.
 
-**Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
+**Rule:** In server functions (and edge functions), batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
-**Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+**Applies to:** `packages/server-functions/src/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
 
-## Kysely writes in an edge function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
+## Kysely writes in a server function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
 
 **Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
 
 **Problem:** Edge functions run on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
 
-**Rule:** In an edge function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
+**Rule:** In a server function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
 
-**Applies to:** `packages/database/supabase/functions/**` (any service-role Kysely write), resumable multi-phase edge flows.
+**Applies to:** `packages/server-functions/src/**` (any service-role Kysely write), resumable multi-phase flows.
 
 ## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
 
@@ -1215,7 +1226,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Wire a safety `assert*` into its call site in the same change that introduces it, or don't write it yet. When reviewing, grep every exported `assert*`/guard for a real importer — an unused one is a finding, not dead weight to leave. Duplicated cross-runtime logic (Node + Deno copies) should re-export one source (`precision.ts` / `batch-time-split.ts` pattern) rather than rely on "keep in sync" comments.
 
-**Applies to:** `packages/utils/src/**`, `packages/database/supabase/functions/shared/**`, any exported guard/assert helper.
+**Applies to:** `packages/utils/src/**`, `packages/database/src/**`, any exported guard/assert helper.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.
@@ -1234,7 +1245,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Any new row that reuses an existing readable id must qualify it (`Q000001-1`), and any insert into a table whose unique key can be orphaned by a delete needs `onConflict(...).doUpdateSet(...)` rather than a bare insert. When a user-facing action reports a generic failure, read the edge-runtime container log before theorising — the route's flash message hides the Postgres error code.
 
-**Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
+**Applies to:** `packages/server-functions/src/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
 ## A memo's `direction` means OPPOSITE things on AR and AP
 
@@ -1262,7 +1273,7 @@ entry balances.
 
 **Applies to:** `apps/erp/app/modules/purchasing/purchasing.service.ts`
 (`createPurchaseReturnOrderCredit`), `apps/erp/app/modules/sales/sales.service.ts`
-(`createSalesReturnOrderCredit`), `packages/database/supabase/functions/post-memo/*`,
+(`createSalesReturnOrderCredit`), `packages/server-functions/src/post-memo/*`,
 any new `memo` writer.
 
 ## A bare FormLabel outside FormControl 500s the whole route
@@ -1408,9 +1419,9 @@ any new `memo` writer.
 
 **Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
 
-**Rule:** In an edge fn, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecord` in batch-operations; `schedule` does the same for `jobId`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+**Rule:** In a server function, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecords`, `@carbon/server-functions`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
 
-**Applies to:** `packages/database/supabase/functions/**` taking record ids in the payload; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
+**Applies to:** `packages/server-functions/src/**` taking record ids in the input; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
 
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 
@@ -1506,7 +1517,7 @@ full-screen ERP route.
 
 **Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
 
-**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/database/supabase/functions/**` writers of the constrained column.
+**Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/server-functions/src/**` writers of the constrained column.
 
 ## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
 
@@ -1544,9 +1555,9 @@ full-screen ERP route.
 
 **Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
 
-**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
+**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getErrorMessage` fallback arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and a server function's `input` schema), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
 
-**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed server-function wrappers, `packages/server-functions/src/errors.ts`, `packages/utils/src/errors.ts`.
 
 ## A creation-time swap must be keyed by its provenance column at every later lookup
 
@@ -1558,7 +1569,6 @@ full-screen ERP route.
 
 **Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any consumer of `jobMaterial.substitutedFromItemId`.
 
-
 ## A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity
 
 **Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
@@ -1567,7 +1577,7 @@ full-screen ERP route.
 
 **Rule:** A fix-up pass that runs after inserts takes the inserted row ids (collect them at every insert site of every flow) and filters on them, plus a guard on any state that means "this row's units are already committed" (`quantityIssued > 0`). Never derive the candidate set from the parent entity when some caller rebuilds only part of it.
 
-**Applies to:** `packages/database/supabase/functions/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
+**Applies to:** `packages/server-functions/src/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
 
 ## A provenance column that records both directions of a swap cannot be trusted first
 
@@ -1688,7 +1698,6 @@ full-screen ERP route.
 
 **Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.
 
-
 ## Accounting review: carrying balances and source principal
 
 - **Context:** Mixed positive and negative invoice lines, high FX rates, and changes to account defaults during settlement and provider replay.
@@ -1704,7 +1713,7 @@ full-screen ERP route.
 
 **Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
 
-**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/src/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
 
 ## Two halves of an intercompany trade must round at the same scale
 
@@ -1824,7 +1833,7 @@ full-screen ERP route.
 
 **Rule:** For an `authenticated` JWT, require a non-empty `sub`, require it to match the requested actor id, and use that subject for permission lookup. Treat body actor ids as attribution inputs only for trusted service-role/API-key flows; they are never authentication evidence.
 
-**Applies to:** Supabase edge functions using `requirePermissions` and any endpoint that accepts a caller/actor id alongside a bearer token.
+**Applies to:** server functions' `authorize` / `ServerFnContext.fromClient` and any endpoint that accepts a caller/actor id alongside a bearer token.
 
 ## Header-only financial documents must reject persisted detail
 
@@ -1965,15 +1974,15 @@ full-screen ERP route.
 
 **Applies to:** `payment-funding.ts` reducers, any future column added to `invoiceSettlement`, `journalLine`, or other high-volume tables where a backfill is skipped.
 
-## A JSON column copied through Kysely on deno-postgres only survives as an object
+## A JSON column copied through Kysely on node-postgres only survives as an object
 
 **Context:** Quote → sales order conversion (`convert` edge function) reads the quote with supabase-js and re-inserts its `internalNotes` / `externalNotes` into `salesOrder` through Kysely inside the transaction. One quote had `internalNotes` stored as a JSON string scalar rather than a tiptap document, written through an API path whose validator typed `notes` as `z.any()`.
 
 **Problem:** deno-postgres encodes query parameters by JS type, not by column type: an object is `JSON.stringify`ed, but a string is sent as raw text and an array as a Postgres array literal. A JSON string scalar therefore round-trips as unquoted text and Postgres rejects the insert with `invalid input syntax for type json`. The route sanitised the body, so Vercel only showed "Edge Function returned a non-2xx status code"; the real line was only in the Supabase function log. Every retry failed identically, and the same latent fault sat in RFQ → quote, supplier quote → PO, and quote revision copies.
 
-**Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in an edge function goes through `lib/json.ts` `toJson()`, which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
+**Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in a server function goes through `toJson()` (`@carbon/database/json`, source `packages/database/src/json.ts`), which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
 
-**Applies to:** `packages/database/supabase/functions/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
+**Applies to:** `packages/server-functions/src/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
 
 **Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
 
@@ -2023,9 +2032,9 @@ full-screen ERP route.
 
 **Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
 
-**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+**Rule:** Obsolete for `get-method`, `convert` and the `post-*` functions: they are server functions now, called in-process, so no HTTP retry sits in front of them. Still true: the `isEdgeFunctionInvoke` carve-out in `fetchWithRetry` stays for the remaining edge functions, and a retry wrapper must never blindly retry a write with real side effects and no idempotency key. Original rule: A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry` and `isEdgeFunctionInvoke` were removed with the supabase-js 2.117 upgrade; `storageReadFetch` retries storage reads only and never touches `/functions/v1/`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 ## pdfjs rejects Node Buffer by constructor check
 
 **Context:** `@carbon/files/pdf` and the shared image pipeline feed bytes from `fs.readFile` / `storage.download().arrayBuffer()` into pdfjs (via unpdf) and jSquash codecs.
@@ -2034,7 +2043,7 @@ full-screen ERP route.
 
 **Rule:** Normalize at the boundary: wrap as a plain view over the same memory — `new Uint8Array(data.buffer, data.byteOffset, data.byteLength)` — before handing bytes to a wasm codec or pdfjs. `@carbon/files` does this in its `toBytes` helpers; new entry points must too.
 
-**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/database/supabase/functions/shared/image-pipeline.ts`, any future wasm codec wrapper.
+**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/files/src/media/image-pipeline.ts`, any future wasm codec wrapper.
 
 ## A functions/shared source with npm deps must register them twice
 
@@ -2042,9 +2051,9 @@ full-screen ERP route.
 
 **Problem:** Module resolution follows the FILE's location, not the importer's. Deno resolves the bare specifiers via `functions/deno.json` `imports`; Node/Vite resolve them from `packages/database/node_modules` — not from the re-exporting package. Registering the dep in only one place typechecks in one world and crashes in the other, and the versions can silently drift.
 
-**Rule:** A shared `functions/` source with npm deps registers each dep in BOTH `functions/deno.json` `imports` (pinned `npm:` specifier) and `packages/database/package.json` `dependencies`, at the same version. Type declarations it needs must sit next to it (triple-slash reference), not in a consuming package — ambient `.d.ts` files only load for programs that include them.
+**Rule:** Obsolete: the pipeline moved to `@carbon/files` (`packages/files/src/media/image-pipeline.ts`, its deps in that package.json) and `functions/deno.json` no longer pins any deps. Still true: type declarations a module needs sit next to it (triple-slash reference) — ambient `.d.ts` files only load for programs that include them.
 
-**Applies to:** `packages/database/supabase/functions/shared/**` and every `@carbon/*` re-export of it.
+**Applies to:** `packages/files/src/media/image-pipeline.ts`.
 
 ## unpdf ships a dead 1.5 MB engine chunk unless aliased away
 
@@ -2115,16 +2124,6 @@ full-screen ERP route.
 **Rule:** Any signup/identity gate must cover OAuth, not just the email path, and OAuth is enforced in the auth callback's non-SSO branch (both ERP and MES). Gate on a GENUINE self-signup only — no company membership AND no pending invite — so existing members and invited contractors pass. Prefer *not minting a session* over deleting the account: a membership-less `user` row can access nothing and is reused by `createEmployeeAccount` if the address is later invited, so no teardown is needed and the email stays invitable. Keep the check + domain list in one shared home (`@carbon/auth/self-signup.server`) so every entry point (ERP login/verify/callback + MES callback) shares one copy.
 
 **Applies to:** `apps/{erp,mes}/app/routes/_public+/callback.tsx` (non-SSO branch), `packages/auth/src/services/self-signup.server.ts`, and any future email/domain restriction — check the OAuth callback, not only the email/password flow.
-
-## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
-
-**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
-
-**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
-
-**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
-
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 
 ## A fetcher's redirect is dropped when anything revalidates during the action
 
@@ -2223,6 +2222,29 @@ load-bearing only for the old one.
 sites across `apps/erp`, `apps/mes`, `packages/{jobs,ee,lib}`, and any future
 change to a helper whose result is destructured widely.
 
+## A git hook exports GIT_DIR, so any git run from a subdirectory gets the wrong work tree
+
+**Context:** The pre-commit backup check (`packages/jobs/src/scripts/check-backups.ts`,
+reached through `pnpm --filter @carbon/jobs`, so its cwd is `packages/jobs`) regenerates
+`packages/jobs/manifests/schema.json` and stages it with `git add <absolute path>`.
+
+**Problem:** Run by hand it staged the right path. Under the hook it ALSO indexed the
+same content as a root-level `manifests/schema.json` on every migration commit — a
+6,994-line file that existed nowhere on disk, resurfacing after each `git rm --cached`.
+Git runs hooks with `GIT_DIR` exported and no `GIT_WORK_TREE`; with `GIT_DIR` set, git
+treats the CURRENT directory as the work-tree root, so an absolute path under
+`packages/jobs` was recorded relative to `packages/jobs`. An absolute path does not
+protect you: the index path is computed from the assumed work tree, not from cwd.
+
+**Rule:** Any script a git hook may invoke must run its git commands from the
+repository root (`cwd: REPO_ROOT` derived from `import.meta.dirname`, or `git -C`),
+never from the package `pnpm --filter` dropped it in. Verify a hook-driven `git add`
+by reading `git show --stat HEAD` after the commit, not by running the script by hand.
+
+**Applies to:** `check-backups.ts`, `scripts/generate-mcp.ts`'s digest staging, the
+lingui staging in `.husky/pre-commit`, and any future hook step that writes and stages
+a generated file from inside a workspace package.
+
 ## Lingui: a ternary inside t`` bakes the English words as runtime values
 
 **Context:** Building the quote lead-time modal, plural labels were written as
@@ -2239,7 +2261,9 @@ invisible to the missing-translation gate because the placeholder IS filled.
 **Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
 `t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
 one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
-non-JSX). The whole phrase with `#` goes in each branch
+non-JSX — but not inside a `memo(…)`-wrapped component, see "Lingui: `plural()`
+inside a `memo(…)` component calls the global i18n" below). The whole phrase
+with `#` goes in each branch
 (`one="# operation has no time standards"`), so the words are extracted and
 translated. After adding one, re-run `lingui:extract` + `/translate` — the new
 ICU msgid needs its own filled `msgstr` per locale (locales with more CLDR
@@ -2248,6 +2272,51 @@ categories, e.g. Polish/Russian `few`/`many`, get the extra branches).
 **Applies to:** any `apps/{erp,mes}/app` or `packages/{react,form}/src` string
 with a count-dependent word; grep `? "` inside `` t` `` templates when reviewing
 i18n.
+
+## A migration file created while migrations are running is recorded as applied — empty
+
+**Context:** Phase D of the rentals plan. `crbn up` was booting (its migrate step
+runs `supabase migration up --include-all`) while `pnpm db:migrate:new lease-enum`
+created the next migration file, whose SQL was written a few seconds later.
+
+**Problem:** The running migrate step picked up the brand-new, still-empty file and
+recorded version `20260923051441` in `supabase_migrations.schema_migrations` with
+zero statements. Every later `crbn migrate` treated it as applied, so the enum value
+it adds never reached the database; the regenerated types silently lacked it and
+the first symptom was an unrelated-looking TS2353 in `@carbon/ee`. A sibling file
+created four seconds later had its SQL in time and applied normally — so "the other
+migration worked" proves nothing.
+
+**Rule:** Never create or edit a migration file while `crbn up` / `crbn migrate` /
+`pnpm db:migrate` is running; write the SQL first (or wait for the run to finish).
+When a regenerated type is missing something a new migration adds, check
+`select version, array_length(statements, 1) from supabase_migrations.schema_migrations
+order by version desc limit 5` — a NULL statement count on your version means it was
+recorded empty. Idempotent SQL can then be re-applied with `psql -f`.
+
+**Applies to:** every new migration under `packages/database/supabase/migrations/`
+during a `crbn up` boot or a background migrate.
+
+## A PR's CLA check counts every commit author on the branch, including copies of main's commits
+
+**Context:** PR #1697's `license/cla` stayed pending after the author had signed many
+times. The bot listed "Brad Barbin" (not a GitHub user) and `chasefostermfg` as unsigned.
+
+**Problem:** Two independent causes, neither fixable by signing again. (1) Commits made
+before `user.email` was configured were authored as `<user>@<hostname>.local` — git's
+fallback — which no GitHub account can own, so cla-assistant can never match them.
+(2) Rebasing the branch onto main by replaying commits copied other contributors'
+already-merged commits onto the branch with new SHAs, so they became PR commits and
+their authors became CLA "committers".
+
+**Rule:** Set `user.name` / `user.email` before the first commit
+(`git log origin/main..HEAD --format='%ae' | sort -u` must show only GitHub-linked
+emails). Bring main in with a MERGE, never by replaying main's commits onto the branch.
+To repair an affected PR, squash onto `origin/main` (merge main first so the tree is
+current, `git reset --soft origin/main`, commit once, confirm `HEAD^{tree}` is
+unchanged) and `git push --force-with-lease=<branch>:<known sha>`.
+
+**Applies to:** any PR on crbnos/carbon (cla-assistant.io).
 
 ## The root `.env` overrides `.env.local`, so a worktree's DB port is not the default
 
@@ -2270,8 +2339,13 @@ believing a Deno/DB test failure is yours, run a NEIGHBOURING suite you did not
 touch — `post-charge` next to `post-reimbursement`. Identical failure counts in
 untouched code means the environment, not the diff.
 
-**Applies to:** `packages/database/supabase/functions/**` Deno `test:db` runs;
-any `pnpm db:check:*` or psql work inside a Conductor worktree.
+Vitest reads `SUPABASE_DB_URL` from the root `.env` too, so DB-backed vitest suites
+(`databaseTest` in `packages/server-functions`) connect to the stale port: they do not skip, because the host is still local. Export the
+worktree's URL before you run them:
+`export SUPABASE_DB_URL="$(grep -h '^SUPABASE_DB_URL' .env.local | cut -d= -f2- | tr -d '"')"`.
+
+**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures, vitest `databaseTest`); any `pnpm db:check:*` or psql work inside
+a Conductor worktree.
 
 ## The `@carbon/ee` barrel boots the server env — four places that breaks
 
@@ -2324,9 +2398,9 @@ Ramp rejected every draft bill with `422 DEVELOPER_7001 "Not a valid date"`. Typ
 did not catch it — the syncer's local type declared `string | null` and the Kysely row
 was assigned straight in. Unit tests did not catch it either; only a live push did.
 
-**Rule:** FIXED AT THE SOURCE for `date` columns — both drivers now decode OID 1082 to
+**Rule:** FIXED AT THE SOURCE for `date` columns — node-postgres now decodes OID 1082 to
 the raw `YYYY-MM-DD` string, so a Kysely row matches the generated types
-(`functions/lib/postgres/index.ts`, pinned by
+(`packages/database/src/client.ts`, pinned by
 `packages/database/src/postgres-type-parsers.test.ts`). `timestamp`/`timestamptz`
 (1114 / 1184) are deliberately still `Date`s — Postgres' wire text for those differs in
 SHAPE from PostgREST's (`… 16:36:52.677+00` vs `…T16:36:52.677+00:00`), so identity
@@ -2411,7 +2485,7 @@ company id calls `assert_company_access` first; one that only servers call raise
 `current_setting('role')`; everything internal (helpers, event interceptors) is SECURITY INVOKER.
 Never trust a user id parameter without relating it to `auth.uid()`. Test a guard by CALLING the
 function as `anon` and as another company's user, not by reading the catalog. Edge functions:
-`verify_jwt` accepts the anon key, so authorize in-function (`requirePermissions` / `requireCaller`).
+`verify_jwt` accepts the anon key, so authorize in-function (`requireCaller` / `requireServiceRole`).
 
 **Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
 `packages/database/supabase/functions/*/index.ts`; enforced by the
@@ -2567,3 +2641,858 @@ keep the old name. Then run the seed itself. Docs count as hits too — main's n
 **Applies to:** any branch that renames a table, column or enum value and then
 merges main; `packages/database/src/datasets/wipe.ts` above all, since no automated
 gate executes it.
+
+## Never `git checkout` a generated file to undo a local patch — the user may have regenerated it
+
+**Context:** Typechecking a new-column change in a worktree with no local database, the
+generated `packages/database/src/types.ts` was patched by hand as a throwaway so `tsgo`
+could see the columns, then "restored" with `git checkout -- …/types.ts`. Meanwhile the
+user had run `pnpm db:migrate`, which regenerated that file with the real columns.
+
+**Problem:** The checkout reverted the user's regeneration to `HEAD`, silently leaving the
+repo with types that no longer matched the live schema (the Deno copy,
+`functions/lib/types.ts`, was untouched, so the two outputs disagreed). The first symptom
+was a wall of `Duplicate identifier` errors from re-applying the throwaway patch on top of
+the regenerated file.
+
+**Rule:** Before reverting any generated file, `git diff` it and confirm the only changes
+are yours. Prefer regenerating (`pnpm generate:types`, needs the local stack) over a
+checkout; if there is no stack, keep the throwaway patch in a scratch copy rather than the
+tracked file.
+
+**Applies to:** `packages/database/src/types.ts`,
+`packages/database/supabase/functions/lib/types.ts`,
+`apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, any generated artifact.
+
+---
+
+## A submit button that stays live is a duplicate-write engine
+
+**Context:** Finalizing quote Q000699 emailed the customer the same PDF three times within
+one minute, same recipient list each time. The finalize action evaluates sales rules across
+every line, renders a PDF, uploads it, writes a `document` row, flips the quote to `Sent`,
+renders two email bodies and signs an attachment URL before it triggers the send — seconds
+of wall time, during which `QuoteFinalizeModal`'s Finalize button was enabled and not even
+spinning (`isDisabled={loading}`, where `loading` was the modal's own data-fetch flag).
+
+**Problem:** Three layers of the same defect, and only the first is about a button.
+(1) `fetcher.submit` aborts the previous BROWSER request; the server action it started runs
+to completion regardless, because nothing in a route action reads `request.signal`. So N
+clicks are N complete sets of side effects. The guard had existed as `onSubmit={onClose}`
+(the modal unmounted before a second click was possible) and was dropped in `e59a9e26e2`
+when closing moved to `useRuleViolations({ onSuccess: onClose })` — correct on its own, since
+violations must be able to reopen the modal, but nothing replaced the guard.
+(2) `@carbon/react`'s `Button` left `isLoading` out of the DOM `disabled` attribute while
+`useShortcutKeys` already treated it as disabling — so a spinning button refused Enter but
+still took a mouse click, and every call site guarding a submit with
+`isLoading={fetcher.state !== "idle"}` was showing a spinner over a live button.
+(3) `fetchWithRetry` replayed every method on a 5xx or a 25 s timeout. PostgREST commits
+before it answers, so a retried insert is a duplicate row and a retried `.rpc()` re-runs a
+transaction. The `quoteToQuote` incidents had already produced the rule — *"a retry wrapper
+must never blindly retry a write with real side effects and no idempotency key"* — but the
+fix carved out only `/functions/v1/`, leaving every PostgREST write still replaying.
+
+**Rule:** A submit path needs a guard at each layer that can replay it. The button disables
+while its own submission is in flight (`<Submit>`, or `isLoading` bound to the fetcher's
+state); `ValidatedForm` drops a re-entrant submit so the form holds even when a button
+forgets; a retry wrapper replays only idempotent methods; and a job retries only failures
+that provably had no effect — for an SMTP send that means connect/greet/auth errors only,
+never an ambiguous `ETIMEDOUT` that may have been delivered. When triaging "the operation
+failed but extra copies appeared", check all four before assuming a browser double-submit.
+`isDisabled` bound to any-old-boolean is not a guard: name the submit state.
+
+**Applies to:** `packages/react/src/Button.tsx`, `packages/form/src/ValidatedForm.tsx`,
+`packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable` — both
+since removed: database reads now use supabase-js's own retry, which never replays a
+write, and only storage reads go through `storageReadFetch`),
+`packages/jobs/src/inngest/functions/notifications/send-{email,slack}.ts`, and any
+`<Button type="submit">` — enforced by `no-unguarded-submit` (`@carbon/checks`).
+
+## Rows inserted in one transaction share `createdAt`
+
+**Context:** The inspection plan editor listed features `ORDER BY "createdAt"`. The save
+RPC (`save_inspection_document_atomic`) creates every new feature in one transaction.
+
+**Problem:** `NOW()` is fixed for the whole transaction, so those features tie, and Postgres
+returns ties in heap order. An `UPDATE` writes a new tuple at the end of the heap, so the
+feature someone just edited dropped to the bottom after a reload. Its neighbour then sat in
+its place, and the edit read as "not saved" although the database had it.
+
+**Rule:** An `ORDER BY` on a timestamp that a batch insert sets needs a deterministic
+tiebreak (a label, a sort order, then the id). Never rely on insertion order surviving.
+
+**Applies to:** any list ordered by `createdAt` whose rows are written together — RPCs,
+Kysely transactions, `insertInto(...).values([...])`, seeds.
+
+## `scripts/one-off/` is executed in production
+
+**Context:** A codemod that added `@mcp` tags to service files was saved as
+`scripts/one-off/tag-mcp-exposure.ts` — "a script run once".
+
+**Problem:** That folder is a registry, not a scratch area. `ci/src/migrations.ts` runs
+every `.ts` file in it against every workspace database on the next deploy and records it
+in `scriptRun`. A source-rewriting codemod there would have been executed by the deploy
+workflow.
+
+**Rule:** `scripts/one-off/` is only for one-time DATA migrations (see its README). A
+codemod is run locally and deleted, or lives in `scripts/` if it is worth keeping.
+
+**Applies to:** anything added under `scripts/one-off/`.
+
+## A lookup table keyed by source text must be a `Map`
+
+**Context:** The MCP generator decided "is this call a database write" with
+`WRITES[memberName]` over an object literal.
+
+**Problem:** `memberName` comes from the code being analysed, so `x.toString()` looked up
+`WRITES["toString"]`, found `Object.prototype.toString`, and counted as a write. Five read
+tools silently left the manifest until the digest diff showed them missing.
+
+**Rule:** When the key is arbitrary input (an identifier from parsed source, a column name,
+a user string), use a `Map`/`Set` or `Object.hasOwn`, never `obj[key]` truthiness. And diff
+the generated manifest against the previous one before trusting a generator change.
+
+**Applies to:** `scripts/lib/service-ast.ts`, and any analyser or dispatcher that indexes a
+record by a name it did not choose.
+
+## A JS array bound for a jsonb column must be stringified on the Kysely path
+
+**Context:** `quoteLinePrice.priceTrace` (a `PriceTraceStep[]`) is written both through
+supabase-js (PostgREST) and through Kysely (`rewriteQuoteLinePrices`,
+`saveQuoteLineWithPrices`, `get-method`).
+
+**Problem:** node-postgres and deno-postgres serialise a parameter by its JS type, not the
+column's: an object becomes JSON, but an array becomes a Postgres array literal (`{a,b}`),
+which a jsonb column rejects. supabase-js sends JSON either way, so the same row "works" on
+one path and fails on the other — and typecheck sees nothing, since `Json` admits arrays.
+
+**Rule:** On a Kysely write, `JSON.stringify` any jsonb value that can be an array (or a bare
+string). In Deno use `toJson` / `toJsonColumns` (`functions/lib/json.ts`).
+
+**Applies to:** every `insertInto` / `updateTable` that sets a jsonb column — `priceTrace`,
+`configuration`, notes, `customFields`, any copied row spread from a supabase-js read.
+
+## Demo datasets state percentages the way people write them; the tier converts
+
+**Context:** `PricingRuleSpec.amount` is documented and validated as percent points
+(0–100], but tier 02 inserted it into `pricingRule.amount` unchanged.
+
+**Problem:** the pricing engine multiplies by a fraction (`price × amount`), so every demo
+"5% discount" was a 500% discount and drove prices to the ≥ 0 floor. It surfaced only when
+the price trace showed the step — the validator checked the dataset's own convention, not
+the column's.
+
+**Rule:** When a dataset field and the column it lands in use different units, convert in
+the tier at the insert, next to a comment naming both units — and check any new percent
+field against how the engine reads the column, not against the dataset type.
+
+**Applies to:** `packages/database/src/datasets/tiers/*` — `pricingRule.amount`, and any
+other fraction-valued column (`discountPercent`, `taxPercent`, rates).
+
+## Single fetch re-runs every matched loader on every navigation
+
+**Context:** A click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`)
+took 2.8 s in production. The Vercel log showed ~68 PostgREST calls for that one click; about
+10 belonged to the page being opened.
+
+**Problem:** React Router 7 single fetch passes `defaultShouldRevalidate = true` for every
+GET navigation, so every reused ancestor loader re-runs unless its route exports
+`shouldRevalidate`. The app shell (`x+/_layout.tsx`, ~20 queries plus an auth round-trip)
+only opted out for same-pathname navigations, and the part layouts not at all. The burst is
+what makes each call slow: the first concurrent wave ran ~200 ms per call, later ones 30–60 ms.
+
+**Rule (superseded 2026-10-06, see "A layout that skips its loader is only as correct as its
+skip rule"):** layouts no longer export `shouldRevalidate`; the skip was removed and slow layout
+loaders are made faster instead. Data in a shell loader that does not gate
+rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never
+awaited.
+
+**Applies to:** every route with children under `apps/erp/app/routes/x+` and
+`apps/mes/app/routes/x+` — `_layout.tsx`, `$id.tsx` with tabs, and list pages that parent a
+drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, so it passes
+`search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
+helper.
+
+## A `@container` block has no intrinsic width — it vanishes in a shrink-to-fit parent
+
+**Context:** The planning grid's expanded row (`PlanningActionLines`) was reused inside the
+order drawer, under a `VStack`, to list an item's suggested changes. The heading rendered and
+the rows did not.
+
+**Problem:** The block's root is `@container` (`container-type: inline-size`), which is
+inline-size containment: the element contributes NO intrinsic width to its parent. In the
+grid the Table hands it a width. `VStack` is `flex flex-col items-start`, so its children
+shrink-to-fit — and a contained element's fit width is zero plus padding. The table inside
+was `w-full` of nothing. Typecheck, lint and unit tests all pass on this; only a render
+shows it.
+
+**Rule:** Anything marked `@container` must be stretched by its parent (`w-full`, a block
+parent, or a flex column with default `items-stretch`) — never placed in `VStack`/`HStack`
+or any `items-start`/`inline-*`/`w-fit` parent without an explicit width. When moving a
+component to a new host, check what the OLD host was giving it for free: width, padding
+offsets (`pl-[52px]` lined the block up under a grid row and means nothing in a drawer) and
+column widths sized for a different pane. A layout built for one host usually wants its own
+variant in the next (the drawer now has its own `OpenOrdersGrid`), sharing only the
+behaviour.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Planning/PlanningActionLines.tsx`
+(`PlanningActionLines` vs `PlanningOrderGrids.tsx`), and any `@container` component rendered
+through `VStack`/`HStack` (`packages/react/src/VStack.tsx` is `items-start`).
+
+## A write that changes nothing still costs a queue message, an Inngest event and a function run
+
+**Context:** `/api/inngest` was the largest consumer on the ERP deployment (2026-10-01
+traces). The audit handler's log was mostly "Skipping: no meaningful diff for UPDATE on
+jobOperation".
+
+**Problem:** The scheduler's `persistChanges` issued one `UPDATE jobOperation` per operation on
+every regen, always setting `updatedAt`, and re-stamped `status = 'Ready'` on operations that
+were already Ready. `dispatch_event_batch()` queued every one of those updates, the drainer
+sent them to Inngest ten at a time, and the audit, search and embedding handlers then threw
+them away. Nothing was wrong in any single place; the waste was the sum.
+
+**Rule:** A bulk writer guards its UPDATE on the values it writes (`isDistinctFromAny` in
+`scheduling-engine.ts` compares in Postgres, so DATE and timestamptz are matched in their own
+type) rather than writing every row and bumping `updatedAt`. The trigger is the backstop: an
+UPDATE that changes only `updatedAt` / `updatedBy` / `embedding` is not queued for AUDIT,
+SEARCH or EMBEDDING (`20261001195204`). When forking `dispatch_event_batch()` into a new
+migration, fork the NEWEST definition; `packages/database/src/event-dispatch.test.ts` fails
+if the filter is lost.
+
+**Applies to:** `packages/planning/src/scheduling/`, any job or route that rewrites many rows
+of a table with event subscriptions, and every migration that redefines
+`dispatch_event_batch()`.
+
+## A cached generator's inputs are everything it executes, not everything it parses
+
+**Context:** The MCP manifest generator was made a cached Turborepo task with `inputs`
+listing the service, models and `types.ts` files it parses.
+
+**Problem:** It also EXECUTES every `*.models.ts` to convert the zod validators, so the
+schemas depend on whatever those files import: `sales.utils.ts`, `accounting.utils.ts`,
+`samplingStandards`, `@carbon/utils`. A change to one of those was a cache hit; turbo
+restored the old manifest (and the old committed digest) over the working tree, and the
+build bundled it. Uncached, this could not happen.
+
+**Rule:** Before caching a task, list what it loads and runs, not only what it reads on
+purpose, and pin that list with a test against the task's real imports. If the true set
+cannot be named, leave the task uncached.
+
+**Applies to:** `//#generate:mcp` in `turbo.json` (pinned by
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts`), and any task given `inputs`.
+
+## A key looked up "anywhere in the payload" finds the wrong one
+
+**Context:** The API dispatcher decides whether an upsert creates or updates from the
+record's `id`. It looked for `id` at the top level and then inside any nested object, to
+support `{ job: { id } }`.
+
+**Problem:** `{ name: "x", customFields: { id: "z" } }` matched the nested `id`, so a
+create was stamped as an update and went down the service's update branch.
+
+**Rule:** Read a record's key only where the record can be: the body itself or the wrapper
+named by the service's payload parameter. A search that descends into arbitrary objects
+will eventually match user data.
+
+**Applies to:** `resolveUpsertOperation` / `recordField` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`.
+
+## A git merge can move a doc comment onto a different function
+
+**Context:** Every API tool is declared by an `@mcp` line in its function's doc comment.
+Main inserted a new function directly under an existing doc block.
+
+**Problem:** The merge was clean, but the doc block (and its `@mcp` line) now sat above
+the NEW function, and the function it described had none. That function silently stopped
+being a tool. Nothing fails: an untagged export is simply not exposed.
+
+**Rule:** After merging into a branch that touches service files, regenerate the manifest
+and diff the tool NAMES against the pre-merge list. A name that disappears is a displaced
+tag until proven otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
+
+## A supply figure that includes scrap cannot be written back as the order quantity
+
+**Context:** Planning actions measure each open job against demand and suggest Decrease /
+Increase. The job's supply came from `openProductionOrders.quantityToReceive`, which is
+`productionQuantity − received`, and `productionQuantity` is the generated `quantity + scrapQuantity`.
+
+**Problem:** Apply writes the suggested figure to `job.quantity`, the good units. A job of 80
+with scrap 4 counted as 84 against a demand of 80: "Only 80 of 84 is required", every run, for
+every job on an item with a scrap rate — and applying it changed nothing, so it came back.
+An Increase was 4 too high the same way. No test covered a job with scrap.
+
+**Rule:** Measure a document in the unit the action will WRITE. If the engine reads a derived
+total (with scrap, with a conversion factor), either convert at the boundary or read the base
+column. And when a write changes a base quantity, restate what rides on it (the scrap
+allowance), as the insert path does — a patch that sets one column of a pair is the bug class
+`.claude/rules/supersession-system.md` describes for `itemScrapPercentage`.
+
+**Applies to:** `generatePlanningActions` (`packages/planning/src/mrp/planning-actions.ts`),
+`updatePlanningJob` (`production.service.ts`), any engine that reads `openProductionOrders`
+or `openPurchaseOrderLines` and writes a document quantity back.
+
+## An `.in()` list built from a result set has no upper bound
+
+**Context:** The planning grids load the actions for the 100 parts on a page, then looked up
+each action's purchase order line with `.in("id", lineIds)`.
+
+**Problem:** `.in()` writes every id into the URL. The list was one id per ACTION, so it grew
+with the data, not the page size: 2,357 ids was a 54 kB request line and the gateway rejected
+it (HTTP 431). The loader did `planningActions.data ?? []`, so the page rendered every part
+with no actions — indistinguishable from "nothing to do". Demo data and hand-made test parts
+(a few actions each) never came near the limit; it took load data to see it.
+
+**Rule:** An id list for `.in()` must be bounded by something you control (the page size), and
+chunked when that bound is large — about 100 ids per request (`fetchAllByIds` in
+`@carbon/database` does the chunking and the paging). When the related rows hang off
+a foreign key, embed them in the first read instead of looking them up afterwards. And a
+loader never swaps a failed read for an empty list: log it and throw.
+
+A list the USER builds (the ids of a bulk selection: Apply, Dismiss, Assign) has no bound at
+all, and chunking a WRITE breaks its atomicity — a claim that lands in chunk 1 and fails in
+chunk 2 leaves rows claimed with nothing applied. Send such a list through Kysely instead:
+`where("id", "in", ids)` binds the ids as parameters, one statement, no URL, no `max_rows`.
+The same bulk Apply did this over PostgREST in five functions and would have failed whole on a
+page of busy parts.
+
+**Applies to:** `getPlanningActions` and the planning action worklist writes in
+`apps/erp/app/modules/production/production.service.ts`, the planning loaders and
+`planning.update` routes (`x+/purchasing+/planning*.tsx`, `x+/production+/planning*.tsx`), and
+any "read rows, then `.in()` their ids" enrichment.
+
+## `useNumberFormatter()` with no argument is a new formatter on every render
+
+**Context:** Opening or closing the order drawer on the planning pages stuttered. The drawer
+itself was cheap; the table behind it was the cost.
+
+**Problem:** react-aria memoizes the formatter on the options OBJECT
+(`useMemo(() => new NumberFormatter(locale, options), [locale, options])`), and the default
+`options = {}` is a new object on each call. So `useNumberFormatter()` returns a new formatter
+every render. It was a dependency of the table's `columns` memo, so every render rebuilt the
+columns; TanStack then sees new `cell` functions and React REMOUNTS every cell, and the
+shared `Table` re-measures its column widths. Opening the drawer re-rendered the table six
+times through fetcher state — 1,824 DOM nodes replaced, six main-thread blocks of 90–220 ms.
+With a stable formatter: zero nodes replaced, and the drawer shows in ~100 ms instead of ~220.
+
+**Rule:** A value that feeds a `useMemo`/`useCallback` dependency list must be stable. Pass
+`useNumberFormatter` a module-level options constant (or use the `@carbon/utils` formatter
+hooks), never the bare call. When a table feels slow, count DOM nodes replaced in its
+`tbody` during the interaction before optimizing anything else — a non-zero count on an
+interaction that changes no data means the columns are being rebuilt.
+
+**Applies to:** `PurchasingPlanningTable.tsx`, `ProductionPlanningTable.tsx` (fixed), and the
+other ERP files that still call `useNumberFormatter()` bare — it only costs where the
+formatter reaches a memo dependency list (`InventoryTable`, `TrackedEntitiesTable`,
+`JobMaterialsTable`, `DemandProjectionTable`, `JobOperationStepRecordsTable` are the
+candidates to check).
+
+## A drawer rendered as `{item && <Drawer />}` cannot animate closed
+
+**Context:** The planning order drawer slid in but vanished on close.
+
+**Problem:** Three things each removed it before a closing animation could run. The tables
+rendered it as `{selectedItem && <Drawer />}` and closed it by clearing `selectedItem`, so
+it left the DOM in the same render. The shared `Drawer` panel only had a slide-IN. And Radix
+keeps a closing dialog mounted only while the element its portal wraps is animating — that
+element is `DrawerPortal`'s positioning div, which had no animation, so even a mounted
+drawer with an exit animation on its panel was removed at once. Adding the exit classes to
+the panel alone changed nothing; the frame-by-frame trace still showed zero closing frames.
+
+**Rule:** A drawer that should animate closed stays mounted and is driven by `open`; keep the
+record it shows until the next open (`useDrawerItem`), and key it per open so each open
+still starts fresh. When a Radix exit animation does not play, check every element between
+the portal and the animated node — each `Presence` looks only at its own child. Verify with
+a trace of `data-state` and `getBoundingClientRect()` per frame, not by eye.
+
+**Applies to:** `packages/react/src/Drawer.tsx` (`portalVariants` + `sheetVariants` closing
+durations must match), `useDrawerItem` (`apps/erp/app/hooks`), both planning tables, and the
+other state-driven drawers that still unmount on close.
+
+## A cast that silences excess-property errors hides failed writes
+
+**Context:** supabase-js 2.117 types reject keys a table does not have (`RejectExcessProperties`). The upgrade wrapped ~75 failing write payloads in `unchecked()` (a cast to `never`) to get typecheck green.
+
+**Problem:** About 30 of those were typed payloads (a zod validator spread into an insert/update) carrying fields the table lacks: `item.shelfLifeCalculateFromBom`, `ability.name`, `quote.notes`, `salesOrder.promisedDate`, `batchProperty.batchPropertyGroupId`, and more. PostgREST rejects any unknown column with PGRST204, so every such write failed whenever the field was present, and `itemValidator`'s always-present checkbox made the BoM explorer's item edit (`api+/item.$type.ts` → `updateItem`) fail on every save. The cast had removed the only warning. The 2.80 types never rejected excess keys, so these were latent all along.
+
+**Rule:** Never cast a typed payload past the table's type. When the compiler names an extra key, destructure it out at the write, where every caller is covered, and say where the value actually lives. `unchecked()` is only for a column or table chosen at runtime (`{ [field]: value }`, `.from(table)`). To list every extra key at once rather than one per error, probe with `Exclude<keyof Payload, keyof Database["public"]["Tables"][T]["Update"]>`.
+
+**Applies to:** every `{module}.service.ts` write, MES `services/*.service.ts`, `packages/utils/src/object.ts` (`unchecked`).
+
+## A function redefined by forking its last migration picks up whatever that fork did
+
+**Context:** Database functions were changed by copying the newest definition into a new migration and editing it. `create_audit_log_table` was forked several times; one fork made its existing-table branch re-attach the append-only trigger and re-run `secure_audit_log_table` unconditionally, and `insert_audit_log_batch` calls it on every write.
+
+**Problem:** `CREATE TRIGGER` fires PostgREST's `pgrst_ddl_watch` event trigger, which reloads the schema cache. With one audit table and one search table per company that reload took 10-13 s in production, and every request with an embed waited for it: 480+ reloads a day, each one stalling joins for every company. No test or review could see it, because each fork looked like a small diff against a file nobody reads end to end. `dispatch_event_batch` lost its composite-key pairing the same way once.
+
+**Rule:** A function that changes more than once is authored as a single file, not as a chain of forks. The event system's functions live in `packages/database/src/event-system/functions/<name>.sql`; edit the file and run `pnpm --filter @carbon/database authz migration <name>`. A function on a write path must not run DDL: check the catalog first and only repair what is missing (`audit-log-no-ddl-on-write.test.sql` asserts the trigger and policy oids do not change across writes).
+
+**Applies to:** `packages/database/src/event-system/functions/`, `packages/database/src/authz/helpers/`, `no-authz-ddl-in-migrations` (`@carbon/checks`).
+
+## Work a request does not await is frozen with the instance on Vercel
+
+**Context:** Work-event capture (PostHog) and the GTM forward were started and not awaited, so the response would not wait for them.
+
+**Problem:** A Vercel function instance is frozen once its response is sent. The unawaited call stopped mid-flight and finished only when the next request woke the instance, so traces showed analytics calls of 10 s and more, and on an instance that was never reused the event was lost. `request.signal` does not help either: without `supportsCancellation` it never aborts on Vercel.
+
+**Rule:** Anything a request leaves running goes through `async.background(task, onError)` from `@carbon/utils`. Each app registers the host's `waitUntil` once with `async.onBackground` in `entry.server.tsx`, which keeps the instance up until that work settles. Never a bare unawaited promise, a `void` IIFE, or a `.then` chain.
+
+**Applies to:** `apps/{erp,mes}/app/entry.server.tsx`, `packages/lib/src/telemetry/capture.ts`, `packages/stripe/src/stripe.server.ts`, any new fire-and-forget call.
+
+## React Router's instrumentation API can observe a request, not change it
+
+**Context:** The request-id, access-log and request-context middlewares looked like candidates to move into `instrumentations`, to shorten the middleware chain.
+
+**Problem:** In React Router 7.18 an instrumentation wrapper receives a read-only view: the request is `{ method, url, headers.get }` with no `signal` and no `clone()`, the context exposes only `get`, and the result carries only `statusCode` and `meta`. It cannot set a response header, open an AsyncLocalStorage scope around the handler, or read the body, which is everything those middlewares do.
+
+**Rule:** Instrumentation is for spans and measurements. Anything that sets a header, provides context to downstream code or reads the request stays a middleware; merge middlewares into one (`requestMiddleware`) instead of moving them. A middleware's own cost is recorded by `timedMiddleware` as `carbon.middleware.<name>.ms`, not by a span, because a middleware span contains everything it calls.
+
+**Applies to:** `packages/logger/src/middleware.server.ts`, `packages/logger/src/tracing.server.ts`, both apps' `root.tsx`.
+
+## A limiter must hand a freed slot to the next waiter, not decrement and let it race
+
+**Context:** `async.limit` first released a slot by decrementing the active count and waking the first queued call.
+
+**Problem:** The woken call resumes a microtask later. A call made in between saw a free slot, took it, and the woken call then incremented too: more than `concurrency` ran at once, and under steady load a queued call could be overtaken indefinitely.
+
+**Rule:** When a slot frees and a call is queued, pass the slot to it directly and leave the count unchanged; decrement only when the queue is empty. A queued call never increments. Test it by starting a new call in the same tick a running one finishes and asserting the queued one runs first.
+
+**Applies to:** `packages/utils/src/async.ts` (`limit`), any hand-written semaphore.
+
+## Copying child rows onto a new record can make that record undeletable
+
+**Context:** A new item revision now inherits the source revision's supplier parts and their
+price breaks (`copyItemPlanningAndPurchasing`, called by `createRevision`). A change notice
+discards its draft revision by deleting the draft item.
+
+**Problem:** `supplierPart.itemId → item` is `ON DELETE CASCADE`, but
+`supplierPartPrice → supplierPart` is `ON DELETE RESTRICT`. An item delete therefore cascades
+into a supplier part that a price break refuses to let go, and the whole delete fails with
+`23503`. Before the copy, a fresh revision had no supplier parts, so nothing exercised that
+path; after it, every revision of an item with price breaks carries the blocker: the Item
+Master delete was refused, and the change notice's draft discard ignored the delete's error,
+so the draft would have survived silently. Reading the migrations for the table being copied
+was not enough; the constraint that mattered sat on its child.
+
+**Rule:** Before copying rows onto a record, list the delete rule of every FK that points at
+the copied tables (`pg_constraint.confdeltype`, or `grep REFERENCES` for the table name) and
+walk every path that deletes the parent. A `RESTRICT`/`NO ACTION` child turns a copy into a
+delete blocker. Either delete the child first on that path, in the same transaction as the
+parent so a refused parent delete does not lose the child, or change the rule in a migration.
+And a delete whose failure the caller ignores is not a delete: return the error.
+
+**Applies to:** `apps/erp/app/modules/items/items.service.ts` (`createRevision`,
+`deleteItemsWithPriceBreaks`, `deleteItem`, `discardChangeNoticeDrafts`,
+`deleteSupplierPart`), and any copy/duplicate of `supplierPart`.
+
+## "Come back here" must carry the query string
+
+**Context:** Notification emails link to `/api/link?event=…&documentId=…&companyId=…`, and `requireAuthSession` sends a request away and back for a token refresh, login, MFA or idle unlock.
+
+**Problem:** `getCurrentPath` returned `pathname` only, so every one of those round trips came back to a bare `/api/link`, which has nothing to resolve and redirects to the home page. The link itself was correct, and it worked on a second click (the token was fresh by then), so it read as an email bug. The token-refresh branch hit anyone idle for longer than the refresh threshold, which is the normal state of someone arriving from an email.
+
+**Rule:** A "return to where you were" target is `pathname + search`, never `pathname`. When it is passed on inside another URL, encode it (`encodeURIComponent` / `URLSearchParams`), or its own `&` splits it. Test the round trip with a URL that has a query string. Drop React Router's `_routes` param from it, and only when present: middleware sees that param (loaders do not), a page URL that carries it limits which loaders later data requests run, and `searchParams.delete` re-encodes the whole query even when it removes nothing. Whatever sends the target on must be matched by something that reads it: three of the four callbacks ignored the `redirectTo` their login page sent.
+
+**Applies to:** `packages/auth/src/utils/http.ts` (`getCurrentPath`, `makeRedirectToFromHere`), `requireAuthSession` / `refreshAuthSession`, every app's `login.tsx` callback URL and the `callback.tsx` that consumes it.
+
+## A `resolve.alias` stub reaches the server bundle too
+
+**Context:** Both apps aliased `unpdf/pdfjs` to a throwing stub to keep unpdf's 1.5 MB engine out of the browser bundle, where react-pdf's `pdfjs-dist` is used instead.
+
+**Problem:** A top-level `resolve.alias` applies to every Vite environment. On the server `unpdf/pdfjs` is the only PDF engine, so every deployed document extraction (purchase invoice, sales RFQ) failed with "Serverless PDF.js bundle could not be resolved". Dev and vitest passed: dev leaves `unpdf` external, so Node resolves the real module and the alias never applies.
+
+**Rule:** A stub that exists to shrink the client bundle goes through `clientOnlyAlias` (`@carbon/dev/vite`), never `resolve.alias`. Verify a server-side dependency change against a bundle built with `ssr.noExternal: true`, not against the dev server.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, `app/ssr-shims/`, `packages/dev/vite.js`.
+
+## A published schema default is a promise the server has to keep
+
+**Context:** API and MCP input schemas are generated from the form validators, whose `.default(0)` was written for a form that submits every field. The dispatcher applied none of them.
+
+**Problem:** A caller reading `taxPercent: default 0` leaves the field out and expects 0. On a read typed from a validator's output that crashed (`state: {}` on a pivot); on an update, filling it would overwrite a stored value the caller never mentioned. And a default that looked safe to fill was not: list reads published `limit: default 100`, but the service pages only when it is handed a limit, so filling it would have cut every unpaged list read to 100 rows.
+
+**Rule:** A default is filled or it is not published (`defaultsPolicy` / `publishDefaults`): always for a read, a create or an action, on create only for an upsert, never for an update. Before publishing or filling one, read what the service does when the field is absent, and compare with the column's own database default.
+
+**Applies to:** `scripts/lib/service-metadata.ts`, `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`, any validator default that reaches an API schema.
+
+## Every sales invoice needs an opportunity
+
+**Context:** A sales invoice's documents, including the PDF written when it is posted,
+live under `{companyId}/opportunity/{opportunityId}/`. `insertSalesInvoice` and
+`upsertSalesInvoice` mint an opportunity and `convert` copies the sales order's, but
+`salesInvoice.opportunityId` is nullable.
+
+**Problem:** Rental billing inserted invoices with `opportunityId: null`. The invoice's
+documents card crashed on `opportunity.id` (shown as "Couldn't load documents", since
+`DeferredFiles` catches render errors too), and posting wrote the PDF to a literal
+`opportunity/null/` folder.
+
+**Rule:** Any new code path that inserts a `salesInvoice` (or `salesOrder` / `quote`)
+creates an opportunity for it in the same transaction. Nullable in the schema does not
+mean optional in the app.
+
+**Applies to:** `packages/server-functions/src/create-rental-invoices/`, any Kysely/server-function writer
+of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backfill.sql`.
+
+## A new FK on a busy table breaks bare PostgREST embeds of it (TS2589)
+
+**Context:** The contracts migration (`20261006221301_contracts.sql`) gave `salesInvoiceLine` four new FKs (`customerContractId`, `customerContractLineId`, `customerContractInvoiceLineId`, `projectId`).
+
+**Problem:** After `generate:types`, the ERP typecheck failed with TS2589 ("type instantiation is excessively deep") in four files that the change did not touch. Each did a bare embed such as `.select("salesInvoice(id, invoiceId)")` from `salesInvoiceLine`. More relationships on the table make the inference of a bare embed too deep. A `@ts-ignore` would hide it, but the next new FK moves the error to another file.
+
+**Rule:** When you add a FK to a table that other code embeds from, name the FK in every embed of its parent: `salesInvoice!salesInvoiceLine_invoiceId_fkey(...)`. Run the scoped `erp` typecheck after `generate:types`, before you commit the migration. Fix the cause at the embed by naming the FK (fix commit `5b26a095dd`). Use `@ts-ignore` (the TS2589 lesson above) only for an embed that already names its FK.
+
+**Applies to:** any migration that adds a FK column to `salesInvoiceLine`, `salesOrderLine`, `jobMaterial` or another widely embedded table; the PostgREST selects in `apps/erp` that embed from it.
+
+## A schedule computed live has no row ids until the first edit writes it
+
+**Context:** An unedited Draft contract has no `customerContractInvoice` rows. The loader computes the invoice schedule from the lines with the pure planner (`@carbon/database/contract-schedule`). The first edit writes the rows (plan decision 2).
+
+**Problem:** The page sent the edit with the ids of computed rows that were not in the database. The server function wrote the schedule, then looked up those ids, found nothing, and refused the edit. So the first edit of every Draft failed. No test covered an edit from the computed state.
+
+**Rule:** When a page shows rows that the server computes and does not store, give each row a reference by position, not an id. Contracts use `planned:<invoiceDate>` for an invoice and `planned:<invoiceDate>:<lineId>:<periodStart>[:adjustment]` for a row. The server writes the rows first, then resolves each reference against them. Test the first edit from the computed state with a database test, not from stored rows (`contract-lifecycle.test.ts`, fix commit `56fa0f7b8e`).
+
+**Applies to:** `post-customer-contract` `edit-schedule`, `ContractInvoiceGrid` / `ContractAmountsModal` (and `ContractRevenueGrid` for the revenue plan), and any future editable preview that persists on first edit.
+
+## Two sessions in one worktree share every uncommitted file
+
+**Context:** Two parallel sessions worked in the same Conductor worktree: one on contracts Phase B, one on hardening the period runs. Both edited `accounting.server.ts`, `propose-revenue-recognition-run/index.ts` and the accounting `AGENTS.md`.
+
+**Problem:** Each session's uncommitted edits sat in the same files as the other's. Neither could commit a file whole, so every commit needed hunk-level staging, and a doc written by one session described the other's half-finished code.
+
+**Rule:** Before a task, run `git status` and treat any change you did not make as foreign: stage only your own hunks and never stash, reset or check out over them. For a long task, ask for an isolated worktree (`isolation: "worktree"`) instead of sharing one.
+
+**Applies to:** Any session that starts in a worktree with uncommitted changes; parallel agents dispatched into the same checkout.
+
+## A `prepare` script that edits git config reaches every worktree
+
+**Context:** Replacing husky with simple-git-hooks, `prepare` unset `core.hooksPath` and installed hooks. It ran on every `pnpm install` in a worktree.
+
+**Problem:** Worktrees share one `.git`. The unset removed the main checkout's `core.hooksPath` and simple-git-hooks wrote into the shared `.git/hooks`, so checkouts still on husky skipped their hooks without a word. The desktop app also sets `core.hooksPath` at WORKTREE scope, which a plain `git config --unset` does not touch. simple-git-hooks additionally deletes every hook it does not manage unless `preserveUnused` is set.
+
+**Rule:** Treat a lifecycle script that touches git config or `.git/hooks` as a change to every checkout of the repository. Use `pnpm install --ignore-scripts` while such a branch is unmerged, clear both the local and the worktree scope, and set `preserveUnused: true`.
+
+**Applies to:** root `package.json` (`prepare`, `simple-git-hooks`), `scripts/git-hooks/`.
+
+## `scripts/one-off/` is a registry, not a folder of leftovers
+
+**Context:** A cleanup pass listed `scripts/one-off/recopy-private-buckets.ts` as dead because nothing referenced it by name.
+
+**Problem:** `ci/src/one-off-scripts.ts` runs every `.ts` file in that folder once per database on deploy; the folder IS the reference. Deleting a file there changes what the next deploy does.
+
+**Rule:** "No grep hits" does not mean dead. Before deleting a script, check whether its directory is enumerated (`readdirSync`, a glob in a workflow or `turbo.json`).
+
+**Applies to:** `scripts/one-off/`, `ci/src/one-off-scripts.ts`, any repo cleanup.
+
+## A Vite plugin that reads the file name must drop the query first
+
+**Context:** Lingui 6.9.0's native macro transform chooses its parser from `path.basename(id)`.
+
+**Problem:** React Router loads route modules as `route.tsx?__react-router-build-client-route`. The extension no longer ends the name, the file is parsed as plain JS, and the build fails with hundreds of "Expected ','" errors on `import type`. vitest and non-route files never show it.
+
+**Rule:** When a transform plugin misbehaves only on route modules, look at the id's query. Verify a build-plugin change with a real `react-router build` of ERP, not with vitest.
+
+**Applies to:** `packages/dev/vite.js` (`linguiWithoutIdQuery`), `apps/*/vite.config.ts`.
+
+## A realtime subscription to a table that is not published fails silently
+
+**Context:** The ERP job page did not show an operation completed in the MES until a reload. It subscribed with `postgres_changes` to `jobOperationStep` and `jobOperationStepRecord`, which were never in the `supabase_realtime` publication, and it had no subscription to `jobOperation` or `job` at all.
+
+**Problem:** Realtime accepts a `postgres_changes` subscription for any table name. For an unpublished table it joins, delivers nothing and reports nothing. The code looked wired and typecheck, lint and tests were all green.
+
+**Rule:** Realtime goes through broadcast topics (`@carbon/query`). Declare a route's tables in `handle.realtime`; the table type is derived from `event-system/attachments.ts`, so a table with no broadcast handler does not compile, and `no-postgres-changes` fails the old API. Verify a "live" page by changing the row while the page is open, not by reading the subscription code.
+
+**Applies to:** `apps/*/app/routes/**` `handle.realtime`, `useRealtime`, `useChangedRows`, `.claude/rules/realtime-system.md`.
+
+## `getCompanyId()` read an httpOnly cookie in the browser and always returned null
+
+**Context:** The client cache scoped its keys with `getCompanyId()`, which parsed `document.cookie` for `companyId`.
+
+**Problem:** That cookie is httpOnly, so JavaScript never sees it. Every key was scoped to the string `"null"`, and an invalidation that matched on the real company id matched nothing. It went unnoticed because a company switch reloads the page and empties the in-memory cache.
+
+**Rule:** Never read a session cookie from `document.cookie`. A value the browser needs comes from loader data: the shell layout calls `setClientCompanyId(company.id)` during render (`@carbon/query/cache`).
+
+**Applies to:** `packages/query/src/cache.ts`, both `apps/*/app/routes/x+/_layout.tsx`, any new client-side tenant scoping.
+
+## A `.client.ts` module is empty on the server, even for a value a route only calls at load
+
+**Context:** The invalidation middleware factory lived in `invalidate.client.ts`, next to `flash.client.ts`. `root.tsx` calls `createInvalidationMiddleware(...)` while the module is evaluated.
+
+**Problem:** React Router replaces a `.client` module's exports with `undefined` on the server. `flash.client.ts` survives because `root.tsx` only REFERENCES its export; a factory is CALLED, so SSR died with "is not a function". Typecheck, lint and unit tests passed.
+
+**Rule:** A module whose export is called at module load of a route must not be named `.client` or `.server`. After adding anything to `root.tsx` or a shell layout, load the page from a running dev server before calling it done.
+
+**Applies to:** `apps/*/app/root.tsx`, `packages/query/src/invalidation.ts`, any shared module imported by a route.
+
+## Two hooks that open the same Realtime topic close each other's channel
+
+**Context:** The shell, the live lists and individual components each called `carbon.channel(topic)` for `company:<id>:<table>`.
+
+**Problem:** `RealtimeClient.channel()` returns the EXISTING channel when the topic is already open. Two hooks then hold one channel object, and the first to unmount calls `removeChannel` and silences the other. A customers page that declared `customer` while the customer list also followed it would have lost one of them at random.
+
+**Rule:** One owner per topic. Listeners register in the registry in `packages/query/src/useRealtime.tsx` (`useTopic`, `useTableChanges`) and `RouteRealtime` owns the channels. Do not call `carbon.channel` or `useRealtimeChannel` for a broadcast topic directly.
+
+**Applies to:** `packages/query/src/useRealtime.tsx`, any new realtime listener.
+
+## Chained Supabase writes in a route action are not a transaction
+
+**Context:** RFQ finalize and supplier quote finalize each wrote a quote, its lines, a share link and a price list as separate `client.from(...)` calls in a loop, logging and skipping any that failed.
+
+**Problem:** Every statement was its own PostgREST request (about 34 ms each), and a failure partway left quotes without lines or half a price list while the action still reported success. The checks that made the write safe (every line priced, the RFQ still Draft) lived in the route, so the API tool for the same operation skipped them.
+
+**Rule:** A write that spans tables is a server function (`packages/server-functions`) with one Kysely transaction. Its preconditions are checked inside it, on a locked read of the document (`forUpdate()`), so a double submit and every other caller get the same answer. The route keeps only what is about the request: the form, the flash, the email.
+
+**Applies to:** any route action with more than one write; `finalize-purchasing-rfq`, `finalize-supplier-quote`.
+
+## A stored copy of server data belongs to a user, not a browser
+
+**Context:** The live lists (items, customers, suppliers, people) were kept in IndexedDB under `<list>:<companyId>` and patched from a change log.
+
+**Problem:** The rows a user holds are their RLS view. The next person to sign in on that browser hydrated the previous user's rows, and patching only the changed ids never removed them. The in-memory query cache had the same hole inside one tab.
+
+**Rule:** Key anything stored on the device by user as well as company, and empty the in-memory cache when the user changes (`setClientCompanyId(companyId, userId)`). A cache that is only ever patched needs a path that replaces it.
+
+**Applies to:** `packages/query/src/useLiveList.tsx`, `packages/query/src/cache.ts`, any new client-side persistence.
+
+## A prefetch the browser cannot reuse makes the click slower
+
+**Context:** Links prefetched their page's data on hover, then (2026-10-02) on press, to give the click a head start.
+
+**Problem:** Single-fetch `.data` responses carry `cache-control: max-age=0, must-revalidate` and no validator, so the browser never serves the click from the prefetched response: both requests reach the server. Chrome also holds a second request for a URL until the first one's response arrives (its HTTP cache admits one writer per URL). The click's request therefore waited behind the prefetch: 781 ms against 518 ms median click-to-page in production, and two same-URL `fetch` calls took 572 / 923 ms where two `cache: "no-store"` ones took 615 / 585 ms.
+
+**Rule:** A prefetch only helps if the browser may reuse its response. Give a prefetch response (`Sec-Purpose: prefetch`) a short `private` lifetime and leave every other response uncached; `prefetchCacheMiddleware` (`@carbon/utils`) does it in each app's root `middleware`, the fix React Router points to (remix-run/react-router#13255). Measure a prefetch by click-to-page time, not by whether the request was sent. A first fix removed the prefetch instead (`6e3bdf7bc6`); it worked but threw away the head start.
+
+**Applies to:** `packages/react/src/PrefetchLink.tsx`; `packages/utils/src/prefetch.ts`; any `<Link prefetch>` or `PrefetchPageLinks`; a revalidation started while a navigation to the same URL is loading.
+
+## A revalidation during the navigation after a save loses the save
+
+**Context:** 186 layouts export `shouldRevalidate` and skip a GET navigation that leaves their params unchanged. Realtime calls `revalidate()` 300 ms after a broadcast.
+
+**Problem:** A save's own broadcast arrives while its redirect is still loading. `revalidate()` during a loading navigation restarts it with `overrideNavigation: state.navigation`, and for a fetcher submission that carries no `formMethod`. The restarted navigation looks like a plain one, so each layout returned `false` and kept its data from before the save: a new quote line was missing from the quote's explorer until a reload (2026-10-05). In single fetch `defaultShouldRevalidate` is `true` for every route on every navigation, so a predicate cannot tell a forced reload from a plain one. A first fix assumed React Router's default was `false` after a redirect with no cookie; logging the predicate's arguments in the browser showed the default was `true` and the first pass did include the layout.
+
+**Rule:** Never call React Router's `revalidate()` directly. Import `useRevalidator` from `@carbon/query`: it holds a call made while a navigation is in flight or a fetcher is submitting and runs it when the router is idle. The `no-raw-revalidator` check (`@carbon/checks`) fails an import of React Router's. Before explaining a skipped loader, log what `shouldRevalidate` received: wrap the route's `shouldRevalidate` on `window.__reactRouterDataRouter.routes` and read `formMethod`, `defaultShouldRevalidate` and both URLs for each call.
+
+**Applies to:** `packages/query/src/useRevalidator.ts`; every `revalidate()` call (realtime, polling timers, upload callbacks); every route that exports `shouldRevalidate`.
+
+## A drag re-rendered every card on the board
+
+**Context:** The schedule boards (operations, dates, batches) render one sortable card per operation or job, each with a form, avatars, tooltips and a menu.
+
+**Problem:** A drag stuttered: with 82 cards, six frames of a 90-frame sweep took over 100 ms. Two causes. dnd-kit re-renders every `useSortable` consumer when the drop target changes, and the hook sat inside the card, so every card's whole body rendered each time. And `useSensor(KeyboardSensor, { coordinateGetter })` passed a new options object on every render: dnd-kit memoizes the sensor on it, so every draggable got new `listeners`, which defeats `memo` on anything that takes them.
+
+**Rule:** A sortable card is a thin shell that calls `useSortable` and a `memo`ized body that takes plain props (`sortableCardProps` in `Schedule/Kanban/cardShell.ts`). `useSensor` options are a module constant (`no-inline-sensor-options` check). A context every card reads must have a stable value. To find what re-renders, count renders per component during a scripted drag; do not guess.
+
+**Applies to:** `apps/erp/app/modules/production/ui/Schedule/Kanban/**`; any dnd-kit board or list with more than a few dozen items.
+
+## Lingui: `plural()` inside a `memo(…)` component calls the global i18n
+
+**Context:** The jobs table's bulk-release toast needed "Released 1 job" / "Released N jobs". The table is `memo((props) => { … })`, and the toast text was written as `` t`${plural(count, { one: "Released # job", other: "Released # jobs" })}` `` with `t` from `useLingui()` and `plural` from `@lingui/core/macro`.
+
+**Problem:** Lingui 6.9.0's macro transform folds a nested `plural()` into the surrounding `t` only when the component or hook is a function declaration or a plain `const X = () => …`. When the function is an inline ARGUMENT of a call (`memo((props) => …)`), the `plural()` is expanded on its own into `i18n._(…)` on the global `@lingui/core` instance, and the outer `t` becomes `{0}` with that call as its value. The global instance is never activated here (see `.claude/rules/i18n-lingui-system.md`), so the string throws "Attempted to call a translation function without setting a locale" the first time it is built. Typecheck, Biome and `lingui:extract` all pass: the catalog shows a normal ICU plural msgid. Only the compiled output shows it.
+
+**Rule:** Do not call `plural()` (or `select()`) from `@lingui/core/macro` inside a component passed inline to `memo(…)` or any other call. Use `<Plural>` in JSX. For a string (a toast), either build it in a function-declaration hook (`function useX() { const { t } = useLingui(); return (n: number) => t`${plural(n, …)}`; }`), or choose between two whole `t` phrases (``n === 1 ? t`Released 1 job` : t`Released ${n} jobs` ``) — both phrases are extracted and translated, but a locale with more plural forms gets only two. When in doubt, read the compiled module (Vite `transformRequest` on the file) and check for an import of `i18n` from `@lingui/core`.
+
+**Applies to:** every `memo(…)` component in `apps/{erp,mes}/app` and `packages/{react,form}/src` (most ERP tables); any new use of `plural` / `select` from `@lingui/core/macro`.
+
+## A row stayed off a screen only because a column happened to be null
+
+**Context:** The MES Work Centers board, the ERP Priority board and the API read `get_active_job_operations_by_location`. Both boards group operations into work-center columns.
+
+**Problem:** An Outside Processing operation showed up on the MES board for an operator to start (2026-10-05). The function never filtered on `operationType`; subcontracted operations stayed off the boards only because they usually have no work center, so they had no column. The work center came back two ways. The operation forms hide the Work Center field for Outside Processing, and a hidden field is omitted from the submit, not cleared, so an update left the work center from the operation's earlier in-house type. Batching was the second way: `get_batchable_operations` offered outside operations, and releasing a batch writes the batch's work center onto every member.
+
+**Rule:** Filter on the fact that decides whether a row belongs, never on a column that only usually agrees with it. When a type makes a field meaningless, clear the field in the one function every writer goes through (`normalizeOperationSourceIds`), because hiding the input does not clear it. Hiding a row from a list is not a gate: refuse it in the routes that open and start it too.
+
+**Applies to:** `get_active_job_operations_by_location`; `get_batchable_operations` and the `batch-operations` `assertEligible`; the MES operation, start and event routes; any form that hides a field by type; any list whose visibility rests on a NULL.
+
+## State seeded from loaded data is a copy that nothing updates
+
+**Context:** A route's components stay mounted when only its params change, and loaded data changes under a mounted component constantly: a save's revalidation, a realtime reload, a layout that reloads after its page has mounted.
+
+**Problem:** `useState(valueFromLoaderData)` reads the value once. Two bugs came from it (2026-10-06). The quote summary summed its totals from lines copied into state at mount, so a deleted line stayed in the subtotal until a reload. And a notes editor seeded from record A stayed mounted on record B: B showed A's notes, and the first keystroke saved A's text into B. An audit of 467 seeded `useState` calls found 17 confirmed cases. Reloading every layout on every navigation had hidden most of the first kind, not fixed it.
+
+**Rule:** Do not copy loaded data into state. A value computed from the data is computed during render (`useMemo`). The user's choices over the data are the only state, combined with the current data during render (`selectQuoteLines`). A draft the user edits is fine as state because the page it lives in remounts for another record: every route under `/x` renders `RecordOutlet` (`@carbon/react`), never a plain `<Outlet>`. Do not write an effect that copies the data into state again. Checks: `no-bare-outlet` and `no-state-copy-of-loader-data` (`@carbon/checks`; the second sees only a hook result used by name in the same file, not a copy seeded from a prop).
+
+**Applies to:** every component that reads `useLoaderData`, `useRouteData` or props that come from them; every route with a param in its path.
+
+## A layout that skips its loader is only as correct as its skip rule
+
+**Context:** 186 layouts exported `shouldRevalidate` and skipped a GET navigation that left their params unchanged (`isUnaffectedByNavigation`, 2026-10-01), to save a layout loader run on each click.
+
+**Problem:** The rule inferred "nothing changed" from `formMethod`. React Router passes a fetcher's submission to the first navigation after it only, so a delete that redirected to a record's bare URL, whose index route redirects again, arrived as a plain navigation and every layout kept its data (2026-10-06). An earlier patch had fixed the same blind spot for a revalidation restarting a navigation. 154 of the 186 layouts also declared no realtime tables, so another user's change did not show until the record changed. A module-level "a save happened" flag closed the redirect case and was rejected: one package set it, another cleared it, a third read it.
+
+**Rule:** Layouts do not skip their loaders. Do not export `shouldRevalidate` from a layout to save a loader run; make the loader cheaper instead (one query, the direct connection, shared work through middleware context). The root and the app shell are the only exceptions. To see which loaders a navigation asked for, read the `_routes` query of its `.data` request. Estimated cost of removing the skip, from production traces: 100 to 300 ms on a click that used to skip, until the dozen slow record loaders are optimised.
+
+**Applies to:** every layout route; `packages/utils/src/revalidate.ts`; the record loaders (`purchase-order+/$orderId`, `supplier+/$supplierId`, `sales-invoice+/$invoiceId`, `part+/$itemId`, `sales-order+/$orderId`, `quote+/$quoteId`).
+
+## A restore told the change log but not the open tabs
+
+**Context:** Backup restore and template revert reload a company through `wipeAndLoad` with triggers off (`session_replication_role = replica`). The live lists (items, customers, suppliers, people) are kept in the browser and updated from broadcasts; the change log (`tableChange`) is what a tab reads when it loads or reconnects.
+
+**Problem:** With triggers off nothing was broadcast. `wipeAndLoad` wrote a reset row to the change log, but an open tab only reads the log when a broadcast tells it to, or once an hour. After a demo template was reverted and applied again, a tab's part picker held the reverted parts next to the new ones, and creating a job with a reverted part returned 404 (2026-10-06, production). The first reproductions missed it because they applied a template (triggers on), which broadcasts correctly.
+
+**Rule:** A writer that turns triggers off does both halves itself: a null-`rowId` row per `CHANGE_LOGGED_TABLES` entry, and a null-`ids` broadcast on every `REALTIME_TABLES` topic of the company, inside the same transaction. When a stale client list is suspected, compare the ids in `window.clientCache.getQueryData(["live", companyId, name])` with the database before reading code.
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-restore.ts` (`wipeAndLoad`); any new job that sets `session_replication_role`.
+
+## macOS silently replaces a web notification that reuses a tag
+
+**Context:** Browser push notifications (`apps/erp/public/push-worker.js`) passed each notification's `tag` (`job-assignment:<id>`, `carbon-test`) to `showNotification`, so a second push about the same thing would replace the first instead of stacking.
+
+**Problem:** On macOS the browser hands the tag to the OS as the notification's identifier, and the OS replaces a notification with the same identifier silently: no banner, only an updated entry in Notification Center. The first test arrived while banners were still off, and every later test replaced it without a sound, so push looked broken although every send returned `201` (2026-10-08). `renotify: true` did not change it. The cause was only visible in the macOS log (`log show --predicate 'process == "usernoted"'`): `updatedExisting: true`.
+
+**Rule:** Never pass a reused `tag` to `showNotification` when the user must see the repeat. Close the older notifications yourself (`registration.getNotifications()`, match on `notification.data.tag`), then show the new one with no `tag`, so it gets a fresh identifier. To debug a push that "does not arrive", read the send's status code first, then the OS notification log, before changing code.
+
+**Applies to:** `apps/erp/public/push-worker.js`; any future service worker or Notification API caller.
+
+## A new key in an Inngest step's return breaks runs in flight at deploy
+
+**Context:** The `notify` function's step `filter-recipients-by-preference` returned `{ emailRecipientIds, slackRecipientIds }`. Browser notifications added `pushRecipientIds` to the same step, under the same step id, and the code after it read `pushRecipientIds.length` (2026-10-08).
+
+**Problem:** Inngest replays a completed step from its memoized output. A run that started before the deploy and resumes after it gets the OLD output, with no `pushRecipientIds`, so `.length` throws and the notification fails. Typecheck cannot see it: the type describes the new code, not the stored output. Self-review caught it before merge.
+
+**Rule:** When a step's return grows a key, read that key with a default (`pushRecipientIds = []`) and comment why, or rename the step id so old runs re-execute it (only when the step is idempotent). Never assume a memoized step output has the current shape. (The `pushRecipientIds` key was removed again later, when push stopped having a per-topic switch; the example stays as the pattern.)
+
+**Applies to:** every `step.run` in `packages/jobs/src/inngest/functions/**` whose return shape changes.
+
+
+## A notification click on an uncontrolled tab opens nothing
+
+**Context:** `push-worker.js` handled `notificationclick` with `clients.matchAll({ type: "window", includeUncontrolled: true })`, then `focus()` and `navigate()` on the first Carbon tab (2026-10-09).
+
+**Problem:** `WindowClient.navigate()` rejects for a tab the worker does not control: a tab opened before the worker was installed, or a hard-reloaded one. The rejection ended the click handler, so the click opened nothing. No error reached the page.
+
+**Rule:** Call `matchAll({ type: "window" })` without `includeUncontrolled` when you will call `navigate()`. Focus first, because the click allows focus for a short time only. Wrap the focus and the navigation in `try`, and call `clients.openWindow()` when either fails or no tab exists.
+
+**Applies to:** `apps/erp/public/push-worker.js`; any service worker that navigates a client.
+
+## A push service's 401 or 403 does not mean the subscription is dead
+
+**Context:** After the VAPID key changed, WNS answered 401 for a subscription made with the old key, and FCM answers 403 for the same case. Deleting the row on 401/403 was proposed so such rows stop failing (2026-10-09).
+
+**Problem:** Apple's push service answers 403 when it refuses our own token (`BadJwtToken`, for example a contact address it does not accept). That refusal hits every Safari subscription at once. A delete on 403 would remove every Safari row on each push, the page load would save them again, and no Safari user would ever get a push, with no error anywhere.
+
+**Rule:** Delete a subscription only on 404 or 410. On 401 or 403, log a warning with the push service's body and keep the row (`pushDeliveryOutcome` → `rejected`). An old-key row is replaced on the browser's next page load or ages out.
+
+**Applies to:** `packages/jobs/src/inngest/functions/notifications/push-outcome.ts`, `send-push.ts`; any Web Push sender.
+
+## A generated avatar is a seed, so the library version decides the face
+
+**Context:** `user.avatarUrl` stores a generated avatar as `dicebear:<style>:<seed>[:<rrggbb>]` (`packages/utils/src/avatar.ts`). The browser draws it with DiceBear every time it renders (`packages/react/src/utils/generatedAvatar.ts`). Nothing about the picture is stored, only the seed.
+
+**Problem:** A new DiceBear major version can draw a different face for the same seed. The move from version 9 to 10 (2026-10-08) changed every existing avatar, and nothing in the database showed it. A style removed from `GENERATED_AVATAR_STYLES` makes its stored values unparseable, so those avatars fall back to initials without an error.
+
+**Rule:** Pin `@dicebear/core` and `@dicebear/styles` to exact versions, never a range. Treat a DiceBear upgrade as "every user's avatar may change", and compare renders of fixed seeds before and after. Only add to `GENERATED_AVATAR_STYLES`; the `Record` type of `STYLE_LOADERS` makes a style without a loader a type error.
+
+**Applies to:** `packages/react/package.json` (DiceBear versions), `packages/utils/src/avatar.ts`, `packages/react/src/utils/generatedAvatar.ts`.
+
+## A library that every page renders must not be imported statically
+
+**Context:** `Avatar` (`@carbon/react`) is in the shell of every app. It renders generated avatars with `@dicebear/core`.
+
+**Problem:** A static `import { Avatar, Style } from "@dicebear/core"` put about 156 KB minified (25 KB gzipped) into the main bundle of the ERP, MES and academy, on every page, whether or not a generated avatar was shown (found in self-review, 2026-10-08). Typecheck, tests and Biome all passed. Only a bundle measurement showed it.
+
+**Rule:** In a component that every page renders, import a heavy library with `import()` at the point of first use, and keep only `import type` at the top of the file. Check with a split bundle: `npx esbuild <file> --bundle --splitting --format=esm --minify --outdir=/tmp/out '--external:@carbon/*' --external:react`. The entry file must stay small, and the library must be a separate chunk.
+
+**Applies to:** `packages/react/src/**` components used in app shells (`Avatar`, `NavRail`, layout parts); any new dependency of `@carbon/react`.
+
+## A JSON import attribute fixes the server and breaks the browser
+
+**Context:** `@carbon/react` loads each DiceBear style's JSON with `import()` (`packages/react/src/utils/generatedAvatar.ts`). The same code runs in the browser (the avatar picker) and on the server (the `/file/avatar/:value` route).
+
+**Problem:** On the server, Vite leaves a dependency's import external, and Node refuses JSON without `with: { type: "json" }` (`ERR_IMPORT_ATTRIBUTE_MISSING`). Adding the attribute fixed the route. But Vite passes the attribute through to the browser's `import()`, and serves the JSON as `text/javascript`, so the browser rejected every style and the picker previews stayed grey (2026-10-08). Typecheck, unit tests and the server route all passed; only the browser saw it.
+
+**Rule:** Never put an import attribute on a JSON import in code that also runs in the browser. Make the server bundle the package instead: add it to `ssrNoExternal` in each app's `vite.config.ts` (the ERP and MES lists apply to both `ssr.noExternal` and `environments.ssr.resolve.noExternal`). To check the browser side, fetch the module from the dev server (`curl $ERP_URL/@fs<absolute path>`) and confirm the `import()` call has no second argument.
+
+**Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
+
+## A value two layers must agree on lives once, in the client-safe pure module
+
+**Context:** The accounting enable wizard (ERP) and the `activate-accounting` server function both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
+
+**Problem:** Until 2026-10-09 each layer kept its own copy. `MigrationClearingTable.tsx` defined `MIGRATION_CLEARING_TOLERANCE = 0.01` and `isMigrationClearingZero`. `activate-accounting/index.ts` defined a second `MIGRATION_CLEARING_TOLERANCE`. `accounting.server.ts` defined `ACTIVATION_CUTOVER_PARAM`. The copies matched, but nothing kept them matched. If one copy changes, the wizard offers an enable that the server refuses, or hides one that the server accepts. Typecheck cannot see a drift between two literals.
+
+**Rule:** Put a value that two layers must agree on in one place: the client-safe pure module that both layers already import. Export the predicate, not only the number, so every caller compares the same way. The accounting cutover keeps `MIGRATION_CLEARING_TOLERANCE`, `isMigrationClearingZero`, `MIGRATION_CLEARING_ACCOUNT_CLASS` and `ACTIVATION_CUTOVER_PARAM` in `@carbon/database/accounting-cutover` (commits 38602af774, b9f897608c, f1fe2b6c81). That module reads no database, so the browser can import it.
+
+**Applies to:** `packages/database/src/accounting-cutover.ts`; `apps/erp/app/modules/accounting/ui/Activation/MigrationClearingTable.tsx`; `apps/erp/app/routes/x+/accounting+/activation.enable.tsx`; `packages/server-functions/src/activate-accounting/index.ts`; any check that a wizard previews and a server function enforces.
+
+## A detector and the builder it feeds share one zero-value rule
+
+**Context:** The accounting enable, and the "Write missing journals" repair, find legacy documents: posted on or after the cutover with no journal (`packages/database/src/legacy-documents.ts`). A builder then writes each document's journal (`packages/server-functions/src/activate-accounting/legacy/`). After that, the enable's re-cost (`activate-accounting/recost.ts`) adjusts the inventory journal pair of each outbound movement whose cost changed.
+
+**Problem:** The detection and the builders used different zero rules, in both directions:
+
+1. The detection found documents that the builders write no line for: a comment-only invoice, a receipt with no received line, a return received at no cost. Such a document got no journal, so every later run found it again.
+2. The posting core wrote no journal for a zero-cost movement (`valueMovement` skipped the journal when `cost === 0`). When the re-cost gave that movement a cost, it found no pair to adjust and refused with a 409.
+
+Commit b9f897608c removed zero-value documents from the detection. Commits b9f897608c and 188a710e24 made every outbound cost row write its pair, at zero too.
+
+**Rule:** Write the zero rule once and apply it on both sides. If the builder writes no line for a document, the detection leaves the document out. If a later step adjusts a line, the builder writes that line even at zero. Pin the pair with a test that runs the detection, the builder, and the detection again: the second detection must find nothing (`activate-accounting/legacy/detection.test.ts`).
+
+**Applies to:** `packages/database/src/legacy-documents.ts`; `packages/server-functions/src/activate-accounting/legacy/*`; `packages/server-functions/src/activate-accounting/recost.ts`; `valueMovement` in `packages/server-functions/src/lib/post-adjustment.ts`; any detect-then-repair pair.
+
+## A migration that re-scopes companies uses the company test of the migration it follows
+
+**Context:** `20261008211304_reset-accounting.sql` deletes the journals of every company except the demo-template companies. It finds those as the companies that hold a `JE-SEED-%` journal, which only tier 09 of the dataset seed writes. `20261009004448_accounting-cutover.sql` (section 7) then gives the spared companies a cutover, because their history is already in Carbon.
+
+**Problem:** The second migration first chose its companies by `accountingEnabled = true`. Only the dev CLI ever set that flag. A template applied through onboarding or Settings → Demo Data has it false. So those companies kept their Posted seed journals, but got no cutover. Their seeded Posted Opening Balance then blocked the enable wizard for good. Commit 38602af774 changed the test to the reset's `JE-SEED-%` test.
+
+**Rule:** If migration B acts on the companies that migration A chose, B copies A's predicate. Do not use a flag that "should" mean the same thing. Before you write the `WHERE`, read A's predicate. Then grep every writer of any flag you plan to use instead.
+
+**Applies to:** `packages/database/supabase/migrations/20261008211304_reset-accounting.sql`; `packages/database/supabase/migrations/20261009004448_accounting-cutover.sql`; any data migration that follows another data migration.
+
+## Removing a feature flag can expose a fail-open `?.data` guard
+
+**Context:** Before always-posting, the return shipments in `post-shipment` and the sales return receipt in `post-receipt` read the account defaults only when `accountingEnabled` was true. Otherwise `accountDefaults` was null. The journal was written under `if (accountingEnabled && accountDefaults?.data && cost > 0)`. So `accountDefaults?.data` was part of the "accounting is off" test.
+
+**Problem:** The always-post change removed the flag and kept `if (accountDefaults.data && cost > 0)`. After that, the `.data` check only caught a failed read, and it failed open. If the defaults read failed, the post still wrote its stock and cost rows, but it skipped the journal with no error and no log. Typecheck and the tests passed. Commit b9f897608c makes both paths throw "Error getting account defaults" when the read fails.
+
+**Rule:** When you remove a flag, read every condition that used the flag. A null check that meant "feature off" becomes a silent error check when the flag goes. Turn a failed read into a throw before any write. Keep only business conditions, such as `cost > 0`, in the `if`.
+
+**Applies to:** `packages/server-functions/src/post-shipment/index.ts` (return shipments); `packages/server-functions/src/post-receipt/index.ts` (sales return receipt); any flag removal, such as `accountingEnabled` or a plan gate.
+
+## The pre-commit Lingui extract reads the working tree, not the commit
+
+**Context:** `scripts/git-hooks/pre-commit` runs `pnpm lingui:check` when a staged file is TS, JS or `.po`. That script runs `lingui extract --clean` and then compiles. The hook then stages every `packages/locale/locales/**/*.po` file.
+
+**Problem:** The extract reads the working tree, not the index. On 2026-10-09, commit eac7595333 ran the hook while another session had uncommitted UI edits in the same tree (`PaymentApplyTable.tsx` and others). The extract removed strings that the committed code still uses ("Applied amount for {0}", "Discount for {0}"). It added strings that only the uncommitted code uses ("Apply to {0}", "FX Gain/Loss"). The hook staged all 13 catalogs, with those changes, into that commit. Commit 814631c22f restored catalogs extracted from HEAD in a clean worktree.
+
+**Rule:** Before you commit TS or JS, run `git status`. If it shows uncommitted `.ts` or `.tsx` edits that are not part of your commit, the hook's catalogs are wrong. A catalog-only commit in the same tree does not fix them, because the hook extracts again from the same dirty tree. Make the catalog commit in a clean tree:
+
+1. Run `git worktree add -b i18n-catalogs <path> HEAD`.
+2. In that worktree, run `pnpm install`.
+3. In that worktree, run `pnpm lingui:check`, then `pnpm lingui:clean`.
+4. Stage `packages/locale/locales/*/*.po` there and commit. The hook now extracts from a clean tree.
+5. In your own tree, run `git merge --ff-only i18n-catalogs`. A fast-forward creates no commit, so no hook runs.
+6. Remove the worktree and the branch.
+
+After any commit, check its `.po` diff. A removed `msgid` that HEAD code still uses means that the extract read a dirty tree.
+
+**Applies to:** `scripts/git-hooks/pre-commit`; `packages/locale/locales/*/*.po`; every workspace that more than one session edits at a time.
+
+## One Inngest send carries at most 512 KB, and a rendered email is about 17 KB
+
+**Context:** `notify` rendered every recipient's notification email in one step, then sent all the `carbon/send-email` events with one `step.sendEvent` (2026-10-09).
+
+**Problem:** One rendered `NotificationEmail` is about 16.9 KB, because the event carries the full HTML. Inngest accepts at most 512 KB in one send and 4 MB in one step's output. So email to about 30 recipients or more could fail the send, and about 240 filled the step. A group notification reaches those sizes; a test with one recipient never does.
+
+**Rule:** Size a fan-out by its bytes, not its count. When each event carries a rendered body, render and send it in chunks (`EMAIL_CHUNK` in `notify.ts`), each chunk in its own step with an indexed id (`render-emails-${index}`). A new step id replays a run in flight at deploy, so a send step that changes id sends again for those runs.
+
+**Applies to:** `packages/jobs/src/inngest/functions/notifications/notify.ts`; any job that fans out events with large payloads.
+
+## A failed COPY in a plain-text dump can swallow the rest of the restore
+
+**Context:** On 2026-10-09 a `crbn restore` of a prod cluster backup ended with ✅. The restored database had no index, constraint, trigger or policy in `public`, and an empty migration ledger. The trailing `migration up --include-all` would then have replayed all 1,159 migrations.
+
+**Problem:** The local stack's auth, storage and realtime tables come from its own service images, and they are older than prod's. Prod's `storage.objects` has a column (`archived_at`) that the local table does not have. A `COPY` that names an unknown column or table fails when psql parses it, so psql never enters copy mode. It then reads the block's data rows as SQL. In that data an unbalanced quote opened a string that never closed, so psql read the rest of the file as part of it. With `ON_ERROR_STOP=0`, nothing failed. The same drift also reaches DDL. The backup's newer `storage.protect_bucket_control_columns` trigger reads columns that the local `storage.buckets` does not have, so every bucket insert failed. Those service-schema objects survive later restores, because a restore drops only `public`. Separately, a Supabase backup is not one consistent snapshot: it contained payments whose journal it did not hold. So 15 foreign keys could not be validated.
+
+**Rule:** Do not trust a restore that ran with `ON_ERROR_STOP=0` until you verify it by name. `scripts/restore-database.sh` now does these things:
+
+1. It fits each non-public `COPY` to the local columns, and drops the block when the local table does not exist.
+2. It skips function definitions owned by the auth, storage and realtime admin roles. Those functions belong to the local service images.
+3. It checks each `public` index, constraint, trigger and policy from the dump, and the ledger row count. It re-adds a foreign key that cannot be validated as `NOT VALID`.
+4. It exits 1 on any shortfall, and `crbn restore` then does not migrate.
+
+A ✓ that a script prints after a step that is allowed to fail is not evidence. Read the state back.
+
+**Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.

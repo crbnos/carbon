@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn, Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCheck, LuInfo } from "react-icons/lu";
@@ -88,7 +92,7 @@ export function WorkCenterAvailabilityPopover({
           aria-label={t`How are these hours calculated?`}
           // Stop the row's onClick (which selects the node) from firing.
           onClick={(e) => e.stopPropagation()}
-          className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground/70 opacity-0 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
+          className="flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground/70 md:opacity-0 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100"
         >
           <LuInfo className="size-3.5" />
         </button>

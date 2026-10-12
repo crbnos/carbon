@@ -1,4 +1,10 @@
-import useInventorySubmodules from "./useInventorySubmodules";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import useInventorySubmodules, {
+  InventorySections
+} from "./useInventorySubmodules";
 
 export * from "./Inventory";
 export * from "./InventoryCount";
@@ -10,4 +16,4 @@ export * from "./StorageTypes";
 export * from "./StorageUnits";
 export * from "./Valuation";
 export * from "./WarehouseTransfers";
-export { useInventorySubmodules };
+export { InventorySections, useInventorySubmodules };

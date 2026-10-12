@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn, Subheading } from "@carbon/react";
 import type { ReactNode } from "react";
 
@@ -16,7 +20,13 @@ type Props = {
  */
 export default function SettingsSectionHeader({ children, className }: Props) {
   return (
-    <Subheading variant="light" className={cn("mt-4", className)}>
+    <Subheading
+      variant="light"
+      className={cn(
+        "mt-4 max-md:text-xs/[1.3] max-md:font-medium max-md:tracking-[0.04em]",
+        className
+      )}
+    >
       {children}
     </Subheading>
   );

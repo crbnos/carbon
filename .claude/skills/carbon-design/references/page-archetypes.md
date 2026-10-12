@@ -34,8 +34,9 @@ unless they start with `apps/` or `packages/`.
 │ ⚙    │ ╰────────────────────────────────────────────────────────────────╯ │
 └──────┴──────────────────────────────────────────────────────────────────┘
 ```
-- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`
-  (icon rail, hover-expands, pushes content). Modules are registered in `hooks/useModules.tsx`
+- Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`,
+  built on the shared `NavRail` from `@carbon/react` (the same rail MES uses): icon rail that
+  expands on mouse hover or when pinned with ⌘B, and pushes content. Modules are registered in `hooks/useModules.tsx`
   (`{ key, permission, name, to, icon }`, Lucide icons, Settings pinned bottom).
 - Topbar: breadcrumbs (from route `handle`), global ✎ Create menu
   (`components/Layout/Topbar/CreateMenu.tsx`), notifications, avatar.
@@ -52,6 +53,13 @@ unless they start with `apps/` or `packages/`.
 
 Both set `handle.module` so the rail stays highlighted. A detail route nested under a module
 folder hides the sub-nav with `handle.hideModuleSidebar` (`utils/handle.ts`).
+
+There is ONE sub-nav, owned by the shell (`ModuleSidebarLayout`, rendered in `x+/_layout.tsx`).
+A module `_layout.tsx` does not render a sidebar: it names its sub-nav component on the route
+handle (`handle.sidebar`, a small component that calls `use{Module}Submodules` and returns
+`<GroupedContentSidebar groups={groups} />`) and its default export is only the page column.
+The frame, its width and its collapsed state therefore persist from module to module; only the
+links change.
 
 ## 3. Archetype A — Module list page
 
@@ -154,12 +162,24 @@ Exemplar: `routes/x+/customer+/$customerId.tsx`, `modules/sales/ui/Customer/Cust
 `components/Layout/Navigation/DetailSidebar.tsx`. Use for long-lived records with many
 sub-collections (contacts, locations, terms) and no line-based lifecycle.
 
-## 7. Archetype E — Posting document (Receipt, Shipment, Journal Entry, Fixed Asset)
+## 7. Archetype E — Posting document (Shipment, Receipt, Transfers, Picking List, Journal Entry, Payment, Memo, Reimbursement, Runs, Fixed Asset)
 
-Centered `max-w-5xl mx-auto p-4` stack of cards, no explorer/properties; header via
-`components/DocumentHeader.tsx` inside a Card or a `*Header` strip. Lines are a card-row list
-with inline inputs (`.claude/rules/shipments-receipts-ui-patterns.md`). Use for short-lived,
-often system-generated documents that are filled in then posted.
+`components/DocumentPage/`: `DocumentPage header sidebar` — one readable column (`max-w-5xl`,
+an `@container`) beside a resizable, collapsible side panel whose size is shared by every
+page using it (on mobile it is a drawer).
+- **Header** — `DocumentPageHeader`: flat (no Card), pinned, a bottom rule only once content
+  scrolls under it. ID (`Heading h2`) + `Copy` + ⋯ menu + status left; outputs then lifecycle
+  actions right, exactly one `primary` (the next step), hidden once it can no longer apply;
+  a muted `meta` line under the ID ("Created 3 days ago by X · Posted Sep 30 by Y").
+- **Body** — the record's own fields laid flat (`ValidatedForm` with no Card, grids on
+  container queries), then the work (lines, notes) as Cards. Line rows size by their own
+  width (`@container`), never by the viewport — the pane is resizable.
+- **Side panel** — `DocumentSidebar`: **Documents** (one untitled `RelatedDocumentGroup` of
+  `RelatedDocument` rows: counterparty, source, downstream with status, then files as
+  `external` rows) and **Activity** (the inline `AuditLogFeed`), Activity only for
+  audit-logged entities. Cross-link buttons and the ⋯ History item do not exist here.
+Exemplar: `routes/x+/shipment+/$shipmentId.tsx` + `modules/inventory/ui/Shipments/Shipment{Header,Documents,Form}.tsx`.
+Rollout notes: `.ai/plans/implemented/2026-10-02-document-page-layout.md`.
 
 ## 8. Archetype F — Settings preference page
 
@@ -229,7 +249,7 @@ menu (add new document types to `CreateMenu.tsx`). Both link to the same `path.t
 ## 14. Responsive
 
 One JS breakpoint: `useIsMobile` = `< 768px`. ERP is desktop-first:
-- < md: rail hidden → hamburger drawer; module sub-nav → "Submodules" drawer; Explorer and
+- < md: rail hidden → the same `NavRail` items in a left drawer, opened by the Topbar hamburger; module sub-nav → "Submodules" drawer; Explorer and
   Properties become overlay drawers that close on navigation; breadcrumbs hidden.
 - 768–1023px: Properties starts collapsed.
 - Form grids collapse to one column (`grid-cols-1 md:grid-cols-2 lg:grid-cols-3`).

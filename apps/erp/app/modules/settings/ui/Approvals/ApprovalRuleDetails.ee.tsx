@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { ApprovalDocumentType, ApprovalRule } from "@carbon/ee/approvals";
 import { cn, HStack, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";

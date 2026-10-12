@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -6,6 +10,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { stepRecordValidator } from "~/services/models";
 import {
   backflushUntrackedMaterialsOnStepRecord,
@@ -47,11 +52,15 @@ export async function action({ request }: ActionFunctionArgs) {
   // (unassigned) on the operation's first step. The operator builds unit by unit
   // and never scans these. A backflush failure (e.g. insufficient stock) never
   // blocks the record; the part just stays manually issuable.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(serviceRole, {
-    jobOperationStepId: validation.data.jobOperationStepId,
-    companyId,
-    userId
-  });
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      jobOperationStepId: validation.data.jobOperationStepId,
+      companyId,
+      userId
+    }
+  );
   if (backflush.error) {
     log.error("Backflush on step record failed", {
       error: backflush.error,

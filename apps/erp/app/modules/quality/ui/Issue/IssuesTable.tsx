@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -74,6 +84,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -83,6 +94,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <IssueStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -106,6 +118,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuOctagonX />,
           filter: {
             type: "static",
@@ -209,6 +222,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: people.map((employee) => ({
@@ -256,6 +270,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.openDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -266,6 +283,9 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <DateTime value={row.original.closeDate} variant="date" />
         ),
         meta: {
+          filter: {
+            type: "dateRange"
+          },
           icon: <LuCalendar />
         }
       },
@@ -305,6 +325,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "quality")}
             onClick={() => {
               navigate(`${path.to.issue(row.id!)}`);
@@ -314,6 +335,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
             Edit Issue
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "quality")}
             onClick={() => {

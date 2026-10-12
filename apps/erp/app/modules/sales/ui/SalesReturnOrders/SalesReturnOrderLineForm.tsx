@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Select as CarbonSelect,
@@ -13,6 +18,7 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
+  PrefetchLink,
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -22,9 +28,9 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useState } from "react";
 import { LuCircleStop, LuLoaderCircle } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -90,9 +96,8 @@ function SourceReference({
   }
 
   return (
-    <Link
+    <PrefetchLink
       to={to}
-      prefetch="intent"
       className="group inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-foreground"
     >
       <span className="text-muted-foreground group-hover:text-foreground">
@@ -101,7 +106,7 @@ function SourceReference({
       <span className="font-medium tabular-nums text-foreground/70 group-hover:text-foreground">
         {value}
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 
@@ -234,18 +239,16 @@ const SalesReturnOrderLineForm = ({
 
   // Disposition submits through its own fetcher, not the line form. Scrap and
   // Rework escalate to an Issue instead of writing the disposition directly.
-  const dispositionFetcher = useFetcher<{ success: boolean }>();
+  const dispositionFetcher = useAction<{ success: boolean }>({
+    onSettled: () => {
+      if (line?.disposition) {
+        setDisposition(line.disposition as string);
+      }
+    }
+  });
   const [disposition, setDisposition] = useState(
     (line?.disposition as string | undefined) ?? "Pending"
   );
-  // The disposition routes always redirect (success or flashed error), so the
-  // loader's revalidated value is the persisted truth — sync the select to it.
-  // A failed submit reverts; a successful one confirms the same value.
-  useEffect(() => {
-    if (dispositionFetcher.state === "idle" && line?.disposition) {
-      setDisposition(line.disposition as string);
-    }
-  }, [dispositionFetcher.state, line?.disposition]);
   const quantityReceived = line?.quantityReceived ?? 0;
 
   const onDispositionChange = (value: string) => {

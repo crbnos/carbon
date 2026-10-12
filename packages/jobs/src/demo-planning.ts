@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule, runMrp } from "@carbon/planning";
 import { getJobDatabaseClient } from "./db";
@@ -18,7 +22,7 @@ function message(err: unknown): string {
 
 /**
  * Same calls as the MRP cron and `api+/schedule.ts`. Must run after the seed commits
- * (both engines read over PostgREST). Never throws: the 3-hourly MRP cron is the backstop.
+ * (both engines read over PostgREST). Never throws: the scheduled MRP run is the backstop.
  */
 export async function planDemoCompany({
   companyId,

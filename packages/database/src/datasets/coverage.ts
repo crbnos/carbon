@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Row-count floors, so a tier that silently writes nothing fails. Counts are absolute
  * (bootstrap rows included). Floor = the smallest count any dataset produced
@@ -33,6 +37,13 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   customer: 4,
   customerBankAccount: 4,
   customerContact: 4,
+  customerContract: 1,
+  // 12–13 depending on the anchor's day of month; floored at 80% per the task.
+  customerContractInvoice: 10, // min 13
+  customerContractInvoiceLine: 21, // min 27
+  customerContractLedgerEntry: 2, // Opening entries
+  customerContractLine: 3,
+  customerContractRevenue: 22, // min 28
   customerItemPriceOverride: 1,
   customerItemPriceOverrideBreak: 2,
   customerLocation: 4,
@@ -234,7 +245,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierTax: 11,
   supplierType: 6,
   tag: 5,
-  timeCardEntry: 7,
+  timeCardEntry: 6,
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,

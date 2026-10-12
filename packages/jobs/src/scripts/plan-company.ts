@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Runs MRP and the scheduler over one company. `db:seed:dev` spawns it because
  * `@carbon/database` cannot import `@carbon/planning` (it depends on the database).

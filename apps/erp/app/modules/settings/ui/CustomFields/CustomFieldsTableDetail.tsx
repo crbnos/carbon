@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   ActionMenu,
   Button,
@@ -10,13 +14,14 @@ import {
   DrawerTitle,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   useDebounce,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Reorder } from "framer-motion";
+import { Reorder } from "motion/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AiOutlineNumber } from "react-icons/ai";
 import { BiText } from "react-icons/bi";
@@ -25,6 +30,7 @@ import { CgProfile } from "react-icons/cg";
 import {
   LuContainer,
   LuGripVertical,
+  LuLink,
   LuPencil,
   LuSquareUser,
   LuTrash
@@ -32,6 +38,7 @@ import {
 import { Link, useFetcher, useParams } from "react-router";
 import { New } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewPlacementContext } from "~/components/New";
 import { useUrlParams } from "~/hooks";
 import type { AttributeDataType } from "~/modules/people";
 import type { CustomField, CustomFieldsTableType } from "~/modules/settings";
@@ -70,7 +77,7 @@ const CustomFieldCategoryDetail = ({
       Array.isArray(customFieldTable.fields)
         ? customFieldTable.fields.reduce<
             Record<string, CustomFieldAndDataType>
-            // @ts-ignore
+            // @ts-expect-error
           >((acc, field) => {
             if (!field) return acc;
             const customField = field as CustomFieldAndDataType;
@@ -148,13 +155,17 @@ const CustomFieldCategoryDetail = ({
   const renderContextMenu = (fieldId: string) => {
     return (
       <>
-        <MenuItem asChild>
+        <MenuItem shortcut={MENU_ITEM_SHORTCUTS.edit} asChild>
           <Link to={`${fieldId}?${params.toString()}`}>
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Custom Field</Trans>
           </Link>
         </MenuItem>
-        <MenuItem destructive onClick={() => onDelete(fieldMap[fieldId])}>
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.delete}
+          destructive
+          onClick={() => onDelete(fieldMap[fieldId])}
+        >
           <MenuIcon icon={<LuTrash />} />
           <Trans>Delete Custom Field</Trans>
         </MenuItem>
@@ -222,9 +233,12 @@ const CustomFieldCategoryDetail = ({
             )}
           </DrawerBody>
           <DrawerFooter>
-            <Button asChild size="md">
-              <New label={t`Custom Field`} to={`new?${params?.toString()}`} />
-            </Button>
+            {/* Inline on phones too: the app bar sits under this drawer. */}
+            <NewPlacementContext.Provider value="inline">
+              <Button asChild size="md">
+                <New label={t`Custom Field`} to={`new?${params?.toString()}`} />
+              </Button>
+            </NewPlacementContext.Provider>
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
@@ -249,6 +263,7 @@ function getIcon(props: AttributeDataType) {
     isDate,
     isNumeric,
     isText,
+    isLink,
     isUser,
     isCustomer,
     isSupplier
@@ -257,6 +272,7 @@ function getIcon(props: AttributeDataType) {
   if (isDate) return <BsCalendarDate />;
   if (isNumeric) return <AiOutlineNumber />;
   if (isText) return <BiText />;
+  if (isLink) return <LuLink />;
   if (isUser) return <CgProfile />;
   if (isCustomer) return <LuSquareUser />;
   if (isSupplier) return <LuContainer />;

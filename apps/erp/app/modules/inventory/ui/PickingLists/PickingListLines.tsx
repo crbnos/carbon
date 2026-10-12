@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
+  ActionPresentation,
   TrackedEntityOption,
   TrackedEntityPickOrder,
   TrackedEntitySelection
 } from "@carbon/react";
 import {
+  ActionPresentationProvider,
   Badge,
   BarProgress,
   Button,
@@ -20,11 +26,13 @@ import {
   DropdownMenuTrigger,
   HStack,
   Skeleton,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   TrackedEntityPicker,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -39,7 +47,7 @@ import {
 import { Await, useFetcher } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
+import { usePercentFormatter, usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPickingListLocked } from "../../inventory.models";
@@ -195,6 +203,39 @@ function PickingKitCard({
     0
   );
   const progress = totalToPick > 0 ? (totalPicked / totalToPick) * 100 : 0;
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const percentFormatter = usePercentFormatter();
+
+  // Phones: an overline header for the kit, then each line as its own card.
+  if (isPhone) {
+    const percent = percentFormatter.format(progress / 100);
+    return (
+      <section className="flex w-full flex-col gap-3">
+        <div className="flex items-center justify-between gap-3 px-1 text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
+          <div className="min-w-0 truncate normal-case tracking-normal">
+            {kit.jobReadableId ?? t`Unknown Job`}
+            {kit.operationName ? ` · ${kit.operationName}` : ""}
+            {kit.workCenterName ? ` · ${kit.workCenterName}` : ""}
+          </div>
+          <span className="shrink-0 tabular-nums">
+            <Trans>{percent} picked</Trans>
+          </span>
+        </div>
+        {kit.lines.map((line) => (
+          <Card key={line.id} className="bg-card">
+            <PickingListLineItem
+              line={line}
+              pickingListId={pickingListId}
+              isLast
+              isLocked={isLocked}
+              recommendations={recommendations}
+            />
+          </Card>
+        ))}
+      </section>
+    );
+  }
 
   return (
     <Card>
@@ -211,7 +252,9 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg">
+        {/* The rows size themselves by this list's width, not the viewport:
+            the content pane it sits in is resizable. */}
+        <div className="@container border rounded-lg">
           {kit.lines.map((line, index) => (
             <PickingListLineItem
               key={line.id}
@@ -228,6 +271,11 @@ function PickingKitCard({
   );
 }
 
+const phoneActionCells: ActionPresentation = {
+  kind: "bar",
+  emphasis: "secondary"
+};
+
 function PickingListLineItem({
   line,
   pickingListId,
@@ -243,6 +291,7 @@ function PickingListLineItem({
 }) {
   const permissions = usePermissions();
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [items] = useItems();
   const fetcher = useFetcher<{ success: boolean; message?: string }>();
   const isPending = fetcher.state !== "idle";
@@ -359,17 +408,128 @@ function PickingListLineItem({
     });
   };
 
+  const quantityBadge = isTracked ? (
+    <Badge
+      variant={isPicked ? "green" : quantityPicked > 0 ? "orange" : "red"}
+      className="text-base tabular-nums"
+    >
+      {quantityPicked}/{quantityToPick}
+      {unitSuffix}
+    </Badge>
+  ) : (
+    <Badge
+      variant={isPicked ? "green" : isShort ? "orange" : "red"}
+      className="text-base tabular-nums"
+    >
+      {isShort ? quantityPicked : quantityToPick}
+      {unitSuffix}
+    </Badge>
+  );
+
+  // Phones: the buttons fill their own row as equal 44pt cells.
+  const actions = isLocked ? null : (
+    <ActionPresentationProvider value={isPhone ? phoneActionCells : null}>
+      <HStack
+        spacing={1}
+        className="max-md:basis-full max-md:gap-2 max-md:space-x-0 max-md:[&>button]:min-w-fit max-md:[&>button]:flex-1"
+      >
+        {isTracked ? (
+          <>
+            {pickedLots.length === 1 ? (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isDisabled={!canPick || isPending}
+                onClick={() => unpickTracked(pickedLots[0].trackedEntityId)}
+              >
+                {pickedLots[0].trackedEntity?.readableId ? (
+                  <Trans>Unpick {pickedLots[0].trackedEntity.readableId}</Trans>
+                ) : (
+                  <Trans>Unpick</Trans>
+                )}
+              </Button>
+            ) : pickedLots.length > 1 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuUndo2 />}
+                    rightIcon={<LuChevronDown />}
+                    isDisabled={!canPick || isPending}
+                  >
+                    <Trans>Unpick</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {pickedLots.map((lot) => (
+                    <DropdownMenuItem
+                      key={lot.trackedEntityId}
+                      onClick={() => unpickTracked(lot.trackedEntityId)}
+                    >
+                      <DropdownMenuIcon icon={<LuUndo2 />} />
+                      {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+            {!isPicked && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuQrCode />}
+                isDisabled={!canPick || isPending}
+                onClick={openPicker}
+              >
+                <Trans>Scan</Trans>
+              </Button>
+            )}
+          </>
+        ) : isPicked ? (
+          <Button
+            variant="secondary"
+            leftIcon={<LuUndo2 />}
+            isDisabled={!canPick || isPending}
+            isLoading={isPending}
+            onClick={() => pick(0)}
+          >
+            <Trans>Unpick</Trans>
+          </Button>
+        ) : (
+          <>
+            <Button
+              variant="secondary"
+              isDisabled={!canPick || isPending}
+              onClick={() => setShortOpen(true)}
+            >
+              <Trans>Short</Trans>
+            </Button>
+            <Button
+              leftIcon={<LuCirclePlus />}
+              isDisabled={!canPick || isPending}
+              isLoading={isPending}
+              onClick={() => pick(quantityToPick)}
+            >
+              <Trans>Pick</Trans>
+            </Button>
+          </>
+        )}
+      </HStack>
+    </ActionPresentationProvider>
+  );
+
   return (
     <div
       className={cn(
-        "group flex items-center justify-between gap-6 p-4 border-b",
+        "group flex flex-col gap-4 p-4 border-b @3xl:flex-row @3xl:items-center @3xl:justify-between @3xl:gap-6 max-md:gap-3",
         isLast && "border-none"
       )}
     >
+      {/* Stacked while the list is narrow; one line once it is wide enough.
+          The item takes what the pick controls leave. */}
       <HStack
         spacing={4}
         className={cn(
-          "min-w-0 flex-1 transition-opacity duration-150",
+          "w-full min-w-0 transition-opacity duration-150 @3xl:w-auto @3xl:flex-1",
           isResolved && "opacity-50 group-hover:opacity-100"
         )}
       >
@@ -378,7 +538,7 @@ function PickingListLineItem({
           thumbnailPath={null}
           type={(item?.type as "Part") ?? "Part"}
         />
-        <VStack spacing={0} className="min-w-0">
+        <VStack spacing={0} className="flex-1 min-w-0">
           <p className="truncate text-base font-medium sm:text-sm">
             {itemName}
           </p>
@@ -404,9 +564,14 @@ function PickingListLineItem({
             <RecommendedLots resolve={recommendations} lineId={line.id} />
           )}
         </VStack>
+        {isPhone && isShort && (
+          <Status color="orange" disableTooltip className="ml-auto shrink-0">
+            <Trans>Short</Trans>
+          </Status>
+        )}
       </HStack>
 
-      <HStack spacing={6} className="shrink-0">
+      <div className="flex flex-wrap items-center justify-end gap-x-6 gap-y-2 @3xl:shrink-0 @3xl:flex-nowrap max-md:gap-3">
         {source ? (
           <div className="text-base font-medium whitespace-nowrap">
             {source}
@@ -465,104 +630,20 @@ function PickingListLineItem({
             </TooltipContent>
           </Tooltip>
         )}
-        {isTracked ? (
-          <Badge
-            variant={isPicked ? "green" : quantityPicked > 0 ? "orange" : "red"}
-            className="text-base tabular-nums"
-          >
-            {quantityPicked}/{quantityToPick}
-            {unitSuffix}
-          </Badge>
-        ) : (
-          <Badge
-            variant={isPicked ? "green" : isShort ? "orange" : "red"}
-            className="text-base tabular-nums"
-          >
-            {isShort ? quantityPicked : quantityToPick}
-            {unitSuffix}
-          </Badge>
-        )}
-        {isLocked ? null : isTracked ? (
-          <HStack spacing={1}>
-            {pickedLots.length === 1 ? (
-              <Button
-                variant="secondary"
-                leftIcon={<LuUndo2 />}
-                isDisabled={!canPick || isPending}
-                onClick={() => unpickTracked(pickedLots[0].trackedEntityId)}
-              >
-                {pickedLots[0].trackedEntity?.readableId ? (
-                  <Trans>Unpick {pickedLots[0].trackedEntity.readableId}</Trans>
-                ) : (
-                  <Trans>Unpick</Trans>
-                )}
-              </Button>
-            ) : pickedLots.length > 1 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuUndo2 />}
-                    rightIcon={<LuChevronDown />}
-                    isDisabled={!canPick || isPending}
-                  >
-                    <Trans>Unpick</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {pickedLots.map((lot) => (
-                    <DropdownMenuItem
-                      key={lot.trackedEntityId}
-                      onClick={() => unpickTracked(lot.trackedEntityId)}
-                    >
-                      <DropdownMenuIcon icon={<LuUndo2 />} />
-                      {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-            {!isPicked && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuQrCode />}
-                isDisabled={!canPick || isPending}
-                onClick={openPicker}
-              >
-                <Trans>Scan</Trans>
-              </Button>
+        {isPhone ? (
+          <span className="ml-auto inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+            {isTracked || isPicked || isShort ? (
+              <Trans>Picked</Trans>
+            ) : (
+              <Trans>To pick</Trans>
             )}
-          </HStack>
-        ) : isPicked ? (
-          <Button
-            variant="secondary"
-            leftIcon={<LuUndo2 />}
-            isDisabled={!canPick || isPending}
-            isLoading={isPending}
-            onClick={() => pick(0)}
-          >
-            <Trans>Unpick</Trans>
-          </Button>
+            {quantityBadge}
+          </span>
         ) : (
-          <HStack spacing={1}>
-            <Button
-              variant="secondary"
-              isDisabled={!canPick || isPending}
-              onClick={() => setShortOpen(true)}
-            >
-              <Trans>Short</Trans>
-            </Button>
-            <Button
-              leftIcon={<LuCirclePlus />}
-              isDisabled={!canPick || isPending}
-              isLoading={isPending}
-              onClick={() => pick(quantityToPick)}
-            >
-              <Trans>Pick</Trans>
-            </Button>
-          </HStack>
+          quantityBadge
         )}
-      </HStack>
+        {actions}
+      </div>
 
       {shortOpen && (
         <ShortPickModal

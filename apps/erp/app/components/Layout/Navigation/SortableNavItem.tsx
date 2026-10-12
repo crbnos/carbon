@@ -1,4 +1,8 @@
-import { cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { cn, navRailItemClasses } from "@carbon/react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { LuEyeOff, LuGripVertical } from "react-icons/lu";
@@ -6,13 +10,11 @@ import type { DraftModule } from "./useNavigationEditMode";
 
 type SortableNavItemProps = {
   module: DraftModule;
-  isOpen: boolean;
   onToggleHidden: (key: string) => void;
 };
 
 export function SortableNavItem({
   module,
-  isOpen,
   onToggleHidden
 }: SortableNavItemProps) {
   const {
@@ -34,24 +36,17 @@ export function SortableNavItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative",
-        "h-10 w-10 group-data-[state=expanded]:w-full",
-        "flex items-center rounded-md",
-        "group-data-[state=collapsed]:justify-center",
-        "group-data-[state=expanded]:-space-x-2",
-        "font-medium shrink-0 inline-flex select-none",
-        "transition-[background-color,color,width] duration-100 ease-out",
+        navRailItemClasses,
         "hover:bg-accent hover:text-accent-foreground",
         "border border-transparent",
-        isDragging && "opacity-50 border-primary",
-        "group/item"
+        isDragging && "opacity-50 border-primary"
       )}
     >
       {/* Drag handle */}
       <div
         className={cn(
           "absolute left-0 top-0 h-full flex items-center pl-1",
-          "opacity-0 group-data-[state=expanded]:opacity-100",
+          "md:opacity-0 group-data-[state=expanded]:opacity-100",
           "cursor-grab active:cursor-grabbing"
         )}
         {...attributes}
@@ -68,7 +63,7 @@ export function SortableNavItem({
         className={cn(
           "min-w-[128px] text-sm",
           "absolute left-12 group-data-[state=expanded]:left-16",
-          "opacity-0 group-data-[state=expanded]:opacity-100"
+          "md:opacity-0 group-data-[state=expanded]:opacity-100"
         )}
       >
         {module.name}
@@ -80,7 +75,7 @@ export function SortableNavItem({
         onClick={() => onToggleHidden(module.key)}
         className={cn(
           "absolute right-2 top-2.5 p-0.5 rounded",
-          "opacity-0 group-data-[state=expanded]:opacity-100",
+          "md:opacity-0 group-data-[state=expanded]:opacity-100",
           "text-muted-foreground hover:text-foreground",
           "transition-opacity"
         )}

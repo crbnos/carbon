@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! cxx bridge over C++ Google Draco: encode one triangle mesh (positions +
 //! optional normals/UVs + indices) into a `KHR_draco_mesh_compression` blob.
 //! The caller (`crates/optimize`) assembles the glTF extension records from the

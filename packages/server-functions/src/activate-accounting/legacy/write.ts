@@ -1,0 +1,415 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Writes the journals the enable builds for legacy documents
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 5a): Provisional, with
+// no period, so the later steps of the enable re-cost, period, re-point and
+// promote them like every other Provisional journal.
+
+import type { Database } from "@carbon/database";
+import type { KyselyTx } from "@carbon/database/client";
+import { toJson } from "@carbon/database/json";
+import { getNextSequences } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
+import { chunkArray, datetime, formatPeriodLabel } from "@carbon/utils";
+import { sql } from "kysely";
+import { InvalidInputError } from "../../errors";
+
+const logger = getLogger("server-functions", "legacy-journals");
+
+type Enums = Database["public"]["Enums"];
+type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
+
+export type DimensionEntityType = Enums["dimensionEntityType"];
+
+/** One line, as the document's posting writes it, and its dimension values. */
+export type LegacyJournalLine = Omit<
+  JournalLineInsert,
+  "journalId" | "companyId" | "createdBy"
+> & {
+  dimensions: Partial<Record<DimensionEntityType, string | null>>;
+  /** Values by dimension id, as a posting that resolves its own dimensions
+   *  writes them. One wins over a `dimensions` value of the same dimension. */
+  dimensionValues?: { dimensionId: string; valueId: string }[];
+};
+
+export type LegacyJournal = {
+  description: string;
+  postingDate: string;
+  sourceType: Enums["journalEntrySourceType"];
+  lines: LegacyJournalLine[];
+};
+
+/** A legacy journal and the document whose `journalId` gets its id. */
+export type LegacyDocumentJournal = LegacyJournal & {
+  documentId: string;
+  /** A reimbursement's payable account, set on a row that has none. */
+  payableAccountId?: string;
+};
+
+/** Rows per statement, well inside Postgres's 65,535 bind parameters. */
+export const ROWS_PER_STATEMENT = 1000;
+
+/** Runs `read` once per chunk of the distinct ids and concatenates the rows. */
+export async function readByIds<T>(
+  ids: Iterable<string | null | undefined>,
+  read: (chunk: string[]) => Promise<T[]>
+): Promise<T[]> {
+  const unique = [
+    ...new Set([...ids].filter((id): id is string => Boolean(id)))
+  ];
+  const rows: T[] = [];
+  for (const chunk of chunkArray(unique, ROWS_PER_STATEMENT)) {
+    rows.push(...(await read(chunk)));
+  }
+  return rows;
+}
+
+/** A received or shipped quantity as the posting reads it: null and NaN are
+ *  0. */
+export function postedQuantity(value: number | null): number {
+  const quantity = Number(value ?? 0);
+  return Number.isNaN(quantity) ? 0 : quantity;
+}
+
+/** Items by id, with what the movement journals read. */
+export async function readItems(
+  trx: KyselyTx,
+  companyId: string,
+  itemIds: Iterable<string | null | undefined>
+) {
+  const rows = await readByIds(itemIds, (ids) =>
+    trx
+      .selectFrom("item")
+      .select([
+        "id",
+        "itemTrackingType",
+        "replenishmentSystem",
+        "readableIdWithRevision"
+      ])
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute()
+  );
+  return new Map(rows.map((row) => [row.id, row]));
+}
+
+/** Each item's posting group (the ItemPostingGroup dimension), by item id. */
+export async function readPostingGroups(
+  trx: KyselyTx,
+  companyId: string,
+  itemIds: Iterable<string | null | undefined>
+) {
+  const rows = await readByIds(itemIds, (ids) =>
+    trx
+      .selectFrom("itemCost")
+      .select(["itemId", "itemPostingGroupId"])
+      .where("companyId", "=", companyId)
+      .where("itemId", "in", ids)
+      .execute()
+  );
+  return new Map(rows.map((row) => [row.itemId, row.itemPostingGroupId]));
+}
+
+/**
+ * Refuses journals dated in a Closed or Locked period, naming the period,
+ * before any is written: the journal trigger refuses a Closed period with a
+ * bare error, and a Locked one fails later, when the journal gets its
+ * period. The enable meets none (no period on or after the cutover can be
+ * closed before it); a repair after it can.
+ */
+async function assertPeriodsOpen(
+  trx: KyselyTx,
+  companyId: string,
+  postingDates: string[]
+) {
+  const dates = [...new Set(postingDates)].sort();
+  const first = dates[0];
+  const last = dates[dates.length - 1];
+  if (!first || !last) return;
+  const periods = await trx
+    .selectFrom("accountingPeriod")
+    .select([
+      sql<string>`"startDate"::text`.as("startDate"),
+      sql<string>`"endDate"::text`.as("endDate"),
+      "closeStatus",
+      "closedAt"
+    ])
+    .where("companyId", "=", companyId)
+    .where("endDate", ">=", first)
+    .where("startDate", "<=", last)
+    .where((eb) =>
+      eb.or([
+        eb("closeStatus", "in", ["Closed", "Locked"]),
+        eb("closedAt", "is not", null)
+      ])
+    )
+    .orderBy("startDate")
+    .execute();
+  const blocked = periods.find((period) =>
+    dates.some((date) => period.startDate <= date && date <= period.endDate)
+  );
+  if (!blocked) return;
+  const name = formatPeriodLabel(blocked.startDate);
+  const locked = blocked.closeStatus === "Locked" && blocked.closedAt === null;
+  logger.warn("Refused legacy journals in a closed period", {
+    companyId,
+    period: blocked.startDate,
+    closeStatus: blocked.closeStatus
+  });
+  throw new InvalidInputError(
+    locked
+      ? `The period ${name} is locked. Unlock it, then write the missing journals.`
+      : `The period ${name} is closed. Reopen it, then write the missing journals.`
+  );
+}
+
+/**
+ * Inserts the journals, their lines and the lines' dimensions in a few
+ * statements, each kept out of provider sync (`keepOutOfProviderSync`). A journal with no lines is skipped, as a posting skips a
+ * zero-value document. Refuses a journal dated in a Closed or Locked period. The journal entry numbers are allocated in order.
+ * Returns the id of each journal, in the order given (null when skipped).
+ */
+export async function insertProvisionalJournals(
+  trx: KyselyTx,
+  {
+    companyId,
+    companyGroupId,
+    userId,
+    journals
+  }: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    journals: LegacyJournal[];
+  }
+): Promise<(string | null)[]> {
+  const writable = journals.filter((journal) => journal.lines.length > 0);
+  if (writable.length === 0) return journals.map(() => null);
+  await assertPeriodsOpen(
+    trx,
+    companyId,
+    writable.map((journal) => journal.postingDate)
+  );
+
+  const entryIds = await getNextSequences(
+    trx,
+    "journalEntry",
+    companyId,
+    writable.length
+  );
+  const postedAt = datetime.timestamp();
+  const journalIdByEntry = new Map<string, string>();
+  for (const rows of chunkArray(
+    writable.map((journal, index) => ({ journal, entryId: entryIds[index]! })),
+    ROWS_PER_STATEMENT
+  )) {
+    const inserted = await trx
+      .insertInto("journal")
+      .values(
+        rows.map(({ journal, entryId }) => ({
+          journalEntryId: entryId,
+          accountingPeriodId: null,
+          description: journal.description,
+          postingDate: journal.postingDate,
+          sourceType: journal.sourceType,
+          status: "Provisional" as const,
+          postedAt,
+          postedBy: userId,
+          companyId,
+          createdBy: userId
+        }))
+      )
+      .returning(["id", "journalEntryId"])
+      .execute();
+    for (const row of inserted)
+      journalIdByEntry.set(row.journalEntryId, row.id);
+  }
+
+  const dimensions = await trx
+    .selectFrom("dimension")
+    .select(["id", "entityType"])
+    .where("companyGroupId", "=", companyGroupId)
+    .where("active", "=", true)
+    .execute();
+  const dimensionIdByEntity = new Map(
+    dimensions.map((dimension) => [dimension.entityType, dimension.id])
+  );
+
+  const lines = writable.flatMap((journal, index) => {
+    const journalId = journalIdByEntry.get(entryIds[index]!)!;
+    return journal.lines.map(
+      ({ dimensions: values, dimensionValues, ...line }) => ({
+        insert: { ...line, journalId, companyId, createdBy: userId },
+        values,
+        dimensionValues: dimensionValues ?? []
+      })
+    );
+  });
+  for (const rows of chunkArray(lines, ROWS_PER_STATEMENT)) {
+    // Returned in insert order, as every posting reads them back.
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows.map((row) => row.insert))
+      .returning("id")
+      .execute();
+    const dimensionInserts = inserted.flatMap((line, index) => {
+      const row = rows[index]!;
+      const valueByDimension = new Map<string, string>();
+      for (const [entityType, valueId] of Object.entries(row.values)) {
+        const dimensionId = dimensionIdByEntity.get(
+          entityType as DimensionEntityType
+        );
+        if (dimensionId && valueId) valueByDimension.set(dimensionId, valueId);
+      }
+      for (const { dimensionId, valueId } of row.dimensionValues) {
+        valueByDimension.set(dimensionId, valueId);
+      }
+      return [...valueByDimension].map(([dimensionId, valueId]) => ({
+        journalLineId: line.id,
+        dimensionId,
+        valueId,
+        companyId
+      }));
+    });
+    for (const dimensionRows of chunkArray(
+      dimensionInserts,
+      ROWS_PER_STATEMENT
+    )) {
+      await trx
+        .insertInto("journalLineDimension")
+        .values(dimensionRows)
+        .execute();
+    }
+  }
+  const idByJournal = new Map(
+    writable.map((journal, index) => [
+      journal,
+      journalIdByEntry.get(entryIds[index]!)!
+    ])
+  );
+  await keepOutOfProviderSync(trx, {
+    companyId,
+    userId,
+    journals: writable.map((journal) => ({
+      id: idByJournal.get(journal)!,
+      sourceType: journal.sourceType
+    }))
+  });
+  return journals.map((journal) => idByJournal.get(journal) ?? null);
+}
+
+/** A document whose posting stores the journal it wrote. */
+export type JournalDocumentTable =
+  | "payment"
+  | "memo"
+  | "charge"
+  | "reimbursement";
+
+/**
+ * Sets each document's `journalId` to the journal the enable wrote for it, as
+ * its posting does, so a later void reverses that journal. A reimbursement
+ * with no payable account also gets the one its journal credits. One
+ * statement per chunk.
+ */
+export async function attachJournalIds(
+  trx: KyselyTx,
+  {
+    table,
+    companyId,
+    userId,
+    rows
+  }: {
+    table: JournalDocumentTable;
+    companyId: string;
+    userId: string;
+    rows: { id: string; journalId: string | null; payableAccountId?: string }[];
+  }
+): Promise<void> {
+  const attached = rows.filter((row) => row.journalId !== null);
+  const updatedAt = datetime.timestamp();
+  for (const chunk of chunkArray(attached, ROWS_PER_STATEMENT)) {
+    const values = sql`jsonb_to_recordset(${JSON.stringify(chunk)}::jsonb)
+      AS v("id" text, "journalId" text, "payableAccountId" text)`;
+    if (table === "reimbursement") {
+      await sql`UPDATE "reimbursement" AS d
+        SET "journalId" = v."journalId",
+          "payableAccountId" = COALESCE(d."payableAccountId", v."payableAccountId"),
+          "updatedAt" = ${updatedAt}, "updatedBy" = ${userId}
+        FROM ${values}
+        WHERE d."id" = v."id" AND d."companyId" = ${companyId}`.execute(trx);
+    } else {
+      await sql`UPDATE ${sql.table(table)} AS d
+        SET "journalId" = v."journalId",
+          "updatedAt" = ${updatedAt}, "updatedBy" = ${userId}
+        FROM ${values}
+        WHERE d."id" = v."id" AND d."companyId" = ${companyId}`.execute(trx);
+    }
+  }
+}
+
+export const CUTOVER_REBUILT_SYNC_CODE = "CUTOVER_REBUILT";
+
+/**
+ * Records an Excluded `journalEntry` sync operation for each journal and
+ * each accounting integration of the company, active or not. The reconciler
+ * (events and the outbound sweep) and the journal backfill skip a journal
+ * that has any operation, so none of them pushes it; the period close counts
+ * Excluded as settled. Re-send in Sync Activity still pushes one on purpose.
+ *
+ * Every journal the legacy backfill or its repair writes gets one. The reset
+ * deleted a company's journals and their sync records, not the provider's
+ * copies, so a journal written again of a document that had one before may
+ * already be in the provider, and pushing it would post it twice there.
+ * Which documents had one cannot be told reliably from the rows: a company
+ * that had accounting on wrote a journal for every family, and the stored
+ * cost rows say only that a posting ran, not that it journaled. So every
+ * rebuilt journal is kept out, and a user sends the ones the provider lacks
+ * from Sync Activity.
+ */
+async function keepOutOfProviderSync(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    journals
+  }: {
+    companyId: string;
+    userId: string;
+    journals: { id: string; sourceType: Enums["journalEntrySourceType"] }[];
+  }
+) {
+  if (journals.length === 0) return;
+  // The accounting providers, by the role the integration declares.
+  const integrations = await trx
+    .selectFrom("companyIntegration")
+    .innerJoin("integration", "integration.id", "companyIntegration.id")
+    .select("companyIntegration.id")
+    .where("companyIntegration.companyId", "=", companyId)
+    .where("integration.providerRole", "=", "accounting")
+    .execute();
+  if (integrations.length === 0) return;
+  const completedAt = datetime.timestamp();
+  const rows = integrations.flatMap((integration) =>
+    journals.map((journal) => ({
+      companyId,
+      integration: integration.id,
+      entityType: "journalEntry",
+      entityId: journal.id,
+      direction: "push-to-accounting",
+      trigger: "posting",
+      status: "Excluded" as const,
+      idempotencyKey: `journalEntry:${journal.id}:push-to-accounting:cutover-rebuilt`,
+      errorCode: CUTOVER_REBUILT_SYNC_CODE,
+      errorMessage:
+        "Written again when accounting was set up; the original may already be in the accounting system",
+      metadata: toJson({ sourceType: journal.sourceType }),
+      completedAt,
+      createdBy: userId
+    }))
+  );
+  for (const chunk of chunkArray(rows, ROWS_PER_STATEMENT)) {
+    await trx.insertInto("accountingSyncOperation").values(chunk).execute();
+  }
+}

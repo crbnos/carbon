@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { pluckUnique } from "@carbon/utils";
+import { RecordOutlet } from "@carbon/react";
+import { pluckUnique, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getInventoryCount,
   getInventoryCountLineSummary,
@@ -24,6 +29,10 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "inventoryCount", column: "id", param: "id" },
+    { table: "inventoryCountLine", column: "inventoryCountId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Inventory Count`, to: path.to.inventoryCounts },
     (data) => data?.inventoryCount?.inventoryCountId
@@ -155,7 +164,7 @@ export default function InventoryCountDetailRoute() {
           storageUnits={storageUnits}
         />
       </div>
-      <Outlet />
+      <RecordOutlet />
     </>
   );
 }

@@ -3,22 +3,17 @@ title: Integrations
 description: Connect Carbon to your accounting, CAD, project-management, estimating, and messaging tools.
 ---
 
-Carbon ships a set of first-party **integrations** to third-party apps. Each one is enabled per company
-under **Settings → Integrations**, where you flip it on and supply its credentials or settings.
+Carbon provides first-party integrations with third-party applications. Enable and configure them per company under **Settings → Integrations**.
 
-Integrations are an **Enterprise** capability. On [Carbon Cloud](https://app.carbon.ms) they're included
-with the **Business** plan; self-hosted, they require a commercial (Enterprise) license —
-see [Licensing](/docs/platform/licensing). **Email** and **Exchange Rates** are the exceptions, available on
-every edition and plan.
+Integrations are an **Enterprise Edition** capability. On [Carbon Cloud](https://app.carbon.ms), they require the **Business** plan. Self-hosted deployments require a commercial license. See [Licensing](/docs/platform/licensing). **Email** and **Exchange Rates** are available on every edition and plan.
 
 ## How a connection works
 
-An integration has two parts: a system-wide **definition** and a per-company **activation**.
+Each integration has a system-wide **definition** and a per-company **activation**.
 
-- The **definition** describes the fields that integration needs: API keys, OAuth tokens, mapping options.
+- The **definition** specifies required fields such as API keys, OAuth tokens, and mapping options.
 - The **activation** is a `companyIntegration` record: an `active` flag plus a `metadata` object holding
-  your credentials and settings. Carbon validates that metadata against the definition, so an integration
-  can't be switched on with incomplete configuration.
+  credentials and settings. Carbon validates this metadata against the definition before activation.
 
 Connections are established one of three ways, depending on the app:
 
@@ -29,19 +24,13 @@ Connections are established one of three ways, depending on the app:
 | OAuth | Xero, Jira, Onshape, Slack | Authorize Carbon with the provider; tokens are stored for you. |
 
 <Callout type="note">
-Disconnecting an integration sets `active = false` but **keeps your stored credentials**. Reconnecting
-doesn't make you re-enter them. To remove credentials entirely, clear the integration's settings before you
-disconnect.
+Disconnecting sets `active = false` but retains stored credentials. To remove credentials, clear the integration settings before disconnecting.
 </Callout>
 
 ## What's available depends on your deployment
 
 <Callout type="warn">
-Which integrations even appear depends on how Carbon is deployed. The OAuth connectors, **Xero**, **Jira**,
-and **Onshape**, only show up when their OAuth client is configured server-side (see
-[Environment variables](/docs/platform/self-hosting/environment-variables)), and **Slack** is hidden in controlled (ITAR)
-environments. So the same Carbon build can offer a different set of integrations depending on its
-configuration.
+Available integrations depend on deployment configuration. **Xero**, **Jira**, and **Onshape** appear only when their OAuth clients are configured server-side; see [Environment variables](/docs/platform/self-hosting/environment-variables). **Slack** is unavailable in controlled (ITAR) environments.
 </Callout>
 
 ## Browse by category

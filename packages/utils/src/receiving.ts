@@ -1,4 +1,8 @@
-import { EPSILON, round } from "./precision";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { EPSILON, round } from "@carbon/database/precision";
 import type { Violation } from "./rules";
 
 export type OverReceiptReceiptLine = {

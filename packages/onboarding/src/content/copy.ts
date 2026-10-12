@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Customer-facing copy, lifted out of the view components so it lives in the
 // editable content layer (a non-engineer can tweak wording here without touching
 // JSX). PAGE_COPY drives each page's H1 + intro; UI_TEXT holds the small shared

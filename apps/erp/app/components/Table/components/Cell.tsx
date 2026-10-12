@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
 import { cn, Td } from "@carbon/react";
 import type { Cell as CellType, Column } from "@tanstack/react-table";
@@ -8,6 +12,7 @@ import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
+import { CellContent } from "./CellContent";
 
 const logger = getLogger("erp", "cell");
 
@@ -76,6 +81,8 @@ const Cell = <T extends object>({
     <Td
       className={cn(
         "group/cell relative py-2 whitespace-nowrap text-sm outline-none max-w-[30dvw] truncate",
+        // Phones: a grid's name column opts in to more width than the others.
+        "max-md:[&:has([data-key-cell])]:max-w-[45dvw]",
         cell.column.id === "Select" ? "px-2" : "px-4",
         wasEdited && "bg-yellow-100 dark:bg-yellow-900",
         isEditMode && !hasEditableTableCellComponent && "bg-muted/50",
@@ -123,7 +130,7 @@ const Cell = <T extends object>({
         </div>
       ) : (
         <div ref={ref}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          <CellContent cell={cell} />
           {showEditAffordance && (
             <LuPencil
               aria-hidden

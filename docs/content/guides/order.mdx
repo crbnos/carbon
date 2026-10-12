@@ -1,69 +1,74 @@
 ---
-title: Start with the order
-description: A 90-unit solar array wing order becomes real work.
+title: Create production jobs from an order
+description: Convert a 90-unit solar-array order into scheduled production jobs.
 label: "(I)"
 index: 0
 ---
 
-Meet the shop we'll follow through this guide: Nebula Aerospace, an <Term>OEM</Term> that builds satellites. One customer, NovaSat Networks, just placed an order for 90 solar array wings. By the end, you'll have followed that order all the way from the sales desk to 90 finished wings on the shipping dock — and seen most of Carbon along the way.
+This guide follows Nebula Aerospace, an <Term>OEM</Term>, as it fulfills an order for 90 solar array wings. The example connects sales, production planning, and shop-floor execution.
 
-Carbon spans the office and the floor: ERP for orders, purchasing, and planning; MES for the people actually building. The thread that ties them together is a single order, so that's where we start.
+Carbon ERP manages orders, purchasing, and planning. Carbon MES executes the resulting production work. The sales order connects both systems.
 
 <Figure illustration="flow-overview" caption="The path one order travels through Carbon, and the shape of this guide." />
 
 ## The sales order
 
-Open the <Term>sales order</Term> dashboard. There's already an order on the books: SO000009, 90 SAW-001 Solar Array Wings at $35,000 each. But the customer doesn't want all 90 at once, so the order carries three lines of 30 — one this week, one next week, one the week after. That delivery schedule is going to shape everything downstream.
+Open sales order SO000009. It contains three lines of 30 SAW-001 Solar Array Wings at $35,000 each, due over three weeks. Each line can be produced and shipped independently.
 
-Shipping part of an order doesn't close it. The badge on the header reads **"In Progress"**, the display status Carbon shows while the order's make-to-order lines still have production to finish; the stored status underneath is **"To Ship and Invoice"** while any unit has yet to ship. Once every unit has shipped but you haven't billed yet, it moves to **"To Invoice"**. The order closes only when everything has both shipped and been invoiced. That's what lets one order be fulfilled in batches without losing track of what's left.
+A partial shipment does not close the order. Carbon displays **"In Progress"** while make-to-order lines still require production. The stored status remains **"To Ship and Invoice"** while units remain to ship. After all units ship, an uninvoiced order moves to **"To Invoice"**. The order closes only after all units are shipped and invoiced.
 
 <Screenshot src="/screens/order-dashboard.png" label="Sales order dashboard" caption="SO000009 for NovaSat Networks: three lines of 30 Solar Array Wings, an 'In Progress' badge, and a 'Jobs Required' banner waiting on you to create the jobs." ratio="wide" />
 
 <Callout tone="neutral" badge="UPSTREAM" title="The order often starts as a quote.">
-Carbon has a full <Term>Quote</Term> module with quantity-break pricing, so the 90-unit price could have been negotiated in <Term>quote to cash</Term> first. We'll pick the story up at the confirmed sales order, where the build truly begins.
+The order may originate from a <Term>quote</Term> with quantity-break pricing. This guide starts with the confirmed sales order. See [quote to cash](/guides/quote-to-cash) for the preceding workflow.
 </Callout>
 
 ## Batch it into jobs
 
-You don't build 90 wings as one monolithic job. To match the three-week delivery schedule, the order's three lines of 30 become three <Term id="job">jobs</Term> of 30, one per delivery, each scheduled, released, and shipped on its own timeline.
+Create three <Term id="job">jobs</Term> of 30 to match the delivery schedule. Each job can be scheduled, released, completed, and shipped independently.
 
-You create those jobs from the sales order itself. The **"Jobs Required"** banner at the top of the order is the prompt; its **"Create Jobs"** button covers the whole order at once. To do it line by line, use the line's **Jobs** card: click **"Make to Order"** and the **"Convert Line to Job"** dialog opens with the **Quantity** already prefilled at the line's 30. Create the first job, then repeat for the second and third lines. Carbon counts down the units still waiting on a job (90 → 60 → 30), so you always know how much of the order is left to batch. To build only part of a line, lower the prefilled **Quantity** and convert the remainder later.
+Create jobs from the sales order in either of two ways:
+
+- Select **Create Jobs** in the **Jobs Required** banner to process the full order.
+- On a line's **Jobs** card, select **Make to Order**. The **Convert Line to Job** dialog defaults **Quantity** to the unallocated line quantity. Reduce it to create a partial job and convert the remainder later.
+
+Carbon decreases the quantity that still requires a job after each conversion.
 
 <Figure illustration="order-split" caption="One 90-unit order, batched into three 30-unit jobs across three weeks." />
 
 <Screenshot src="/screens/order-convert-line-to-job.png" label="Sales order line: Jobs card and the Convert Line to Job dialog" caption="Where you batch: the line's Jobs card. 'Make to Order' opens 'Convert Line to Job' with the Quantity prefilled at the line's 30. Create each batch, repeating until the order is fully covered." ratio="wide" />
 
 <Callout tone="blue" badge="WHY BATCH" title="Batching matches your build to the delivery promise.">
-Three jobs of 30 let you release week one now, keep weeks two and three in planning, and ship each batch the moment it's done — instead of waiting on all 90.
+Separate jobs let you release the first delivery while later deliveries remain in planning. Completed batches can ship without waiting for all 90 units.
 </Callout>
 
 ## Create the job
 
-From the sales order, create the job. Carbon carries the part, quantity, and due date across automatically. The job inherits exactly what was sold. That way, the shop floor always has the up-to-date specifications and requirements for the job.
+When you create a job from the sales order, Carbon copies the part, quantity, and due date to the job.
 
-Carbon carries one more thing across, and it's the most important: the part's <Term id="method">manufacturing method</Term>, its full recipe of materials and operations. The job doesn't point at the part's master recipe, though. It gets its own copy.
+Carbon also copies the part's <Term id="method">manufacturing method</Term>, including its materials and operations. The job owns this copy; it does not reference the editable master method.
 
 <Screenshot src="/screens/order-job-overview.png" label="Job overview with its copied method" caption="A job created this way — here J000001 for the SAT-1000 satellite bus — carries its own copy of the part's method, with part, quantity, and due date inherited from the sales order line." ratio="wide" />
 
 ## Get the method
 
-Pulling that recipe into the job is an explicit action in Carbon called <Term>Get Method</Term>. It clones the part's method, every material and every operation, into a job-specific method that belongs to this job alone.
+<Term>Get Method</Term> clones the part's materials and operations into a job-specific method.
 
-That copy is the whole point. Say this batch needs a one-off substitution, like a different fastener or an extra inspection step. You edit the job's method, and the part master stays untouched. And when a change proves itself, you can push it back up to the part so every future job inherits it.
+Edit the job method for batch-specific substitutions or operations without changing the part master. If the change should become standard, push it to the part method for future jobs.
 
 <Figure illustration="get-method" caption="Get Method copies the part's recipe into the job. Edits stay local until you push a proven change back up." />
 
 <Callout tone="blue" badge="GET METHOD" title="The part holds the master recipe; the job holds a working copy.">
-Editing a job never silently rewrites your part library, and updating a part never disturbs a job already in flight. Nothing flows between them automatically: you copy the recipe down when the job is created, and push improvements back up only when you choose to.
+Editing a job does not update the part library. Updating a part does not alter an existing job. Changes move between them only through explicit copy and push actions.
 </Callout>
 
 ## Release or plan
 
-Now the key decision. You'll release one job, week one, and leave the other two in planning. The difference is what each action sets in motion:
+Release the first job and plan the other two. The actions have different effects:
 
-- Release: generates inventory alerts for any required material that isn't in stock, and adds the job's tasks to the shop-floor schedule. This is work the floor can start.
-- Plan: generates the same inventory alerts, but does not schedule anything. It's how you see what a future job will need without the shop floor seeing it on the schedule. They are not yet notified about this job in any way.
+- **Release** generates shortage alerts and adds job tasks to the shop-floor schedule.
+- **Plan** generates the same shortage alerts without scheduling work or notifying the shop floor.
 
 <Callout tone="amber" badge="RELEASE ≠ PLAN" title="Plan = See demand early | Release = Put work in motion">
-Planning weeks two and three now means you can order materials that have a long lead time — without cluttering this week's schedule with jobs the floor can't touch yet.
+Plan future jobs to identify long-lead material demand without adding those jobs to the current shop-floor schedule.
 </Callout>

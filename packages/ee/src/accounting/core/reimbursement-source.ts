@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fromDate } from "@internationalized/date";
 import type { JournalLineDimensionRef } from "./posting";
@@ -441,7 +445,7 @@ export function validateReimbursementAccountMapping(args: {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message: `Cannot sync reimbursement ${reimbursement.reimbursementId}: it has no employee-payable control account. Post the reimbursement (with accounting enabled), then retry.`,
+      message: `Cannot sync reimbursement ${reimbursement.reimbursementId}: it has no employee-payable control account. Post the reimbursement, then retry.`,
       metadata: { reimbursementId: reimbursement.id }
     });
   }

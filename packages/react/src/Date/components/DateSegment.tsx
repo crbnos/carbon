@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useDateSegment } from "@react-aria/datepicker";
 import type {
   DateSegment as DateSegmentType,
@@ -7,8 +11,8 @@ import clsx from "clsx";
 import { useId, useRef } from "react";
 
 const segmentSizeVariants = {
-  sm: "text-sm",
-  md: "text-sm",
+  sm: "text-sm max-md:text-base",
+  md: "text-sm max-md:text-base",
   lg: "text-base"
 } as const;
 

@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { Button, Loading, useHydrated, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -9,7 +14,7 @@ import { ReactFlowProvider, useReactFlow, useStore } from "@xyflow/react";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useCallback, useMemo, useState } from "react";
 import type { LinksFunction, LoaderFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData, useNavigation } from "react-router";
+import { Link, useLoaderData, useNavigation } from "react-router";
 import { Empty } from "~/components";
 import type { Activity, TrackedEntity } from "~/modules/inventory";
 import {
@@ -393,7 +398,7 @@ function TraceabilityRouteInner() {
       null);
 
   return (
-    <div className="flex bg-card h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden scrollbar-hide">
+    <div className="flex bg-card h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full overflow-hidden scrollbar-hide max-md:flex-col">
       <VStack className="flex-1 min-w-0 h-full" spacing={0}>
         <div className="flex flex-1 w-full h-full overflow-hidden">
           <div className="w-full h-full">

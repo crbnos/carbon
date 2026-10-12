@@ -8,6 +8,18 @@
 
 One paragraph summary of what this spec proposes.
 
+## Overview diagram
+
+One Mermaid diagram that explains the whole change. Choose its type with the
+table in `/spec-writing` Step 6. Replace this sample.
+
+```mermaid
+flowchart LR
+    A["Current step"] --> B["Changed step"]:::hot --> C["New step"]:::new
+    classDef hot stroke-width:3px
+    classDef new stroke-dasharray:4 3
+```
+
 ## Problem Statement
 
 What's wrong or what's missing. Include concrete examples if possible.

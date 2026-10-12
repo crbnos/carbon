@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { New } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { getIntercompanyTransactions } from "~/modules/accounting";
@@ -97,7 +101,7 @@ export default function IntercompanyRoute() {
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

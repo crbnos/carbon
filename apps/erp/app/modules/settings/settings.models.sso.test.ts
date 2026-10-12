@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-// Isolation mock — settings.models transitively imports @carbon/glossary,
+// Isolation mock — settings.models transitively imports @carbon/content/glossary,
 // whose Lingui `msg` macro calls only work under the app's vite macro
 // transform. The validator under test never touches glossary content.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: vi.fn(),
   getEntry: vi.fn(),
   getTermText: vi.fn(),

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
@@ -195,7 +199,10 @@ export function SlidesEditor({
   const withModels = !!modelInputRef && !!onModelFileChange;
 
   return (
-    <VStack spacing={2} className="w-full col-span-2 border-t pt-4">
+    <VStack
+      spacing={2}
+      className="w-full col-span-2 max-md:col-span-full border-t pt-4"
+    >
       <div className="flex w-full items-center justify-between">
         <Label className="text-xs text-muted-foreground">Slides</Label>
         {!isDisabled && (

@@ -1,17 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { productionEventValidator } from "~/services/models";
 import {
   endProductionEvent,
   getOperationEligibility,
   startProductionEvent
 } from "~/services/operations.service";
+import { OUTSIDE_PROCESSING_REFUSAL } from "~/utils/operationView";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,6 +47,19 @@ export async function action({ request }: ActionFunctionArgs) {
     // qualification check must run on this path (not only in the
     // start.$operationId loader)
     const serviceRole = await getCarbonServiceRole();
+    const operation = await serviceRole
+      .from("jobOperation")
+      .select("operationType")
+      .eq("id", d.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (operation.data?.operationType === "Outside Processing") {
+      return data(
+        {},
+        await flash(request, error(null, OUTSIDE_PROCESSING_REFUSAL))
+      );
+    }
+
     const eligibility = await getOperationEligibility(serviceRole, {
       operationId: d.jobOperationId,
       employeeId: userId,
@@ -70,7 +90,6 @@ export async function action({ request }: ActionFunctionArgs) {
         .is("endTime", null)
         .neq("type", d.type);
       if (openOthers.data && openOthers.data.length > 0) {
-        const serviceRole = await getCarbonServiceRole();
         const endTime = datetime.timestamp();
         for (const ev of openOthers.data) {
           const ended = await endProductionEvent(client, {
@@ -79,9 +98,15 @@ export async function action({ request }: ActionFunctionArgs) {
             employeeId: userId
           });
           if (ended.data && ended.data.length > 0) {
-            await serviceRole.functions.invoke("post-production-event", {
-              body: { productionEventId: ended.data[0].id, userId, companyId }
-            });
+            await serverFns
+              .system({
+                db: getDatabaseClient(),
+                companyId,
+                userId
+              })
+              .invoke("post-production-event", {
+                productionEventId: ended.data[0].id
+              });
           }
         }
       }
@@ -127,17 +152,18 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     if (endEvent.data && endEvent.data.length > 0) {
       // Batch timers post cost at batch completion, when the aggregate event is
-      // sliced per member (batch-operations edge fn). Posting it here too would
+      // sliced per member (batch-operations). Posting it here too would
       // double-book the cost, so skip post-production-event for a batch event.
       if (!endEvent.data[0].jobOperationBatchId) {
-        const serviceRole = await getCarbonServiceRole();
-        await serviceRole.functions.invoke("post-production-event", {
-          body: {
-            productionEventId: endEvent.data[0].id,
-            userId,
-            companyId
-          }
-        });
+        await serverFns
+          .system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          })
+          .invoke("post-production-event", {
+            productionEventId: endEvent.data[0].id
+          });
       }
     }
     return data(

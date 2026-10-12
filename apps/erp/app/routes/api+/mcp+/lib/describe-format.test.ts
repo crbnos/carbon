@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ManifestEntry } from "@carbon/api";
 import {
   deriveNameDescription,
@@ -17,7 +21,9 @@ const baseTool: ManifestEntry = {
   description: "get customer",
   paramCount: 1,
   serviceParams: ["client", "id"],
+  contextParams: { client: "client" },
   injectAuth: ["companyId"],
+  resultShape: "envelope",
   permission: { module: "sales", actions: ["view"] },
   paginates: true,
   schema: {

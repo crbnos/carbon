@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Button,
@@ -10,8 +14,9 @@ import {
   TruncatedTooltipText,
   VStack
 } from "@carbon/react";
+import { distinctItemText } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { LuImage } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { DateTime, MotionMoney, SupplierAvatar } from "~/components";
@@ -94,9 +99,9 @@ const PurchaseReturnOrderSummary = () => {
             return (
               <motion.div
                 key={line.id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
                 className="border-b border-input py-6 w-full"
               >
                 <HStack spacing={4} className="items-start">
@@ -135,18 +140,24 @@ const PurchaseReturnOrderSummary = () => {
                             </Link>
                           </Button>
                         </HStack>
-                        <TruncatedTooltipText
-                          className="text-muted-foreground text-sm truncate w-full"
-                          tooltip={line.item?.name ?? ""}
-                        >
-                          {line.item?.name}
-                        </TruncatedTooltipText>
+                        {distinctItemText(
+                          line.item?.readableIdWithRevision,
+                          line.item?.name
+                        ) && (
+                          <TruncatedTooltipText
+                            className="text-muted-foreground text-sm truncate w-full"
+                            tooltip={line.item?.name ?? ""}
+                          >
+                            {line.item?.name}
+                          </TruncatedTooltipText>
+                        )}
                       </VStack>
                       <VStack
                         spacing={2}
                         className="flex-shrink-0 items-end w-auto"
                       >
                         <MotionMoney
+                          className="font-semibold text-xl whitespace-nowrap"
                           value={lineCredit}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}

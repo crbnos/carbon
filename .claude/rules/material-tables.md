@@ -113,7 +113,8 @@ the service loads the rows they read and writes what they decide.
   failure there leaves the transaction's writes in place. An update by readable id is refused when
   the material has several revisions (sizes are revisions); pass the item id.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
-  so their MCP tools inject only `companyId` (`INJECT_AUTH_OVERRIDES` in
+  so their MCP tools inject only `companyId` (the generator drops an audit field the
+  tool's one table has no column for — `withoutAbsentAuditColumns` in
   `scripts/lib/service-metadata.ts`). Their update branch filters by `companyId` when given and
   never writes it, so an update cannot move a row to another company.
 

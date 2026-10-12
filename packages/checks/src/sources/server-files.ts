@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
@@ -10,7 +14,9 @@ import type { SourceFile } from "../check";
 const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
-  "packages/database/supabase/functions"
+  "packages/database/supabase/functions",
+  "packages/database/src",
+  "packages/server-functions/src"
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */

@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { cn } from "@carbon/react";
+import { cn, RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect } from "react-router";
+
 import { usePermissions } from "~/hooks";
 import {
   getCustomer,
@@ -67,12 +72,15 @@ export default function CustomerRoute() {
     <>
       <CustomerHeader />
       <div
-        className={cn("grid grid-cols-1 h-full w-full gap-4", {
-          "md:grid-cols-[1fr_4fr]": isEmployee
-        })}
+        className={cn(
+          "grid grid-cols-1 h-full w-full gap-4 max-md:h-auto max-md:gap-0",
+          {
+            "md:grid-cols-[1fr_4fr]": isEmployee
+          }
+        )}
       >
         {isEmployee && <CustomerSidebar />}
-        <Outlet />
+        <RecordOutlet />
       </div>
     </>
   );

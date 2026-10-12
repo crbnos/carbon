@@ -1,8 +1,8 @@
-import {
-  ITAR_RIDER_SHA256,
-  ITAR_RIDER_VERSION,
-  safeRedirect
-} from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { ITAR_RIDER_SHA256, ITAR_RIDER_VERSION } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
@@ -10,11 +10,11 @@ import { getLogger } from "@carbon/logger";
 import {
   datetime,
   getClientIp,
+  redirect,
   requiresItarEntityCertification
 } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   itarEntityCertificationValidator,
   itarUserCertificationValidator,
@@ -228,10 +228,10 @@ export async function action({ request }: ActionFunctionArgs) {
       .single();
 
     if (readError) {
-      logger.error(
-        `[acknowledge] Failed to read flags for user ${userId}:`,
-        readError
-      );
+      logger.error("[acknowledge] Failed to read flags for user {userId}", {
+        userId,
+        error: readError
+      });
       return { success: false, message: "Failed to read user flags" };
     }
 
@@ -245,14 +245,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (updateResult.error) {
       logger.error(
-        `[acknowledge] Failed to write flag "${flag}" for user ${userId}:`,
-        updateResult.error
+        '[acknowledge] Failed to write flag "{flag}" for user {userId}',
+        { flag, userId, error: updateResult.error }
       );
       return { success: false, message: "Failed to update flag" };
     }
 
     if (redirectTo) {
-      throw redirect(safeRedirect(redirectTo));
+      throw redirect(redirectTo);
     }
 
     return { success: true, message: "Flag updated" };

@@ -1,20 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Settings → Demo Data (apply an industry demo dataset, keep it or revert).
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { DATASETS, datasetKeys } from "@carbon/database/datasets";
-import { Heading, toast, VStack } from "@carbon/react";
+import { useRevalidator } from "@carbon/query";
+import { toast, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useRevalidator
-} from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import type { CompanyTemplateRun } from "~/modules/settings";
 import { getCompanyTemplateRun } from "~/modules/settings";
 import { purgeCorruptedRows } from "~/modules/settings/backups.server";
@@ -27,7 +27,6 @@ import {
   TemplateCards,
   TemplateReviewRow
 } from "~/modules/settings/ui/DemoData";
-import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 
 export const handle = {
@@ -35,20 +34,10 @@ export const handle = {
   to: path.to.demoData
 };
 
-function requireDemoDataAccess(email: string | null) {
-  // Same gate as Backups: this replaces a company's data wholesale and carries
-  // the same unhardened multi-tenant caveats, so it stays internal-only in real
-  // deployments and open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "settings"
   });
-  requireDemoDataAccess(email);
 
   const run = await getCompanyTemplateRun(client, companyId);
 
@@ -65,13 +54,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
-  requireDemoDataAccess(email);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "settings"
+  });
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -317,11 +302,11 @@ export default function DemoDataRoute() {
   );
 
   return (
-    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto">
+    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto max-md:p-4">
       <VStack spacing={1}>
-        <Heading size="h3">
+        <SettingsPageHeading>
           <Trans>Demo Data</Trans>
-        </Heading>
+        </SettingsPageHeading>
         <p className="text-muted-foreground text-sm">
           <Trans>
             Fill this company with a realistic industry story so every screen

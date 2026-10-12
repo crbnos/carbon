@@ -1,16 +1,29 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type {
   ExpressionBuilder,
   Kysely,
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import {
+  buildSupplierPriceMap,
+  type SupplierPriceBreak,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, isUniqueViolation, withPathIds } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -31,8 +44,8 @@ import {
   lookupBuyPriceFromMap,
   type MethodType,
   normalizeOperationSourceIds,
-  type PriceBreak,
   type SourcingType,
+  type SupplierPartPricing,
   type SupplierPriceMap
 } from "../shared";
 import { updateSortOrder } from "../shared/sort-order";
@@ -51,6 +64,7 @@ import {
   type configurationRuleValidator,
   type consumableValidator,
   type customerPartValidator,
+  EACH_UNIT_OF_MEASURE_CODE,
   type getMethodValidator,
   ItemTrackingType,
   isAllowedChangeNoticeTransition,
@@ -119,36 +133,38 @@ const SERVICES_LIST_COLUMNS =
 
 const logger = getLogger("erp", "items");
 
+/** @mcp action */
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "methodVersionToActive",
-      ...payload
-    }
+  const { companyId, userId, id } = payload;
+  return serverFns.as({ client, db, companyId, userId }).invoke("convert", {
+    type: "methodVersionToActive",
+    id
   });
 }
 
+/** @mcp create */
 export async function copyItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
       type: "itemToItem",
       sourceId: args.sourceId,
       targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
       parts: {
         billOfMaterial: args.billOfMaterial,
         billOfProcess: args.billOfProcess,
@@ -157,24 +173,24 @@ export async function copyItem(
         steps: args.steps,
         workInstructions: args.workInstructions
       }
-    }
-  });
+    });
 }
 
+/** @mcp create */
 export async function copyMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("get-method", {
       type: "makeMethodToMakeMethod",
       sourceId: args.sourceId,
       targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
       parts: {
         billOfMaterial: args.billOfMaterial,
         billOfProcess: args.billOfProcess,
@@ -183,8 +199,7 @@ export async function copyMakeMethod(
         steps: args.steps,
         workInstructions: args.workInstructions
       }
-    }
-  });
+    });
 }
 
 // Copy a source item's item group (itemPostingGroupId, stored on itemCost) onto a
@@ -210,10 +225,219 @@ export async function copyItemPostingGroup(
     .eq("companyId", args.companyId);
 }
 
+// Kysely bypasses RLS, so before a Kysely write the caller's client vouches for
+// it: the permission the table's RLS policy would have asked for, in that
+// company. A service-role client passes.
+async function requireCompanyPermission(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  permission: string
+): Promise<{ error: ServiceError | null }> {
+  const gate = await client.rpc("assert_company_access", {
+    p_company_id: companyId,
+    p_permission: permission
+  });
+  return { error: gate.error };
+}
+
+// What a new revision inherits from the revision it was copied from, beyond the
+// item row and the method: replenishment (batch size, scrap percent, lead time,
+// the preferred supplier and its purchasing unit), each location's reorder
+// policy with its parameters, the item group, and the supplier parts with their
+// price breaks. Runs in the transaction that inserted the target item: the item
+// interceptor has by then created the target's itemReplenishment / itemPlanning
+// / itemCost rows with defaults, and it has no supplier parts, so this updates
+// those rows in place and inserts the rest. Both sides of every statement are
+// scoped to the company.
+async function copyItemPlanningAndPurchasing(
+  trx: KyselyTx,
+  args: {
+    sourceItemId: string;
+    targetItemId: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { sourceItemId, targetItemId, companyId, userId } = args;
+  const updatedAt = datetime.timestamp();
+
+  await trx
+    .updateTable("itemReplenishment as target")
+    .from("itemReplenishment as source")
+    .set((eb) => ({
+      lotSize: eb.ref("source.lotSize"),
+      scrapPercentage: eb.ref("source.scrapPercentage"),
+      leadTime: eb.ref("source.leadTime"),
+      // The purchasing unit and conversion factor are properties of the
+      // preferred supplier's supplier part (see upsertItemPurchasing), which
+      // is copied below, so the three travel together.
+      preferredSupplierId: eb.ref("source.preferredSupplierId"),
+      purchasingUnitOfMeasureCode: eb.ref("source.purchasingUnitOfMeasureCode"),
+      conversionFactor: eb.ref("source.conversionFactor"),
+      updatedBy: userId,
+      updatedAt
+    }))
+    .where("target.itemId", "=", targetItemId)
+    .where("target.companyId", "=", companyId)
+    .where("source.itemId", "=", sourceItemId)
+    .where("source.companyId", "=", companyId)
+    .execute();
+
+  // A reorder policy is only meaningful with its parameters (Maximum
+  // Quantity needs a reorder point and a maximum, and so on), so the policy
+  // and its sizing parameters are copied together, location by location.
+  // The planning horizon and the responsible employee are not copied: a new
+  // revision inherits the company defaults for both. A location the source
+  // has no planning row for keeps the defaults.
+  await trx
+    .updateTable("itemPlanning as target")
+    .from("itemPlanning as source")
+    .set((eb) => ({
+      reorderingPolicy: eb.ref("source.reorderingPolicy"),
+      demandAccumulationPeriod: eb.ref("source.demandAccumulationPeriod"),
+      demandAccumulationSafetyStock: eb.ref(
+        "source.demandAccumulationSafetyStock"
+      ),
+      reorderPoint: eb.ref("source.reorderPoint"),
+      reorderQuantity: eb.ref("source.reorderQuantity"),
+      maximumInventoryQuantity: eb.ref("source.maximumInventoryQuantity"),
+      minimumOrderQuantity: eb.ref("source.minimumOrderQuantity"),
+      maximumOrderQuantity: eb.ref("source.maximumOrderQuantity"),
+      orderMultiple: eb.ref("source.orderMultiple"),
+      updatedBy: userId,
+      updatedAt
+    }))
+    .whereRef("target.locationId", "=", "source.locationId")
+    .where("target.itemId", "=", targetItemId)
+    .where("target.companyId", "=", companyId)
+    .where("source.itemId", "=", sourceItemId)
+    .where("source.companyId", "=", companyId)
+    .execute();
+
+  await trx
+    .updateTable("itemCost as target")
+    .from("itemCost as source")
+    .set((eb) => ({
+      itemPostingGroupId: eb.ref("source.itemPostingGroupId"),
+      updatedBy: userId,
+      updatedAt
+    }))
+    .where("target.itemId", "=", targetItemId)
+    .where("target.companyId", "=", companyId)
+    .where("source.itemId", "=", sourceItemId)
+    .where("source.companyId", "=", companyId)
+    .execute();
+
+  await trx
+    .insertInto("supplierPart")
+    .columns([
+      "itemId",
+      "supplierId",
+      "supplierPartId",
+      "supplierUnitOfMeasureCode",
+      "minimumOrderQuantity",
+      "orderMultiple",
+      "conversionFactor",
+      "supplierUnitPrice",
+      "currencyCode",
+      "active",
+      "customFields",
+      "tags",
+      "companyId",
+      "createdBy"
+    ])
+    .expression((eb) =>
+      eb
+        .selectFrom("supplierPart")
+        .select((eb) => [
+          eb.val(targetItemId).as("itemId"),
+          "supplierId",
+          "supplierPartId",
+          "supplierUnitOfMeasureCode",
+          "minimumOrderQuantity",
+          "orderMultiple",
+          "conversionFactor",
+          "supplierUnitPrice",
+          "currencyCode",
+          "active",
+          "customFields",
+          "tags",
+          "companyId",
+          eb.val(userId).as("createdBy")
+        ])
+        .where("itemId", "=", sourceItemId)
+        .where("companyId", "=", companyId)
+    )
+    .execute();
+
+  // Price breaks hang off the supplier part, not the item. A supplier has at
+  // most one supplier part per item, so the supplier pairs each source part
+  // with the copy just inserted.
+  await trx
+    .insertInto("supplierPartPrice")
+    .columns([
+      "supplierPartId",
+      "quantity",
+      "supplierUnitPrice",
+      "leadTime",
+      "sourceType",
+      "sourceDocumentId",
+      "companyId",
+      "createdBy"
+    ])
+    .expression((eb) =>
+      eb
+        .selectFrom("supplierPartPrice as price")
+        .innerJoin("supplierPart as source", (join) =>
+          join
+            .onRef("source.id", "=", "price.supplierPartId")
+            .onRef("source.companyId", "=", "price.companyId")
+        )
+        .innerJoin("supplierPart as target", (join) =>
+          join
+            .onRef("target.supplierId", "=", "source.supplierId")
+            .onRef("target.companyId", "=", "source.companyId")
+        )
+        .select((eb) => [
+          "target.id as supplierPartId",
+          "price.quantity",
+          "price.supplierUnitPrice",
+          "price.leadTime",
+          "price.sourceType",
+          "price.sourceDocumentId",
+          "price.companyId",
+          eb.val(userId).as("createdBy")
+        ])
+        .where("source.itemId", "=", sourceItemId)
+        .where("target.itemId", "=", targetItemId)
+        .where("price.companyId", "=", companyId)
+    )
+    .execute();
+}
+
+/** @mcp create */
 export async function createRevision(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
-    item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
+    // The source item's fields a revision copies, not the whole row.
+    item: Pick<
+      NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>,
+      | "id"
+      | "companyId"
+      | "readableId"
+      | "name"
+      | "type"
+      | "replenishmentSystem"
+      | "defaultMethodType"
+      | "itemTrackingType"
+      | "unitOfMeasureCode"
+      | "description"
+      | "sourcingType"
+      | "thumbnailPath"
+      | "mpn"
+      | "modelUploadId"
+    >;
     revision: string;
     createdBy: string;
     // Change-order draft revisions are created inactive so they don't surface
@@ -221,61 +445,99 @@ export async function createRevision(
     // "New Revision" keeps the default (active).
     active?: boolean;
   }
-) {
+): Promise<
+  { data: { id: string }; error: null } | { data: null; error: ServiceError }
+> {
   const { item, revision, createdBy, active = true } = args;
-  const itemInsert = await client
-    .from("item")
-    .insert({
-      readableId: item.readableId,
-      revision: revision,
-      name: item.name,
-      type: item.type,
-      replenishmentSystem: item.replenishmentSystem,
-      defaultMethodType: item.defaultMethodType,
-      itemTrackingType: item.itemTrackingType,
-      unitOfMeasureCode: item.unitOfMeasureCode,
-      // A revision starts as a faithful copy of the source's attributes so the
-      // only differences the user (and the CO diff) sees are ones they made.
-      description: item.description,
-      sourcingType: item.sourcingType,
-      thumbnailPath: item.thumbnailPath,
-      mpn: item.mpn,
-      active,
-      modelUploadId: item.modelUploadId,
-      companyId: item.companyId,
-      createdBy: createdBy
-    })
-    .select("id")
-    .single();
-
-  if (itemInsert.error) {
-    return itemInsert;
+  const companyId = item.companyId;
+  if (!companyId) {
+    return { data: null, error: { message: "Item has no company" } };
   }
 
-  // Carry the source's item group (itemPostingGroupId lives on itemCost, which
-  // the item-insert trigger auto-creates with defaults) onto the new revision.
-  await copyItemPostingGroup(client, {
-    sourceItemId: item.id,
-    targetItemId: itemInsert.data.id,
-    companyId: item.companyId
-  });
+  // The revision is written with Kysely: the item INSERT policy asks for
+  // parts_create in the item's company.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_create"
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  // The item and what it inherits land together or not at all: a revision
+  // with default planning and no suppliers is never visible, and a failure
+  // leaves nothing holding the revision label against a retry.
+  let revisionItemId: string;
+  try {
+    revisionItemId = await db.transaction().execute(async (trx) => {
+      const inserted = await trx
+        .insertInto("item")
+        .values({
+          readableId: item.readableId,
+          revision,
+          name: item.name,
+          type: item.type,
+          replenishmentSystem: item.replenishmentSystem,
+          defaultMethodType: item.defaultMethodType,
+          itemTrackingType: item.itemTrackingType,
+          unitOfMeasureCode: item.unitOfMeasureCode,
+          // A revision starts as a faithful copy of the source's attributes so
+          // the only differences the user (and the CO diff) sees are ones they
+          // made.
+          description: item.description,
+          sourcingType: item.sourcingType,
+          thumbnailPath: item.thumbnailPath,
+          mpn: item.mpn,
+          active,
+          modelUploadId: item.modelUploadId,
+          companyId,
+          createdBy
+        })
+        .returning("id")
+        .executeTakeFirstOrThrow();
+
+      await copyItemPlanningAndPurchasing(trx, {
+        sourceItemId: item.id,
+        targetItemId: inserted.id,
+        companyId,
+        userId: createdBy
+      });
+
+      return inserted.id;
+    });
+  } catch (error) {
+    logger.error("Failed to create revision", {
+      companyId,
+      sourceItemId: item.id,
+      revision,
+      error
+    });
+    return { data: null, error: writeError(error) };
+  }
 
   if (item.replenishmentSystem !== "Buy") {
-    await client.functions.invoke("get-method", {
-      body: {
+    const copy = await serverFns
+      .as({ client, db, companyId, userId: createdBy })
+      .invoke("get-method", {
         type: "itemToItem",
         sourceId: item.id,
-        targetId: itemInsert.data.id,
-        companyId: item.companyId,
-        userId: createdBy
-      }
-    });
+        targetId: revisionItemId
+      });
+    // The revision stands either way; its make method can be copied again.
+    if (copy.error) {
+      logger.error("Failed to copy the make method onto the new revision", {
+        companyId,
+        sourceItemId: item.id,
+        revisionItemId,
+        error: copy.error
+      });
+    }
   }
 
-  return itemInsert;
+  return { data: { id: revisionItemId }, error: null };
 }
 
 // getNextRevision — numeric → +1, A → …→ Z → AA, AA → AB, etc.
+/** @mcp read */
 export function getNextRevision(maxRevision: string): string {
   if (/^\d+$/.test(maxRevision)) {
     return (parseInt(maxRevision) + 1).toString();
@@ -295,6 +557,7 @@ export function getNextRevision(maxRevision: string): string {
   return maxRevision;
 }
 
+/** @mcp delete */
 export async function deleteConfigurationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -302,6 +565,7 @@ export async function deleteConfigurationParameter(
   return client.from("configurationParameter").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteConfigurationRule(
   client: SupabaseClient<Database>,
   field: string,
@@ -314,6 +578,7 @@ export async function deleteConfigurationRule(
     .eq("itemId", itemId);
 }
 
+/** @mcp delete */
 export async function deleteItemCustomerPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -326,6 +591,7 @@ export async function deleteItemCustomerPart(
     .eq("companyId", companyId);
 }
 
+/** @mcp delete */
 export async function deleteSupplierPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -338,6 +604,7 @@ export async function deleteSupplierPart(
     .eq("companyId", companyId);
 }
 
+/** @mcp delete */
 export async function deleteConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -367,10 +634,65 @@ export async function deleteConfigurationParameterGroup(
   return client.from("configurationParameterGroup").delete().eq("id", id);
 }
 
-export async function deleteItem(client: SupabaseClient<Database>, id: string) {
-  return client.from("item").delete().eq("id", id);
+// An item delete cascades to its supplier parts, and a price break restricts
+// the delete of its supplier part, so the price breaks go first. Runs in the
+// caller's transaction: when the item delete is refused (inventory history,
+// tracked entities) the price breaks stay.
+async function deleteItemsWithPriceBreaks(
+  trx: KyselyTx,
+  args: { itemIds: string[]; companyId: string }
+) {
+  const { itemIds, companyId } = args;
+  if (itemIds.length === 0) return;
+
+  await trx
+    .deleteFrom("supplierPartPrice")
+    .where("companyId", "=", companyId)
+    .where("supplierPartId", "in", (eb) =>
+      eb
+        .selectFrom("supplierPart")
+        .select("id")
+        .where("itemId", "in", itemIds)
+        .where("companyId", "=", companyId)
+    )
+    .execute();
+
+  await trx
+    .deleteFrom("item")
+    .where("id", "in", itemIds)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
+/** @mcp delete */
+export async function deleteItem(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  id: string,
+  companyId: string
+): Promise<{ data: null; error: ServiceError | null }> {
+  // The item DELETE policy asks for parts_delete in the item's company.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_delete"
+  );
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  try {
+    await db
+      .transaction()
+      .execute((trx) =>
+        deleteItemsWithPriceBreaks(trx, { itemIds: [id], companyId })
+      );
+  } catch (error) {
+    logger.error("Failed to delete item", { companyId, itemId: id, error });
+    return { data: null, error: writeError(error) };
+  }
+  return { data: null, error: null };
+}
+
+/** @mcp delete */
 export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -378,6 +700,7 @@ export async function deleteItemPostingGroup(
   return client.from("itemPostingGroup").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
@@ -385,6 +708,7 @@ export async function deleteMaterialDimension(
   return client.from("materialDimension").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
@@ -392,6 +716,7 @@ export async function deleteMaterialFinish(
   return client.from("materialFinish").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMaterialForm(
   client: SupabaseClient<Database>,
   id: string
@@ -399,6 +724,7 @@ export async function deleteMaterialForm(
   return client.from("materialForm").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
@@ -406,6 +732,7 @@ export async function deleteMaterialGrade(
   return client.from("materialGrade").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
@@ -413,6 +740,7 @@ export async function deleteMaterialSubstance(
   return client.from("materialSubstance").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMethodMaterial(
   client: SupabaseClient<Database>,
   id: string
@@ -420,6 +748,7 @@ export async function deleteMethodMaterial(
   return client.from("methodMaterial").delete().eq("id", id);
 }
 
+/** @mcp action */
 export async function assertMethodOperationIsDraft(
   client: SupabaseClient<Database>,
   operationId: string
@@ -449,6 +778,7 @@ export async function deleteMethodOperation(
   return client.from("methodOperation").delete().eq("id", methodOperationId);
 }
 
+/** @mcp delete */
 export async function deleteMethodOperationStep(
   client: SupabaseClient<Database>,
   id: string
@@ -456,6 +786,7 @@ export async function deleteMethodOperationStep(
   return client.from("methodOperationStep").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
@@ -463,6 +794,7 @@ export async function deleteMethodOperationStepSlide(
   return client.from("methodOperationStepSlide").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMethodOperationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -470,6 +802,7 @@ export async function deleteMethodOperationParameter(
   return client.from("methodOperationParameter").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteMethodOperationTool(
   client: SupabaseClient<Database>,
   id: string
@@ -477,6 +810,7 @@ export async function deleteMethodOperationTool(
   return client.from("methodOperationTool").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
@@ -484,6 +818,7 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
+/** @mcp read */
 export async function getConfigurationParameters(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -519,6 +854,7 @@ export async function getConfigurationParameters(
   return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
 }
 
+/** @mcp read */
 export async function getConfigurationRules(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -536,6 +872,7 @@ export async function getConfigurationRules(
   return result.data ?? [];
 }
 
+/** @mcp read */
 export async function getConsumable(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -548,6 +885,7 @@ export async function getConsumable(
     .single();
 }
 
+/** @mcp read */
 export async function getConsumables(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -581,6 +919,7 @@ export async function getConsumables(
   return query;
 }
 
+/** @mcp read */
 export async function getConsumablesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -598,10 +937,12 @@ export async function getConsumablesList(
   );
 }
 
+/** @mcp read */
 export async function getItem(client: SupabaseClient<Database>, id: string) {
   return client.from("item").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -615,6 +956,7 @@ export async function getItemCost(
     .single();
 }
 
+/** @mcp read */
 export async function getItemCostHistory(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -635,6 +977,7 @@ export async function getItemCostHistory(
     .limit(500);
 }
 
+/** @mcp read */
 export async function getItemCustomerPart(
   client: SupabaseClient<Database>,
   id: string,
@@ -648,6 +991,7 @@ export async function getItemCustomerPart(
     .single();
 }
 
+/** @mcp read */
 export async function getItemCustomerParts(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -660,6 +1004,7 @@ export async function getItemCustomerParts(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getItemDemand(
   client: SupabaseClient<Database>,
   {
@@ -699,10 +1044,13 @@ export async function getItemDemand(
       .in("periodId", periods)
   ]);
 
+  // A failed read is reported, not folded into an empty series: an item with
+  // no demand yet has empty series too, and the two must not look alike.
   return {
     actuals: actuals.data ?? [],
     forecasts: forecasts.data ?? [],
-    projections: projections.data ?? []
+    projections: projections.data ?? [],
+    error: actuals.error ?? forecasts.error ?? projections.error ?? null
   };
 }
 
@@ -746,6 +1094,7 @@ export type DemandForecastSourceRow = {
   } | null;
 };
 
+/** @mcp read */
 export async function getDemandForecastSources(
   client: SupabaseClient<Database>,
   {
@@ -806,6 +1155,7 @@ export async function getDemandForecastSources(
   };
 }
 
+/** @mcp read */
 export async function getItemFiles(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -817,6 +1167,7 @@ export async function getItemFiles(
   return result.data ?? [];
 }
 
+/** @mcp read */
 export async function getItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
@@ -824,6 +1175,7 @@ export async function getItemPostingGroup(
   return client.from("itemPostingGroup").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getItemPostingGroups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -832,7 +1184,7 @@ export async function getItemPostingGroups(
   let query = client
     .from("itemPostingGroup")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -849,6 +1201,7 @@ export async function getItemPostingGroups(
   return query;
 }
 
+/** @mcp read */
 export async function getItemPostingGroupsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -860,6 +1213,7 @@ export async function getItemPostingGroupsList(
     .order("name");
 }
 
+/** @mcp read */
 export async function getItemManufacturing(
   client: SupabaseClient<Database>,
   id: string,
@@ -873,6 +1227,7 @@ export async function getItemManufacturing(
     .single();
 }
 
+/** @mcp read */
 export async function getItemPlanning(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -888,6 +1243,7 @@ export async function getItemPlanning(
     .maybeSingle();
 }
 
+/** @mcp read */
 export async function getItemQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -916,6 +1272,7 @@ export async function getItemQuantities(
  * location is in play. Zero rows are dropped — the picker renders no badge for
  * an item it has no row for, so they carry no information and are the bulk of
  * the table on a tenant with history.
+ * @mcp read
  */
 export async function getItemStockQuantitiesByLocation(
   client: SupabaseClient<Database>,
@@ -949,6 +1306,7 @@ export async function getItemStockQuantitiesByLocation(
   return { data: quantities, error: null };
 }
 
+/** @mcp read */
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -962,6 +1320,7 @@ export async function getItemReplenishment(
     .single();
 }
 
+/** @mcp read */
 export async function getItemSupersession(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -978,6 +1337,7 @@ export async function getItemSupersession(
     .maybeSingle();
 }
 
+/** @mcp read */
 export async function getItemSupersessionsForItems(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -994,6 +1354,7 @@ export async function getItemSupersessionsForItems(
 }
 
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
+/** @mcp read */
 export async function getItemSupersededBy(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1008,6 +1369,7 @@ export async function getItemSupersededBy(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getSupersessionChain(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1049,6 +1411,7 @@ export async function getSupersessionChain(
   return { chain, supersededBy: supersededBy.data ?? [] };
 }
 
+/** @mcp read */
 export async function getItemStorageUnitQuantities(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1062,6 +1425,7 @@ export async function getItemStorageUnitQuantities(
   });
 }
 
+/** @mcp read */
 export async function getItemSupply(
   client: SupabaseClient<Database>,
   {
@@ -1101,6 +1465,7 @@ export async function getItemSupply(
   };
 }
 
+/** @mcp read */
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
   id: string,
@@ -1114,6 +1479,7 @@ export async function getItemUnitSalePrice(
     .single();
 }
 
+/** @mcp read */
 export async function getJobMaterialUsageForItem(
   client: SupabaseClient<Database>,
   { itemId, companyId }: { itemId: string; companyId: string }
@@ -1147,132 +1513,33 @@ export async function getJobMaterialUsageForItem(
   return { byMaterialId, byJobId };
 }
 
+/**
+ * Where a material or consumable is used.
+ * @mcp read
+ */
 export async function getMaterialUsedIn(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
 ) {
-  const [
-    issues,
-    jobMaterials,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes,
-    inspections,
-    jobMaterialUsage
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId),
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-    client
-      .from("inspection")
-      .select("id, documentReadableId:inspectionId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    getJobMaterialUsageForItem(client, { itemId, companyId })
-  ]);
-
+  const usedIn = await readUsedIn(client, itemId, companyId);
   return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? [],
-    inspections: inspections.data ?? [],
-    jobMaterialUsage
+    issues: usedIn.issues,
+    jobMaterials: usedIn.jobMaterials,
+    maintenanceDispatchItems: usedIn.maintenanceDispatchItems,
+    methodMaterials: usedIn.methodMaterials,
+    purchaseOrderLines: usedIn.purchaseOrderLines,
+    receiptLines: usedIn.receiptLines,
+    quoteMaterials: usedIn.quoteMaterials,
+    salesOrderLines: usedIn.salesOrderLines,
+    shipmentLines: usedIn.shipmentLines,
+    supplierQuotes: usedIn.supplierQuotes,
+    inspections: usedIn.inspections,
+    jobMaterialUsage: usedIn.jobMaterialUsage
   };
 }
 
+/** @mcp read */
 export async function getMakeMethods(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1285,6 +1552,7 @@ export async function getMakeMethods(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getMakeMethodById(
   client: SupabaseClient<Database>,
   makeMethodId: string,
@@ -1298,6 +1566,7 @@ export async function getMakeMethodById(
     .single();
 }
 
+/** @mcp read */
 export async function getMaterial(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1310,6 +1579,7 @@ export async function getMaterial(
     .single();
 }
 
+/** @mcp read */
 export async function getMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1343,6 +1613,7 @@ export async function getMaterials(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1365,6 +1636,7 @@ function buildSearchFilter(search: string, columns: string[]) {
   return columns.map((column) => `${column}.ilike.${value}`).join(",");
 }
 
+/** @mcp read */
 export async function getMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
@@ -1372,6 +1644,7 @@ export async function getMaterialDimension(
   return client.from("materialDimension").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialDimensions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1380,7 +1653,7 @@ export async function getMaterialDimensions(
   let query = client
     .from("materialDimensions")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("isMetric", args?.isMetric ?? false)
     .or(`companyId.eq.${companyId},companyId.is.null`);
@@ -1401,6 +1674,7 @@ export async function getMaterialDimensions(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialDimensionList(
   client: SupabaseClient<Database>,
   materialFormId: string,
@@ -1415,6 +1689,7 @@ export async function getMaterialDimensionList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
+/** @mcp read */
 export async function getMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
@@ -1422,6 +1697,7 @@ export async function getMaterialFinish(
   return client.from("materialFinish").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialFinishes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1430,7 +1706,7 @@ export async function getMaterialFinishes(
   let query = client
     .from("materialFinishes")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1450,6 +1726,7 @@ export async function getMaterialFinishes(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialFinishList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -1462,6 +1739,7 @@ export async function getMaterialFinishList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
+/** @mcp read */
 export async function getMaterialForm(
   client: SupabaseClient<Database>,
   id: string
@@ -1469,6 +1747,7 @@ export async function getMaterialForm(
   return client.from("materialForm").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialForms(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1477,7 +1756,7 @@ export async function getMaterialForms(
   let query = client
     .from("materialForm")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1494,6 +1773,7 @@ export async function getMaterialForms(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialFormsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1505,6 +1785,7 @@ export async function getMaterialFormsList(
     .order("name");
 }
 
+/** @mcp read */
 export async function getMaterialGrades(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1513,7 +1794,7 @@ export async function getMaterialGrades(
   let query = client
     .from("materialGrades")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1533,6 +1814,7 @@ export async function getMaterialGrades(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
@@ -1540,6 +1822,7 @@ export async function getMaterialGrade(
   return client.from("materialGrade").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialGradeList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -1552,6 +1835,7 @@ export async function getMaterialGradeList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
+/** @mcp read */
 export async function getMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
@@ -1559,6 +1843,7 @@ export async function getMaterialSubstance(
   return client.from("materialSubstance").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialSubstances(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1567,7 +1852,7 @@ export async function getMaterialSubstances(
   let query = client
     .from("materialSubstance")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
@@ -1584,6 +1869,7 @@ export async function getMaterialSubstances(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialSubstancesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1595,6 +1881,7 @@ export async function getMaterialSubstancesList(
     .order("name");
 }
 
+/** @mcp read */
 export async function getMethodMaterial(
   client: SupabaseClient<Database>,
   materialId: string
@@ -1606,6 +1893,7 @@ export async function getMethodMaterial(
     .single();
 }
 
+/** @mcp read */
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1616,7 +1904,7 @@ export async function getMethodMaterials(
     .select(
       "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .eq("companyId", companyId);
@@ -1644,6 +1932,7 @@ function isMissingQuantityColumn(
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
+/** @mcp read */
 export async function getMethodMaterialsByMakeMethod(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -1667,6 +1956,7 @@ export async function getMethodMaterialsByMakeMethod(
   return result;
 }
 
+/** @mcp read */
 export async function getMethodOperations(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1677,7 +1967,7 @@ export async function getMethodOperations(
     .select(
       "*, makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .eq("companyId", companyId);
@@ -1695,6 +1985,7 @@ export async function getMethodOperations(
   return query;
 }
 
+/** @mcp read */
 export async function getMethodOperationsByMakeMethodId(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -1717,6 +2008,7 @@ type MethodTreeItem = {
   children: MethodTreeItem[];
 };
 
+/** @mcp read */
 export async function getMethodTree(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -1732,6 +2024,7 @@ export async function getMethodTree(
   };
 }
 
+/** @mcp read */
 export async function getMethodTreeArray(
   client: SupabaseClient<Database>,
   makeMethodId: string
@@ -1742,13 +2035,6 @@ export async function getMethodTreeArray(
 }
 
 function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
-  function traverseAndRenameIds(node: MethodTreeItem) {
-    const clone = structuredClone(node);
-    clone.id = nanoid();
-    clone.children = clone.children.map((n) => traverseAndRenameIds(n));
-    return clone;
-  }
-
   const rootItems: MethodTreeItem[] = [];
   const lookup: { [id: string]: MethodTreeItem } = {};
 
@@ -1757,7 +2043,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     const parentId = item.parentMaterialId;
 
     if (!Object.prototype.hasOwnProperty.call(lookup, itemId)) {
-      // @ts-ignore
+      // @ts-expect-error
       lookup[itemId] = { id: itemId, children: [] };
     }
 
@@ -1770,7 +2056,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       rootItems.push(treeItem);
     } else {
       if (!Object.prototype.hasOwnProperty.call(lookup, parentId)) {
-        // @ts-ignore
+        // @ts-expect-error
         lookup[parentId] = { id: parentId, children: [] };
       }
 
@@ -1779,7 +2065,9 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
     }
   }
 
-  return rootItems.map((item) => traverseAndRenameIds(item));
+  // A sub-assembly used in two places is one node above: give each place an
+  // id of its own, the same on every load (see `withPathIds`).
+  return withPathIds(rootItems);
 }
 
 export type BomItemAttributes = {
@@ -1792,6 +2080,7 @@ export type BomItemAttributes = {
   leadTime: number | null;
 };
 
+/** @mcp read */
 export async function getBomItemAttributes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1843,6 +2132,7 @@ export async function getBomItemAttributes(
   return { data, error: null };
 }
 
+/** @mcp read */
 export async function getOpenJobMaterials(
   client: SupabaseClient<Database>,
   {
@@ -1861,6 +2151,7 @@ export async function getOpenJobMaterials(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getOpenProductionOrders(
   client: SupabaseClient<Database>,
   {
@@ -1879,6 +2170,7 @@ export async function getOpenProductionOrders(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getOpenPurchaseOrderLines(
   client: SupabaseClient<Database>,
   {
@@ -1897,6 +2189,7 @@ export async function getOpenPurchaseOrderLines(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getOpenSalesOrderLines(
   client: SupabaseClient<Database>,
   {
@@ -1915,6 +2208,7 @@ export async function getOpenSalesOrderLines(
     .eq("locationId", locationId);
 }
 
+/** @mcp read */
 export async function getPart(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -1927,6 +2221,7 @@ export async function getPart(
     .single();
 }
 
+/** @mcp read */
 export async function getParts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1962,6 +2257,7 @@ export async function getParts(
 
 // Distinct manufacturer part numbers for the company, used to populate the MPN
 // column filter in the item list tables. Deduping happens in the route loader.
+/** @mcp read */
 export async function getItemMpnsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1975,6 +2271,7 @@ export async function getItemMpnsList(
   );
 }
 
+/** @mcp read */
 export async function getPartsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1992,163 +2289,100 @@ export async function getPartsList(
   );
 }
 
+// Every line's document exists: the foreign keys are NOT NULL.
+type UsedInDocument = {
+  id: string;
+  documentReadableId: string;
+  documentId: string;
+};
+type UsedInMethod = UsedInDocument & { methodType: string };
+
+export type ItemUsedIn = {
+  issues: UsedInDocument[];
+  jobMaterials: UsedInMethod[];
+  jobs: { id: string; documentReadableId: string }[];
+  maintenanceDispatchItems: UsedInDocument[];
+  methodMaterials: (UsedInMethod & {
+    version: number;
+    documentParentId: string;
+    itemType: Database["public"]["Enums"]["itemType"];
+  })[];
+  purchaseOrderLines: UsedInDocument[];
+  receiptLines: UsedInDocument[];
+  quoteLines: UsedInMethod[];
+  quoteMaterials: (UsedInMethod & { documentParentId: string })[];
+  salesOrderLines: UsedInMethod[];
+  shipmentLines: UsedInDocument[];
+  supplierQuotes: UsedInDocument[];
+  assemblyInstructions: {
+    id: string;
+    documentReadableId: string;
+    version: number;
+  }[];
+  inspections: { id: string; documentReadableId: string }[];
+  jobMaterialUsage: {
+    byMaterialId: Record<string, number>;
+    byJobId: Record<string, number>;
+  };
+};
+
+const NOT_USED: ItemUsedIn = {
+  issues: [],
+  jobMaterials: [],
+  jobs: [],
+  maintenanceDispatchItems: [],
+  methodMaterials: [],
+  purchaseOrderLines: [],
+  receiptLines: [],
+  quoteLines: [],
+  quoteMaterials: [],
+  salesOrderLines: [],
+  shipmentLines: [],
+  supplierQuotes: [],
+  assemblyInstructions: [],
+  inspections: [],
+  jobMaterialUsage: { byMaterialId: {}, byJobId: {} }
+};
+
+/**
+ * Every place an item is referenced, in one request (`get_item_used_in`). It
+ * was fifteen PostgREST requests fired at once: on a page load they took most
+ * of the request's eight call slots from the queries the page was waiting on.
+ * A failure is logged and reads as "not used", as each of the fifteen did.
+ */
+async function readUsedIn(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+): Promise<ItemUsedIn> {
+  const { data, error } = await client.rpc("get_item_used_in", {
+    item_id: itemId,
+    company_id: companyId
+  });
+  if (error || !data) {
+    logger.error("Failed to read where an item is used", {
+      companyId,
+      itemId,
+      error
+    });
+    return structuredClone(NOT_USED);
+  }
+  return data as unknown as ItemUsedIn;
+}
+
+/**
+ * Where a part, tool or service is used.
+ * @mcp read
+ */
 export async function getPartUsedIn(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
-) {
-  const [
-    issues,
-    jobMaterials,
-    jobs,
-    maintenanceDispatchItems,
-    methodMaterials,
-    purchaseOrderLines,
-    receiptLines,
-    quoteLines,
-    quoteMaterials,
-    salesOrderLines,
-    shipmentLines,
-    supplierQuotes,
-    assemblyInstructions,
-    inspections,
-    jobMaterialUsage
-  ] = await Promise.all([
-    client
-      .from("nonConformanceItem")
-      .select(
-        "id, ...nonConformance(documentReadableId:nonConformanceId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("jobMaterial")
-      .select("id, methodType, ...job(documentReadableId:jobId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("job")
-      .select("id, documentReadableId:jobId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("maintenanceDispatchItem")
-      .select(
-        "id, ...maintenanceDispatch!maintenanceDispatchId(documentReadableId:maintenanceDispatchId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("methodMaterial")
-      .select(
-        "id, methodType, ...makeMethod!makeMethodId(documentId:id, version, ...item(documentReadableId:readableIdWithRevision, documentParentId:id, itemType:type))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("purchaseOrderLine")
-      .select(
-        "id, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("receiptLine")
-      .select("id, ...receipt(documentReadableId:receiptId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("quoteLine")
-      .select(
-        "id, methodType, ...quote(documentReadableId:quoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-
-    client
-      .from("quoteMaterial")
-      .select(
-        "id, methodType, documentParentId:quoteId, documentId:quoteLineId, ...quoteLine(...item(documentReadableId:readableIdWithRevision))"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("salesOrderLine")
-      .select(
-        "id, methodType, ...salesOrder(documentReadableId:salesOrderId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("shipmentLine")
-      .select("id, ...shipment(documentReadableId:shipmentId, documentId:id)")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("supplierQuoteLine")
-      .select(
-        "id, ...supplierQuote(documentReadableId:supplierQuoteId, documentId:id)"
-      )
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100),
-    client
-      .from("assemblyInstruction")
-      .select("id, documentReadableId:name, version")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    client
-      .from("inspection")
-      .select("id, documentReadableId:inspectionId")
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .limit(100)
-      .order("createdAt", { ascending: false }),
-    getJobMaterialUsageForItem(client, { itemId, companyId })
-  ]);
-
-  return {
-    issues: issues.data ?? [],
-    jobMaterials: jobMaterials.data ?? [],
-    jobs: jobs.data ?? [],
-    maintenanceDispatchItems: maintenanceDispatchItems.data ?? [],
-    methodMaterials: methodMaterials.data ?? [],
-    purchaseOrderLines: purchaseOrderLines.data ?? [],
-    receiptLines: receiptLines.data ?? [],
-    quoteLines: quoteLines.data ?? [],
-    quoteMaterials: quoteMaterials.data ?? [],
-    salesOrderLines: salesOrderLines.data ?? [],
-    shipmentLines: shipmentLines.data ?? [],
-    supplierQuotes: supplierQuotes.data ?? [],
-    assemblyInstructions: assemblyInstructions.data ?? [],
-    inspections: inspections.data ?? [],
-    jobMaterialUsage
-  };
+): Promise<ItemUsedIn> {
+  return readUsedIn(client, itemId, companyId);
 }
 
+/** @mcp read */
 export async function getPickMethod(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2164,6 +2398,7 @@ export async function getPickMethod(
     .maybeSingle();
 }
 
+/** @mcp read */
 export async function getPickMethods(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2176,6 +2411,7 @@ export async function getPickMethods(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getServices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2213,6 +2449,7 @@ export async function getServices(
   return query;
 }
 
+/** @mcp read */
 export async function getService(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2229,6 +2466,7 @@ export async function getService(
     .single();
 }
 
+/** @mcp read */
 export async function getServicesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2246,6 +2484,7 @@ export async function getServicesList(
   );
 }
 
+/** @mcp read */
 export async function getSupplierParts(
   client: SupabaseClient<Database>,
   id: string,
@@ -2259,6 +2498,27 @@ export async function getSupplierParts(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
+export async function getSupplierPartsBySupplier(
+  client: SupabaseClient<Database>,
+  supplierId: string,
+  companyId: string
+) {
+  // Paged past PostgREST's 1000-row cap: a distributor can supply thousands of parts.
+  return fetchAllRecords(() =>
+    client
+      .from("supplierPart")
+      .select(
+        "*, item(id, readableIdWithRevision, name, type, thumbnailPath, unitOfMeasureCode)"
+      )
+      .eq("active", true)
+      .eq("supplierId", supplierId)
+      .eq("companyId", companyId)
+      .order("id")
+  );
+}
+
+/** @mcp read */
 export async function getTool(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2271,6 +2531,7 @@ export async function getTool(
     .single();
 }
 
+/** @mcp read */
 export async function getTools(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2304,6 +2565,7 @@ export async function getTools(
   return query;
 }
 
+/** @mcp read */
 export async function getToolsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2321,6 +2583,7 @@ export async function getToolsList(
   );
 }
 
+/** @mcp read */
 export async function getUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string,
@@ -2338,6 +2601,7 @@ export async function getUnitOfMeasure(
  * Which tables still reference a unit of measure, and how many rows each;
  * empty means safe to delete (or id not visible to the caller). RPC-backed so
  * the answer doesn't depend on the caller's module permissions.
+ * @mcp read
  */
 export async function getUnitOfMeasureUsage(
   client: SupabaseClient<Database>,
@@ -2346,6 +2610,7 @@ export async function getUnitOfMeasureUsage(
   return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
+/** @mcp read */
 export async function getUnitOfMeasures(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2354,7 +2619,7 @@ export async function getUnitOfMeasures(
   let query = client
     .from("unitOfMeasure")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2368,6 +2633,7 @@ export async function getUnitOfMeasures(
   return query;
 }
 
+/** @mcp read */
 export async function getUnitOfMeasuresList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2379,6 +2645,7 @@ export async function getUnitOfMeasuresList(
     .order("name");
 }
 
+/** @mcp update */
 export async function updateConfigurationParameterGroupOrder(
   client: SupabaseClient<Database>,
   data: z.infer<typeof configurationParameterGroupOrderValidator>
@@ -2389,6 +2656,7 @@ export async function updateConfigurationParameterGroupOrder(
     .eq("id", data.id);
 }
 
+/** @mcp update */
 export async function updateDefaultRevision(
   client: SupabaseClient<Database>,
   data: {
@@ -2429,6 +2697,7 @@ export async function updateDefaultRevision(
     .in("itemId", itemIds);
 }
 
+/** @mcp update */
 export async function updateConfigurationParameterOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2445,6 +2714,7 @@ export async function updateConfigurationParameterOrder(
     .eq("id", data.id);
 }
 
+/** @mcp update */
 export async function updateItemCost(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2464,6 +2734,7 @@ export async function updateItemCost(
     .single();
 }
 
+/** @mcp update */
 export async function updateMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -2478,6 +2749,7 @@ export async function updateMaterialOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp update */
 export async function updateOperationOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -2492,6 +2764,7 @@ export async function updateOperationOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp update */
 export async function updateRevision(
   client: SupabaseClient<Database>,
   revision: {
@@ -2509,6 +2782,7 @@ export async function updateRevision(
     .eq("id", revision.id);
 }
 
+/** @mcp upsert */
 export async function upsertConfigurationParameter(
   client: SupabaseClient<Database>,
   configurationParameter: z.infer<typeof configurationParameterValidator> & {
@@ -2571,6 +2845,7 @@ export async function upsertConfigurationParameter(
   });
 }
 
+/** @mcp upsert */
 export async function upsertConfigurationParameterGroup(
   client: SupabaseClient<Database>,
   configurationParameterGroup: z.infer<
@@ -2609,6 +2884,7 @@ export async function upsertConfigurationParameterGroup(
   });
 }
 
+/** @mcp upsert */
 export async function upsertConfigurationRule(
   client: SupabaseClient<Database>,
   configurationRule: z.infer<typeof configurationRuleValidator> & {
@@ -2701,6 +2977,7 @@ export async function upsertItemDefaultPickMethod(
  * picker to processes the recipe will actually run, so users can't pick a
  * process the trigger never matches against (the set-shelf-life helper short-circuits
  * on processId mismatch). Empty array when the item has no active recipe.
+ * @mcp read
  */
 export async function getRecipeProcessIdsForItem(
   client: SupabaseClient<Database>,
@@ -2735,6 +3012,7 @@ export async function getRecipeProcessIdsForItem(
  * Fetch the shelf-life policy for an item. Returns `data: null` (without
  * an error) when the item has no row, since absence = "not managed" and
  * that's a valid state we don't want to treat as an error path.
+ * @mcp read
  */
 export async function getItemShelfLife(
   client: SupabaseClient<Database>,
@@ -2757,6 +3035,7 @@ export async function getItemShelfLife(
  * Returns false when there is no make-method, no materials, or every
  * material has shelf-life NotManaged. Errors are coerced to false — this
  * is a UI hint, not a correctness gate.
+ * @mcp read
  */
 export async function getBomHasShelfLifeManagedInput(
   client: SupabaseClient<Database>,
@@ -2901,6 +3180,7 @@ export async function upsertItemShelfLife(
  * two independent Supabase calls means a failure between the two leaves a
  * partial update committed. This helper runs both writes inside a single
  * Postgres transaction via Kysely.
+ * @mcp upsert destructive
  */
 export async function upsertPickMethodWithShelfLife(
   db: Kysely<KyselyDatabase>,
@@ -3050,6 +3330,7 @@ export async function upsertPickMethodWithShelfLife(
  * Without this, snapshot flags drift from the live item value and leave the
  * UI reading stale (often sticky-true) tracking flags after an item is
  * flipped back to Inventory / Non-Inventory.
+ * @mcp action
  */
 export async function cascadeItemTrackingType(
   db: Kysely<KyselyDatabase>,
@@ -3192,6 +3473,7 @@ export async function cascadeItemTrackingType(
  * sourcingType and defaultMethodType are item-level properties; method
  * materials are read-only mirrors. Only mirrors on Draft make methods are
  * touched — Active and Archived methods are frozen.
+ * @mcp update
  */
 export async function updateItemMethodAndSourcing(
   db: Kysely<KyselyDatabase>,
@@ -3463,6 +3745,9 @@ const typedItemTables = {
  * Creates a consumable (item row and consumable row) or updates one; on update
  * `id` is the item id (uuid) or the consumable's readable id and the write is
  * a full replace, so omitted optional fields are cleared.
+ * @mcp upsert
+ * @mcp key item id
+ * @mcp key item readableId=id
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
@@ -3602,6 +3887,7 @@ export async function upsertConsumable(
  *
  * Callers that also have a customer/supplier part mapping should try that
  * first; this covers the readableId/name half of the match.
+ * @mcp read
  */
 export async function matchItemIdByText(
   client: SupabaseClient<Database>,
@@ -3696,6 +3982,7 @@ export async function matchItemIdByText(
  * Resolve extracted document line text to an item id: first through the
  * party's part mapping (customerPartToItem / supplierPart), then by exact
  * readableId/name match. Returns null when nothing matches directly.
+ * @mcp action
  */
 export async function resolveItemIdFromExtractedText(
   client: SupabaseClient<Database>,
@@ -3739,6 +4026,9 @@ export async function resolveItemIdFromExtractedText(
  * Creates a part (item row and part row) or updates one; on update `id` is the
  * item id (uuid) or the part's readable id and the write is a full replace, so
  * omitted optional fields are cleared.
+ * @mcp upsert
+ * @mcp key item id
+ * @mcp key item readableId=id
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -3884,6 +4174,7 @@ export async function upsertPart(
   return updated;
 }
 
+/** @mcp update */
 export async function updateItem(
   client: SupabaseClient<Database>,
   item: z.infer<typeof itemValidator> & {
@@ -3891,13 +4182,27 @@ export async function updateItem(
     type: Database["public"]["Enums"]["itemType"];
   }
 ) {
+  // These are stored elsewhere (pickMethod, itemCost, itemShelfLife), not on
+  // the item row.
+  const {
+    defaultStorageUnitId: _defaultStorageUnitId,
+    postingGroupId: _postingGroupId,
+    unitCost: _unitCost,
+    shelfLifeMode: _shelfLifeMode,
+    shelfLifeDays: _shelfLifeDays,
+    shelfLifeTriggerProcessId: _shelfLifeTriggerProcessId,
+    shelfLifeTriggerTiming: _shelfLifeTriggerTiming,
+    shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
+    ...row
+  } = item;
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(sanitize(row))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
 
+/** @mcp upsert */
 export async function upsertItemCost(
   client: SupabaseClient<Database>,
   itemCost: z.infer<typeof itemCostValidator> & {
@@ -3911,6 +4216,10 @@ export async function upsertItemCost(
     .eq("itemId", itemCost.itemId);
 }
 
+/**
+ * @mcp upsert
+ * @mcp key pickMethod itemId, locationId
+ */
 export async function upsertPickMethod(
   client: SupabaseClient<Database>,
   pickMethod:
@@ -3937,6 +4246,7 @@ export async function upsertPickMethod(
     .eq("locationId", pickMethod.locationId);
 }
 
+/** @mcp upsert */
 export async function upsertItemManufacturing(
   client: SupabaseClient<Database>,
   partManufacturing: z.infer<typeof itemManufacturingValidator> & {
@@ -3950,6 +4260,10 @@ export async function upsertItemManufacturing(
     .eq("itemId", partManufacturing.itemId);
 }
 
+/**
+ * @mcp upsert
+ * @mcp key itemPlanning itemId, locationId
+ */
 export async function upsertItemPlanning(
   client: SupabaseClient<Database>,
   partPlanning:
@@ -3974,6 +4288,7 @@ export async function upsertItemPlanning(
     .eq("locationId", partPlanning.locationId);
 }
 
+/** @mcp upsert */
 export async function upsertItemPurchasing(
   client: SupabaseClient<Database>,
   itemPurchasing: z.infer<typeof itemPurchasingValidator> & {
@@ -4065,6 +4380,7 @@ async function findSupersessionCycle(
   return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
 }
 
+/** @mcp upsert destructive */
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -4169,6 +4485,7 @@ export async function upsertItemSupersession(
     .insert({ ...row, itemId, companyId, createdBy });
 }
 
+/** @mcp upsert */
 export async function upsertItemPostingGroup(
   client: SupabaseClient<Database>,
   itemPostingGroup:
@@ -4190,17 +4507,15 @@ export async function upsertItemPostingGroup(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("itemPostingGroup")
-      .update(sanitize(itemPostingGroup))
-      // @ts-ignore
-      .eq("id", itemPostingGroup.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("itemPostingGroup")
+    .update(sanitize(itemPostingGroup))
+    .eq("id", itemPostingGroup.id)
+    .select("id")
+    .single();
 }
 
+/** @mcp upsert */
 export async function upsertSupplierPart(
   client: SupabaseClient<Database>,
   supplierPart:
@@ -4232,6 +4547,7 @@ export async function upsertSupplierPart(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertItemCustomerPart(
   client: SupabaseClient<Database>,
   customerPart:
@@ -4257,6 +4573,7 @@ export async function upsertItemCustomerPart(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertItemUnitSalePrice(
   client: SupabaseClient<Database>,
   itemUnitSalePrice: z.infer<typeof itemUnitSalePriceValidator> & {
@@ -4270,6 +4587,7 @@ export async function upsertItemUnitSalePrice(
     .eq("itemId", itemUnitSalePrice.itemId);
 }
 
+/** @mcp upsert */
 export async function upsertMakeMethodVersion(
   client: SupabaseClient<Database>,
   makeMethodVersion: z.infer<typeof makeMethodVersionValidator> & {
@@ -4387,6 +4705,10 @@ async function resolveMethodMaterialStorageUnitIds(
   return current;
 }
 
+/**
+ * @mcp upsert
+ * @mcp key methodMaterial id
+ */
 export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
@@ -4402,6 +4724,16 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
+  // The MCP/API path skips methodMaterialValidator, and the insert spreads the
+  // id over the column default — so a blank id was stored as "" and the next
+  // blank create collided with it.
+  if (!methodMaterial.id?.trim()) {
+    return {
+      data: null,
+      error: { message: "Material ID is required" }
+    };
+  }
+
   // sourcingType and methodType are item-level properties (edited in the
   // item's Properties sidebar). A methodMaterial is a read-only mirror of its
   // component item, so derive both from the item rather than trusting the
@@ -4482,6 +4814,10 @@ export async function upsertMethodMaterial(
     .single();
 }
 
+/**
+ * @mcp upsert
+ * @mcp key methodOperation id
+ */
 export async function upsertMethodOperation(
   client: SupabaseClient<Database>,
 
@@ -4517,6 +4853,7 @@ export async function upsertMethodOperation(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertMethodOperationStep(
   client: SupabaseClient<Database>,
   methodOperationStep:
@@ -4555,6 +4892,7 @@ export async function upsertMethodOperationStep(
 // carrying its reference slides (image + caption + size + annotations, incl. tool
 // hotspots). Sequential supabase writes — a step is created first, then its slides,
 // so a slide-copy failure surfaces without a half-written step blocking the editor.
+/** @mcp create */
 export async function duplicateMethodOperationStep(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; createdBy: string }
@@ -4685,6 +5023,7 @@ export async function duplicateMethodOperationStep(
   return { data: { id: newStepId }, error: null };
 }
 
+/** @mcp upsert */
 export async function upsertMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
@@ -4726,6 +5065,7 @@ export async function upsertMethodOperationStepSlide(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertMethodOperationParameter(
   client: SupabaseClient<Database>,
   methodOperationParameter:
@@ -4755,6 +5095,7 @@ export async function upsertMethodOperationParameter(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertMethodOperationTool(
   client: SupabaseClient<Database>,
   methodOperationTool:
@@ -4830,6 +5171,7 @@ export async function replaceMethodMaterialSteps(
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
 // `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
 // re-linking an existing link updates the quantity, so the same call edits a split.
+/** @mcp update destructive */
 export async function setMethodMaterialStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -4868,6 +5210,7 @@ export async function setMethodMaterialStepLink(
 // row the operation's Tools tab would create) before linking it to the step. Unlink
 // removes only the step link; the operation tool row stays (the Tools tab owns it).
 // Twin of setMethodMaterialStepLink.
+/** @mcp update destructive */
 export async function setMethodOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -5131,14 +5474,20 @@ async function requireMaterialUpdatable(
 
 class MaterialRuleViolation extends Error {}
 
-function materialWriteError(error: unknown): ServiceError {
-  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+// A thrown Kysely/Postgres error in the { message, code } shape services
+// return. The code is the SQLSTATE (23505 for a taken revision label).
+function writeError(error: unknown): ServiceError {
   const code =
     error && typeof error === "object" && "code" in error
       ? String((error as { code: unknown }).code)
       : undefined;
   const message = error instanceof Error ? error.message : String(error);
   return code ? { code, message } : { message };
+}
+
+function materialWriteError(error: unknown): ServiceError {
+  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+  return writeError(error);
 }
 
 async function writeMaterialIdentity(
@@ -5264,6 +5613,9 @@ async function getNewMaterialSizes(
  * IDs are typed by hand. An update's material, item and item cost writes land
  * together or not at all; the pick method, shelf life and new sizes are
  * written after them.
+ * @mcp upsert
+ * @mcp key item id
+ * @mcp key item readableId=id
  */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
@@ -5585,7 +5937,7 @@ export async function upsertMaterial(
     const source = await getItem(client, itemId);
     if (source.error) return source;
     for (const size of newSizes) {
-      const revision = await createRevision(client, {
+      const revision = await createRevision(client, db, {
         item: source.data,
         revision: size,
         createdBy: updatedBy
@@ -5610,6 +5962,7 @@ export async function upsertMaterial(
  * the substance, dimension to the shape, and type to both. With generated
  * material IDs on, every revision's readable id and name are regenerated once
  * the material has a substance and a shape.
+ * @mcp update
  */
 export async function updateMaterialProperties(
   client: SupabaseClient<Database>,
@@ -5689,6 +6042,7 @@ export async function updateMaterialProperties(
 /**
  * Creates a dimension (a named size) for a material shape, or updates the one
  * whose `id` is sent; a new dimension's id is generated.
+ * @mcp upsert
  */
 export async function upsertMaterialDimension(
   client: SupabaseClient<Database>,
@@ -5723,6 +6077,7 @@ export async function upsertMaterialDimension(
 /**
  * Creates a finish for a material substance, or updates the one whose `id` is
  * sent; a new finish's id is generated.
+ * @mcp upsert
  */
 export async function upsertMaterialFinish(
   client: SupabaseClient<Database>,
@@ -5752,6 +6107,7 @@ export async function upsertMaterialFinish(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertMaterialForm(
   client: SupabaseClient<Database>,
   materialForm:
@@ -5773,20 +6129,18 @@ export async function upsertMaterialForm(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("materialForm")
-      .update(sanitize(materialForm))
-      // @ts-ignore
-      .eq("id", materialForm.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("materialForm")
+    .update(sanitize(materialForm))
+    .eq("id", materialForm.id)
+    .select("id")
+    .single();
 }
 
 /**
  * Creates a grade for a material substance, or updates the one whose `id` is
  * sent; a new grade's id is generated.
+ * @mcp upsert
  */
 export async function upsertMaterialGrade(
   client: SupabaseClient<Database>,
@@ -5816,6 +6170,7 @@ export async function upsertMaterialGrade(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteMaterialType(
   client: SupabaseClient<Database>,
   id: string
@@ -5823,6 +6178,7 @@ export async function deleteMaterialType(
   return client.from("materialType").delete().eq("id", id);
 }
 
+/** @mcp read */
 export async function getMaterialTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5830,7 +6186,7 @@ export async function getMaterialTypes(
 ) {
   let query = client
     .from("materialTypes")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .or(`companyId.eq.${companyId},companyId.is.null`);
 
   if (args?.search) {
@@ -5848,6 +6204,7 @@ export async function getMaterialTypes(
   return query;
 }
 
+/** @mcp read */
 export async function getMaterialType(
   client: SupabaseClient<Database>,
   id: string
@@ -5855,6 +6212,7 @@ export async function getMaterialType(
   return client.from("materialType").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getMaterialTypeList(
   client: SupabaseClient<Database>,
   materialSubstanceId: string,
@@ -5872,6 +6230,7 @@ export async function getMaterialTypeList(
 /**
  * Creates a material type for a substance and shape pair, or updates the one
  * whose `id` is sent; a new type's id is generated.
+ * @mcp upsert
  */
 export async function upsertMaterialType(
   client: SupabaseClient<Database>,
@@ -5901,6 +6260,7 @@ export async function upsertMaterialType(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertMaterialSubstance(
   client: SupabaseClient<Database>,
   materialSubstance:
@@ -5922,24 +6282,28 @@ export async function upsertMaterialSubstance(
       .select("*")
       .single();
   }
-  return (
-    client
-      .from("materialSubstance")
-      .update(sanitize(materialSubstance))
-      // @ts-ignore
-      .eq("id", materialSubstance.id)
-      .select("id")
-      .single()
-  );
+  return client
+    .from("materialSubstance")
+    .update(sanitize(materialSubstance))
+    .eq("id", materialSubstance.id)
+    .select("id")
+    .single();
 }
 
 /**
- * Creates a service (item row and service row) or updates one; on update `id`
- * is the item id (uuid) or the service's readable id and the write is a full
- * replace, so omitted optional fields are cleared.
+ * Creates a service (item row and service row) or updates one. A service is
+ * identified by its name: on create the readable id is `name`, and on update
+ * a changed name renames the readable id with it (a name another service uses
+ * is refused). On update `id` is the item id (uuid) or the
+ * service's readable id and the write is a full replace, so omitted optional
+ * fields are cleared.
+ * @mcp upsert
+ * @mcp key item id
+ * @mcp key item readableId=id
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   service:
     | (z.infer<typeof serviceValidator> & {
         companyId: string;
@@ -5953,11 +6317,27 @@ export async function upsertService(
       })
 ) {
   if ("createdBy" in service) {
+    const readableId = service.name;
+    const existing = await client
+      .from("item")
+      .select("id")
+      .eq("readableId", readableId)
+      .eq("type", "Service")
+      .eq("companyId", service.companyId)
+      .limit(1);
+    if (existing.error) return existing;
+    if (existing.data.length > 0) {
+      return {
+        data: null,
+        error: ruleError(`A service named "${readableId}" already exists`)
+      };
+    }
+
     const itemInsert = await client
       .from("item")
       .insert({
-        readableId: service.id,
-        revision: service.revision ?? "0",
+        readableId,
+        revision: service.revision || "0",
         name: service.name,
         description: service.description,
         type: "Service",
@@ -5965,7 +6345,8 @@ export async function upsertService(
         defaultMethodType: service.defaultMethodType,
         // Services can never be shipped, received, or stocked
         itemTrackingType: "Non-Inventory",
-        unitOfMeasureCode: service.unitOfMeasureCode,
+        // A service is always counted in Each, whatever unit a caller sends.
+        unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
         active: true,
         companyId: service.companyId,
         createdBy: service.createdBy
@@ -5977,7 +6358,7 @@ export async function upsertService(
 
     const [serviceInsert, itemCostUpdate] = await Promise.all([
       client.from("service").upsert({
-        id: service.id,
+        id: readableId,
         // Legacy column, no longer surfaced in the UI; the migration adds a
         // DB-level default of "External". Passed explicitly until the committed
         // (cloud-sourced) types pick up that default and make it optional.
@@ -6003,11 +6384,15 @@ export async function upsertService(
     const newService = await client
       .from("services")
       .select("*")
-      .eq("readableId", service.id)
+      .eq("readableId", readableId)
       .eq("companyId", service.companyId)
       .single();
 
     return newService;
+  }
+
+  if (!service.id) {
+    return { data: null, error: ruleError("Service id is required") };
   }
 
   const updated = await updateTypedItem(client, {
@@ -6016,19 +6401,100 @@ export async function upsertService(
     updatedBy: service.updatedBy,
     type: "Service",
     item: {
-      name: service.name,
       description: service.description,
       replenishmentSystem: service.replenishmentSystem,
       defaultMethodType: service.defaultMethodType,
       itemTrackingType: "Non-Inventory",
-      unitOfMeasureCode: service.unitOfMeasureCode,
+      // A service is always counted in Each, whatever unit a caller sends.
+      unitOfMeasureCode: EACH_UNIT_OF_MEASURE_CODE,
       active: true
     },
     typed: { customFields: service.customFields }
   });
-  return updated;
+  if (updated.error) return updated;
+
+  // The name is the readable id, so it is written by the rename (after the
+  // update above, which resolves `id` against the current readable id).
+  const renamed = await updateServiceName(db, {
+    itemId: updated.data.id,
+    name: service.name,
+    companyId: service.companyId,
+    userId: service.updatedBy
+  });
+  if (renamed.error) return renamed;
+  return {
+    data: { id: updated.data.id, readableId: renamed.data.readableId },
+    error: null
+  };
 }
 
+/**
+ * Renames a service. A service is identified by its name, so every revision's
+ * readable id and the service row's id follow it; a name another service
+ * already uses is refused.
+ */
+export async function updateServiceName(
+  db: Kysely<KyselyDatabase>,
+  args: { itemId: string; name: string; companyId: string; userId: string }
+): Promise<
+  | { data: { readableId: string }; error: null }
+  | { data: null; error: { code: string; message: string } }
+> {
+  const name = args.name.trim();
+  if (!name) {
+    return { data: null, error: ruleError("Name is required") };
+  }
+
+  const updatedAt = datetime.timestamp();
+
+  return db.transaction().execute(async (trx) => {
+    const item = await trx
+      .selectFrom("item")
+      .select("readableId")
+      .where("id", "=", args.itemId)
+      .where("type", "=", "Service")
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!item) {
+      return { data: null, error: ruleError("Service not found") };
+    }
+
+    if (item.readableId !== name) {
+      const taken = await trx
+        .selectFrom("item")
+        .select("id")
+        .where("readableId", "=", name)
+        .where("type", "=", "Service")
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (taken) {
+        return {
+          data: null,
+          error: ruleError(`A service named "${name}" already exists`)
+        };
+      }
+
+      await trx
+        .updateTable("service")
+        .set({ id: name, updatedBy: args.userId, updatedAt })
+        .where("id", "=", item.readableId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("item")
+      .set({ readableId: name, name, updatedBy: args.userId, updatedAt })
+      .where("readableId", "=", item.readableId)
+      .where("type", "=", "Service")
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    return { data: { readableId: name }, error: null };
+  });
+}
+
+/** @mcp upsert */
 export async function upsertUnitOfMeasure(
   client: SupabaseClient<Database>,
   unitOfMeasure:
@@ -6063,6 +6529,9 @@ export async function upsertUnitOfMeasure(
  * Creates a tool (item row and tool row) or updates one; on update `id` is the
  * item id (uuid) or the tool's readable id and the write is a full replace, so
  * omitted optional fields are cleared.
+ * @mcp upsert
+ * @mcp key item id
+ * @mcp key item readableId=id
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,
@@ -6195,11 +6664,14 @@ export async function upsertTool(
 }
 
 /**
- * Batch pre-fetch supplier price breaks for multiple items.
- * Builds a SupplierPriceMap keyed by itemId, pooling price break
- * tiers from ALL suppliers for each item.
+ * Batch pre-fetch supplier pricing for multiple items, for costing.
+ * Builds a SupplierPriceMap keyed by itemId, pooling the price breaks of ALL
+ * suppliers for each item, converted to base currency per INVENTORY unit at
+ * today's exchange rates (`buildSupplierPriceMap`).
  *
  * Used by the quote loader to pre-load pricing data for BOM costing.
+ * Mirrored in `packages/database/src/methods.ts`.
+ * @mcp read
  */
 export async function getSupplierPriceBreaksForItems(
   client: SupabaseClient<Database>,
@@ -6209,57 +6681,62 @@ export async function getSupplierPriceBreaksForItems(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("id, itemId, unitPrice")
+    .select(
+      "id, itemId, companyId, currencyCode, conversionFactor, supplierUnitPrice"
+    )
     .in("itemId", itemIds);
 
   if (!supplierParts.data?.length) return {};
 
+  const companyId = supplierParts.data[0].companyId;
   const supplierPartIds = supplierParts.data.map((sp) => sp.id);
 
-  const prices = await client
-    .from("supplierPartPrice")
-    .select("supplierPartId, quantity, unitPrice")
-    .in("supplierPartId", supplierPartIds)
-    .order("quantity", { ascending: true });
+  const [prices, rates, company] = await Promise.all([
+    client
+      .from("supplierPartPrice")
+      .select("supplierPartId, quantity, supplierUnitPrice")
+      .in("supplierPartId", supplierPartIds)
+      .eq("companyId", companyId),
+    client.rpc("get_exchange_rates", { p_company_id: companyId }),
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single()
+  ]);
 
-  // Build a lookup from supplierPartId → itemId
-  const spToItem = new Map<string, string>();
-  for (const sp of supplierParts.data) {
-    spToItem.set(sp.id, sp.itemId);
-  }
-
-  const result: SupplierPriceMap = {};
-
-  // Initialize entries with fallback prices
-  for (const sp of supplierParts.data) {
-    if (!result[sp.itemId]) {
-      result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
-    }
-    const current = result[sp.itemId].fallbackUnitPrice;
-    if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
-    }
-  }
-
-  // Add price breaks
+  const breaksByPart = new Map<string, SupplierPriceBreak[]>();
   for (const price of prices.data ?? []) {
-    const itemId = spToItem.get(price.supplierPartId);
-    if (itemId && result[itemId]) {
-      result[itemId].priceBreaks.push({
-        quantity: price.quantity,
-        unitPrice: price.unitPrice
-      });
-    }
+    const breaks = breaksByPart.get(price.supplierPartId) ?? [];
+    breaks.push({
+      quantity: price.quantity,
+      supplierUnitPrice: price.supplierUnitPrice
+    });
+    breaksByPart.set(price.supplierPartId, breaks);
   }
 
-  return result;
+  return buildSupplierPriceMap(
+    supplierParts.data.map((sp) => ({
+      itemId: sp.itemId,
+      currencyCode: sp.currencyCode,
+      conversionFactor: sp.conversionFactor,
+      supplierUnitPrice: sp.supplierUnitPrice,
+      priceBreaks: breaksByPart.get(sp.id) ?? []
+    })),
+    Object.fromEntries(
+      (rates.data ?? []).map((rate) => [rate.currencyCode, rate.rate])
+    ),
+    company.data?.baseCurrencyCode ?? "USD"
+  );
 }
 
 /**
- * Async price lookup across ALL suppliers for an item.
- * Delegates to getSupplierPriceBreaksForItems + lookupBuyPriceFromMap.
+ * Async price lookup across ALL suppliers for an item, in base currency per
+ * inventory unit. Delegates to getSupplierPriceBreaksForItems +
+ * lookupBuyPriceFromMap.
  *
  * Used in quote creation where the specific supplier isn't known.
+ * @mcp read
  */
 export async function lookupBuyPrice(
   client: SupabaseClient<Database>,
@@ -6272,22 +6749,82 @@ export async function lookupBuyPrice(
 }
 
 /**
- * Fetch price breaks array for a specific supplier part.
- * Used by PO and Invoice forms to cache breaks in state.
+ * A supplier part's pricing for a purchase document: its price and breaks as
+ * the supplier quoted them (per purchase unit, in the part's currency), with
+ * that currency's CURRENT exchange rate, so `resolveSupplierPrice` can convert
+ * them into the document's currency. A part in the document's own currency
+ * needs no rate; a missing rate is an error, never par.
+ * @mcp read
+ */
+export async function getSupplierPartPricing(
+  client: SupabaseClient<Database>,
+  supplierPart: {
+    id: string;
+    companyId: string;
+    currencyCode: string | null;
+    supplierUnitPrice: number | null;
+  },
+  baseCurrencyCode: string,
+  documentCurrencyCode: string
+): Promise<
+  | { data: SupplierPartPricing; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const currencyCode = supplierPartCurrency(
+    supplierPart.currencyCode,
+    baseCurrencyCode
+  );
+  const needsRate =
+    currencyCode !== baseCurrencyCode && currencyCode !== documentCurrencyCode;
+
+  const [priceBreaks, rate] = await Promise.all([
+    getSupplierPartPriceBreaks(client, supplierPart.id),
+    needsRate
+      ? client.rpc("get_exchange_rate", {
+          p_company_id: supplierPart.companyId,
+          p_currency_code: currencyCode
+        })
+      : Promise.resolve({ data: 1, error: null })
+  ]);
+
+  if (rate.error || !rate.data) {
+    return {
+      data: null,
+      error: {
+        message: rate.error?.message ?? `No exchange rate for ${currencyCode}`
+      }
+    };
+  }
+
+  return {
+    data: {
+      priceBreaks,
+      supplierUnitPrice: supplierPart.supplierUnitPrice,
+      currency: { currencyCode, exchangeRate: Number(rate.data) }
+    },
+    error: null
+  };
+}
+
+/**
+ * Fetch price breaks array for a specific supplier part, as the supplier
+ * quoted them: purchase quantity and price per purchase unit, in the supplier
+ * part's currency. Used by PO and Invoice forms to cache breaks in state.
+ * @mcp read
  */
 export async function getSupplierPartPriceBreaks(
   client: SupabaseClient<Database>,
   supplierPartId: string
-): Promise<PriceBreak[]> {
+): Promise<SupplierPriceBreak[]> {
   const result = await client
     .from("supplierPartPrice")
-    .select("quantity, unitPrice")
+    .select("quantity, supplierUnitPrice")
     .eq("supplierPartId", supplierPartId)
     .order("quantity", { ascending: true });
 
   return (result.data ?? []).map((pb) => ({
     quantity: pb.quantity,
-    unitPrice: pb.unitPrice
+    supplierUnitPrice: pb.supplierUnitPrice
   }));
 }
 // =============================================================================
@@ -6297,6 +6834,7 @@ export async function getSupplierPartPriceBreaks(
 // -----------------------------------------------------------------------------
 // Reads
 // -----------------------------------------------------------------------------
+/** @mcp read */
 export async function getChangeNotice(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -6310,6 +6848,7 @@ export async function getChangeNotice(
     .single();
 }
 
+/** @mcp read */
 export async function getChangeNotices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6317,7 +6856,7 @@ export async function getChangeNotices(
 ) {
   let query = client
     .from("changeOrders")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6338,6 +6877,7 @@ export async function getChangeNotices(
 // -----------------------------------------------------------------------------
 // Header CRUD
 // -----------------------------------------------------------------------------
+/** @mcp create */
 export async function insertChangeNotice(
   client: SupabaseClient<Database>,
   input: {
@@ -6414,6 +6954,7 @@ export async function insertChangeNotice(
   };
 }
 
+/** @mcp update */
 export async function updateChangeNotice(
   client: SupabaseClient<Database>,
   input: {
@@ -6448,8 +6989,10 @@ export async function updateChangeNotice(
   return { data: { id: result.data.id }, error: null };
 }
 
+/** @mcp delete */
 export async function deleteChangeNotice(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   changeNoticeId: string,
   companyId: string
 ) {
@@ -6463,11 +7006,17 @@ export async function deleteChangeNotice(
     .select("draftMakeMethodId, newItemId")
     .eq("changeOrderId", changeNoticeId)
     .eq("companyId", companyId);
-  if (!affected.error && affected.data) {
-    for (const item of affected.data) {
-      await discardChangeNoticeDraft(client, item, companyId);
-    }
-  }
+  if (affected.error) return { data: null, error: affected.error };
+
+  // A draft that cannot be discarded keeps its change notice: deleting the
+  // notice anyway would leave the draft with nothing pointing at it.
+  const discarded = await discardChangeNoticeDrafts(
+    client,
+    db,
+    affected.data,
+    companyId
+  );
+  if (discarded.error) return { data: null, error: discarded.error };
 
   // Remaining children (affected items, action tasks) cascade via ON DELETE CASCADE.
   return client
@@ -6481,6 +7030,7 @@ export async function deleteChangeNotice(
 // Stage transition — the single guarded writer (G8), a compare-and-swap (G2).
 // Forward-only (isAllowedChangeNoticeTransition).
 // -----------------------------------------------------------------------------
+/** @mcp update */
 export async function updateChangeNoticeStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -6542,6 +7092,7 @@ export async function updateChangeNoticeStatus(
 // -----------------------------------------------------------------------------
 // Change Notice Types (the "Category" lookup — configured like Issue Types)
 // -----------------------------------------------------------------------------
+/** @mcp read */
 export async function getChangeNoticeTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -6549,7 +7100,7 @@ export async function getChangeNoticeTypes(
 ) {
   let query = client
     .from("changeOrderType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -6565,6 +7116,7 @@ export async function getChangeNoticeTypes(
   return query;
 }
 
+/** @mcp read */
 export async function getChangeNoticeTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -6576,6 +7128,7 @@ export async function getChangeNoticeTypesList(
     .order("name", { ascending: true });
 }
 
+/** @mcp read */
 export async function getChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string,
@@ -6589,6 +7142,7 @@ export async function getChangeNoticeType(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertChangeNoticeType(
   client: SupabaseClient<Database>,
   changeNoticeType:
@@ -6606,15 +7160,17 @@ export async function upsertChangeNoticeType(
         customFields?: Json;
       }
 ) {
+  // changeOrderType has no customFields column.
   if ("createdBy" in changeNoticeType) {
-    return client
-      .from("changeOrderType")
-      .insert([changeNoticeType])
-      .select("id")
-      .single();
+    const { customFields: _customFields, ...type } = changeNoticeType;
+    return client.from("changeOrderType").insert([type]).select("id").single();
   }
   // companyId scopes the row, it is not part of the payload (it's in the PK).
-  const { companyId, ...update } = changeNoticeType;
+  const {
+    companyId,
+    customFields: _customFields,
+    ...update
+  } = changeNoticeType;
   return client
     .from("changeOrderType")
     .update(sanitize(update))
@@ -6624,6 +7180,7 @@ export async function upsertChangeNoticeType(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteChangeNoticeType(
   client: SupabaseClient<Database>,
   id: string,
@@ -6653,6 +7210,7 @@ export async function deleteChangeNoticeType(
 // embeds — TS2589 budget); a per-item origin set that only grows drives a fixpoint,
 // so a corrupt/cyclic BOM can't loop forever and provenance fully propagates.
 // `nodeBudget` is a pure infinite-loop backstop, not a depth limit.
+/** @mcp read */
 export async function getTopLevelProductsForItems(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -6920,6 +7478,7 @@ type DraftMethodResult = {
 // Create the CO-owned Draft make method for an affected item per its change type.
 export async function createChangeNoticeDraftMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     itemId: string;
@@ -6974,7 +7533,7 @@ export async function createChangeNoticeDraftMethod(
       }
       // 23505 = unique_violation (makeMethod_unique_itemId_version); a parallel
       // CO grabbed this number first — recompute the next free version + retry.
-      if (res.error?.code === "23505") {
+      if (isUniqueViolation(res.error)) {
         const latest = await getActiveMakeMethodId(client, itemId, companyId);
         nextVersion = (latest?.maxVersion ?? nextVersion) + 1;
         continue;
@@ -6990,8 +7549,8 @@ export async function createChangeNoticeDraftMethod(
         error: { message: "Failed to create draft version" }
       };
     }
-    // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-    const copy = await copyMakeMethod(client, {
+    // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
+    const copy = await copyMakeMethod(client, db, {
       sourceId: base.id,
       targetId: draftId,
       companyId,
@@ -7037,7 +7596,7 @@ export async function createChangeNoticeDraftMethod(
       nextRevision = getNextRevision(maxRevision);
     }
 
-    const created = await createRevision(client, {
+    const created = await createRevision(client, db, {
       item: source.data,
       revision: nextRevision,
       createdBy: userId,
@@ -7170,8 +7729,8 @@ export async function createChangeNoticeDraftMethod(
   });
 
   // Copy the affected part's method into the new item's (trigger-created) draft.
-  // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-  const copy = await copyItem(client, {
+  // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
+  const copy = await copyItem(client, db, {
     sourceId: itemId,
     targetId: newItemId,
     companyId,
@@ -7202,39 +7761,69 @@ export async function createChangeNoticeDraftMethod(
   };
 }
 
-// Discard an affected item's CO-owned Draft (used on change-type switch + when
-// removing the affected item). Deletes the new item for Revision/New Part
-// (cascades its method rows) or the Draft method for Version.
-async function discardChangeNoticeDraft(
+// Discard affected items' CO-owned Drafts (on a change-type switch, and when an
+// affected item or its change notice is removed): the new item for a
+// Revision / Replacement Part / New Part, which cascades its method rows, or
+// the Draft method for a Version. One transaction, so a failure leaves every
+// draft in place and the caller can stop instead of orphaning one.
+async function discardChangeNoticeDrafts(
   client: SupabaseClient<Database>,
-  affected: {
+  db: Kysely<KyselyDatabase>,
+  drafts: {
     draftMakeMethodId: string | null;
     newItemId: string | null;
-  },
+  }[],
   companyId: string
-): Promise<void> {
-  if (affected.newItemId) {
-    await client
-      .from("item")
-      .delete()
-      .eq("id", affected.newItemId)
-      .eq("companyId", companyId);
-    return;
+): Promise<{ error: ServiceError | null }> {
+  const itemIds = drafts.flatMap((draft) =>
+    draft.newItemId ? [draft.newItemId] : []
+  );
+  const makeMethodIds = drafts.flatMap((draft) =>
+    !draft.newItemId && draft.draftMakeMethodId ? [draft.draftMakeMethodId] : []
+  );
+  if (itemIds.length === 0 && makeMethodIds.length === 0) {
+    return { error: null };
   }
-  if (affected.draftMakeMethodId) {
-    await client
-      .from("makeMethod")
-      .delete()
-      .eq("id", affected.draftMakeMethodId)
-      .eq("companyId", companyId);
+
+  // The item and makeMethod DELETE policies both ask for parts_delete.
+  const permitted = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_delete"
+  );
+  if (permitted.error) return permitted;
+
+  try {
+    await db.transaction().execute(async (trx) => {
+      // A Revision draft inherits its source's price breaks.
+      await deleteItemsWithPriceBreaks(trx, { itemIds, companyId });
+      if (makeMethodIds.length > 0) {
+        await trx
+          .deleteFrom("makeMethod")
+          .where("id", "in", makeMethodIds)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+    });
+  } catch (error) {
+    logger.error("Failed to discard change notice drafts", {
+      companyId,
+      itemIds,
+      makeMethodIds,
+      error
+    });
+    return { error: writeError(error) };
   }
+  return { error: null };
 }
 
 // Add an affected item to a CO: insert the row, then spin its CO-owned Draft
 // make method per the change type and write the draft refs back. Rolls the row
-// back if draft creation fails (edge-fn calls can't share one txn — G2).
+// back if draft creation fails (get-method runs its own transaction — G2).
+/** @mcp create destructive */
 export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     // The existing affected item (Version / Revision / Replacement Part). Omitted
@@ -7357,7 +7946,7 @@ export async function addChangeNoticeAffectedItem(
   }
   const affectedItemId = inserted.data.id;
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId,
     itemId,
     changeType: effectiveChangeType,
@@ -7396,8 +7985,10 @@ export async function addChangeNoticeAffectedItem(
 
 // Switch an affected item's change type: discard its current draft and rebuild
 // for the new type (Q2 — the editable surface differs per type, so edits reset).
+/** @mcp update */
 export async function updateChangeNoticeAffectedItemChangeType(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     id: string;
     changeType: ChangeNoticeChangeType;
@@ -7430,6 +8021,15 @@ export async function updateChangeNoticeAffectedItemChangeType(
     return { data: { id }, error: null };
   }
 
+  // The current Draft is deleted at the end, which takes parts_delete. Refuse
+  // now rather than after the swap, when the old draft could only be orphaned.
+  const canDiscard = await requireCompanyPermission(
+    client,
+    companyId,
+    "parts_delete"
+  );
+  if (canDiscard.error) return { data: null, error: canDiscard.error };
+
   // Create the replacement Draft BEFORE destroying the current one, so a failure
   // in creation or the ref swap leaves the affected row still pointing at a valid
   // (undeleted) draft instead of a dangling reference. The old draft is discarded
@@ -7440,7 +8040,7 @@ export async function updateChangeNoticeAffectedItemChangeType(
     newItemId: affected.data.newItemId
   };
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId: affected.data.changeOrderId,
     itemId: affected.data.itemId,
     changeType,
@@ -7464,13 +8064,21 @@ export async function updateChangeNoticeAffectedItemChangeType(
     .eq("companyId", companyId);
   if (updated.error) return { data: null, error: updated.error };
 
-  // Swap succeeded — now safe to discard the superseded draft.
-  await discardChangeNoticeDraft(client, previousDraft, companyId);
+  // Swap succeeded — now safe to discard the superseded draft. The type has
+  // changed either way; a draft that could not be removed is reported.
+  const discarded = await discardChangeNoticeDrafts(
+    client,
+    db,
+    [previousDraft],
+    companyId
+  );
+  if (discarded.error) return { data: null, error: discarded.error };
   return { data: { id }, error: null };
 }
 
 // Update the per-item revision cutover config (mode + dates). The existence of
 // the oldRev→newRev supersession is automatic at release; this only tunes it.
+/** @mcp update */
 export async function updateChangeNoticeAffectedItemCutover(
   client: SupabaseClient<Database>,
   input: {
@@ -7548,6 +8156,7 @@ async function stitchItemLabels(
 }
 
 // The affected items of a CO, each stitched to a minimal item label.
+/** @mcp read */
 export async function getChangeNoticeAffectedItems(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -7583,8 +8192,10 @@ export async function getChangeNoticeAffectedItems(
 
 // Remove an affected item + discard its CO-owned Draft (delete the new item for
 // Revision/New Part, or the Draft method for Version) so no orphan draft leaks.
+/** @mcp action destructive */
 export async function removeChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   id: string,
   companyId: string
 ) {
@@ -7594,8 +8205,17 @@ export async function removeChangeNoticeAffectedItem(
     .eq("id", id)
     .eq("companyId", companyId)
     .maybeSingle();
-  if (!affected.error && affected.data) {
-    await discardChangeNoticeDraft(client, affected.data, companyId);
+  if (affected.error) return { data: null, error: affected.error };
+  if (affected.data) {
+    // The affected row is the only pointer at its draft, so it stays until the
+    // draft is gone.
+    const discarded = await discardChangeNoticeDrafts(
+      client,
+      db,
+      [affected.data],
+      companyId
+    );
+    if (discarded.error) return { data: null, error: discarded.error };
   }
   return client
     .from("changeOrderAffectedItem")
@@ -7628,6 +8248,14 @@ export type ChangeNoticeForItem = {
   createdAt: string;
 };
 
+/**
+ * Every change notice that touches an item or any other revision of it: as an
+ * affected item, as a component on a notice's draft method, as either side of
+ * a supersession, or as the revision a notice created. One request
+ * (`get_item_change_notices`); it was eight in five steps, awaited by every
+ * item page.
+ * @mcp read
+ */
 export async function findChangeNoticesForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -7636,100 +8264,13 @@ export async function findChangeNoticesForItem(
     statuses?: Database["public"]["Enums"]["changeOrderStatus"][];
   }
 ): Promise<{ data: ChangeNoticeForItem[]; error: { message: string } | null }> {
-  const { itemId, companyId, statuses } = args;
-
-  // Resolve every revision (item row) sharing this part's readableId.
-  const item = await client
-    .from("item")
-    .select("readableId")
-    .eq("id", itemId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (item.error) return { data: [], error: item.error };
-  if (!item.data?.readableId) return { data: [], error: null };
-
-  const siblings = await client
-    .from("item")
-    .select("id, changeOrderId")
-    .eq("readableId", item.data.readableId)
-    .eq("companyId", companyId);
-  if (siblings.error) return { data: [], error: siblings.error };
-  const itemIds = (siblings.data ?? []).map((s) => s.id);
-  if (itemIds.length === 0) return { data: [], error: null };
-
-  // Collect referencing changeOrderIds from every relation. v2: instead of a
-  // staged-material mirror, "this item is a component in a CO's edited BOM" is
-  // found via methodMaterial rows on CO-owned draft methods (makeMethod with a
-  // non-null changeOrderId).
-  const [affected, componentMaterials, predecessors, successors] =
-    await Promise.all([
-      client
-        .from("changeOrderAffectedItem")
-        .select("changeOrderId")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("methodMaterial")
-        .select("makeMethodId")
-        .in("itemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("changeOrderSupersession")
-        .select("changeOrderId")
-        .in("predecessorItemId", itemIds)
-        .eq("companyId", companyId),
-      client
-        .from("changeOrderSupersession")
-        .select("changeOrderId")
-        .in("successorItemId", itemIds)
-        .eq("companyId", companyId)
-    ]);
-  if (affected.error) return { data: [], error: affected.error };
-  if (componentMaterials.error)
-    return { data: [], error: componentMaterials.error };
-  if (predecessors.error) return { data: [], error: predecessors.error };
-  if (successors.error) return { data: [], error: successors.error };
-
-  // Resolve which of those make methods are CO-owned drafts.
-  const makeMethodIds = [
-    ...new Set(
-      (componentMaterials.data ?? []).map((m) => m.makeMethodId).filter(Boolean)
-    )
-  ] as string[];
-  const coOwnedMethods = makeMethodIds.length
-    ? await client
-        .from("makeMethod")
-        .select("changeOrderId")
-        .in("id", makeMethodIds)
-        .not("changeOrderId", "is", null)
-        .eq("companyId", companyId)
-    : { data: [], error: null };
-  if (coOwnedMethods.error) return { data: [], error: coOwnedMethods.error };
-
-  const coIds = new Set<string>();
-  for (const a of affected.data ?? []) coIds.add(a.changeOrderId);
-  for (const m of coOwnedMethods.data ?? []) {
-    if (m.changeOrderId) coIds.add(m.changeOrderId);
-  }
-  for (const p of predecessors.data ?? []) coIds.add(p.changeOrderId);
-  for (const s of successors.data ?? []) coIds.add(s.changeOrderId);
-
-  // Reverse link: a released revision points at the CO that created it.
-  for (const s of siblings.data ?? []) {
-    if (s.changeOrderId) coIds.add(s.changeOrderId);
-  }
-
-  if (coIds.size === 0) return { data: [], error: null };
-
-  let query = client
-    .from("changeOrder")
-    .select("id, changeOrderId, name, status, changeOrderTypeId, createdAt")
-    .in("id", [...coIds])
-    .eq("companyId", companyId);
-  if (statuses && statuses.length > 0) query = query.in("status", statuses);
-  query = query.order("createdAt", { ascending: false });
-
-  const result = await query;
+  const result = await client.rpc("get_item_change_notices", {
+    item_id: args.itemId,
+    company_id: args.companyId,
+    ...(args.statuses && args.statuses.length > 0
+      ? { statuses: args.statuses }
+      : {})
+  });
   if (result.error) return { data: [], error: result.error };
   return { data: result.data ?? [], error: null };
 }
@@ -7737,6 +8278,7 @@ export async function findChangeNoticesForItem(
 // Reverse of the Linked-NCR cross-link (4a): every change notice that references
 // a given non-conformance. Read-only, minimal columns; rendered on the Issue
 // detail. Flat select (no embeds — TS2589 budget).
+/** @mcp read */
 export async function getChangeNoticesForNonConformance(
   client: SupabaseClient<Database>,
   nonConformanceId: string,
@@ -7755,6 +8297,7 @@ export async function getChangeNoticesForNonConformance(
 // Reuses the canonical G6 query at the open-status filter. A non-empty result
 // means adding the part here would create a parallel open CO — the routes (and
 // the staging service) reject it.
+/** @mcp read */
 export async function findOtherOpenChangeNoticesForItem(
   client: SupabaseClient<Database>,
   args: { itemId: string; companyId: string; excludeChangeNoticeId: string }
@@ -7771,6 +8314,7 @@ export async function findOtherOpenChangeNoticesForItem(
 // item detail page (part/tool/material) — the CO history for the item plus the
 // type lookup used to label rows. One shared source so the detail routes don't
 // each re-implement the pair of reads.
+/** @mcp read */
 export async function getItemChangeNoticeData(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -7791,6 +8335,7 @@ export async function getItemChangeNoticeData(
 // user, any stage; non-gating. Kept as its own section of items.service.ts to
 // keep each area focused and under the module's 1000-line budget (G4).
 // =============================================================================
+/** @mcp read */
 export async function getChangeNoticeActions(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -7848,6 +8393,7 @@ export async function getChangeNoticeActions(
   };
 }
 
+/** @mcp update */
 export async function updateChangeNoticeActionStatus(
   client: SupabaseClient<Database>,
   input: {
@@ -7869,6 +8415,7 @@ export async function updateChangeNoticeActionStatus(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteChangeNoticeAction(
   client: SupabaseClient<Database>,
   id: string
@@ -7876,6 +8423,7 @@ export async function deleteChangeNoticeAction(
   return client.from("changeOrderActionTask").delete().eq("id", id);
 }
 
+/** @mcp update */
 export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -7897,6 +8445,7 @@ export async function updateChangeNoticeActionOrder(
 // Change Notice Required Actions (the configurable default-action templates the
 // config CRUD page manages, and the source new change notices are seeded from).
 // =============================================================================
+/** @mcp read */
 export async function getChangeNoticeRequiredActions(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -7904,7 +8453,7 @@ export async function getChangeNoticeRequiredActions(
 ) {
   let query = client
     .from("changeOrderRequiredAction")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -7920,6 +8469,7 @@ export async function getChangeNoticeRequiredActions(
   return query;
 }
 
+/** @mcp read */
 export async function getChangeNoticeRequiredActionsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -7932,6 +8482,7 @@ export async function getChangeNoticeRequiredActionsList(
     .order("name", { ascending: true });
 }
 
+/** @mcp read */
 export async function getChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string,
@@ -7945,6 +8496,7 @@ export async function getChangeNoticeRequiredAction(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   input: {
@@ -7981,6 +8533,7 @@ export async function upsertChangeNoticeRequiredAction(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteChangeNoticeRequiredAction(
   client: SupabaseClient<Database>,
   id: string,
@@ -7998,6 +8551,7 @@ export async function deleteChangeNoticeRequiredAction(
 // Quality's requiredActionIds field). Templates newly selected are instantiated
 // (appended); templates deselected have their task removed. Tasks with no
 // template link (actionTypeId IS NULL) are left untouched.
+/** @mcp update destructive */
 export async function setChangeNoticeActionTasks(
   client: SupabaseClient<Database>,
   input: {
@@ -8355,6 +8909,24 @@ function diffAttributes(
   return entries;
 }
 
+// Supplier parts of a draft item against the item it was drafted from. A
+// Revision draft starts with a copy of the source revision's supplier parts
+// (createRevision), so only what the user changed on the CO line shows: a
+// supplier has at most one supplier part per item, so the supplier pairs the
+// two sides. A Replacement Part or New Part draft starts with none — a null
+// base — and every supplier part is an addition.
+function diffSupplierParts(
+  base: Row[] | null,
+  target: Row[]
+): MethodDiffEntry<Row>[] {
+  // The two sides are different items by construction; that is not a change.
+  const withoutItem = ({ itemId: _itemId, ...row }: Row): Row => row;
+  const baseRows = (base ?? []).map(withoutItem);
+  const targetRows = target.map(withoutItem);
+  correlate(baseRows, targetRows, "supplierId", CHILD_SOURCE_KEY);
+  return diffRows(baseRows, targetRows, CHILD_SOURCE_KEY);
+}
+
 // -----------------------------------------------------------------------------
 // The pure diff engine
 // -----------------------------------------------------------------------------
@@ -8372,6 +8944,11 @@ export type DiffMethodInput = {
   // shape.
   baseOperationChildren?: ChildrenByOperationId;
   targetOperationChildren?: ChildrenByOperationId;
+  // Optional supplier parts of the draft item (target) and of the item it was
+  // drafted from (base). A null/omitted base means the draft started with none,
+  // so every target supplier part is an addition.
+  baseSupplierParts?: Row[] | null;
+  targetSupplierParts?: Row[];
 };
 
 export type DiffMethodResult = {
@@ -8381,11 +8958,16 @@ export type DiffMethodResult = {
   // against MethodDiffEntry<Row>[] keep working.
   operations: OperationDiffEntry[];
   attributes: MethodDiffEntry<Row>[];
+  supplierParts: MethodDiffEntry<Row>[];
 };
 
 // PURE. Compares two method snapshots. No DB access — the caller supplies plain
 // rows (live method rows as `base`, CO-staged rows as `target`), and optionally
-// the per-operation child buckets to also diff steps/parameters/tools.
+// the per-operation child buckets to also diff steps/parameters/tools, and the
+// two items' supplier parts.
+/**
+ * @mcp read
+ */
 export function diffMethod(input: DiffMethodInput): DiffMethodResult {
   return {
     materials: diffRows(
@@ -8402,6 +8984,10 @@ export function diffMethod(input: DiffMethodInput): DiffMethodResult {
     attributes: diffAttributes(
       input.baseAttributes ?? null,
       input.targetAttributes ?? null
+    ),
+    supplierParts: diffSupplierParts(
+      input.baseSupplierParts ?? null,
+      input.targetSupplierParts ?? []
     )
   };
 }
@@ -8563,17 +9149,13 @@ async function readItemAttributes(
   };
 }
 
-// A Revision/New Part draft item starts with no supplier parts (the source's
-// aren't copied); the ones the user sets up on the CO line are surfaced as `added`
-// entries. Mirrors getSupplierParts (items.service) — active rows for the item.
-async function readDraftSupplierParts(
+// One item's supplier parts for the diff. Mirrors getSupplierParts
+// (items.service) — active rows for the item.
+async function readSupplierPartRows(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
-): Promise<{
-  data: MethodDiffEntry<Row>[];
-  error: { message: string } | null;
-}> {
+): Promise<{ data: Row[]; error: { message: string } | null }> {
   const res = await client
     .from("supplierPart")
     .select("*")
@@ -8581,14 +9163,7 @@ async function readDraftSupplierParts(
     .eq("companyId", companyId)
     .eq("active", true);
   if (res.error) return { data: [], error: res.error };
-  return {
-    data: (res.data ?? []).map((row) => ({
-      status: "added" as const,
-      before: null,
-      after: row as Row
-    })),
-    error: null
-  };
+  return { data: (res.data ?? []) as Row[], error: null };
 }
 
 // Resolve item-group ids → their names for readable diff display.
@@ -8806,6 +9381,7 @@ async function stampOperationRefNames(
 // CO-owned Draft method as `target` (both REAL method tables), correlate by
 // natural keys, run the pure `diffMethod`, and collect. Also returns the manual
 // supersession declarations. Flat selects scoped by companyId (no embeds).
+/** @mcp read */
 export async function getChangeNoticeDiff(
   client: SupabaseClient<Database>,
   changeNoticeId: string,
@@ -8875,14 +9451,34 @@ export async function getChangeNoticeDiff(
         : await readItemAttributes(client, draftItemId, companyId);
 
     // Supplier parts on the draft item (Revision/Replacement Part/New Part; a
-    // Version shares the live item's suppliers, which are not a CO change).
-    // Surfaced as additions. A New Part's draft item IS its own item
-    // (draftItemId === itemId), so gate on the change type too.
-    let supplierParts: MethodDiffEntry<Row>[] = [];
+    // Version shares the live item's suppliers, which are not a CO change). A
+    // Revision is diffed against the source revision it was copied from; the
+    // other two start with none, so theirs are all additions. A New Part's
+    // draft item IS its own item (draftItemId === itemId), so gate on the
+    // change type too.
+    let draftSupplierParts: Row[] = [];
+    let sourceSupplierParts: Row[] | null = null;
     if (draftItemId !== affectedItem.itemId || isNewPart) {
-      const sp = await readDraftSupplierParts(client, draftItemId, companyId);
-      if (sp.error) return { data: { items: [] }, error: sp.error };
-      supplierParts = sp.data;
+      const draftParts = await readSupplierPartRows(
+        client,
+        draftItemId,
+        companyId
+      );
+      if (draftParts.error) {
+        return { data: { items: [] }, error: draftParts.error };
+      }
+      draftSupplierParts = draftParts.data;
+      if (affectedItem.changeType === "Revision") {
+        const sourceParts = await readSupplierPartRows(
+          client,
+          affectedItem.itemId,
+          companyId
+        );
+        if (sourceParts.error) {
+          return { data: { items: [] }, error: sourceParts.error };
+        }
+        sourceSupplierParts = sourceParts.data;
+      }
     }
 
     const diff = diffMethod({
@@ -8893,7 +9489,9 @@ export async function getChangeNoticeDiff(
       baseAttributes: isNewPart ? null : baseAttributes,
       targetAttributes,
       baseOperationChildren: base.children,
-      targetOperationChildren: target.children
+      targetOperationChildren: target.children,
+      baseSupplierParts: sourceSupplierParts,
+      targetSupplierParts: draftSupplierParts
     });
 
     // Label BOM lines by their component's readable id and BOP tools by the tool
@@ -8961,7 +9559,7 @@ export async function getChangeNoticeDiff(
       materials: diff.materials,
       operations: diff.operations,
       attributes: diff.attributes,
-      supplierParts
+      supplierParts: diff.supplierParts
     });
   }
 
@@ -8974,6 +9572,9 @@ export async function getChangeNoticeDiff(
  * returned `signedUrl`, then call `documents_insertUploadedDocument` with the
  * returned `path`, the item's type as `sourceDocument`, and
  * `sourceDocumentId: itemId`.
+ * @mcp create — part of the documented MCP signed-URL upload flow
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function createItemDocumentUploadUrl(
   client: SupabaseClient<Database>,

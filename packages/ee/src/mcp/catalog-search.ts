@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Ranked full-text search over the tool catalog, extracted from server.ts so it
 // is typed and unit-testable. Backed by zbsearch (BM25 + prefix expansion) with
 // a curated alias layer in front — the engine knows nothing about ERP domain
 // vocabulary, so "RMA" reaching the returns tools is our job, not its.
 import type { Classification, ManifestEntry } from "@carbon/api";
+import { stemInflection } from "@carbon/content/search";
 import { create, insertMultiple, search } from "zbsearch";
 
 /**
@@ -90,8 +95,8 @@ export function collectFieldNames(
 /**
  * Build the search term: the query's words (camelCase split AND raw, so
  * "getCustomers" matches both the tokenized and the literal name) plus alias
- * expansions. BM25 scores documents matching more of the terms higher, so the
- * expansions never need to all hit.
+ * expansions and word stems ("scrapping" adds "scrap"). BM25 scores documents
+ * matching more of the terms higher, so the expansions never need to all hit.
  */
 export function expandQueryTerm(query: string): string {
   const words = new Set<string>();
@@ -106,6 +111,12 @@ export function expandQueryTerm(query: string): string {
     for (const alias of SEARCH_ALIASES[word] ?? []) {
       words.add(alias);
     }
+  }
+  // Stems join the QUERY only, like aliases. Stemming the index collapsed "orders"
+  // into "order", so list tools (getSalesOrders) lost their edge to single-record
+  // ones (deleteSalesOrder).
+  for (const word of [...words]) {
+    words.add(stemInflection(word));
   }
   return [...words].join(" ");
 }

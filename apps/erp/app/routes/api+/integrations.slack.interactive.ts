@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { ERP_URL, SLACK_SIGNING_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -10,6 +14,7 @@ import {
   getSlackIntegrationByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -19,6 +24,7 @@ import {
   getIssueWorkflowsList,
   insertIssue
 } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // nodejs runtime: the Slack signature check uses node:crypto.
@@ -518,14 +524,16 @@ async function handleViewSubmission(
           channelId: configuredChannelId
         }
       ),
-      serviceRole.functions.invoke("create", {
-        body: {
-          type: "nonConformanceTasks",
-          id: ncrId,
+      serverFns
+        .system({
+          db: getDatabaseClient(),
           companyId,
           userId: employee.data?.id ?? "system"
-        }
-      })
+        })
+        .invoke("create", {
+          type: "nonConformanceTasks",
+          id: ncrId
+        })
     ]);
 
     if (tasksResult.error) {

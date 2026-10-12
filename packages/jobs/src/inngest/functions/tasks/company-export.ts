@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
@@ -371,7 +375,7 @@ export const companyExportFunction = inngest.createFunction(
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.

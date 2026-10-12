@@ -1,12 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { type JSONContent, VStack } from "@carbon/react";
+import { type JSONContent, RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import type { PurchasingRFQLine } from "~/modules/purchasing";
 import {
@@ -27,6 +32,10 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "purchasing-rfq");
 
 export const handle: Handle = {
+  realtime: [
+    { table: "purchasingRfq", column: "id", param: "rfqId" },
+    { table: "purchasingRfqLine", column: "purchasingRfqId", param: "rfqId" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.purchasingRfqs },
     (data) => data?.rfqSummary?.rfqId
@@ -132,9 +141,9 @@ export default function PurchasingRFQRoute() {
             <ResizablePanels
               explorer={<PurchasingRFQExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

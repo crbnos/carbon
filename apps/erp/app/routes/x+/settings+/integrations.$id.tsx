@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -21,7 +25,9 @@ import {
   getProviderIntegration,
   getSyncOperations,
   getUnmappedPostingAccounts,
+  getUnmappedRequiredAccounts,
   getUnmappedSlottedDimensionValues,
+  isAccountingSyncEnabled,
   JOURNAL_ENTRY_SOURCE_TYPES,
   loadAccountDefaultAccountIds,
   matchAccountsByCode,
@@ -39,6 +45,8 @@ import {
   type SyncOperation,
   type SyncOperationStatus,
   SyncOperationStatusSchema,
+  selectRequiredMappingAccountIds,
+  selectUnmappedRequiredAccounts,
   suggestAccountMatchesWithAI,
   transitionOperation,
   upsertAccountMapping,
@@ -79,12 +87,12 @@ import {
   getConnectAccountStatus,
   isConnectAccountStillLinked
 } from "@carbon/stripe/connect.server";
+import { redirect, redirectExternal } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
-  redirect,
   useLoaderData,
   useNavigate,
   useParams,
@@ -110,16 +118,19 @@ import {
   dimensionSlotsUpdateValidator,
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
-  postingSyncSettingsValidator
+  postingSyncSettingsValidator,
+  syncEnabledValidator
 } from "~/modules/settings/settings.models";
 import {
   getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
+import { AccountingSyncControl } from "~/modules/settings/ui/Integrations/AccountingSyncControl";
 import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMapping";
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
+import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
@@ -305,18 +316,23 @@ async function getAccountMappingTabData(
   }
 
   // The tab spans the FULL chart of accounts (getAccountMappings is unscoped and
-  // the syncers already see every mapping). The "required" set — badged and
-  // surfaced as needing mapping — is the accountDefault posting accounts PLUS
-  // every Expense account: any Expense account can be charged directly on a PO
-  // G/L-account line, so it should be mapped up front rather than parking a
-  // journal later.
+  // the syncers already see every mapping). The "required" set — badged, and
+  // what must be mapped before sync can be turned on — is the accountDefault
+  // posting accounts PLUS every Expense account.
   const fullChart = allAccounts.data ?? [];
-  const expenseAccountIds = fullChart
-    .filter((account) => account.class === "Expense")
-    .map((account) => account.id);
-  const requiredAccountIds = [
-    ...new Set([...accountDefaultIds, ...expenseAccountIds])
-  ];
+  const requiredAccountIds = selectRequiredMappingAccountIds(
+    accountDefaultIds,
+    fullChart
+  );
+  const unmappedRequiredCount = selectUnmappedRequiredAccounts({
+    accountDefaultIds,
+    chart: fullChart,
+    mappedAccountIds: new Set(
+      (mappings.data ?? [])
+        .filter((mapping) => mapping.externalId)
+        .map((mapping) => mapping.accountId)
+    )
+  }).length;
 
   return {
     mappings: mappings.data ?? [],
@@ -324,6 +340,7 @@ async function getAccountMappingTabData(
     chart,
     proposals: proposals.data ?? [],
     requiredAccountIds,
+    unmappedRequiredCount,
     allAccounts: fullChart,
     blocking: blocking.data ?? []
   };
@@ -667,6 +684,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       dynamicOptions,
       syncActivity: null,
       accountMapping: null,
+      accountingSync: null,
       postingSync: null,
       dimensionSync: null
     };
@@ -1112,12 +1130,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     : null;
 
+  // The header's sync switch: off on a new connection, and only switchable on
+  // once every required account is mapped.
+  const accountingSync = accountMapping
+    ? {
+        enabled: isAccountingSyncEnabled(metadata),
+        unmappedRequiredCount: accountMapping.unmappedRequiredCount
+      }
+    : null;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
     dynamicOptions,
     syncActivity,
     accountMapping,
+    accountingSync,
     postingSync,
     dimensionSync
   };
@@ -1526,6 +1554,99 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Turn an accounting integration's sync on or off (drawer header switch).
+  // A new connection starts off; turning it on is refused until every
+  // required account is mapped, so the first push cannot park a wall of
+  // UNMAPPED_ACCOUNTS warnings. Stays on the page.
+  if (formData.get("intent") === "update-sync-enabled") {
+    const validation = await validator(syncEnabledValidator).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const { syncEnabled } = validation.data;
+
+    const existing = await getIntegration(client, integrationId, companyId);
+    if (existing.error || !existing.data?.active) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(existing.error, "Failed to load integration settings")
+        )
+      );
+    }
+
+    if (syncEnabled) {
+      const unmapped = await getUnmappedRequiredAccounts(getDatabaseClient(), {
+        companyId,
+        integration: integrationId
+      });
+      if (unmapped.error || !unmapped.data) {
+        logger.error("Failed to load unmapped accounts", {
+          companyId,
+          integrationId,
+          error: unmapped.error
+        });
+        return data(
+          {},
+          await flash(
+            request,
+            error(unmapped.error, "Failed to check the account mapping")
+          )
+        );
+      }
+      if (unmapped.data.length > 0) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(
+              null,
+              `Map the remaining ${unmapped.data.length} required account${
+                unmapped.data.length === 1 ? "" : "s"
+              } before turning on sync`
+            )
+          )
+        );
+      }
+    }
+
+    const existingMetadata =
+      (existing.data.metadata as Record<string, unknown>) ?? {};
+    const existingSettings =
+      (existingMetadata.settings as Record<string, unknown> | undefined) ?? {};
+
+    const update = await upsertCompanyIntegration(client, {
+      id: integrationId,
+      active: existing.data.active,
+      metadata: {
+        ...existingMetadata,
+        settings: { ...existingSettings, syncEnabled }
+      } as Json,
+      companyId,
+      updatedBy: userId
+    });
+
+    if (update.error) {
+      return data(
+        {},
+        await flash(request, error(update.error, "Failed to update sync"))
+      );
+    }
+
+    await invalidateIntegrationHealthCache(integrationId, companyId);
+
+    return data(
+      {},
+      await flash(
+        request,
+        success(syncEnabled ? "Turned on sync" : "Turned off sync")
+      )
+    );
+  }
+
   // Persist posting-sync settings (Posting tab): read-modify-write the
   // companyIntegration metadata JSONB, deep-merging the postingSync
   // fragment under metadata.settings so credentials and other settings
@@ -1714,7 +1835,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // tenant that issued it.
   const onshapeAppChanged =
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
-    (["baseUrl", "oauthUrl", "clientId"] as const).some(
+    (["baseUrl", "clientId"] as const).some(
       (key) => metadata[key] !== existingMetadata[key]
     );
   const onshapeNeedsAuthorization =
@@ -1763,6 +1884,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const wasInstalled = existing.data?.active === true;
+
+  // An accounting integration installed from this form (Rillet) starts with
+  // sync off, so accounts can be mapped before anything reaches the provider.
+  // OAuth providers make the same decision in their callbacks.
+  if (
+    !wasInstalled &&
+    (integration as { providerRole?: "accounting" | "spend" }).providerRole ===
+      "accounting"
+  ) {
+    metadata.settings = {
+      ...((metadata.settings as Record<string, unknown> | undefined) ?? {}),
+      syncEnabled: false
+    };
+  }
 
   // Install-time secret presence. The config schemas now let an empty secret
   // field mean "keep the existing vaulted value" (it loads masked, never sent to
@@ -1941,14 +2076,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             started.reason,
-            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, OAuth URL, client ID and client secret."
+            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret."
           )
         )
       );
     }
     // Off to the tenant's consent screen; its callback finishes the install
     // (and registers the release webhook if asset sync is on).
-    throw redirect(started.url, { headers: { "Set-Cookie": started.cookie } });
+    throw redirectExternal(started.url, {
+      headers: { "Set-Cookie": started.cookie }
+    });
   }
 
   if (isOnshapeIntegrationId(integrationId)) {
@@ -2012,6 +2149,7 @@ export default function IntegrationRoute() {
     dynamicOptions,
     syncActivity,
     accountMapping,
+    accountingSync,
     postingSync,
     dimensionSync
   } = useLoaderData<typeof loader>();
@@ -2021,6 +2159,7 @@ export default function IntegrationRoute() {
   const { id: integrationId } = useParams();
 
   const collapseSettings = integrationId === "mount" && installed;
+  const mountActions = useMountActionStates(metadata);
 
   // Accounting-category integrations get Account Mapping, Posting, Dimensions
   // and Sync Activity tabs next to the Settings form (deep-linkable via
@@ -2081,7 +2220,7 @@ export default function IntegrationRoute() {
       )
     });
   }
-  if (syncActivity) {
+  if (syncActivity && integrationId) {
     tabs.push({
       value: "sync-activity",
       label:
@@ -2096,6 +2235,7 @@ export default function IntegrationRoute() {
       content: (tabBar) => (
         <SyncActivity
           tabs={tabBar}
+          integrationId={integrationId}
           operations={syncActivity.operations}
           count={syncActivity.count}
           status={syncActivity.status}
@@ -2125,6 +2265,20 @@ export default function IntegrationRoute() {
       dynamicOptions={dynamicOptions}
       tabs={tabs.length > 0 ? tabs : undefined}
       defaultTab={defaultTab}
+      headerExtra={
+        accountingSync ? (
+          <AccountingSyncControl
+            enabled={accountingSync.enabled}
+            unmappedRequiredCount={accountingSync.unmappedRequiredCount}
+          />
+        ) : undefined
+      }
+      {...(integrationId === "mount" && installed
+        ? {
+            actionStates: mountActions.actionStates,
+            onActionStarted: mountActions.onActionStarted
+          }
+        : {})}
       onClose={() => navigate(path.to.integrations)}
     />
   );

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -18,7 +22,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -26,15 +29,18 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import CompanyDefaultAttachmentsCard from "~/components/CompanyDefaultAttachmentsCard";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsPayableBillingAddressValidator,
   defaultSupplierCcValidator,
@@ -332,27 +338,34 @@ export default function PurchasingSettingsRoute() {
 
   const toggleFetcher = useFetcher<typeof action>();
 
-  const [apAddressEnabled, setApAddressEnabled] = useState(
+  const apAddressEnabled = useSavedToggle(
+    toggleFetcher,
+    "accountsPayableAddressToggle",
     companySettings.accountsPayableAddress ?? false
   );
 
-  const [requireSupplierContactAndLocation, setRequireSupplierContact] =
-    useState(
-      (companySettings as { requireSupplierContactAndLocation?: boolean })
-        .requireSupplierContactAndLocation ?? false
-    );
+  const requireSupplierContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireSupplierContactAndLocationToggle",
+    (companySettings as { requireSupplierContactAndLocation?: boolean })
+      .requireSupplierContactAndLocation ?? false
+  );
 
-  const [leadTimesOnReceiptEnabled, setLeadTimesOnReceiptEnabled] = useState(
+  const leadTimesOnReceiptEnabled = useSavedToggle(
+    toggleFetcher,
+    "updateLeadTimesOnReceipt",
     (companySettings as { updateLeadTimesOnReceipt?: boolean })
       .updateLeadTimesOnReceipt ?? false
   );
 
-  const [showSupplierReadableIdEnabled, setShowSupplierReadableIdEnabled] =
-    useState(companySettings.showSupplierReadableId ?? false);
+  const showSupplierReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showSupplierReadableIdToggle",
+    companySettings.showSupplierReadableId ?? false
+  );
 
   const handleShowSupplierReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowSupplierReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -363,7 +376,6 @@ export default function PurchasingSettingsRoute() {
 
   const handleRequireSupplierContactToggle = useCallback(
     (checked: boolean) => {
-      setRequireSupplierContact(checked);
       toggleFetcher.submit(
         {
           intent: "requireSupplierContactAndLocationToggle",
@@ -377,7 +389,6 @@ export default function PurchasingSettingsRoute() {
 
   const handleApAddressToggle = useCallback(
     (checked: boolean) => {
-      setApAddressEnabled(checked);
       toggleFetcher.submit(
         { intent: "accountsPayableAddressToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -388,7 +399,6 @@ export default function PurchasingSettingsRoute() {
 
   const handleLeadTimesOnReceiptToggle = useCallback(
     (checked: boolean) => {
-      setLeadTimesOnReceiptEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "updateLeadTimesOnReceipt",
@@ -411,13 +421,10 @@ export default function PurchasingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Purchasing</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
@@ -828,7 +835,7 @@ export default function PurchasingSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

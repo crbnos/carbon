@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure, DB-free validation of a Dataset's internal consistency (reads the bundled
 // assembly graph.json sidecars from disk); `pnpm db:check:datasets` covers the live
 // schema. RULES order is the order violations are listed in.
 
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { EPSILON, round } from "../precision.ts";
 import {
   accounts,
   changeOrderRequiredActions,
@@ -20,8 +26,7 @@ import {
   returnReasons,
   scrapReasons,
   unitOfMeasures
-} from "../../supabase/functions/lib/seed.data.ts";
-import { EPSILON, round } from "../../supabase/functions/shared/precision.ts";
+} from "../seed-data.ts";
 import { Constants } from "../types.ts";
 import { NOT_CLOSED_MIN_OFFSET, OPEN_PERIOD_MIN_OFFSET } from "./dates.ts";
 import {
@@ -45,6 +50,7 @@ import {
 import { RULE_FIELDS, type RuleValueKind } from "./rule-fields.ts";
 import type {
   AccountClass,
+  AssemblyStepSpec,
   BankAccountSpec,
   BopOperationSpec,
   Dataset,
@@ -379,7 +385,11 @@ export const COVERAGE = {
   },
 
   journalStatus: {
-    values: enumValues("journalEntryStatus"),
+    values: enumValues("journalEntryStatus", {
+      Provisional:
+        "a demo company starts with a cutover, so it posts no Provisional journal",
+      Superseded: "only the enable turns a Provisional journal into Superseded"
+    }),
     missing: (status) => `accounting.journalEntries: no "${status}" entry`
   },
   memoDirection: {
@@ -400,7 +410,11 @@ export const COVERAGE = {
     missing: (status) => `accounting.closeTasks: no "${status}" task`
   },
   fixedAssetStatus: {
-    values: enumValues("fixedAssetStatus"),
+    // Under Construction needs a CIP class and fixedAssetCipCost rows, which
+    // FixedAssetSpec cannot express.
+    values: enumValues("fixedAssetStatus", {
+      "Under Construction": NOT_AUTHORABLE
+    }),
     missing: (status) => `accounting.fixedAssets: no "${status}" asset`
   },
 
@@ -1263,6 +1277,7 @@ export function foundation(ctx: ValidationCtx): void {
     ["sales.statusOrders", dataset.sales.statusOrders],
     ["sales.releasedOrders", dataset.sales.releasedOrders],
     ["sales.salesReturns", dataset.sales.salesReturns],
+    ["sales.contracts", dataset.sales.contracts],
     ["purchasing.rfqLines", dataset.purchasing.rfqLines],
     ["purchasing.rfqQuotes", dataset.purchasing.rfqQuotes],
     ["purchasing.lifecycleRfqs", dataset.purchasing.lifecycleRfqs],
@@ -1540,6 +1555,14 @@ export function itemIdentity(ctx: ValidationCtx): void {
       itemIds.add(spec.readableId);
     }
   }
+  // A service is identified by its name (upsertService, the CSV import).
+  for (const spec of ctx.dataset.items.services) {
+    if (spec.readableId !== spec.name) {
+      ctx.fail(
+        `items.services "${spec.readableId}": a service's readableId must equal its name "${spec.name}"`
+      );
+    }
+  }
 }
 
 export function items(ctx: ValidationCtx): void {
@@ -1761,6 +1784,31 @@ export function items(ctx: ValidationCtx): void {
           parameter.listOptions.length === 0)
       ) {
         fail(`${where}: list parameter "${parameter.key}" has no listOptions`);
+      }
+    }
+    // Each price must name a value the configurator can produce, or it never
+    // applies (configurationSurcharge in sales.utils.ts).
+    const parameterByKey = new Map(cfg.parameters.map((p) => [p.key, p]));
+    for (const price of cfg.prices ?? []) {
+      const priceWhere = `${where} price "${price.key}${price.value === undefined ? "" : `=${price.value}`}"`;
+      const parameter = parameterByKey.get(price.key);
+      if (!parameter) {
+        fail(`${priceWhere}: unknown parameter`);
+        continue;
+      }
+      if (!Number.isFinite(price.amount) || price.amount === 0) {
+        fail(`${priceWhere}: amount must be a non-zero number`);
+      }
+      const valueOk =
+        parameter.dataType === "numeric"
+          ? price.value === undefined
+          : parameter.dataType === "boolean"
+            ? price.value === "true"
+            : (parameter.listOptions ?? []).includes(price.value ?? "");
+      if (!valueOk) {
+        fail(
+          `${priceWhere}: not a value of ${parameter.dataType} parameter "${parameter.key}"`
+        );
       }
     }
   }
@@ -2228,6 +2276,32 @@ export function sales(ctx: ValidationCtx): void {
             `${where} line "${line.item}": Completed return line needs a toShelf`
           );
         }
+      }
+    }
+  }
+
+  const serviceItems = new Set(
+    dataset.items.services.map((spec) => spec.readableId)
+  );
+  for (const contract of dataset.sales.contracts) {
+    const where = `sales.contracts "${contract.key}"`;
+    needCustomer(where, contract.customer);
+    if (contract.lines.length === 0) fail(`${where}: no lines`);
+    for (const line of contract.lines) {
+      need("item", where, line.item);
+      if (!serviceItems.has(line.item)) {
+        fail(`${where} line "${line.item}": not a Service item`);
+      }
+      if (
+        (line.revenueType === "Recurring") !==
+        (line.rateUnit !== undefined)
+      ) {
+        fail(
+          `${where} line "${line.item}": a Recurring line needs a rateUnit and a One-time line has none`
+        );
+      }
+      if (line.startOffset < contract.startOffset) {
+        fail(`${where} line "${line.item}": starts before the contract`);
       }
     }
   }
@@ -3825,6 +3899,104 @@ export function floor(ctx: ValidationCtx): void {
   }
 }
 
+/**
+ * The sub-assembly rules `validateSubAssemblies` (@carbon/viewer) enforces on every
+ * ERP write, restated here because this package cannot depend on the viewer. Steps
+ * are in play order: a header's members sit directly before it, and the step that
+ * uses a finished sub-assembly comes after it.
+ */
+/**
+ * Fingerprint of what baked step motions depend on: each step's parts, header
+ * flag and sub-assembly links (by position, so renaming a key is not a change),
+ * in play order. Stored as `AssemblySpec.motionsBakedFor` by the bake.
+ */
+export function assemblyStructureFingerprint(steps: AssemblyStepSpec[]) {
+  const indexByKey = new Map(
+    steps.flatMap((step, index) => (step.key ? [[step.key, index]] : []))
+  );
+  const structure = steps.map((step) => [
+    step.componentNodeIds,
+    step.isSubAssembly ?? false,
+    step.parent ? (indexByKey.get(step.parent) ?? step.parent) : null,
+    step.usedIn ? (indexByKey.get(step.usedIn) ?? step.usedIn) : null
+  ]);
+  return createHash("sha1")
+    .update(JSON.stringify(structure))
+    .digest("hex")
+    .slice(0, 16);
+}
+
+function assemblySubAssemblies(
+  steps: AssemblyStepSpec[],
+  fail: (message: string) => void
+): void {
+  const indexByKey = new Map<string, number>();
+  for (const [index, step] of steps.entries()) {
+    if (step.key === undefined) continue;
+    if (indexByKey.has(step.key)) {
+      fail(
+        `items.assembly step "${step.title}": key "${step.key}" is used twice`
+      );
+    }
+    indexByKey.set(step.key, index);
+  }
+  const headerKeys = new Set(
+    steps.filter((step) => step.isSubAssembly).map((step) => step.key)
+  );
+
+  for (const [index, step] of steps.entries()) {
+    const where = `items.assembly step "${step.title}"`;
+    if (step.isSubAssembly) {
+      if (step.key === undefined) fail(`${where}: a sub-assembly needs a key`);
+      if (step.parent !== undefined) {
+        fail(`${where}: a sub-assembly cannot be a member of another one`);
+      }
+      if (
+        step.componentNodeIds.length > 0 ||
+        (step.materials ?? []).length > 0 ||
+        (step.tools ?? []).length > 0
+      ) {
+        fail(`${where}: a sub-assembly names no node ids, materials or tools`);
+      }
+      // Members: the contiguous run of steps directly before the header.
+      const members = new Set<number>();
+      for (let i = index - 1; i >= 0 && steps[i]!.parent === step.key; i--) {
+        members.add(i);
+      }
+      for (const [i, other] of steps.entries()) {
+        if (other.parent === step.key && !members.has(i)) {
+          fail(
+            `items.assembly step "${other.title}": members of "${step.title}" must sit directly before it`
+          );
+        }
+      }
+      if (step.usedIn !== undefined) {
+        const target = indexByKey.get(step.usedIn);
+        if (target === undefined) {
+          fail(`${where}: usedIn names unknown step key "${step.usedIn}"`);
+        } else if (target <= index) {
+          fail(
+            `${where}: usedIn "${step.usedIn}" must come after the sub-assembly`
+          );
+        } else if (steps[target]!.isSubAssembly) {
+          fail(
+            `${where}: usedIn "${step.usedIn}" is a sub-assembly, not a step`
+          );
+        } else if (steps[target]!.parent === step.key) {
+          fail(`${where}: usedIn "${step.usedIn}" is one of its own members`);
+        }
+      }
+    } else {
+      if (step.usedIn !== undefined) {
+        fail(`${where}: only a sub-assembly can name usedIn`);
+      }
+      if (step.parent !== undefined && !headerKeys.has(step.parent)) {
+        fail(`${where}: parent "${step.parent}" is not a sub-assembly`);
+      }
+    }
+  }
+}
+
 const MIN_ASSEMBLY_STEP_MATERIALS = 2;
 const MIN_ASSEMBLY_COMPONENT_MAPPINGS = 2;
 
@@ -3848,14 +4020,35 @@ export function assembly(ctx: ValidationCtx): void {
       if (assembly.item !== undefined)
         need("item", "items.assembly", assembly.item);
       for (const step of assembly.steps) {
-        for (const nodeId of step.componentNodeIds) {
+        for (const nodeId of [
+          ...step.componentNodeIds,
+          ...(step.blockedBy ?? [])
+        ]) {
           if (!graph.nodeIds.has(nodeId)) {
             fail(
               `items.assembly step "${step.title}": node id "${nodeId}" is not in the bundled graph`
             );
           }
         }
+        if (step.motion && step.blockedBy?.length) {
+          fail(
+            `items.assembly step "${step.title}": a blocked step has no path, so it carries no motion`
+          );
+        }
       }
+      const baked = assembly.steps.some(
+        (step) => step.motion || step.view || step.blockedBy
+      );
+      if (
+        baked &&
+        assembly.motionsBakedFor !==
+          assemblyStructureFingerprint(assembly.steps)
+      ) {
+        fail(
+          `items.assembly "${assembly.model}": steps changed since their motions were baked — re-bake them, or drop motion/view/blockedBy`
+        );
+      }
+      assemblySubAssemblies(assembly.steps, fail);
       const bom =
         assembly.item === undefined
           ? new Set<string>()
@@ -6129,33 +6322,6 @@ const PEOPLE_ABSENCE_WINDOW = { min: 7, max: 13 } as const;
 export function peopleAndTime(ctx: ValidationCtx): void {
   const { dataset, fail, need } = ctx;
   const ops = dataset.ops;
-
-  const clockIn = secondsOfDay(ops.openTimecard.clockIn);
-  if (clockIn === null) {
-    fail(
-      `ops.openTimecard: clockIn "${ops.openTimecard.clockIn}" is not a UTC "HH:MM:SS"`
-    );
-  } else {
-    const runningStarts = [
-      OPEN_EVENT_TIME,
-      dataset.production.batch.running.startTimeOfDay
-    ];
-    for (const job of dataset.production.jobs) {
-      for (const override of job.operationOverrides ?? []) {
-        if (override.running) {
-          runningStarts.push(override.running.startTimeOfDay);
-        }
-      }
-    }
-    const earliest = Math.min(
-      ...runningStarts.map((time) => secondsOfDay(time) ?? 0)
-    );
-    if (clockIn > earliest) {
-      fail(
-        `ops.openTimecard: clocked in at ${ops.openTimecard.clockIn}, after a production timer already running today`
-      );
-    }
-  }
 
   const assignmentDays = new Set<number>();
   const assignedWorkCenters = new Set<string>();

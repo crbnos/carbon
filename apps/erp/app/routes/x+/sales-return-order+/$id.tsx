@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getSalesReturnOrder, getSalesReturnOrderLines } from "~/modules/sales";
 import {
@@ -16,6 +21,10 @@ import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
+  realtime: [
+    { table: "salesReturnOrder", column: "id", param: "id" },
+    { table: "salesReturnOrderLine", column: "salesReturnOrderId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RMAs`, to: path.to.salesReturnOrders },
     (data) => data?.salesReturnOrder?.salesReturnOrderId
@@ -70,9 +79,9 @@ export default function SalesReturnOrderRoute() {
             <ResizablePanels
               explorer={<SalesReturnOrderExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

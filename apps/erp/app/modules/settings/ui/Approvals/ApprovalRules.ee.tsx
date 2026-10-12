@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import {
   type ApprovalRule,
   approvalDocumentTypesWithAmounts
@@ -44,8 +48,8 @@ const ApprovalRules = memo(
 
     return (
       <ScrollArea className="h-full w-full">
-        <div className="py-12 px-4 max-w-[60rem] mx-auto">
-          <div className="mb-8">
+        <div className="py-12 px-4 max-w-[60rem] mx-auto max-md:py-3">
+          <div className="mb-8 max-md:hidden">
             <Heading size="h2">
               <Trans>Approval Rules</Trans>
             </Heading>
@@ -54,7 +58,7 @@ const ApprovalRules = memo(
           <VStack spacing={4}>
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Purchase Orders</Trans>
@@ -97,7 +101,7 @@ const ApprovalRules = memo(
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Quality Documents</Trans>
@@ -142,7 +146,7 @@ const ApprovalRules = memo(
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Suppliers</Trans>

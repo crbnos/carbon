@@ -1,12 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
-  SalesRulesTable,
+  SalesRulesGroups,
   SalesRulesUpgradeOverlay
 } from "~/modules/sales/ui/SalesRules";
 import {
@@ -50,11 +56,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     assignmentCount: countsData[r.id] ?? 0
   }));
 
-  return { rows, count: rules.count ?? rows.length };
+  return { rows };
 }
 
 export default function SalesRulesRoute() {
-  const { rows, count } = useLoaderData<typeof loader>();
+  const { rows } = useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "SALES_RULES" });
 
   if (isGated) {
@@ -63,8 +69,8 @@ export default function SalesRulesRoute() {
 
   return (
     <>
-      <SalesRulesTable data={rows as never} count={count} />
-      <Outlet />
+      <SalesRulesGroups rules={rows as never} />
+      <RecordOutlet />
     </>
   );
 }

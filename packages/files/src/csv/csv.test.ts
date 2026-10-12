@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { encodeCsv, encodeCsvTable, parseCsv } from "./csv";
 
@@ -19,6 +23,19 @@ describe("encodeCsv", () => {
       emptyFieldValue: "-"
     });
     expect(csv).toBe("a,b,c\r\n2,1,-");
+  });
+  it("joins header-less pages into the same file as one encode", () => {
+    const fields = ["a", "b"];
+    const rows = [
+      { a: 1, b: "x" },
+      { a: 2, b: "y, z" },
+      { a: 3, b: '"q"' }
+    ];
+    const paged = [
+      encodeCsv(rows.slice(0, 2), { fields }),
+      encodeCsv(rows.slice(2), { fields, header: false })
+    ].join("\r\n");
+    expect(paged).toBe(encodeCsv(rows, { fields }));
   });
 });
 

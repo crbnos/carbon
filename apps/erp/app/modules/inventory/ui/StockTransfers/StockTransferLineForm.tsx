@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   HStack,
@@ -165,7 +169,6 @@ const StockTransferLineForm = ({
                             ? t`Consumable`
                             : t`Item`
                   }
-                  // @ts-ignore
                   type={itemType}
                   // Only stockable types can be transferred — Services are
                   // Non-Inventory and must not be selectable here.

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
@@ -200,6 +204,7 @@ export default function CustomerPortal() {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -222,6 +227,7 @@ export default function CustomerPortal() {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: salesOrderStatusType.map((status) => ({
@@ -267,6 +273,7 @@ export default function CustomerPortal() {
       {
         accessorKey: "promisedDate",
         header: "Due Date",
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <DateTime
             value={
@@ -281,6 +288,7 @@ export default function CustomerPortal() {
       {
         accessorKey: "readableId",
         header: "Part Number",
+        meta: { mobile: "P3" },
         cell: ({ row }) => row.original.readableId
       },
       {

@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  useViewport
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -76,6 +81,8 @@ const QuoteShipmentForm = forwardRef<
 
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isEditable = !isLocked;
+  const { isPhone } = useViewport();
+  const quoteStatus = routeData?.quote?.status ?? "";
 
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(company?.baseCurrencyCode);
@@ -100,6 +107,13 @@ const QuoteShipmentForm = forwardRef<
           <CardTitle>
             <Trans>Shipping</Trans>
           </CardTitle>
+          {isPhone && isLocked ? (
+            <p className="text-sm text-muted-foreground">
+              <Trans>
+                Locked while the quote is {quoteStatus}. Reopen it to edit.
+              </Trans>
+            </p>
+          ) : null}
         </CardHeader>
         <CardContent>
           <Hidden name="id" />

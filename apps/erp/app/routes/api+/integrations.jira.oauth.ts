@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
@@ -7,8 +11,9 @@ import {
   getAccessibleResources
 } from "@carbon/ee/jira.server";
 import { getLogger } from "@carbon/logger";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -112,7 +117,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (createdJiraIntegration?.data?.metadata) {
       // Redirect on the canonical public origin — `request.url`'s origin is the
       // internal proxy address in dev, which would drop the session cookies.
-      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+      return redirectExternal(`${getAppUrl()}${path.to.integrations}`, {
         headers: { "Set-Cookie": consumedState.cookie }
       });
     } else {

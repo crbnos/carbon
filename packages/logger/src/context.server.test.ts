@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createContext, RouterContextProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 import {
+  currentRequest,
   getRequestContext,
   getRouterContext,
+  isAbandonedRead,
   oncePerRead,
   oncePerRequest,
   requestMemoSize,
@@ -31,6 +37,33 @@ describe("request context", () => {
 
     expect(runInRequestContext(p, service)).toBe("req_123");
     expect(service()).toBeUndefined(); // outside a request
+  });
+});
+
+describe("currentRequest and isAbandonedRead", () => {
+  const load = (controller: AbortController, method = "GET") =>
+    new Request("http://erp.test/x", { method, signal: controller.signal });
+
+  it("hands over the request being handled, and nothing outside one", () => {
+    const request = load(new AbortController());
+    expect(runInRequestContext(provider(), currentRequest, { request })).toBe(
+      request
+    );
+    expect(currentRequest()).toBeUndefined();
+  });
+
+  it("is true only for a read whose client has gone", () => {
+    const controller = new AbortController();
+    const read = load(controller);
+    const write = load(controller, "POST");
+    const abandoned = (request: Request) =>
+      runInRequestContext(provider(), isAbandonedRead, { request });
+
+    expect(abandoned(read)).toBe(false);
+    controller.abort();
+    expect(abandoned(read)).toBe(true);
+    expect(abandoned(write)).toBe(false);
+    expect(isAbandonedRead()).toBe(false);
   });
 });
 

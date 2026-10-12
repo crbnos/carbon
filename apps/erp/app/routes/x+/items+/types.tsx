@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import { getMaterialTypes } from "~/modules/items";
 import MaterialTypesTable from "~/modules/items/ui/MaterialTypes/MaterialTypesTable";
 import type { Handle } from "~/utils/handle";
@@ -59,7 +64,7 @@ export default function MaterialTypesRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <MaterialTypesTable data={materialTypes} count={count ?? 0} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
@@ -15,7 +19,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunction, LoaderFunction } from "react-router";
 import { data } from "react-router";
 import { requireChangeNoticeEditable } from "~/modules/items/items.server";
-import { getActionTaskWithParent } from "~/services/action-task.server";
+import { getActionTaskWithParent } from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "integrations-linear-issue-link");
 

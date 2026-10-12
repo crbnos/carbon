@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Shortcut } from "@carbon/react";
 import {
   Badge,
@@ -22,12 +26,12 @@ import {
   TooltipContent,
   TooltipTrigger,
   useDebounce,
-  useShortcutKeys
+  useShortcutKeys,
+  useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds, lerp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { Virtualizer } from "@tanstack/react-virtual";
-import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 import {
@@ -168,6 +172,7 @@ const Gantt = ({
   axisTickMs
 }: GanttProps) => {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const [filterText, setFilterText] = useState("");
   const [wipOnly, setWipOnly] = useState(false);
   const [showDurations, setShowDurations] = useState(false);
@@ -229,11 +234,139 @@ const Gantt = ({
     }
   });
 
+  // Defined once: desktop puts these in resizable panels, phones in a fixed row.
+  const treePanel = (
+    <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
+      <div className="flex items-center pr-2">
+        {parentReadableId && (
+          <ShowParentLink ganttReadableId={parentReadableId} />
+        )}
+        <LiveReloadingStatus
+          rootSpanCompleted={rootSpanStatus !== "inprogress"}
+        />
+      </div>
+      <TreeView
+        parentRef={parentRef}
+        scrollRef={treeScrollRef}
+        virtualizer={virtualizer}
+        autoFocus
+        tree={events}
+        nodes={nodes}
+        getNodeProps={getNodeProps}
+        getTreeProps={getTreeProps}
+        renderNode={({ node, state }) => (
+          <>
+            <div
+              className={cn(
+                "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
+                state.selected ? "bg-muted" : "bg-transparent hover:bg-muted/60"
+              )}
+              onClick={() => {
+                selectNode(node.id);
+              }}
+            >
+              <div className="flex h-8 items-center">
+                {Array.from({ length: node.level }).map((_, index) => (
+                  <LevelLine
+                    key={index}
+                    isError={node.data.isError}
+                    isSelected={state.selected}
+                  />
+                ))}
+                <div
+                  className={cn(
+                    "flex h-8 w-4 items-center",
+                    node.hasChildren && "hover:bg-muted"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (e.altKey) {
+                      if (state.expanded) {
+                        collapseAllBelowDepth(node.level);
+                      } else {
+                        expandAllBelowDepth(node.level);
+                      }
+                    } else {
+                      toggleExpandNode(node.id);
+                    }
+                    scrollToNode(node.id);
+                  }}
+                >
+                  {node.hasChildren ? (
+                    state.expanded ? (
+                      <LuChevronDown className="size-4 text-muted-foreground" />
+                    ) : (
+                      <LuChevronRight className="size-4 text-muted-foreground" />
+                    )
+                  ) : (
+                    <div className="h-8 w-4" />
+                  )}
+                </div>
+              </div>
+
+              <div className="flex w-full items-center justify-between gap-2 pl-1 max-md:min-w-0">
+                <div className="flex items-center gap-2 overflow-x-hidden max-md:min-w-0">
+                  <GanttIcon
+                    name={node.data.style?.icon}
+                    className="size-4 min-h-4 min-w-4"
+                  />
+                  <NodeText node={node} />
+                  {node.data.isRoot && (
+                    <Badge variant="outline" className="text-xs">
+                      <Trans>Job</Trans>
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  {renderNodeAside?.(node)}
+                  <span className="contents max-md:hidden">
+                    <NodeStatusIcon node={node} />
+                  </span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        onScroll={(scrollTop) => {
+          //sync the scroll to the tree
+          if (timelineScrollRef.current) {
+            timelineScrollRef.current.scrollTop = scrollTop;
+          }
+        }}
+      />
+    </div>
+  );
+  const timelinePanel = (
+    <GanttTimeline
+      totalDuration={totalDuration}
+      scale={scale}
+      events={events}
+      rootSpanStatus={rootSpanStatus}
+      rootStartedAt={rootStartedAt}
+      axis={axis}
+      windowStartMs={windowStartMs}
+      formatAxisTick={formatAxisTick}
+      nowMs={nowMs}
+      nonWorkingIntervals={nonWorkingIntervals}
+      tickIntervalMs={tickIntervalMs}
+      axisTickMs={axisTickMs}
+      parentRef={parentRef}
+      timelineScrollRef={timelineScrollRef}
+      nodes={nodes}
+      getNodeProps={getNodeProps}
+      getTreeProps={getTreeProps}
+      showDurations={showDurations}
+      treeScrollRef={treeScrollRef}
+      virtualizer={virtualizer}
+      toggleNodeSelection={toggleNodeSelection}
+    />
+  );
+
   return (
-    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden">
-      <div className="flex items-center justify-between gap-2 border-b border-border">
+    <div className="grid h-full grid-rows-[2.5rem_1fr_3.25rem] overflow-hidden max-md:grid-cols-[minmax(0,1fr)]">
+      <div className="flex items-center justify-between gap-2 border-b border-border max-md:overflow-x-auto max-md:scroll-fade-x">
         <SearchField onChange={setFilterText} />
-        <div className="flex items-center gap-3 pr-2">
+        <div className="flex items-center gap-3 pr-2 max-md:shrink-0">
           {toolbarAccessory}
           <Switch
             variant="small"
@@ -241,16 +374,29 @@ const Gantt = ({
             checked={wipOnly}
             onCheckedChange={(e) => setWipOnly(e.valueOf())}
           />
-          <Switch
-            variant="small"
-            label={t`Show Durations`}
-            checked={showDurations}
-            onCheckedChange={(e) => setShowDurations(e.valueOf())}
-          />
+          {/* Phones have no hover, so their bars always show durations. */}
+          {!isPhone && (
+            <Switch
+              variant="small"
+              label={t`Show Durations`}
+              checked={showDurations}
+              onCheckedChange={(e) => setShowDurations(e.valueOf())}
+            />
+          )}
         </div>
       </div>
       <div ref={panelGroupRef} className="h-full w-full min-h-0">
-        {treeDefaultSize !== undefined && (
+        {/* Phones: a fixed tree column beside the timeline, which keeps its
+            own sideways scroll. */}
+        {isPhone && (
+          <div className="flex h-full w-full">
+            <div className="h-full w-[118px] shrink-0 overflow-hidden border-r border-border pl-3">
+              {treePanel}
+            </div>
+            <div className="h-full min-w-0 flex-1">{timelinePanel}</div>
+          </div>
+        )}
+        {!isPhone && treeDefaultSize !== undefined && (
           <ResizablePanelGroup
             direction="horizontal"
             onLayout={(layout) => {
@@ -265,107 +411,7 @@ const Gantt = ({
               defaultSize={treeDefaultSize}
               className="pl-3"
             >
-              <div className="grid h-full grid-rows-[2rem_1fr] overflow-hidden">
-                <div className="flex items-center pr-2">
-                  {parentReadableId && (
-                    <ShowParentLink ganttReadableId={parentReadableId} />
-                  )}
-                  <LiveReloadingStatus
-                    rootSpanCompleted={rootSpanStatus !== "inprogress"}
-                  />
-                </div>
-                <TreeView
-                  parentRef={parentRef}
-                  scrollRef={treeScrollRef}
-                  virtualizer={virtualizer}
-                  autoFocus
-                  tree={events}
-                  nodes={nodes}
-                  getNodeProps={getNodeProps}
-                  getTreeProps={getTreeProps}
-                  renderNode={({ node, state }) => (
-                    <>
-                      <div
-                        className={cn(
-                          "group flex h-8 cursor-pointer items-center overflow-hidden rounded-l-sm pr-2",
-                          state.selected
-                            ? "bg-muted"
-                            : "bg-transparent hover:bg-muted/60"
-                        )}
-                        onClick={() => {
-                          selectNode(node.id);
-                        }}
-                      >
-                        <div className="flex h-8 items-center">
-                          {Array.from({ length: node.level }).map(
-                            (_, index) => (
-                              <LevelLine
-                                key={index}
-                                isError={node.data.isError}
-                                isSelected={state.selected}
-                              />
-                            )
-                          )}
-                          <div
-                            className={cn(
-                              "flex h-8 w-4 items-center",
-                              node.hasChildren && "hover:bg-muted"
-                            )}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (e.altKey) {
-                                if (state.expanded) {
-                                  collapseAllBelowDepth(node.level);
-                                } else {
-                                  expandAllBelowDepth(node.level);
-                                }
-                              } else {
-                                toggleExpandNode(node.id);
-                              }
-                              scrollToNode(node.id);
-                            }}
-                          >
-                            {node.hasChildren ? (
-                              state.expanded ? (
-                                <LuChevronDown className="size-4 text-muted-foreground" />
-                              ) : (
-                                <LuChevronRight className="size-4 text-muted-foreground" />
-                              )
-                            ) : (
-                              <div className="h-8 w-4" />
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex w-full items-center justify-between gap-2 pl-1">
-                          <div className="flex items-center gap-2 overflow-x-hidden">
-                            <GanttIcon
-                              name={node.data.style?.icon}
-                              className="size-4 min-h-4 min-w-4"
-                            />
-                            <NodeText node={node} />
-                            {node.data.isRoot && (
-                              <Badge variant="outline" className="text-xs">
-                                <Trans>Job</Trans>
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {renderNodeAside?.(node)}
-                            <NodeStatusIcon node={node} />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                  onScroll={(scrollTop) => {
-                    //sync the scroll to the tree
-                    if (timelineScrollRef.current) {
-                      timelineScrollRef.current.scrollTop = scrollTop;
-                    }
-                  }}
-                />
-              </div>
+              {treePanel}
             </ResizablePanel>
             <ResizableHandle withHandle />
             {/* Timeline — takes whatever the tree leaves */}
@@ -374,29 +420,7 @@ const Gantt = ({
               minSize={20}
               defaultSize={100 - treeDefaultSize}
             >
-              <GanttTimeline
-                totalDuration={totalDuration}
-                scale={scale}
-                events={events}
-                rootSpanStatus={rootSpanStatus}
-                rootStartedAt={rootStartedAt}
-                axis={axis}
-                windowStartMs={windowStartMs}
-                formatAxisTick={formatAxisTick}
-                nowMs={nowMs}
-                nonWorkingIntervals={nonWorkingIntervals}
-                tickIntervalMs={tickIntervalMs}
-                axisTickMs={axisTickMs}
-                parentRef={parentRef}
-                timelineScrollRef={timelineScrollRef}
-                nodes={nodes}
-                getNodeProps={getNodeProps}
-                getTreeProps={getTreeProps}
-                showDurations={showDurations}
-                treeScrollRef={treeScrollRef}
-                virtualizer={virtualizer}
-                toggleNodeSelection={toggleNodeSelection}
-              />
+              {timelinePanel}
             </ResizablePanel>
           </ResizablePanelGroup>
         )}
@@ -411,7 +435,7 @@ const Gantt = ({
               setShowDurations={setShowDurations}
             />
           </div>
-          <div className="@[42rem]:hidden">
+          <div className="@[42rem]:hidden max-md:hidden">
             <Popover>
               <PopoverTrigger className="text-sm">
                 <Trans>Shortcuts</Trans>
@@ -643,10 +667,12 @@ const GanttTimeline = ({
                           // start hugs the left, one at the very end hugs the
                           // right, everything between (e.g. a week's mid-week
                           // day ticks, which don't reach the edge) is centered.
+                          // Phones drop the edge labels: ticks are too close
+                          // for them not to collide with their neighbours.
                           tickMs <= 0
-                            ? "ml-1"
+                            ? "ml-1 max-md:hidden"
                             : tickMs >= duration * 0.98
-                              ? "-ml-1 -translate-x-full"
+                              ? "-ml-1 -translate-x-full max-md:hidden"
                               : "-translate-x-1/2"
                         )}
                       >
@@ -672,9 +698,9 @@ const GanttTimeline = ({
                               className={cn(
                                 "whitespace-nowrap",
                                 index === 0
-                                  ? "ml-1"
+                                  ? "ml-1 max-md:hidden"
                                   : index === TICK_COUNT - 1
-                                    ? "-ml-1 -translate-x-full"
+                                    ? "-ml-1 -translate-x-full max-md:hidden"
                                     : "-translate-x-1/2"
                               )}
                             >
@@ -899,12 +925,11 @@ const GanttTimeline = ({
                     ) : (
                       <Timeline.Point ms={node.data.offset}>
                         {(ms) => (
-                          <motion.div
+                          <div
                             className={cn(
                               "-ml-1 size-3 rounded-full",
                               eventBackgroundClassName(node.data)
                             )}
-                            layoutId={node.id}
                           />
                         )}
                       </Timeline.Point>
@@ -927,7 +952,7 @@ const GanttTimeline = ({
 };
 
 function NodeText({ node }: { node: GanttEvent }) {
-  const className = "line-clamp-1";
+  const className = "line-clamp-1 max-md:min-w-0";
   return (
     <Paragraph variant="small" className={cn(className)}>
       <SpanTitle {...node.data} size="small" />
@@ -1128,6 +1153,10 @@ function SpanWithDuration({
       ? segments
       : [{ startMs: props.startMs, durationMs: props.durationMs }];
 
+  // Plain divs, not motion `layoutId`s: every scroll frame re-renders
+  // the visible rows, and a layout node measures itself before and after each
+  // render — hundreds of forced reflows per frame on a large board.
+
   // The duration label (TOTAL work, from props.durationMs) rides the widest
   // piece so it stays readable when the bar is split into thin segments.
   let labelIndex = 0;
@@ -1145,7 +1174,7 @@ function SpanWithDuration({
           startMs={piece.startMs}
           durationMs={piece.durationMs}
         >
-          <motion.div
+          <div
             className={cn(
               "relative flex h-4 w-full min-w-[2px] items-center rounded-sm",
               // Aggregate/rollup rows draw a neutral base; their conflict windows
@@ -1155,7 +1184,6 @@ function SpanWithDuration({
                 ? "bg-gray-500"
                 : eventBackgroundClassName(node.data)
             )}
-            layoutId={pieces.length === 1 ? node.id : `${node.id}:${i}`}
           >
             {(node.data.isPartial || node.data.isEstimated) && (
               <div
@@ -1174,7 +1202,7 @@ function SpanWithDuration({
               <div
                 className={cn(
                   "sticky left-0 z-10 transition group-hover:opacity-100",
-                  !showDuration && "opacity-0"
+                  !showDuration && "md:opacity-0"
                 )}
               >
                 <div className="rounded-sm bg-black/40 px-1 py-0.5 text-xxs font-medium text-white tabular-nums">
@@ -1185,7 +1213,7 @@ function SpanWithDuration({
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         </Timeline.Span>
       ))}
     </>
@@ -1357,7 +1385,10 @@ function SearchField({ onChange }: { onChange: (value: string) => void }) {
   };
 
   return (
-    <InputGroup insetRing className="border-transparent rounded-none ring-0">
+    <InputGroup
+      insetRing
+      className="border-transparent rounded-none ring-0 max-md:min-w-[140px] max-md:w-[160px] max-md:shrink-0"
+    >
       <InputLeftElement>
         <LuSearch className="h-4 w-4 text-muted-foreground" />
       </InputLeftElement>

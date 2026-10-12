@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
-  downloadBlob,
+  downloadUrl,
   isPreviewableDocumentType,
   storage
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -17,9 +22,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   File,
-  generateHTML,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  RichTextView,
   Skeleton,
   Table,
   Tbody,
@@ -28,7 +34,8 @@ import {
   Thead,
   Tr,
   toast,
-  useDebounce
+  useDebounce,
+  useViewport
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -36,7 +43,7 @@ import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
 import { Suspense, useCallback, useState } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Await, useRevalidator } from "react-router";
+import { Await } from "react-router";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import {
@@ -104,11 +111,9 @@ export function MaintenanceDispatchNotes({
             }}
           />
         ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(content as JSONContent)
-            }}
+          <RichTextView
+            content={content as JSONContent}
+            empty={<Trans>No notes</Trans>}
           />
         )}
       </CardContent>
@@ -182,6 +187,7 @@ function MaintenanceFilesContent({
   isReadOnly: boolean;
 }) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const revalidator = useRevalidator();
@@ -212,8 +218,7 @@ function MaintenanceFilesContent({
       const filePath = getFilePath(file.name);
       const url = path.to.file.previewFile(`private/${filePath}`);
       try {
-        const response = await fetch(url);
-        downloadBlob(await response.blob(), file.name);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -333,7 +338,10 @@ function MaintenanceFilesContent({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => download(file)}>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.download}
+                          onClick={() => download(file)}
+                        >
                           <Trans>Download</Trans>
                         </DropdownMenuItem>
                         {!isReadOnly && (
@@ -363,7 +371,8 @@ function MaintenanceFilesContent({
           )}
         </Tbody>
       </Table>
-      {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+      {/* Phones: the header Upload already opens the same picker. */}
+      {!isReadOnly && !isPhone && <FileDropzone onDrop={onDrop} />}
     </>
   );
 }

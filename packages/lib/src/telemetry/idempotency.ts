@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Namespace for Carbon work-event ids. A fixed random UUID, per RFC 4122 §4.3 —
  * it only has to be constant, not secret.

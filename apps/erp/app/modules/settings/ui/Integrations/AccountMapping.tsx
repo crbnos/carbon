@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Combobox, Submit, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Drawer,
@@ -341,14 +346,14 @@ export function AccountMapping({
         </div>
 
         {grouped.length === 0 ? (
-          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
+          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
             <Trans>No accounts match your search</Trans>
           </div>
         ) : (
           grouped.map((group) => (
             <div key={group.class} className="flex w-full flex-col gap-1">
               <Subheading variant="heavy">{group.class}</Subheading>
-              <div className="w-full rounded-lg border border-border">
+              <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
                 <div className="flex w-full flex-col divide-y divide-border">
                   {group.accounts.map((account) => {
                     const mapping = mappedById.get(account.id);
@@ -563,17 +568,15 @@ function MatchByCodeDrawer({
   canUpdate: boolean;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher();
+  const fetcher = useAction({
+    onSettled: () => {
+      if (submittedRef.current) {
+        onClose();
+      }
+    }
+  });
   const isSubmitting = fetcher.state !== "idle";
   const submittedRef = useRef(false);
-
-  // Close once the confirm-all POST settles; revalidation has already
-  // refreshed the sections behind the drawer.
-  useEffect(() => {
-    if (submittedRef.current && fetcher.state === "idle") {
-      onClose();
-    }
-  }, [fetcher.state, onClose]);
 
   const confirmAll = () => {
     if (proposals.length === 0) return;
@@ -621,7 +624,7 @@ function MatchByCodeDrawer({
               <Trans>No unmapped accounts match a provider code</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>
@@ -707,21 +710,19 @@ function AiSuggestModal({
   const suggestFetcher = useFetcher<{
     proposals?: AccountMatchProposalRow[];
   }>();
-  const applyFetcher = useFetcher();
+  const applyFetcher = useAction({
+    onSettled: () => {
+      if (appliedRef.current) {
+        onClose();
+      }
+    }
+  });
   const appliedRef = useRef(false);
 
   const isSuggesting = suggestFetcher.state !== "idle";
   const isApplying = applyFetcher.state !== "idle";
   const proposals = suggestFetcher.data?.proposals;
   const hasSuggested = proposals !== undefined;
-
-  // Close once the apply POST settles; revalidation has already refreshed
-  // the sections behind the modal.
-  useEffect(() => {
-    if (appliedRef.current && applyFetcher.state === "idle") {
-      onClose();
-    }
-  }, [applyFetcher.state, onClose]);
 
   const suggest = () => {
     const formData = new FormData();
@@ -799,7 +800,7 @@ function AiSuggestModal({
               <Trans>AI couldn't confidently match any accounts</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>

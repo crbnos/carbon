@@ -1,21 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { runLocationSchedule } from "@carbon/planning";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   jobStatus,
+  makeToAssetItemError,
   recalculateJobRequirements,
-  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
-import { releaseJobs } from "~/modules/production/production.server";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -57,7 +61,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Ready") {
     const { data } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
       .eq("id", id)
       .single();
 
@@ -66,6 +72,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
       );
+    }
+
+    // Make to Asset gate, checked here so every path to Ready (the release
+    // dialog and the plain status post) refuses before releaseJobs runs. The
+    // item rule is `makeToAssetItemError`; a job on a sales order line is a
+    // sale, not a capitalisation.
+    if (data?.fixedAssetClassId || data?.fixedAssetId) {
+      const itemError = makeToAssetItemError({
+        fixedAssetClassId: data.fixedAssetClassId,
+        fixedAssetId: data.fixedAssetId,
+        itemTrackingType: data.item?.itemTrackingType,
+        quantity: data.quantity
+      });
+      if (itemError) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(null, itemError))
+        );
+      }
+      if (data.salesOrderLineId) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              "A job linked to a sales order line cannot complete to a fixed asset"
+            )
+          )
+        );
+      }
     }
   }
 
@@ -116,6 +153,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     });
     if (released.error) {
+      // The job is Ready when it came back released (its purchase orders
+      // failed after the flip): schedule it, then say what failed.
+      if (released.releasedJobIds.includes(id)) {
+        try {
+          await scheduleJobLocation({ id, companyId, userId });
+        } catch (err) {
+          logger.error("Error", { error: err });
+        }
+      }
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, released.error))
@@ -140,7 +186,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
-    await recalculateJobRequirements(serviceRole, {
+    await recalculateJobRequirements(serviceRole, getDatabaseClient(), {
       id,
       companyId,
       userId
@@ -153,8 +199,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
-  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // Commit the new status BEFORE invoking the scheduler. The scheduler
+  // only batches jobs whose status is already Ready/In Progress/Paused,
   // so a job released here must be persisted as Ready first — otherwise it is
   // filtered out of its own scheduling run and never lands in the forecast.
   //
@@ -163,51 +209,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
   if (status === "Cancelled") {
-    const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), {
-      jobId: id,
-      userId,
-      companyId
-    });
-    if (sweep.error) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(sweep.error, "Cancel aborted: returning picked material failed")
-        )
-      );
-    }
-    const picks = await cancelOpenPickingListsForJob(getDatabaseClient(), {
+    // Returns picked material and closes picking lists before the status
+    // changes — the same path the planning Cancel action takes.
+    const failed = await cancelJob({
+      client,
+      db: getDatabaseClient(),
       jobId: id,
       companyId,
       userId
     });
-    if (picks.error) {
+    if (failed) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
-        await flash(
-          request,
-          error(
-            picks.error,
-            "Cancel aborted: its picking lists could not be closed"
-          )
-        )
+        await flash(request, error(failed.error, failed.message))
       );
     }
-  }
-
-  const update = await updateJobStatus(client, {
-    id,
-    companyId,
-    status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
-  });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, error(update.error, "Failed to update job status"))
-    );
+  } else {
+    const update = await updateJobStatus(client, {
+      id,
+      companyId,
+      status,
+      updatedBy: userId
+    });
+    if (update.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(update.error, "Failed to update job status"))
+      );
+    }
   }
 
   if (status === "Planned" && shouldSchedule) {
@@ -224,15 +253,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
-        getCarbonServiceRole().functions.invoke("create", {
-          body: {
+        serverFns
+          .system({ db: getDatabaseClient(), companyId, userId })
+          .invoke("create", {
             type: "purchaseOrderFromJob",
             jobId: id,
-            purchaseOrdersBySupplierId,
-            companyId,
-            userId
-          }
-        })
+            purchaseOrdersBySupplierId
+          })
       ]);
     } catch (err) {
       logger.error("Error", { error: err });
@@ -244,10 +271,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Closed") {
-    const serviceRole = await getCarbonServiceRole();
-    await serviceRole.functions.invoke("close-job", {
-      body: { jobId: id, userId, companyId }
-    });
+    const closed = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("close-job", { jobId: id });
+    if (closed.error) {
+      // The status change stands; only the WIP write-off failed, as before.
+      logger.error("Failed to write off WIP for closed job", {
+        jobId: id,
+        companyId,
+        error: closed.error
+      });
+    }
   }
 
   if (status === "Planned") {
@@ -264,7 +298,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 // Forecast-first scheduling regenerates the whole location the job is in,
-// in-process (Node) — no edge cold-start or HTTP hop. Throws on failure.
+// in-process (Node). Throws on failure.
 async function scheduleJobLocation({
   id,
   companyId,

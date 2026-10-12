@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure logic behind the batch builder: signatures, per-candidate value sets,
 // duration math, and suggestion scoring. No JSX and no lingui, so vitest can
 // import it directly (the ERP barrels drag lingui macros vitest cannot
@@ -457,7 +461,9 @@ export function deriveFacetDimensions(
 // included) or a calendar range picked day to day, both ends inclusive.
 export type DueFilter =
   | { kind: "window"; days: number }
-  | { kind: "range"; start: CalendarDate; end: CalendarDate };
+  // Either bound may be open: no start is "due on or before", no end is
+  // "due on or after"
+  | { kind: "range"; start: CalendarDate | null; end: CalendarDate | null };
 
 // Every distinct day (YYYY-MM-DD) the candidates are due on — the calendar
 // marks these days so a planner can see where work falls before picking.
@@ -500,11 +506,11 @@ export function filterAndSortCandidates(
       );
       if (!anyLineMatches) return false;
     }
-    if (dueEnd) {
+    if (dueStart || dueEnd) {
       const due = dueDateOf(c);
       if (!due) return false;
       const dueDay = parseDate(due);
-      if (dueDay.compare(dueEnd) > 0) return false;
+      if (dueEnd && dueDay.compare(dueEnd) > 0) return false;
       if (dueStart && dueDay.compare(dueStart) < 0) return false;
     }
     if (term) {
@@ -616,7 +622,7 @@ export function computeSelectionDimSets(
 }
 
 // A candidate is LOCKED when adding it to the current selection would leave a
-// "must" dimension with no shared value — the client mirror of the edge fn's
+// "must" dimension with no shared value — the client mirror of the server fn's
 // `assertMaterialCompatible`. Empty selection locks nothing; already-selected
 // candidates are never locked.
 export function computeLockedById(
@@ -646,7 +652,7 @@ export function computeLockedById(
 // row is picked; this is the after-the-fact flag: "this operation is in the
 // batch and its material shares no {dimension} with the rest". Covers every
 // non-"ignore" dimension — a "must" mismatch that slipped in (rules changed,
-// or members drifted) flags here too, and the edge fn still refuses it on
+// or members drifted) flags here too, and the server fn still refuses it on
 // submit. Members with no value for a dimension are never flagged by it.
 export function computeMemberMismatches(
   members: { id: string; sets: MemberValueSets }[],

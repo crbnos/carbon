@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
-import { renameColumns, TABLE_RENAMES } from "./renames";
+import { renameColumns, renameLiveColumns, TABLE_RENAMES } from "./renames";
 
 /**
  * Schema introspection + backup-compatibility logic, shared by the backup jobs
@@ -21,19 +25,33 @@ export const BACKUP_VERSION = 1;
  * Tables whose contents must never travel in a backup — credentials,
  * integration tokens and webhook targets stay with the source company.
  * (`apiKeyRateLimit` dangles without its stripped `apiKey` and is an UNLOGGED
- * operational counter, never user data. `employeePin` holds console PIN
+ * operational counter, never user data. `tableChange` is the same kind of
+ * table: an UNLOGGED log of which rows changed, whose transaction ids mean
+ * nothing in another database. `employeePin` holds console PIN
  * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
  * it is a credential; being secret also keeps an in-place restore from wiping
- * every operator's PIN.)
+ * every operator's PIN. `ssoConnection` / `ssoDomain` are the company's login
+ * identity — `providerId` and a verified `domain` are unique across ALL
+ * companies, so a copy collides with the source company or hands its domain to
+ * another. `oauthCode` is a live auth code, and dangles without `oauthClient`.
+ * `pushSubscription` holds a browser's push endpoint and its encryption keys:
+ * a device credential that means nothing in another company, and being secret
+ * keeps an in-place restore from bringing back signed-out browsers or wiping
+ * the current ones.)
  */
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
+  "tableChange",
   "companyIntegration",
   "employeePin",
   "webhook",
   "oauthClient",
-  "oauthToken"
+  "oauthCode",
+  "oauthToken",
+  "ssoConnection",
+  "ssoDomain",
+  "pushSubscription"
 ];
 
 /**
@@ -278,6 +296,7 @@ export async function getCompanyTableCatalog(
            is_generated, identity_generation, column_default
     FROM information_schema.columns
     WHERE table_schema = 'public'
+    ORDER BY table_name, ordinal_position
   `.execute(db);
 
   const primaryKeys = await sql<{
@@ -543,10 +562,11 @@ export function reportBackupCompatibility(
       }
     }
 
-    // A renamed table's columns are compared under their CURRENT names, so a
-    // column that moved with the table is not reported as both added and removed.
+    // A renamed table's (or renamed column's) values are compared under their
+    // CURRENT names, so a column that moved is not reported as both added and
+    // removed.
     const backupColumnNames = liveByName.has(backupTable.name)
-      ? backupTable.columns
+      ? renameLiveColumns(backupTable.name, backupTable.columns)
       : renameColumns(backupTable.name, backupTable.columns);
     const backupCols = new Set(backupColumnNames);
     for (const c of live.columns) {

@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useControlField, useField, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Combobox,
   FormControl,
@@ -146,15 +151,12 @@ const SupplierContact = ({
   } = useField(name);
   const [value, setValue] = useControlField<string | null>(name);
 
-  const supplierContactFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierContacts>>>();
+  const supplierContactFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSupplierContacts>>
+  >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (supplier) {
-      supplierContactFetcher.load(path.to.api.supplierContacts(supplier));
-    }
-
     if (initialLoad.current) {
       initialLoad.current = false;
     } else {

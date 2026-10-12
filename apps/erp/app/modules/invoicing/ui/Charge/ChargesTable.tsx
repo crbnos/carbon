@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { formatDate, formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
@@ -46,13 +50,14 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
             {row.original.chargeId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "type",
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -69,6 +74,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <ChargeStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -84,13 +90,13 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
         accessorKey: "transactionDate",
         header: t`Transaction Date`,
         cell: (item) => formatDate(item.getValue<string>(), undefined, locale),
-        meta: { icon: <LuCalendar /> }
+        meta: { filter: { type: "dateRange" }, icon: <LuCalendar /> }
       },
       {
         accessorKey: "merchantName",
         header: t`Merchant`,
         cell: ({ row }) => row.original.merchantName ?? null,
-        meta: { icon: <LuStore /> }
+        meta: { icon: <LuStore />, mobile: "P3" }
       },
       {
         accessorKey: "cardHolderName",
@@ -115,6 +121,7 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuCoins />
         }
       },

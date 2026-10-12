@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   addChangeNoticeAffectedItem,
   type ChangeNoticeChangeType,
@@ -12,6 +15,7 @@ import {
   insertChangeNotice
 } from "~/modules/items";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 // One-click "Create Change Notice" for a part/tool: mint a CO and attach the item
@@ -66,7 +70,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const add = await addChangeNoticeAffectedItem(client, {
+  const add = await addChangeNoticeAffectedItem(client, getDatabaseClient(), {
     changeNoticeId: co.data.id,
     itemId,
     changeType,

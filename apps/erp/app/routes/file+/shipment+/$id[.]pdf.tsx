@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { ensureFont, PackingSlipPDF } from "@carbon/documents/pdf";
@@ -14,6 +18,7 @@ import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getPaymentTerm } from "~/modules/accounting";
 import {
+  getRentalShipmentLines,
   getShipment,
   getShipmentLinesWithDetails,
   getShipmentTracking,
@@ -27,6 +32,7 @@ import {
 } from "~/modules/purchasing";
 import {
   getCustomerLocation,
+  getRentalAgreement,
   getSalesOrder,
   getSalesOrderShipment,
   getSalesTerms
@@ -587,6 +593,118 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       return new Response(new Uint8Array(transferBody), {
         status: 200,
         headers: transferHeaders
+      });
+    }
+    case "Rental Agreement": {
+      const rentalAgreement = await getRentalAgreement(
+        serviceRole,
+        shipment.data.sourceDocumentId,
+        companyId
+      );
+
+      if (rentalAgreement.error) {
+        logger.error("Failed to load rentalAgreement", {
+          error: rentalAgreement.error
+        });
+        throw new Error("Failed to load rental agreement");
+      }
+
+      const [
+        customer,
+        customerLocation,
+        paymentTerm,
+        shippingMethod,
+        rentalLines
+      ] = await Promise.all([
+        serviceRole
+          .from("customer")
+          .select("*")
+          .eq("id", rentalAgreement.data.customerId ?? "")
+          .eq("companyId", companyId)
+          .single(),
+        getCustomerLocation(
+          serviceRole,
+          rentalAgreement.data.customerLocationId ?? ""
+        ),
+        getPaymentTerm(serviceRole, rentalAgreement.data.paymentTermId ?? ""),
+        getShippingMethod(serviceRole, shipment.data.shippingMethodId ?? ""),
+        getRentalShipmentLines(serviceRole, id, companyId)
+      ]);
+
+      if (customer.error) {
+        logger.error("Failed to load customer", { error: customer.error });
+        throw new Error("Failed to load customer");
+      }
+
+      if (rentalLines.error) {
+        logger.error("Failed to load rental units", {
+          error: rentalLines.error
+        });
+        throw new Error("Failed to load rental units");
+      }
+
+      const rentalUnits = (rentalLines.data ?? [])
+        .filter((row) => row.shipped)
+        .map((row) => {
+          // The read filters out rows with no rental line.
+          const line = row.rentalAgreementLine!;
+          return {
+            id: row.id,
+            name: line.fixedAsset?.name ?? line.item?.name ?? "Rental unit",
+            assetReadableId: line.fixedAsset?.fixedAssetId ?? null,
+            serialNumber:
+              line.fixedAsset?.serialNumber ??
+              line.trackedEntity?.readableId ??
+              null
+          };
+        });
+
+      const rentalStream = await renderToStream(
+        <PackingSlipPDF
+          company={company.data as any}
+          customer={customer.data}
+          locale={locale}
+          meta={{
+            author: "Carbon",
+            keywords: "delivery ticket",
+            subject: "Delivery Ticket"
+          }}
+          sourceDocument="Rental Agreement"
+          sourceDocumentId={rentalAgreement.data.rentalAgreementId ?? undefined}
+          shipment={shipment.data}
+          shipmentLines={shipmentLines.data ?? []}
+          // @ts-expect-error
+          shippingAddress={customerLocation.data?.address ?? null}
+          terms={(terms?.data?.salesTerms ?? {}) as JSONContent}
+          paymentTerm={paymentTerm.data ?? { id: "", name: "" }}
+          shippingMethod={shippingMethod.data ?? { id: "", name: "" }}
+          trackedEntities={[]}
+          rentalUnits={rentalUnits}
+          title="Delivery Ticket"
+          thumbnails={{}}
+          template={templateConfig}
+          sections={templateSections}
+        />
+      );
+
+      const rentalBody: Buffer = await new Promise((resolve, reject) => {
+        const buffers: Uint8Array[] = [];
+        rentalStream.on("data", (data) => {
+          buffers.push(data);
+        });
+        rentalStream.on("end", () => {
+          resolve(Buffer.concat(buffers));
+        });
+        rentalStream.on("error", reject);
+      });
+
+      const rentalHeaders = new Headers({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${company.data.name} - ${shipment.data.shipmentId}.pdf"`
+      });
+      return new Response(new Uint8Array(rentalBody), {
+        status: 200,
+        headers: rentalHeaders
       });
     }
     default:

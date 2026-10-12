@@ -17,11 +17,11 @@ changes the ergonomics.
 |---|---|---|
 | Control size | `sm`/`md` (24/32px buttons) | **`size="lg"` default** (44–48px); hero Start/Pause 56 → 96 → 128px |
 | Text | `text-xs`/`text-sm` | `text-sm`/`text-base`; big numbers for counts |
-| Navigation | module rail + sub-nav + breadcrumbs + ⌘K | touch `Sidebar` of **task queues** (Schedule, Assigned, Active, Jobs, Maintenance, Picking) with live counts; per-page sticky header with title or "‹ Back" |
+| Navigation | module rail + sub-nav + breadcrumbs + ⌘K | the same shared `NavRail` as ERP, holding **task queues** (Schedule, Assigned, Active, Recent, Jobs, Maintenance, Picking) with live count pills, then tools, then Time Card + user menu; per-page sticky header with title or "‹ Back" and the rail toggle |
 | Detail tabs | routes | client `Tabs` (Details / Model / Instructions / Chat) |
 | Actions | header strip, menus | **dock**: right column at `lg`, bottom bar below `lg` (safe-area padding); one color-coded primary; "More actions" sheet |
 | Secondary actions | ⋯ menus, context menus | `BottomSheet` / FAB sheet of big round icon buttons |
-| Hover-reveal | common | **none** — everything visible |
+| Hover-reveal | common | **none** — everything visible (the nav rail's hover-expand is mouse-only; touch opens it with the header toggle / ⌘B) |
 | Context menus / bulk | yes | **none** |
 | Lists | feature-rich Table | cards in `grid-cols-[repeat(auto-fill,minmax(min(100%,330px),1fr))]`, simple tables with one search, Kanban |
 | Keyboard | bare letters OK (`n`, `g`) | **no bare letters** — `alt+1..7`, space (start/stop), enter, arrows; yield Enter to scans |

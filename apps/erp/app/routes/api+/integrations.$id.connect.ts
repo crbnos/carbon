@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationIdsByRole, integrations } from "@carbon/ee";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { buildIntegrationOAuthUrl } from "~/modules/settings/integration-oauth";
 import { path } from "~/utils/path";
 
@@ -33,12 +37,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = integrations.find((i) => i.id === integrationId);
 
   if (!integration || !integrationId) {
-    return redirect(`${getAppUrl()}${path.to.integrations}?error=not-found`);
+    return redirectExternal(
+      `${getAppUrl()}${path.to.integrations}?error=not-found`
+    );
   }
 
   const oauth = "oauth" in integration ? integration.oauth : undefined;
   if (!oauth) {
-    return redirect(
+    return redirectExternal(
       `${getAppUrl()}${path.to.integrations}?error=not-oauth&integration=${integrationId}`
     );
   }
@@ -61,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (row) => row.id && roleIds.has(row.id) && row.id !== integrationId
     );
     if (incumbent?.id) {
-      return redirect(
+      return redirectExternal(
         `${getAppUrl()}${path.to.integrations}?error=role-conflict&integration=${integrationId}&conflictsWith=${incumbent.id}`
       );
     }
@@ -84,7 +90,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (declaredModes.length > 0) {
     const chosen = declaredModes.find((m) => m.id === requestedMode);
     if (!chosen) {
-      return redirect(
+      return redirectExternal(
         `${getAppUrl()}${path.to.integrations}?error=invalid-mode&integration=${integrationId}`
       );
     }
@@ -112,10 +118,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   if (!authorizeUrl) {
-    return redirect(
+    return redirectExternal(
       `${getAppUrl()}${path.to.integrations}?error=connect-failed&integration=${integrationId}`
     );
   }
 
-  return redirect(authorizeUrl, { headers: { "Set-Cookie": cookie } });
+  return redirectExternal(authorizeUrl, { headers: { "Set-Cookie": cookie } });
 }

@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { Avatar, HStack, useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type {
   getSupplierContacts,
   SupplierContact as SupplierContactType
@@ -47,8 +51,9 @@ const SupplierContact = ({
   ...props
 }: SupplierContactSelectProps) => {
   const { t } = useLingui();
-  const supplierContactsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierContacts>>>();
+  const supplierContactsFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSupplierContacts>>
+  >(supplier ? path.to.api.supplierContacts(supplier) : null);
 
   const newContactModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
@@ -59,13 +64,6 @@ const SupplierContact = ({
   const nameTokens = namePart.trim().split(" ");
   const initialFirstName = nameTokens[0] || "";
   const initialLastName = nameTokens.slice(1).join(" ");
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (supplier) {
-      supplierContactsFetcher.load(path.to.api.supplierContacts(supplier));
-    }
-  }, [supplier]);
 
   const options = useMemo(
     () =>
@@ -116,12 +114,6 @@ const SupplierContact = ({
           onClose={() => {
             setCreated("");
             newContactModal.onClose();
-            // Reload the per-supplier fetcher so a just-created contact appears.
-            if (supplier) {
-              supplierContactsFetcher.load(
-                path.to.api.supplierContacts(supplier)
-              );
-            }
             triggerRef.current?.click();
           }}
           initialValues={{

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import { noUnroundedTrackedQuantity } from "./no-unrounded-tracked-quantity";
 
@@ -101,9 +105,7 @@ describe("no-unrounded-tracked-quantity — the write", () => {
       "  .set({ quantity: a - b })",
       "  .execute();"
     ].join("\n");
-    expect(
-      scan(src, "packages/database/supabase/functions/shared/entity-drain.ts")
-    ).toHaveLength(0);
+    expect(scan(src, "packages/utils/src/entity-drain.ts")).toHaveLength(0);
   });
 });
 

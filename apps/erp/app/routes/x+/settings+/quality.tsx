@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -16,7 +20,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -24,14 +27,17 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { Users } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import { getCompanySettings } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -106,7 +112,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const update = await client
       .from("companySettings")
-      // @ts-ignore - samplingStandard column added in migration 20260419100000
       .update({ samplingStandard: validation.data.samplingStandard })
       .eq("id", companyId);
     if (update.error) return { success: false, message: update.error.message };
@@ -159,14 +164,15 @@ export default function QualitySettingsRoute() {
   const fetcher = useFetcher<typeof action>();
   const toggleFetcher = useFetcher<typeof action>();
 
-  const [fourEyesEnabled, setFourEyesEnabled] = useState(
+  const fourEyesEnabled = useSavedToggle(
+    toggleFetcher,
+    "enforceInspectionFourEyes",
     (companySettings as { enforceInspectionFourEyes?: boolean })
       .enforceInspectionFourEyes ?? false
   );
 
   const handleFourEyesToggle = useCallback(
     (checked: boolean) => {
-      setFourEyesEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "enforceInspectionFourEyes",
@@ -199,13 +205,10 @@ export default function QualitySettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Quality</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Notifications</Trans>
@@ -403,7 +406,7 @@ export default function QualitySettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -17,12 +21,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (remove.error) {
     return data(
       { success: false },
-      await flash(request, error(remove.error, "Failed to delete unit"))
+      await flash(
+        request,
+        error(remove.error, "Failed to delete component group")
+      )
     );
   }
 
   return data(
     { success: true },
-    await flash(request, success("Successfully deleted unit"))
+    await flash(request, success("Successfully deleted component group"))
   );
 }

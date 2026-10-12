@@ -60,12 +60,12 @@ redirects kinds it does not serve (no loops).
 - **`finishJobOperation`** (`operations.service.ts`) flips the op to `Done` (firing
   the `sync_finish_job_operation` trigger that completes the job to inventory when
   it's the last op). It then runs `returnPickedRemainders`: one `post-picking`
-  sweep invoke (via the service-role client) — `returnJobRemainders` when
-  `job.status='Completed'`, else `returnOperationRemainders` (which itself no-ops
-  unless `companySettings.returnPickedMaterialTiming = 'operation'`). The sweep
+  `returnOperationRemainders` sweep — the server function sweeps the whole job when
+  `job.status='Completed'`, else no-ops unless
+  `companySettings.returnPickedMaterialTiming = 'operation'`. The sweep
   returns un-consumed lineside remainders (tracked AND untracked) to their
   warehouse source, booking `pickingListLine.quantityReturned`. The SQL trigger
-  can't call edge functions, so this is orchestrated in TS. See
+  can't call server functions, so this is orchestrated in TS. See
   `.ai/specs/2026-08-04-picked-material-return-timing.md`.
 
 ## Batch mode (operation batching)
@@ -82,6 +82,14 @@ closing a timer is never blocked. `getOpenJobs` widens with Released-batch
 member jobs via a two-step `.or(status.in…, id.in…)` (quoted statuses — "In
 Progress" has a space). List visibility alone was the leak: nothing else gated
 a direct operation URL.
+
+**Outside Processing never runs on the floor.** Subcontracted work runs at the
+supplier: `get_active_job_operations_by_location` filters it by type (not by a
+null `workCenterId`, which a stale value defeats), and the operation loader, the
+`start.$operationId.tsx` loader (before its timer re-open) and `event.tsx`'s
+Start branch all refuse it with `OUTSIDE_PROCESSING_REFUSAL`
+(`utils/operationView.ts`). `resolveOperationView` still maps it to the Operation
+view so the resolver stays total; the refusal is the routes' job.
 
 
 There is **no separate batch page** — the operation view IS the batch UI. In
@@ -128,7 +136,7 @@ so the loader passes `batch: null` and the page is a plain operation view.
 operation (`path.to.operation`). Legacy links keep working: the ERP board's "Open
 in MES" (`path.to.external.mesBatch`) and the MES kanban batch card
 (`path.to.batch`). Completion still POSTs to `batch.$batchId.complete.tsx`
-(unchanged) → `batch-operations` edge fn.
+(unchanged) → `batch-operations` server function.
 
 In batch mode `JobOperation` derives `isBatched = !!batch`,
 `isCompleting = batch.status === "Completing"`, and:
@@ -177,7 +185,7 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   single op's `Done`), so submit is NOT gated on the timer and there is no "stop
   the timer" note. **"Not in this run" is now implicit: leave a member at 0
   quantity AND 0 scrap** — the modal derives `excluded` from that, submits
-  `excluded="true"` (string flag, the `exclusive` idiom), and the edge fn
+  `excluded="true"` (string flag, the `exclusive` idiom), and `batch-operations`
   detaches it back to the schedule un-run inside the Phase-1 txn — no time slice,
   no quantities, not Done. There is no explicit exclude toggle/X and no amber
   "completed with 0" warning: 0 simply means not-in-this-run. All-excluded (every
@@ -188,9 +196,8 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `outputLotNumber` as every member's batch number, then (after completion
   succeeds) `getPlannedMergeLots` reads the members' Available output lots and
   invokes `issue` `mergeTrackedEntities` with that readableId. The merge
-  carries **no entity ids from the form** — the route invokes `issue` with the
-  SERVICE ROLE, so a posted id list would let a production-only user merge any
-  two same-item lots. A merge failure leaves the batch completed with
+  carries **no entity ids from the form** — the route derives them server-side
+  from batch membership before calling `issue`. A merge failure leaves the batch completed with
   per-member lots; the ERP batch drawer's "Merge output lots" is the recovery
   path. The route returns `data({ completed: true })` + flash, NOT a
   redirect: the completion's own writes fire `useOperation`'s realtime
@@ -223,7 +230,7 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `ReworkModal`, `SerialSelectorModal`, `QualityIssueModal`, `MaintenanceDispatch`,
   `ScrapReason`, `Chat.tsx` (`OperationChat`), `TableSkeleton`.
 - **Hooks:** `hooks/useOperation.tsx` (modal disclosures, live progress via
-  `useInterval` + `useRealtimeChannel`, active-event detection, serial selection),
+  `useInterval` + realtime (`@carbon/query`, see `realtime-system.md`), active-event detection, serial selection),
   `hooks/useFiles.tsx` (`downloadFile`/`downloadModel` via `path.to.file.previewFile`).
 
 ## Tabs

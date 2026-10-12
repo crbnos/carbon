@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Assembly tree, world bboxes, source-unit detection, and graph.json emission —
 //! ported 1:1 from `app/convert.py`. Deterministic; no OCCT.
 
 use crate::nodeid::{geometry_hash, node_id};
 use nalgebra::{Matrix4, Vector3};
-use regex::Regex;
+use regex::bytes::Regex;
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -84,40 +88,43 @@ fn si_prefix(p: &str) -> &'static str {
 
 /// `_detect_source_unit`: best-effort read of the STEP declared length unit.
 pub fn detect_source_unit(text: &str) -> String {
+    detect_source_unit_bytes(text.as_bytes())
+}
+
+/// How much of a file's head is searched for its unit.
+pub const SOURCE_UNIT_SCAN_BYTES: usize = 32 * 1024 * 1024;
+
+/// [`detect_source_unit`] over raw bytes — a memory-mapped file's head — so a
+/// caller need not decode tens of megabytes into a `String` to ask one
+/// question. The answer is the one the lossy-decoded text gives: a byte that is
+/// not valid UTF-8 counts as an ordinary character (as `�` did), and a unit
+/// name is decoded the same lossy way.
+pub fn detect_source_unit_bytes(head: &[u8]) -> String {
     static STMT: OnceLock<Regex> = OnceLock::new();
     static CONV: OnceLock<Regex> = OnceLock::new();
     static SI: OnceLock<Regex> = OnceLock::new();
-    let stmt =
-        STMT.get_or_init(|| Regex::new(r"(?s)\(([^;]*?LENGTH_UNIT\(\)[^;]*?)\)\s*;").unwrap());
-    let conv = CONV.get_or_init(|| Regex::new(r"CONVERSION_BASED_UNIT\s*\(\s*'([^']+)'").unwrap());
+    // `(?-u:[^x])` is "any byte but x", valid UTF-8 or not; everything else
+    // (`\s`, `\w`) keeps its Unicode meaning.
+    let stmt = STMT.get_or_init(|| {
+        Regex::new(r"(?s)\(((?-u:[^;])*?LENGTH_UNIT\(\)(?-u:[^;])*?)\)\s*;").unwrap()
+    });
+    let conv = CONV
+        .get_or_init(|| Regex::new(r"CONVERSION_BASED_UNIT\s*\(\s*'((?-u:[^'])+)'").unwrap());
     let si =
         SI.get_or_init(|| Regex::new(r"SI_UNIT\s*\(\s*(?:\.(\w+)\.|\$)\s*,\s*\.METRE\.").unwrap());
 
-    // Lossy decoding expands invalid bytes to 3-byte `�`, so a byte-capped read
-    // can decode to MORE than `cap` bytes — floor to a char boundary or the
-    // slice panics mid-replacement-char (seen on binary xbf heads).
-    let cap = 32 * 1024 * 1024;
-    let text = if text.len() > cap {
-        let mut end = cap;
-        while !text.is_char_boundary(end) {
-            end -= 1;
-        }
-        &text[..end]
-    } else {
-        text
-    };
-
-    for m in stmt.captures_iter(text) {
+    let head = &head[..head.len().min(SOURCE_UNIT_SCAN_BYTES)];
+    for m in stmt.captures_iter(head) {
         let body = &m[1];
         if let Some(c) = conv.captures(body) {
-            let name = c[1].to_uppercase();
-            return unit_names(&name)
+            let name = String::from_utf8_lossy(&c[1]);
+            return unit_names(&name.to_uppercase())
                 .map(|s| s.to_string())
-                .unwrap_or_else(|| c[1].to_lowercase());
+                .unwrap_or_else(|| name.to_lowercase());
         }
         if let Some(c) = si.captures(body) {
-            let prefix = c.get(1).map(|g| g.as_str()).unwrap_or("");
-            return si_prefix(prefix).to_string();
+            let prefix = c.get(1).map(|g| g.as_bytes()).unwrap_or(b"");
+            return si_prefix(&String::from_utf8_lossy(prefix)).to_string();
         }
     }
     OUTPUT_UNIT.to_string()
@@ -273,6 +280,59 @@ mod tests {
             detect_source_unit("#5=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );"),
             "mm"
         );
+    }
+
+    /// The detector as it was: over the lossy-decoded text.
+    fn reference(head: &[u8]) -> String {
+        use regex::Regex;
+        let text = String::from_utf8_lossy(head);
+        let stmt = Regex::new(r"(?s)\(([^;]*?LENGTH_UNIT\(\)[^;]*?)\)\s*;").unwrap();
+        let conv = Regex::new(r"CONVERSION_BASED_UNIT\s*\(\s*'([^']+)'").unwrap();
+        let si = Regex::new(r"SI_UNIT\s*\(\s*(?:\.(\w+)\.|\$)\s*,\s*\.METRE\.").unwrap();
+        for m in stmt.captures_iter(&text) {
+            let body = &m[1];
+            if let Some(c) = conv.captures(body) {
+                let name = c[1].to_uppercase();
+                return unit_names(&name)
+                    .map(|s| s.to_string())
+                    .unwrap_or_else(|| c[1].to_lowercase());
+            }
+            if let Some(c) = si.captures(body) {
+                return si_prefix(c.get(1).map(|g| g.as_str()).unwrap_or("")).to_string();
+            }
+        }
+        OUTPUT_UNIT.to_string()
+    }
+
+    #[test]
+    fn bytes_give_the_answer_the_decoded_text_gave() {
+        let cases: &[&[u8]] = &[
+            b"DATA;\n#41=( CONVERSION_BASED_UNIT('INCH',#38) LENGTH_UNIT() NAMED_UNIT(#40) );\nENDSEC;",
+            b"#41=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT($,.METRE.) );",
+            b"#5=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );",
+            b"#5=(\r\n LENGTH_UNIT()\r\n NAMED_UNIT(*)\r\n SI_UNIT(.CENTI.,.METRE.)\r\n)\r\n;",
+            b"#9=( CONVERSION_BASED_UNIT('FurLong',#1) LENGTH_UNIT() NAMED_UNIT(#2) );",
+            b"DATA;\nENDSEC;",
+            b"",
+            // Not UTF-8: in the header before the statement, inside it, and
+            // inside the unit name.
+            b"FILE_NAME('pi\xE8ce');\n#1=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT(.MILLI.,.METRE.) );",
+            b"#1=( LENGTH_UNIT() /* \xFF\xFE */ NAMED_UNIT(*) SI_UNIT($,.METRE.) );",
+            b"#1=( CONVERSION_BASED_UNIT('IN\xC9CH',#3) LENGTH_UNIT() NAMED_UNIT(#4) );",
+            // Unicode: a multi-byte name, and a no-break space between tokens.
+            "#1=( CONVERSION_BASED_UNIT('Zoll\u{e4}',#3) LENGTH_UNIT() NAMED_UNIT(#4) );".as_bytes(),
+            "#1=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT\u{a0}(\u{a0}.MILLI.,.METRE.) )\u{a0};".as_bytes(),
+            // The first LENGTH_UNIT statement names no unit; the second does.
+            b"#1=( LENGTH_UNIT() NAMED_UNIT(#9) ); #2=( LENGTH_UNIT() NAMED_UNIT(*) SI_UNIT($,.METRE.) );",
+        ];
+        for case in cases {
+            assert_eq!(
+                detect_source_unit_bytes(case),
+                reference(case),
+                "{}",
+                String::from_utf8_lossy(case)
+            );
+        }
     }
 
     #[test]

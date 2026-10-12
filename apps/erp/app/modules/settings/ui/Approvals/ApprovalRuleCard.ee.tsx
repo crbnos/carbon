@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import {
   type ApprovalDocumentType,
   type ApprovalRule,
@@ -18,6 +22,7 @@ import {
   Heading,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Status,
   useDisclosure
 } from "@carbon/react";
@@ -69,9 +74,13 @@ const ApprovalRuleCard = memo(
           <Accordion type="multiple" className="w-full">
             <AccordionItem value={rule.id} className="border-none">
               <div className="relative">
-                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full">
+                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full max-md:px-4 max-md:py-4">
                   <HStack spacing={4} className="flex-1 justify-between pr-12">
-                    <Heading size="h4" as="h3">
+                    <Heading
+                      size="h4"
+                      as="h3"
+                      className="max-md:text-left max-md:min-w-0"
+                    >
                       {approvalDocumentTypeLabel[documentType]}
                       {approvalDocumentTypesWithAmounts.includes(
                         documentType
@@ -82,7 +91,7 @@ const ApprovalRuleCard = memo(
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}
-                      className="text-xs font-medium"
+                      className="text-xs font-medium max-md:shrink-0"
                     >
                       {rule.enabled ? (
                         <Trans>Enabled</Trans>
@@ -104,6 +113,7 @@ const ApprovalRuleCard = memo(
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.edit}
                         disabled={!canEdit}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -115,6 +125,7 @@ const ApprovalRuleCard = memo(
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
                         destructive
                         disabled={!canDelete}
                         onClick={(e) => {

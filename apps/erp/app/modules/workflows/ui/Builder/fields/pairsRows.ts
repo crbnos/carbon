@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { PairEntry, PairValue, ValueOrRef } from "@carbon/ee/workflows";
 
 /** A new row starts with an empty name and an empty value — never absent, because

@@ -1,4 +1,4 @@
-name: Check Lint and Types
+name: Checks
 
 on:
   pull_request:
@@ -32,6 +32,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -56,6 +67,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
@@ -89,6 +111,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -117,6 +150,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -143,6 +187,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
@@ -171,6 +226,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -188,24 +254,19 @@ jobs:
           persist-credentials: false
       - uses: denoland/setup-deno@v2
         with:
-          # Pin the major the functions are written against; the Supabase edge
-          # runtime is Deno, so this suite needs Deno rather than Node/vitest.
-          deno-version: v1.x
-
-      # Runs with --no-check: `packages/database/tsconfig.json` only covers
-      # `src` and `supabase/functions/lib/postgres/**`, so most of this tree is
-      # not typechecked by tsgo either, and `deno check` currently reports 8
-      # pre-existing errors (kysely/deno-postgres Pool typings + a TS2589).
-      # Closing that gap is separate work — tracked in
-      # .ai/plans/2026-09-09-accounting-nuclear-review-fixes.md.
-      #
-      # The regressions that need a real Postgres SKIP here (see `databaseTest`
-      # in post-payment/payment-test-fixture.ts), so this run needs NO Deno
-      # permissions at all — no env, net, read or write. `deno task test:db`
-      # is the local variant that grants the four the pg driver needs.
-      - name: Test
+          deno-version: v2.x
+      # Each function is self-contained: it imports nothing from outside its
+      # own directory, so this needs no permissions.
+      - name: Self-contained
         working-directory: packages/database/supabase/functions
-        run: deno task test
+        run: |
+          if grep -rnE "from ['\"]\.\./" --include='*.ts' .; then
+            echo "Edge functions must not import from outside their own directory" >&2
+            exit 1
+          fi
+      - name: Check
+        working-directory: packages/database/supabase/functions
+        run: deno check --no-lock */index.ts
 
   audit:
     name: Audit

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import {
   assertExchangeRate,
@@ -574,7 +578,7 @@ export async function loadRilletMemoReasonAccount(
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
-      message: `Cannot sync memo ${memo.memoId}: it has no reason account. Post the memo (with accounting enabled), then retry.`,
+      message: `Cannot sync memo ${memo.memoId}: it has no reason account. Post the memo, then retry.`,
       metadata: { memoId: memo.id }
     });
   }

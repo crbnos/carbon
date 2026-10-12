@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
@@ -8,6 +12,7 @@ import {
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
+  LuCalendarClock,
   LuClock,
   LuCoins,
   LuEuro,
@@ -16,9 +21,11 @@ import {
   LuHandCoins,
   LuLayers,
   LuScale,
-  LuSheet
+  LuSheet,
+  LuTruck
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
@@ -30,6 +37,7 @@ const integrationRoutes = new Set<string>([path.to.accountingSyncTieOut]);
 
 export default function useAccountingSubmodules() {
   const { t } = useLingui();
+  const { addSavedViewsToRoutes } = useSavedViews();
   const accountingRoutes: AuthenticatedRouteGroup[] = useMemo(
     () => [
       {
@@ -53,26 +61,44 @@ export default function useAccountingSubmodules() {
         name: t`General Ledger`,
         routes: [
           {
+            name: t`Journal Entries`,
+            to: path.to.accountingJournals,
+            role: "employee",
+            icon: <LuBookOpen />,
+            table: "journal"
+          },
+          {
             name: t`Intercompany`,
             to: path.to.intercompany,
             role: "employee",
             icon: <LuArrowLeftRight />
-          },
-          {
-            name: t`Journal Entries`,
-            to: path.to.accountingJournals,
-            role: "employee",
-            icon: <LuBookOpen />
-          },
+          }
+        ]
+      },
+      {
+        name: t`Closing`,
+        routes: [
           {
             name: t`Accounting Periods`,
             to: path.to.accountingPeriods,
             role: "employee",
-            icon: <LuCalendarCheck />
+            icon: <LuCalendarCheck />,
+            table: "accountingPeriod"
+          },
+          {
+            name: t`Revenue Recognition`,
+            to: path.to.revenueRecognitionRuns,
+            role: "employee",
+            icon: <LuCalendarClock />
+          },
+          {
+            name: t`Depreciation`,
+            to: path.to.depreciationRuns,
+            role: "employee",
+            icon: <LuClock />
           }
         ]
       },
-
       {
         name: t`Fixed Assets`,
         routes: [
@@ -80,13 +106,15 @@ export default function useAccountingSubmodules() {
             name: t`Assets`,
             to: path.to.fixedAssets,
             role: "employee",
-            icon: <LuBuilding2 />
+            icon: <LuBuilding2 />,
+            table: "fixedAsset"
           },
           {
-            name: t`Depreciation`,
-            to: path.to.depreciationRuns,
+            name: t`Fleet`,
+            to: path.to.fleet,
             role: "employee",
-            icon: <LuClock />
+            icon: <LuTruck />,
+            table: "fleetAssets"
           }
         ]
       },
@@ -175,7 +203,7 @@ export default function useAccountingSubmodules() {
       .filter((group) => group.routes.some(isRouteVisible))
       .map((group) => ({
         ...group,
-        routes: group.routes.filter(isRouteVisible)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
 }

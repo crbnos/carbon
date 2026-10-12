@@ -1,4 +1,8 @@
-import { assertIsPost, safeRedirect } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
@@ -10,11 +14,13 @@ import {
   CardHeader,
   CardTitle,
   HStack,
+  PrefetchLink,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { Link, redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import type { z } from "zod";
 import {
   OnboardingCard,
@@ -78,7 +84,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to update account");
   }
 
-  throw redirect(safeRedirect(next, path.to.onboarding.root));
+  throw redirect(next || path.to.onboarding.root);
 }
 
 export default function OnboardingUser() {
@@ -130,9 +136,9 @@ export default function OnboardingUser() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
             <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>
               <Trans>Next</Trans>

@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { LinearIssue } from "@carbon/ee/linear";
 import { mapLinearStatusToCarbonStatus } from "@carbon/ee/linear";
 import {
   Badge,
   cn,
+  PrefetchLink,
   Status,
   Tooltip,
   TooltipContent,
@@ -25,6 +30,7 @@ import {
   LuBox,
   LuBuilding,
   LuBuilding2,
+  LuCalendarClock,
   LuCircle,
   LuCircleCheck,
   LuCircleDashed,
@@ -46,6 +52,7 @@ import {
   LuHardHat,
   LuHeadphones,
   LuImage,
+  LuKeyRound,
   LuLandmark,
   LuList,
   LuListChecks,
@@ -65,11 +72,11 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
-import { Link } from "react-router";
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
@@ -169,15 +176,15 @@ export function MethodBadge({ type, text, to, className }: MethodBadgeProps) {
   const mode = useMode();
   const style = getReplenishmentBadgeColor(type, mode);
   return (
-    <Link to={to} prefetch="intent" className="group flex items-center gap-1">
+    <PrefetchLink to={to} className="group flex items-center gap-1">
       <Badge style={style} className={className}>
         <MethodIcon type={type} className="w-3 h-3 mr-1 " />
         {text}
       </Badge>
-      <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+      <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
         <LuExternalLink />
       </span>
-    </Link>
+    </PrefetchLink>
   );
 }
 
@@ -633,6 +640,8 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHardHat className={className} />;
     case "Job Close":
       return <LuCircleCheck className={className} />;
+    case "Maintenance Event":
+      return <LuWrench className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":
@@ -652,6 +661,12 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTriangleAlert className={className} />;
     case "Inbound Inspection":
       return <LuClipboardCheck className={className} />;
+    case "Revenue Recognition":
+      return <LuCalendarClock className={className} />;
+    case "Asset Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Lease":
+      return <LuKeyRound className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;

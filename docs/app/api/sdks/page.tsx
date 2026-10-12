@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CodeBlock } from "@/components/api/code-block";
 import { ApiKeysLink } from "@/components/api/config-inline";
 import {
@@ -20,7 +24,7 @@ import { pageSeo, SEO } from "@/lib/seo";
 import { toolCounts } from "@/lib/tools-data";
 
 export const metadata = pageSeo({
-  title: `${SEO.carbonApi.sdks.title} — Carbon`,
+  title: `${SEO.carbonApi.sdks.title} | Carbon`,
   ogTitle: SEO.carbonApi.sdks.title,
   description: SEO.carbonApi.sdks.description,
   path: "/api/sdks",

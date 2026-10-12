@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { DateTimePicker, Select, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -130,6 +134,7 @@ const MaintenanceDispatchForm = ({
                   <Trans>Description</Trans>
                 </Label>
                 <Editor
+                  autoFocus={!isEditing}
                   initialValue={content}
                   onUpload={onUploadImage}
                   onChange={(value) => {
@@ -200,7 +205,7 @@ const MaintenanceDispatchForm = ({
 
               <Boolean
                 bordered
-                className="col-span-2"
+                className="col-span-2 max-md:col-span-1"
                 name="takesWorkCenterOffline"
                 label={t`Takes work center offline`}
                 description={t`While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed).`}
