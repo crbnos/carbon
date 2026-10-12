@@ -136,6 +136,15 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 19: Reduce the Plan loader to Table, Tree and Reader
 
+- Demo data moved: the database was rebuilt, so the company is "Carbon Development" (`db6d4ukm20gg2a6iv1vg`), the only user is `test@carbon.ms` (the dev bypass signs it in, no magic link), OB2 is `prj_5vCwDZeAP2MHdjqYeYe7iP` (10 elements) and NSOPS is `prj_Xn8Bq9qYwbQ6tsjQVHuD7h` (0 elements). `login.sh` now takes `LOGIN_EMAIL`.
+- `projectLayouts` is `table`, `tree`, `reader`. `canonicalElementsParams` (models, tested) redirects a URL with no layout or a retired one to `layout=table`, and turns the old `?type=` into `filter=type:eq:…`; every other param stays, `cr` included.
+- The loader reads no view and no preference. `$projectId.views.tsx`, the 5 view and preference service functions, the display-state models and `path.to.projectViews` are gone. `generate:mcp` changed nothing (none of them was a tool).
+- The Type filter is in the Filter popover (`isExclusive`, one type at a time, because the Tree uses it as a lens). The type chips row is gone with it.
+- Verify: `grep -rn "getProjectViews\|projectUserPreference\|savePreference\|projectViews" apps/erp/app` → only `AGENTS.md` (the table row says the tables are unused) and none in code.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,253 passed (11 new in `projects-element-filters.test.ts`).
+- Shots: `19-plan-redirect.png` (`?layout=board` ends at `layout=table`), `19-plan-legacy-type.png` (`?type=Requirement` shows the chip "Type is Requirement" and 3 rows), `19-plan-empty.png` (NSOPS).
+- 7 questions: the toolbar is still the old one until Task 20 (title, count, layout dropdown, quick-add bar). Answers 1–7 are checked in Task 20.
+
 ## Task 20: Give Plan one toolbar row and add rows in the grid
 
 ## Task 21: Delete the List, Board and Timeline layouts

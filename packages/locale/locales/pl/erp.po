@@ -8562,9 +8562,6 @@ msgstr "Priorytet zlecenia utrzymania ruchu"
 msgid "Dispatches"
 msgstr "Zlecenia utrzymania ruchu"
 
-msgid "Display"
-msgstr "Wyświetl"
-
 msgid "Display Settings"
 msgstr "Ustawienia wyświetlania"
 
@@ -10021,9 +10018,6 @@ msgstr "Każda sztuka ma stawkę."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Każdy musi skonfigurować aplikację uwierzytelniającą przed otwarciem tej firmy."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "Każdy, kto widzi ten projekt, może użyć widoku"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Wszyscy pracujący w dowolnym dniu wybranego tygodnia zostają dłużej po swoją zmianę o liczbę godzin, którą ustawisz. Dotyczy to tylko działów i zmian, które filtrują."
 
@@ -10691,9 +10685,6 @@ msgstr "Nie udało się zapisać stawkę"
 
 msgid "Failed to save the signature"
 msgstr "Nie udało się zapisać podpis"
-
-msgid "Failed to save the view"
-msgstr "Nie udało się zapisać widok"
 
 msgid "Failed to save tools"
 msgstr "Nie udało się zapisać narzędzi"
@@ -13459,9 +13450,6 @@ msgstr "Pozostaw puste lub wpisz 0, aby pokazać wszystko, co planuje MRP."
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
 
-msgid "Leave view"
-msgstr "Opuść widok"
-
 msgid "Left item"
 msgstr "Element po lewej stronie"
 
@@ -13698,9 +13686,6 @@ msgstr "Połączona część"
 
 msgid "Linked PO"
 msgstr "Powiązane PO"
-
-msgid "List"
-msgstr "Lista"
 
 msgid "List Options"
 msgstr "Opcje listy"
@@ -14808,9 +14793,6 @@ msgstr "Mój zapisany widok"
 
 msgid "My Timesheet"
 msgstr "Moja karta czasu pracy"
-
-msgid "My views"
-msgstr "Moje widoki"
 
 msgid "My Visits"
 msgstr "Moje wizyty"
@@ -16142,9 +16124,6 @@ msgstr "Brak przypisanych reguł"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "Brak uruchomień jeszcze. Uruchomienie rozpoczyna się, gdy okres się zablokuje, lub za pomocą Uruchomienia okresu."
-
-msgid "No saved views"
-msgstr "Brak zapisanych widoków"
 
 msgid "No scheduled work in this window"
 msgstr "Brak zaplanowanych prac w tym oknie czasowym"
@@ -22167,9 +22146,6 @@ msgstr "Kanał wspólny"
 msgid "Shared Sections"
 msgstr "Sekcje wspólne"
 
-msgid "Shared views"
-msgstr "Widoki udostępnione"
-
 msgid "Shelf life"
 msgstr "Okres przydatności"
 
@@ -22461,9 +22437,6 @@ msgstr "Pokazywanie 1000 najlepszych grup wg kwoty"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Wyświetlany jako delikatne tło za każdą stroną wygenerowanych plików PDF"
-
-msgid "Shown properties"
-msgstr "Wyświetlane właściwości"
 
 msgid "Shown to the customer on the invoice"
 msgstr "Wyświetlane klientowi na fakturze"
@@ -25628,9 +25601,6 @@ msgstr "Rejestracja czasu"
 msgid "Timekeeping Controls"
 msgstr "Kontrole rejestracji czasu"
 
-msgid "Timeline"
-msgstr "Oś czasu"
-
 msgid "Timer running"
 msgstr "Czasomierz uruchomiony"
 
@@ -26527,9 +26497,6 @@ msgstr "Zaktualizuj informacje kanban dla uzupełniania opartego na skanowaniu."
 msgid "Update the purchase order quantities"
 msgstr "Zaktualizuj ilości zamówienia zakupu"
 
-msgid "Update view"
-msgstr "Aktualizuj widok"
-
 msgid "Updated"
 msgstr "Zaktualizowano"
 
@@ -27120,9 +27087,6 @@ msgstr "Wyświetlono"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "Wyświetlanie <0>{0}</0>: {1}. To nie jest wersja robocza, więc nie można dokonać zmian."
-
-msgid "Views"
-msgstr "Wyświetlenia"
 
 msgid "Visibilities"
 msgstr "Widoczności"

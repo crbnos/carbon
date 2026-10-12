@@ -14,27 +14,19 @@ import {
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  useFetcher,
-  useLoaderData,
-  useLocation,
-  useParams,
-  useSearchParams
-} from "react-router";
+import { useLoaderData, useLocation, useParams } from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
 import type {
   ChangeOperationMark,
   Project,
-  ProjectDisplayOptions,
-  ProjectDisplayState,
   ProjectElementLink,
   ProjectElementListItem,
   ProjectElementType,
@@ -45,18 +37,15 @@ import type {
   VerificationElement
 } from "~/modules/projects";
 import {
-  displayStateToParams,
-  elementFilterStateFromParams,
+  canonicalElementsParams,
+  elementLayoutFromParams,
   getProjectCostSummary,
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
-  getProjectUserPreference,
-  getProjectViews,
-  isBareElementsUrl,
   isProjectPlanLocked,
   parseElementFilters,
-  parseProjectDisplayState,
+  projectElementTypes,
   projectPlanLockedMessage,
   projectStateGroups,
   rollUpCostSummary
@@ -70,22 +59,16 @@ import {
 } from "~/modules/projects/projects.server";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
-import { ElementBoard } from "~/modules/projects/ui/Elements/ElementBoard";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
-import {
-  ElementList,
-  QuickAddRow
-} from "~/modules/projects/ui/Elements/ElementList";
-import type {
-  ElementDisplayProperty,
-  ElementGrouping
-} from "~/modules/projects/ui/Elements/ElementProperties";
+import { QuickAddRow } from "~/modules/projects/ui/Elements/ElementList";
 import { resolveElementDisplay } from "~/modules/projects/ui/Elements/ElementProperties";
 import { ElementReader } from "~/modules/projects/ui/Elements/ElementReader";
-import type { ElementViewOption } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
-import { ElementTimeline } from "~/modules/projects/ui/Elements/ElementTimeline";
+import {
+  ElementTypeIcon,
+  useElementTypeLabels
+} from "~/modules/projects/ui/Elements/ElementTypeIcon";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
@@ -97,23 +80,15 @@ export const links: LinksFunction = () => [
   { rel: "stylesheet", href: XYFlowStyle }
 ];
 
-const defaultState = parseProjectDisplayState({});
+/** Every element property shows in the Table; there is no Display menu. */
+const display = resolveElementDisplay({});
 
-/** Keeping the preference changes nothing this page shows: skip the reload. */
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   nextUrl,
   formMethod,
-  formAction,
-  formData,
   defaultShouldRevalidate
 }) => {
-  if (
-    formAction?.endsWith("/views") &&
-    formData?.get("intent") === "savePreference"
-  ) {
-    return false;
-  }
   // `root` changes only what the Tree layout draws: skip the reload.
   if (!formMethod && currentUrl.pathname === nextUrl.pathname) {
     const withoutRoot = (url: URL) => {
@@ -133,7 +108,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "projects"
   });
 
@@ -142,56 +117,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = url.searchParams;
-  const viewId = searchParams.get("view");
 
-  const [preference, views] = await Promise.all([
-    getProjectUserPreference(client, { projectId, companyId, userId }),
-    getProjectViews(client, { projectId, companyId, userId })
-  ]);
-  if (preference.error) {
-    logger.error("Failed to load the element page preference", {
-      companyId,
-      projectId,
-      error: preference.error
-    });
-  }
-  if (views.error) {
-    logger.error("Failed to load project views", {
-      companyId,
-      projectId,
-      error: views.error
-    });
-  }
-  const viewOptions: ElementViewOption[] = (views.data ?? []).map((view) => ({
-    id: view.id,
-    name: view.name,
-    isShared: view.isShared,
-    isOwn: view.createdBy === userId,
-    state: parseProjectDisplayState(view)
-  }));
-  const activeView = viewOptions.find((view) => view.id === viewId) ?? null;
-  const preferenceState = preference.data
-    ? parseProjectDisplayState(preference.data)
-    : null;
+  // The page always has a layout in its URL. A URL with none, a retired one
+  // (List, Board, Timeline) or the old `?type=` param redirects to the Table
+  // or the Type filter, keeping every other param (`cr` included).
+  const canonical = canonicalElementsParams(searchParams);
+  if (canonical) throw redirect(`${url.pathname}?${canonical}`);
 
-  // The page always writes `layout` into the URL. A URL without it is a link
-  // from outside the page: it takes the view it names, else the preference.
-  if (!searchParams.has("layout")) {
-    const source = activeView?.state ?? preferenceState;
-    let next: URLSearchParams;
-    if (source && isBareElementsUrl(searchParams)) {
-      next = displayStateToParams(source, activeView?.id);
-    } else {
-      next = new URLSearchParams(searchParams);
-      next.set("layout", source?.layout ?? "list");
-    }
-    // An open change request stays open across the redirect.
-    const changeRequestId = searchParams.get("cr");
-    if (changeRequestId) next.set("cr", changeRequestId);
-    throw redirect(`${url.pathname}?${next}`);
-  }
-
-  const { layout } = elementFilterStateFromParams(searchParams);
+  const layout = elementLayoutFromParams(searchParams) ?? "table";
   const { filters: elementFilters, type } = parseElementFilters(searchParams);
   // The Tree layout applies the type filter on the canvas, so it loads every
   // type: a box must still show the parent of a matching card.
@@ -308,12 +241,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (commentCounts.data ?? []).map((row) => [row.id, row.count])
     ) as Record<string, number>,
     layout,
-    type,
-    views: viewOptions,
-    activeViewId: activeView?.id ?? null,
-    // The active view's display options, else the user's last ones.
-    displayOptions: (activeView?.state ?? preferenceState ?? defaultState)
-      .displayOptions
+    type
   };
 }
 
@@ -333,10 +261,7 @@ export default function ProjectElementsRoute() {
     descriptions,
     commentCounts,
     layout,
-    type,
-    views,
-    activeViewId,
-    displayOptions: loadedDisplayOptions
+    type
   } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     project: Project;
@@ -347,79 +272,9 @@ export default function ProjectElementsRoute() {
 
   const permissions = usePermissions();
   const { search } = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
   const [people] = usePeople();
+  const typeLabels = useElementTypeLabels();
 
-  // Only the user's own display changes are state, kept with the view they
-  // were made in; otherwise the loaded view or preference shows.
-  const [localDisplay, setLocalDisplay] = useState<{
-    projectId: string;
-    viewId: string | null;
-    options: ProjectDisplayOptions;
-  } | null>(null);
-  const displayOptions =
-    localDisplay?.projectId === projectId &&
-    localDisplay.viewId === activeViewId
-      ? localDisplay.options
-      : loadedDisplayOptions;
-  const keepDisplay = (viewId: string | null, options: ProjectDisplayOptions) =>
-    setLocalDisplay({ projectId, viewId, options });
-  const changeDisplayOptions = (patch: Partial<ProjectDisplayOptions>) =>
-    keepDisplay(activeViewId, { ...displayOptions, ...patch });
-  const display = resolveElementDisplay(displayOptions.properties);
-  const setDisplayProperty = (
-    property: ElementDisplayProperty,
-    shown: boolean
-  ) =>
-    changeDisplayOptions({
-      properties: { ...displayOptions.properties, [property]: shown }
-    });
-  const grouping = displayOptions.grouping;
-  const setGrouping = (next: ElementGrouping) =>
-    changeDisplayOptions({ grouping: next });
-
-  const currentState: ProjectDisplayState = useMemo(
-    () => ({ ...elementFilterStateFromParams(searchParams), displayOptions }),
-    [searchParams, displayOptions]
-  );
-
-  // Every change keeps the user's preference, 1 s after the last one.
-  const preferenceFetcher = useFetcher({
-    key: `project-preference:${projectId}`
-  });
-  const serializedState = JSON.stringify(currentState);
-  const savedState = useRef(serializedState);
-  const submitPreference = preferenceFetcher.submit;
-  useEffect(() => {
-    if (serializedState === savedState.current) return;
-    const timer = setTimeout(() => {
-      savedState.current = serializedState;
-      submitPreference(
-        { intent: "savePreference", state: serializedState },
-        { method: "post", action: path.to.projectViews(projectId) }
-      );
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [serializedState, submitPreference, projectId]);
-
-  const selectView = (view: ElementViewOption | null) => {
-    if (view) {
-      keepDisplay(view.id, view.state.displayOptions);
-      setSearchParams(displayStateToParams(view.state, view.id));
-      return;
-    }
-    // Leaving a view keeps what it shows.
-    keepDisplay(null, displayOptions);
-    const next = new URLSearchParams(searchParams);
-    next.delete("view");
-    setSearchParams(next);
-  };
-  const viewSaved = (id: string) => {
-    keepDisplay(id, displayOptions);
-    const next = new URLSearchParams(searchParams);
-    next.set("view", id);
-    setSearchParams(next);
-  };
   const [newType, setNewType] = useState<ProjectElementType>("Task");
   const quickAddRef = useRef<HTMLInputElement>(null);
 
@@ -438,17 +293,6 @@ export default function ProjectElementsRoute() {
     };
   }, [elements, costSummary]);
 
-  // An element with a suspect link at either end shows the amber triangle.
-  const suspectIds = useMemo(() => {
-    const ids = new Set<string>();
-    for (const link of links) {
-      if (!link.suspectSince) continue;
-      ids.add(link.fromElementId);
-      ids.add(link.toElementId);
-    }
-    return ids;
-  }, [links]);
-
   const groupLabels: Record<ProjectStateGroup, string> = {
     Backlog: t`Backlog`,
     Unstarted: t`Unstarted`,
@@ -462,6 +306,25 @@ export default function ProjectElementsRoute() {
     "currentColor";
 
   const filters: ColumnFilter[] = [
+    {
+      accessorKey: "type",
+      header: t`Type`,
+      pluralHeader: t`Types`,
+      filter: {
+        type: "static",
+        // One type at a time: the Tree layout uses it as a lens.
+        isExclusive: true,
+        options: projectElementTypes.map((value) => ({
+          value,
+          label: (
+            <span className="inline-flex items-center gap-2">
+              <ElementTypeIcon type={value} className="size-3.5" />
+              {typeLabels[value]}
+            </span>
+          )
+        }))
+      }
+    },
     {
       accessorKey: "stateGroup",
       header: t`State`,
@@ -572,10 +435,7 @@ export default function ProjectElementsRoute() {
               : elements.length
           }
           layout={layout}
-          type={type}
           filters={filters}
-          display={display}
-          onDisplayChange={setDisplayProperty}
           onNew={focusQuickAdd}
           onBuildFromPart={() => setBuildingFromPart(true)}
           canCreate={layoutProps.canCreate}
@@ -584,14 +444,6 @@ export default function ProjectElementsRoute() {
               ? `${path.to.file.projectReader(projectId)}${search}`
               : undefined
           }
-          grouping={layout === "table" ? grouping : undefined}
-          onGroupingChange={layout === "table" ? setGrouping : undefined}
-          projectId={projectId}
-          views={views}
-          activeViewId={activeViewId}
-          currentState={currentState}
-          onSelectView={selectView}
-          onViewSaved={viewSaved}
           planLock={
             planLocked && lockMilestone
               ? {
@@ -608,7 +460,7 @@ export default function ProjectElementsRoute() {
                 <ElementTable
                   {...layoutProps}
                   costByElement={costByElement}
-                  grouping={grouping}
+                  grouping="none"
                 />
               </div>
               {layoutProps.canCreate && (
@@ -632,40 +484,13 @@ export default function ProjectElementsRoute() {
               commentCounts={commentCounts}
               canUpdate={layoutProps.canUpdate}
             />
-          ) : layout === "reader" ? (
+          ) : (
             <ElementReader
               projectId={projectId}
               elements={elements}
               descriptions={descriptions}
               verification={verification}
               requirementStatus={requirementStatus}
-            />
-          ) : layout === "timeline" ? (
-            <ElementTimeline
-              projectId={projectId}
-              elements={elements}
-              links={links}
-              zoom={displayOptions.timelineZoom}
-              onZoomChange={(timelineZoom) =>
-                changeDisplayOptions({ timelineZoom })
-              }
-            />
-          ) : layout === "board" ? (
-            <ElementBoard
-              {...layoutProps}
-              newType={newType}
-              onNewTypeChange={setNewType}
-              quickAddRef={quickAddRef}
-            />
-          ) : (
-            <ElementList
-              {...layoutProps}
-              requirementStatus={requirementStatus}
-              suspectIds={suspectIds}
-              newType={newType}
-              onNewTypeChange={setNewType}
-              quickAddRef={quickAddRef}
-              onCreateFirst={() => focusQuickAdd()}
             />
           )}
         </div>

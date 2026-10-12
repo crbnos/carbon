@@ -2136,7 +2136,6 @@ export const path = {
       generatePath(`${x}/project/${id}/template`),
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
     projectTimesheetApprovals: `${x}/projects/approvals`,
-    projectViews: (id: string) => generatePath(`${x}/project/${id}/views`),
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>

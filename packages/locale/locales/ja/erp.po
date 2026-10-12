@@ -8562,9 +8562,6 @@ msgstr "保全指示の優先度"
 msgid "Dispatches"
 msgstr "保全指示"
 
-msgid "Display"
-msgstr "表示"
-
 msgid "Display Settings"
 msgstr "表示設定"
 
@@ -10021,9 +10018,6 @@ msgstr "すべての個にレートが設定されています。"
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
 
-msgid "Everyone who can see this project can use the view"
-msgstr "このプロジェクトを表示できるユーザーはビューを使用できます"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
 
@@ -10691,9 +10685,6 @@ msgstr "料金の保存に失敗しました"
 
 msgid "Failed to save the signature"
 msgstr "署名の保存に失敗しました"
-
-msgid "Failed to save the view"
-msgstr "表示の保存に失敗しました"
 
 msgid "Failed to save tools"
 msgstr "ツールの保存に失敗しました"
@@ -13459,9 +13450,6 @@ msgstr "空のままにするか、0を入力して、MRPが計画するすべ�
 msgid "Leave this page"
 msgstr "このページを離れる"
 
-msgid "Leave view"
-msgstr "ビューを離れる"
-
 msgid "Left item"
 msgstr "左側の項目"
 
@@ -13698,9 +13686,6 @@ msgstr "リンク済み部品"
 
 msgid "Linked PO"
 msgstr "リンク済みPO"
-
-msgid "List"
-msgstr "リスト"
 
 msgid "List Options"
 msgstr "リストオプション"
@@ -14808,9 +14793,6 @@ msgstr "マイ保存ビュー"
 
 msgid "My Timesheet"
 msgstr "マイタイムシート"
-
-msgid "My views"
-msgstr "マイビュー"
 
 msgid "My Visits"
 msgstr "マイ訪問"
@@ -16142,9 +16124,6 @@ msgstr "ルールが割り当てられていません"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "まだ実行がありません。実行はピリオドロック時または実行ピリオドで開始されます。"
-
-msgid "No saved views"
-msgstr "保存されたビューがありません"
 
 msgid "No scheduled work in this window"
 msgstr "このウィンドウにはスケジュール済みの作業がありません"
@@ -22167,9 +22146,6 @@ msgstr "共有チャネル"
 msgid "Shared Sections"
 msgstr "共有セクション"
 
-msgid "Shared views"
-msgstr "共有ビュー"
-
 msgid "Shelf life"
 msgstr "保存期間"
 
@@ -22461,9 +22437,6 @@ msgstr "金額別上位 1,000 グループを表示中"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "生成されたPDFの各ページの背景に薄く表示されます"
-
-msgid "Shown properties"
-msgstr "表示されるプロパティ"
 
 msgid "Shown to the customer on the invoice"
 msgstr "請求書で顧客に表示されます"
@@ -25628,9 +25601,6 @@ msgstr "労務管理"
 msgid "Timekeeping Controls"
 msgstr "労務管理コントロール"
 
-msgid "Timeline"
-msgstr "タイムライン"
-
 msgid "Timer running"
 msgstr "タイマー実行中"
 
@@ -26527,9 +26497,6 @@ msgstr "スキャンベースの補充用かんばん情報を更新します。
 msgid "Update the purchase order quantities"
 msgstr "発注書の数量を更新"
 
-msgid "Update view"
-msgstr "表示を更新"
-
 msgid "Updated"
 msgstr "更新済み"
 
@@ -27120,9 +27087,6 @@ msgstr "表示済み"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "<0>{0}</0>を表示中：{1}。下書きではないため、変更を受け付けません。"
-
-msgid "Views"
-msgstr "表示"
 
 msgid "Visibilities"
 msgstr "可視性"

@@ -8562,9 +8562,6 @@ msgstr "유지보수 지시 우선순위"
 msgid "Dispatches"
 msgstr "유지보수 지시"
 
-msgid "Display"
-msgstr "표시"
-
 msgid "Display Settings"
 msgstr "표시 설정"
 
@@ -10021,9 +10018,6 @@ msgstr "모든 단위에 요율이 있습니다."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "이 회사를 열기 전에 모든 사람이 인증기 앱을 설정해야 합니다."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "이 프로젝트를 볼 수 있는 모든 사용자가 보기를 사용할 수 있습니다"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날이든 근무하는 모든 사람이 설정한 시간만큼 교대조를 초과 근무합니다. 필터링하는 부서 및 교대조만 영향을 받습니다."
 
@@ -10691,9 +10685,6 @@ msgstr "요금 저장 실패"
 
 msgid "Failed to save the signature"
 msgstr "서명 저장 실패"
-
-msgid "Failed to save the view"
-msgstr "보기 저장 실패"
 
 msgid "Failed to save tools"
 msgstr "도구 저장 실패"
@@ -13459,9 +13450,6 @@ msgstr "MRP가 계획한 모든 것을 표시하려면 공란으로 두거나 0�
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
-msgid "Leave view"
-msgstr "보기 종료"
-
 msgid "Left item"
 msgstr "왼쪽 품목"
 
@@ -13698,9 +13686,6 @@ msgstr "연결된 부품"
 
 msgid "Linked PO"
 msgstr "연결된 구매주문"
-
-msgid "List"
-msgstr "목록"
 
 msgid "List Options"
 msgstr "목록 옵션"
@@ -14808,9 +14793,6 @@ msgstr "내 저장된 보기"
 
 msgid "My Timesheet"
 msgstr "내 타임시트"
-
-msgid "My views"
-msgstr "내 보기"
 
 msgid "My Visits"
 msgstr "내 방문"
@@ -16142,9 +16124,6 @@ msgstr "배정된 규칙이 없습니다"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "아직 실행이 없습니다. 실행은 기간이 잠금될 때 또는 실행 기간과 함께 시작됩니다."
-
-msgid "No saved views"
-msgstr "저장된 보기 없음"
 
 msgid "No scheduled work in this window"
 msgstr "이 시간대에 스케줄된 작업이 없습니다"
@@ -22167,9 +22146,6 @@ msgstr "공유 채널"
 msgid "Shared Sections"
 msgstr "공유 섹션"
 
-msgid "Shared views"
-msgstr "공유된 보기"
-
 msgid "Shelf life"
 msgstr "보존 기간"
 
@@ -22461,9 +22437,6 @@ msgstr "금액별 상위 1,000개 그룹을 표시하고 있습니다"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "생성된 PDF의 모든 페이지 배경에 옅게 표시됩니다"
-
-msgid "Shown properties"
-msgstr "표시된 속성"
 
 msgid "Shown to the customer on the invoice"
 msgstr "송장에서 고객에게 표시"
@@ -25628,9 +25601,6 @@ msgstr "시간 관리"
 msgid "Timekeeping Controls"
 msgstr "시간 관리 제어"
 
-msgid "Timeline"
-msgstr "시간표"
-
 msgid "Timer running"
 msgstr "타이머 실행 중"
 
@@ -26527,9 +26497,6 @@ msgstr "스캔 기반 보충을 위한 칸반 정보를 업데이트합니다."
 msgid "Update the purchase order quantities"
 msgstr "발주서 수량 업데이트"
 
-msgid "Update view"
-msgstr "보기 업데이트"
-
 msgid "Updated"
 msgstr "업데이트됨"
 
@@ -27120,9 +27087,6 @@ msgstr "조회됨"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "<0>{0}</0> 조회 중: {1}. 초안이 아니므로 변경할 수 없습니다."
-
-msgid "Views"
-msgstr "보기"
 
 msgid "Visibilities"
 msgstr "공개 범위"

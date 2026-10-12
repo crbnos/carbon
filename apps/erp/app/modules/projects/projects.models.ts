@@ -2645,24 +2645,29 @@ export type ProjectElementFilters = {
 };
 
 /**
- * The Elements filters of a query string: `type`, `search` and the
- * `filter=` params of the filter row. The Elements page and the Reader PDF
- * read the same filters, so the PDF prints what the page shows.
+ * The Elements filters of a query string: `search` and the `filter=` params
+ * of the filter row. The Type filter is `filter=type:eq:…`; the old `?type=`
+ * param still reads, so an older link keeps its filter. The Plan page and the
+ * Reader PDF read the same filters, so the PDF prints what the page shows.
+ *
+ * `type` is the one chosen type, which the Tree layout uses as a lens.
  */
 export function parseElementFilters(params: URLSearchParams): {
   filters: ProjectElementFilters;
   type: ProjectElementType | null;
   isFiltered: boolean;
 } {
-  const typeParam = params.get("type");
-  const type = projectElementTypes.includes(typeParam as ProjectElementType)
-    ? (typeParam as ProjectElementType)
-    : null;
+  const legacyType = params.get("type");
+  const types = (
+    filterValues(params, "type") ?? (legacyType ? [legacyType] : [])
+  ).filter((value) =>
+    projectElementTypes.includes(value as ProjectElementType)
+  ) as ProjectElementType[];
   const stateGroup = (filterValues(params, "stateGroup") ?? []).filter((g) =>
     projectStateGroups.includes(g as ProjectStateGroup)
   ) as ProjectStateGroup[];
   const filters: ProjectElementFilters = {
-    type: type ? [type] : null,
+    type: types.length > 0 ? types : null,
     stateGroup: stateGroup.length > 0 ? stateGroup : null,
     ownerId: filterValues(params, "ownerId"),
     milestoneId: filterValues(params, "milestoneId"),
@@ -2671,24 +2676,57 @@ export function parseElementFilters(params: URLSearchParams): {
   };
   return {
     filters,
-    type,
+    type: types.length === 1 ? types[0] : null,
     isFiltered: Object.values(filters).some((value) => value !== null)
   };
 }
 
-// --- Views and preferences ----------------------------------------------------
+// --- Layouts -------------------------------------------------------------------
 
-export type ProjectLayout = Enums["projectLayout"];
-
-/** The layouts of the Elements page, in the order the switcher lists them. */
+/** The layouts of the Plan page, in the order the switch lists them. */
 export const projectLayouts = [
-  "list",
-  "board",
   "table",
   "tree",
-  "timeline",
   "reader"
-] as const satisfies readonly ProjectLayout[];
+] as const satisfies readonly Enums["projectLayout"][];
+
+export type ProjectLayout = (typeof projectLayouts)[number];
+
+/** The layout a Plan URL names; null when it names none or a retired one. */
+export function elementLayoutFromParams(
+  params: URLSearchParams
+): ProjectLayout | null {
+  const layout = params.get("layout");
+  return projectLayouts.includes(layout as ProjectLayout)
+    ? (layout as ProjectLayout)
+    : null;
+}
+
+/**
+ * The params a Plan URL redirects to, or null when it needs no redirect. A
+ * missing or retired layout (`list`, `board`, `timeline`) becomes `table`,
+ * and the old `?type=` param becomes the Type filter, so the filter shows as
+ * a chip. Every other param stays, `cr` included.
+ */
+export function canonicalElementsParams(
+  params: URLSearchParams
+): URLSearchParams | null {
+  const legacyType = params.get("type");
+  const hasLayout = elementLayoutFromParams(params) !== null;
+  if (hasLayout && legacyType === null) return null;
+  const next = new URLSearchParams(params);
+  if (!hasLayout) next.set("layout", "table");
+  if (legacyType !== null) {
+    next.delete("type");
+    if (
+      projectElementTypes.includes(legacyType as ProjectElementType) &&
+      filterValues(next, "type") === null
+    ) {
+      next.append("filter", `type:eq:${legacyType}`);
+    }
+  }
+  return next;
+}
 
 /** The properties the Display menu can show or hide. */
 export const elementDisplayProperties = [
@@ -2713,119 +2751,6 @@ export const elementGroupings = [
 ] as const;
 
 export const timelineZooms = ["day", "week", "month"] as const;
-
-const elementFilterStateValidator = z.object({
-  type: z.enum(projectElementTypes).nullable().catch(null),
-  stateGroup: z.array(z.enum(projectStateGroups)).catch([]),
-  ownerId: z.array(z.string()).catch([]),
-  milestoneId: z.array(z.string()).catch([]),
-  labelId: z.array(z.string()).catch([]),
-  search: z.string().nullable().catch(null)
-});
-
-const elementDisplayOptionsValidator = z.object({
-  properties: z
-    .partialRecord(z.enum(elementDisplayProperties), z.boolean())
-    .catch({}),
-  grouping: z.enum(elementGroupings).catch("none"),
-  timelineZoom: z.enum(timelineZooms).catch("week")
-});
-
-/**
- * The state of the Elements page that a view or a user preference keeps. Each
- * part falls back to its default, so a stored `{}` (the column default) or a
- * value from an older shape still parses.
- */
-export const projectDisplayStateValidator = z.object({
-  layout: z.enum(projectLayouts).catch("list"),
-  filters: elementFilterStateValidator.catch(
-    elementFilterStateValidator.parse({})
-  ),
-  displayOptions: elementDisplayOptionsValidator.catch(
-    elementDisplayOptionsValidator.parse({})
-  )
-});
-
-export type ProjectDisplayState = z.infer<typeof projectDisplayStateValidator>;
-export type ProjectElementFilterState = ProjectDisplayState["filters"];
-export type ProjectDisplayOptions = ProjectDisplayState["displayOptions"];
-
-/** Parses a stored view or preference row; never throws. */
-export function parseProjectDisplayState(row: {
-  layout?: unknown;
-  filters?: unknown;
-  displayOptions?: unknown;
-}): ProjectDisplayState {
-  return projectDisplayStateValidator.parse({
-    layout: row.layout,
-    filters: row.filters ?? {},
-    displayOptions: row.displayOptions ?? {}
-  });
-}
-
-/** The search params that carry the Elements page state. */
-const DISPLAY_STATE_PARAMS = ["layout", "type", "filter", "search"] as const;
-
-/** True when the URL names no layout, type, filter or search. */
-export function isBareElementsUrl(params: URLSearchParams) {
-  return DISPLAY_STATE_PARAMS.every((key) => !params.has(key));
-}
-
-/** The layout, type, filters and search of the Elements page's URL. */
-export function elementFilterStateFromParams(params: URLSearchParams): {
-  layout: ProjectLayout;
-  filters: ProjectElementFilterState;
-} {
-  const layoutParam = params.get("layout");
-  const layout = projectLayouts.includes(layoutParam as ProjectLayout)
-    ? (layoutParam as ProjectLayout)
-    : "list";
-  const { filters, type } = parseElementFilters(params);
-  return {
-    layout,
-    filters: {
-      type,
-      stateGroup: filters.stateGroup ?? [],
-      ownerId: filters.ownerId ?? [],
-      milestoneId: filters.milestoneId ?? [],
-      labelId: filters.labelId ?? [],
-      search: filters.search
-    }
-  };
-}
-
-/**
- * The search params of a state. `layout` is always set, so a URL the page made
- * is never bare: only a link from outside the page takes the preference.
- */
-export function displayStateToParams(
-  state: Pick<ProjectDisplayState, "layout" | "filters">,
-  viewId?: string | null
-) {
-  const params = new URLSearchParams();
-  params.set("layout", state.layout);
-  if (viewId) params.set("view", viewId);
-  if (state.filters.type) params.set("type", state.filters.type);
-  for (const key of [
-    "stateGroup",
-    "ownerId",
-    "milestoneId",
-    "labelId"
-  ] as const) {
-    const values = state.filters[key];
-    if (values.length > 0)
-      params.append("filter", `${key}:in:${values.join(",")}`);
-  }
-  if (state.filters.search) params.set("search", state.filters.search);
-  return params;
-}
-
-export const projectViewValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  name: z.string().trim().min(1, { message: "Name is required" }),
-  isShared: zfd.checkbox(),
-  state: z.string().min(1)
-});
 
 // --- Copying a project ---------------------------------------------------------
 

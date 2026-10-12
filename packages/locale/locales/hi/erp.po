@@ -8562,9 +8562,6 @@ msgstr "रखरखाव कार्य की प्राथमिकता
 msgid "Dispatches"
 msgstr "रखरखाव कार्य"
 
-msgid "Display"
-msgstr "प्रदर्शित करें"
-
 msgid "Display Settings"
 msgstr "प्रदर्शन सेटिंग्स"
 
@@ -10021,9 +10018,6 @@ msgstr "प्रत्येक इकाई की एक दर है।"
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
 
-msgid "Everyone who can see this project can use the view"
-msgstr "हर कोई जो इस प्रोजेक्ट को देख सकता है, दृश्य का उपयोग कर सकता है"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
 
@@ -10691,9 +10685,6 @@ msgstr "दर सहेजने में विफल"
 
 msgid "Failed to save the signature"
 msgstr "हस्ताक्षर सहेजने में विफल"
-
-msgid "Failed to save the view"
-msgstr "दृश्य सहेजने में विफल"
 
 msgid "Failed to save tools"
 msgstr "उपकरणों को सहेजने में विफल"
@@ -13459,9 +13450,6 @@ msgstr "MRP द्वारा योजनाबद्ध सब कुछ द�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
-msgid "Leave view"
-msgstr "दृश्य छोड़ें"
-
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -13698,9 +13686,6 @@ msgstr "लिंक किया गया पार्ट"
 
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
-
-msgid "List"
-msgstr "सूची"
 
 msgid "List Options"
 msgstr "सूची विकल्प"
@@ -14808,9 +14793,6 @@ msgstr "मेरा सहेजा गया दृश्य"
 
 msgid "My Timesheet"
 msgstr "मेरी टाइमशीट"
-
-msgid "My views"
-msgstr "मेरे दृश्य"
 
 msgid "My Visits"
 msgstr "मेरी यात्राएँ"
@@ -16142,9 +16124,6 @@ msgstr "कोई नियम असाइन नहीं किया गय�
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "अभी तक कोई रन नहीं। जब कोई अवधि लॉक हो या रन अवधि के साथ कोई रन शुरू होता है।"
-
-msgid "No saved views"
-msgstr "कोई सहेजी गई देखें नहीं"
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
@@ -22167,9 +22146,6 @@ msgstr "साझा चैनल"
 msgid "Shared Sections"
 msgstr "साझा अनुभाग"
 
-msgid "Shared views"
-msgstr "साझा दृश्य"
-
 msgid "Shelf life"
 msgstr "शेल्फ लाइफ"
 
@@ -22461,9 +22437,6 @@ msgstr "राशि द्वारा शीर्ष 1,000 समूह द�
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "जनरेट की गई PDF के हर पेज के पीछे हल्की पृष्ठभूमि के रूप में दिखाया जाता है"
-
-msgid "Shown properties"
-msgstr "दिखाए गए गुण"
 
 msgid "Shown to the customer on the invoice"
 msgstr "चालान पर ग्राहक को दिखाया जाता है"
@@ -25628,9 +25601,6 @@ msgstr "समय रिकॉर्डिंग"
 msgid "Timekeeping Controls"
 msgstr "समय रिकॉर्डिंग नियंत्रण"
 
-msgid "Timeline"
-msgstr "समय सारणी"
-
 msgid "Timer running"
 msgstr "टाइमर चल रहा है"
 
@@ -26527,9 +26497,6 @@ msgstr "स्कैन-आधारित पुनः भरण के लि�
 msgid "Update the purchase order quantities"
 msgstr "क्रय आदेश मात्रा अपडेट करें"
 
-msgid "Update view"
-msgstr "दृश्य अपडेट करें"
-
 msgid "Updated"
 msgstr "अपडेट किया गया"
 
@@ -27120,9 +27087,6 @@ msgstr "देखा गया"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "देख रहे हैं <0>{0}</0>: {1}। यह एक ड्राफ्ट नहीं है, इसलिए यह कोई बदलाव नहीं लेता है।"
-
-msgid "Views"
-msgstr "दृश्य"
 
 msgid "Visibilities"
 msgstr "दृश्यता"

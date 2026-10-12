@@ -8562,9 +8562,6 @@ msgstr "Приоритет заявки на техобслуживание"
 msgid "Dispatches"
 msgstr "Заявки на техобслуживание"
 
-msgid "Display"
-msgstr "Отображение"
-
 msgid "Display Settings"
 msgstr "Настройки отображения"
 
@@ -10021,9 +10018,6 @@ msgstr "Каждая единица имеет ставку."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "Каждый, кто может видеть этот проект, может использовать представление"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
 
@@ -10691,9 +10685,6 @@ msgstr "Не удалось сохранить ставку"
 
 msgid "Failed to save the signature"
 msgstr "Не удалось сохранить подпись"
-
-msgid "Failed to save the view"
-msgstr "Не удалось сохранить представление"
 
 msgid "Failed to save tools"
 msgstr "Ошибка при сохранении инструментов"
@@ -13459,9 +13450,6 @@ msgstr "Оставьте пусто или введите 0, чтобы пока
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
-msgid "Leave view"
-msgstr "Оставить просмотр"
-
 msgid "Left item"
 msgstr "Левый элемент"
 
@@ -13698,9 +13686,6 @@ msgstr "Связанная деталь"
 
 msgid "Linked PO"
 msgstr "Связанный ПО"
-
-msgid "List"
-msgstr "Список"
 
 msgid "List Options"
 msgstr "Параметры списка"
@@ -14808,9 +14793,6 @@ msgstr "Мой сохраненный вид"
 
 msgid "My Timesheet"
 msgstr "Мой табель"
-
-msgid "My views"
-msgstr "Мои представления"
 
 msgid "My Visits"
 msgstr "Мои визиты"
@@ -16142,9 +16124,6 @@ msgstr "Нет назначенных правил"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "Запусков еще нет. Запуск начинается, когда период заблокирован, или с использованием периода запуска."
-
-msgid "No saved views"
-msgstr "Нет сохраненных просмотров"
 
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
@@ -22167,9 +22146,6 @@ msgstr "Общий канал"
 msgid "Shared Sections"
 msgstr "Общие разделы"
 
-msgid "Shared views"
-msgstr "Общие просмотры"
-
 msgid "Shelf life"
 msgstr "срок хранения"
 
@@ -22461,9 +22437,6 @@ msgstr "Показано топ 1000 групп по сумме"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Отображается как бледный фон на каждой странице сгенерированных PDF-файлов"
-
-msgid "Shown properties"
-msgstr "Отображаемые свойства"
 
 msgid "Shown to the customer on the invoice"
 msgstr "Показано покупателю на счет-фактуре"
@@ -25628,9 +25601,6 @@ msgstr "Учет рабочего времени"
 msgid "Timekeeping Controls"
 msgstr "Элементы управления учетом рабочего времени"
 
-msgid "Timeline"
-msgstr "Временная шкала"
-
 msgid "Timer running"
 msgstr "Таймер запущен"
 
@@ -26527,9 +26497,6 @@ msgstr "Обновите информацию канбана для пополн
 msgid "Update the purchase order quantities"
 msgstr "Обновить количества Заказа поставщику"
 
-msgid "Update view"
-msgstr "Обновить просмотр"
-
 msgid "Updated"
 msgstr "Обновлено"
 
@@ -27120,9 +27087,6 @@ msgstr "Просмотрено"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "Просмотр <0>{0}</0>: {1}. Это не черновик, поэтому изменения невозможны."
-
-msgid "Views"
-msgstr "Просмотры"
 
 msgid "Visibilities"
 msgstr "Видимость"

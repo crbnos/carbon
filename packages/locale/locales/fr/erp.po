@@ -8562,9 +8562,6 @@ msgstr "Priorité d'intervention de maintenance"
 msgid "Dispatches"
 msgstr "Interventions de maintenance"
 
-msgid "Display"
-msgstr "Afficher"
-
 msgid "Display Settings"
 msgstr "Paramètres d'affichage"
 
@@ -10021,9 +10018,6 @@ msgstr "Chaque unité a un taux."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Tout le monde doit configurer une application d'authentification avant d'ouvrir cette société."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "Tous ceux qui peuvent voir ce projet peuvent utiliser la vue"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Tous ceux qui travaillent n'importe quel jour de la semaine que vous choisissez restent après leur équipe pendant les heures que vous réglez. Seuls les départements et les équipes que vous filtrez sont affectés."
 
@@ -10691,9 +10685,6 @@ msgstr "Impossible d'enregistrer le taux"
 
 msgid "Failed to save the signature"
 msgstr "Impossible d'enregistrer la signature"
-
-msgid "Failed to save the view"
-msgstr "Impossible d'enregistrer la vue"
 
 msgid "Failed to save tools"
 msgstr "Échec de l'enregistrement des outils"
@@ -13459,9 +13450,6 @@ msgstr "Laisser vide ou entrer 0 pour afficher tout ce que le MRP planifie."
 msgid "Leave this page"
 msgstr "Quitter cette page"
 
-msgid "Leave view"
-msgstr "Quitter l'affichage"
-
 msgid "Left item"
 msgstr "Élément de gauche"
 
@@ -13698,9 +13686,6 @@ msgstr "Pièce liée"
 
 msgid "Linked PO"
 msgstr "Bon de commande lié"
-
-msgid "List"
-msgstr "Liste"
 
 msgid "List Options"
 msgstr "Options de liste"
@@ -14808,9 +14793,6 @@ msgstr "Ma vue enregistrée"
 
 msgid "My Timesheet"
 msgstr "Ma feuille de temps"
-
-msgid "My views"
-msgstr "Mes affichages"
 
 msgid "My Visits"
 msgstr "Mes visites"
@@ -16142,9 +16124,6 @@ msgstr "Aucune règle assignée"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "Aucune exécution encore. Une exécution démarre quand une période verrouille, ou avec Exécuter la période."
-
-msgid "No saved views"
-msgstr "Aucune vue enregistrée"
 
 msgid "No scheduled work in this window"
 msgstr "Aucun travail prévu dans cette fenêtre"
@@ -22167,9 +22146,6 @@ msgstr "Canal partagé"
 msgid "Shared Sections"
 msgstr "Sections partagées"
 
-msgid "Shared views"
-msgstr "Affichages partagés"
-
 msgid "Shelf life"
 msgstr "Durée de conservation"
 
@@ -22461,9 +22437,6 @@ msgstr "Affichage des 1 000 meilleurs groupes par montant"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Affiché en arrière-plan discret sur chaque page des PDF générés"
-
-msgid "Shown properties"
-msgstr "Propriétés affichées"
 
 msgid "Shown to the customer on the invoice"
 msgstr "Affiché au client sur la facture"
@@ -25628,9 +25601,6 @@ msgstr "Pointage"
 msgid "Timekeeping Controls"
 msgstr "Contrôles de pointage"
 
-msgid "Timeline"
-msgstr "Chronologie"
-
 msgid "Timer running"
 msgstr "Minuterie en cours d'exécution"
 
@@ -26527,9 +26497,6 @@ msgstr "Mettez à jour les informations du kanban pour le réapprovisionnement b
 msgid "Update the purchase order quantities"
 msgstr "Mettre à jour les quantités du bon de commande"
 
-msgid "Update view"
-msgstr "Mettre à jour l'affichage"
-
 msgid "Updated"
 msgstr "Mis à jour"
 
@@ -27120,9 +27087,6 @@ msgstr "Affiché"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "Affichage de <0>{0}</0> : {1}. Ce n'est pas un brouillon, il ne peut donc pas être modifié."
-
-msgid "Views"
-msgstr "Vues"
 
 msgid "Visibilities"
 msgstr "Visibilités"

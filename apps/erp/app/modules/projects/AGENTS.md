@@ -121,7 +121,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `timesheetEntry` | Hours per employee, day, charge number, labor category |
 | `projectLedger` | Actual cost rows; a void writes a negative row with `reversalOfId` |
 | `projectElementLink` | Trace links with `suspectSince` / `reviewedAt` |
-| `projectView`, `projectUserPreference` | Saved views and per-user layout, filters, display |
+| `projectView`, `projectUserPreference` | Unused since the Plan page lost saved views (2026-10-12); kept with no migration |
 | `fixedAssetCipCost` (`projectId`, `projectElementId`, `postCapitalization`) | CIP rows of capital projects |
 | `get_project_cost_summary` (RPC) | Plan, committed and actual per element |
 | `get_element_history_by_item` (RPC) | Average hours and material cost of elements on one item |
@@ -164,8 +164,9 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `copyProject` (`.server`) / `planProjectCopy` (models) — templates.
 - `buildElementsFromPart`, `previewBuildFromPart` (`.server`) / `planElementsFromSource`
   (models) — Build from part.
-- `getProjectViews`, `upsertProjectView`, `getProjectUserPreference`,
-  `upsertProjectUserPreference` — saved views and preferences.
+- `parseElementFilters`, `canonicalElementsParams`, `elementLayoutFromParams`
+  (models) — the Plan page's filters (`filter=type:eq:…` for the Type filter;
+  the old `?type=` still reads) and its layouts (Table, Tree, Reader).
 - `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline` (`.server`),
   `getProjectBaselines`, `getProjectBaseline`, `diffPlanSnapshots` (models) — baselines.
 - `createChangeRequest`, `upsertChangeRequestItems`, `loadChangeRequestOverlay`,

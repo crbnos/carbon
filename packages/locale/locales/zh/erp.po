@@ -8562,9 +8562,6 @@ msgstr "维护工单优先级"
 msgid "Dispatches"
 msgstr "维护工单"
 
-msgid "Display"
-msgstr "显示"
-
 msgid "Display Settings"
 msgstr "显示设置"
 
@@ -10021,9 +10018,6 @@ msgstr "每件都有费率。"
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
 
-msgid "Everyone who can see this project can use the view"
-msgstr "可以看到此项目的每个人都可以使用该视图"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "您选择的该周任何一天工作的所有人都将在他们的班次后延长您设置的小时数。只有您筛选的部门和班次会受到影响。"
 
@@ -10691,9 +10685,6 @@ msgstr "保存费率失败"
 
 msgid "Failed to save the signature"
 msgstr "保存签名失败"
-
-msgid "Failed to save the view"
-msgstr "保存视图失败"
 
 msgid "Failed to save tools"
 msgstr "保存工具失败"
@@ -13459,9 +13450,6 @@ msgstr "留空或输入 0 以显示 MRP 计划的所有内容。"
 msgid "Leave this page"
 msgstr "离开此页面"
 
-msgid "Leave view"
-msgstr "离开查看"
-
 msgid "Left item"
 msgstr "左项"
 
@@ -13698,9 +13686,6 @@ msgstr "已链接零件"
 
 msgid "Linked PO"
 msgstr "关联采购订单"
-
-msgid "List"
-msgstr "列表"
 
 msgid "List Options"
 msgstr "列表选项"
@@ -14808,9 +14793,6 @@ msgstr "我的保存视图"
 
 msgid "My Timesheet"
 msgstr "我的时间表"
-
-msgid "My views"
-msgstr "我的视图"
 
 msgid "My Visits"
 msgstr "我的访问"
@@ -16142,9 +16124,6 @@ msgstr "没有已分配的规则"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "还没有运行。当期间锁定时或使用\"运行期间\"时运行开始。"
-
-msgid "No saved views"
-msgstr "没有保存的视图"
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
@@ -22167,9 +22146,6 @@ msgstr "共享频道"
 msgid "Shared Sections"
 msgstr "共享部分"
 
-msgid "Shared views"
-msgstr "共享视图"
-
 msgid "Shelf life"
 msgstr "保质期"
 
@@ -22461,9 +22437,6 @@ msgstr "按金额显示前1,000个分组"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "作为淡色背景显示在每个生成的PDF页面后面"
-
-msgid "Shown properties"
-msgstr "显示的属性"
 
 msgid "Shown to the customer on the invoice"
 msgstr "在发票上向客户显示"
@@ -25628,9 +25601,6 @@ msgstr "工时记录"
 msgid "Timekeeping Controls"
 msgstr "工时记录控制"
 
-msgid "Timeline"
-msgstr "时间表"
-
 msgid "Timer running"
 msgstr "计时器运行中"
 
@@ -26527,9 +26497,6 @@ msgstr "更新看板信息以进行扫描式补货。"
 msgid "Update the purchase order quantities"
 msgstr "更新采购订单数量"
 
-msgid "Update view"
-msgstr "更新视图"
-
 msgid "Updated"
 msgstr "已更新"
 
@@ -27120,9 +27087,6 @@ msgstr "已查看"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "查看 <0>{0}</0>：{1}。它不是草稿，所以不接受更改。"
-
-msgid "Views"
-msgstr "视图"
 
 msgid "Visibilities"
 msgstr "可见性"

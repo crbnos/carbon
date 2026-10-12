@@ -210,7 +210,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 - [ ] Task 17: Simplify the Time page
 - [ ] Task 18: Turn Milestones into the Schedule page
-- [ ] Task 19: Reduce the Plan loader to Table, Tree and Reader
+- [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
 - [ ] Task 20: Give Plan one toolbar row and add rows in the grid
 - [ ] Task 21: Delete the List, Board and Timeline layouts
 - [ ] Task 22: Restyle the Tree cards and fix the fit-view
@@ -1603,3 +1603,8 @@ Polish pass of 2026-10-12, after Brad's review of the Task 13 shots (commit `fix
 - An empty Overview section ("Nothing needs attention", "No upcoming milestone") is one muted line, not the `Empty` cabinet illustration (a deviation from D6 for this summary page only: the illustration was louder than the data).
 - Layer 5: Stock and Pegging show under Costs only when the project has project stock (any `itemLedger` row with its `projectId`) or a current peg (a `projectPeg` row with `supersededAt` null). `$projectId.tsx` reads each with one `head: true` count, both served by existing partial indexes, and returns `hasProjectStock` / `hasPegs`. Before, they showed on the `projectStock` flag and `planningGroupId`.
 - Open question: a project with project stock turned on but no stock yet now has no Stock link, so the Task 16 Transfer button on that page is not reachable from the sidebar until stock arrives (the old URL and the Overview's overdue-borrows row still reach it).
+
+Run of 2026-10-12, Tasks 19–21 (the Plan page), with Brad's instruction of the same day: "remove the Elements from the top bar here. we can keep the search, that should move left and the elements can go in filter".
+
+- Environment: the database was rebuilt. The demo company is "Carbon Development" (`db6d4ukm20gg2a6iv1vg`) with one user, `test@carbon.ms` (signed in by the dev bypass). OB2 is `prj_5vCwDZeAP2MHdjqYeYe7iP`, NSOPS `prj_Xn8Bq9qYwbQ6tsjQVHuD7h`. The record table above has the old ids.
+- Task 19: the Type filter writes `filter=type:eq:…` and is single choice (`isExclusive`), as the type chips were, because the Tree layout uses one type as a lens. The old `?type=` param still works: the loader redirects it into the Type filter so it shows as a chip (`canonicalElementsParams`), and `parseElementFilters` still reads it for the Reader PDF.

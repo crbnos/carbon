@@ -8562,9 +8562,6 @@ msgstr "Bakım emri önceliği"
 msgid "Dispatches"
 msgstr "Bakım emirleri"
 
-msgid "Display"
-msgstr "Görüntüle"
-
 msgid "Display Settings"
 msgstr "Görüntü Ayarları"
 
@@ -10021,9 +10018,6 @@ msgstr "Her adetin bir oranı vardır."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Herkes bu şirketi açmadan önce bir kimlik doğrulaması uygulaması kurması gerekir."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "Bu projeyi görebilen herkes görünümü kullanabilir"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
 
@@ -10691,9 +10685,6 @@ msgstr "Oran kaydı başarısız"
 
 msgid "Failed to save the signature"
 msgstr "İmza kaydı başarısız"
-
-msgid "Failed to save the view"
-msgstr "Görünüm kaydı başarısız"
 
 msgid "Failed to save tools"
 msgstr "Araç kaydedilemedi"
@@ -13459,9 +13450,6 @@ msgstr "Tüm MRP planlarını görmek için boş bırakın veya 0 girin."
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
-msgid "Leave view"
-msgstr "Görünümü bırak"
-
 msgid "Left item"
 msgstr "Sol öğe"
 
@@ -13698,9 +13686,6 @@ msgstr "Bağlantılı parça"
 
 msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"
-
-msgid "List"
-msgstr "Liste"
 
 msgid "List Options"
 msgstr "Liste Seçenekleri"
@@ -14808,9 +14793,6 @@ msgstr "Kaydedilmiş Görünümüm"
 
 msgid "My Timesheet"
 msgstr "Benim Zaman Tablomu"
-
-msgid "My views"
-msgstr "Benim Görünümleri"
 
 msgid "My Visits"
 msgstr "Benim Ziyaretlerim"
@@ -16142,9 +16124,6 @@ msgstr "Atanmış kural yok"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "Henüz çalıştırma yok. Bir çalıştırma, bir dönem kilitlendiğinde veya Çalıştırma Dönemi ile başlar."
-
-msgid "No saved views"
-msgstr "Kaydedilmiş görünümü yok"
 
 msgid "No scheduled work in this window"
 msgstr "Bu zaman penceresinde planlanmış iş yok"
@@ -22167,9 +22146,6 @@ msgstr "Paylaşılan kanal"
 msgid "Shared Sections"
 msgstr "Paylaşılan Bölümler"
 
-msgid "Shared views"
-msgstr "Paylaşılan görünümler"
-
 msgid "Shelf life"
 msgstr "Raf ömrü"
 
@@ -22461,9 +22437,6 @@ msgstr "Miktar açısından ilk 1.000 grup gösteriliyor"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Oluşturulan PDF'lerin her sayfasının arkasında soluk bir arka plan olarak gösterilir"
-
-msgid "Shown properties"
-msgstr "Gösterilen özellikler"
 
 msgid "Shown to the customer on the invoice"
 msgstr "Müşteriye faturada gösterilir"
@@ -25628,9 +25601,6 @@ msgstr "Zaman takibi"
 msgid "Timekeeping Controls"
 msgstr "Zaman Takibi Kontrolleri"
 
-msgid "Timeline"
-msgstr "Zaman Çizelgesi"
-
 msgid "Timer running"
 msgstr "Zamanlayıcı çalışıyor"
 
@@ -26527,9 +26497,6 @@ msgstr "Tarama tabanlı ikmal için kanban bilgilerini güncelleyin."
 msgid "Update the purchase order quantities"
 msgstr "Satın alma siparişi miktarlarını güncelle"
 
-msgid "Update view"
-msgstr "Görüntüyü güncelle"
-
 msgid "Updated"
 msgstr "Güncellendi"
 
@@ -27120,9 +27087,6 @@ msgstr "Görüntülendi"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "Görüntüleniyor <0>{0}</0>: {1}. Bu Taslak değildir, bu nedenle değişiklik alamaz."
-
-msgid "Views"
-msgstr "Görüntüler"
 
 msgid "Visibilities"
 msgstr "Görünürlükler"

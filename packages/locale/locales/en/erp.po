@@ -8562,9 +8562,6 @@ msgstr "Dispatch priority"
 msgid "Dispatches"
 msgstr "Dispatches"
 
-msgid "Display"
-msgstr "Display"
-
 msgid "Display Settings"
 msgstr "Display Settings"
 
@@ -10021,9 +10018,6 @@ msgstr "Every unit has a rate."
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
 
-msgid "Everyone who can see this project can use the view"
-msgstr "Everyone who can see this project can use the view"
-
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 
@@ -10691,9 +10685,6 @@ msgstr "Failed to save the rate"
 
 msgid "Failed to save the signature"
 msgstr "Failed to save the signature"
-
-msgid "Failed to save the view"
-msgstr "Failed to save the view"
 
 msgid "Failed to save tools"
 msgstr "Failed to save tools"
@@ -13459,9 +13450,6 @@ msgstr "Leave empty, or enter 0, to show everything MRP plans."
 msgid "Leave this page"
 msgstr "Leave this page"
 
-msgid "Leave view"
-msgstr "Leave view"
-
 msgid "Left item"
 msgstr "Left item"
 
@@ -13698,9 +13686,6 @@ msgstr "Linked part"
 
 msgid "Linked PO"
 msgstr "Linked PO"
-
-msgid "List"
-msgstr "List"
 
 msgid "List Options"
 msgstr "List Options"
@@ -14808,9 +14793,6 @@ msgstr "My Saved View"
 
 msgid "My Timesheet"
 msgstr "My Timesheet"
-
-msgid "My views"
-msgstr "My views"
 
 msgid "My Visits"
 msgstr "My Visits"
@@ -16142,9 +16124,6 @@ msgstr "No rules assigned"
 
 msgid "No runs yet. A run starts when a period locks, or with Run Period."
 msgstr "No runs yet. A run starts when a period locks, or with Run Period."
-
-msgid "No saved views"
-msgstr "No saved views"
 
 msgid "No scheduled work in this window"
 msgstr "No scheduled work in this window"
@@ -22167,9 +22146,6 @@ msgstr "Shared channel"
 msgid "Shared Sections"
 msgstr "Shared Sections"
 
-msgid "Shared views"
-msgstr "Shared views"
-
 msgid "Shelf life"
 msgstr "Shelf life"
 
@@ -22461,9 +22437,6 @@ msgstr "Showing the top 1,000 groups by amount"
 
 msgid "Shown as a faint background behind every page of generated PDFs"
 msgstr "Shown as a faint background behind every page of generated PDFs"
-
-msgid "Shown properties"
-msgstr "Shown properties"
 
 msgid "Shown to the customer on the invoice"
 msgstr "Shown to the customer on the invoice"
@@ -25628,9 +25601,6 @@ msgstr "Timekeeping"
 msgid "Timekeeping Controls"
 msgstr "Timekeeping Controls"
 
-msgid "Timeline"
-msgstr "Timeline"
-
 msgid "Timer running"
 msgstr "Timer running"
 
@@ -26527,9 +26497,6 @@ msgstr "Update the kanban information for scan-based replenishment."
 msgid "Update the purchase order quantities"
 msgstr "Update the purchase order quantities"
 
-msgid "Update view"
-msgstr "Update view"
-
 msgid "Updated"
 msgstr "Updated"
 
@@ -27120,9 +27087,6 @@ msgstr "Viewed"
 #. placeholder {1}: changeRequest.title
 msgid "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
 msgstr "Viewing <0>{0}</0>: {1}. It is not a Draft, so it takes no changes."
-
-msgid "Views"
-msgstr "Views"
 
 msgid "Visibilities"
 msgstr "Visibilities"

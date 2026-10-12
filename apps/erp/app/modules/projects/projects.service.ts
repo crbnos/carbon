@@ -23,11 +23,8 @@ import type {
   ProjectBorrowStatus,
   ProjectCostTreatment,
   ProjectCostType,
-  ProjectDisplayOptions,
   ProjectElementEditableField,
-  ProjectElementFilterState,
   ProjectElementType,
-  ProjectLayout,
   ProjectStateGroup,
   ProjectStatus,
   ProjectStockTransferAction,
@@ -4016,131 +4013,6 @@ export async function getChildServiceProjectCosts(
     })),
     error: null
   };
-}
-
-// --- Views and preferences ---------------------------------------------------
-
-/**
- * The saved views of a project the user can see: their own views, then the
- * views other people shared. RLS hides another user's private view.
- */
-export async function getProjectViews(
-  client: Client,
-  args: { projectId: string; companyId: string; userId: string }
-) {
-  return client
-    .from("projectView")
-    .select("id, name, isShared, layout, filters, displayOptions, createdBy")
-    .eq("projectId", args.projectId)
-    .eq("companyId", args.companyId)
-    .or(`createdBy.eq.${args.userId},isShared.eq.true`)
-    .order("sortOrder", { ascending: true })
-    .order("name", { ascending: true });
-}
-
-type ProjectDisplayStateRow = {
-  layout: ProjectLayout;
-  filters: ProjectElementFilterState;
-  displayOptions: ProjectDisplayOptions;
-};
-
-/** Creates a view, or updates the user's own view when `id` is set. */
-export async function upsertProjectView(
-  client: Client,
-  view: ProjectDisplayStateRow & {
-    id?: string;
-    name: string;
-    isShared: boolean;
-    projectId: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  const fields = {
-    name: view.name,
-    isShared: view.isShared,
-    layout: view.layout,
-    filters: view.filters as unknown as Json,
-    displayOptions: view.displayOptions as unknown as Json
-  };
-  if (view.id) {
-    return client
-      .from("projectView")
-      .update({
-        ...fields,
-        updatedBy: view.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", view.id)
-      .eq("projectId", view.projectId)
-      .eq("companyId", view.companyId)
-      .eq("createdBy", view.userId)
-      .select("id")
-      .single();
-  }
-  return client
-    .from("projectView")
-    .insert([
-      {
-        ...fields,
-        projectId: view.projectId,
-        companyId: view.companyId,
-        createdBy: view.userId
-      }
-    ])
-    .select("id")
-    .single();
-}
-
-/** Deletes one of the user's own views. */
-export async function deleteProjectView(
-  client: Client,
-  args: { id: string; projectId: string; companyId: string; userId: string }
-) {
-  return client
-    .from("projectView")
-    .delete()
-    .eq("id", args.id)
-    .eq("projectId", args.projectId)
-    .eq("companyId", args.companyId)
-    .eq("createdBy", args.userId);
-}
-
-/** The user's last layout, filters and display options on a project. */
-export async function getProjectUserPreference(
-  client: Client,
-  args: { projectId: string; companyId: string; userId: string }
-) {
-  return client
-    .from("projectUserPreference")
-    .select("layout, filters, displayOptions")
-    .eq("projectId", args.projectId)
-    .eq("companyId", args.companyId)
-    .eq("userId", args.userId)
-    .maybeSingle();
-}
-
-/** Keeps the user's layout, filters and display options on a project. */
-export async function upsertProjectUserPreference(
-  client: Client,
-  preference: ProjectDisplayStateRow & {
-    projectId: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  return client.from("projectUserPreference").upsert(
-    {
-      projectId: preference.projectId,
-      companyId: preference.companyId,
-      userId: preference.userId,
-      layout: preference.layout,
-      filters: preference.filters as unknown as Json,
-      displayOptions: preference.displayOptions as unknown as Json,
-      updatedAt: datetime.timestamp()
-    },
-    { onConflict: "projectId,userId,companyId" }
-  );
 }
 
 // --- Project stock transfers ---------------------------------------------------
