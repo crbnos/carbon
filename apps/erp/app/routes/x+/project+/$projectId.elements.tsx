@@ -69,9 +69,9 @@ import {
 } from "~/modules/projects/ui/ChangeRequests/useActiveChangeRequest";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
+import { ElementList } from "~/modules/projects/ui/Elements/ElementList";
 import { ElementReader } from "~/modules/projects/ui/Elements/ElementReader";
 import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
-import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
 import {
   ElementTypeIcon,
   useElementTypeLabels
@@ -123,12 +123,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const searchParams = url.searchParams;
 
   // The page always has a layout in its URL. A URL with none, a retired one
-  // (List, Board, Timeline) or the old `?type=` param redirects to the Table
+  // (Table, Board, Timeline) or the old `?type=` param redirects to the List
   // or the Type filter, keeping every other param (`cr` included).
   const canonical = canonicalElementsParams(searchParams);
   if (canonical) throw redirect(`${url.pathname}?${canonical}`);
 
-  const layout = elementLayoutFromParams(searchParams) ?? "table";
+  const layout = elementLayoutFromParams(searchParams) ?? "list";
   const { filters: elementFilters, type } = parseElementFilters(searchParams);
   // The Tree layout applies the type filter on the canvas, so it loads every
   // type: a box must still show the parent of a matching card.
@@ -383,9 +383,9 @@ export default function ProjectElementsRoute() {
   const canDelete =
     permissions.can("delete", "projects") && !isClosed && !planLocked;
 
-  // New Element adds a row: a default name per type, under the element whose
-  // panel is open. The Table highlights the new row; the other layouts open
-  // its panel, since they have no row to show.
+  // New Element adds a row: a default name per type. The List highlights
+  // the new row; the other layouts open its page, since they have no row to
+  // show.
   const newNames: Record<ProjectElementType, string> = {
     Folder: t`New Folder`,
     System: t`New System`,
@@ -402,21 +402,24 @@ export default function ProjectElementsRoute() {
   }>({
     onSuccess: (data) => {
       if (!data.id) return;
-      if (layout === "table") setCreatedId(data.id);
-      else navigate(`${path.to.projectElement(projectId, data.id)}${search}`);
+      if (layout === "list") setCreatedId(data.id);
+      else
+        navigate(`${path.to.projectElementFull(projectId, data.id)}${search}`);
     },
     onError: (data) =>
       toast.error(data.error?.message ?? t`Failed to create the element`)
   });
   const createElement = (
     elementType: ProjectElementType = "Task",
-    parentId: string | undefined = elementId
+    parentId?: string,
+    stateId?: string
   ) => {
     if (createFetcher.isPending) return;
     const formData = new FormData();
     formData.append("type", elementType);
     formData.append("name", newNames[elementType]);
     if (parentId) formData.append("parentId", parentId);
+    if (stateId) formData.append("stateId", stateId);
     createFetcher.submit(formData, {
       method: "post",
       action: withChangeRequest(
@@ -458,11 +461,13 @@ export default function ProjectElementsRoute() {
           }
         />
         <div className="min-h-0 flex-1">
-          {layout === "table" ? (
-            <ElementTable
+          {layout === "list" ? (
+            <ElementList
               projectId={projectId}
               elements={elements}
               states={states}
+              labels={labels}
+              requirementStatus={requirementStatus}
               canUpdate={canUpdate}
               canCreate={canCreate}
               canDelete={canDelete}

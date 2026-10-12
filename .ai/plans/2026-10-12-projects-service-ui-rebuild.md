@@ -1657,3 +1657,13 @@ Menu scrollbar check of 2026-10-12 (Brad: "this menu has scrollbars that shouldn
 - One suspect was ruled out: the Filter sub-list's own `max-h-[300px] overflow-y-auto` container is not nested in a `CommandList` (`Filter.tsx` has none), so a long list (the Jobs Item filter) scrolls once, as it should. Removing it made the list run off the screen, so it stays.
 - No code changed. If Brad's menu still shows scrollbars, the executor needs his screenshot or the page it was on.
 
+
+Brad's decisions of 2026-10-12, the Linear list and the element page (`.ai/scratch/ui-reference/linear-list-brief.md`, `element-page-brief.md`; they override Tasks 20, 23 and 24 where they conflict):
+
+- List: the Plan page's Table is now a grouped List (`ElementList.tsx`; `ElementTable.tsx` is deleted). The switch reads List / Tree / Reader; `projectLayouts` is `["list", "tree", "reader"]` and `canonicalElementsParams` sends a missing layout and the retired `table`, `board` and `timeline` to `list`. `list` was already a `projectLayout` enum value, so no migration.
+- List: one group per STATE (not per state group), in `sortStates` order, so "In Progress" and "In Review" are two groups although both are Started. The brief's header shows the state's own icon and name, which only a per-state group can do.
+- List: the state picker is the state icon between the id and the name (Linear's place). The brief's left side lists only the type icon, the id and the name, but the state must be clickable on the row, and a state chip on the right would repeat the group header.
+- List: the pickers are the existing `StatePill`, `OwnerPill` and `DatePill`. `PillVariant` gained `icon` (a bare 24 px square: the state icon or the owner avatar at `xs`), and the `pill` chip grew from 20 px to 24 px (`h-6 rounded-md`) to match the 44 px rows. `ElementTypeIcon` gained `tinted` (the icon on a 20 px tinted square).
+- List: an unset owner or date shows its placeholder only while the row is hovered or focused; a user who cannot update sees no placeholder. Labels are a read-only chip ("● Name" or "● N labels"); the names are in its tooltip.
+- List: a row is one `Link` stretched over the row (`before:absolute inset-0`); the pickers, the diff badge and the ⋯ menu sit above it (`relative z-10`). So a row is reachable by Tab and opens with Enter.
+- List: the group header's "+" creates a Task in that state (`stateId` posts to `newProjectElement`, which `projectElementValidator` already accepted). The List's bulk actions and grouping options from the old layouts are not back.

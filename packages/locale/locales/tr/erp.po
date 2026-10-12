@@ -105,6 +105,7 @@ msgstr "{0, plural, one {# tür filtresi tarafından gizlendi} other {# tür fil
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# stok kartı} other {# stok kartları}}"
 
+#. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# etiket} other {# etiketler}}"
@@ -6287,9 +6288,8 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
-#. placeholder {0}: row.original.readableId
-msgid "Copied {0}"
-msgstr "Kopyalandı {0}"
+msgid "Copied {readableId}"
+msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "ID panoya kopyalandı"
@@ -13821,6 +13821,9 @@ msgstr "Bağlantılı parça"
 msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "Liste Seçenekleri"
 
@@ -14799,8 +14802,10 @@ msgid "More options"
 msgstr "Daha fazla seçenek"
 
 #. placeholder {0}: milestone.name
-#. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
+msgstr ""
+
+msgid "More options for {readableId}"
 msgstr ""
 
 msgid "More overtime"
@@ -15153,6 +15158,10 @@ msgid "New element"
 msgstr "Yeni öğe"
 
 msgid "New Element"
+msgstr ""
+
+#. placeholder {0}: state.name
+msgid "New element in {0}"
 msgstr ""
 
 msgid "New element name"
@@ -23863,9 +23872,6 @@ msgstr "Müşterileri türlerine göre hedefleyin."
 
 msgid "Target date"
 msgstr "Hedef tarih"
-
-msgid "Target Date"
-msgstr "Hedef Tarihi"
 
 msgid "Target disposition row"
 msgstr "Hedef karar satırı"

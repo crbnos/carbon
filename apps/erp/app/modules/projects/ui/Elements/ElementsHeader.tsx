@@ -40,7 +40,7 @@ type ElementsHeaderProps = {
 };
 
 /**
- * The Plan page's one toolbar row: the Table / Tree / Reader switch on the
+ * The Plan page's one toolbar row: the List / Tree / Reader switch on the
  * left; Filter and New Element on the right. The search is the sidebar's
  * "Search elements" box. Filter chips show in a second row only while a
  * filter is set.
@@ -71,7 +71,7 @@ export function ElementsHeader({
   );
   const typeLabels = useElementTypeLabels();
   const layoutLabels: Record<ProjectLayout, string> = {
-    table: t`Table`,
+    list: t`List`,
     tree: t`Tree`,
     reader: t`Reader`
   };

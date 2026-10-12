@@ -2685,7 +2685,7 @@ export function parseElementFilters(params: URLSearchParams): {
 
 /** The layouts of the Plan page, in the order the switch lists them. */
 export const projectLayouts = [
-  "table",
+  "list",
   "tree",
   "reader"
 ] as const satisfies readonly Enums["projectLayout"][];
@@ -2704,7 +2704,7 @@ export function elementLayoutFromParams(
 
 /**
  * The params a Plan URL redirects to, or null when it needs no redirect. A
- * missing or retired layout (`list`, `board`, `timeline`) becomes `table`,
+ * missing or retired layout (`table`, `board`, `timeline`) becomes `list`,
  * and the old `?type=` param becomes the Type filter, so the filter shows as
  * a chip. Every other param stays, `cr` included.
  */
@@ -2715,7 +2715,7 @@ export function canonicalElementsParams(
   const hasLayout = elementLayoutFromParams(params) !== null;
   if (hasLayout && legacyType === null) return null;
   const next = new URLSearchParams(params);
-  if (!hasLayout) next.set("layout", "table");
+  if (!hasLayout) next.set("layout", "list");
   if (legacyType !== null) {
     next.delete("type");
     if (

@@ -12,7 +12,8 @@ import {
 const params = (query: string) => new URLSearchParams(query);
 
 describe("the Plan page layout", () => {
-  it("reads table, tree and reader", () => {
+  it("reads list, tree and reader", () => {
+    expect(elementLayoutFromParams(params("layout=list"))).toBe("list");
     expect(elementLayoutFromParams(params("layout=tree"))).toBe("tree");
     expect(elementLayoutFromParams(params("layout=reader"))).toBe("reader");
   });
@@ -25,23 +26,23 @@ describe("the Plan page layout", () => {
 
 describe("canonicalElementsParams", () => {
   it("needs no redirect for a layout and no old type param", () => {
-    expect(canonicalElementsParams(params("layout=table&search=bus"))).toBe(
+    expect(canonicalElementsParams(params("layout=list&search=bus"))).toBe(
       null
     );
   });
 
-  it("sends a missing layout to table and keeps every other param", () => {
+  it("sends a missing layout to list and keeps every other param", () => {
     const next = canonicalElementsParams(params("cr=pcr_1&search=bus"));
-    expect(next?.get("layout")).toBe("table");
+    expect(next?.get("layout")).toBe("list");
     expect(next?.get("cr")).toBe("pcr_1");
     expect(next?.get("search")).toBe("bus");
   });
 
-  it("sends the retired layouts to table", () => {
-    for (const layout of ["list", "board", "timeline"]) {
+  it("sends the retired layouts to list", () => {
+    for (const layout of ["table", "board", "timeline"]) {
       expect(
         canonicalElementsParams(params(`layout=${layout}`))?.get("layout")
-      ).toBe("table");
+      ).toBe("list");
     }
   });
 
@@ -59,13 +60,13 @@ describe("canonicalElementsParams", () => {
 
   it("drops an unknown old type and keeps a Type filter already set", () => {
     expect(
-      canonicalElementsParams(params("layout=table&type=Bogus"))?.getAll(
+      canonicalElementsParams(params("layout=list&type=Bogus"))?.getAll(
         "filter"
       )
     ).toEqual([]);
     expect(
       canonicalElementsParams(
-        params("layout=table&type=Task&filter=type:eq:System")
+        params("layout=list&type=Task&filter=type:eq:System")
       )?.getAll("filter")
     ).toEqual(["type:eq:System"]);
   });

@@ -523,10 +523,10 @@ and Requirement from the rows the page loads; there is no SQL function.
 
 ## The Plan page: layouts, filters and the Reader PDF
 
-Three layouts (`projectLayouts`): Table (the inline-edit grid, `ElementTable`), Tree
-(React Flow boxes + dagre) and Reader. A URL with no layout, a retired one (`list`,
+Three layouts (`projectLayouts`): List (Linear's grouped list, `ElementList`), Tree
+(React Flow boxes + dagre) and Reader. A URL with no layout, a retired one (`table`,
 `board`, `timeline`) or the old `?type=` param redirects (`canonicalElementsParams`):
-the layout becomes `table`, `?type=X` becomes `filter=type:eq:X`, and every other param
+the layout becomes `list`, `?type=X` becomes `filter=type:eq:X`, and every other param
 stays, `cr` included. The Reader PDF (`file+/project+/$id[.]pdf.tsx`, `ProjectReaderPDF`
 in `@carbon/documents`) reads the same filters (`parseElementFilters`) and outline
 (`buildReaderOutline`).
@@ -536,8 +536,13 @@ Milestone, Label; Type is single choice) and the **New Element** `SplitButton`, 
 posts a default name per type to `path.to.newProjectElement` under the open element.
 The page's only search is the project sidebar's "Search elements" box
 (`ProjectElementTree`): it filters the tree at once and writes `?search=` (debounced)
-on the Plan page. The Table edits Name, State, Owner and Target Date in place and has
-a hover row menu (Open, Add child, Move to…, Copy id, Delete).
+on the Plan page. The List is not an editable table: it groups the rows by state
+(`sortStates` order, empty groups hidden, each group collapsible, a hover "+" adds an
+element in that state), keeps tree order inside a group and indents a row only under a
+parent in the same group. Only the state, the owner and the target date edit in place,
+each through its picker (`StatePill` / `OwnerPill` / `DatePill`); labels are read-only;
+a click anywhere else opens the element's page. A hover row menu has Open, Add child,
+Move to…, Copy id and Delete.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the

@@ -143,7 +143,7 @@ function shown<T>(pending: string | null | undefined, saved: T) {
 
 // --- The pill -----------------------------------------------------------------
 
-export type PillVariant = "pill" | "ghost";
+export type PillVariant = "pill" | "ghost" | "icon";
 
 type PillProps = ComponentPropsWithoutRef<"button"> & {
   variant?: PillVariant;
@@ -151,8 +151,9 @@ type PillProps = ComponentPropsWithoutRef<"button"> & {
 };
 
 /**
- * The trigger of every property editor. A `pill` is 20 px high (List, Board).
- * A `ghost` fills the value column of the element sidebar.
+ * The trigger of every property editor. A `pill` is a 24 px chip (the rows of
+ * the Plan list). A `ghost` fills the value column of the element sidebar. An
+ * `icon` is a bare square that shows only the value's icon or avatar.
  */
 const Pill = forwardRef<HTMLButtonElement, PillProps>(
   (
@@ -167,8 +168,10 @@ const Pill = forwardRef<HTMLButtonElement, PillProps>(
       className={cn(
         "inline-flex min-w-0 items-center gap-1 text-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60",
         variant === "pill"
-          ? "h-5 max-w-[12rem] shrink-0 rounded border border-border px-1.5 text-muted-foreground enabled:hover:bg-accent enabled:hover:text-foreground"
-          : "h-8 w-full rounded-md px-2 text-sm text-foreground enabled:hover:bg-accent",
+          ? "h-6 max-w-[12rem] shrink-0 rounded-md border border-border px-2 text-muted-foreground enabled:hover:bg-accent enabled:hover:text-foreground"
+          : variant === "icon"
+            ? "size-6 shrink-0 justify-center rounded-md text-muted-foreground enabled:hover:bg-accent"
+            : "h-8 w-full rounded-md px-2 text-sm text-foreground enabled:hover:bg-accent",
         className
       )}
       onClick={(event) => {
@@ -292,11 +295,14 @@ export function StatePill({
           variant={variant}
           isDisabled={isDisabled}
           aria-label={t`Change state`}
+          title={variant === "icon" ? state?.name : undefined}
         >
           {state ? (
             <>
               <StateIcon group={state.group} color={state.color} />
-              <span className="truncate">{state.name}</span>
+              {variant !== "icon" && (
+                <span className="truncate">{state.name}</span>
+              )}
             </>
           ) : (
             <Placeholder>
@@ -369,7 +375,7 @@ export function OwnerPill({
           {value ? (
             <EmployeeAvatar
               employeeId={value}
-              size="xxs"
+              size={variant === "icon" ? "xs" : "xxs"}
               withName={variant === "ghost"}
             />
           ) : (

@@ -105,6 +105,7 @@ msgstr "{0, plural, one {# masqué par le filtre de type} other {# masqués par 
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# article} other {# articles}}"
 
+#. placeholder {0}: labels.length
 #. placeholder {0}: selected.length
 msgid "{0, plural, one {# label} other {# labels}}"
 msgstr "{0, plural, one {# étiquette} other {# étiquettes}}"
@@ -6287,9 +6288,8 @@ msgstr "Conversion en cours…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
 
-#. placeholder {0}: row.original.readableId
-msgid "Copied {0}"
-msgstr "Copié {0}"
+msgid "Copied {readableId}"
+msgstr ""
 
 msgid "Copied ID to clipboard"
 msgstr "ID copié dans le presse-papiers"
@@ -13821,6 +13821,9 @@ msgstr "Pièce liée"
 msgid "Linked PO"
 msgstr "Bon de commande lié"
 
+msgid "List"
+msgstr ""
+
 msgid "List Options"
 msgstr "Options de liste"
 
@@ -14799,8 +14802,10 @@ msgid "More options"
 msgstr "Plus d'options"
 
 #. placeholder {0}: milestone.name
-#. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
+msgstr ""
+
+msgid "More options for {readableId}"
 msgstr ""
 
 msgid "More overtime"
@@ -15153,6 +15158,10 @@ msgid "New element"
 msgstr "Nouvel élément"
 
 msgid "New Element"
+msgstr ""
+
+#. placeholder {0}: state.name
+msgid "New element in {0}"
 msgstr ""
 
 msgid "New element name"
@@ -23862,9 +23871,6 @@ msgid "Target customers by type."
 msgstr "Cibler les clients par type."
 
 msgid "Target date"
-msgstr "Date cible"
-
-msgid "Target Date"
 msgstr "Date cible"
 
 msgid "Target disposition row"
