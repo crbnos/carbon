@@ -17,7 +17,8 @@ import { data, useLoaderData } from "react-router";
 import { timesheetCellValidator } from "~/modules/projects";
 import {
   getTimesheetWeekView,
-  saveTimesheetEntry
+  saveTimesheetEntry,
+  timesheetBudgetWarning
 } from "~/modules/projects/projects.server";
 import TimesheetGrid from "~/modules/projects/ui/Timesheet/TimesheetGrid";
 import { getDatabaseClient } from "~/services/database.server";
@@ -136,7 +137,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
  * Saves one cell of the employee's week through `save-timesheet-entry`, as
  * the manager. The server function needs a reason, sets the entry to
  * Pending Employee Review, and refuses a new entry on a day with no recorded
- * absence. Answers `{ error }`, which the grid reads.
+ * absence. Answers `{ error }`, which the grid reads. A budget overrun
+ * comes back as `warning` and never refuses the entry.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -174,7 +176,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
     return data({ error: { message: result.error } }, { status: 400 });
   }
-  return data({ error: null, data: result.data });
+
+  // Budget control (Government Contracting 5c): a timesheet only warns. The
+  // grid toasts the warning; the entry is already saved.
+  const warning = await timesheetBudgetWarning(client, {
+    ...validation.data,
+    companyId
+  });
+
+  return data({ error: null, data: result.data, warning });
 }
 
 export default function EmployeeTimesheetRoute() {

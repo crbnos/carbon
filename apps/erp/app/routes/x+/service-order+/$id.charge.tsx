@@ -14,7 +14,8 @@ import { logTimeValidator, projectIssueValidator } from "~/modules/projects";
 import {
   postProjectIssue,
   postTimesheetEntries,
-  saveTimesheetEntry
+  saveTimesheetEntry,
+  timesheetBudgetWarning
 } from "~/modules/projects/projects.server";
 import {
   coverageOverrideValidator,
@@ -76,10 +77,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ) {
     return refuse("Unknown charge");
   }
+  // Budget control (Government Contracting 5c): time only warns. The warning
+  // goes into the success flash.
+  let warning: string | null = null;
 
   // A part moves stock, so it also needs inventory rights. A technician
   // without `update: "service"` charges only their own open visit.
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "service",
     ...(intent === "part" ? { update: "inventory" } : {})
   });
@@ -138,6 +142,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (saved.error !== null || !saved.data.entryId) {
         return refuse(saved.error ?? "Failed to log the time");
       }
+      // Checked before the entry posts, so its own cost is not counted twice.
+      warning = await timesheetBudgetWarning(client, {
+        companyId,
+        projectId: order.projectId,
+        projectElementId: validation.data.projectElementId ?? null,
+        laborCategoryId: validation.data.laborCategoryId,
+        entryDate: validation.data.entryDate,
+        hours: validation.data.hours
+      });
       const postingError = await postTimesheetEntries({
         timesheetEntryIds: [saved.data.entryId],
         companyId,
@@ -242,6 +255,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   return data(
     { success: true, error: null },
-    await flash(request, success(MESSAGES[intent]))
+    await flash(
+      request,
+      success(warning ? `${MESSAGES[intent]}. ${warning}` : MESSAGES[intent])
+    )
   );
 }
