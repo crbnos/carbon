@@ -44,6 +44,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  // A grid cell posts `quiet` and reads `{ error }` instead of a flash.
+  const quiet = formData.get("quiet") === "true";
+  const invalid = (validation: Parameters<typeof validationError>[0]) =>
+    quiet
+      ? failure(
+          Object.values(validation.fieldErrors ?? {})[0] ?? "Invalid values"
+        )
+      : validationError(validation);
+  const done = async (message: string) =>
+    quiet
+      ? data({ success: true, error: null })
+      : data(
+          { success: true, error: null },
+          await flash(request, success(message))
+        );
 
   if (intent === "ceiling-upsert" || intent === "ceiling-delete") {
     const { id: contractId } = params;
@@ -74,16 +89,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
           });
           return failure("Failed to delete the ceiling");
         }
-        return data(
-          { success: true, error: null },
-          await flash(request, success("Ceiling deleted"))
-        );
+        return done("Ceiling deleted");
       }
 
       const validation = await validator(contractRateCeilingValidator).validate(
         formData
       );
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation.error);
       // The line is the URL's, never the form's copy.
       const saved = await upsertContractRateCeiling(client, {
         ...validation.data,
@@ -103,10 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             : "Failed to save the ceiling"
         );
       }
-      return data(
-        { success: true, error: null },
-        await flash(request, success("Ceiling saved"))
-      );
+      return done("Ceiling saved");
     } catch (err) {
       if (!(err instanceof EntitlementError)) throw err;
       logger.error("Indirect rates are not in the company's plan", {
@@ -128,16 +137,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       });
       return failure("Failed to delete the rate");
     }
-    return data(
-      { success: true, error: null },
-      await flash(request, success("Rate deleted"))
-    );
+    return done("Rate deleted");
   }
 
   const validation = await validator(contractLaborRateValidator).validate(
     formData
   );
-  if (validation.error) return validationError(validation.error);
+  if (validation.error) return invalid(validation.error);
 
   const { id, ...rate } = validation.data;
   // The line is the URL's, never the form's copy.
@@ -158,8 +164,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return failure(saved.error.message || "Failed to save the rate");
   }
 
-  return data(
-    { success: true, error: null },
-    await flash(request, success("Rate saved"))
-  );
+  return done("Rate saved");
 }

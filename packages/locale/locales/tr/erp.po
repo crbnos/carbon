@@ -430,8 +430,8 @@ msgstr "{0}-Yıl"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} görüntülendi"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/s"
@@ -868,9 +868,6 @@ msgstr "1. Negatif Eldeki"
 msgid "1Y"
 msgstr "1Y"
 
-msgid "2 capital letters or digits"
-msgstr "2 büyük harf veya rakam"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2 ile 6 arasında büyük harf veya rakam, örneğin SNS"
 
@@ -1144,9 +1141,6 @@ msgstr "Resmi bir kabul / imza aşaması"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "Bir finansman değişikliği sonraki faturalandırma çalışmasından itibaren geçerlidir."
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "Bir finansman değişikliği sonraki faturalandırma çalışmasından itibaren geçerlidir. Faturalandırma finanse edilen miktarda durur."
@@ -3033,6 +3027,9 @@ msgstr "Uygulanan, İskonto ve Kayıttan düşme tutarları şirketin ana Para b
 
 msgid "Applies to"
 msgstr "Uygulama"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "Tümüne uygulanır"
@@ -5082,9 +5079,6 @@ msgstr "Bilgi"
 msgid "Ceiling"
 msgstr "Tavan"
 
-msgid "Ceiling per Hour"
-msgstr "Saat Başına Tavan"
-
 msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
 
@@ -5353,11 +5347,17 @@ msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebili
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
 msgid "Choose a period"
 msgstr "Bir dönem seç"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
@@ -8014,8 +8014,8 @@ msgstr "Özniteliği Sil"
 msgid "Delete Category"
 msgstr "Kategoriyi Sil"
 
-msgid "Delete ceiling"
-msgstr "Silme tavanı"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Değişiklik Bildirisini Sil"
@@ -9481,9 +9481,6 @@ msgstr "Satın alma siparişi satır türünü düzenle"
 msgid "Edit Question"
 msgstr "Soruyu Düzenle"
 
-msgid "Edit Rate"
-msgstr "Oranı Düzenle"
-
 msgid "Edit Reason"
 msgstr "Nedeni Düzenle"
 
@@ -9681,6 +9678,10 @@ msgstr "Çalışan Türü"
 
 msgid "Employee Types"
 msgstr "Çalışan Tipleri"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "çalışanlar"
@@ -10404,9 +10405,6 @@ msgstr "Son Kullanma Tarihi (isteğe bağlı)"
 msgid "Expires in {0}d"
 msgstr "{0}g içinde süresi doluyor"
 
-msgid "Expires On"
-msgstr "Süresi Doluyor"
-
 msgid "Expiring first"
 msgstr "İlk sona eren"
 
@@ -10829,9 +10827,6 @@ msgstr "Sonuç kaydedilemedi"
 msgid "Failed to save slides"
 msgstr "Slayt kaydedilemedi"
 
-msgid "Failed to save the ceiling"
-msgstr "Tavan kaydı başarısız"
-
 msgid "Failed to save the change"
 msgstr "Değişikliği kaydetme başarısız oldu"
 
@@ -10840,12 +10835,6 @@ msgstr "Maliyet kaydedilemedi"
 
 msgid "Failed to save the fixed price"
 msgstr "Sabit fiyat kaydı başarısız"
-
-msgid "Failed to save the funding action"
-msgstr "Finansman işlemi kaydı başarısız"
-
-msgid "Failed to save the rate"
-msgstr "Oran kaydı başarısız"
 
 msgid "Failed to save the signature"
 msgstr "İmza kaydı başarısız"
@@ -11416,9 +11405,6 @@ msgstr "Finansmanlı Tutar"
 msgid "Funded Cost"
 msgstr "Finansmanlı Maliyet"
 
-msgid "Funded Date"
-msgstr "Finansman Tarihi"
-
 msgid "Funded Fee"
 msgstr "Finansmanlı Ücret"
 
@@ -11430,9 +11416,6 @@ msgstr "Finansman"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "Finansman işlemi işlemleri"
 
 msgid "Funding Actions"
 msgstr "Finansman İşlemleri"
@@ -11958,8 +11941,8 @@ msgstr "Öğeleri Tut"
 msgid "Hold the journal as a warning to fix."
 msgstr "Düzeltilmesi için uyarı olarak muhasebe fişini beklet."
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "Projelerde öğeleri tut, serbest bırak, yazdır veya yeniden fiyatlandır → Faturalandırma."
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Tatil"
@@ -13422,8 +13405,9 @@ msgstr "İşçilik kategorisi"
 msgid "Labor Category"
 msgstr "İşçilik Kategorisi"
 
-msgid "Labor Category or Employee"
-msgstr "İşçilik Kategorisi veya Çalışan"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "İşçilik Maliyetleri"
@@ -14793,8 +14777,8 @@ msgstr "Model yükleme"
 msgid "Modification"
 msgstr "Değişiklik"
 
-msgid "Modification Number"
-msgstr "Değişiklik Numarası"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "Değiştirildi"
@@ -19506,9 +19490,6 @@ msgstr "Kur"
 
 msgid "rate {was} → {now}"
 msgstr "oran {was} → {now}"
-
-msgid "Rate actions"
-msgstr "Oran eylemleri"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "Malzemelerinizi sınıflandıran dereceler"
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "Bu hesabın toplanacağı grup hesabı; türünü, sınıfını ve beyan yerleşimini belirler."
 
-msgid "The highest rate this line bills for the pool."
-msgstr "Bu satırın havuz için faturalandırdığı en yüksek oran."
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "Bu İş merkezi üzerinde operatör İşçiliğinin saatlik Maliyeti; kaydedilen işçilik saatlerine göre bir İş emrinin Yarı mamul Maliyetine yüklenir."
 
@@ -24877,9 +24855,6 @@ msgstr "Bu sorun türüne uygulanan Görev ve Onay gereksinimlerinin önceden ay
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "Bu satırda bir saatin fiyatı."
 
 msgid "The principle:"
 msgstr "İlke:"

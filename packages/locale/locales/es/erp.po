@@ -430,8 +430,8 @@ msgstr "{0}-Año"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} visualizado"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/h"
@@ -868,9 +868,6 @@ msgstr "Primer negativo en existencias"
 msgid "1Y"
 msgstr "1 año"
 
-msgid "2 capital letters or digits"
-msgstr "2 letras mayúsculas o dígitos"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2 a 6 letras mayúsculas o dígitos, como SNS"
 
@@ -1144,9 +1141,6 @@ msgstr "Una fase formal de aceptación / aprobación"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "Un cambio de financiamiento se aplica desde la próxima ejecución de facturación."
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "Un cambio de financiamiento se aplica desde la próxima ejecución de facturación. La facturación se detiene en el monto financiado."
@@ -3033,6 +3027,9 @@ msgstr "Los importes aplicados, los descuentos y las cancelaciones contables est
 
 msgid "Applies to"
 msgstr "Se aplica a"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "Se aplica a todos"
@@ -5082,9 +5079,6 @@ msgstr "CC"
 msgid "Ceiling"
 msgstr "Límite máximo"
 
-msgid "Ceiling per Hour"
-msgstr "Límite máximo por hora"
-
 msgid "Centralized Billing Address"
 msgstr "Dirección de Facturación Centralizada"
 
@@ -5353,11 +5347,17 @@ msgstr "Elija un proceso agrupable para ver las operaciones que pueden ejecutars
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Selecciona una pieza que {itemReadableId} reemplaza. La regla se guarda en esa pieza con {itemReadableId} como su sucesor."
 
 msgid "Choose a period"
 msgstr "Elegir un período"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Elija una fila a la izquierda para ver de dónde puede provenir su stock."
@@ -8014,8 +8014,8 @@ msgstr "Eliminar Atributo"
 msgid "Delete Category"
 msgstr "Eliminar Categoría"
 
-msgid "Delete ceiling"
-msgstr "Eliminar techo"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Eliminar Aviso de Cambio"
@@ -9481,9 +9481,6 @@ msgstr "Editar tipo de línea de orden de compra"
 msgid "Edit Question"
 msgstr "Editar Pregunta"
 
-msgid "Edit Rate"
-msgstr "Editar Tarifa"
-
 msgid "Edit Reason"
 msgstr "Editar Razón"
 
@@ -9681,6 +9678,10 @@ msgstr "Tipo de Empleado"
 
 msgid "Employee Types"
 msgstr "Tipos de Empleados"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "empleados"
@@ -10404,9 +10405,6 @@ msgstr "Expira en (opcional)"
 msgid "Expires in {0}d"
 msgstr "Vence en {0}d"
 
-msgid "Expires On"
-msgstr "Expira el"
-
 msgid "Expiring first"
 msgstr "Expirando primero"
 
@@ -10829,9 +10827,6 @@ msgstr "Error al guardar resultado"
 msgid "Failed to save slides"
 msgstr "Error al guardar diapositivas"
 
-msgid "Failed to save the ceiling"
-msgstr "No se pudo guardar el techo"
-
 msgid "Failed to save the change"
 msgstr "Error al guardar el cambio"
 
@@ -10840,12 +10835,6 @@ msgstr "Error al Guardar el Costo"
 
 msgid "Failed to save the fixed price"
 msgstr "No se pudo guardar el precio fijo"
-
-msgid "Failed to save the funding action"
-msgstr "No se pudo guardar la acción de financiación"
-
-msgid "Failed to save the rate"
-msgstr "No se pudo guardar la tasa"
 
 msgid "Failed to save the signature"
 msgstr "No se pudo guardar la firma"
@@ -11416,9 +11405,6 @@ msgstr "Cantidad financiada"
 msgid "Funded Cost"
 msgstr "Costo financiado"
 
-msgid "Funded Date"
-msgstr "Fecha de financiación"
-
 msgid "Funded Fee"
 msgstr "Tarifa financiada"
 
@@ -11430,9 +11416,6 @@ msgstr "Financiación"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "Acciones de acción de financiación"
 
 msgid "Funding Actions"
 msgstr "Acciones de financiación"
@@ -11958,8 +11941,8 @@ msgstr "Retener artículos"
 msgid "Hold the journal as a warning to fix."
 msgstr "Mantener el Asiento como advertencia para corregir."
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "Retener, liberar, dar de baja o repreciar artículos en Proyectos → Facturación."
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Día festivo"
@@ -13422,8 +13405,9 @@ msgstr "Categoría de mano de obra"
 msgid "Labor Category"
 msgstr "Categoría de mano de obra"
 
-msgid "Labor Category or Employee"
-msgstr "Categoría de mano de obra o empleado"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "Costos de mano de obra"
@@ -14793,8 +14777,8 @@ msgstr "Carga de modelo"
 msgid "Modification"
 msgstr "Modificación"
 
-msgid "Modification Number"
-msgstr "Número de modificación"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "Modificado"
@@ -19506,9 +19490,6 @@ msgstr "Tipo de cambio"
 
 msgid "rate {was} → {now}"
 msgstr "tarifa {was} → {now}"
-
-msgid "Rate actions"
-msgstr "Acciones de tarifa"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "Los grados que clasifican tus materiales"
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "La cuenta de grupo a la que se agrupa esta cuenta; determina su tipo, clase y colocación en el estado."
 
-msgid "The highest rate this line bills for the pool."
-msgstr "La tasa más alta que esta línea factura para el grupo."
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "El costo por hora de la mano de obra del operario en este centro de trabajo; combinado con horas de mano de obra registradas para cargar el costo de mano de obra al producto en proceso de la orden de trabajo."
 
@@ -24877,9 +24855,6 @@ msgstr "El conjunto predeterminado de tareas y requisitos de aprobación aplicad
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "El precio de una hora en esta línea."
 
 msgid "The principle:"
 msgstr "El principio:"

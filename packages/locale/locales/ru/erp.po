@@ -430,8 +430,8 @@ msgstr "{0}-летний"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} просмотрено"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/ч"
@@ -868,9 +868,6 @@ msgstr "Первое отрицательное значение запаса"
 msgid "1Y"
 msgstr "1 год"
 
-msgid "2 capital letters or digits"
-msgstr "2 прописные буквы или цифры"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2–6 прописных букв или цифр, например SNS"
 
@@ -1144,9 +1141,6 @@ msgstr "Формальная фаза принятия / подписания"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "Изменение финансирования применяется с следующего цикла выставления счётов."
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "Изменение финансирования применяется с следующего цикла выставления счётов. Выставление счётов останавливается на профинансированной сумме."
@@ -3033,6 +3027,9 @@ msgstr "Примененные суммы, скидки и списания ук
 
 msgid "Applies to"
 msgstr "Применяется к"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "Применяется ко всем"
@@ -5082,9 +5079,6 @@ msgstr "CC"
 msgid "Ceiling"
 msgstr "Лимит"
 
-msgid "Ceiling per Hour"
-msgstr "Лимит в час"
-
 msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
 
@@ -5353,11 +5347,17 @@ msgstr "Выберите пакетируемый процесс, чтобы у�
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
 
 msgid "Choose a period"
 msgstr "Выберите период"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Выберите строку слева, чтобы увидеть, откуда может поступить её запас."
@@ -8014,8 +8014,8 @@ msgstr "Удалить атрибут"
 msgid "Delete Category"
 msgstr "Удалить категорию"
 
-msgid "Delete ceiling"
-msgstr "Удалить потолок"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Удалить извещение об изменении"
@@ -9481,9 +9481,6 @@ msgstr "Изменить тип строки заказа поставщику"
 msgid "Edit Question"
 msgstr "Изменить Вопрос"
 
-msgid "Edit Rate"
-msgstr "Изменить ставку"
-
 msgid "Edit Reason"
 msgstr "Изменить Причину"
 
@@ -9681,6 +9678,10 @@ msgstr "Тип сотрудника"
 
 msgid "Employee Types"
 msgstr "Типы сотрудников"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "сотрудники"
@@ -10404,9 +10405,6 @@ msgstr "Истекает (опционально)"
 msgid "Expires in {0}d"
 msgstr "Истекает через {0}д"
 
-msgid "Expires On"
-msgstr "Срок действия"
-
 msgid "Expiring first"
 msgstr "Истекающие первыми"
 
@@ -10829,9 +10827,6 @@ msgstr "Не удалось сохранить результат"
 msgid "Failed to save slides"
 msgstr "Ошибка при сохранении слайдов"
 
-msgid "Failed to save the ceiling"
-msgstr "Не удалось сохранить потолок"
-
 msgid "Failed to save the change"
 msgstr "Не удалось сохранить изменение"
 
@@ -10840,12 +10835,6 @@ msgstr "Не удалось сохранить себестоимость"
 
 msgid "Failed to save the fixed price"
 msgstr "Не удалось сохранить фиксированную цену"
-
-msgid "Failed to save the funding action"
-msgstr "Не удалось сохранить действие финансирования"
-
-msgid "Failed to save the rate"
-msgstr "Не удалось сохранить ставку"
 
 msgid "Failed to save the signature"
 msgstr "Не удалось сохранить подпись"
@@ -11416,9 +11405,6 @@ msgstr "Финансируемая сумма"
 msgid "Funded Cost"
 msgstr "Финансируемая себестоимость"
 
-msgid "Funded Date"
-msgstr "Дата финансирования"
-
 msgid "Funded Fee"
 msgstr "Финансируемая комиссия"
 
@@ -11430,9 +11416,6 @@ msgstr "Финансирование"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "Действия финансирования"
 
 msgid "Funding Actions"
 msgstr "Действия финансирования"
@@ -11958,8 +11941,8 @@ msgstr "Удерживать номенклатуру"
 msgid "Hold the journal as a warning to fix."
 msgstr "Удержать операцию как предупреждение для исправления."
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "Удерживать, запустить в работу, списать или переоценить номенклатуру в Projects → Billing."
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "Праздник"
@@ -13422,8 +13405,9 @@ msgstr "Категория труда"
 msgid "Labor Category"
 msgstr "Категория труда"
 
-msgid "Labor Category or Employee"
-msgstr "Категория труда или Сотрудник"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "Стоимость труда"
@@ -14793,8 +14777,8 @@ msgstr "Загрузка модели"
 msgid "Modification"
 msgstr "Изменение"
 
-msgid "Modification Number"
-msgstr "Номер изменения"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "Изменено"
@@ -19506,9 +19490,6 @@ msgstr "Курс"
 
 msgid "rate {was} → {now}"
 msgstr "ставка {was} → {now}"
-
-msgid "Rate actions"
-msgstr "Действия по ставкам"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "Сорта, которые классифицируют ваши мат�
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "Групповой счет, на который свертывается этот счет, определяет его тип, класс и расположение в отчете."
 
-msgid "The highest rate this line bills for the pool."
-msgstr "Максимальная ставка, на которую выставляет счет эта строка в пуле."
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "Почасовая Себестоимость Труда оператора на этом Рабочем центре; в сочетании с зарегистрированными часами Труда начисляется Себестоимость Труда в Незавершенное производство Производственного заказа."
 
@@ -24877,9 +24855,6 @@ msgstr "Предварительно установленный пакет за�
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "Цена одного часа по этой строке."
 
 msgid "The principle:"
 msgstr "Принцип:"

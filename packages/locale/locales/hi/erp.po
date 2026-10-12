@@ -430,8 +430,8 @@ msgstr "{0}-वर्ष"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} देखा गया"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/घंटा"
@@ -868,9 +868,6 @@ msgstr "1st नकारात्मक स्टॉक"
 msgid "1Y"
 msgstr "1 वर्ष"
 
-msgid "2 capital letters or digits"
-msgstr "2 बड़े अक्षर या अंक"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2 से 6 बड़े अक्षर या अंक, जैसे SNS"
 
@@ -1144,9 +1141,6 @@ msgstr "एक औपचारिक स्वीकृति / साइन-ऑ
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "एक वित्त पोषण परिवर्तन अगले बिलिंग रन से लागू होता है।"
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "एक वित्त पोषण परिवर्तन अगले बिलिंग रन से लागू होता है। बिलिंग वित्त पोषित राशि पर रुक जाती है।"
@@ -3033,6 +3027,9 @@ msgstr "लागू की गई राशियाँ, छूट और ब�
 
 msgid "Applies to"
 msgstr "लागू होता है"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "सभी पर लागू होता है"
@@ -5082,9 +5079,6 @@ msgstr "CC"
 msgid "Ceiling"
 msgstr "छत"
 
-msgid "Ceiling per Hour"
-msgstr "प्रति घंटा छत"
-
 msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
 
@@ -5353,11 +5347,17 @@ msgstr "एक साथ चल सकने वाले ऑपरेशन द
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
 msgid "Choose a period"
 msgstr "एक अवधि चुनें"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
@@ -8014,8 +8014,8 @@ msgstr "विशेषता हटाएं"
 msgid "Delete Category"
 msgstr "श्रेणी हटाएं"
 
-msgid "Delete ceiling"
-msgstr "छत हटाएँ"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "परिवर्तन सूचना हटाएं"
@@ -9481,9 +9481,6 @@ msgstr "क्रय आदेश लाइन प्रकार संपा�
 msgid "Edit Question"
 msgstr "प्रश्न संपादित करें"
 
-msgid "Edit Rate"
-msgstr "संपादित करें दर"
-
 msgid "Edit Reason"
 msgstr "कारण संपादित करें"
 
@@ -9681,6 +9678,10 @@ msgstr "कर्मचारी प्रकार"
 
 msgid "Employee Types"
 msgstr "कर्मचारी प्रकार"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "कर्मचारियों"
@@ -10404,9 +10405,6 @@ msgstr "समाप्त होता है (वैकल्पिक)"
 msgid "Expires in {0}d"
 msgstr "{0}d में समाप्त होता है"
 
-msgid "Expires On"
-msgstr "समाप्त होता है"
-
 msgid "Expiring first"
 msgstr "पहले समाप्त होने वाला"
 
@@ -10829,9 +10827,6 @@ msgstr "परिणाम को सहेजने में विफल र�
 msgid "Failed to save slides"
 msgstr "स्लाइड्स को सहेजने में विफल"
 
-msgid "Failed to save the ceiling"
-msgstr "छत सहेजने में विफल"
-
 msgid "Failed to save the change"
 msgstr "परिवर्तन को सहेजने में विफल"
 
@@ -10840,12 +10835,6 @@ msgstr "लागत सहेजने में विफल"
 
 msgid "Failed to save the fixed price"
 msgstr "निश्चित मूल्य सहेजने में विफल"
-
-msgid "Failed to save the funding action"
-msgstr "फंडिंग कार्रवाई सहेजने में विफल"
-
-msgid "Failed to save the rate"
-msgstr "दर सहेजने में विफल"
 
 msgid "Failed to save the signature"
 msgstr "हस्ताक्षर सहेजने में विफल"
@@ -11416,9 +11405,6 @@ msgstr "फंडित राशि"
 msgid "Funded Cost"
 msgstr "फंडित लागत"
 
-msgid "Funded Date"
-msgstr "फंडित तारीख"
-
 msgid "Funded Fee"
 msgstr "फंडित शुल्क"
 
@@ -11430,9 +11416,6 @@ msgstr "धन सहायता"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "धन सहायता कार्रवाई"
 
 msgid "Funding Actions"
 msgstr "धन सहायता कार्रवाई"
@@ -11958,8 +11941,8 @@ msgstr "आइटम को रोकें"
 msgid "Hold the journal as a warning to fix."
 msgstr "जर्नल को ठीक करने के लिए एक चेतावनी के रूप में रखें।"
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "Projects → Billing में आइटम को रोकें, जारी करें, राइट ऑफ करें या फिर से मूल्य निर्धारण करें।"
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "छुट्टी"
@@ -13422,8 +13405,9 @@ msgstr "श्रम श्रेणी"
 msgid "Labor Category"
 msgstr "श्रम श्रेणी"
 
-msgid "Labor Category or Employee"
-msgstr "श्रम श्रेणी या कर्मचारी"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "श्रम लागत"
@@ -14793,8 +14777,8 @@ msgstr "मॉडल अपलोड"
 msgid "Modification"
 msgstr "संशोधन"
 
-msgid "Modification Number"
-msgstr "संशोधन संख्या"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "संशोधित"
@@ -19506,9 +19490,6 @@ msgstr "दर"
 
 msgid "rate {was} → {now}"
 msgstr "दर {was} → {now}"
-
-msgid "Rate actions"
-msgstr "दर क्रियाएं"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "वह ग्रेड जो आपकी सामग्री को 
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "वह समूह खाता जिसमें यह खाता जोड़ा जाता है; इसका प्रकार, वर्ग और विवरण प्लेसमेंट निर्धारित करता है।"
 
-msgid "The highest rate this line bills for the pool."
-msgstr "यह पंक्ति पूल के लिए जो सर्वोच्च दर बिल करती है।"
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "इस वर्क सेंटर पर ऑपरेटर श्रम की प्रति घंटा लागत; दर्ज श्रम घंटों के साथ संयुक्त होकर श्रम लागत को जॉब के WIP में चार्ज करने के लिए।"
 
@@ -24877,9 +24855,6 @@ msgstr "कार्यों और अनुमोदन आवश्यकत
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "इस पंक्ति पर एक घंटे की कीमत।"
 
 msgid "The principle:"
 msgstr "सिद्धांत:"

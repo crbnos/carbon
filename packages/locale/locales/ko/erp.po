@@ -430,8 +430,8 @@ msgstr "{0}년"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} 조회됨"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/h"
@@ -868,9 +868,6 @@ msgstr "첫 번째 음수 재고"
 msgid "1Y"
 msgstr "1년"
 
-msgid "2 capital letters or digits"
-msgstr "2개의 대문자 또는 숫자"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "SNS와 같은 2~6개의 대문자 또는 숫자"
 
@@ -1144,9 +1141,6 @@ msgstr "공식 승인/서명 단계"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "자금 변경은 다음 청구 실행부터 적용됩니다."
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "자금 변경은 다음 청구 실행부터 적용됩니다. 청구는 자금 조달 금액에서 중단됩니다."
@@ -3033,6 +3027,9 @@ msgstr "적용된 금액, 할인 금액 및 대손 처리 금액은 회사 기�
 
 msgid "Applies to"
 msgstr "적용 대상"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "전체에 적용"
@@ -5082,9 +5079,6 @@ msgstr "참조"
 msgid "Ceiling"
 msgstr "상한"
 
-msgid "Ceiling per Hour"
-msgstr "시간당 상한"
-
 msgid "Centralized Billing Address"
 msgstr "통합 청구 주소"
 
@@ -5353,11 +5347,17 @@ msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정�
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
 msgid "Choose a period"
 msgstr "기간 선택"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
@@ -8014,8 +8014,8 @@ msgstr "속성 삭제"
 msgid "Delete Category"
 msgstr "카테고리 삭제"
 
-msgid "Delete ceiling"
-msgstr "삭제 한도"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "변경 통지 삭제"
@@ -9481,9 +9481,6 @@ msgstr "발주서 라인 유형 편집"
 msgid "Edit Question"
 msgstr "질문 편집"
 
-msgid "Edit Rate"
-msgstr "요율 편집"
-
 msgid "Edit Reason"
 msgstr "이유 편집"
 
@@ -9681,6 +9678,10 @@ msgstr "직원 유형"
 
 msgid "Employee Types"
 msgstr "직원 유형"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "직원"
@@ -10404,9 +10405,6 @@ msgstr "만료일(선택)"
 msgid "Expires in {0}d"
 msgstr "{0}일 후 만료"
 
-msgid "Expires On"
-msgstr "만료일"
-
 msgid "Expiring first"
 msgstr "먼저 만료되는 순"
 
@@ -10829,9 +10827,6 @@ msgstr "결과 저장 실패"
 msgid "Failed to save slides"
 msgstr "슬라이드 저장 실패"
 
-msgid "Failed to save the ceiling"
-msgstr "상한 저장 실패"
-
 msgid "Failed to save the change"
 msgstr "변경 사항을 저장하지 못했습니다."
 
@@ -10840,12 +10835,6 @@ msgstr "원가 저장 실패"
 
 msgid "Failed to save the fixed price"
 msgstr "고정 가격 저장 실패"
-
-msgid "Failed to save the funding action"
-msgstr "자금 조성 조치 저장 실패"
-
-msgid "Failed to save the rate"
-msgstr "요금 저장 실패"
 
 msgid "Failed to save the signature"
 msgstr "서명 저장 실패"
@@ -11416,9 +11405,6 @@ msgstr "자금 조성된 금액"
 msgid "Funded Cost"
 msgstr "자금 조성된 원가"
 
-msgid "Funded Date"
-msgstr "자금 조성 날짜"
-
 msgid "Funded Fee"
 msgstr "자금 조성된 수수료"
 
@@ -11430,9 +11416,6 @@ msgstr "자금 조성"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "자금 조성 조치"
 
 msgid "Funding Actions"
 msgstr "자금 조성 조치"
@@ -11958,8 +11941,8 @@ msgstr "품목 보류"
 msgid "Hold the journal as a warning to fix."
 msgstr "수정할 경고로 전표를 보류하세요."
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "Projects → Billing에서 품목을 보류, 릴리스, 제거 또는 재가격 책정하세요."
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "휴일"
@@ -13422,8 +13405,9 @@ msgstr "노무 카테고리"
 msgid "Labor Category"
 msgstr "노무 카테고리"
 
-msgid "Labor Category or Employee"
-msgstr "노무 카테고리 또는 직원"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "노무 비용"
@@ -14793,8 +14777,8 @@ msgstr "모델 업로드"
 msgid "Modification"
 msgstr "수정"
 
-msgid "Modification Number"
-msgstr "수정 번호"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "수정됨"
@@ -19506,9 +19490,6 @@ msgstr "환율"
 
 msgid "rate {was} → {now}"
 msgstr "요율 {was} → {now}"
-
-msgid "Rate actions"
-msgstr "요율 조치"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "자재를 분류하는 등급"
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "이 계정이 합산되는 그룹 계정으로, 유형·분류·재무제표 표시 위치를 결정합니다."
 
-msgid "The highest rate this line bills for the pool."
-msgstr "이 라인이 풀에 대해 청구하는 최고 요금입니다."
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "이 작업장에서 작업자 노무의 시간당 원가이며, 기록된 노무 시간과 합산하여 작업 지시의 재공품에 노무 원가를 부과합니다."
 
@@ -24877,9 +24855,6 @@ msgstr "이 이슈에 적용되는 사전 정의된 작업 및 승인 요구사�
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "이 라인의 1시간 가격입니다."
 
 msgid "The principle:"
 msgstr "원칙:"

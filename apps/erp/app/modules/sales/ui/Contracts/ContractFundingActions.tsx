@@ -2,56 +2,41 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  Table,
-  Tbody,
-  Td,
-  Tfoot,
-  Th,
-  Thead,
-  Tr,
-  toast
+  LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuEllipsisVertical, LuPencil, LuPlus, LuTrash } from "react-icons/lu";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { LuPlus, LuTrash } from "react-icons/lu";
+import { Table } from "~/components";
 import {
-  DatePicker,
-  Hidden,
-  Input,
-  Number as NumberField,
-  Submit
-} from "~/components/Form";
+  EditableDate,
+  EditableNumber,
+  EditableText,
+  useStableEditableComponents
+} from "~/components/Editable";
 import { ConfirmDelete } from "~/components/Modals";
+import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
 import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter
 } from "~/hooks";
-import { customerContractFundingValidator } from "../../sales.models";
 import ContractMoney from "./ContractMoney";
 
 export type ContractFundingAction = {
@@ -64,10 +49,17 @@ export type ContractFundingAction = {
   expiresOn: string | null;
 };
 
+/** One grid row; a draft has no `id` until it saves. */
+type FundingRow = Omit<ContractFundingAction, "id"> & {
+  key: string;
+  id: string | null;
+};
+
 /**
- * The funding actions of a billing line: one row per contract modification
- * that funds it, under an ACRN. In DCAA mode their sums are the line's funded
- * cost and funded amount (cost + fee).
+ * The funding actions of a billing line as a grid: one row per contract
+ * modification that funds it, under an ACRN, with the totals in the
+ * footer. In DCAA mode their sums are the line's funded cost and funded
+ * amount (cost + fee).
  */
 export default function ContractFundingActions({
   lineId,
@@ -85,162 +77,287 @@ export default function ContractFundingActions({
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
-  const [editing, setEditing] = useState<ContractFundingAction | "new" | null>(
-    null
-  );
-  const [deleting, setDeleting] = useState<ContractFundingAction | null>(null);
+  const today = useCompanyToday();
+  const decimals = useCurrencyDecimals(currencyCode);
+  const save = useCellSave();
+  const [drafts, setDrafts] = useState<FundingRow[]>([]);
+  const draftCount = useRef(0);
+  const [deleting, setDeleting] = useState<FundingRow | null>(null);
 
+  const rows = useMemo<FundingRow[]>(
+    () => [
+      ...actions.map((row) => ({
+        ...row,
+        key: row.id,
+        fundedCost: Number(row.fundedCost),
+        fundedFee: Number(row.fundedFee)
+      })),
+      ...drafts
+    ],
+    [actions, drafts]
+  );
   const totalCost = actions.reduce(
     (sum, row) => sum + Number(row.fundedCost),
     0
   );
   const totalFee = actions.reduce((sum, row) => sum + Number(row.fundedFee), 0);
 
+  // A cell posts the whole funding action with the change. A draft saves
+  // once it has a modification number and an ACRN.
+  const onCellEdit = useCallback(
+    async (key: string, value: unknown, row: FundingRow) => {
+      const next: FundingRow = { ...row };
+      const text = value === null || value === undefined ? "" : String(value);
+      if (key === "modificationNumber") next.modificationNumber = text;
+      if (key === "acrn") next.acrn = text.trim().toUpperCase();
+      if (key === "fundedDate") next.fundedDate = text;
+      if (key === "expiresOn") next.expiresOn = text || null;
+      if (key === "fundedCost" || key === "fundedFee") {
+        next[key] = text === "" ? 0 : Number(text);
+      }
+      if (next.id === null && (!next.modificationNumber || !next.acrn)) {
+        setDrafts((previous) =>
+          previous.map((draft) => (draft.key === row.key ? next : draft))
+        );
+        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
+      }
+      const result = await save(action, {
+        intent: "upsert",
+        id: next.id ?? "",
+        customerContractLineId: lineId,
+        modificationNumber: next.modificationNumber,
+        fundedDate: next.fundedDate,
+        acrn: next.acrn,
+        fundedCost: String(next.fundedCost),
+        fundedFee: String(next.fundedFee),
+        expiresOn: next.expiresOn ?? ""
+      });
+      if (next.id === null && !result.error) {
+        setDrafts((previous) => previous.filter((d) => d.key !== row.key));
+      }
+      return result;
+    },
+    [action, lineId, save]
+  );
+
+  const editableComponents = useStableEditableComponents(
+    (latest) => {
+      const edit = (key: string, value: unknown, row: FundingRow) =>
+        latest.current.onCellEdit(key, value, row);
+      const money = EditableNumber<FundingRow>(
+        edit,
+        {
+          minValue: 0,
+          formatOptions: INPUT_FORMAT.money(currencyCode, decimals),
+          step: INPUT_STEP.money(decimals)
+        },
+        { inputClassName: "text-right" }
+      );
+      return {
+        modificationNumber: EditableText<FundingRow>(edit),
+        fundedDate: EditableDate<FundingRow>(edit, { label: t`Funded` }),
+        acrn: EditableText<FundingRow>(edit),
+        expiresOn: EditableDate<FundingRow>(edit, {
+          label: t`Expires`,
+          clearable: true
+        }),
+        fundedCost: money,
+        fundedFee: money
+      };
+    },
+    { onCellEdit }
+  );
+
+  const columns = useMemo<ColumnDef<FundingRow>[]>(
+    () => [
+      {
+        accessorKey: "modificationNumber",
+        header: t`Modification`,
+        size: 160,
+        cell: ({ row }) =>
+          row.original.modificationNumber ? (
+            <span className="block truncate">
+              {row.original.modificationNumber}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              <Trans>Modification number</Trans>
+            </span>
+          ),
+        footer: () => (
+          <span className="font-medium">
+            <Trans>Total</Trans>
+          </span>
+        )
+      },
+      {
+        accessorKey: "fundedDate",
+        header: t`Funded`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatDate(row.original.fundedDate)}
+          </span>
+        )
+      },
+      {
+        accessorKey: "acrn",
+        header: () => (
+          <LabelWithHelp termId="acrn" variant="inline">
+            <Trans>ACRN</Trans>
+          </LabelWithHelp>
+        ),
+        size: 96,
+        cell: ({ row }) =>
+          row.original.acrn ? (
+            <span className="tabular-nums">{row.original.acrn}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+      },
+      {
+        accessorKey: "expiresOn",
+        header: t`Expires`,
+        cell: ({ row }) =>
+          row.original.expiresOn ? (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatDate(row.original.expiresOn)}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+      },
+      {
+        accessorKey: "fundedCost",
+        header: t`Funded Cost`,
+        cell: ({ row }) => (
+          <span className="block text-right">
+            <ContractMoney
+              value={row.original.fundedCost}
+              currencyCode={currencyCode}
+            />
+          </span>
+        ),
+        footer: () => (
+          <span className="block text-right font-medium">
+            <ContractMoney value={totalCost} currencyCode={currencyCode} />
+          </span>
+        )
+      },
+      {
+        accessorKey: "fundedFee",
+        header: t`Funded Fee`,
+        cell: ({ row }) => (
+          <span className="block text-right">
+            <ContractMoney
+              value={row.original.fundedFee}
+              currencyCode={currencyCode}
+            />
+          </span>
+        ),
+        footer: () => (
+          <span className="block text-right font-medium">
+            <ContractMoney value={totalFee} currencyCode={currencyCode} />
+          </span>
+        )
+      }
+    ],
+    [t, formatDate, currencyCode, totalCost, totalFee]
+  );
+
+  const renderMenu = useCallback(
+    (row: FundingRow) => (
+      <MenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        disabled={isDisabled}
+        onClick={() =>
+          row.id === null
+            ? setDrafts((previous) => previous.filter((d) => d.key !== row.key))
+            : setDeleting(row)
+        }
+      >
+        <MenuIcon icon={<LuTrash />} />
+        <Trans>Delete Funding</Trans>
+      </MenuItem>
+    ),
+    [isDisabled]
+  );
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
+    [columns, renderMenu, t]
+  );
+
   return (
     <>
       <Card>
         <CardHeader>
           <CardTitle>
-            <Trans>Funding Actions</Trans>
+            <LabelWithHelp termId="funding-action" variant="inline">
+              <Trans>Funding Actions</Trans>
+            </LabelWithHelp>
           </CardTitle>
           <CardDescription>
             <Trans>
               Each contract modification that funds this line, by ACRN.
             </Trans>
           </CardDescription>
-          <CardAction>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPlus />}
-              isDisabled={isDisabled}
-              onClick={() => setEditing("new")}
-            >
-              <Trans>Add Funding</Trans>
-            </Button>
-          </CardAction>
         </CardHeader>
-        <CardContent>
-          {actions.length === 0 ? (
+        <CardContent className="flex flex-col gap-2">
+          {rows.length > 0 ? (
+            <div
+              className="w-full overflow-hidden rounded-lg border border-border"
+              style={{ height: setupGridHeight(rows.length, 49) }}
+            >
+              <Table<FundingRow>
+                compact
+                columns={gridColumns}
+                data={rows}
+                count={rows.length}
+                editableComponents={editableComponents}
+                withInlineEditing={!isDisabled}
+                forceEditMode={!isDisabled}
+                withPagination={false}
+                withSearch={false}
+                withSimpleSorting={false}
+                withSidebarTrigger={false}
+                withColumnOrdering={false}
+                withCsvExport={false}
+                sort={null}
+              />
+            </div>
+          ) : (
             <p className="text-sm text-muted-foreground">
               <Trans>No funding actions yet.</Trans>
             </p>
-          ) : (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th className="w-full">
-                    <Trans>Modification</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Funded</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>ACRN</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Funded Cost</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Funded Fee</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Expires</Trans>
-                  </Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {actions.map((row) => (
-                  <Tr key={row.id}>
-                    <Td>
-                      <span className="truncate">{row.modificationNumber}</span>
-                    </Td>
-                    <Td className="whitespace-nowrap tabular-nums">
-                      {formatDate(row.fundedDate)}
-                    </Td>
-                    <Td className="whitespace-nowrap font-mono text-xs">
-                      {row.acrn}
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <ContractMoney
-                        value={Number(row.fundedCost)}
-                        currencyCode={currencyCode}
-                      />
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <ContractMoney
-                        value={Number(row.fundedFee)}
-                        currencyCode={currencyCode}
-                      />
-                    </Td>
-                    <Td className="whitespace-nowrap tabular-nums">
-                      {row.expiresOn ? formatDate(row.expiresOn) : "—"}
-                    </Td>
-                    <Td>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            aria-label={t`Funding action actions`}
-                            icon={<LuEllipsisVertical />}
-                            variant="ghost"
-                            size="sm"
-                            isDisabled={isDisabled}
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditing(row)}>
-                            <DropdownMenuIcon icon={<LuPencil />} />
-                            <Trans>Edit Funding</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            destructive
-                            onClick={() => setDeleting(row)}
-                          >
-                            <DropdownMenuIcon icon={<LuTrash />} />
-                            <Trans>Delete Funding</Trans>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-              <Tfoot>
-                <Tr className="font-medium">
-                  <Td colSpan={3}>
-                    <Trans>Total</Trans>
-                  </Td>
-                  <Td className="text-right whitespace-nowrap">
-                    <ContractMoney
-                      value={totalCost}
-                      currencyCode={currencyCode}
-                    />
-                  </Td>
-                  <Td className="text-right whitespace-nowrap">
-                    <ContractMoney
-                      value={totalFee}
-                      currencyCode={currencyCode}
-                    />
-                  </Td>
-                  <Td colSpan={2} />
-                </Tr>
-              </Tfoot>
-            </Table>
           )}
+          <Button
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            className="self-start"
+            isDisabled={isDisabled}
+            onClick={() => {
+              draftCount.current += 1;
+              setDrafts((previous) => [
+                ...previous,
+                {
+                  key: `draft-${draftCount.current}`,
+                  id: null,
+                  modificationNumber: "",
+                  fundedDate: today,
+                  acrn: "",
+                  fundedCost: 0,
+                  fundedFee: 0,
+                  expiresOn: null
+                }
+              ]);
+            }}
+          >
+            <Trans>Add Funding</Trans>
+          </Button>
         </CardContent>
       </Card>
 
-      {editing && (
-        <FundingActionModal
-          key={editing === "new" ? "new" : editing.id}
-          lineId={lineId}
-          row={editing === "new" ? null : editing}
-          currencyCode={currencyCode}
-          action={action}
-          onClose={() => setEditing(null)}
-        />
-      )}
-      {deleting && (
+      {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
           isOpen
@@ -252,96 +369,5 @@ export default function ContractFundingActions({
         />
       )}
     </>
-  );
-}
-
-/** One funding action: a modification number, an ACRN and its amounts. */
-function FundingActionModal({
-  lineId,
-  row,
-  currencyCode,
-  action,
-  onClose
-}: {
-  lineId: string;
-  row: ContractFundingAction | null;
-  currencyCode: string;
-  action: string;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const today = useCompanyToday();
-  const decimals = useCurrencyDecimals(currencyCode);
-  const money = {
-    minValue: 0,
-    step: INPUT_STEP.money(decimals),
-    formatOptions: INPUT_FORMAT.money(currencyCode, decimals)
-  };
-  const fetcher = useAction<{ error?: { message: string } | null }>({
-    onSuccess: () => onClose(),
-    onError: (data) =>
-      toast.error(data?.error?.message ?? t`Failed to save the funding action`)
-  });
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          validator={customerContractFundingValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            id: row?.id,
-            customerContractLineId: lineId,
-            modificationNumber: row?.modificationNumber ?? "",
-            fundedDate: row?.fundedDate ?? today,
-            acrn: row?.acrn ?? "",
-            fundedCost: row ? Number(row.fundedCost) : 0,
-            fundedFee: row ? Number(row.fundedFee) : 0,
-            expiresOn: row?.expiresOn ?? undefined
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {row ? <Trans>Edit Funding</Trans> : <Trans>Add Funding</Trans>}
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>A funding change applies from the next billing run.</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="upsert" />
-            <Hidden name="id" />
-            <Hidden name="customerContractLineId" />
-            <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 md:grid-cols-2">
-              <Input name="modificationNumber" label={t`Modification Number`} />
-              <DatePicker name="fundedDate" label={t`Funded Date`} />
-              <Input
-                name="acrn"
-                label={t`ACRN`}
-                helperText={t`2 capital letters or digits`}
-                maxLength={2}
-              />
-              <DatePicker name="expiresOn" label={t`Expires On`} />
-              <NumberField
-                name="fundedCost"
-                label={t`Funded Cost`}
-                {...money}
-              />
-              <NumberField name="fundedFee" label={t`Funded Fee`} {...money} />
-            </div>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
   );
 }

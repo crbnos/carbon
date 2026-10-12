@@ -13,7 +13,13 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
   HStack,
+  IconButton,
   Modal,
   ModalBody,
   ModalContent,
@@ -33,11 +39,17 @@ import {
 import { BILLABLE_REASON_FUNDING_LIMIT, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuPencil, LuRefreshCw } from "react-icons/lu";
+import {
+  LuEllipsisVertical,
+  LuFileText,
+  LuPencil,
+  LuRefreshCw
+} from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { Hidden, Submit } from "~/components/Form";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import type { ProjectCostType } from "~/modules/projects";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { BillableItemStatus } from "~/modules/service/ui/ServiceStatus";
 import { path } from "~/utils/path";
 import { contractLineFundingValidator } from "../../sales.models";
@@ -73,8 +85,9 @@ export type ContractLineBillableItem = {
 /**
  * The billing of one Time & Materials or Cost Plus line: its funding, its
  * bill rates (Time & Materials) and its billable items, with Generate
- * Billable Items for work posted before the line or by the job SQL. Items
- * are reviewed (hold, release, write off, price) in Projects → Billing.
+ * Billable Items for work posted before the line or by the job SQL (the one
+ * primary action; Line Details and Edit Funding are in the ⋯ menu). Items
+ * are reviewed (hold, release, write off, price) in Projects → Approvals.
  */
 export default function ContractLineBilling({
   contractId,
@@ -109,6 +122,7 @@ export default function ContractLineBilling({
   const billingLabels = useBillingMethodLabels();
   const generateFetcher = useFetcher();
   const [editingFunding, setEditingFunding] = useState(false);
+  const isGovernment = useGovernmentContracting();
   const isTimeAndMaterials = line.billingMethod === "Time & Materials";
   const title = line.description || line.item?.name || line.itemId;
 
@@ -122,18 +136,12 @@ export default function ContractLineBilling({
           </span>
         </VStack>
         <HStack className="shrink-0">
-          <Button variant="secondary" asChild>
-            <Link to={path.to.contractLine(contractId, line.id)}>
-              <Trans>Line Details</Trans>
-            </Link>
-          </Button>
           <generateFetcher.Form
             method="post"
             action={path.to.contractLineGenerate(contractId, line.id)}
           >
             <Button
               type="submit"
-              variant="secondary"
               leftIcon={<LuRefreshCw />}
               isLoading={generateFetcher.state !== "idle"}
               isDisabled={!canUpdate || generateFetcher.state !== "idle"}
@@ -141,6 +149,30 @@ export default function ContractLineBilling({
               <Trans>Generate Billable Items</Trans>
             </Button>
           </generateFetcher.Form>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More options`}
+                icon={<LuEllipsisVertical />}
+                variant="secondary"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link to={path.to.contractLine(contractId, line.id)}>
+                  <DropdownMenuIcon icon={<LuFileText />} />
+                  <Trans>Line Details</Trans>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canUpdate}
+                onClick={() => setEditingFunding(true)}
+              >
+                <DropdownMenuIcon icon={<LuPencil />} />
+                <Trans>Edit Funding</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </HStack>
       </HStack>
 
@@ -149,16 +181,6 @@ export default function ContractLineBilling({
           <CardTitle>
             <Trans>Funding</Trans>
           </CardTitle>
-          <CardAction>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPencil />}
-              isDisabled={!canUpdate}
-              onClick={() => setEditingFunding(true)}
-            >
-              <Trans>Edit Funding</Trans>
-            </Button>
-          </CardAction>
         </CardHeader>
         <CardContent>
           <FundingBar
@@ -169,7 +191,8 @@ export default function ContractLineBilling({
         </CardContent>
       </Card>
 
-      {(fundedByActions || fundingActions.length > 0) && (
+      {/* Layer 5: funding actions are government contracting. */}
+      {(isGovernment || fundedByActions || fundingActions.length > 0) && (
         <ContractFundingActions
           lineId={line.id}
           actions={fundingActions}
@@ -248,12 +271,13 @@ function ContractLineBillableItems({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Hold, release, write off or reprice items in Projects → Billing.
+            Hold, release, write off or reprice items in Projects → Approvals,
+            on the Billing tab.
           </Trans>
         </CardDescription>
         <CardAction>
           <Button variant="secondary" asChild>
-            <Link to={path.to.projectsBilling}>
+            <Link to={`${path.to.projectTimesheetApprovals}?tab=billing`}>
               <Trans>Review Items</Trans>
             </Link>
           </Button>

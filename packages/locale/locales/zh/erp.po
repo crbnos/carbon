@@ -430,8 +430,8 @@ msgstr "{0} 年"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1} 已查看"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/小时"
@@ -868,9 +868,6 @@ msgstr "首次出现负库存"
 msgid "1Y"
 msgstr "1年"
 
-msgid "2 capital letters or digits"
-msgstr "2 个大写字母或数字"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "2 到 6 个大写字母或数字，例如 SNS"
 
@@ -1144,9 +1141,6 @@ msgstr "正式验收/签署阶段"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "资金变化从下一次计费运行开始生效。"
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "资金变化从下一次计费运行开始生效。计费在资金额处停止。"
@@ -3033,6 +3027,9 @@ msgstr "已应用金额、折扣和核销金额均以公司基本货币（{baseC
 
 msgid "Applies to"
 msgstr "适用于"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "适用于全部"
@@ -5082,9 +5079,6 @@ msgstr "抄送"
 msgid "Ceiling"
 msgstr "上限"
 
-msgid "Ceiling per Hour"
-msgstr "每小时上限"
-
 msgid "Centralized Billing Address"
 msgstr "集中式账单地址"
 
@@ -5353,11 +5347,17 @@ msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
 msgid "Choose a period"
 msgstr "选择期间"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "选择左侧的行以查看其库存可能来自何处。"
@@ -8014,8 +8014,8 @@ msgstr "删除属性"
 msgid "Delete Category"
 msgstr "删除分类"
 
-msgid "Delete ceiling"
-msgstr "删除上限"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "删除变更通知"
@@ -9481,9 +9481,6 @@ msgstr "编辑采购订单行类型"
 msgid "Edit Question"
 msgstr "编辑问题"
 
-msgid "Edit Rate"
-msgstr "编辑费率"
-
 msgid "Edit Reason"
 msgstr "编辑原因"
 
@@ -9681,6 +9678,10 @@ msgstr "员工类型"
 
 msgid "Employee Types"
 msgstr "员工类型"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "员工"
@@ -10404,9 +10405,6 @@ msgstr "过期时间（可选）"
 msgid "Expires in {0}d"
 msgstr "在 {0}d 后过期"
 
-msgid "Expires On"
-msgstr "过期于"
-
 msgid "Expiring first"
 msgstr "先到期"
 
@@ -10829,9 +10827,6 @@ msgstr "未能保存结果"
 msgid "Failed to save slides"
 msgstr "保存幻灯片失败"
 
-msgid "Failed to save the ceiling"
-msgstr "保存上限失败"
-
 msgid "Failed to save the change"
 msgstr "保存更改失败"
 
@@ -10840,12 +10835,6 @@ msgstr "保存成本失败"
 
 msgid "Failed to save the fixed price"
 msgstr "保存固定价格失败"
-
-msgid "Failed to save the funding action"
-msgstr "保存资金操作失败"
-
-msgid "Failed to save the rate"
-msgstr "保存费率失败"
 
 msgid "Failed to save the signature"
 msgstr "保存签名失败"
@@ -11416,9 +11405,6 @@ msgstr "已资助金额"
 msgid "Funded Cost"
 msgstr "已资助成本"
 
-msgid "Funded Date"
-msgstr "资助日期"
-
 msgid "Funded Fee"
 msgstr "已资助费用"
 
@@ -11430,9 +11416,6 @@ msgstr "资金"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "资金操作"
 
 msgid "Funding Actions"
 msgstr "资金操作"
@@ -11958,8 +11941,8 @@ msgstr "保留物料"
 msgid "Hold the journal as a warning to fix."
 msgstr "保留凭证作为需要修正的警告"
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "在项目 → 计费中保留、下达、注销或重新定价物料。"
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "假期"
@@ -13422,8 +13405,9 @@ msgstr "人工分类"
 msgid "Labor Category"
 msgstr "人工分类"
 
-msgid "Labor Category or Employee"
-msgstr "人工分类或员工"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "人工成本"
@@ -14793,8 +14777,8 @@ msgstr "模型上传"
 msgid "Modification"
 msgstr "修改"
 
-msgid "Modification Number"
-msgstr "修改编号"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "已修改"
@@ -19506,9 +19490,6 @@ msgstr "汇率"
 
 msgid "rate {was} → {now}"
 msgstr "费率 {was} → {now}"
-
-msgid "Rate actions"
-msgstr "费率操作"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "对原材料进行分类的等级"
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "该账户汇总到的集团账户；确定其类型、级别和报表中的位置。"
 
-msgid "The highest rate this line bills for the pool."
-msgstr "此行为该池计费的最高费率。"
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "此工作中心的操作员人工时薪；与记录的人工小时数相结合，将人工成本计入工单的在制品。"
 
@@ -24877,9 +24855,6 @@ msgstr "应用于此问题的预设任务和审批要求捆绑；设置时覆盖
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "此行一小时的价格。"
 
 msgid "The principle:"
 msgstr "原则："

@@ -430,8 +430,8 @@ msgstr "{0} 年"
 msgid "{0}/{1} viewed"
 msgstr "{0}/{1}表示"
 
-#. placeholder {0}: perHour.format(ceiling.ceilingRate)
 #. placeholder {0}: perHour.format(rate.ytdRate)
+#. placeholder {0}: perHour.format(row.original.ceilingRate)
 #. placeholder {0}: perHourFormatter.format(value)
 msgid "{0}/h"
 msgstr "{0}/時間"
@@ -868,9 +868,6 @@ msgstr "初回マイナス在庫"
 msgid "1Y"
 msgstr "1年"
 
-msgid "2 capital letters or digits"
-msgstr "2文字の大文字または数字"
-
 msgid "2 to 6 capital letters or digits, such as SNS"
 msgstr "SNSなどの2～6文字の大文字または数字"
 
@@ -1144,9 +1141,6 @@ msgstr "正式な承認/サインオフフェーズ"
 
 msgid "A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan."
 msgstr ""
-
-msgid "A funding change applies from the next billing run."
-msgstr "資金の変更は次の請求実行から適用されます。"
 
 msgid "A funding change applies from the next billing run. Billing stops at the funded amount."
 msgstr "資金の変更は次の請求実行から適用されます。請求は資金額で停止します。"
@@ -3033,6 +3027,9 @@ msgstr "適用済み金額、値引額、償却額は会社の基本通貨（{ba
 
 msgid "Applies to"
 msgstr "適用対象"
+
+msgid "Applies To"
+msgstr ""
 
 msgid "Applies to all"
 msgstr "すべてに適用"
@@ -5082,9 +5079,6 @@ msgstr "CC"
 msgid "Ceiling"
 msgstr "上限"
 
-msgid "Ceiling per Hour"
-msgstr "時間あたりの上限"
-
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
 
@@ -5353,11 +5347,17 @@ msgstr "バッチ可能な工法を選択して、一緒に実行できる工程
 msgid "Choose a labor category"
 msgstr ""
 
+msgid "Choose a labor category or an employee"
+msgstr ""
+
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
 msgid "Choose a period"
 msgstr "期間を選択"
+
+msgid "Choose a pool"
+msgstr ""
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
@@ -8014,8 +8014,8 @@ msgstr "属性を削除"
 msgid "Delete Category"
 msgstr "カテゴリを削除"
 
-msgid "Delete ceiling"
-msgstr "削除上限"
+msgid "Delete Ceiling"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "変更通知を削除"
@@ -9481,9 +9481,6 @@ msgstr "発注書明細タイプを編集"
 msgid "Edit Question"
 msgstr "質問を編集"
 
-msgid "Edit Rate"
-msgstr "レート編集"
-
 msgid "Edit Reason"
 msgstr "理由を編集"
 
@@ -9681,6 +9678,10 @@ msgstr "従業員タイプ"
 
 msgid "Employee Types"
 msgstr "従業員タイプ"
+
+#. placeholder {0}: person.name
+msgid "Employee: {0}"
+msgstr ""
 
 msgid "employees"
 msgstr "従業員"
@@ -10404,9 +10405,6 @@ msgstr "有効期限（オプション）"
 msgid "Expires in {0}d"
 msgstr "{0}d 後に有効期限切れ"
 
-msgid "Expires On"
-msgstr "有効期限"
-
 msgid "Expiring first"
 msgstr "最初に期限切れ"
 
@@ -10829,9 +10827,6 @@ msgstr "結果の保存に失敗しました"
 msgid "Failed to save slides"
 msgstr "スライドの保存に失敗しました"
 
-msgid "Failed to save the ceiling"
-msgstr "上限の保存に失敗しました"
-
 msgid "Failed to save the change"
 msgstr "変更の保存に失敗しました。"
 
@@ -10840,12 +10835,6 @@ msgstr "原価の保存に失敗しました"
 
 msgid "Failed to save the fixed price"
 msgstr "固定価格の保存に失敗しました"
-
-msgid "Failed to save the funding action"
-msgstr "資金調達措置の保存に失敗しました"
-
-msgid "Failed to save the rate"
-msgstr "料金の保存に失敗しました"
 
 msgid "Failed to save the signature"
 msgstr "署名の保存に失敗しました"
@@ -11416,9 +11405,6 @@ msgstr "資金供給額"
 msgid "Funded Cost"
 msgstr "資金供給原価"
 
-msgid "Funded Date"
-msgstr "資金供給日"
-
 msgid "Funded Fee"
 msgstr "資金供給手数料"
 
@@ -11430,9 +11416,6 @@ msgstr "資金調達"
 
 msgid "Funding action"
 msgstr ""
-
-msgid "Funding action actions"
-msgstr "資金調達措置"
 
 msgid "Funding Actions"
 msgstr "資金調達措置"
@@ -11958,8 +11941,8 @@ msgstr "品目を保留"
 msgid "Hold the journal as a warning to fix."
 msgstr "修正が必要な警告として仕訳を保留"
 
-msgid "Hold, release, write off or reprice items in Projects → Billing."
-msgstr "プロジェクト→請求で品目を保留、リリース、償却、または価格を変更します。"
+msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgstr ""
 
 msgid "Holiday"
 msgstr "祝日"
@@ -13422,8 +13405,9 @@ msgstr "労務カテゴリ"
 msgid "Labor Category"
 msgstr "労務カテゴリ"
 
-msgid "Labor Category or Employee"
-msgstr "労務カテゴリまたは従業員"
+#. placeholder {0}: category.label
+msgid "Labor category: {0}"
+msgstr ""
 
 msgid "Labor Costs"
 msgstr "労務費"
@@ -14793,8 +14777,8 @@ msgstr "モデルアップロード"
 msgid "Modification"
 msgstr "修正"
 
-msgid "Modification Number"
-msgstr "修正番号"
+msgid "Modification number"
+msgstr ""
 
 msgid "Modified"
 msgstr "修正済み"
@@ -19506,9 +19490,6 @@ msgstr "レート"
 
 msgid "rate {was} → {now}"
 msgstr "料金 {was} → {now}"
-
-msgid "Rate actions"
-msgstr "料率アクション"
 
 msgid "Rate ceiling"
 msgstr ""
@@ -24551,9 +24532,6 @@ msgstr "あなたの材料を分類するグレード"
 msgid "The group account this account rolls up to; determines its type, class, and statement placement."
 msgstr "このアカウントがロールアップされるグループアカウント。種類、クラス、および明細書の配置を決定します。"
 
-msgid "The highest rate this line bills for the pool."
-msgstr "このラインがプールに請求できる最高レート。"
-
 msgid "The hourly cost of operator labor on this work center; combined with logged labor hours to charge labor cost into a job's WIP."
 msgstr "この作業区の作業者労務の時間原価。ログ記録された労務時間と組み合わせて、製造指図の仕掛品に労務原価を転記します。"
 
@@ -24877,9 +24855,6 @@ msgstr "このイシューに適用されるタスクと承認要件のプリセ
 
 msgid "The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day."
 msgstr ""
-
-msgid "The price of one hour on this line."
-msgstr "このラインの1時間の価格。"
 
 msgid "The principle:"
 msgstr "原則:"

@@ -2,48 +2,36 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import {
-  contractRateCeilingValidator,
-  type IndirectBaseType
-} from "@carbon/ee/indirect-rates";
-import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
+import type { IndirectBaseType } from "@carbon/ee/indirect-rates";
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  toast,
-  VStack
+  LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { LuPercent, LuPlus, LuTrash } from "react-icons/lu";
+import { Table } from "~/components";
 import {
-  Hidden,
-  Number as NumberField,
-  SelectControlled,
-  Submit
-} from "~/components/Form";
+  EditableList,
+  EditableNumber,
+  useStableEditableComponents
+} from "~/components/Editable";
 import { ConfirmDelete } from "~/components/Modals";
+import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import {
   useCurrencyDecimals,
@@ -76,6 +64,15 @@ type ContractRateCeilingsProps = {
   isDisabled: boolean;
 };
 
+/** One grid row; a draft has no `id` until it names a pool. */
+type CeilingRow = {
+  key: string;
+  id: string | null;
+  indirectPoolId: string;
+  ceilingRate: number;
+  sequence: number;
+};
+
 /**
  * The indirect rate ceilings of a Cost Plus line. Burden bills at the lower
  * of the billing rate and the line's ceiling for the pool. A company without
@@ -104,6 +101,7 @@ export default function ContractRateCeilings(props: ContractRateCeilingsProps) {
   return <RateCeilingsCard {...props} />;
 }
 
+/** The ceilings as a grid: the pool and its ceiling edit in place. */
 function RateCeilingsCard({
   lineId,
   ceilings,
@@ -114,15 +112,178 @@ function RateCeilingsCard({
   const { t } = useLingui();
   const percent = usePercentFormatter();
   const perHour = useCurrencyFormatter({ rate: true });
-  const [adding, setAdding] = useState(false);
-  const [deleting, setDeleting] = useState<ContractRateCeiling | null>(null);
+  const { company } = useUser();
+  const currency = company?.baseCurrencyCode ?? "USD";
+  const decimals = useCurrencyDecimals(currency);
+  const save = useCellSave();
+  const [drafts, setDrafts] = useState<CeilingRow[]>([]);
+  const draftCount = useRef(0);
+  const [deleting, setDeleting] = useState<CeilingRow | null>(null);
 
-  const baseTypeOf = new Map(pools.map((pool) => [pool.id, pool.baseType]));
-  const ceilingPoolIds = new Set(ceilings.map((c) => c.indirectPoolId));
-  const availablePools = pools.filter((pool) => !ceilingPoolIds.has(pool.id));
-  const sorted = [...ceilings].sort(
-    (a, b) => (a.indirectPool?.sequence ?? 0) - (b.indirectPool?.sequence ?? 0)
+  const poolById = useMemo(
+    () => new Map(pools.map((pool) => [pool.id, pool])),
+    [pools]
   );
+  const rows = useMemo<CeilingRow[]>(
+    () => [
+      ...[...ceilings]
+        .sort(
+          (a, b) =>
+            (a.indirectPool?.sequence ?? 0) - (b.indirectPool?.sequence ?? 0)
+        )
+        .map((ceiling) => ({
+          key: ceiling.id,
+          id: ceiling.id,
+          indirectPoolId: ceiling.indirectPoolId,
+          ceilingRate: Number(ceiling.ceilingRate),
+          sequence: ceiling.indirectPool?.sequence ?? 0
+        })),
+      ...drafts
+    ],
+    [ceilings, drafts]
+  );
+  const isPerHour = useCallback(
+    (row: CeilingRow) =>
+      poolById.get(row.indirectPoolId)?.baseType === "Direct Labor Hours",
+    [poolById]
+  );
+
+  // A cell posts the whole ceiling. A draft saves once it names a pool; a
+  // pool that already has a ceiling is refused by the route.
+  const onCellEdit = useCallback(
+    async (key: string, value: unknown, row: CeilingRow) => {
+      const next: CeilingRow = { ...row };
+      if (key === "indirectPoolId") next.indirectPoolId = String(value ?? "");
+      if (key === "ceilingRate") {
+        next.ceilingRate =
+          value === null || value === undefined || value === ""
+            ? 0
+            : Number(value);
+      }
+      if (next.id === null && !next.indirectPoolId) {
+        setDrafts((previous) =>
+          previous.map((draft) => (draft.key === row.key ? next : draft))
+        );
+        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
+      }
+      const result = await save(action, {
+        intent: "ceiling-upsert",
+        id: next.id ?? "",
+        customerContractLineId: lineId,
+        indirectPoolId: next.indirectPoolId,
+        ceilingRate: String(next.ceilingRate)
+      });
+      if (next.id === null && !result.error) {
+        setDrafts((previous) => previous.filter((d) => d.key !== row.key));
+      }
+      return result;
+    },
+    [action, lineId, save]
+  );
+
+  const stable = useStableEditableComponents(
+    (latest) => ({
+      // The format follows the pool: a share of the base, or a rate per hour.
+      ceilingRate: EditableNumber<CeilingRow>(
+        (key, value, row) => latest.current.onCellEdit(key, value, row),
+        (row) =>
+          latest.current.isPerHour(row)
+            ? {
+                minValue: 0,
+                formatOptions: INPUT_FORMAT.rate(
+                  latest.current.currency,
+                  latest.current.decimals
+                ),
+                step: INPUT_STEP.rate
+              }
+            : {
+                minValue: 0,
+                formatOptions: INPUT_FORMAT.percent,
+                step: INPUT_STEP.percent
+              },
+        { inputClassName: "text-right" }
+      )
+    }),
+    { onCellEdit, isPerHour, currency, decimals }
+  );
+  const latestOnCellEdit = useRef(onCellEdit);
+  latestOnCellEdit.current = onCellEdit;
+  const editableComponents = useMemo(
+    () => ({
+      ...stable,
+      indirectPoolId: EditableList<CeilingRow>(
+        (key, value, row) => latestOnCellEdit.current(key, value, row),
+        pools.map((pool) => ({ value: pool.id, label: pool.name }))
+      )
+    }),
+    [stable, pools]
+  );
+
+  const columns = useMemo<ColumnDef<CeilingRow>[]>(
+    () => [
+      {
+        accessorKey: "indirectPoolId",
+        header: t`Pool`,
+        size: 280,
+        cell: ({ row }) =>
+          row.original.indirectPoolId ? (
+            <span className="block truncate">
+              {poolById.get(row.original.indirectPoolId)?.name ??
+                ceilings.find(
+                  (c) => c.indirectPoolId === row.original.indirectPoolId
+                )?.indirectPool?.name ??
+                row.original.indirectPoolId}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              <Trans>Choose a pool</Trans>
+            </span>
+          )
+      },
+      {
+        accessorKey: "ceilingRate",
+        header: () => (
+          <LabelWithHelp termId="rate-ceiling" variant="inline">
+            <Trans>Ceiling</Trans>
+          </LabelWithHelp>
+        ),
+        cell: ({ row }) => (
+          <span className="block text-right tabular-nums">
+            {isPerHour(row.original)
+              ? t`${perHour.format(row.original.ceilingRate)}/h`
+              : percent.format(row.original.ceilingRate)}
+          </span>
+        )
+      }
+    ],
+    [t, poolById, ceilings, isPerHour, perHour, percent]
+  );
+
+  const renderMenu = useCallback(
+    (row: CeilingRow) => (
+      <MenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        disabled={isDisabled}
+        onClick={() =>
+          row.id === null
+            ? setDrafts((previous) => previous.filter((d) => d.key !== row.key))
+            : setDeleting(row)
+        }
+      >
+        <MenuIcon icon={<LuTrash />} />
+        <Trans>Delete Ceiling</Trans>
+      </MenuItem>
+    ),
+    [isDisabled]
+  );
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
+    [columns, renderMenu, t]
+  );
+
+  const usedPools = new Set(rows.map((row) => row.indirectPoolId));
+  const canAdd = pools.some((pool) => !usedPools.has(pool.id));
 
   return (
     <>
@@ -137,80 +298,64 @@ function RateCeilingsCard({
               With no ceiling, a pool bills at its billing rate.
             </Trans>
           </CardDescription>
-          <CardAction>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPlus />}
-              isDisabled={isDisabled || availablePools.length === 0}
-              onClick={() => setAdding(true)}
-            >
-              <Trans>Add Ceiling</Trans>
-            </Button>
-          </CardAction>
         </CardHeader>
-        <CardContent>
-          {sorted.length === 0 ? (
+        <CardContent className="flex flex-col gap-2">
+          {rows.length > 0 ? (
+            <div
+              className="w-full overflow-hidden rounded-lg border border-border"
+              style={{ height: setupGridHeight(rows.length, 49) - 44 }}
+            >
+              <Table<CeilingRow>
+                compact
+                columns={gridColumns}
+                data={rows}
+                count={rows.length}
+                editableComponents={editableComponents}
+                withInlineEditing={!isDisabled}
+                forceEditMode={!isDisabled}
+                withPagination={false}
+                withSearch={false}
+                withSimpleSorting={false}
+                withSidebarTrigger={false}
+                withColumnOrdering={false}
+                withCsvExport={false}
+                sort={null}
+              />
+            </div>
+          ) : (
             <p className="text-sm text-muted-foreground">
               <Trans>No ceilings. Burden bills at the billing rates.</Trans>
             </p>
-          ) : (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th className="w-full">
-                    <Trans>Pool</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Ceiling</Trans>
-                  </Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {sorted.map((ceiling) => (
-                  <Tr key={ceiling.id}>
-                    <Td>
-                      <span className="truncate">
-                        {ceiling.indirectPool?.name ?? ceiling.indirectPoolId}
-                      </span>
-                    </Td>
-                    <Td className="whitespace-nowrap text-right tabular-nums">
-                      {baseTypeOf.get(ceiling.indirectPoolId) ===
-                      "Direct Labor Hours"
-                        ? t`${perHour.format(ceiling.ceilingRate)}/h`
-                        : percent.format(ceiling.ceilingRate)}
-                    </Td>
-                    <Td>
-                      <IconButton
-                        aria-label={t`Delete ceiling`}
-                        icon={<LuTrash />}
-                        variant="ghost"
-                        size="sm"
-                        isDisabled={isDisabled}
-                        onClick={() => setDeleting(ceiling)}
-                      />
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
           )}
+          <Button
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            className="self-start"
+            isDisabled={isDisabled || !canAdd}
+            onClick={() => {
+              draftCount.current += 1;
+              setDrafts((previous) => [
+                ...previous,
+                {
+                  key: `draft-${draftCount.current}`,
+                  id: null,
+                  indirectPoolId: "",
+                  ceilingRate: 0,
+                  sequence: Number.MAX_SAFE_INTEGER
+                }
+              ]);
+            }}
+          >
+            <Trans>Add Ceiling</Trans>
+          </Button>
         </CardContent>
       </Card>
 
-      {adding && (
-        <RateCeilingModal
-          lineId={lineId}
-          pools={availablePools}
-          action={action}
-          onClose={() => setAdding(false)}
-        />
-      )}
-      {deleting && (
+      {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
           isOpen
-          name={deleting.indirectPool?.name ?? t`Ceiling`}
+          name={poolById.get(deleting.indirectPoolId)?.name ?? t`Ceiling`}
           text={t`Are you sure you want to delete this rate ceiling?`}
           fields={{ intent: "ceiling-delete", id: deleting.id }}
           onCancel={() => setDeleting(null)}
@@ -218,100 +363,5 @@ function RateCeilingsCard({
         />
       )}
     </>
-  );
-}
-
-function RateCeilingModal({
-  lineId,
-  pools,
-  action,
-  onClose
-}: {
-  lineId: string;
-  pools: CeilingPool[];
-  action: string;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const { company } = useUser();
-  const currency = company?.baseCurrencyCode ?? "USD";
-  const decimals = useCurrencyDecimals(currency);
-  const [poolId, setPoolId] = useState<string>(pools[0]?.id ?? "");
-  const perHour =
-    pools.find((pool) => pool.id === poolId)?.baseType === "Direct Labor Hours";
-  const fetcher = useAction<{ error?: { message: string } | null }>({
-    onSuccess: () => onClose(),
-    onError: (data) =>
-      toast.error(data?.error?.message ?? t`Failed to save the ceiling`)
-  });
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          validator={contractRateCeilingValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            customerContractLineId: lineId,
-            indirectPoolId: poolId,
-            ceilingRate: 0
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              <Trans>Add Ceiling</Trans>
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>The highest rate this line bills for the pool.</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="ceiling-upsert" />
-            <Hidden name="customerContractLineId" />
-            <VStack spacing={4}>
-              <SelectControlled
-                name="indirectPoolId"
-                label={t`Pool`}
-                options={pools.map((pool) => ({
-                  label: pool.name,
-                  value: pool.id
-                }))}
-                value={poolId}
-                onChange={(option) => setPoolId(option?.value ?? "")}
-              />
-              {perHour ? (
-                <NumberField
-                  key="per-hour"
-                  name="ceilingRate"
-                  label={t`Ceiling per Hour`}
-                  minValue={0}
-                  step={INPUT_STEP.rate}
-                  formatOptions={INPUT_FORMAT.rate(currency, decimals)}
-                />
-              ) : (
-                <NumberField
-                  key="percent"
-                  name="ceilingRate"
-                  label={t`Ceiling`}
-                  minValue={0}
-                  step={INPUT_STEP.percent}
-                  formatOptions={INPUT_FORMAT.percent}
-                />
-              )}
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
   );
 }

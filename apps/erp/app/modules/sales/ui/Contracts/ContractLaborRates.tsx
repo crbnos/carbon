@@ -2,61 +2,43 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
-import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  IconButton,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalDescription,
-  ModalFooter,
-  ModalHeader,
-  ModalTitle,
-  RadioGroup,
-  RadioGroupItem,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
-  toast,
-  VStack
+  LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuEllipsisVertical, LuPencil, LuPlus, LuTrash } from "react-icons/lu";
-import { EmployeeAvatar } from "~/components";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { LuPlus, LuTrash } from "react-icons/lu";
+import { Table } from "~/components";
 import {
-  DatePicker,
-  Employee,
-  Hidden,
-  LaborCategory,
-  Number as NumberField,
-  Submit,
-  useLaborCategories
-} from "~/components/Form";
+  EditableDate,
+  EditableList,
+  EditableNumber,
+  useStableEditableComponents
+} from "~/components/Editable";
+import { useLaborCategories } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
+import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
 import {
   useCompanyToday,
   useCurrencyDecimals,
   useDateFormatter
 } from "~/hooks";
-import { contractLaborRateValidator } from "../../sales.models";
+import { usePeople } from "~/stores";
 import ContractMoney from "./ContractMoney";
 
 export type ContractLaborRate = {
@@ -67,11 +49,26 @@ export type ContractLaborRate = {
   effectiveFrom: string;
 };
 
+/** One grid row; `appliesTo` is `category:<id>` or `employee:<id>`. */
+type RateRow = {
+  key: string;
+  id: string | null;
+  appliesTo: string;
+  billRate: number;
+  effectiveFrom: string;
+};
+
+function appliesToValue(rate: ContractLaborRate) {
+  return rate.employeeId
+    ? `employee:${rate.employeeId}`
+    : `category:${rate.laborCategoryId ?? ""}`;
+}
+
 /**
- * The bill rates of a Time & Materials line: per labor category, and per
- * employee (which wins), each effective from a date. With no rate here, an
- * hour bills at its labor category's default bill rate; with none at all the
- * item is held for "No bill rate".
+ * The bill rates of a Time & Materials line as a grid: per labor category,
+ * and per employee (which wins), each effective from a date. With no rate
+ * here, an hour bills at its labor category's default bill rate; with none
+ * at all the item is held for "No bill rate".
  */
 export default function ContractLaborRates({
   lineId,
@@ -89,14 +86,191 @@ export default function ContractLaborRates({
 }) {
   const { t } = useLingui();
   const { formatDate } = useDateFormatter();
+  const today = useCompanyToday();
+  const decimals = useCurrencyDecimals(currencyCode);
+  const save = useCellSave();
   const categories = useLaborCategories();
-  const categoryName = new Map(
-    categories.map((category) => [category.value, category.label])
+  const [people] = usePeople();
+  const [drafts, setDrafts] = useState<RateRow[]>([]);
+  const draftCount = useRef(0);
+  const [deleting, setDeleting] = useState<RateRow | null>(null);
+
+  const appliesToOptions = useMemo(
+    () => [
+      ...categories.map((category) => ({
+        value: `category:${category.value}`,
+        label: t`Labor category: ${category.label}`
+      })),
+      ...people.map((person) => ({
+        value: `employee:${person.id}`,
+        label: t`Employee: ${person.name}`
+      }))
+    ],
+    [categories, people, t]
   );
-  const [editing, setEditing] = useState<ContractLaborRate | "new" | null>(
-    null
+  const appliesToLabel = useMemo(
+    () =>
+      new Map(appliesToOptions.map((option) => [option.value, option.label])),
+    [appliesToOptions]
   );
-  const [deleting, setDeleting] = useState<ContractLaborRate | null>(null);
+
+  const rows = useMemo<RateRow[]>(
+    () => [
+      ...rates.map((rate) => ({
+        key: rate.id,
+        id: rate.id,
+        appliesTo: appliesToValue(rate),
+        billRate: Number(rate.billRate),
+        effectiveFrom: rate.effectiveFrom
+      })),
+      ...drafts
+    ],
+    [rates, drafts]
+  );
+
+  // A cell posts the whole rate with the change; the choice maps to a labor
+  // category or an employee. A draft saves once it names one.
+  const onCellEdit = useCallback(
+    async (key: string, value: unknown, row: RateRow) => {
+      const next: RateRow = { ...row };
+      if (key === "appliesTo") next.appliesTo = String(value ?? "");
+      if (key === "effectiveFrom") next.effectiveFrom = String(value ?? "");
+      if (key === "billRate") {
+        next.billRate =
+          value === null || value === undefined || value === ""
+            ? 0
+            : Number(value);
+      }
+      if (next.id === null && !next.appliesTo) {
+        setDrafts((previous) =>
+          previous.map((draft) => (draft.key === row.key ? next : draft))
+        );
+        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
+      }
+      const [kind, id] = next.appliesTo.split(":");
+      const result = await save(action, {
+        intent: "upsert",
+        id: next.id ?? "",
+        customerContractLineId: lineId,
+        laborCategoryId: kind === "category" ? (id ?? "") : "",
+        employeeId: kind === "employee" ? (id ?? "") : "",
+        billRate: String(next.billRate),
+        effectiveFrom: next.effectiveFrom
+      });
+      if (next.id === null && !result.error) {
+        setDrafts((previous) => previous.filter((d) => d.key !== row.key));
+      }
+      return result;
+    },
+    [action, lineId, save]
+  );
+
+  const stable = useStableEditableComponents(
+    (latest) => {
+      const edit = (key: string, value: unknown, row: RateRow) =>
+        latest.current.onCellEdit(key, value, row);
+      return {
+        billRate: EditableNumber<RateRow>(
+          edit,
+          {
+            minValue: 0,
+            formatOptions: INPUT_FORMAT.rate(currencyCode, decimals),
+            step: INPUT_STEP.rate
+          },
+          { inputClassName: "text-right" }
+        ),
+        effectiveFrom: EditableDate<RateRow>(edit, {
+          label: t`Effective From`
+        })
+      };
+    },
+    { onCellEdit }
+  );
+  // The list editor takes its options when built: rebuilt only when they
+  // change (a pick commits at once).
+  const latestOnCellEdit = useRef(onCellEdit);
+  latestOnCellEdit.current = onCellEdit;
+  const editableComponents = useMemo(
+    () => ({
+      ...stable,
+      appliesTo: EditableList<RateRow>(
+        (key, value, row) => latestOnCellEdit.current(key, value, row),
+        appliesToOptions
+      )
+    }),
+    [stable, appliesToOptions]
+  );
+
+  const columns = useMemo<ColumnDef<RateRow>[]>(
+    () => [
+      {
+        accessorKey: "appliesTo",
+        header: t`Applies To`,
+        size: 280,
+        cell: ({ row }) =>
+          row.original.appliesTo ? (
+            <span className="block truncate">
+              {appliesToLabel.get(row.original.appliesTo) ??
+                row.original.appliesTo}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">
+              <Trans>Choose a labor category or an employee</Trans>
+            </span>
+          )
+      },
+      {
+        accessorKey: "billRate",
+        header: () => (
+          <LabelWithHelp termId="bill-rate" variant="inline">
+            <Trans>Bill Rate</Trans>
+          </LabelWithHelp>
+        ),
+        cell: ({ row }) => (
+          <span className="block text-right">
+            <ContractMoney
+              value={row.original.billRate}
+              currencyCode={currencyCode}
+              rate
+            />
+          </span>
+        )
+      },
+      {
+        accessorKey: "effectiveFrom",
+        header: t`Effective From`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatDate(row.original.effectiveFrom)}
+          </span>
+        )
+      }
+    ],
+    [t, appliesToLabel, currencyCode, formatDate]
+  );
+
+  const renderMenu = useCallback(
+    (row: RateRow) => (
+      <MenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        destructive
+        disabled={isDisabled}
+        onClick={() =>
+          row.id === null
+            ? setDrafts((previous) => previous.filter((d) => d.key !== row.key))
+            : setDeleting(row)
+        }
+      >
+        <MenuIcon icon={<LuTrash />} />
+        <Trans>Delete Rate</Trans>
+      </MenuItem>
+    ),
+    [isDisabled]
+  );
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
+    [columns, renderMenu, t]
+  );
 
   return (
     <>
@@ -111,106 +285,61 @@ export default function ContractLaborRates({
               hour bills at the labor category's default bill rate.
             </Trans>
           </CardDescription>
-          <CardAction>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPlus />}
-              isDisabled={isDisabled}
-              onClick={() => setEditing("new")}
-            >
-              <Trans>Add Rate</Trans>
-            </Button>
-          </CardAction>
         </CardHeader>
-        <CardContent>
-          {rates.length === 0 ? (
+        <CardContent className="flex flex-col gap-2">
+          {rows.length > 0 && (
+            <div
+              className="w-full overflow-hidden rounded-lg border border-border"
+              style={{ height: setupGridHeight(rows.length, 49) - 44 }}
+            >
+              <Table<RateRow>
+                compact
+                columns={gridColumns}
+                data={rows}
+                count={rows.length}
+                editableComponents={editableComponents}
+                withInlineEditing={!isDisabled}
+                forceEditMode={!isDisabled}
+                withPagination={false}
+                withSearch={false}
+                withSimpleSorting={false}
+                withSidebarTrigger={false}
+                withColumnOrdering={false}
+                withCsvExport={false}
+                sort={null}
+              />
+            </div>
+          )}
+          {rows.length === 0 && (
             <p className="text-sm text-muted-foreground">
               <Trans>No contract rates. Hours bill at the default rates.</Trans>
             </p>
-          ) : (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th className="w-full">
-                    <Trans>Labor Category or Employee</Trans>
-                  </Th>
-                  <Th className="text-right">
-                    <Trans>Bill Rate</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Effective From</Trans>
-                  </Th>
-                  <Th />
-                </Tr>
-              </Thead>
-              <Tbody>
-                {rates.map((rate) => (
-                  <Tr key={rate.id}>
-                    <Td>
-                      {rate.employeeId ? (
-                        <EmployeeAvatar employeeId={rate.employeeId} />
-                      ) : (
-                        <span className="truncate">
-                          {categoryName.get(rate.laborCategoryId ?? "") ??
-                            rate.laborCategoryId}
-                        </span>
-                      )}
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <ContractMoney
-                        value={rate.billRate}
-                        currencyCode={currencyCode}
-                        rate
-                      />
-                    </Td>
-                    <Td className="whitespace-nowrap tabular-nums">
-                      {formatDate(rate.effectiveFrom)}
-                    </Td>
-                    <Td>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <IconButton
-                            aria-label={t`Rate actions`}
-                            icon={<LuEllipsisVertical />}
-                            variant="ghost"
-                            size="sm"
-                            isDisabled={isDisabled}
-                          />
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditing(rate)}>
-                            <DropdownMenuIcon icon={<LuPencil />} />
-                            <Trans>Edit Rate</Trans>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            destructive
-                            onClick={() => setDeleting(rate)}
-                          >
-                            <DropdownMenuIcon icon={<LuTrash />} />
-                            <Trans>Delete Rate</Trans>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
           )}
+          <Button
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            className="self-start"
+            isDisabled={isDisabled}
+            onClick={() => {
+              draftCount.current += 1;
+              setDrafts((previous) => [
+                ...previous,
+                {
+                  key: `draft-${draftCount.current}`,
+                  id: null,
+                  appliesTo: "",
+                  billRate: 0,
+                  effectiveFrom: today
+                }
+              ]);
+            }}
+          >
+            <Trans>Add Rate</Trans>
+          </Button>
         </CardContent>
       </Card>
 
-      {editing && (
-        <LaborRateModal
-          key={editing === "new" ? "new" : editing.id}
-          lineId={lineId}
-          rate={editing === "new" ? null : editing}
-          currencyCode={currencyCode}
-          action={action}
-          onClose={() => setEditing(null)}
-        />
-      )}
-      {deleting && (
+      {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
           isOpen
@@ -222,109 +351,5 @@ export default function ContractLaborRates({
         />
       )}
     </>
-  );
-}
-
-/** One bill rate: for a labor category or for one employee. */
-function LaborRateModal({
-  lineId,
-  rate,
-  currencyCode,
-  action,
-  onClose
-}: {
-  lineId: string;
-  rate: ContractLaborRate | null;
-  currencyCode: string;
-  action: string;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-  const today = useCompanyToday();
-  const decimals = useCurrencyDecimals(currencyCode);
-  const [appliesTo, setAppliesTo] = useState<"category" | "employee">(
-    rate?.employeeId ? "employee" : "category"
-  );
-  const fetcher = useAction<{ error?: { message: string } | null }>({
-    onSuccess: () => onClose(),
-    onError: (data) =>
-      toast.error(data?.error?.message ?? t`Failed to save the rate`)
-  });
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalContent>
-        <ValidatedForm
-          validator={contractLaborRateValidator}
-          method="post"
-          action={action}
-          fetcher={fetcher}
-          defaultValues={{
-            id: rate?.id,
-            customerContractLineId: lineId,
-            laborCategoryId: rate?.laborCategoryId ?? undefined,
-            employeeId: rate?.employeeId ?? undefined,
-            billRate: rate ? Number(rate.billRate) : 0,
-            effectiveFrom: rate?.effectiveFrom ?? today
-          }}
-        >
-          <ModalHeader>
-            <ModalTitle>
-              {rate ? <Trans>Edit Rate</Trans> : <Trans>Add Rate</Trans>}
-            </ModalTitle>
-            <ModalDescription>
-              <Trans>The price of one hour on this line.</Trans>
-            </ModalDescription>
-          </ModalHeader>
-          <ModalBody>
-            <Hidden name="intent" value="upsert" />
-            <Hidden name="id" />
-            <Hidden name="customerContractLineId" />
-            <VStack spacing={4}>
-              <RadioGroup
-                value={appliesTo}
-                onValueChange={(value) =>
-                  setAppliesTo(value === "employee" ? "employee" : "category")
-                }
-                className="flex gap-4"
-              >
-                <label className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem value="category" />
-                  <Trans>Labor category</Trans>
-                </label>
-                <label className="flex items-center gap-2 text-sm">
-                  <RadioGroupItem value="employee" />
-                  <Trans>Employee</Trans>
-                </label>
-              </RadioGroup>
-              {appliesTo === "employee" ? (
-                <Employee name="employeeId" label={t`Employee`} />
-              ) : (
-                <LaborCategory
-                  name="laborCategoryId"
-                  label={t`Labor Category`}
-                />
-              )}
-              <NumberField
-                name="billRate"
-                label={t`Bill Rate`}
-                minValue={0}
-                step={INPUT_STEP.rate}
-                formatOptions={INPUT_FORMAT.rate(currencyCode, decimals)}
-              />
-              <DatePicker name="effectiveFrom" label={t`Effective From`} />
-            </VStack>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="secondary" onClick={onClose}>
-              <Trans>Cancel</Trans>
-            </Button>
-            <Submit>
-              <Trans>Save</Trans>
-            </Submit>
-          </ModalFooter>
-        </ValidatedForm>
-      </ModalContent>
-    </Modal>
   );
 }

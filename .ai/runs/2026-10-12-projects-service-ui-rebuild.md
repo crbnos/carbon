@@ -283,6 +283,8 @@ Shot: `28-labor-rates.png` (Systems Engineer, after Bill Rate 150 was typed, com
 
 ## Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 
+Unverified in the browser. The demo has only Fixed lines. A Draft test contract (CON000002, "UI rebuild T&M check", ORBSEC) was created in the UI and its line switched to Time & Materials, but the line form's Billing Element picker offered no element of OB2, and `customerContractLine_billing_check` refuses a Time & Materials line without one, so the line could not be saved. The test contract was deleted through its own delete route. Checked by typecheck, Biome and the ERP tests only.
+
 ## Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 
 ## Task 31: Open New Service Order in a drawer

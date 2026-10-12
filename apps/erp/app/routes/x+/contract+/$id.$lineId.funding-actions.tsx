@@ -39,6 +39,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  // A grid cell posts `quiet` and reads `{ error }` instead of a flash.
+  const quiet = formData.get("quiet") === "true";
+  const invalid = (validation: Parameters<typeof validationError>[0]) =>
+    quiet
+      ? failure(
+          Object.values(validation.fieldErrors ?? {})[0] ?? "Invalid values"
+        )
+      : validationError(validation);
+  const done = async (message: string) =>
+    quiet
+      ? data({ success: true, error: null })
+      : data(
+          { success: true, error: null },
+          await flash(request, success(message))
+        );
 
   if (intent === "delete") {
     const id = formData.get("id");
@@ -63,10 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           : "Failed to delete the funding action"
       );
     }
-    return data(
-      { success: true, error: null },
-      await flash(request, success("Funding action deleted"))
-    );
+    return done("Funding action deleted");
   }
 
   if (intent !== "upsert") return failure("Unknown action");
@@ -74,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const validation = await validator(customerContractFundingValidator).validate(
     formData
   );
-  if (validation.error) return validationError(validation.error);
+  if (validation.error) return invalid(validation.error);
 
   try {
     // The line is the URL's, never the form's copy.
@@ -95,8 +107,5 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  return data(
-    { success: true, error: null },
-    await flash(request, success("Funding action saved"))
-  );
+  return done("Funding action saved");
 }

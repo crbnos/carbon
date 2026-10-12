@@ -221,7 +221,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 26: Rebuild MES My Time as a touch grid
 - [x] Task 27: Rebuild Approvals with Time and Billing tabs
 - [x] Task 28: Edit labor category rates in a grid
-- [ ] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
+- [x] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 - [ ] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 - [ ] Task 31: Open New Service Order in a drawer
 - [ ] Task 32: Give service templates a standard record page
@@ -1721,3 +1721,7 @@ Run of 2026-10-12, Part B (Tasks 25–29):
 - Task 28: the drawer's `ValidatedForm` now wraps only the category's fields, and Save reaches it through `Submit formId`. With the grid inside the form, Enter in a grid cell submitted the category (seen in the browser: the drawer closed and `laborCategory.updatedAt` moved).
 - Task 28: Enter in the last row of a `Grid` keeps the cell editing (the shared `Grid` does not move past the last row); Tab or a click elsewhere commits. Not changed here.
 - Environment: at 13:57 the stack restarted on new ports (database 60663 → 50683, ERP 60668 → 50688) and crbn started its own ERP server on 50688. The server restarted earlier on 60668 kept the old database port, so it hung; it was stopped. A Chrome renderer of the screenshot session then spun at 120 % CPU and was killed; the session was signed in again.
+- Task 29: labor rates, funding actions and rate ceilings are `Table compact withInlineEditing` grids in their cards, each with a secondary "Add …" button under the grid (a draft row), a row ⋯ menu with Delete (`ConfirmDelete`, today's intents) and no modal. Labor rates: Applies to (one `EditableList` of "Labor category: X" and "Employee: Y"; the save maps it to `laborCategoryId` or `employeeId`), Bill Rate, Effective From; a draft saves once it names one. Funding actions: Modification, Funded, ACRN, Expires, Funded Cost, Funded Fee, with the totals in the footer; a draft saves once it has a modification number and an ACRN (typed ACRN is upper-cased). Rate ceilings: Pool (`EditableList`) and Ceiling (percent, or a rate per hour for a Direct Labor Hours pool, chosen per row); a draft saves once it names a pool. Each edit posts the whole row with today's `upsert` / `ceiling-upsert` intent; both routes now answer `quiet` with `{ error }` (a validation error included) and no flash.
+- Task 29: `ContractLineBilling` has one primary action, Generate Billable Items; Line Details and Edit Funding moved into a ⋯ menu (the Funding card lost its Edit button). The Funding Actions card shows when `useGovernmentContracting()` is true, DCAA owns the totals, or the line has actions (Layer 5); on this dev stack the plan gate always passes, so it always shows. "Review Items" now opens Approvals → Billing directly.
+- Task 29: `termId`s: `acrn` (ACRN header), `funding-action` (card title), `rate-ceiling` (Ceiling header), `bill-rate` (Bill Rate header).
+- Task 29: the line form's Billing Element picker showed "No option found" for OB2 after choosing the project, while creating a Time & Materials line on a new Draft contract. Not investigated (outside this task); a T&M line could not be created in the UI here.
