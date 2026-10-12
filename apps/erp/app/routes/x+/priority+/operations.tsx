@@ -4,6 +4,7 @@
 
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { useChangedRows } from "@carbon/query";
 import {
   Button,
@@ -52,7 +53,10 @@ import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useFilters } from "~/components/Table/components/Filter/useFilters";
 import { useUrlParams, useUser } from "~/hooks";
-import { getActiveJobOperationsByLocation } from "~/modules/production";
+import {
+  getActiveJobOperationsByLocation,
+  getJobProjects
+} from "~/modules/production";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
   BatchItem,
@@ -75,6 +79,8 @@ import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "priority-operations");
 
 export const handle: Handle = {
   breadcrumb: msg`Schedule`,
@@ -281,14 +287,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     )
   ];
-  const batchHeaders =
+  const [batchHeaders, jobProjects] = await Promise.all([
     batchIds.length > 0
-      ? await client
+      ? client
           .from("jobOperationBatch")
           .select("id, readableId, status, workCenterId")
           .in("id", batchIds)
           .eq("companyId", companyId)
-      : { data: [] as never[], error: null };
+      : { data: [] as never[], error: null },
+    getJobProjects(client, companyId, [
+      ...new Set((operations.data ?? []).map((op) => op.jobId))
+    ])
+  ]);
+  if (jobProjects.error) {
+    logger.error("Failed to load job projects", {
+      companyId,
+      error: jobProjects.error
+    });
+  }
   const batchById = new Map((batchHeaders.data ?? []).map((b) => [b.id, b]));
 
   const activeWorkCenters = new Set();
@@ -415,6 +431,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       salesOrderReadableId: op.salesOrderReadableId,
       salesOrderId: op.salesOrderId,
       salesOrderLineId: op.salesOrderLineId,
+      ...jobProjects.data[op.jobId],
       status: op.operationStatus,
       setupDuration: operation.setupDuration,
       laborDuration: operation.laborDuration,
@@ -558,6 +575,7 @@ const defaultDisplaySettings: ScheduleDisplaySettings = {
   showQuantity: true,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -818,6 +836,7 @@ function KanbanSchedule() {
                     { key: "showQuantity", label: t`Quantity` },
                     { key: "showStatus", label: t`Status` },
                     { key: "showSalesOrder", label: t`Sales Order` },
+                    { key: "showProject", label: t`Project` },
                     { key: "showThumbnail", label: t`Thumbnail` }
                   ].map(({ key, label }) => (
                     <Switch

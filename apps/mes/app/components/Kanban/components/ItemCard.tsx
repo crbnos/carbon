@@ -25,6 +25,7 @@ import {
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
+  LuFolderKanban,
   LuSquareUser,
   LuTimer,
   LuTrash,
@@ -89,6 +90,7 @@ export function ItemCard({
   showProgress,
   showStatus,
   showSalesOrder,
+  showProject,
   showThumbnail
 }: ItemCardProps) {
   const { t } = useLingui();
@@ -314,6 +316,21 @@ export function ItemCard({
                 <span className="text-sm">{item.salesOrderReadableId}</span>
               </HStack>
             )}
+
+          {showProject && item.projectReadableId && (
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuFolderKanban className="text-muted-foreground shrink-0" />
+              <span className="text-sm truncate">
+                {item.projectReadableId}
+                {item.projectName && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {item.projectName}
+                  </span>
+                )}
+              </span>
+            </HStack>
+          )}
 
           {Array.isArray(employeeIds) && employeeIds.length > 0 && (
             <HStack className="justify-start space-x-2 max-md:order-1">
