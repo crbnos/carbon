@@ -61,9 +61,14 @@ function cell(value: unknown): string | null {
 
 /**
  * Without "Item" every row reads as the root and a push would apply an empty
- * BOM. "Part number" is the join key to Carbon.
+ * BOM. "Part number" is the join key to Carbon. Without "Quantity" every line
+ * would push as 1.
  */
-export const BOM_REQUIRED_COLUMNS = ["Item", "Part number"] as const;
+export const BOM_REQUIRED_COLUMNS = [
+  "Item",
+  "Part number",
+  "Quantity"
+] as const;
 
 export function parseBomTree(payload: unknown): {
   /** The assembly's own row (index "0"), when the export included it. */
@@ -229,10 +234,14 @@ export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
 }
 
 export function missingBomColumnsMessage(missingColumns: string[]): string {
-  const names = missingColumns.map((name) => `"${name}"`).join(" and ");
-  return `Onshape's BOM for this assembly has no ${names} column. Add ${
-    missingColumns.length > 1 ? "them" : "it"
-  } back to the assembly's BOM table in Onshape, then try again.`;
+  const names = new Intl.ListFormat("en", {
+    style: "long",
+    type: "conjunction"
+  }).format(missingColumns.map((name) => `"${name}"`));
+  const plural = missingColumns.length > 1;
+  return `Onshape's BOM for this assembly has no ${names} column${
+    plural ? "s" : ""
+  }. Add ${plural ? "them" : "it"} back to the assembly's BOM table in Onshape, then try again.`;
 }
 
 export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {

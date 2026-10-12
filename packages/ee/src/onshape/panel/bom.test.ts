@@ -220,6 +220,20 @@ describe("parseBomTree", () => {
     );
   });
 
+  it("names a missing Quantity column instead of pushing every line as 1", () => {
+    const { missingColumns } = parseBomTree({
+      headers: H.filter((header) => header.name !== "Quantity"),
+      rows: [row("1", "A-1", 3)]
+    });
+    expect(missingColumns).toEqual(["Quantity"]);
+  });
+
+  it("lists three missing columns", () => {
+    expect(
+      missingBomColumnsMessage(["Item", "Part number", "Quantity"])
+    ).toContain('"Item", "Part number", and "Quantity"');
+  });
+
   it("does not flag the headers of a BOM with no rows", () => {
     expect(parseBomTree({ headers: [], rows: [] }).missingColumns).toEqual([]);
     expect(

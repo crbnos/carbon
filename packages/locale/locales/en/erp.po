@@ -16589,8 +16589,6 @@ msgstr "Push the journal without the dimension"
 msgid "Push to accounting"
 msgstr "Push to accounting"
 
-msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr "Pushes don't change this item's fields, so edits made here stay."
 
@@ -16599,6 +16597,9 @@ msgstr "Pushes from Onshape stop updating this item. Pushing this part from Onsh
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
 msgstr "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 
 msgid "Putting your data back"
 msgstr "Putting your data back"

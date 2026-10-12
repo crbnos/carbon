@@ -16589,7 +16589,6 @@ msgstr "发布不包含维度的凭证"
 msgid "Push to accounting"
 msgstr "推送到会计系统"
 
-msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgid "Pushes don't change this item's fields, so edits made here stay."
 msgstr ""
 
@@ -16597,6 +16596,9 @@ msgid "Pushes from Onshape stop updating this item. Pushing this part from Onsha
 msgstr ""
 
 msgid "Pushes replace only the fields that Onshape's Fields page sets to Update on every push."
+msgstr ""
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 msgstr ""
 
 msgid "Putting your data back"
