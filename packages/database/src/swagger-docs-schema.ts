@@ -123628,10 +123628,8 @@ export default {
         "companyId",
         "leaseId",
         "status",
-        "name",
         "supplierId",
         "commencementDate",
-        "endDate",
         "invoiceFromDate",
         "paymentFrequency",
         "paymentTiming",
@@ -127943,7 +127941,8 @@ export default {
         "classificationBefore",
         "classificationAfter",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "leaseLineId"
       ],
       properties: {
         id: {

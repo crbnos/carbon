@@ -98,12 +98,13 @@ export default function NewLeaseRoute() {
   const initialValues = {
     id: undefined,
     leaseId: undefined,
-    name: "",
+    name: undefined,
     supplierId: params.get("supplierId") ?? "",
     locationId: defaults?.locationId ?? "",
     // The person entering the lease usually owns it.
     assignee: userId,
     commencementDate: companyToday,
+    duration: "36" as const,
     endDate: "",
     paymentFrequency: "Monthly" as const,
     paymentTiming: "Advance" as const,

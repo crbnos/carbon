@@ -20,6 +20,16 @@ const lease = (
 });
 
 describe("dueLeaseReminders", () => {
+  it("reminds an open-ended lease of its notice date only", () => {
+    expect(
+      dueLeaseReminders(
+        [lease({ endDate: null, noticeDate: "2027-02-01" })],
+        "2027-01-01",
+        90
+      )
+    ).toEqual([{ leaseId: "lease-1", kind: "notice", date: "2027-02-01" }]);
+  });
+
   it("reminds a date exactly the lead days away, and not one day further", () => {
     expect(
       dueLeaseReminders(

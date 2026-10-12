@@ -512,3 +512,14 @@ The user asked for several assets on one lease. Research: `.ai/research/2026-10-
 | A8 | Lease status | Active while any asset is Active; Expired, Terminated or Purchased after the last asset ends, taking the last asset's end | `leaseLineStatus`: Active, Terminated, Purchased, Expired |
 
 Out of scope: a different commencement date per asset; allocating a lump-sum payment by standalone price (the user enters each asset's payment).
+
+### Duration, open-ended leases, a shorter Details step (2026-10-12)
+
+The user asked for open-ended leases and for the contract's Duration field. Plan: `.ai/plans/2026-10-12-lease-duration-open-ended.md`.
+
+| # | Decision |
+|---|---|
+| A9 | The Details step asks for a **Duration**, as the AR contract does: 1 to 5 years, Open-ended, or Custom (an End Date). A preset ends the day before the same date N months on. Nothing stores the duration: `leaseDurationOf` reads it back from the dates. |
+| A10 | An **open-ended** lease (`endDate` NULL) can be ended on notice, so its term is short (ASC 842-10-30-1) and every asset is Short-Term. Activation posts no journal and writes no schedule. Payment rows roll forward in whole periods through the period after the current one (`openEndedLeaseHorizon`). Setup cuts the first ones; the daily job and Invoice Now cut the next ones before they draft. It has no purchase option row. Modify and Purchase do not apply, and Terminate ends it. It never expires on its own. |
+| A10a | If the company's short-term expedient is off, an open-ended lease cannot activate. The refusal names both fixes: turn on the expedient in Settings → Accounting, or give the lease a fixed duration. The Accounting and Review steps and the Activate dialog link both. |
+| A11 | The Details step has no Name and no Leased Asset section: the assets are step 2. `lease.name` is optional, and the page shows the lease number and the supplier. Description is Notes under More Details. Location is in the first section. |

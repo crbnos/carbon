@@ -50,11 +50,12 @@ export type LeaseRow = {
   id: string;
   leaseId: string;
   status: Enums["leaseStatus"];
-  name: string;
+  name: string | null;
   supplierId: string;
   locationId: string | null;
   commencementDate: string;
-  endDate: string;
+  /** Null is open-ended: every asset is short-term (spec Addendum A10). */
+  endDate: string | null;
   invoiceFromDate: string;
   paymentFrequency: Enums["leasePaymentFrequency"];
   paymentTiming: Enums["rentalBillingTiming"];
@@ -107,7 +108,7 @@ export async function lockLease(
       "supplierId",
       "locationId",
       sql<string>`"commencementDate"::text`.as("commencementDate"),
-      sql<string>`"endDate"::text`.as("endDate"),
+      sql<string | null>`"endDate"::text`.as("endDate"),
       sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate"),
       "paymentFrequency",
       "paymentTiming",

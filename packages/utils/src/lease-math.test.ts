@@ -13,6 +13,7 @@ import {
   leaseMonthEnds,
   leaseMonthsAt,
   leaseTermMonths,
+  openEndedLeaseHorizon,
   paymentMonthIndex,
   presentValueOfPayments,
   remeasureLease
@@ -169,6 +170,45 @@ describe("lease months from the 31st", () => {
       );
       expect(paymentMonthIndex(row, terms.commencementDate, "Advance")).toBe(i);
     });
+  });
+});
+
+describe("open-ended leases", () => {
+  const terms = {
+    ...TERMS,
+    commencementDate: "2027-01-15",
+    endDate: null,
+    frequency: "Quarterly" as const,
+    purchaseOptionAmount: 20000
+  };
+
+  it("reaches one period past the one asOf falls in", () => {
+    expect(openEndedLeaseHorizon("2027-01-15", "2027-05-01", "Quarterly")).toBe(
+      "2027-07-15"
+    );
+    expect(openEndedLeaseHorizon("2027-01-15", "2027-01-10", "Monthly")).toBe(
+      "2027-02-15"
+    );
+  });
+
+  it("cuts whole periods through the horizon, never prorated, with no purchase option", () => {
+    const rows = generateLeasePayments({
+      ...terms,
+      through: openEndedLeaseHorizon("2027-01-15", "2027-05-01", "Quarterly")
+    });
+    expect(rows.map((row) => [row.periodStart, row.periodEnd])).toEqual([
+      ["2027-01-15", "2027-04-14"],
+      ["2027-04-15", "2027-07-14"],
+      ["2027-07-15", "2027-10-14"]
+    ]);
+    expect(rows.every((row) => row.amount === 10000)).toBe(true);
+    expect(rows.some((row) => row.paymentType === "Purchase Option")).toBe(
+      false
+    );
+  });
+
+  it("needs a date to cut through", () => {
+    expect(() => generateLeasePayments(terms)).toThrow();
   });
 });
 

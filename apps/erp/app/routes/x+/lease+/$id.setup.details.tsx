@@ -12,7 +12,13 @@ import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import { getLease, leaseValidator, updateLease } from "~/modules/purchasing";
+import {
+  getLease,
+  leaseDurationOf,
+  leaseEndDate,
+  leaseValidator,
+  updateLease
+} from "~/modules/purchasing";
 import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import { LeaseDetailsForm } from "~/modules/purchasing/ui/Leases";
@@ -79,8 +85,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // New dates move every payment row of every asset: cut them again. A
   // lease with no asset yet has none to cut.
+  const dates = {
+    commencementDate: data.commencementDate,
+    endDate: data.duration
+      ? leaseEndDate(data.commencementDate, data.duration, data.endDate)
+      : data.endDate || null,
+    invoiceFromDate: data.invoiceFromDate || data.commencementDate
+  };
   const datesChanged = PAYMENT_DATES.some(
-    (field) => (current.data[field] ?? "") !== (data[field] ?? "")
+    (field) => (current.data[field] ?? "") !== (dates[field] ?? "")
   );
   if (datesChanged && Number(current.data.assetCount ?? 0) > 0) {
     try {
@@ -129,7 +142,7 @@ export default function LeaseSetupDetailsRoute() {
       initialValues={{
         id,
         leaseId: lease.leaseId ?? undefined,
-        name: lease.name ?? "",
+        name: lease.name ?? undefined,
         description: lease.description ?? undefined,
         supplierId: lease.supplierId ?? "",
         supplierLocationId: lease.supplierLocationId ?? undefined,
@@ -137,6 +150,7 @@ export default function LeaseSetupDetailsRoute() {
         locationId: lease.locationId ?? undefined,
         assignee: lease.assignee ?? undefined,
         commencementDate: lease.commencementDate ?? "",
+        duration: leaseDurationOf(lease),
         endDate: lease.endDate ?? "",
         noticeDate: lease.noticeDate ?? undefined,
         invoiceFromDate: lease.invoiceFromDate ?? undefined,

@@ -74,6 +74,7 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
+  leaseEndDate,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
@@ -5304,7 +5305,7 @@ function leaseTerms(
   terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">
 ) {
   return {
-    name: terms.name,
+    name: terms.name || null,
     description: terms.description ?? null,
     supplierId: terms.supplierId,
     supplierLocationId: terms.supplierLocationId || null,
@@ -5312,7 +5313,11 @@ function leaseTerms(
     locationId: terms.locationId || null,
     assignee: terms.assignee || null,
     commencementDate: terms.commencementDate,
-    endDate: terms.endDate,
+    // A duration from the Details step gives the end date; a single saved
+    // term keeps the one given. Null is open-ended.
+    endDate: terms.duration
+      ? leaseEndDate(terms.commencementDate, terms.duration, terms.endDate)
+      : terms.endDate || null,
     // A cleared DatePicker posts "", which a DATE column rejects.
     noticeDate: terms.noticeDate || null,
     invoiceFromDate: terms.invoiceFromDate || terms.commencementDate,

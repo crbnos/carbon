@@ -64,10 +64,16 @@ export type LeasePaymentRowInput = {
 /** The payment rows the terms cut, from `commencementDate` through `endDate`.
  *  The escalation steps up on each anniversary of commencement. A last
  *  period shorter than the frequency is prorated by days. A purchase option
- *  (pass it only when it is reasonably certain) is one more row on `endDate`. */
+ *  (pass it only when it is reasonably certain) is one more row on `endDate`.
+ *
+ *  An open-ended lease (`endDate` null) has no last period: it cuts every
+ *  whole period that starts on or before `through`
+ *  (`openEndedLeaseHorizon`), never prorated, and has no purchase option. */
 export function generateLeasePayments(args: {
   commencementDate: string;
-  endDate: string;
+  endDate: string | null;
+  /** Open-ended only: the last date a period may start on. */
+  through?: string;
   paymentAmount: number;
   frequency: LeasePaymentFrequency;
   timing: Timing;
@@ -76,16 +82,20 @@ export function generateLeasePayments(args: {
   decimals: number;
 }): LeasePaymentRowInput[] {
   const { commencementDate, endDate, decimals } = args;
-  // Validates both dates and refuses an end before the commencement.
-  daysBetweenInclusive(commencementDate, endDate);
+  const lastStart = endDate ?? args.through;
+  if (!lastStart) {
+    throw new Error("An open-ended lease needs a date to cut its rows through");
+  }
+  // Validates the dates and refuses an end before the commencement.
+  if (endDate) daysBetweenInclusive(commencementDate, endDate);
   const step = FREQUENCY_MONTHS[args.frequency];
 
   const rows: LeasePaymentRowInput[] = [];
   for (let i = 0; ; i += 1) {
     const periodStart = addMonths(commencementDate, i * step);
-    if (periodStart > endDate) break;
+    if (periodStart > lastStart) break;
     const fullEnd = addDays(addMonths(commencementDate, (i + 1) * step), -1);
-    const periodEnd = fullEnd > endDate ? endDate : fullEnd;
+    const periodEnd = endDate && fullEnd > endDate ? endDate : fullEnd;
 
     const years = (i * step - ((i * step) % MONTHS_PER_YEAR)) / MONTHS_PER_YEAR;
     const escalated =
@@ -105,7 +115,7 @@ export function generateLeasePayments(args: {
     });
   }
 
-  if (args.purchaseOptionAmount > 0) {
+  if (endDate && args.purchaseOptionAmount > 0) {
     rows.push({
       periodStart: endDate,
       periodEnd: endDate,
@@ -115,6 +125,21 @@ export function generateLeasePayments(args: {
     });
   }
   return rows;
+}
+
+/** The last date an open-ended lease's payment period may start on to be cut
+ *  by `asOf`: the start of the period after the one `asOf` falls in. So the
+ *  rows always reach one period ahead of today, as an open-ended contract's
+ *  schedule does. */
+export function openEndedLeaseHorizon(
+  commencementDate: string,
+  asOf: string,
+  frequency: LeasePaymentFrequency
+): string {
+  const step = FREQUENCY_MONTHS[frequency];
+  const months = leaseMonthsAt(commencementDate, asOf);
+  const period = (months - (months % step)) / step;
+  return addMonths(commencementDate, (period + 1) * step);
 }
 
 /** The lease months that have started by `date`, after the first: the

@@ -706,3 +706,66 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "an open-ended lease activates Short-Term, and is refused without the short-term expedient",
+  async () => {
+    const f = await leaseFixture({ endDate: null });
+    try {
+      await f.db
+        .updateTable("companySettings")
+        .set({ leaseShortTermExpedient: false })
+        .where("id", "=", f.companyId)
+        .execute();
+      const refused = await run(f, { type: "activate", leaseId: f.leaseId });
+      expect(String((refused.error as Error)?.message)).toContain(
+        "Settings → Accounting"
+      );
+      expect((await lease(f)).status).toBe("Draft");
+
+      await f.db
+        .updateTable("companySettings")
+        .set({ leaseShortTermExpedient: true })
+        .where("id", "=", f.companyId)
+        .execute();
+      expect(
+        (await run(f, { type: "activate", leaseId: f.leaseId })).error
+      ).toBeNull();
+      expect((await lease(f)).status).toBe("Active");
+      expect((await asset(f)).lesseeClassification).toBe("Short-Term");
+      expect(await leaseJournals(f)).toHaveLength(0);
+      expect(await scheduleLines(f)).toHaveLength(0);
+
+      // Nothing to modify or buy; it ends with Terminate.
+      expect(
+        (
+          await run(f, {
+            type: "purchase",
+            leaseId: f.leaseId,
+            leaseLineId: f.lineIds[0]!,
+            exerciseDate: "2027-01-31",
+            purchasePrice: 1000,
+            fixedAssetClassId: f.assetClassId,
+            name: "x"
+          })
+        ).error
+      ).not.toBeNull();
+      expect(
+        (
+          await run(f, {
+            type: "terminate",
+            leaseId: f.leaseId,
+            leaseLineId: f.lineIds[0]!,
+            terminationDate: "2027-01-31",
+            penaltyAmount: 0
+          })
+        ).error
+      ).toBeNull();
+      const ended = await lease(f);
+      expect(ended.status).toBe("Terminated");
+      expect(ended.endDate).toBe("2027-01-31");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

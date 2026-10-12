@@ -782,11 +782,17 @@ msgstr "3D-Modell"
 msgid "3h"
 msgstr "3h"
 
+msgid "4 years"
+msgstr "4 Jahre"
+
 msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
 msgstr "Minimum 5 Benutzer"
+
+msgid "5 years"
+msgstr "5 Jahre"
 
 msgid "5-8 weeks"
 msgstr "5-8 Wochen"
@@ -2515,6 +2521,12 @@ msgstr "Eine unbefristete Vereinbarung ist immer ein Leasing. Legen Sie ein Endd
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "Eine unbefristete Vereinbarung wird immer als Leasing behandelt: Ein Verkauf benötigt ein Enddatum."
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "Ein unkündbarer Mietvertrag kann auf Kündigung beendet werden, daher ist es eine kurzfristige Mietdauer. Dieses Unternehmen bilanziert kurzfristige Mietdauern nicht außerbilanziell, daher kann dieser nicht aktiviert werden. Entweder:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "Ein unkündbarer Mietvertrag ist kurzfristig: Die Aktivierung erzeugt keinen Buchungssatz, und jede Rechnung wird als Aufwand verbucht."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Ein Arbeitsgang, der von einem externen Lieferanten anstelle eines internen Arbeitsplatzes durchgeführt wird und durch eine Unterauftrags-Bestellung gedeckt ist."
@@ -10017,9 +10029,6 @@ msgstr "Für <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "für alles. Sie werden die richtige Person hinzuziehen."
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "Zum Beispiel „Gabelstapler FL-12\" oder „Gebäude Werk 2\""
-
 msgid "Forecast"
 msgstr "Prognose"
 
@@ -10268,6 +10277,9 @@ msgstr "Geben Sie jeder Anlage eine Zahlung."
 
 msgid "Give it an owner and a date"
 msgstr "Weisen Sie einen Verantwortlichen und ein Datum zu"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "Geben Sie dem Mietvertrag eine <0>feste Laufzeit in seinem Schritt „Einzelheiten\"</0>."
 
 msgid "GL"
 msgstr "Hauptbuch"
@@ -12098,9 +12110,6 @@ msgstr "Leasing-Durchläufe"
 
 msgid "Lease setup"
 msgstr "Leasing-Einrichtung"
-
-msgid "Leased Asset"
-msgstr "Geleaste Anlage"
 
 msgid "Leases"
 msgstr "Leasing"
@@ -18856,6 +18865,9 @@ msgstr "Läuft bis zu einem Enddatum. Eine Einheit, die danach noch ausstehend i
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Läuft unbeaufsichtigt rund um die Uhr und ignoriert Schichtkalender."
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "Läuft bis zur Beendigung auf Kündigung. Jeder Vermögenswert ist kurzfristig: nichts wird in der Bilanz ausgewiesen."
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (gröbstes Spezial)"
 
@@ -22397,6 +22409,9 @@ msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Die Werkstattbedarf und Verbrauchsmaterialien, die Sie bereithalten"
 
+msgid "The short-term lease expedient is off"
+msgstr "Die Erleichterung für kurzfristige Mietdauern ist deaktiviert."
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "Die Zeichen-Offs, die jede Ausgabe mit diesem Workflow benötigt, bevor es geschlossen werden kann."
 
@@ -22825,6 +22840,9 @@ msgstr "Dieser Auftrag ist auf der Werkstatt nicht mehr verfügbar."
 
 msgid "This job's own required quantity for the material."
 msgstr "Die für dieses Material benötigte Menge dieses Auftrags."
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "Dieser Mietvertrag ist unbefristet: er kann auf Kündigung beendet werden, daher ist seine Laufzeit kurz und jeder Vermögenswert ist kurzfristig. Nichts wird in der Bilanz ausgewiesen, und jede Rechnung wird als Aufwand verbucht."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "Versuchen Sie einen anderen Namen."
 
 msgid "Tuesday"
 msgstr "Dienstag"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "Aktivieren Sie <0>die Erleichterung für kurzfristige Mietdauern in Einstellungen → Buchhaltung</0>, oder"
 
 msgid "Turn on the built-in pieces"
 msgstr "Aktivieren Sie die integrierten Komponenten"
@@ -24807,9 +24828,6 @@ msgstr "Was tatsächlich je Teil für diesen Werkstoff zum Linienlager kommissio
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} ist was?"
 
-msgid "What is leased and where it is used."
-msgstr "Was geleast wird und wo es verwendet wird."
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Was geleased wird, zum Beispiel Gabelstapler FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "Wenn die Waren tatsächlich ankamen; auf dem Beleg aufgezeichnet und zur
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Wenn die Kanban-Karte gescannt wird, wird der Job automatisch aus dem Entwurf entfernt und zur Freigabe auf den Boden freigegeben."
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "Wann das Leasing beginnt und endet. Das Enddatum ist der letzte Tag der Laufzeit, einschließlich der angemessen sicheren Verlängerungen."
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "Wann der Mietvertrag beginnt und wie lange er läuft, einschließlich Verlängerungen, die mit angemessener Sicherheit erwartet werden."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Wann der Empfangsort die Ankunft des Bestandes erwartet; treibt die MRP-Verfügbarkeit am Bestimmungsort."
@@ -25037,6 +25055,9 @@ msgstr "Wo Bestände lagern und wie sie versendet werden."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Wo die betroffenen Elemente im System verwendet werden. Informativ – nichts hier blockiert die Freigabe."
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "Wo die Vermögenswerte genutzt werden. Ein Vermögenswert kann sein eigenes haben."
 
 msgid "Where the service is delivered"
 msgstr "Wo die Dienstleistung erbracht wird."
@@ -25173,8 +25194,8 @@ msgstr "Wer es verkauft hat, die Währung, in der abgerechnet wird, und alle Not
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Wer es verkauft hat, wem es gehört und wann es abgeschlossen wurde."
 
-msgid "Who the company leases from, and who to call there."
-msgstr "Von wem das Unternehmen mietet und wen man dort anrufen kann."
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "Von wem das Unternehmen Vermögenswerte mietet, wen man dort anrufen kann, und wo die Vermögenswerte genutzt werden."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Mit wem der Vertrag abgeschlossen ist und wie er heißt."

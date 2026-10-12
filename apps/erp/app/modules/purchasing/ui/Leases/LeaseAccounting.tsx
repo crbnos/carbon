@@ -83,35 +83,39 @@ const LeaseAccounting = ({
         </div>
       </SetupSection>
 
-      <SetupSection
-        title={<Trans>Discount Rate</Trans>}
-        description={
-          <Trans>The rate every asset's payments are discounted at.</Trans>
-        }
-      >
-        <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-          <TermForm name="discountRate" value={lease.discountRate}>
-            <NumberControlled
-              name="discountRate"
-              label={t`Discount Rate (%)`}
-              helperText={t`Annual. Starts from the company's incremental borrowing rate`}
-              isReadOnly={isDisabled}
-              value={lease.discountRate ?? 0}
-              minValue={0}
-              step={INPUT_STEP.percent}
-              formatOptions={INPUT_FORMAT.percentPoints}
-              onChange={(value) => {
-                const next = String(Number.isNaN(value) ? 0 : value);
-                if (String(lease.discountRate) !== next) {
-                  save("discountRate", next);
-                }
-              }}
-            />
-          </TermForm>
-        </div>
-      </SetupSection>
+      {/* An open-ended lease is short-term: nothing is discounted or
+          classified, so it has no rate and no inputs to set. */}
+      {lease.endDate && (
+        <SetupSection
+          title={<Trans>Discount Rate</Trans>}
+          description={
+            <Trans>The rate every asset's payments are discounted at.</Trans>
+          }
+        >
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
+            <TermForm name="discountRate" value={lease.discountRate}>
+              <NumberControlled
+                name="discountRate"
+                label={t`Discount Rate (%)`}
+                helperText={t`Annual. Starts from the company's incremental borrowing rate`}
+                isReadOnly={isDisabled}
+                value={lease.discountRate ?? 0}
+                minValue={0}
+                step={INPUT_STEP.percent}
+                formatOptions={INPUT_FORMAT.percentPoints}
+                onChange={(value) => {
+                  const next = String(Number.isNaN(value) ? 0 : value);
+                  if (String(lease.discountRate) !== next) {
+                    save("discountRate", next);
+                  }
+                }}
+              />
+            </TermForm>
+          </div>
+        </SetupSection>
+      )}
 
-      {lines.length > 0 && (
+      {lease.endDate && lines.length > 0 && (
         <SetupSection
           title={<Trans>Asset Inputs</Trans>}
           description={

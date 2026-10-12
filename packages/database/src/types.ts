@@ -31070,13 +31070,13 @@ export type Database = {
           customFields: Json | null
           description: string | null
           discountRate: number
-          endDate: string
+          endDate: string | null
           endRemindedFor: string | null
           id: string
           invoiceFromDate: string
           leaseId: string
           locationId: string | null
-          name: string
+          name: string | null
           noticeDate: string | null
           noticeRemindedFor: string | null
           paymentFrequency: Database["public"]["Enums"]["leasePaymentFrequency"]
@@ -31102,13 +31102,13 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           discountRate: number
-          endDate: string
+          endDate?: string | null
           endRemindedFor?: string | null
           id?: string
           invoiceFromDate: string
           leaseId: string
           locationId?: string | null
-          name: string
+          name?: string | null
           noticeDate?: string | null
           noticeRemindedFor?: string | null
           paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]
@@ -31134,13 +31134,13 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           discountRate?: number
-          endDate?: string
+          endDate?: string | null
           endRemindedFor?: string | null
           id?: string
           invoiceFromDate?: string
           leaseId?: string
           locationId?: string | null
-          name?: string
+          name?: string | null
           noticeDate?: string | null
           noticeRemindedFor?: string | null
           paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]

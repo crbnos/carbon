@@ -4,7 +4,7 @@
 
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   canApproveRequest,
@@ -12,7 +12,11 @@ import {
 } from "@carbon/ee/approvals.server";
 import { serverFns } from "@carbon/server-functions";
 import type { DraftedLeaseInvoice } from "@carbon/server-functions/create-lease-invoices";
-import { generateLeasePayments } from "@carbon/utils";
+import {
+  datetime,
+  generateLeasePayments,
+  openEndedLeaseHorizon
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { path } from "~/utils/path";
@@ -106,7 +110,9 @@ export async function getSupplierApprovalContext(
  * asset with no payment amount has no rows. A row due before the lease's
  * `invoiceFromDate` was paid outside Carbon and is created `Skipped`, so the
  * daily job never invoices it. A purchase option row is added only when it
- * is reasonably certain (it is then part of the lease liability).
+ * is reasonably certain (it is then part of the lease liability). An
+ * open-ended lease is cut through one period past today
+ * (`openEndedLeaseHorizon`); the daily job rolls it forward from there.
  */
 export async function regenerateLeasePayments(
   db: Kysely<KyselyDatabase>,
@@ -128,7 +134,7 @@ export async function regenerateLeasePayments(
         "paymentTiming",
         "annualEscalationPercent",
         sql<string>`"commencementDate"::text`.as("commencementDate"),
-        sql<string>`"endDate"::text`.as("endDate"),
+        sql<string | null>`"endDate"::text`.as("endDate"),
         sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate")
       ])
       .where("id", "=", leaseId)
@@ -136,6 +142,13 @@ export async function regenerateLeasePayments(
       .forUpdate()
       .executeTakeFirst();
     if (!lease) throw new Error("Lease not found");
+    const through = lease.endDate
+      ? undefined
+      : openEndedLeaseHorizon(
+          lease.commencementDate,
+          datetime.today(await getCompanyTimeZone(trx, companyId)).toString(),
+          lease.paymentFrequency
+        );
     if (lease.status !== "Draft") {
       throw new Error(
         "Payment rows are cut again only while the lease is Draft; modify an active lease instead"
@@ -176,6 +189,7 @@ export async function regenerateLeasePayments(
         ? generateLeasePayments({
             commencementDate: lease.commencementDate,
             endDate: lease.endDate,
+            through,
             paymentAmount: Number(line.paymentAmount),
             frequency: lease.paymentFrequency,
             timing: lease.paymentTiming,

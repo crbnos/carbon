@@ -126,6 +126,7 @@ const LeaseAssets = ({
               const isActive = line.status === "Active";
               const canPurchase =
                 isActive &&
+                !!lease.endDate &&
                 Number(line.purchaseOptionAmount ?? 0) > 0 &&
                 line.lesseeClassification !== "Short-Term";
               return (

@@ -782,11 +782,17 @@ msgstr "3D модель"
 msgid "3h"
 msgstr "3ч"
 
+msgid "4 years"
+msgstr "4 года"
+
 msgid "4h"
 msgstr "4ч"
 
 msgid "5 user minimum"
 msgstr "Минимум 5 пользователей"
+
+msgid "5 years"
+msgstr "5 лет"
 
 msgid "5-8 weeks"
 msgstr "5-8 недель"
@@ -2515,6 +2521,12 @@ msgstr "Договор без установленного срока оконч
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "Договор без установленного срока окончания всегда рассматривается как аренда: для продажи требуется дата окончания."
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "Договор аренды без указания срока может быть расторгнут по требованию, поэтому это краткосрочная аренда. Эта организация не учитывает краткосрочную аренду вне бухгалтерского баланса, поэтому она не может быть активирована. Либо:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "Договор аренды без указания срока - краткосрочная аренда: при его активировании не создается никакая операция, и каждый счет-фактура списывается в расходы."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Операция, выполняемая внешним поставщиком вместо изготовления на собственном рабочем центре, предусмотренная заказом поставщику на субподряд."
@@ -10017,9 +10029,6 @@ msgstr "На <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "Например \"Вилочный погрузчик FL-12\" или \"Здание завода 2\""
-
 msgid "Forecast"
 msgstr "Прогноз"
 
@@ -10268,6 +10277,9 @@ msgstr "Назначьте платеж для каждого актива."
 
 msgid "Give it an owner and a date"
 msgstr "Назначьте ответственного и дату"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "Установите для аренды <0>фиксированный срок в шаге «Детали»</0>."
 
 msgid "GL"
 msgstr "Главная книга"
@@ -12098,9 +12110,6 @@ msgstr "Прогоны расчета аренды"
 
 msgid "Lease setup"
 msgstr "Наладка аренды"
-
-msgid "Leased Asset"
-msgstr "Арендованный актив"
 
 msgid "Leases"
 msgstr "Аренды"
@@ -18856,6 +18865,9 @@ msgstr "Работает до даты окончания. Единица, вс�
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Работает без присмотра круглосуточно, игнорируя календари смен."
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "Действует до момента расторжения по требованию. Каждый актив краткосрочный: ничего не попадает на бухгалтерский баланс."
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (самый грубый специальный)"
 
@@ -22397,6 +22409,9 @@ msgstr "Полки и ячейки, где физически располага
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Расходные материалы и товары, которые вы держите под рукой"
 
+msgid "The short-term lease expedient is off"
+msgstr "Упрощение для краткосрочной аренды отключено"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "Утверждения, которые каждая проблема, использующая этот рабочий процесс, должна иметь перед закрытием."
 
@@ -22825,6 +22840,9 @@ msgstr "Этот производственный заказ больше не �
 
 msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "Эта аренда без указания срока: она может быть расторгнута по требованию, поэтому ее срок краткосрочный и каждый актив краткосрочный. Ничего не попадает на бухгалтерский баланс, и каждый счет-фактура списывается в расходы."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "Попробуйте другое имя."
 
 msgid "Tuesday"
 msgstr "Вторник"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "Включите <0>упрощение для краткосрочной аренды в Настройках → Бухгалтерия</0>, или"
 
 msgid "Turn on the built-in pieces"
 msgstr "Включите встроенные компоненты"
@@ -24807,9 +24828,6 @@ msgstr "Что было фактически отобрано в прилине�
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"
 
-msgid "What is leased and where it is used."
-msgstr "Что сдается в лизинг и где оно используется."
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Что арендуется, например Вилочный погрузчик FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "Когда товары действительно прибыли; за�
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Когда карточка канбана сканируется, задание автоматически удаляется из черновика и выпускается на пол."
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "Когда аренда начинается и заканчивается. Дата окончания — это последний день периода, включая возобновления, которые разумно вероятны."
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "Когда начинается аренда и как долго она длится, включая продления, которые разумно ожидаемы."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Когда Площадка приемки ожидает прибытия Запаса; определяет доступность MRP в пункте назначения."
@@ -25037,6 +25055,9 @@ msgstr "Где находится запас и как он отправляет
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Где затронутые элементы используются по всей системе. Информационно — ничто здесь не блокирует выпуск."
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "Где используются активы. Актив может иметь свое собственное."
 
 msgid "Where the service is delivered"
 msgstr "Где предоставляется услуга"
@@ -25173,8 +25194,8 @@ msgstr "Кто его продал, валюта, в которой он выс�
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Кто это продал, кому принадлежит и когда закрыто."
 
-msgid "Who the company leases from, and who to call there."
-msgstr "У кого организация берёт в аренду и кого звать там."
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "От кого организация арендует, с кем связаться там и где используются активы."
 
 msgid "Who the contract is with and what it is called."
 msgstr "С кем договор и как он называется."

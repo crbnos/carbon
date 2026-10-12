@@ -782,11 +782,17 @@ msgstr "3D 모델"
 msgid "3h"
 msgstr "3시간"
 
+msgid "4 years"
+msgstr "4년"
+
 msgid "4h"
 msgstr "4시간"
 
 msgid "5 user minimum"
 msgstr "최소 5명의 사용자"
+
+msgid "5 years"
+msgstr "5년"
 
 msgid "5-8 weeks"
 msgstr "5-8주"
@@ -2515,6 +2521,12 @@ msgstr "개방형 계약은 항상 임차입니다. 이를 사용하려면 종�
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "개방형 계약은 항상 임차로 취급됩니다. 판매는 종료 날짜가 필요합니다."
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "개방형 리스는 통지로 종료될 수 있으므로 단기 리스입니다. 이 회사는 재무상태표 외의 단기 리스를 계산하지 않으므로 활성화할 수 없습니다. 다음 중 하나를 수행하세요:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "개방형 리스는 단기 리스입니다: 활성화하면 전표를 작성하지 않으며 각 송장은 비용으로 계상됩니다."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "사내 작업장이 아닌 외부 공급업체에서 수행되고 외주 발주서로 커버되는 공정"
@@ -10017,9 +10029,6 @@ msgstr "대상 <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "예: \"지게차 FL-12\" 또는 \"제2 공장 건물\""
-
 msgid "Forecast"
 msgstr "예측"
 
@@ -10268,6 +10277,9 @@ msgstr "모든 자산에 지불을 지정하세요."
 
 msgid "Give it an owner and a date"
 msgstr "책임자와 날짜를 지정하세요"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "리스의 <0>세부 정보 단계에서 고정 기간을 지정하세요</0>."
 
 msgid "GL"
 msgstr "총계정원장"
@@ -12098,9 +12110,6 @@ msgstr "리스 실행"
 
 msgid "Lease setup"
 msgstr "리스 셋업"
-
-msgid "Leased Asset"
-msgstr "리스 자산"
 
 msgid "Leases"
 msgstr "리스"
@@ -18856,6 +18865,9 @@ msgstr "종료 날짜까지 실행됩니다. 그 후에도 여전히 반출 중�
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "무인으로 24시간 내내 실행되며 교대조 일정을 무시합니다."
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "통지를 통해 종료될 때까지 실행됩니다. 모든 자산은 단기입니다: 재무상태표에 기록되는 것이 없습니다."
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1(가장 완화된 특별수준)"
 
@@ -22397,6 +22409,9 @@ msgstr "재고가 실제로 보관되는 선반과 빈(bin)"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "보유하고 있는 공장 소모품 및 소모재"
 
+msgid "The short-term lease expedient is off"
+msgstr "단기 리스 간편법이 꺼져 있습니다"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "이 워크플로를 사용하는 모든 이슈가 종료되기 전에 필요한 서명 승인입니다."
 
@@ -22825,6 +22840,9 @@ msgstr "이 작업 지시는 현장에서 더 이상 가용하지 않을 것입�
 
 msgid "This job's own required quantity for the material."
 msgstr "이 작업 자체의 자재 소요 수량입니다."
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "이 리스는 개방형입니다: 통지를 통해 종료될 수 있으므로 기간이 짧으며 모든 자산은 단기입니다. 재무상태표에 기록되는 것이 없으며 각 송장은 비용으로 처리됩니다."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "다른 이름을 시도하세요."
 
 msgid "Tuesday"
 msgstr "화요일"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "<0>설정 → 회계에서 단기 리스 간편법</0>을 켜세요, 또는"
 
 msgid "Turn on the built-in pieces"
 msgstr "내장 기능을 켜세요"
@@ -24807,9 +24828,6 @@ msgstr "이 자재에 대해 라인사이드로 실제로 피킹된 부품입니
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
 
-msgid "What is leased and where it is used."
-msgstr "임차되는 것이 무엇이고 어디에 사용되는지."
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "예를 들어 포크리프트 FL-12와 같이 리스되는 것"
 
@@ -24972,8 +24990,8 @@ msgstr "재화가 실제로 도착한 시점으로, 입고에 기록되며 공�
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "칸반 카드를 스캔하면 작업이 자동으로 초안 상태에서 벗어나 현장으로 릴리즈됩니다."
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "리스가 시작되고 종료되는 시기입니다. 종료 날짜는 기간의 마지막 날이며, 합리적으로 확실한 갱신을 포함합니다."
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "리스가 시작되는 시기 및 실행 기간(합리적으로 확실한 갱신 포함)"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "입고 사업장이 재고가 도착할 것으로 예상할 때; 목적지의 MRP 가용성을 결정합니다."
@@ -25037,6 +25055,9 @@ msgstr "재고가 어디에 있고 어떻게 출하되는지."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "영향받은 항목이 시스템 전체에서 사용되는 위치입니다. 참고 사항 — 여기의 내용은 릴리스를 막지 않습니다."
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "자산이 사용되는 위치입니다. 자산은 자신의 위치를 가질 수 있습니다."
 
 msgid "Where the service is delivered"
 msgstr "서비스가 제공되는 위치"
@@ -25173,8 +25194,8 @@ msgstr "판매한 사람, 청구할 통화, 그리고 메모입니다."
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "판매처, 소유권 및 마감 시점"
 
-msgid "Who the company leases from, and who to call there."
-msgstr "회사가 어디에서 리스를 받는지, 그리고 거기에 누구에게 전화할 것인지입니다."
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "회사가 리스를 제공받는 대상, 연락처 및 자산이 사용되는 위치입니다."
 
 msgid "Who the contract is with and what it is called."
 msgstr "계약처, 계약명"

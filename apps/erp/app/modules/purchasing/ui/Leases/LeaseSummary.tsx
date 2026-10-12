@@ -116,7 +116,9 @@ const LeaseSummary = ({
       <CardHeader>
         <HStack className="justify-between items-start">
           <div className="flex flex-col gap-1 min-w-0">
-            <CardTitle className="truncate">{lease.name}</CardTitle>
+            <CardTitle className="truncate">
+              {lease.name || lease.supplierName || lease.leaseId}
+            </CardTitle>
             {lease.description && (
               <CardDescription className="line-clamp-2">
                 {lease.description}
@@ -128,7 +130,11 @@ const LeaseSummary = ({
             <span className="text-xs text-muted-foreground tracking-tight whitespace-nowrap">
               <DateTime value={lease.commencementDate} variant="date" />
               {" – "}
-              <DateTime value={lease.endDate} variant="date" />
+              {lease.endDate ? (
+                <DateTime value={lease.endDate} variant="date" />
+              ) : (
+                <Trans>Open-ended</Trans>
+              )}
             </span>
           </div>
         </HStack>

@@ -132,7 +132,7 @@ async function prepare(
       `The date must fall on a lease-month boundary: the month starts on day ${lease.commencementDate.slice(8)} of a month`
     );
   }
-  if (startDate > addDays(lease.endDate, 1)) {
+  if (lease.endDate && startDate > addDays(lease.endDate, 1)) {
     throw new InvalidInputError("The date is after the end of the lease");
   }
 
@@ -365,6 +365,11 @@ export async function modify(
     );
     if (lines.length === 0) {
       throw new InvalidInputError("The lease has no active asset to modify");
+    }
+    if (!lease.endDate) {
+      throw new InvalidInputError(
+        "An open-ended lease has no term to modify; terminate it and enter the new terms as a new lease"
+      );
     }
     for (const entry of payload.lines) findLine(lines, entry.leaseLineId);
     const startDate = payload.effectiveDate;
@@ -724,6 +729,11 @@ export async function purchase(
     if (line.lesseeClassification === "Short-Term") {
       throw new InvalidInputError(
         "A short-term asset has no right-of-use asset to purchase; end it and buy the asset on a purchase order"
+      );
+    }
+    if (!lease.endDate) {
+      throw new InvalidInputError(
+        "An open-ended lease is short-term and has no right-of-use asset to purchase; end it and buy the asset on a purchase order"
       );
     }
     if (!line.purchaseOptionAmount) {

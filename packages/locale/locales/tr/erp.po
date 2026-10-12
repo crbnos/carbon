@@ -782,11 +782,17 @@ msgstr "3B Model"
 msgid "3h"
 msgstr "3s"
 
+msgid "4 years"
+msgstr "4 yıl"
+
 msgid "4h"
 msgstr "4s"
 
 msgid "5 user minimum"
 msgstr "5 kullanıcı minimum"
+
+msgid "5 years"
+msgstr "5 yıl"
 
 msgid "5-8 weeks"
 msgstr "5-8 hafta"
@@ -2515,6 +2521,12 @@ msgstr "Açık uçlu bir anlaşma her zaman bir kiralama işlemidir. Bunu kullan
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "Açık uçlu bir anlaşma her zaman kiralama olarak muhasebeleştirilir: bir satış için bitiş tarihi gereklidir."
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "Açık uçlu bir kiralama, fesih bildirimi ile sona erdirilebilir, bu nedenle kısa vadeli bir kiralama olarak kabul edilir. Bu şirket, kısa vadeli kiralamaları bilançonun dışında muhasebeleştirmediği için aktive edilemez. Şunlardan biri:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "Açık uçlu bir kiralama kısa vadeli olarak kabul edilir: aktive edildiğinde muhasebe fişi oluşturmaz ve her fatura gidere yazılır."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Dış tedarikçi tarafından yapılan operasyon, bir taşeronluk satın alma siparişi ile kapsanan, içeriye iş merkezi yerine."
@@ -10017,9 +10029,6 @@ msgstr "İçin <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "Örneğin \"Forklift FL-12\" veya \"Plant 2 binası\""
-
 msgid "Forecast"
 msgstr "Tahmin"
 
@@ -10268,6 +10277,9 @@ msgstr "Her varlığa bir ödeme verin."
 
 msgid "Give it an owner and a date"
 msgstr "Ona bir sahip ve bir tarih verin"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "Kiralama için <0>Detaylar adımında sabit bir dönem</0> belirleyin."
 
 msgid "GL"
 msgstr "Büyük defter"
@@ -12098,9 +12110,6 @@ msgstr "Kira Çalışmaları"
 
 msgid "Lease setup"
 msgstr "Kiralama kurulumu"
-
-msgid "Leased Asset"
-msgstr "Kiralanan Varlık"
 
 msgid "Leases"
 msgstr "Kiralar"
@@ -18856,6 +18865,9 @@ msgstr "Bir bitiş tarihine kadar çalışır. Dönem sonundan sonra hala iade e
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Vardiya takvimlerini görmezden gelerek, gözetimsiz olarak günün her saati çalışır."
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "Fesih bildirimi verilene kadar çalışır. Her varlık kısa vadeli: hiçbir şey bilançoya kaydedilmez."
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (en kalın özel)"
 
@@ -22397,6 +22409,9 @@ msgstr "Stoğun fiziksel olarak bulunduğu raflar ve gözler"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "Elinizdeki tezgâh malzemeleri ve sarf malzemeleri"
 
+msgid "The short-term lease expedient is off"
+msgstr "Kısa vadeli kiralama muafiyeti kapalı"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "Bu iş akışını kullanan her sorunun kapatılmadan önce ihtiyacı olan imzalar."
 
@@ -22825,6 +22840,9 @@ msgstr "Bu iş emri atölye'de artık kullanılamayacaktır."
 
 msgid "This job's own required quantity for the material."
 msgstr "Bu işin malzeme için kendi gerekli miktarı."
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "Bu kiralama açık uçlu: fesih bildirimi ile sona erdirilebilir, bu nedenle vadesi kısa ve her varlık kısa vadeli. Hiçbir şey bilançoya kaydedilmez ve her fatura gidere yazılır."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "Farklı bir ad deneyin."
 
 msgid "Tuesday"
 msgstr "Salı"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "Açın <0>Ayarlar → Muhasebe'de Kısa Vadeli Kiralama Muafiyeti</0> veya"
 
 msgid "Turn on the built-in pieces"
 msgstr "Yerleşik parçaları açın"
@@ -24807,9 +24828,6 @@ msgstr "Bu malzeme için Hat yanı'na gerçekten toplanmış olan toplama, parç
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"
 
-msgid "What is leased and where it is used."
-msgstr "Neyin kiralandığı ve nerede kullanıldığı."
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "Kiralanan nedir, örneğin Forklift FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "Mallar gerçekten geldiğinde; makbuzda kaydedilmiş ve tedarikçinin za
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "Kanban kartı tarandığında, iş otomatik olarak taslaktan çıkarılır ve yere yayınlanır."
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "Kiralama ne zaman başlar ve biter. Son tarih, makul ölçüde kesin olan yenilemeler dahil olmak üzere, dönemin son günüdür."
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "Kiralama ne zaman başladığı ve ne kadar sürdüğü, makul ölçüde kesin olan yenilemeleri de kapsayarak."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Mal kabul lokasyonunun stokun teslim alınmasını beklediği zaman; varış yerinde MRP uygunluğunu belirler."
@@ -25037,6 +25055,9 @@ msgstr "Stokun nerede bulunduğu ve nasıl gönderildiği."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Etkilenen ürünlerin sistem genelinde nerede kullanıldığı. Bilgilendirici — burada hiçbir şey yayınlamayı engellemiyor."
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "Varlıkların nerede kullanıldığı. Bir varlık kendi konumunu belirtebilir."
 
 msgid "Where the service is delivered"
 msgstr "Hizmetin nerede sağlandığı"
@@ -25173,8 +25194,8 @@ msgstr "Satıcı, faturalandırılan para birimi ve notlar."
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Kim sattı, kime ait ve ne zaman kapatıldı."
 
-msgid "Who the company leases from, and who to call there."
-msgstr "Şirket kimden kiralamaktadır ve orada kime çağrı yapılır."
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "Şirketin kiralamayı kim verenden aldığı, orada kimi arayacağı ve varlıkların nerede kullanıldığı."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Sözleşmenin karşı tarafı ve adı."

@@ -10,6 +10,7 @@ import {
   LeaseClassificationPreview,
   LeaseCommencementPreview,
   LesseeClassificationBadge,
+  OpenEndedExpedientNotice,
   useLesseeClassificationLabel
 } from "./LeaseClassificationPreview";
 import LeaseDetailsForm from "./LeaseDetailsForm";
@@ -72,6 +73,7 @@ export {
   LeaseSummary,
   LeaseTerminateModal,
   LesseeClassificationBadge,
+  OpenEndedExpedientNotice,
   useLeasePaymentTypeLabel,
   useLeaseTermSave,
   useLesseeClassificationLabel

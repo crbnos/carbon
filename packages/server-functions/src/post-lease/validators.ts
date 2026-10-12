@@ -95,6 +95,13 @@ export const payloadValidator = z.discriminatedUnion("type", [
 
 export type LeasePayload = z.infer<typeof payloadValidator>;
 
+/** Why an open-ended lease cannot activate without the short-term expedient,
+ *  and the two ways to fix it. An open-ended lease can be ended on notice, so
+ *  its term is short (ASC 842-10-30-1) and carrying it on the balance sheet
+ *  one notice period at a time is not supported. */
+export const OPEN_ENDED_NEEDS_EXPEDIENT =
+  "An open-ended lease is a short-term lease, and this company has the short-term lease expedient turned off. Turn on Short-Term Lease Expedient in Settings → Accounting, or give the lease a fixed duration on its Details step.";
+
 /** Why a Draft lease cannot activate, or null. */
 export function activateBlocker(args: {
   status: string;

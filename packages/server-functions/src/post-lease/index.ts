@@ -46,6 +46,7 @@ import { modify, purchase, terminate } from "./lifecycle";
 import {
   activateBlocker,
   type LeasePayload,
+  OPEN_ENDED_NEEDS_EXPEDIENT,
   payloadValidator
 } from "./validators";
 
@@ -148,16 +149,29 @@ async function activate(
       trx,
       companyId
     );
-    const measured = lines.map((line) =>
-      measureAsset({
-        line,
-        payments: paymentsOf(line),
-        fromDate: lease.commencementDate,
-        endDate: lease.endDate,
-        lease,
-        thresholds,
-        shortTermExpedient
-      })
+    // An open-ended lease can be ended on notice, so every asset is
+    // short-term (spec Addendum A10); it needs the expedient.
+    const endDate = lease.endDate;
+    if (!endDate && !shortTermExpedient) {
+      throw new InvalidInputError(OPEN_ENDED_NEEDS_EXPEDIENT);
+    }
+    const measured: MeasuredAsset[] = lines.map((line) =>
+      endDate
+        ? measureAsset({
+            line,
+            payments: paymentsOf(line),
+            fromDate: lease.commencementDate,
+            endDate,
+            lease,
+            thresholds,
+            shortTermExpedient
+          })
+        : {
+            line,
+            liability: 0,
+            classification: "Short-Term",
+            classificationInputs: { openEnded: true }
+          }
     );
     const recognized = measured.filter(
       (
@@ -169,12 +183,12 @@ async function activate(
     const now = datetime.timestamp();
 
     let commencementJournalId: string | null = null;
-    if (recognized.length > 0) {
+    if (endDate && recognized.length > 0) {
       const accounting = await loadLesseeAccounting(trx, {
         companyId,
         companyGroupId: company.companyGroupId
       });
-      const span = scheduleSpan(lease.commencementDate, lease.endDate);
+      const span = scheduleSpan(lease.commencementDate, endDate);
       const schedules: AssetSchedule[] = recognized.map((asset) => ({
         leaseLineId: asset.line.id,
         startDate: lease.commencementDate,

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
 import postLease from "../post-lease";
@@ -139,6 +140,49 @@ databaseTest(
           supplierUnitPrice: 5000
         }
       ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an open-ended lease's rows roll forward as the invoices are drafted",
+  async () => {
+    const f = await leaseFixture({ endDate: null });
+    try {
+      await postLease(f.ctx, { type: "activate", leaseId: f.leaseId });
+      // Set up through 2027-03 (Arrears: the March row is due 2027-03-31).
+      expect(await payments(f)).toHaveLength(3);
+
+      const result = await draft(f, "2027-05-10");
+      // Due by May 10: January to April.
+      expect(result.invoices).toHaveLength(4);
+      const rows = await f.db
+        .selectFrom("leasePayment")
+        .select([
+          sql<string>`"periodStart"::text`.as("periodStart"),
+          "status",
+          "amount"
+        ])
+        .where("leaseId", "=", f.leaseId)
+        .orderBy("periodStart")
+        .execute();
+      // One period past May: rows through June, whole and unprorated.
+      expect(rows.map((row) => row.periodStart)).toEqual([
+        "2027-01-01",
+        "2027-02-01",
+        "2027-03-01",
+        "2027-04-01",
+        "2027-05-01",
+        "2027-06-01"
+      ]);
+      expect(rows.every((row) => Number(row.amount) === 10000)).toBe(true);
+      expect(rows.filter((row) => row.status === "Invoiced")).toHaveLength(4);
+
+      // A second run the same day cuts and drafts nothing.
+      expect((await draft(f, "2027-05-10")).invoices).toHaveLength(0);
+      expect(await payments(f)).toHaveLength(6);
     } finally {
       await f.cleanup();
     }

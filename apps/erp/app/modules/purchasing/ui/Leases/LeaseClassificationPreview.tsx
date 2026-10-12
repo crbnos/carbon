@@ -4,6 +4,9 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   Button,
   cn,
@@ -32,8 +35,8 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
-import { LuCircleCheck, LuCircleMinus } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { LuCircleCheck, LuCircleMinus, LuTriangleAlert } from "react-icons/lu";
+import { Link, useFetcher } from "react-router";
 import { Select, Submit, TextArea } from "~/components/Form";
 import { usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
@@ -106,6 +109,89 @@ export function LesseeClassificationBadge({ value }: { value: string }) {
 
 const TEST_KEYS = ["a", "b", "c", "d", "e"] as const;
 
+/** Why an open-ended lease cannot activate while the short-term expedient is
+ *  off, with both ways to fix it linked: turn the expedient on, or give the
+ *  lease a fixed duration. Mirrors `OPEN_ENDED_NEEDS_EXPEDIENT`. */
+export function OpenEndedExpedientNotice({ leaseId }: { leaseId: string }) {
+  return (
+    <Alert variant="destructive">
+      <LuTriangleAlert className="h-4 w-4" />
+      <AlertTitle>
+        <Trans>The short-term lease expedient is off</Trans>
+      </AlertTitle>
+      <AlertDescription>
+        <p>
+          <Trans>
+            An open-ended lease can be ended on notice, so it is a short-term
+            lease. This company does not account for short-term leases off the
+            balance sheet, so it cannot be activated. Either:
+          </Trans>
+        </p>
+        <ul className="mt-2 list-disc pl-5">
+          <li>
+            <Trans>
+              Turn on{" "}
+              <Link
+                to={path.to.accountingSettings}
+                className="font-medium underline"
+              >
+                Short-Term Lease Expedient in Settings → Accounting
+              </Link>
+              , or
+            </Trans>
+          </li>
+          <li>
+            <Trans>
+              Give the lease a{" "}
+              <Link
+                to={path.to.leaseSetup(leaseId, "details")}
+                className="font-medium underline"
+              >
+                fixed duration on its Details step
+              </Link>
+              .
+            </Trans>
+          </li>
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+/** An open-ended lease's treatment: every asset is short-term. */
+function OpenEndedTreatment({
+  lease,
+  policy
+}: {
+  lease: Lease;
+  policy: LeasePolicy;
+}) {
+  const description = useLesseeClassificationDescription();
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      <div className="flex flex-col gap-1 rounded-lg border border-foreground p-4">
+        <HStack className="justify-between">
+          <LesseeClassificationBadge value="Short-Term" />
+          <LuCircleCheck className="shrink-0" />
+        </HStack>
+        <p className="text-sm text-muted-foreground">
+          {description("Short-Term")}
+        </p>
+      </div>
+      <p className="text-sm text-muted-foreground">
+        <Trans>
+          This lease is open-ended: it can be ended on notice, so its term is
+          short and every asset is short-term. Nothing goes on the balance
+          sheet, and each invoice is expensed.
+        </Trans>
+      </p>
+      {!policy.shortTermExpedient && lease.id && (
+        <OpenEndedExpedientNotice leaseId={lease.id} />
+      )}
+    </div>
+  );
+}
+
 type AssetPreview = {
   line: LeaseLine;
   preview: LesseeClassificationPreview;
@@ -161,6 +247,9 @@ export function LeaseClassificationPreview({
     lease.status === "Draft" && permissions.can("update", "accounting");
   const isSingle = assets.length === 1;
 
+  if (!lease.endDate) {
+    return <OpenEndedTreatment lease={lease} policy={policy} />;
+  }
   if (lines.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
@@ -511,7 +600,8 @@ export function LeaseCommencementPreview({
     lease,
     lines,
     payments,
-    baseCurrencyCode: company.baseCurrencyCode
+    baseCurrencyCode: company.baseCurrencyCode,
+    policy
   });
 
   return (
@@ -523,6 +613,9 @@ export function LeaseCommencementPreview({
           </Trans>
         </p>
       )}
+      {gaps.includes("openEndedWithoutExpedient") && lease.id && (
+        <OpenEndedExpedientNotice leaseId={lease.id} />
+      )}
       {gaps.includes("noAssets") && (
         <p className="text-sm text-destructive">
           <Trans>Add at least one asset before activating.</Trans>
@@ -531,6 +624,14 @@ export function LeaseCommencementPreview({
       {gaps.includes("assetWithoutPayments") && (
         <p className="text-sm text-destructive">
           <Trans>Every asset needs a payment row before activating.</Trans>
+        </p>
+      )}
+      {!lease.endDate && !gaps.includes("openEndedWithoutExpedient") && (
+        <p className="text-sm text-muted-foreground">
+          <Trans>
+            An open-ended lease is short-term: activating it posts no journal,
+            and each invoice is expensed.
+          </Trans>
         </p>
       )}
       {shortTerm.length > 0 && (

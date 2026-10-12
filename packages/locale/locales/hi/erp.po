@@ -782,11 +782,17 @@ msgstr "3D मॉडल"
 msgid "3h"
 msgstr "3 घंटे"
 
+msgid "4 years"
+msgstr "4 साल"
+
 msgid "4h"
 msgstr "4 घंटे"
 
 msgid "5 user minimum"
 msgstr "न्यूनतम 5 उपयोगकर्ता"
+
+msgid "5 years"
+msgstr "5 साल"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
@@ -2515,6 +2521,12 @@ msgstr "एक खुली अवधि का समझौता हमेश�
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "एक खुली अवधि का समझौता हमेशा किराया के रूप में माना जाता है: एक बिक्री को एक समाप्ति तारीख की आवश्यकता है।"
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "एक खुला पट्टा नोटिस पर समाप्त किया जा सकता है, इसलिए यह एक अल्पकालिक पट्टा है। यह कंपनी अल्पकालिक पट्टों को तुलन पत्र से बाहर खाते में नहीं लेती है, इसलिए इसे सक्रिय नहीं किया जा सकता। कोई भी:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "एक खुला पट्टा अल्पकालिक है: इसे सक्रिय करते समय कोई जर्नल पोस्ट नहीं होता है, और प्रत्येक चालान को खर्च के रूप में दर्ज किया जाता है।"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आपूर्तिकर्ता द्वारा किया गया एक ऑपरेशन एक इन-हाउस वर्क सेंटर के बजाय, एक उप-अनुबंध क्रय आदेश द्वारा कवर किया गया।"
@@ -10017,9 +10029,6 @@ msgstr "के लिए <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "उदाहरण के लिए „फोर्कलिफ्ट FL-12\" या „प्लांट 2 इमारत\""
-
 msgid "Forecast"
 msgstr "पूर्वानुमान"
 
@@ -10268,6 +10277,9 @@ msgstr "प्रत्येक संपत्ति को एक भुग�
 
 msgid "Give it an owner and a date"
 msgstr "इसे एक स्वामी और एक तारीख दें"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "पट्टे को इसके <0>विवरण चरण पर निर्धारित अवधि दें</0>।"
 
 msgid "GL"
 msgstr "सामान्य खाता बही"
@@ -12098,9 +12110,6 @@ msgstr "पट्टा रन"
 
 msgid "Lease setup"
 msgstr "पट्टा सेटअप"
-
-msgid "Leased Asset"
-msgstr "पट्टे पर संपत्ति"
 
 msgid "Leases"
 msgstr "पट्टे"
@@ -18856,6 +18865,9 @@ msgstr "एक अंतिम तारीख तक चलता है। ए
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "शिफ्ट कैलेंडर को अनदेखा करते हुए, 24 घंटे बिना निगरानी के चलता है।"
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "जब तक नोटिस पर समाप्त नहीं हो जाता तब तक चलता है। हर संपत्ति अल्पकालिक है: तुलन पत्र पर कुछ नहीं जाता है।"
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (सबसे मोटे विशेष)"
 
@@ -22397,6 +22409,9 @@ msgstr "वह शेल्फ और बिन जहां स्टॉक भ
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "दुकान की आपूर्ति और उपभोग्य सामग्री जो आप हाथ में रखते हैं"
 
+msgid "The short-term lease expedient is off"
+msgstr "अल्पकालिक पट्टा उपाय बंद है"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "साइन-ऑफ जो इस वर्कफ़्लो का उपयोग करने वाली प्रत्येक समस्या को बंद करने से पहले चाहिए।"
 
@@ -22825,6 +22840,9 @@ msgstr "यह नौकरी अब शॉप फ्लोर पर उपल
 
 msgid "This job's own required quantity for the material."
 msgstr "इस सामग्री के लिए इस कार्य की अपनी आवश्यक मात्रा।"
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "यह पट्टा खुला है: इसे नोटिस पर समाप्त किया जा सकता है, इसलिए इसकी अवधि कम है और हर संपत्ति अल्पकालिक है। तुलन पत्र पर कुछ नहीं जाता है, और प्रत्येक चालान को खर्च के रूप में दर्ज किया जाता है।"
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "एक अलग नाम आज़माएँ।"
 
 msgid "Tuesday"
 msgstr "मंगलवार"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "सेटिंग्स → लेखांकन में <0>अल्पकालिक पट्टा उपाय चालू करें</0>, या"
 
 msgid "Turn on the built-in pieces"
 msgstr "बिल्ट-इन पीसेस को चालू करें"
@@ -24807,9 +24828,6 @@ msgstr "इस सामग्री के लिए प्रति पार�
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
 
-msgid "What is leased and where it is used."
-msgstr "क्या पट्टे पर है और कहाँ इसका उपयोग किया जाता है।"
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "पट्टे पर क्या है, उदाहरण के लिए Forklift FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "जब सामान वास्तव में आ गए; रस�
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "जब कानबान कार्ड को स्कैन किया जाता है, तो नौकरी स्वचालित रूप से ड्राफ्ट से बाहर चली जाती है और फर्श पर रिलीज के लिए जारी की जाती है।"
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "जब पट्टा शुरू और समाप्त होता है। अंत की तारीख अवधि का अंतिम दिन है, जिसमें नवीकरण शामिल हैं जो उचित रूप से निश्चित हैं।"
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "जब पट्टा शुरू होता है और यह कितने समय तक चलता है, उचित रूप से निश्चित नवीनीकरण सहित।"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "प्राप्ति स्थान को स्टॉक के आने की उम्मीद कब है; गंतव्य पर MRP उपलब्धता को संचालित करता है।"
@@ -25037,6 +25055,9 @@ msgstr "स्टॉक कहाँ रहता है और यह कैस
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "जहां प्रभावित आइटम पूरे सिस्टम में उपयोग किए जाते हैं। सूचनात्मक — यहां कुछ भी जारी करने में बाधा नहीं डालता।"
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "जहां संपत्तियों का उपयोग किया जाता है। एक संपत्ति के पास अपना हो सकता है।"
 
 msgid "Where the service is delivered"
 msgstr "सेवा कहाँ दी जाती है"
@@ -25173,8 +25194,8 @@ msgstr "इसे किसने बेचा, यह किस मुद्र
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "इसे किसने बेचा, यह किससे संबंधित है, और यह कब बंद हुआ।"
 
-msgid "Who the company leases from, and who to call there."
-msgstr "कंपनी किससे पट्टे पर लेती है, और वहां किसे कॉल करना है।"
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "कंपनी किससे पट्टे पर लेती है, वहां किसे बुलाना है, और जहां संपत्तियों का उपयोग किया जाता है।"
 
 msgid "Who the contract is with and what it is called."
 msgstr "यह अनुबंध किसके साथ है और इसे क्या कहा जाता है।"

@@ -94,7 +94,8 @@ const LeaseHeader = ({
       lease,
       lines,
       payments,
-      baseCurrencyCode: company?.baseCurrencyCode
+      baseCurrencyCode: company?.baseCurrencyCode,
+      policy: leasePolicy
     }).length === 0;
 
   const open = (next: PendingAction) => {
@@ -195,7 +196,7 @@ const LeaseHeader = ({
             )}
           </HStack>
           <HStack>
-            {isActive && (
+            {isActive && lease.endDate && (
               <Button
                 variant="secondary"
                 leftIcon={<LuPencilRuler />}

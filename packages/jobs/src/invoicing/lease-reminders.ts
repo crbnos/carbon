@@ -18,7 +18,8 @@ import { sql } from "kysely";
 export type LeaseReminderCandidate = {
   id: string;
   noticeDate: string | null;
-  endDate: string;
+  /** Null is open-ended: there is no end date to remind of. */
+  endDate: string | null;
   noticeRemindedFor: string | null;
   endRemindedFor: string | null;
 };

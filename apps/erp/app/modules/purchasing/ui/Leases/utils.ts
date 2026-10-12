@@ -209,21 +209,27 @@ export function previewLesseeClassification(args: {
 }
 
 /** What stops a Draft from activating, as the `post-lease` activate refuses
- *  it (`activateBlocker`): no asset, an asset with no payment row, or a
- *  currency other than the company's base currency. The Review step lists
- *  them and the setup footer disables Activate. */
+ *  it (`activateBlocker`, `OPEN_ENDED_NEEDS_EXPEDIENT`): no asset, an asset
+ *  with no payment row, a currency other than the company's base currency,
+ *  or an open-ended lease while the short-term expedient is off. The Review
+ *  step lists them and the setup footer disables Activate. */
 export type LeaseActivationGap =
   | "noAssets"
   | "assetWithoutPayments"
-  | "foreignCurrency";
+  | "foreignCurrency"
+  | "openEndedWithoutExpedient";
 
 export function leaseActivationGaps(args: {
-  lease: Pick<Lease, "currencyCode">;
+  lease: Pick<Lease, "currencyCode" | "endDate">;
   lines: Pick<LeaseLine, "id">[];
   payments: Pick<LeasePayment, "leaseLineId">[];
   baseCurrencyCode: string | null | undefined;
+  policy: Pick<LeasePolicy, "shortTermExpedient">;
 }): LeaseActivationGap[] {
   const gaps: LeaseActivationGap[] = [];
+  if (!args.lease.endDate && !args.policy.shortTermExpedient) {
+    gaps.push("openEndedWithoutExpedient");
+  }
   if (args.lines.length === 0) gaps.push("noAssets");
   if (
     args.lines.some(

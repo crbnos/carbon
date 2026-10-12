@@ -11,10 +11,15 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
-import { round } from "@carbon/utils";
+import {
+  generateLeasePayments,
+  openEndedLeaseHorizon,
+  round
+} from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
+import { currencyDecimals } from "../post-rental-agreement/agreement";
 
 export type LeaseInvoiceGenerationArgs = {
   companyId: string;
@@ -77,15 +82,22 @@ async function createLeaseInvoicesForDuePayments(
     .where("lease.companyId", "=", companyId)
     .where("lease.status", "in", BILLABLE_STATUSES)
     .where((eb) =>
-      eb.exists(
-        eb
-          .selectFrom("leasePayment as p")
-          .select("p.id")
-          .whereRef("p.leaseId", "=", "lease.id")
-          .whereRef("p.companyId", "=", "lease.companyId")
-          .where("p.status", "=", "Pending")
-          .where("p.dueDate", "<=", asOf)
-      )
+      eb.or([
+        eb.exists(
+          eb
+            .selectFrom("leasePayment as p")
+            .select("p.id")
+            .whereRef("p.leaseId", "=", "lease.id")
+            .whereRef("p.companyId", "=", "lease.companyId")
+            .where("p.status", "=", "Pending")
+            .where("p.dueDate", "<=", asOf)
+        ),
+        // An Active open-ended lease's next rows are cut by this run.
+        eb.and([
+          eb("lease.status", "=", "Active"),
+          eb("lease.endDate", "is", null)
+        ])
+      ])
     )
     .orderBy("lease.leaseId");
   if (leaseId) dueQuery = dueQuery.where("lease.id", "=", leaseId);
@@ -125,6 +137,7 @@ async function draftLeaseInvoices(
     .select([
       "id",
       "status",
+      "endDate",
       "supplierId",
       "supplierContactId",
       "supplierLocationId",
@@ -136,6 +149,9 @@ async function draftLeaseInvoices(
     .forUpdate()
     .executeTakeFirstOrThrow();
   if (!BILLABLE_STATUSES.includes(lease.status)) return [];
+  if (lease.status === "Active" && lease.endDate === null) {
+    await rollOpenEndedLeasePayments(trx, { companyId, userId, leaseId, asOf });
+  }
 
   const rows = await trx
     .selectFrom("leasePayment as p")
@@ -287,6 +303,91 @@ async function draftLeaseInvoices(
     drafted.push({ invoiceId: invoice.id, leaseId });
   }
   return drafted;
+}
+
+/**
+ * Cuts an open-ended lease's payment rows forward to one period past `asOf`
+ * (`openEndedLeaseHorizon`), for each active asset with a payment: only the
+ * periods after its last Rent row, so an edited or deleted row is never cut
+ * again. A row due before `invoiceFromDate` is Skipped, as at setup. The
+ * lease row is locked by the caller.
+ */
+export async function rollOpenEndedLeasePayments(
+  trx: KyselyTx,
+  args: { companyId: string; userId: string; leaseId: string; asOf: string }
+): Promise<number> {
+  const { companyId, userId, leaseId, asOf } = args;
+  const lease = await trx
+    .selectFrom("lease")
+    .select([
+      sql<string>`"commencementDate"::text`.as("commencementDate"),
+      sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate"),
+      "paymentFrequency",
+      "paymentTiming",
+      "annualEscalationPercent",
+      "currencyCode"
+    ])
+    .where("id", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+  const lines = await trx
+    .selectFrom("leaseLine as l")
+    .leftJoin("leasePayment as p", (join) =>
+      join
+        .onRef("p.leaseLineId", "=", "l.id")
+        .onRef("p.companyId", "=", "l.companyId")
+        .on("p.paymentType", "=", "Rent")
+    )
+    .select([
+      "l.id",
+      "l.paymentAmount",
+      sql<string | null>`max(p."periodStart")::text`.as("lastPeriodStart")
+    ])
+    .where("l.leaseId", "=", leaseId)
+    .where("l.companyId", "=", companyId)
+    .where("l.status", "=", "Active")
+    .where("l.paymentAmount", ">", 0)
+    .groupBy(["l.id", "l.paymentAmount"])
+    .execute();
+  if (lines.length === 0) return 0;
+
+  const decimals = await currencyDecimals(trx, companyId, lease.currencyCode);
+  const through = openEndedLeaseHorizon(
+    lease.commencementDate,
+    asOf,
+    lease.paymentFrequency
+  );
+  const rows = lines.flatMap((line) =>
+    generateLeasePayments({
+      commencementDate: lease.commencementDate,
+      endDate: null,
+      through,
+      paymentAmount: Number(line.paymentAmount),
+      frequency: lease.paymentFrequency,
+      timing: lease.paymentTiming,
+      annualEscalationPercent: Number(lease.annualEscalationPercent),
+      purchaseOptionAmount: 0,
+      decimals
+    })
+      .filter(
+        (row) => !line.lastPeriodStart || row.periodStart > line.lastPeriodStart
+      )
+      .map((row) => ({
+        ...row,
+        leaseId,
+        leaseLineId: line.id,
+        status:
+          row.dueDate < lease.invoiceFromDate
+            ? ("Skipped" as const)
+            : ("Pending" as const),
+        companyId,
+        createdBy: userId
+      }))
+  );
+  if (rows.length > 0) {
+    await trx.insertInto("leasePayment").values(rows).execute();
+  }
+  return rows.length;
 }
 
 /** "Forklift FL-12 — 2027-01-01 to 2027-01-31", or for a one-off payment

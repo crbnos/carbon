@@ -782,11 +782,17 @@ msgstr "3D 模型"
 msgid "3h"
 msgstr "3小时"
 
+msgid "4 years"
+msgstr "4 年"
+
 msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
 msgstr "最少需要5个用户"
+
+msgid "5 years"
+msgstr "5 年"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -2515,6 +2521,12 @@ msgstr "无固定期限的协议始终是租赁。设置结束日期以使用这
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "无固定期限的协议始终作为租赁处理：销售需要结束日期。"
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "无期限租赁可随时终止，因此属于短期租赁。该公司不在资产负债表外确认短期租赁，无法激活。选择以下任一项："
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "无期限租赁属于短期租赁：激活时不会过账凭证，每份发票均作为费用处理。"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
@@ -10017,9 +10029,6 @@ msgstr "对于 <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "例如「叉车FL-12」或「2号厂房」"
-
 msgid "Forecast"
 msgstr "预测"
 
@@ -10268,6 +10277,9 @@ msgstr "为每项资产分配付款。"
 
 msgid "Give it an owner and a date"
 msgstr "给它分配一个负责人和截止日期"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "在其详细信息步骤中为租赁指定<0>固定期限</0>。"
 
 msgid "GL"
 msgstr "总账"
@@ -12098,9 +12110,6 @@ msgstr "租赁批次"
 
 msgid "Lease setup"
 msgstr "租赁换型"
-
-msgid "Leased Asset"
-msgstr "租赁资产"
 
 msgid "Leases"
 msgstr "租赁"
@@ -18856,6 +18865,9 @@ msgstr "运行至结束日期。期后仍未归还的设备继续计费。"
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "无人值守全天候运行，忽略班次日历。"
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "持续运行，直至随时终止。所有资产为短期资产：不计入资产负债表。"
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
 
@@ -22397,6 +22409,9 @@ msgstr "库存实际存放的货架和料箱"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
 
+msgid "The short-term lease expedient is off"
+msgstr "短期租赁豁免已禁用"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "使用此工作流的每个问题被关闭前需要的签核。"
 
@@ -22825,6 +22840,9 @@ msgstr "此工作将不再在车间可用。"
 
 msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "该租赁为无期限租赁：可随时终止，因此其期限较短，所有资产为短期资产。不计入资产负债表，每份发票均作为费用处理。"
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "请尝试其他名称。"
 
 msgid "Tuesday"
 msgstr "星期二"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "启用<0>设置 → 会计中的短期租赁豁免</0>，或"
 
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
@@ -24807,9 +24828,6 @@ msgstr "此物料实际拣货到线边的零件。拣货可能会使用与物料
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
 
-msgid "What is leased and where it is used."
-msgstr "租赁资产及其使用地点。"
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "租赁的资产是什么，例如叉车 FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评�
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂。"
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "租赁的开始和结束时间。结束日期是期限的最后一天，包括合理确定的续租。"
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "租赁何时开始及其持续多久，包括有合理确定性的续约。"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "当收货地点期望库存到达时；驱动目的地的 MRP 可用性。"
@@ -25037,6 +25055,9 @@ msgstr "库存存放位置及其发货方式。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "受影响的物料在整个系统中的使用位置。仅供参考——此处没有任何内容阻止已下达。"
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "资产的使用地点。一项资产可以拥有自己的地点。"
 
 msgid "Where the service is delivered"
 msgstr "服务交付的位置"
@@ -25173,8 +25194,8 @@ msgstr "谁出售的、以什么货币计费以及任何备注。"
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "谁出售、所有权及何时已关闭。"
 
-msgid "Who the company leases from, and who to call there."
-msgstr "公司从谁那里租赁，以及在那里与谁联系。"
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "公司的租赁出租方、该出租方的联系方式以及资产的使用地点。"
 
 msgid "Who the contract is with and what it is called."
 msgstr "合同对方及合同名称。"

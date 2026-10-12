@@ -13,7 +13,7 @@ A new lease opens a five-step setup. **"Next"** on the first step saves it as a 
 
 <Steps>
 <Step>
-**Details.** The **"Supplier"**, **"Supplier Location"** and **"Supplier Contact"**; the lease's **"Name"**, such as "Warehouse forklifts", and the **"Location"** where its assets are used; then the term, which every asset shares: **"Commencement Date"**, **"End Date"** (including renewals that are reasonably certain), **"Notice Date"**, the last day to give notice, and **"Invoice From"**: payments due before it are marked as paid outside Carbon. Under **More Details**, the **"Owner"**, who gets the invoice digest and the date reminders.
+**Details.** The **"Supplier"**, **"Supplier Location"** and **"Supplier Contact"**, and the **"Location"** where the assets are used. Then the term, which every asset shares: the **"Commencement Date"** and the **"Duration"**: 1 to 5 years, **Open-ended**, or **Custom** with an **"End Date"**. A duration includes renewals that are reasonably certain. Then the **"Notice Date"**, the last day to give notice, and **"Invoice From"**: payments due before it are marked as paid outside Carbon. Under **More Details**, the **"Owner"**, who gets the invoice digest and the date reminders, and **"Notes"**. A lease is known by its number and its supplier.
 </Step>
 <Step>
 **Assets.** **"Add Asset"** for each asset the lease covers: its description, such as "Forklift FL-12", its **"Serial Number"**, and the **"Payment"** the lease pays for it each period. Click a cell to change it, or to give an asset its own **"Location"**. Each asset's payment rows are cut as you add it.
@@ -45,6 +45,14 @@ A new lease opens a five-step setup. **"Next"** on the first step saves it as a 
 **"Activate"** needs at least one asset and a payment row for each. It classifies each asset, measures each asset's liability at the present value of its payment rows, posts one commencement journal with lines for each asset, and writes each asset's monthly schedule. The terms, assets and payment rows are fixed from then on. Each asset also has its own status: Active, Terminated, Purchased or Expired. The lease stays Active while any asset is.
 
 **"Cancel Lease"**, in the header menu of an active lease, voids the lease's journals and removes the schedule. It is refused once a payment is invoiced or a lease run holds or has posted the lease's entries: terminate its assets instead. **"Delete Lease"** is for drafts only.
+
+## Open-ended leases
+
+An open-ended lease runs until either side ends it on notice, such as a month-to-month rental. Under ASC 842, its term is only the notice period, so every asset is **Short-Term**. Activation posts no journal and writes no schedule, and each invoice is expensed.
+
+Its payment rows always reach one period past today. Each day, Carbon cuts the next period's row before it drafts the invoices that are due. **"Terminate"** ends the lease on a date. **"Modify"** and **"Exercise Purchase Option"** do not apply: to change the terms, terminate it and enter a new lease.
+
+An open-ended lease needs the company's **"Short-Term Lease Expedient"**. If it is off, the lease cannot be activated: turn it on in **Settings → Accounting**, or give the lease a fixed **"Duration"**. The Review step links both.
 
 ## Classification
 
@@ -99,7 +107,7 @@ Every day, Carbon drafts a [purchase invoice](/docs/reference/invoices) per leas
 
 When a lease's notice date or end date is within the company's **"Lease Reminder Days"**, its owner and the **"Also notify"** group get a "Lease date coming up" notification, once per date.
 
-An active lease expires on its own once it is past its end date, every lease run entry is posted, and no payment is left to invoice. An asset the company will own, by an ownership transfer or a reasonably certain purchase option, still carries a right-of-use asset at the end of the term, so the lease waits for its **"Exercise Purchase Option"**.
+An open-ended lease never expires. An active lease with an end date expires on its own once it is past its end date, every lease run entry is posted, and no payment is left to invoice. An asset the company will own, by an ownership transfer or a reasonably certain purchase option, still carries a right-of-use asset at the end of the term, so the lease waits for its **"Exercise Purchase Option"**.
 
 ## Leases that started before the cutover
 

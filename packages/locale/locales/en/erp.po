@@ -782,11 +782,17 @@ msgstr "3D Model"
 msgid "3h"
 msgstr "3h"
 
+msgid "4 years"
+msgstr "4 years"
+
 msgid "4h"
 msgstr "4h"
 
 msgid "5 user minimum"
 msgstr "5 user minimum"
+
+msgid "5 years"
+msgstr "5 years"
 
 msgid "5-8 weeks"
 msgstr "5-8 weeks"
@@ -2515,6 +2521,12 @@ msgstr "An open-ended agreement is always a rental. Set an end date to use these
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "An open-ended agreement is always treated as a rental: a sale needs an end date."
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
@@ -10017,9 +10029,6 @@ msgstr "For <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "For example \"Forklift FL-12\" or \"Plant 2 building\""
-
 msgid "Forecast"
 msgstr "Forecast"
 
@@ -10268,6 +10277,9 @@ msgstr "Give every asset a payment."
 
 msgid "Give it an owner and a date"
 msgstr "Give it an owner and a date"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "Give the lease a <0>fixed duration on its Details step</0>."
 
 msgid "GL"
 msgstr "GL"
@@ -12098,9 +12110,6 @@ msgstr "Lease Runs"
 
 msgid "Lease setup"
 msgstr "Lease setup"
-
-msgid "Leased Asset"
-msgstr "Leased Asset"
 
 msgid "Leases"
 msgstr "Leases"
@@ -18856,6 +18865,9 @@ msgstr "Runs to an end date. A unit still out after it keeps billing."
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "Runs unattended around the clock, ignoring shift calendars."
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1 (coarsest special)"
 
@@ -22397,6 +22409,9 @@ msgstr "The shelves and bins where stock physically sits"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "The shop supplies and consumables you keep on hand"
 
+msgid "The short-term lease expedient is off"
+msgstr "The short-term lease expedient is off"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "The sign-offs every issue using this workflow needs before it can be closed."
 
@@ -22825,6 +22840,9 @@ msgstr "This job will no longer be available on the shop floor."
 
 msgid "This job's own required quantity for the material."
 msgstr "This job's own required quantity for the material."
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "Try a different name."
 
 msgid "Tuesday"
 msgstr "Tuesday"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
 
 msgid "Turn on the built-in pieces"
 msgstr "Turn on the built-in pieces"
@@ -24807,9 +24828,6 @@ msgstr "What has actually been picked to lineside for this material, per part. A
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"
 
-msgid "What is leased and where it is used."
-msgstr "What is leased and where it is used."
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "What is leased, for example Forklift FL-12"
 
@@ -24972,8 +24990,8 @@ msgstr "When the goods actually arrived; recorded on the receipt and used for su
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "When the lease starts and how long it runs, including renewals that are reasonably certain."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
@@ -25037,6 +25055,9 @@ msgstr "Where stock lives and how it ships."
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Where the affected items are used across the system. Informational — nothing here blocks releasing."
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "Where the assets are used. An asset can have its own."
 
 msgid "Where the service is delivered"
 msgstr "Where the service is delivered"
@@ -25173,8 +25194,8 @@ msgstr "Who sold it, the currency it bills in, and any notes."
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Who sold it, what it belongs to, and when it closed."
 
-msgid "Who the company leases from, and who to call there."
-msgstr "Who the company leases from, and who to call there."
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "Who the company leases from, who to call there, and where the assets are used."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Who the contract is with and what it is called."

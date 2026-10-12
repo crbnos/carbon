@@ -23,6 +23,8 @@ import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  leaseDurationOf,
+  leaseEndDate,
   leaseLineValidator,
   leaseModifyValidator,
   leasePaymentValidator,
@@ -178,7 +180,6 @@ describe("the document validators carry no contact requirement (D-2)", () => {
 
 describe("leaseValidator", () => {
   const base = {
-    name: "Forklift FL-12",
     supplierId: "supplier-1",
     commencementDate: "2027-01-01",
     endDate: "2029-12-31",
@@ -207,6 +208,47 @@ describe("leaseValidator", () => {
 
   it("refuses invoicing that starts before commencement", () => {
     expect(parse({ invoiceFromDate: "2026-12-01" }).success).toBe(false);
+  });
+});
+
+describe("lease durations", () => {
+  it("ends a preset the day before the same date N months on", () => {
+    expect(leaseEndDate("2027-01-01", "36")).toBe("2029-12-31");
+    expect(leaseEndDate("2027-01-31", "12")).toBe("2028-01-30");
+    expect(leaseEndDate("2027-01-01", "open")).toBeNull();
+    expect(leaseEndDate("2027-01-01", "custom", "2027-06-30")).toBe(
+      "2027-06-30"
+    );
+  });
+
+  it("reads the duration back from the dates", () => {
+    const of = (endDate: string | null) =>
+      leaseDurationOf({ commencementDate: "2027-01-01", endDate });
+    expect(of("2029-12-31")).toBe("36");
+    expect(of(null)).toBe("open");
+    expect(of("2029-06-30")).toBe("custom");
+  });
+
+  it("needs an end date only for a custom duration", () => {
+    const parse = (overrides: Record<string, string>) =>
+      leaseValidator.safeParse({
+        supplierId: "supplier-1",
+        commencementDate: "2027-01-01",
+        paymentFrequency: "Monthly",
+        paymentTiming: "Arrears",
+        discountRate: "6",
+        currencyCode: "USD",
+        ...overrides
+      });
+    expect(parse({ duration: "open" }).success).toBe(true);
+    expect(parse({ duration: "36" }).success).toBe(true);
+    expect(parse({ duration: "custom" }).success).toBe(false);
+    expect(parse({ duration: "custom", endDate: "2026-12-31" }).success).toBe(
+      false
+    );
+    expect(parse({ duration: "custom", endDate: "2027-06-30" }).success).toBe(
+      true
+    );
   });
 });
 

@@ -87,12 +87,13 @@ export default function LeaseSetupRoute() {
       lease,
       lines,
       payments,
-      baseCurrencyCode: company?.baseCurrencyCode
+      baseCurrencyCode: company?.baseCurrencyCode,
+      policy: leasePolicy
     }).length === 0;
 
   return (
     <SetupFrame
-      title={lease.name || readableId}
+      title={lease.name || lease.supplierName || readableId}
       subtitle={[readableId, lease.supplierName].filter(Boolean).join(" · ")}
       step={step}
       steps={<LeaseSetupSteps current={step} leaseId={id} />}

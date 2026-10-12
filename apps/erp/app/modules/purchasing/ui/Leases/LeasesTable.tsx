@@ -156,7 +156,10 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
       {
         accessorKey: "endDate",
         header: t`End`,
-        cell: (item) => formatDate(item.getValue<string>()),
+        cell: (item) => {
+          const value = item.getValue<string | null>();
+          return value ? formatDate(value) : t`Open-ended`;
+        },
         meta: {
           icon: <LuCalendar />
         }

@@ -25,7 +25,8 @@ export type LeaseFixtureAsset = {
 };
 
 export type LeaseFixtureOptions = LeaseFixtureAsset & {
-  endDate?: string; // default 2029-12-31
+  /** Default 2029-12-31; null is open-ended (rows cut through 2027-03-01). */
+  endDate?: string | null;
   timing?: "Advance" | "Arrears"; // default Arrears
   /** The leased assets; default one, from the asset options above. */
   assets?: LeaseFixtureAsset[];
@@ -55,7 +56,8 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   accounts: Record<LeaseFixtureAccount, string>;
   cleanup(): Promise<void>;
 }> {
-  const endDate = options.endDate ?? "2029-12-31";
+  const endDate =
+    options.endDate === undefined ? "2029-12-31" : options.endDate;
   const timing = options.timing ?? "Arrears";
   const db = await connectLocalTestDatabase();
   const prefix = `leasefx-${crypto
@@ -259,6 +261,7 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
           generateLeasePayments({
             commencementDate: "2027-01-01",
             endDate,
+            through: endDate ? undefined : "2027-03-01",
             paymentAmount: asset.paymentAmount ?? 10000,
             frequency: "Monthly",
             timing,

@@ -12,7 +12,8 @@ import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import {
   LeaseCommencementPreview,
   LeaseSummary,
-  leaseActivationGaps
+  leaseActivationGaps,
+  OpenEndedExpedientNotice
 } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
@@ -31,7 +32,8 @@ export default function LeaseSetupReviewRoute() {
     lease,
     lines,
     payments,
-    baseCurrencyCode: company?.baseCurrencyCode
+    baseCurrencyCode: company?.baseCurrencyCode,
+    policy: leasePolicy
   });
 
   return (
@@ -65,6 +67,11 @@ export default function LeaseSetupReviewRoute() {
             </p>
           ) : (
             <ul className="flex flex-col gap-3 text-sm">
+              {gaps.includes("openEndedWithoutExpedient") && (
+                <li>
+                  <OpenEndedExpedientNotice leaseId={id} />
+                </li>
+              )}
               {gaps.includes("noAssets") && (
                 <Gap
                   to={path.to.leaseSetup(id, "assets")}

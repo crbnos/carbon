@@ -782,11 +782,17 @@ msgstr "3Dモデル"
 msgid "3h"
 msgstr "3時間"
 
+msgid "4 years"
+msgstr "4年"
+
 msgid "4h"
 msgstr "4時間"
 
 msgid "5 user minimum"
 msgstr "最低 5 ユーザー"
+
+msgid "5 years"
+msgstr "5年"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
@@ -2515,6 +2521,12 @@ msgstr "期間制限のない契約は常にレンタルです。これらを使
 
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "期間制限のない契約は常にレンタルとして扱われます。売上として扱うには終了日が必要です。"
+
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "期限を定めないリースは予告で終了できるため、短期リースです。この会社は短期リースを貸借対照表から外して処理していないため、有効化できません。どちらかを行ってください："
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "期限を定めないリースは短期です。これを有効化すると、仕訳が転記されず、各請求書は費用計上されます。"
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
@@ -10017,9 +10029,6 @@ msgstr "用<0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
-msgid "For example \"Forklift FL-12\" or \"Plant 2 building\""
-msgstr "例：「フォークリフトFL-12」または「プラント2建物」"
-
 msgid "Forecast"
 msgstr "予測"
 
@@ -10268,6 +10277,9 @@ msgstr "すべての資産に支払明細を与えてください。"
 
 msgid "Give it an owner and a date"
 msgstr "責任者と日付を指定してください"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "リースに<0>詳細ステップで固定期間を設定してください</0>。"
 
 msgid "GL"
 msgstr "総勘定元帳"
@@ -12098,9 +12110,6 @@ msgstr "リース処理"
 
 msgid "Lease setup"
 msgstr "リース段取り"
-
-msgid "Leased Asset"
-msgstr "リース資産"
 
 msgid "Leases"
 msgstr "リース"
@@ -18856,6 +18865,9 @@ msgstr "終了日まで実行されます。その後も返却されていない
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "無人で24時間実行され、シフトカレンダーを無視します。"
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "予告で終了されるまで実行されます。すべての資産は短期です。貸借対照表には何も計上されません。"
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最も粗い特殊）"
 
@@ -22397,6 +22409,9 @@ msgstr "在庫が物理的に置かれている棚とビン。"
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "手元に保管する店舗用品と消耗品"
 
+msgid "The short-term lease expedient is off"
+msgstr "短期リースの簡便処理がオフです"
+
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "このワークフローを使用するすべてのイシューが閉じられる前に必要な署名。"
 
@@ -22825,6 +22840,9 @@ msgstr "この製造指図は製造現場で利用できなくなります。"
 
 msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "このリースは期限を定めません。予告で終了できるため、期間は短く、すべての資産は短期です。貸借対照表には何も計上されず、各請求書は費用計上されます。"
 
 #. placeholder {0}: formatDate(cutoverDate, undefined, locale)
 msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
@@ -23573,6 +23591,9 @@ msgstr "別の名前を試してください。"
 
 msgid "Tuesday"
 msgstr "火曜日"
+
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "<0>設定 → 会計で短期リースの簡便処理をオンにしてください</0>、または"
 
 msgid "Turn on the built-in pieces"
 msgstr "組み込み機能をオンにする"
@@ -24807,9 +24828,6 @@ msgstr "この材料用にラインサイドに実際にピッキングされた
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
 
-msgid "What is leased and where it is used."
-msgstr "リースされるもの、およびそれがどこで使用されるか。"
-
 msgid "What is leased, for example Forklift FL-12"
 msgstr "リースされている内容（例：Forklift FL-12など）"
 
@@ -24972,8 +24990,8 @@ msgstr "商品が実際に到着した日時。入荷に記録され、仕入先
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "かんばんカードがスキャンされると、製造指図は自動的に下書きから移動され、フロアにリリース済となります。"
 
-msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr "リースの開始日と終了日。終了日は期間の最終日で、合理的に確実な更新を含みます。"
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "リースが開始される時期と期間、および合理的に確実な更新を含みます。"
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "入荷拠点が在庫到着を予想する日時。目的地でのMRP在庫可用性を決定します。"
@@ -25037,6 +25055,9 @@ msgstr "在庫がどこに保管され、どのように出荷されるか。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "影響を受けるアイテムがシステム全体でどこで使用されているか。情報提供 - ここに何もリリースをブロックしません。"
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "資産が使用される場所です。資産は独自のものを持つことができます。"
 
 msgid "Where the service is delivered"
 msgstr "外注サービスが提供される場所"
@@ -25173,8 +25194,8 @@ msgstr "誰がそれを販売したか、請求する通貨、そしてメモ。
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "販売者、対象、クローズ日。"
 
-msgid "Who the company leases from, and who to call there."
-msgstr "会社がリースする仕入先と、そこの連絡先。"
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "会社がリースする相手、その相手の連絡先、および資産が使用される場所です。"
 
 msgid "Who the contract is with and what it is called."
 msgstr "契約の相手先と名称"

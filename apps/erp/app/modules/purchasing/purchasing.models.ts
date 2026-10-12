@@ -4,6 +4,8 @@
 
 import type { Database } from "@carbon/database";
 import {
+  addDays,
+  addMonths,
   bicMatchesCountry,
   getBankFieldConfig,
   isValidSwiftBic,
@@ -1021,11 +1023,58 @@ function isOnOrAfter(later: string, earlier: string): boolean {
   }
 }
 
+/** How long a lease runs, as the Details step asks it (the AR contract's
+ *  Duration): N months from commencement, open-ended, or a custom end date.
+ *  Not stored — `leaseDurationOf` reads it back from the dates. */
+export const leaseDurations = [
+  "12",
+  "24",
+  "36",
+  "48",
+  "60",
+  "open",
+  "custom"
+] as const;
+
+export type LeaseDuration = (typeof leaseDurations)[number];
+
+/** The end date a duration gives: N months ends the day before the same
+ *  date N months on (`addMonths` clamps to the month end, as the payment
+ *  rows do), so 36 months from 1 Jan 2027 ends 31 Dec 2029. Null is
+ *  open-ended. */
+export function leaseEndDate(
+  commencementDate: string,
+  duration: LeaseDuration,
+  endDate?: string | null
+): string | null {
+  if (duration === "open") return null;
+  if (duration === "custom") return endDate || null;
+  return addDays(addMonths(commencementDate, Number(duration)), -1);
+}
+
+/** The duration a lease's dates show: a preset when the end falls exactly
+ *  N months on, open-ended without an end, else custom. */
+export function leaseDurationOf(lease: {
+  commencementDate: string | null;
+  endDate: string | null;
+}): LeaseDuration {
+  if (!lease.endDate) return "open";
+  if (!lease.commencementDate) return "custom";
+  return (
+    leaseDurations.find(
+      (duration) =>
+        duration !== "open" &&
+        duration !== "custom" &&
+        leaseEndDate(lease.commencementDate!, duration) === lease.endDate
+    ) ?? "custom"
+  );
+}
+
 export const leaseValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     leaseId: zfd.text(z.string().optional()),
-    name: z.string().trim().min(1, { message: "Name is required" }),
+    name: zfd.text(z.string().trim().optional()),
     description: zfd.text(z.string().optional()),
     supplierId: z.string().min(1, { message: "Supplier is required" }),
     supplierLocationId: zfd.text(z.string().optional()),
@@ -1035,7 +1084,10 @@ export const leaseValidator = z
     commencementDate: z
       .string()
       .min(1, { message: "Commencement date is required" }),
-    endDate: z.string().min(1, { message: "End date is required" }),
+    /** Absent when a single term is saved: the end date is then as given. */
+    duration: z.enum(leaseDurations).optional(),
+    /** Empty is open-ended. */
+    endDate: zfd.text(z.string().optional()),
     noticeDate: zfd.text(z.string().optional()),
     invoiceFromDate: zfd.text(z.string().optional()),
     paymentFrequency: z.enum(leasePaymentFrequencies, {
@@ -1052,12 +1104,27 @@ export const leaseValidator = z
     ),
     currencyCode: z.string().min(1, { message: "Currency is required" })
   })
-  .refine((data) => isOnOrAfter(data.endDate, data.commencementDate), {
-    message: "End date must be on or after the commencement date",
+  .refine((data) => data.duration !== "custom" || !!data.endDate, {
+    message: "End date is required",
     path: ["endDate"]
   })
   .refine(
-    (data) => !data.noticeDate || isOnOrAfter(data.endDate, data.noticeDate),
+    (data) =>
+      !data.endDate ||
+      data.duration === "open" ||
+      isOnOrAfter(data.endDate, data.commencementDate),
+    {
+      message: "End date must be on or after the commencement date",
+      path: ["endDate"]
+    }
+  )
+  .refine(
+    (data) => {
+      const end = data.duration
+        ? leaseEndDate(data.commencementDate, data.duration, data.endDate)
+        : data.endDate || null;
+      return !data.noticeDate || !end || isOnOrAfter(end, data.noticeDate);
+    },
     {
       message: "The notice date must be on or before the end date",
       path: ["noticeDate"]
