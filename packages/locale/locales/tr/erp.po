@@ -20069,6 +20069,9 @@ msgstr "Sevk edilen miktar, iş emri miktarını aşıyor"
 msgid "Shipping"
 msgstr "Nakliye"
 
+msgid "Shipping & Receiving"
+msgstr "Sevkiyat ve Mal Kabul"
+
 msgid "Shipping Address"
 msgstr "Sevkiyat Adresi"
 
@@ -20727,6 +20730,9 @@ msgstr "Adımlar kendi başlarına oluşturulur, ardından bir parça olarak tak
 
 msgid "Still dark out on the floor."
 msgstr "Fabrikada hala karanlık."
+
+msgid "Stock"
+msgstr "Stok"
 
 msgid "Stock Availability"
 msgstr "Stok Mevcudiyeti"
@@ -23417,9 +23423,6 @@ msgstr "Toplamlar"
 
 msgid "Traceability"
 msgstr "İzlenebilirlik"
-
-msgid "Track"
-msgstr "Takip Et"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "Faturalar, siparişler, müşteriler, tedarikçiler ve daha fazlası dahil olmak üzere temel iş varlıklarındaki değişiklikleri izleyin."

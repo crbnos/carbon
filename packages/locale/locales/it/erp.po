@@ -20069,6 +20069,9 @@ msgstr "La quantità spedita supera la quantità dell'ordine di produzione"
 msgid "Shipping"
 msgstr "Spedizione"
 
+msgid "Shipping & Receiving"
+msgstr "Spedizione e ricevimento"
+
 msgid "Shipping Address"
 msgstr "Indirizzo Spedizione"
 
@@ -20727,6 +20730,9 @@ msgstr "Passi costruiti separatamente, quindi montati come un'unica parte: nel p
 
 msgid "Still dark out on the floor."
 msgstr "Ancora buio in officina."
+
+msgid "Stock"
+msgstr "Giacenza"
 
 msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
@@ -23417,9 +23423,6 @@ msgstr "Totali"
 
 msgid "Traceability"
 msgstr "Tracciabilità"
-
-msgid "Track"
-msgstr "Traccia"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "Traccia le modifiche alle entità aziendali chiave inclusi fatture, ordini, clienti, fornitori e altro ancora."

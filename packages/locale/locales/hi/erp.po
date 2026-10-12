@@ -20069,6 +20069,9 @@ msgstr "भेजी गई मात्रा जॉब मात्रा स�
 msgid "Shipping"
 msgstr "शिपिंग"
 
+msgid "Shipping & Receiving"
+msgstr "शिपिंग और प्राप्ति"
+
 msgid "Shipping Address"
 msgstr "डिलीवरी पता"
 
@@ -20727,6 +20730,9 @@ msgstr "चरणों को अलग से बनाया जाता ह
 
 msgid "Still dark out on the floor."
 msgstr "अभी भी फर्श पर अंधकार है।"
+
+msgid "Stock"
+msgstr "स्टॉक"
 
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
@@ -23417,9 +23423,6 @@ msgstr "कुल"
 
 msgid "Traceability"
 msgstr "ट्रेसेबिलिटी"
-
-msgid "Track"
-msgstr "ट्रैक करें"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "चालान, ऑर्डर, ग्राहक, आपूर्तिकर्ता और अन्य सहित मुख्य व्यावसायिक संस्थाओं में परिवर्तन को ट्रैक करें।"

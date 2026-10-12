@@ -20069,6 +20069,9 @@ msgstr "发运数量超过工单数量"
 msgid "Shipping"
 msgstr "运输"
 
+msgid "Shipping & Receiving"
+msgstr "发货与收货"
+
 msgid "Shipping Address"
 msgstr "收货地址"
 
@@ -20727,6 +20730,9 @@ msgstr "步骤独自构建，然后作为一个整体拼接：在使用它的步
 
 msgid "Still dark out on the floor."
 msgstr "车间仍在黑暗中。"
+
+msgid "Stock"
+msgstr "库存"
 
 msgid "Stock Availability"
 msgstr "库存可用性"
@@ -23417,9 +23423,6 @@ msgstr "总计"
 
 msgid "Traceability"
 msgstr "可追溯性"
-
-msgid "Track"
-msgstr "追踪"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "跟踪关键业务实体的变化，包括发票、订单、客户、供应商等。"

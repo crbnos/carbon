@@ -20069,6 +20069,9 @@ msgstr "Отгруженное количество превышает коли�
 msgid "Shipping"
 msgstr "Доставка"
 
+msgid "Shipping & Receiving"
+msgstr "Отгрузка и приёмка"
+
 msgid "Shipping Address"
 msgstr "Адрес доставки"
 
@@ -20727,6 +20730,9 @@ msgstr "Шаги, построенные отдельно, затем собра
 
 msgid "Still dark out on the floor."
 msgstr "На производстве всё ещё темно."
+
+msgid "Stock"
+msgstr "Запас"
 
 msgid "Stock Availability"
 msgstr "Наличие запаса"
@@ -23417,9 +23423,6 @@ msgstr "Итоги"
 
 msgid "Traceability"
 msgstr "Прослеживаемость"
-
-msgid "Track"
-msgstr "Отслеживание"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "Отслеживайте изменения ключевых бизнес-объектов, включая счета-фактуры, заказы, покупателей, поставщиков и многое другое."

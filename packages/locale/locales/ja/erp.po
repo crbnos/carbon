@@ -20069,6 +20069,9 @@ msgstr "出荷数量が製造指図数量を超えています"
 msgid "Shipping"
 msgstr "配送"
 
+msgid "Shipping & Receiving"
+msgstr "出荷・入荷"
+
 msgid "Shipping Address"
 msgstr "配送先住所"
 
@@ -20727,6 +20730,9 @@ msgstr "ステップは独立して構築された後、1つのピースとし�
 
 msgid "Still dark out on the floor."
 msgstr "まだフロアは暗い。"
+
+msgid "Stock"
+msgstr "在庫"
 
 msgid "Stock Availability"
 msgstr "在庫可用性"
@@ -23417,9 +23423,6 @@ msgstr "合計"
 
 msgid "Traceability"
 msgstr "トレーサビリティ"
-
-msgid "Track"
-msgstr "追跡"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "請求書、注文、得意先、仕入先など、主要なビジネスエンティティへの変更を追跡します。"

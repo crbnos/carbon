@@ -20069,6 +20069,9 @@ msgstr "출하 수량이 작업 지시 수량을 초과합니다"
 msgid "Shipping"
 msgstr "배송"
 
+msgid "Shipping & Receiving"
+msgstr "출하 및 입고"
+
 msgid "Shipping Address"
 msgstr "배송 주소"
 
@@ -20727,6 +20730,9 @@ msgstr "단계들은 독립적으로 구축되며 하나의 부품으로 결합�
 
 msgid "Still dark out on the floor."
 msgstr "작업장은 여전히 어둡습니다."
+
+msgid "Stock"
+msgstr "재고"
 
 msgid "Stock Availability"
 msgstr "재고 가용성"
@@ -23417,9 +23423,6 @@ msgstr "합계"
 
 msgid "Traceability"
 msgstr "추적성"
-
-msgid "Track"
-msgstr "추적"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "송장, 주문, 고객, 공급업체 등 주요 비즈니스 항목의 변경 사항을 추적하세요."

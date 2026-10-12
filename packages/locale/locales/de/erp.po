@@ -20069,6 +20069,9 @@ msgstr "Versandmenge überschreitet Auftragsmenge"
 msgid "Shipping"
 msgstr "Versand"
 
+msgid "Shipping & Receiving"
+msgstr "Versand & Wareneingang"
+
 msgid "Shipping Address"
 msgstr "Versandadresse"
 
@@ -20727,6 +20730,9 @@ msgstr "Schritte werden eigenständig erstellt und dann als ein Stück zusammeng
 
 msgid "Still dark out on the floor."
 msgstr "Es ist noch dunkel auf der Werkstatt."
+
+msgid "Stock"
+msgstr "Bestand"
 
 msgid "Stock Availability"
 msgstr "Bestandsverfügbarkeit"
@@ -23417,9 +23423,6 @@ msgstr "Summen"
 
 msgid "Traceability"
 msgstr "Rückverfolgbarkeit"
-
-msgid "Track"
-msgstr "Nachverfolgung"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "Verfolgen Sie Änderungen an wichtigen Geschäftsentitäten wie Rechnungen, Bestellungen, Kunden, Lieferanten und mehr."
