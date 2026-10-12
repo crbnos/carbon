@@ -15,45 +15,22 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type {
-  Project,
-  ProjectLabel,
-  ProjectMilestone,
-  ProjectState
-} from "~/modules/projects";
+import type { Project, ProjectMilestone } from "~/modules/projects";
 import {
   addProjectMember,
-  deleteProjectLabel,
-  deleteProjectState,
   getProjectMembers,
-  projectLabelValidator,
   projectMemberValidator,
-  projectStateValidator,
-  removeProjectMember,
-  setProjectStateDefault,
-  upsertProjectLabel,
-  upsertProjectState
+  removeProjectMember
 } from "~/modules/projects";
 import ProjectControlSettings from "~/modules/projects/ui/Project/ProjectControlSettings.ee";
-import ProjectLabels from "~/modules/projects/ui/Project/ProjectLabels";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
-import ProjectStates from "~/modules/projects/ui/Project/ProjectStates";
 import { ProjectForm } from "~/modules/projects/ui/Projects";
-import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-settings");
 
-const intents = [
-  "upsertState",
-  "deleteState",
-  "setDefaultState",
-  "upsertLabel",
-  "deleteLabel",
-  "addMember",
-  "removeMember",
-  "control-settings"
-] as const;
+// States and labels are company-wide: Settings → Projects edits them.
+const intents = ["addMember", "removeMember", "control-settings"] as const;
 type Intent = (typeof intents)[number];
 
 /** The project's members: who may charge time when charging is restricted. */
@@ -86,7 +63,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent") as Intent | null;
-  const id = formData.get("id");
 
   const refuse = async (err: unknown, message: string) =>
     data({ success: false }, await flash(request, error(err, message)));
@@ -94,87 +70,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     data({ success: true }, await flash(request, success(message)));
 
   switch (intent) {
-    case "upsertState": {
-      const validation = await validator(projectStateValidator).validate(
-        formData
-      );
-      if (validation.error) return validationError(validation.error);
-      const { id: stateId, ...state } = validation.data;
-      const result = stateId
-        ? await upsertProjectState(client, {
-            ...state,
-            id: stateId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectState(client, {
-            ...state,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) {
-        return refuse(result.error, "Failed to save the state");
-      }
-      return done("State saved");
-    }
-    case "deleteState": {
-      if (typeof id !== "string") return refuse(null, "No state was given");
-      const result = await deleteProjectState(getDatabaseClient(), {
-        companyId,
-        projectId,
-        id
-      });
-      if (result.error) {
-        return refuse(result.error, result.error.message);
-      }
-      return done("State deleted");
-    }
-    case "setDefaultState": {
-      if (typeof id !== "string") return refuse(null, "No state was given");
-      const result = await setProjectStateDefault(getDatabaseClient(), {
-        companyId,
-        projectId,
-        id,
-        updatedBy: userId
-      });
-      if (result.error) {
-        return refuse(result.error, result.error.message);
-      }
-      return done("Default state changed");
-    }
-    case "upsertLabel": {
-      const validation = await validator(projectLabelValidator).validate(
-        formData
-      );
-      if (validation.error) return validationError(validation.error);
-      const { id: labelId, ...label } = validation.data;
-      const result = labelId
-        ? await upsertProjectLabel(client, {
-            ...label,
-            id: labelId,
-            companyId,
-            updatedBy: userId
-          })
-        : await upsertProjectLabel(client, {
-            ...label,
-            projectId,
-            companyId,
-            createdBy: userId
-          });
-      if (result.error) {
-        return refuse(result.error, "Failed to save the label");
-      }
-      return done("Label saved");
-    }
-    case "deleteLabel": {
-      if (typeof id !== "string") return refuse(null, "No label was given");
-      const result = await deleteProjectLabel(client, id, companyId);
-      if (result.error) {
-        return refuse(result.error, "Failed to delete the label");
-      }
-      return done("Label deleted");
-    }
     case "addMember":
     case "removeMember": {
       const validation = await validator(projectMemberValidator).validate(
@@ -269,8 +164,6 @@ export default function ProjectSettingsRoute() {
 
   const routeData = useRouteData<{
     project: Project;
-    states: ProjectState[];
-    labels: ProjectLabel[];
     milestones: ProjectMilestone[];
     hasPlanningGroups: boolean;
   }>(path.to.project(projectId));
@@ -329,16 +222,6 @@ export default function ProjectSettingsRoute() {
           isDisabled={isDisabled}
         />
       )}
-      <ProjectStates
-        states={routeData.states}
-        action={action}
-        isDisabled={isDisabled}
-      />
-      <ProjectLabels
-        labels={routeData.labels}
-        action={action}
-        isDisabled={isDisabled}
-      />
       <ProjectControlSettings
         project={project}
         action={action}

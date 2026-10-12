@@ -34,8 +34,6 @@ function element(
 
 function source(overrides: Partial<ProjectCopySource>): ProjectCopySource {
   return {
-    states: [{ id: "state-1", name: "Todo", companyId: "company" }],
-    labels: [],
     milestones: [],
     elements: [],
     elementLabels: [],
@@ -81,7 +79,8 @@ describe("planProjectCopy", () => {
     for (const row of plan.elements) {
       expect(["root", "child", "grandchild"]).not.toContain(row.id);
       expect(row.projectId).toBe("new-project");
-      expect(row.stateId).toBe(plan.states[0]!.id);
+      // States are company-wide: an element keeps its state.
+      expect(row.stateId).toBe("state-1");
       expect("companyId" in row).toBe(false);
     }
     // Parents come before their children.

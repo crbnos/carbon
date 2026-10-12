@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261012005458",
+  "schemaVersion": "20261012164449",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-12T00:59:12.440Z",
+  "exportedAt": "2026-10-12T17:06:27.740Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -103,11 +103,11 @@
         "leaseRevenueAccount",
         "leaseInterestIncomeAccount",
         "netInvestmentInLeasesAccount",
+        "migrationClearingAccount",
         "projectExpenseAccount",
         "projectWorkInProgressAccount",
         "warrantyExpenseAccount",
-        "contractLossProvisionAccount",
-        "migrationClearingAccount"
+        "contractLossProvisionAccount"
       ]
     },
     {
@@ -1990,6 +1990,38 @@
       ]
     },
     {
+      "name": "projectLabel",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "color",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "projectState",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "name",
+        "group",
+        "color",
+        "sortOrder",
+        "isDefault",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "purchasingRfq",
       "rows": 0,
       "columns": [
@@ -2844,6 +2876,9 @@
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
         "invoiceNotificationGroup",
+        "accountingCutoverDate",
+        "accountingActivatedAt",
+        "accountingActivatedBy",
         "timesheetApprovalRequired",
         "requireProjectElement",
         "serviceLaborItemId",
@@ -2853,9 +2888,6 @@
         "certificationTextExempt",
         "certificationTextNonExempt",
         "standardWeeklyHours",
-        "accountingCutoverDate",
-        "accountingActivatedAt",
-        "accountingActivatedBy",
         "burdenRateType",
         "postAppliedBurden"
       ]
@@ -5860,22 +5892,6 @@
       ]
     },
     {
-      "name": "projectLabel",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "projectId",
-        "name",
-        "color",
-        "sortOrder",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
       "name": "projectMember",
       "rows": 0,
       "columns": [
@@ -5901,54 +5917,6 @@
         "endDate",
         "completedAt",
         "sortOrder",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt"
-      ]
-    },
-    {
-      "name": "projectPeg",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "planningGroupId",
-        "itemId",
-        "locationId",
-        "supplyType",
-        "supplyId",
-        "projectId",
-        "projectElementId",
-        "demandSourceType",
-        "demandSourceId",
-        "parentPegId",
-        "quantity",
-        "needDate",
-        "state",
-        "manualReason",
-        "exception",
-        "createdByRunId",
-        "supersededAt",
-        "supersededByRunId",
-        "hardenedAt",
-        "itemLedgerId",
-        "createdBy",
-        "createdAt"
-      ]
-    },
-    {
-      "name": "projectState",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "projectId",
-        "name",
-        "group",
-        "color",
-        "sortOrder",
-        "isDefault",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -6278,6 +6246,36 @@
         "indirectPoolId",
         "indirectRateType",
         "burdenFiscalYear"
+      ]
+    },
+    {
+      "name": "projectPeg",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "planningGroupId",
+        "itemId",
+        "locationId",
+        "supplyType",
+        "supplyId",
+        "projectId",
+        "projectElementId",
+        "demandSourceType",
+        "demandSourceId",
+        "parentPegId",
+        "quantity",
+        "needDate",
+        "state",
+        "manualReason",
+        "exception",
+        "createdByRunId",
+        "supersededAt",
+        "supersededByRunId",
+        "hardenedAt",
+        "itemLedgerId",
+        "createdBy",
+        "createdAt"
       ]
     },
     {

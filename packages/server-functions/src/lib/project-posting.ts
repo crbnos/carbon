@@ -798,7 +798,6 @@ export async function startElementsOnFirstCharge(
       AND current."id" = e."stateId"
       AND current."companyId" = e."companyId"
       AND current."group" = 'Unstarted'
-      AND started."projectId" = e."projectId"
       AND started."companyId" = e."companyId"
       AND started."group" = 'Started'
       AND started."isDefault"

@@ -67,7 +67,6 @@ import {
   canLink,
   chargeableByDefault,
   computeVerification,
-  defaultProjectStates,
   diffPlanSnapshots,
   elementSubtreeIds,
   findConflicts,
@@ -156,22 +155,7 @@ export async function createProject(
       .returning("id")
       .executeTakeFirstOrThrow();
 
-    await trx
-      .insertInto("projectState")
-      .values(
-        defaultProjectStates.map((state) => ({
-          projectId: project.id,
-          companyId: args.companyId,
-          name: state.name,
-          group: state.group,
-          color: state.color,
-          sortOrder: state.sortOrder,
-          isDefault: state.isDefault,
-          createdBy: args.userId
-        }))
-      )
-      .execute();
-
+    // States are company-wide (Settings → Projects): nothing to seed here.
     return project.id;
   });
 }
@@ -187,8 +171,9 @@ const makeCopyId = (() => {
 
 /**
  * Creates a Draft project as a copy of another project of the company, in
- * one transaction: its states, labels, milestones, elements (renumbered from
- * 1), element labels, links and plan lines. Charges, ledger rows, timesheets,
+ * one transaction: its milestones, elements (renumbered from 1), element
+ * labels, links and plan lines. States and labels are company-wide, so the
+ * copy keeps the source's. Charges, ledger rows, timesheets,
  * comments, views, preferences and assets are not copied. When `identifier`
  * is empty, `derive_project_identifier` picks one from the name.
  */
@@ -214,8 +199,6 @@ export async function copyProject(
 
     const ofSource = <
       T extends
-        | "projectState"
-        | "projectLabel"
         | "projectMilestone"
         | "projectElement"
         | "projectElementLink"
@@ -226,15 +209,13 @@ export async function copyProject(
       table: T
     ) =>
       trx
-        .selectFrom(table as "projectState")
+        .selectFrom(table as "projectMilestone")
         .selectAll()
         .where("projectId", "=", sourceProjectId)
         .where("companyId", "=", companyId)
         .execute();
 
     const [
-      states,
-      labels,
       milestones,
       elements,
       links,
@@ -244,8 +225,6 @@ export async function copyProject(
       elementLabels,
       identifierRow
     ] = await Promise.all([
-      ofSource("projectState"),
-      ofSource("projectLabel"),
       ofSource("projectMilestone"),
       ofSource("projectElement"),
       ofSource("projectElementLink"),
@@ -275,8 +254,6 @@ export async function copyProject(
     const projectId = makeCopyId("prj");
     const plan = planProjectCopy(
       {
-        states,
-        labels,
         milestones,
         elements: elements as unknown as ProjectCopyElement[],
         elementLabels,
@@ -319,19 +296,17 @@ export async function copyProject(
       })
       .execute();
 
-    // FK order: states, labels and milestones before the elements that
-    // point at them; elements (parents first) before labels, links and plan
-    // lines. Every row of one insert has the same keys.
+    // FK order: milestones before the elements that point at them; elements
+    // (parents first) before labels, links and plan lines. Every row of one
+    // insert has the same keys.
     const audit = { companyId, createdBy: userId };
     const insertRows = async (table: string, rows: object[]) => {
       if (rows.length === 0) return;
       await trx
-        .insertInto(table as "projectState")
+        .insertInto(table as "projectMilestone")
         .values(rows.map((row) => ({ ...row, ...audit })) as never)
         .execute();
     };
-    await insertRows("projectState", plan.states);
-    await insertRows("projectLabel", plan.labels);
     await insertRows("projectMilestone", plan.milestones);
     await insertRows("projectElement", plan.elements);
     await insertRows("projectElementLabel", plan.elementLabels);
@@ -789,7 +764,6 @@ export async function addElementToChangeRequest(
     const state = await db
       .selectFrom("projectState")
       .select("id")
-      .where("projectId", "=", args.projectId)
       .where("companyId", "=", args.companyId)
       .where("group", "=", "Unstarted")
       .orderBy("isDefault", "desc")
@@ -797,7 +771,9 @@ export async function addElementToChangeRequest(
       .limit(1)
       .executeTakeFirst();
     if (!state)
-      throw new ProjectChangeRequestError("The project has no Unstarted state");
+      throw new ProjectChangeRequestError(
+        "The company has no Unstarted state (Settings → Projects)"
+      );
     stateId = state.id;
   }
 
@@ -2326,8 +2302,7 @@ export async function completeElementSubtrees(
       WHERE c."companyId" = ${args.companyId}
     ), completed AS (
       SELECT st."id" FROM "projectState" st
-      WHERE st."projectId" = ${args.projectId}
-        AND st."companyId" = ${args.companyId}
+      WHERE st."companyId" = ${args.companyId}
         AND st."group" = 'Completed'
       ORDER BY st."isDefault" DESC, st."sortOrder", st."id"
       LIMIT 1
@@ -2406,14 +2381,16 @@ export async function insertProjectElement(
       const state = await trx
         .selectFrom("projectState")
         .select("id")
-        .where("projectId", "=", args.projectId)
         .where("companyId", "=", args.companyId)
         .where("group", "=", "Unstarted")
         .orderBy("isDefault", "desc")
         .orderBy("sortOrder", "asc")
         .limit(1)
         .executeTakeFirst();
-      if (!state) throw new Error("The project has no Unstarted state");
+      if (!state)
+        throw new Error(
+          "The company has no Unstarted state (Settings → Projects)"
+        );
       stateId = state.id;
     }
 
@@ -2696,7 +2673,6 @@ function ofTemplate(
   table:
     | "projectElement"
     | "projectElementLink"
-    | "projectState"
     | "projectElementMaterial"
     | "projectElementLabor"
     | "projectElementCost",
@@ -2739,8 +2715,7 @@ type BuildTarget = {
 /**
  * Plans the elements Build from part makes under `parentId`. A Template
  * source copies the template's elements down to `depth` levels with
- * `planProjectCopy`; their states map to this project's default state of the
- * same group. Returns the element rows (parents first), the template's links
+ * `planProjectCopy`; they keep their states, which are company-wide. Returns the element rows (parents first), the template's links
  * between them, and the count of BOM lines the source could not read.
  */
 async function planBuildFromPart(
@@ -2761,7 +2736,8 @@ async function planBuildFromPart(
     args.states.find((s) => s.group === group && s.isDefault)?.id ??
     args.states.find((s) => s.group === group)?.id;
   const defaultStateId = stateOfGroup("Unstarted");
-  if (!defaultStateId) throw new Error("The project has no Unstarted state");
+  if (!defaultStateId)
+    throw new Error("The company has no Unstarted state (Settings → Projects)");
 
   if ("templateProjectId" in args.source) {
     const source = {
@@ -2776,21 +2752,19 @@ async function planBuildFromPart(
       .executeTakeFirst();
     if (!template?.isTemplate) throw new Error("The template was not found");
     const noRows = Promise.resolve([] as Record<string, unknown>[]);
-    const [elements, links, templateStates, materials, labor, costs] =
-      await Promise.all([
-        ofTemplate(db, "projectElement", source),
-        ofTemplate(db, "projectElementLink", source),
-        ofTemplate(db, "projectState", source),
-        args.includePlanLines
-          ? ofTemplate(db, "projectElementMaterial", source)
-          : noRows,
-        args.includePlanLines
-          ? ofTemplate(db, "projectElementLabor", source)
-          : noRows,
-        args.includePlanLines
-          ? ofTemplate(db, "projectElementCost", source)
-          : noRows
-      ]);
+    const [elements, links, materials, labor, costs] = await Promise.all([
+      ofTemplate(db, "projectElement", source),
+      ofTemplate(db, "projectElementLink", source),
+      args.includePlanLines
+        ? ofTemplate(db, "projectElementMaterial", source)
+        : noRows,
+      args.includePlanLines
+        ? ofTemplate(db, "projectElementLabor", source)
+        : noRows,
+      args.includePlanLines
+        ? ofTemplate(db, "projectElementCost", source)
+        : noRows
+    ]);
 
     // Keep the template's elements down to `depth` levels.
     const byId = new Map(elements.map((e) => [e.id, e]));
@@ -2806,16 +2780,11 @@ async function planBuildFromPart(
       return level;
     };
     const keptElements = elements.filter((e) => levelOf(e.id) <= args.depth);
-    const groupOfState = new Map(
-      (
-        templateStates as unknown as { id: string; group: ProjectStateGroup }[]
-      ).map((state) => [state.id, state.group])
-    );
+    // States are company-wide: a template element keeps its state.
+    const stateIds = new Set(args.states.map((state) => state.id));
 
     const plan = planProjectCopy(
       {
-        states: [],
-        labels: [],
         milestones: [],
         elements: keptElements as unknown as ProjectCopyElement[],
         elementLabels: [],
@@ -2831,12 +2800,13 @@ async function planBuildFromPart(
     );
     let rootSort = args.startSortOrder;
     const rows = plan.elements.map((element) => {
-      const group = groupOfState.get(element.stateId);
       const isRoot = element.parentId === null;
       return {
         ...element,
         parentId: element.parentId ?? args.parentId,
-        stateId: (group && stateOfGroup(group)) ?? defaultStateId,
+        stateId: stateIds.has(element.stateId)
+          ? element.stateId
+          : defaultStateId,
         sortOrder: isRoot
           ? ++rootSort
           : (element as Record<string, unknown>).sortOrder
@@ -2912,7 +2882,6 @@ async function loadBuildTarget(
     db
       .selectFrom("projectState")
       .select(["id", "group", "isDefault"])
-      .where("projectId", "=", args.projectId)
       .where("companyId", "=", args.companyId)
       .orderBy("sortOrder", "asc")
       .execute(),
@@ -3340,7 +3309,6 @@ export async function startElementOnFirstCharge(
       AND current."id" = e."stateId"
       AND current."companyId" = e."companyId"
       AND current."group" = 'Unstarted'
-      AND started."projectId" = e."projectId"
       AND started."companyId" = e."companyId"
       AND started."group" = 'Started'
       AND started."isDefault"

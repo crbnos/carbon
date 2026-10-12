@@ -79,8 +79,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pegRows
   ] = await Promise.all([
     getProject(client, companyId, projectId),
-    getProjectStates(client, projectId, companyId),
-    getProjectLabels(client, projectId, companyId),
+    getProjectStates(client, companyId),
+    getProjectLabels(client, companyId),
     getProjectMilestones(client, projectId, companyId),
     // The Open borrows the project owes or has lent, past their payback
     // date: the header's exception badge.

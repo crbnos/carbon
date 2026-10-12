@@ -1210,9 +1210,6 @@ msgstr "Bir görünüm kaydetmek için bir isim gereklidir"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Belirli bir müşteri, müşteri türü veya tüm müşteriler için sabitlenmiş ve temel fiyatın yerini tamamıyla alan, isteğe bağlı olarak miktar kademesileri ile birlikte gelen müzakere edilmiş fiyat."
 
-msgid "A new element takes the default state"
-msgstr "Yeni bir element varsayılan durumu alır."
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Her tedarikçi için yeni bir satın alma siparişi oluşturulacaktır. Alternatif olarak, tedarikçinin dış operasyonları eklemesi için mevcut taslak bir satın alma siparişi seçebilirsiniz."
 
@@ -2001,10 +1998,6 @@ msgstr "Ekle {0} seçili"
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "{0} durumu Ekle"
-
 msgid "Add a column below to sort the view"
 msgstr "Görünümü sıralamak için aşağı bir sütun ekleyin"
 
@@ -2172,9 +2165,6 @@ msgstr "Öğe Ekle"
 
 msgid "Add Journal Entry"
 msgstr "Yevmiye Kaydı Ekle"
-
-msgid "Add Label"
-msgstr "Etiket Ekle"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "Kurulumu Daralt"
 msgid "Collapse subtree"
 msgstr "Alt ağacı daralt"
 
-msgid "Color"
-msgstr "Renk"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "Varsayılan (finanse: Maliyet Artı veya Zaman & Malzeme satırı vardı
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "Varsayılan (finanse edilmedi: Maliyet Artı veya Zaman & Malzeme satırı yok)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "Varsayılan {0} durumu"
-
 msgid "Default Account"
 msgstr "Varsayılan Hesap"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "Sil"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "{0} Sil"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "{0} faturasını sil"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "Etiket {0} silinsin mi? Bunu taşıyan her elementten kaldırılacak."
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Kilometre taşı {0} silinsin mi? Öğeleri kalır, kilometre taşı olmadan."
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Miktar {0} için fiyat kademesi silinsin mi? Bu işlem geri alınamaz."
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "Durum {0} silinsin mi? Öğelerin kullandığı durum silinemez."
 
 msgid "Delete this line?"
 msgstr "Bu satırı silinsin mi?"
@@ -9066,9 +9044,6 @@ msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği person
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Bu satırı finanse eden her sözleşme değişikliği, ACRN'ye göre."
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "Her element bir durumda bulunur. Grup durumun ne anlama geldiğine karar verir: Başlatılmış durumda olan bir element masraf alır ve yeni bir element grubunun varsayılan durumunu alır."
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Her nihai varlık bu İnşaat Sürüyor sınıfında yapılır"
 
@@ -9179,11 +9154,6 @@ msgstr "Ekonomik Operatörlerin Kayıt ve Kimlik Numarası; AB/İngiltere'de gü
 
 msgid "Edit"
 msgstr "Düzenle"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "Düzenle {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>Sorun</0> İş Akışını Düzenle"
@@ -9338,9 +9308,6 @@ msgstr "Yevmiye Kaydını Düzenle"
 
 msgid "Edit Kanban"
 msgstr "Kanban Düzenle"
-
-msgid "Edit Label"
-msgstr "Etiketi Düzenle"
 
 msgid "Edit Labor Category"
 msgstr "İşçilik Kategorisini Düzenle"
@@ -9503,9 +9470,6 @@ msgstr "Sevkiyat Yöntemi Düzenle"
 
 msgid "Edit Size"
 msgstr "Boyut Düzenle"
-
-msgid "Edit State"
-msgstr "Durumu Düzenle"
 
 msgid "Edit Stock Transfer"
 msgstr "Stok Transfer Düzenle"
@@ -14161,6 +14125,9 @@ msgstr "{quantity} üret"
 msgid "Make Active"
 msgstr "Aktif Yap"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "Varsayılan Yap"
 
@@ -15080,9 +15047,6 @@ msgstr "Hiçbir zaman hizmet almadı"
 msgid "New"
 msgstr "Yeni"
 
-msgid "New {groupLabel} State"
-msgstr "Yeni {groupLabel} Durumu"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "Yeni <0>Issue</0> İş Akışı"
 
@@ -15243,8 +15207,8 @@ msgstr "Yeni Ürün Grubu"
 msgid "New Kanban"
 msgstr "Yeni Kanban"
 
-msgid "New Label"
-msgstr "Yeni Etiket"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "Yeni İşçilik Kategorisi"
@@ -15422,6 +15386,9 @@ msgstr "Yeni sevkiyat yöntemi"
 
 msgid "New Size"
 msgstr "Yeni Boyut"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "Yeni Depolama Türü"
@@ -15997,11 +15964,8 @@ msgstr "Bu dönem için kapsam içinde muhasebe fişi satırı yok"
 msgid "No labels"
 msgstr "Etiket yok"
 
-msgid "No labels in this project"
-msgstr "Bu projede etiket yok"
-
-msgid "No labels yet."
-msgstr "Henüz etiket yok."
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "Satır yok"
@@ -23813,9 +23777,6 @@ msgstr "Tablo"
 msgid "Table actions"
 msgstr "Tablo işlemleri"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "Ağaç genelinde öğeleri etiketle, örneğin disipline göre."
-
 msgid "Tags"
 msgstr "Etiketler"
 
@@ -24604,6 +24565,9 @@ msgstr "Bu özniteliğin kabul ettiği değer türü (metin, sayı, tarih, boole
 msgid "The label and document printers your company prints to"
 msgstr "Şirketinizin yazdığı etiket ve belge yazıcıları"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Tedarikçinin teslim süresine göre bu Satın Alma Siparişini (PO) ihtiyaç tarihine kadar ulaşması için en geç tarih."
 
@@ -25063,6 +25027,9 @@ msgstr "Bu teklif satırının durumu — Taslak, Teklif Yok, Tamamlandı; Tekli
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Bu grup altındaki tüm hesapların kullanacağı beyan grubu."
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "İstasyonun Vardiyalarından takvim saatleri. Atanan Personel saatleri (atadığınız kişiler) aşağıda gösterilir."

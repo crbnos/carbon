@@ -1980,12 +1980,12 @@ async function projectBillingFixture(
         .insertInto("projectState")
         .values({
           id: stateId,
-          name: "Todo",
+          // States are company-wide: one per test project, none the default.
+          name: `Todo ${projectId}`,
           group: "Unstarted",
           color: "#000000",
           sortOrder: 0,
-          isDefault: true,
-          projectId,
+          isDefault: false,
           companyId,
           createdBy: USER
         })

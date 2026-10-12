@@ -100,14 +100,6 @@ describe.skipIf(!hasLocalDatabase)("insertServiceOrder", () => {
         costTreatment: "By Coverage"
       });
 
-      const states = await f.db
-        .selectFrom("projectState")
-        .select("name")
-        .where("projectId", "=", created.projectId)
-        .where("companyId", "=", f.companyId)
-        .execute();
-      expect(states).toHaveLength(6);
-
       // Leave the serial free for the next case.
       await f.db
         .updateTable("serviceOrder")

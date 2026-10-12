@@ -36,6 +36,10 @@ const PRESERVED_TABLES = new Set([
   "nonConformanceType",
   "paymentTerm",
   "periodCloseTaskDefinition",
+  // Company-wide project states and labels (Settings → Projects, seeded by
+  // seed-company): configuration, like the units of measure
+  "projectLabel",
+  "projectState",
   "returnReason",
   "scrapReason",
   "sequence",

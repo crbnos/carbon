@@ -1210,9 +1210,6 @@ msgstr "需要名称才能保存查看"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "为特定物料约定的固定价格——按客户、客户类型或所有客户——完全替代基准价格，可选择数量阶梯。"
 
-msgid "A new element takes the default state"
-msgstr "新元素采用默认状态"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "将为每个供应商创建一个新的采购订单。或者，您可以选择供应商的现有草稿采购订单以向其添加外协工序。"
 
@@ -2001,10 +1998,6 @@ msgstr "添加 {0} 个已选择的"
 msgid "Add & Issue"
 msgstr "添加并发放"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "添加 {0} 状态"
-
 msgid "Add a column below to sort the view"
 msgstr "在下方添加一列以对视图进行排序"
 
@@ -2172,9 +2165,6 @@ msgstr "添加项目"
 
 msgid "Add Journal Entry"
 msgstr "添加分录"
-
-msgid "Add Label"
-msgstr "添加标签"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "收起换型"
 msgid "Collapse subtree"
 msgstr "折叠子树"
 
-msgid "Color"
-msgstr "颜色"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "默认（已出资：有成本加成或计时计价行）"
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "默认（未出资：没有成本加成或计时计价行）"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "默认 {0} 状态"
-
 msgid "Default Account"
 msgstr "默认账户"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "删除"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "删除 {0}"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "删除 {0} 发票"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "删除标签 {0}？它将从拥有该标签的每个元素中删除。"
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "删除里程碑 {0}？其元素将保留，但没有里程碑。"
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "删除数量{0}的价格阶梯？此操作无法撤销。"
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "删除状态 {0}？使用该状态的元素无法删除。"
 
 msgid "Delete this line?"
 msgstr "删除此行？"
@@ -9066,9 +9044,6 @@ msgstr "每个单元格显示分配的人员与该天工作所需的人员对比
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "每个为此行提供资金的合同修改（按 ACRN）。"
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "每个元素处于一种状态。组决定该状态的含义：处于\"已开始\"状态的元素承担费用，新元素采用其组的默认状态。"
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "每个最终资产都在此\"在建工程\"类别中建立"
 
@@ -9179,11 +9154,6 @@ msgstr "经济营运人注册和识别号；对于在欧盟/英国海关边界�
 
 msgid "Edit"
 msgstr "编辑"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "编辑 {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "编辑<0>问题</0>工作流"
@@ -9338,9 +9308,6 @@ msgstr "编辑分录"
 
 msgid "Edit Kanban"
 msgstr "编辑看板"
-
-msgid "Edit Label"
-msgstr "编辑标签"
 
 msgid "Edit Labor Category"
 msgstr "编辑人工类别"
@@ -9503,9 +9470,6 @@ msgstr "编辑 发货方式"
 
 msgid "Edit Size"
 msgstr "编辑尺寸"
-
-msgid "Edit State"
-msgstr "编辑状态"
 
 msgid "Edit Stock Transfer"
 msgstr "编辑库存转移"
@@ -14161,6 +14125,9 @@ msgstr "制造 {quantity}"
 msgid "Make Active"
 msgstr "启用"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "设为默认"
 
@@ -15080,9 +15047,6 @@ msgstr "从未维修"
 msgid "New"
 msgstr "新建"
 
-msgid "New {groupLabel} State"
-msgstr "新 {groupLabel} 状态"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "新的<0>Issue</0>工作流"
 
@@ -15243,8 +15207,8 @@ msgstr "新建项目组"
 msgid "New Kanban"
 msgstr "新看板"
 
-msgid "New Label"
-msgstr "新标签"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "新人工类别"
@@ -15422,6 +15386,9 @@ msgstr "新建发货方式"
 
 msgid "New Size"
 msgstr "新尺寸"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "新存储类型"
@@ -15997,11 +15964,8 @@ msgstr "此期间范围内没有凭证行"
 msgid "No labels"
 msgstr "没有标签"
 
-msgid "No labels in this project"
-msgstr "此项目中没有标签"
-
-msgid "No labels yet."
-msgstr "还没有标签。"
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "无行项"
@@ -23813,9 +23777,6 @@ msgstr "表"
 msgid "Table actions"
 msgstr "表格操作"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "标记整个树中的元素，例如按学科分类。"
-
 msgid "Tags"
 msgstr "标签"
 
@@ -24604,6 +24565,9 @@ msgstr "此属性接受的值类型（文本、数字、日期、布尔值、列
 msgid "The label and document printers your company prints to"
 msgstr "您公司打印至的标签和文件打印机"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "放置此采购订单的最迟日期，以便在给定供应商提前期的情况下按需要日期到达。"
 
@@ -25063,6 +25027,9 @@ msgstr "报价行的状态 — 草稿、不报价、完成；不报价时显示�
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "此组下所有帐户将使用的报表组。"
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "工作站从其班次的日历小时数。配置人员小时数（您分配的人员）显示在下方。"

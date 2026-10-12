@@ -10,7 +10,6 @@
 
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import { defaultProjectStates } from "@carbon/utils";
 import { type Kysely, sql, type Transaction } from "kysely";
 import { ServerFnError } from "../errors";
 
@@ -69,22 +68,7 @@ export async function insertServiceProject(
     .returning("id")
     .executeTakeFirstOrThrow();
 
-  await trx
-    .insertInto("projectState")
-    .values(
-      defaultProjectStates.map((state) => ({
-        projectId: project.id,
-        companyId,
-        name: state.name,
-        group: state.group,
-        color: state.color,
-        sortOrder: state.sortOrder,
-        isDefault: state.isDefault,
-        createdBy: userId
-      }))
-    )
-    .execute();
-
+  // States are company-wide (Settings → Projects): nothing to seed here.
   return project.id;
 }
 

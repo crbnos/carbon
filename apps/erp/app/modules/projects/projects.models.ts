@@ -141,7 +141,6 @@ export const chargeableByDefault: Record<ProjectElementType, boolean> = {
  * The six states every new project starts with. Shared with the server
  * functions, which create a service order's project in their own transaction.
  */
-export { defaultProjectStates } from "@carbon/utils";
 
 /** The pattern the `project_identifier_check` constraint enforces. */
 export const PROJECT_IDENTIFIER_PATTERN = /^[A-Z][A-Z0-9]{1,5}$/;
@@ -2791,8 +2790,6 @@ export type ProjectCopyElement = CopyRow & {
 };
 
 export type ProjectCopySource = {
-  states: (CopyRow & { id: string })[];
-  labels: (CopyRow & { id: string })[];
   milestones: (CopyRow & { id: string })[];
   elements: ProjectCopyElement[];
   elementLabels: { projectElementId: string; projectLabelId: string }[];
@@ -2808,8 +2805,6 @@ export type ProjectCopySource = {
 
 /** The id prefixes of the copied tables, as the SQL `id()` defaults use them. */
 export const projectCopyIdPrefixes = {
-  state: "pjs",
-  label: "pjb",
   milestone: "pjm",
   element: "pje",
   link: "pjk",
@@ -2820,8 +2815,9 @@ export const projectCopyIdPrefixes = {
 
 /**
  * Plans the rows of a project copy, with new ids from `makeId`. Every
- * reference is remapped to the copy: element parents, states, milestones and
- * actual Parameters, element labels, both ends of each link. Elements are
+ * reference is remapped to the copy: element parents, milestones and actual
+ * Parameters, element labels, both ends of each link. States and labels are
+ * company-wide, so elements keep their state and label ids. Elements are
  * renumbered from 1 in the source's sequence order and returned parents
  * first; formulas name the new readable ids. What belongs to the source's
  * history is cleared: the element's asset, a test verdict, a link's suspect
@@ -2837,8 +2833,6 @@ export function planProjectCopy(
 ) {
   const remap = <T extends { id: string }>(rows: T[], prefix: string) =>
     new Map(rows.map((row) => [row.id, makeId(prefix)]));
-  const stateIds = remap(source.states, projectCopyIdPrefixes.state);
-  const labelIds = remap(source.labels, projectCopyIdPrefixes.label);
   const milestoneIds = remap(
     source.milestones,
     projectCopyIdPrefixes.milestone
@@ -2888,7 +2882,7 @@ export function planProjectCopy(
       parentId: element.parentId
         ? (elementIds.get(element.parentId) ?? null)
         : null,
-      stateId: stateIds.get(element.stateId) ?? element.stateId,
+      stateId: element.stateId,
       milestoneId: element.milestoneId
         ? (milestoneIds.get(element.milestoneId) ?? null)
         : null,
@@ -2920,16 +2914,6 @@ export function planProjectCopy(
       }));
 
   return {
-    states: source.states.map((state) => ({
-      ...withoutAudit(state),
-      id: stateIds.get(state.id)!,
-      projectId: newProjectId
-    })),
-    labels: source.labels.map((label) => ({
-      ...withoutAudit(label),
-      id: labelIds.get(label.id)!,
-      projectId: newProjectId
-    })),
     milestones: source.milestones.map((milestone) => ({
       ...withoutAudit(milestone),
       id: milestoneIds.get(milestone.id)!,
@@ -2937,14 +2921,10 @@ export function planProjectCopy(
     })),
     elements,
     elementLabels: source.elementLabels
-      .filter(
-        (row) =>
-          elementIds.has(row.projectElementId) &&
-          labelIds.has(row.projectLabelId)
-      )
+      .filter((row) => elementIds.has(row.projectElementId))
       .map((row) => ({
         projectElementId: elementIds.get(row.projectElementId)!,
-        projectLabelId: labelIds.get(row.projectLabelId)!
+        projectLabelId: row.projectLabelId
       })),
     links: source.links
       .filter(

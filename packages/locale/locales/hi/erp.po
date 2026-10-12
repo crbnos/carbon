@@ -1210,9 +1210,6 @@ msgstr "एक दृश्य को सहेजने के लिए एक
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "एक समझौता किया गया मूल्य एक विशिष्ट आइटम के लिए तय किया गया — ग्राहक, ग्राहक प्रकार, या सभी ग्राहकों द्वारा — जो मूल मूल्य को पूरी तरह से प्रतिस्थापित करता है, वैकल्पिक रूप से मात्रा स्तर के साथ।"
 
-msgid "A new element takes the default state"
-msgstr "एक नया तत्व डिफ़ॉल्ट स्थिति लेता है"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "प्रत्येक आपूर्तिकर्ता के लिए एक नया क्रय आदेश बनाया जाएगा। वैकल्पिक रूप से, आप आपूर्तिकर्ता के लिए एक मौजूदा ड्राफ्ट क्रय आदेश चुन सकते हैं ताकि बाहरी ऑपरेशन जोड़े जा सकें।"
 
@@ -2001,10 +1998,6 @@ msgstr "{0} चयनित जोड़ें"
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "एक {0} स्थिति जोड़ें"
-
 msgid "Add a column below to sort the view"
 msgstr "इस दृश्य को सॉर्ट करने के लिए नीचे एक कॉलम जोड़ें"
 
@@ -2172,9 +2165,6 @@ msgstr "आइटम जोड़ें"
 
 msgid "Add Journal Entry"
 msgstr "जर्नल प्रविष्टि जोड़ें"
-
-msgid "Add Label"
-msgstr "लेबल जोड़ें"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "सेटअप को संक्षिप्त करें"
 msgid "Collapse subtree"
 msgstr "सबट्री को संक्षिप्त करें"
 
-msgid "Color"
-msgstr "रंग"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "डिफ़ॉल्ट (वित्त पोषित: Cost Plus य
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "डिफ़ॉल्ट (वित्त पोषित नहीं: कोई Cost Plus या समय और सामग्री पंक्ति नहीं)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "डिफ़ॉल्ट {0} स्थिति"
-
 msgid "Default Account"
 msgstr "डिफ़ॉल्ट खाता"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "हटाएं"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "{0} हटाएं"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "चालान {0} को हटाएँ"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "हटाएँ लेबल {0}? इसे हर उस तत्व से हटा दिया जाएगा जिसमें यह है।"
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "हटाएँ मील का पत्थर {0}? इसके तत्व बने रहते हैं, बिना मील का पत्थर के।"
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "मात्रा {0} के लिए मूल्य स्तर हटाएँ? यह पूर्ववत नहीं किया जा सकता।"
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "हटाएँ स्थिति {0}? एक स्थिति जो तत्व उपयोग करते हैं, हटाई नहीं जा सकती।"
 
 msgid "Delete this line?"
 msgstr "इस पंक्ति को हटाएँ?"
@@ -9066,9 +9044,6 @@ msgstr "प्रत्येक सेल उन लोगों को दर�
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "प्रत्येक अनुबंध संशोधन जो इस पंक्ति को निधि देता है, ACRN द्वारा।"
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "प्रत्येक तत्व एक अवस्था में है। समूह तय करता है कि अवस्था का क्या मतलब है: एक शुरू की गई अवस्था में एक तत्व आरोप लेता है, और एक नया तत्व अपने समूह की डिफ़ॉल्ट अवस्था लेता है।"
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "प्रत्येक अंतिम संपत्ति इस निर्माणाधीन कक्षा में बनाई जाती है"
 
@@ -9179,11 +9154,6 @@ msgstr "आर्थिक ऑपरेटर पंजीकरण और प�
 
 msgid "Edit"
 msgstr "संपादित करें"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "संपादित करें {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>समस्या</0> वर्कफ़्लो संपादित करें"
@@ -9338,9 +9308,6 @@ msgstr "जर्नल प्रविष्टि संपादित कर
 
 msgid "Edit Kanban"
 msgstr "कानबान संपादित करें"
-
-msgid "Edit Label"
-msgstr "संपादित करें लेबल"
 
 msgid "Edit Labor Category"
 msgstr "संपादित करें श्रम श्रेणी"
@@ -9503,9 +9470,6 @@ msgstr "शिपिंग विधि संपादित करें"
 
 msgid "Edit Size"
 msgstr "आकार संपादित करें"
-
-msgid "Edit State"
-msgstr "संपादित करें अवस्था"
 
 msgid "Edit Stock Transfer"
 msgstr "स्टॉक ट्रांसफर संपादित करें"
@@ -14161,6 +14125,9 @@ msgstr "{quantity} बनाएं"
 msgid "Make Active"
 msgstr "सक्रिय करें"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "डिफ़ॉल्ट बनाएं"
 
@@ -15080,9 +15047,6 @@ msgstr "कभी सेवा प्राप्त नहीं"
 msgid "New"
 msgstr "नया"
 
-msgid "New {groupLabel} State"
-msgstr "नई {groupLabel} स्थिति"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "नया <0>Issue</0> वर्कफ़्लो"
 
@@ -15243,8 +15207,8 @@ msgstr "नया आइटम समूह"
 msgid "New Kanban"
 msgstr "नया कानबन"
 
-msgid "New Label"
-msgstr "नया लेबल"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "नई श्रम श्रेणी"
@@ -15422,6 +15386,9 @@ msgstr "नई शिपिंग विधि"
 
 msgid "New Size"
 msgstr "नया आकार"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "नया स्टोरेज प्रकार"
@@ -15997,11 +15964,8 @@ msgstr "इस अवधि के लिए दायरे में कोई
 msgid "No labels"
 msgstr "कोई लेबल नहीं"
 
-msgid "No labels in this project"
-msgstr "इस परियोजना में कोई लेबल नहीं"
-
-msgid "No labels yet."
-msgstr "अभी कोई लेबल नहीं।"
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "कोई पंक्तियाँ नहीं"
@@ -23813,9 +23777,6 @@ msgstr "तालिका"
 msgid "Table actions"
 msgstr "तालिका क्रियाएं"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "पूरे पेड़ में तत्वों को टैग करें, उदाहरण के लिए अनुशासन द्वारा।"
-
 msgid "Tags"
 msgstr "टैग"
 
@@ -24604,6 +24565,9 @@ msgstr "इस विशेषता द्वारा स्वीकृत �
 msgid "The label and document printers your company prints to"
 msgstr "लेबल और दस्तावेज़ प्रिंटर जो आपकी कंपनी में प्रिंट करते हैं"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
 
@@ -25063,6 +25027,9 @@ msgstr "इस कोटेशन पंक्ति की स्थिति �
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "विवरण बाल्टी जो इस समूह के सभी खाते उपयोग करेंगे।"
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "स्टेशन के शिफ्ट से कैलेंडर घंटे। असाइन किए गए लोग नीचे दिखाई देते हैं।"

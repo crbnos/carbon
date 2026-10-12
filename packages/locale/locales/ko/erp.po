@@ -1210,9 +1210,6 @@ msgstr "보기를 저장하려면 이름이 필요합니다"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "특정 품목에 대해 협상으로 고정된 가격으로 고객, 고객 유형 또는 모든 고객 기준으로 기본 가격을 완전히 대체하며 선택적으로 수량 구간을 포함합니다."
 
-msgid "A new element takes the default state"
-msgstr "새로운 요소는 기본 상태를 취합니다."
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "각 공급업체마다 새로운 발주서가 생성됩니다. 또는 공급업체의 기존 초안 발주서를 선택하여 외주 공정을 추가할 수 있습니다."
 
@@ -2001,10 +1998,6 @@ msgstr "선택된 {0}개 추가"
 msgid "Add & Issue"
 msgstr "추가 및 출고"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "{0} 상태 추가"
-
 msgid "Add a column below to sort the view"
 msgstr "보기를 정렬하려면 아래에 열을 추가하세요"
 
@@ -2172,9 +2165,6 @@ msgstr "품목 추가"
 
 msgid "Add Journal Entry"
 msgstr "분개 추가"
-
-msgid "Add Label"
-msgstr "레이블 추가"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "셋업 접기"
 msgid "Collapse subtree"
 msgstr "하위 트리 접기"
 
-msgid "Color"
-msgstr "색상"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "기본값 (자금 조달됨: 원가 가산 또는 Time & Materials 라�
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "기본값 (자금 미조달: 원가 가산 또는 Time & Materials 라인 없음)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "기본 {0} 상태"
-
 msgid "Default Account"
 msgstr "기본 계정"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "삭제"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "{0} 삭제"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "{0} 송장 삭제"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "레이블 {0}을(를) 삭제하시겠습니까? 이 레이블이 지정된 모든 요소에서 제거됩니다."
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "마일스톤 {0}을(를) 삭제하시겠습니까? 요소는 유지되지만 마일스톤이 없습니다."
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "수량 {0}에 대한 가격 구간을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다."
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "상태 {0}을(를) 삭제하시겠습니까? 요소가 사용하는 상태는 삭제할 수 없습니다."
 
 msgid "Delete this line?"
 msgstr "이 라인을 삭제하시겠습니까?"
@@ -9066,9 +9044,6 @@ msgstr "각 셀은 그 날 일에 필요한 인원 대비 할당된 인원입니
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "이 라인에 자금을 제공하는 각 계약 수정사항(ACRN별)"
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "각 요소는 하나의 상태에 있습니다. 그룹이 상태의 의미를 결정합니다. 시작된 상태의 요소는 청구를 받고, 새 요소는 그룹의 기본 상태를 취합니다."
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "각 최종 자산은 이 건설 중(CIP) 분류에서 생성됩니다"
 
@@ -9179,11 +9154,6 @@ msgstr "경제 운영자 등록 및 식별 번호; EU/UK 세관 국경을 넘는
 
 msgid "Edit"
 msgstr "편집"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "{0} 편집"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>불출</0> 워크플로 편집"
@@ -9338,9 +9308,6 @@ msgstr "분개장 항목 편집"
 
 msgid "Edit Kanban"
 msgstr "칸반 편집"
-
-msgid "Edit Label"
-msgstr "레이블 편집"
 
 msgid "Edit Labor Category"
 msgstr "노무 분류 편집"
@@ -9503,9 +9470,6 @@ msgstr "배송 방법 편집"
 
 msgid "Edit Size"
 msgstr "크기 편집"
-
-msgid "Edit State"
-msgstr "상태 편집"
 
 msgid "Edit Stock Transfer"
 msgstr "재고 이송 편집"
@@ -14161,6 +14125,9 @@ msgstr "{quantity} 제조"
 msgid "Make Active"
 msgstr "활성으로 설정"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "기본값으로 설정"
 
@@ -15080,9 +15047,6 @@ msgstr "서비스되지 않음"
 msgid "New"
 msgstr "신규"
 
-msgid "New {groupLabel} State"
-msgstr "새로운 {groupLabel} 상태"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "새 <0>이슈</0> 워크플로"
 
@@ -15243,8 +15207,8 @@ msgstr "새 품목 그룹"
 msgid "New Kanban"
 msgstr "새 칸반"
 
-msgid "New Label"
-msgstr "새 레이블"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "새 노무 범주"
@@ -15422,6 +15386,9 @@ msgstr "새 배송 방법"
 
 msgid "New Size"
 msgstr "새 사이즈"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "새 저장 유형"
@@ -15997,11 +15964,8 @@ msgstr "이 기간의 범위 내 전표 라인이 없음"
 msgid "No labels"
 msgstr "레이블 없음"
 
-msgid "No labels in this project"
-msgstr "이 프로젝트에 레이블이 없습니다"
-
-msgid "No labels yet."
-msgstr "아직 레이블이 없습니다."
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "항목 없음"
@@ -23813,9 +23777,6 @@ msgstr "테이블"
 msgid "Table actions"
 msgstr "테이블 작업"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "트리 전체의 요소에 태그를 지정합니다(예: 분야별)."
-
 msgid "Tags"
 msgstr "태그"
 
@@ -24604,6 +24565,9 @@ msgstr "이 속성이 수락하는 값의 종류(텍스트, 숫자, 날짜, 부�
 msgid "The label and document printers your company prints to"
 msgstr "회사가 인쇄하는 라벨 및 문서 프린터"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "공급업체의 리드타임을 고려할 때, 필요일까지 도착하도록 이 PO를 발주해야 하는 최종 일자입니다."
 
@@ -25063,6 +25027,9 @@ msgstr "이 견적 라인의 상태 — 초안, 견적 거절, 완료됨. 견적
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "이 그룹에 속한 모든 계정이 사용할 재무제표 구분입니다."
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "스테이션의 교대조로부터의 달력 시간입니다. 배정된 인원의 시간이 아래에 표시됩니다."

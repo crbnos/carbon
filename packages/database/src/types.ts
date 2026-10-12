@@ -50140,10 +50140,10 @@ export type Database = {
           },
           {
             foreignKeyName: "projectElement_state_fkey"
-            columns: ["stateId", "projectId", "companyId"]
+            columns: ["stateId", "companyId"]
             isOneToOne: false
             referencedRelation: "projectState"
-            referencedColumns: ["id", "projectId", "companyId"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "projectElement_trackedEntityId_fkey"
@@ -51461,7 +51461,6 @@ export type Database = {
           createdBy: string
           id: string
           name: string
-          projectId: string
           sortOrder: number
           updatedAt: string | null
           updatedBy: string | null
@@ -51473,7 +51472,6 @@ export type Database = {
           createdBy: string
           id?: string
           name: string
-          projectId: string
           sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -51485,7 +51483,6 @@ export type Database = {
           createdBy?: string
           id?: string
           name?: string
-          projectId?: string
           sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -51553,13 +51550,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "projectLabel_project_fkey"
-            columns: ["projectId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "project"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "projectLabel_updatedBy_fkey"
@@ -52329,7 +52319,6 @@ export type Database = {
           id: string
           isDefault: boolean
           name: string
-          projectId: string
           sortOrder: number
           updatedAt: string | null
           updatedBy: string | null
@@ -52343,7 +52332,6 @@ export type Database = {
           id?: string
           isDefault?: boolean
           name: string
-          projectId: string
           sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -52357,7 +52345,6 @@ export type Database = {
           id?: string
           isDefault?: boolean
           name?: string
-          projectId?: string
           sortOrder?: number
           updatedAt?: string | null
           updatedBy?: string | null
@@ -52425,13 +52412,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "projectState_project_fkey"
-            columns: ["projectId", "companyId"]
-            isOneToOne: false
-            referencedRelation: "project"
-            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "projectState_updatedBy_fkey"

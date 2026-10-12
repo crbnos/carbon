@@ -171,10 +171,10 @@ BEGIN
       VALUES ('Pieces standard', 'PCS', company_a, 'system') RETURNING id INTO std_project;
     INSERT INTO project (name, identifier, "projectType", "costTreatment", "companyId", "createdBy")
       VALUES ('Pieces service', 'SVC999001', 'Service', 'By Coverage', company_a, 'system') RETURNING id INTO svc_project;
-    INSERT INTO "projectState" ("projectId", name, "group", color, "companyId", "createdBy")
-      VALUES (std_project, 'Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO std_state;
-    INSERT INTO "projectState" ("projectId", name, "group", color, "companyId", "createdBy")
-      VALUES (svc_project, 'Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO svc_state;
+    -- States are company-wide: both projects use one.
+    INSERT INTO "projectState" (name, "group", color, "companyId", "createdBy")
+      VALUES ('Pieces', 'Unstarted', '#60646C', company_a, 'system') RETURNING id INTO std_state;
+    svc_state := std_state;
     INSERT INTO "projectElement" ("projectId", type, name, "stateId", "companyId", "createdBy")
       VALUES (std_project, 'Task', 'Standard task', std_state, company_a, 'system') RETURNING id INTO std_element;
     INSERT INTO "projectElement" ("projectId", type, name, "stateId", "companyId", "createdBy")

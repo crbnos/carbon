@@ -189,12 +189,12 @@ async function addRefurbishment(
       .insertInto("projectState")
       .values({
         id: `${projectId}-state`,
-        name: "Todo",
+        // States are company-wide: one per test project, none the default.
+        name: `Todo ${projectId}`,
         group: "Unstarted",
         color: "#000000",
         sortOrder: 0,
-        isDefault: true,
-        projectId,
+        isDefault: false,
         companyId: f.companyId,
         createdBy: USER
       })

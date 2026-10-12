@@ -1210,9 +1210,6 @@ msgstr "Un nom est requis pour enregistrer une vue"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Un prix négocié fixé pour un article spécifique — par client, type de client ou tous les clients — qui remplace le prix de base purement et simplement, optionnellement avec des paliers de quantité."
 
-msgid "A new element takes the default state"
-msgstr "Un nouvel élément prend l'état par défaut"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Un nouveau bon de commande sera créé pour chaque fournisseur. Vous pouvez également choisir un bon de commande brouillon existant du fournisseur auquel ajouter les opérations externes."
 
@@ -2001,10 +1998,6 @@ msgstr "Ajouter {0} sélectionnés"
 msgid "Add & Issue"
 msgstr "Ajouter et émettre"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "Ajouter un état {0}"
-
 msgid "Add a column below to sort the view"
 msgstr "Ajoutez une colonne ci-dessous pour trier la vue"
 
@@ -2172,9 +2165,6 @@ msgstr "Ajouter un article"
 
 msgid "Add Journal Entry"
 msgstr "Ajouter une ligne d'écriture"
-
-msgid "Add Label"
-msgstr "Ajouter une étiquette"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "Réduire la configuration"
 msgid "Collapse subtree"
 msgstr "Réduire le sous-arbre"
 
-msgid "Color"
-msgstr "Couleur"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "Par défaut (financé : a une ligne coût majoré ou temps et matériel)
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "Par défaut (non financé : pas de ligne coût majoré ou temps et matériel)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "État {0} par défaut"
-
 msgid "Default Account"
 msgstr "Compte par défaut"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "Supprimer"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "Supprimer {0}"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "Supprimer la facture du {0}"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "Supprimer l'étiquette {0} ? Elle est supprimée de chaque élément qui l'a."
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Supprimer le jalon {0} ? Ses éléments restent, sans jalon."
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Supprimer le palier de prix pour la quantité {0} ? Cette action ne peut pas être annulée."
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "Supprimer l'état {0} ? Un état que les éléments utilisent ne peut pas être supprimé."
 
 msgid "Delete this line?"
 msgstr "Supprimer cette ligne ?"
@@ -9066,9 +9044,6 @@ msgstr "Chaque cellule affiche les personnes assignées par rapport aux personne
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Chaque modification de contrat qui finance cette ligne, par ACRN."
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "Chaque élément est dans un état. Le groupe décide de ce que l'état signifie : un élément dans un état Démarré prend les charges, et un nouvel élément prend l'état par défaut de son groupe."
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Chaque actif final est construit dans cette classe Construction en cours"
 
@@ -9179,11 +9154,6 @@ msgstr "Numéro d'Enregistrement et d'Identification des Opérateurs Économique
 
 msgid "Edit"
 msgstr "Modifier"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "Modifier {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Modifier le Flux de Travail <0>Problème</0>"
@@ -9338,9 +9308,6 @@ msgstr "Modifier la ligne d'écriture"
 
 msgid "Edit Kanban"
 msgstr "Modifier Kanban"
-
-msgid "Edit Label"
-msgstr "Modifier Étiquette"
 
 msgid "Edit Labor Category"
 msgstr "Modifier Catégorie de Main-d'œuvre"
@@ -9503,9 +9470,6 @@ msgstr "Modifier le mode d'expédition"
 
 msgid "Edit Size"
 msgstr "Modifier la taille"
-
-msgid "Edit State"
-msgstr "Modifier État"
 
 msgid "Edit Stock Transfer"
 msgstr "Modifier le transfert de stock"
@@ -14161,6 +14125,9 @@ msgstr "Fabriquer {quantity}"
 msgid "Make Active"
 msgstr "Rendre actif"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "Définir par défaut"
 
@@ -15080,9 +15047,6 @@ msgstr "Jamais entretenu"
 msgid "New"
 msgstr "Nouveau"
 
-msgid "New {groupLabel} State"
-msgstr "Nouvel état {groupLabel}"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "Nouveau Flux de Travail <0>Issue</0>"
 
@@ -15243,8 +15207,8 @@ msgstr "Nouveau groupe d'articles"
 msgid "New Kanban"
 msgstr "Nouveau Kanban"
 
-msgid "New Label"
-msgstr "Nouveau libellé"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "Nouvelle catégorie de main-d'œuvre"
@@ -15422,6 +15386,9 @@ msgstr "Nouveau mode d'expédition"
 
 msgid "New Size"
 msgstr "Nouvelle Taille"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "Nouveau Type de Stockage"
@@ -15997,11 +15964,8 @@ msgstr "Aucune ligne d'écriture dans le périmètre pour cette période"
 msgid "No labels"
 msgstr "Aucun libellé"
 
-msgid "No labels in this project"
-msgstr "Aucun libellé dans ce projet"
-
-msgid "No labels yet."
-msgstr "Aucun libellé pour le moment."
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "Aucune ligne"
@@ -23813,9 +23777,6 @@ msgstr "Tableau"
 msgid "Table actions"
 msgstr "Actions du tableau"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "Étiqueter les éléments dans l'arborescence, par exemple par discipline."
-
 msgid "Tags"
 msgstr "Étiquettes"
 
@@ -24604,6 +24565,9 @@ msgstr "Le type de valeur que cet attribut accepte (texte, nombre, date, boolée
 msgid "The label and document printers your company prints to"
 msgstr "Les imprimantes d'étiquettes et de documents vers lesquelles votre société imprime"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "La date la plus tardive pour passer ce bon de commande afin qu'il arrive à la date requise, compte tenu du délai d'approvisionnement du fournisseur."
 
@@ -25063,6 +25027,9 @@ msgstr "L'état de cette ligne de devis — Brouillon, Refus de devis, Terminé 
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Le groupe d'états que tous les comptes sous ce groupe utiliseront."
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "les heures du calendrier de la station selon ses équipes. Les heures pourvues (les personnes que vous avez assignées) s'affichent ci-dessous."

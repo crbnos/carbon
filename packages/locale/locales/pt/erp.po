@@ -1210,9 +1210,6 @@ msgstr "Um nome é necessário para salvar uma visualização"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Um preço negociado fixado para um item específico — por cliente, tipo de cliente ou todos os clientes — que substitui completamente o preço base, opcionalmente com faixas de quantidade."
 
-msgid "A new element takes the default state"
-msgstr "Um novo elemento assume o estado padrão"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Uma nova ordem de compra será criada para cada fornecedor. Alternativamente, você pode escolher um pedido de compra em rascunho existente do fornecedor para adicionar as operações externas a ele."
 
@@ -2001,10 +1998,6 @@ msgstr "Adicionar {0} selecionado"
 msgid "Add & Issue"
 msgstr "Adicionar e Emitir"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "Adicionar um estado {0}"
-
 msgid "Add a column below to sort the view"
 msgstr "Adicione uma coluna abaixo para ordenar a visualização"
 
@@ -2172,9 +2165,6 @@ msgstr "Adicionar Item"
 
 msgid "Add Journal Entry"
 msgstr "Adicionar Lançamento"
-
-msgid "Add Label"
-msgstr "Adicionar rótulo"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "Recolher Configuração"
 msgid "Collapse subtree"
 msgstr "Recolher subárvore"
 
-msgid "Color"
-msgstr "Cor"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "Padrão (financiado: tem uma linha de Custo Mais Markup ou Tempo & Mater
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "Padrão (não financiado: sem linha de Custo Mais Markup ou Tempo & Materiais)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "Estado padrão de {0}"
-
 msgid "Default Account"
 msgstr "Conta Padrão"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "Excluir"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "Excluir {0}"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "Excluir a fatura de {0}"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "Excluir o rótulo {0}? Ele é removido de cada elemento que o possui."
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Excluir o marco {0}? Seus elementos permanecem, sem um marco."
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Excluir a faixa de preço para quantidade {0}? Isso não pode ser desfeito."
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "Excluir o estado {0}? Um estado que os elementos usam não pode ser excluído."
 
 msgid "Delete this line?"
 msgstr "Excluir esta linha?"
@@ -9066,9 +9044,6 @@ msgstr "Cada célula mostra as pessoas atribuídas em comparação com as pessoa
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Cada modificação de contrato que financia esta linha, por ACRN."
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "Cada elemento está em um estado. O grupo decide o que o estado significa: um elemento em estado iniciado aceita encargos, e um novo elemento assume o estado padrão do grupo."
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Cada ativo final é construído nesta classe de Construção em Andamento"
 
@@ -9179,11 +9154,6 @@ msgstr "Número de Registro e Identificação de Operadores Econômicos; necess�
 
 msgid "Edit"
 msgstr "Editar"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "Editar {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Editar Fluxo de Trabalho <0>Problema</0>"
@@ -9338,9 +9308,6 @@ msgstr "Editar Lançamento no Diário"
 
 msgid "Edit Kanban"
 msgstr "Editar Kanban"
-
-msgid "Edit Label"
-msgstr "Editar Rótulo"
 
 msgid "Edit Labor Category"
 msgstr "Editar Categoria de Mão de obra"
@@ -9503,9 +9470,6 @@ msgstr "Editar Método de Envio"
 
 msgid "Edit Size"
 msgstr "Editar Tamanho"
-
-msgid "Edit State"
-msgstr "Editar Estado"
 
 msgid "Edit Stock Transfer"
 msgstr "Editar Transferência de Estoque"
@@ -14161,6 +14125,9 @@ msgstr "Fabricar {quantity}"
 msgid "Make Active"
 msgstr "Tornar Ativo"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "Definir como Padrão"
 
@@ -15080,9 +15047,6 @@ msgstr "Nunca atendido"
 msgid "New"
 msgstr "Novo"
 
-msgid "New {groupLabel} State"
-msgstr "Novo estado {groupLabel}"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "Novo Fluxo de Trabalho <0>Issue</0>"
 
@@ -15243,8 +15207,8 @@ msgstr "Novo Grupo de Itens"
 msgid "New Kanban"
 msgstr "Novo Kanban"
 
-msgid "New Label"
-msgstr "Novo rótulo"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "Nova categoria de mão de obra"
@@ -15422,6 +15386,9 @@ msgstr "Novo Método de Envio"
 
 msgid "New Size"
 msgstr "Novo Tamanho"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "Novo Tipo de Armazenamento"
@@ -15997,11 +15964,8 @@ msgstr "Nenhuma linha de diário no escopo para este período"
 msgid "No labels"
 msgstr "Nenhum rótulo"
 
-msgid "No labels in this project"
-msgstr "Nenhum rótulo neste projeto"
-
-msgid "No labels yet."
-msgstr "Nenhum rótulo ainda."
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "Sem linhas"
@@ -23813,9 +23777,6 @@ msgstr "Tabela"
 msgid "Table actions"
 msgstr "Ações da tabela"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "Etiquetar elementos em toda a árvore, por exemplo por disciplina"
-
 msgid "Tags"
 msgstr "Etiquetas"
 
@@ -24604,6 +24565,9 @@ msgstr "O tipo de valor que esse atributo aceita (texto, número, data, booleano
 msgid "The label and document printers your company prints to"
 msgstr "As impressoras de etiquetas e documentos para as quais sua empresa imprime"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "A data limite para colocar este pedido de compra para que chegue até a data necessária, considerando o lead time do fornecedor."
 
@@ -25063,6 +25027,9 @@ msgstr "O estado desta linha do orçamento — Rascunho, Sem cotação, Concluí
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "O grupo de demonstrações que todas as contas sob este grupo usarão."
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "as horas do calendário da estação dos seus turnos. As horas pessoais (as pessoas que você atribuiu) aparecem abaixo."

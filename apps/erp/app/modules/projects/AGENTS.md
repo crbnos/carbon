@@ -13,8 +13,11 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   `project.nextElementSequence`; a move never changes it. A Parameter's children are
   Parameters. Any other element can link a part (`itemId`) and one serial of it
   (`trackedEntityId`).
-- **State** — per-project `projectState` in five groups (Backlog, Unstarted, Started,
-  Completed, Cancelled), one default per group. `defaultProjectStates` seeds six.
+- **State** — company-wide `projectState` in five groups (Backlog, Unstarted, Started,
+  Completed, Cancelled), one default per group per company, edited in Settings → Projects
+  (`ProjectStatesGrid`). `seed-company` inserts the six `projectStates` of
+  `@carbon/database/seed-data`; a project or service order seeds none. Labels
+  (`projectLabel`) are company-wide too (`ProjectLabelsGrid`).
 - **Charge number** — a project, or a project plus element (`ChargeNumber` picker,
   `getChargeNumbers`). Jobs, PO lines, purchase invoice lines, charge and reimbursement
   lines, timesheet entries and project issues carry one.
@@ -83,7 +86,8 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   `withChangeRequest` — a write that skips them bypasses the draft and the plan lock.
 
 ### Ask First
-- Changing `defaultProjectStates` — tier 09 `PROJECT_STATES` and the backfill migration copy it.
+- Changing `projectStates` (`seed-data.ts`) — tier 09 `PROJECT_STATES` and the
+  `20261012164218_project-states-company-wide.sql` backfill copy it.
 - Adding a cost treatment — `resolveProjectPostingAccount` and SQL `project_posting_account`
   must change together.
 - Turning `CONSTRUCTION_IN_PROGRESS_ENABLED` on — project screens read CIP classes with

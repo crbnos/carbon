@@ -48805,6 +48805,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
             $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
           },
           {
@@ -48815,9 +48818,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
             $ref: "#/parameters/select"
@@ -49065,6 +49065,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
             $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
           },
           {
@@ -49075,9 +49078,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -49279,6 +49279,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.netInvestmentInLeasesAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
             $ref: "#/parameters/rowFilter.accountDefault.projectExpenseAccount"
           },
           {
@@ -49289,9 +49292,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.contractLossProvisionAccount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -50740,9 +50740,6 @@ export default {
             $ref: "#/parameters/rowFilter.projectLabel.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.projectLabel.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.projectLabel.name"
           },
           {
@@ -50829,9 +50826,6 @@ export default {
             $ref: "#/parameters/rowFilter.projectLabel.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.projectLabel.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.projectLabel.name"
           },
           {
@@ -50870,9 +50864,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectLabel.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.projectLabel.projectId"
           },
           {
             $ref: "#/parameters/rowFilter.projectLabel.name"
@@ -61558,9 +61549,6 @@ export default {
             $ref: "#/parameters/rowFilter.projectState.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.projectState.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.projectState.name"
           },
           {
@@ -61653,9 +61641,6 @@ export default {
             $ref: "#/parameters/rowFilter.projectState.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.projectState.projectId"
-          },
-          {
             $ref: "#/parameters/rowFilter.projectState.name"
           },
           {
@@ -61700,9 +61685,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectState.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.projectState.projectId"
           },
           {
             $ref: "#/parameters/rowFilter.projectState.name"
@@ -111079,6 +111061,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -111104,15 +111095,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.standardWeeklyHours"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
@@ -111375,6 +111357,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -111400,15 +111391,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.standardWeeklyHours"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
@@ -111625,6 +111607,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.invoiceNotificationGroup"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.timesheetApprovalRequired"
           },
           {
@@ -111650,15 +111641,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.standardWeeklyHours"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingCutoverDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.burdenRateType"
@@ -150734,6 +150716,10 @@ export default {
           format: "text",
           type: "string"
         },
+        migrationClearingAccount: {
+          format: "text",
+          type: "string"
+        },
         projectExpenseAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
@@ -150755,10 +150741,6 @@ export default {
         contractLossProvisionAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        migrationClearingAccount: {
           format: "text",
           type: "string"
         }
@@ -151357,7 +151339,6 @@ export default {
       required: [
         "id",
         "companyId",
-        "projectId",
         "name",
         "color",
         "sortOrder",
@@ -151374,10 +151355,6 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        projectId: {
           format: "text",
           type: "string"
         },
@@ -156628,7 +156605,6 @@ export default {
       required: [
         "id",
         "companyId",
-        "projectId",
         "name",
         "group",
         "color",
@@ -156647,10 +156623,6 @@ export default {
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        projectId: {
           format: "text",
           type: "string"
         },
@@ -180344,6 +180316,20 @@ export default {
           },
           type: "array"
         },
+        accountingCutoverDate: {
+          format: "date",
+          type: "string"
+        },
+        accountingActivatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        accountingActivatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
         timesheetApprovalRequired: {
           default: false,
           format: "boolean",
@@ -180388,20 +180374,6 @@ export default {
           default: 40,
           format: "numeric",
           type: "number"
-        },
-        accountingCutoverDate: {
-          format: "date",
-          type: "string"
-        },
-        accountingActivatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        accountingActivatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
         },
         burdenRateType: {
           default: "Provisional",
@@ -207040,6 +207012,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.migrationClearingAccount": {
+      name: "migrationClearingAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.accountDefault.projectExpenseAccount": {
       name: "projectExpenseAccount",
       required: false,
@@ -207060,12 +207038,6 @@ export default {
     },
     "rowFilter.accountDefault.contractLossProvisionAccount": {
       name: "contractLossProvisionAccount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.accountDefault.migrationClearingAccount": {
-      name: "migrationClearingAccount",
       required: false,
       in: "query",
       type: "string"
@@ -207759,12 +207731,6 @@ export default {
     },
     "rowFilter.projectLabel.companyId": {
       name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.projectLabel.projectId": {
-      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -213636,12 +213602,6 @@ export default {
     },
     "rowFilter.projectState.companyId": {
       name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.projectState.projectId": {
-      name: "projectId",
       required: false,
       in: "query",
       type: "string"
@@ -239936,6 +239896,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.accountingCutoverDate": {
+      name: "accountingCutoverDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.accountingActivatedAt": {
+      name: "accountingActivatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.accountingActivatedBy": {
+      name: "accountingActivatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.timesheetApprovalRequired": {
       name: "timesheetApprovalRequired",
       required: false,
@@ -239986,24 +239964,6 @@ export default {
     },
     "rowFilter.companySettings.standardWeeklyHours": {
       name: "standardWeeklyHours",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.accountingCutoverDate": {
-      name: "accountingCutoverDate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.accountingActivatedAt": {
-      name: "accountingActivatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.accountingActivatedBy": {
-      name: "accountingActivatedBy",
       required: false,
       in: "query",
       type: "string"

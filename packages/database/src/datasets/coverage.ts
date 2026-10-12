@@ -177,7 +177,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   projectElement: 23, // min 29
   projectElementLink: 5,
   projectMilestone: 4,
-  projectState: 12,
+  projectState: 6,
   projectStockTransfer: 1,
   projectStockTransferLine: 1,
   purchaseInvoice: 7,

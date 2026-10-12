@@ -261,7 +261,6 @@ export async function projectPostingFixture(
           color: "#000000",
           sortOrder: index,
           isDefault: true,
-          projectId,
           companyId,
           createdBy: USER
         }))

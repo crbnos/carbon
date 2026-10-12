@@ -613,7 +613,7 @@ export function LabelsPill({
           <CommandInput placeholder={t`Search...`} className="h-9" />
           <CommandList>
             <CommandEmpty>
-              <Trans>No labels in this project</Trans>
+              <Trans>No labels yet. Add them in Settings → Projects.</Trans>
             </CommandEmpty>
             <CommandGroup>
               {labels.map((label) => (

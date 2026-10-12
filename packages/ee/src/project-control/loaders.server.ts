@@ -387,7 +387,6 @@ export async function loadWorkPackages(
       .innerJoin("projectState as s", (join) =>
         join
           .onRef("s.id", "=", "e.stateId")
-          .onRef("s.projectId", "=", "e.projectId")
           .onRef("s.companyId", "=", "e.companyId")
       )
       .select([

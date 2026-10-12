@@ -795,8 +795,9 @@ async function upsertBillingAddress(
   );
 }
 
-// Mirrors `defaultProjectStates` (ERP `projects.models.ts`), the six states
-// `createProject` gives every new project. The backfill migration seeds the same.
+// Mirrors `projectStates` (`seed-data.ts`), the six company-wide states the
+// company seed gives every company. A company whose states a wipe removed
+// gets them back here.
 const PROJECT_STATES: {
   name: ProjectStateName;
   group: "Backlog" | "Unstarted" | "Started" | "Completed" | "Cancelled";
@@ -811,21 +812,38 @@ const PROJECT_STATES: {
   { name: "Cancelled", group: "Cancelled", color: "#9AA4BC", isDefault: true }
 ];
 
-/** The default states every project has (`PROJECT_STATES`), by name. */
-async function insertProjectStates(
-  ctx: Ctx,
-  projectId: string
-): Promise<Record<string, string>> {
-  const stateIds: Record<string, string> = {};
+/**
+ * The company's project states by name (states are company-wide). Inserts
+ * the six defaults the company lacks; a group that already has a default
+ * keeps it.
+ */
+async function insertProjectStates(ctx: Ctx): Promise<Record<string, string>> {
+  const existing = await rows<{
+    id: string;
+    name: string;
+    group: string;
+    isDefault: boolean;
+  }>(
+    ctx.client,
+    `SELECT id, name, "group", "isDefault" FROM "projectState" WHERE "companyId" = $1`,
+    [ctx.companyId]
+  );
+  const stateIds: Record<string, string> = Object.fromEntries(
+    existing.map((state) => [state.name, state.id])
+  );
+  const defaults = new Set(
+    existing.filter((state) => state.isDefault).map((state) => state.group)
+  );
   for (const [index, state] of PROJECT_STATES.entries()) {
+    if (stateIds[state.name]) continue;
     stateIds[state.name] = await insertId(ctx, "projectState", {
-      projectId,
       name: state.name,
       group: state.group,
       color: state.color,
       sortOrder: index + 1,
-      isDefault: state.isDefault
+      isDefault: state.isDefault && !defaults.has(state.group)
     });
+    if (state.isDefault) defaults.add(state.group);
   }
   return stateIds;
 }
@@ -846,7 +864,7 @@ async function insertServiceTree(
   }
 ): Promise<Record<string, string>> {
   const { projectId, identifier, nodes } = args;
-  const stateIds = await insertProjectStates(ctx, projectId);
+  const stateIds = await insertProjectStates(ctx);
 
   const nodeIds: Record<string, string> = {};
   const siblingCount: Record<string, number> = {};
@@ -937,7 +955,7 @@ async function seedServiceWork(ctx: Ctx): Promise<void> {
       active: true,
       nextElementSequence: 1
     });
-    await insertProjectStates(ctx, projectId);
+    await insertProjectStates(ctx);
     await ctx.client.query(
       `UPDATE "customerContract" SET "projectId" = $1
        WHERE id = $2 AND "companyId" = $3`,
@@ -1662,7 +1680,7 @@ async function seedProjects(ctx: Ctx): Promise<void> {
     });
     ctx.refs.misc[`project:${spec.key}`] = projectId;
 
-    const stateIds = await insertProjectStates(ctx, projectId);
+    const stateIds = await insertProjectStates(ctx);
 
     const milestoneIds: Record<string, string> = {};
     for (const [index, milestone] of spec.milestones.entries()) {

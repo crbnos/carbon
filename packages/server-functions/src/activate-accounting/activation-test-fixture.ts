@@ -1035,7 +1035,6 @@ export async function addReleasedProject(
         color: "#000000",
         sortOrder: 0,
         isDefault: true,
-        projectId,
         companyId: f.companyId,
         createdBy: USER
       })

@@ -1210,9 +1210,6 @@ msgstr "Требуется имя для сохранения представл
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "Согласованная цена, установленная для конкретной номенклатуры — по покупателю, типу покупателя или для всех покупателей — которая полностью заменяет базовую цену, опционально с шкалами количества."
 
-msgid "A new element takes the default state"
-msgstr "Новый элемент принимает состояние по умолчанию"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Для каждого поставщика будет создан новый заказ на покупку. Кроме того, вы можете выбрать существующий черновик заказа на покупку поставщика, чтобы добавить к нему внешние операции."
 
@@ -2001,10 +1998,6 @@ msgstr "Добавить {0} выбранных"
 msgid "Add & Issue"
 msgstr "Добавить и выдать"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "Добавить состояние {0}"
-
 msgid "Add a column below to sort the view"
 msgstr "Добавьте столбец ниже для сортировки представления"
 
@@ -2172,9 +2165,6 @@ msgstr "Добавить элемент"
 
 msgid "Add Journal Entry"
 msgstr "Добавить проводку"
-
-msgid "Add Label"
-msgstr "Добавить метку"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "Свернуть настройку"
 msgid "Collapse subtree"
 msgstr "Свернуть поддерево"
 
-msgid "Color"
-msgstr "Цвет"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "По умолчанию (финансируется: имеет стро
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "По умолчанию (не финансируется: нет строки Cost Plus или Time & Materials)"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "Статус {0} по умолчанию"
-
 msgid "Default Account"
 msgstr "Счет по умолчанию"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "Удалить"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "Удалить {0}"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "Удалить счет от {0}"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "Удалить метку {0}? Она будет удалена из всех элементов, которые её имеют."
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "Удалить веху {0}? Её элементы останутся без вехи."
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "Удалить ценовую шкалу для количества {0}? Это не может быть отменено."
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "Удалить состояние {0}? Состояние, используемое элементами, не может быть удалено."
 
 msgid "Delete this line?"
 msgstr "Удалить эту строку?"
@@ -9066,9 +9044,6 @@ msgstr "Каждая ячейка — это назначенные сотруд
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "Каждое изменение контракта, финансирующее эту строку, по ACRN."
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "Каждый элемент находится в одном состоянии. Группа определяет, что означает состояние: элемент в состоянии Started берёт на себя сборы, а новый элемент принимает состояние по умолчанию его группы."
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "Каждый финальный актив построен в этом классе Construction in Progress"
 
@@ -9179,11 +9154,6 @@ msgstr "Номер регистрации и идентификации экон
 
 msgid "Edit"
 msgstr "Изменить"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "Изменить {0}"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "Изменить рабочий процесс <0>списания в производство</0>"
@@ -9338,9 +9308,6 @@ msgstr "Изменить проводку"
 
 msgid "Edit Kanban"
 msgstr "Изменить канбан"
-
-msgid "Edit Label"
-msgstr "Изменить метку"
 
 msgid "Edit Labor Category"
 msgstr "Изменить категорию трудозатрат"
@@ -9503,9 +9470,6 @@ msgstr "Изменить Способ доставки"
 
 msgid "Edit Size"
 msgstr "Изменить Размер"
-
-msgid "Edit State"
-msgstr "Изменить состояние"
 
 msgid "Edit Stock Transfer"
 msgstr "Изменить Перемещение запаса"
@@ -14161,6 +14125,9 @@ msgstr "Произвести {quantity}"
 msgid "Make Active"
 msgstr "Сделать активным"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "Сделать по умолчанию"
 
@@ -15080,9 +15047,6 @@ msgstr "Никогда не обслуживалось"
 msgid "New"
 msgstr "Новый"
 
-msgid "New {groupLabel} State"
-msgstr "Новое состояние {groupLabel}"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "Новый рабочий процесс <0>Issue</0>"
 
@@ -15243,8 +15207,8 @@ msgstr "Новая группа товаров"
 msgid "New Kanban"
 msgstr "Новый канбан"
 
-msgid "New Label"
-msgstr "Новая метка"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "Новая категория труда"
@@ -15422,6 +15386,9 @@ msgstr "Новый способ доставки"
 
 msgid "New Size"
 msgstr "Новый размер"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "Новый тип хранилища"
@@ -15997,11 +15964,8 @@ msgstr "Нет строк операций в этом периоде"
 msgid "No labels"
 msgstr "Нет меток"
 
-msgid "No labels in this project"
-msgstr "Нет меток в этом проекте"
-
-msgid "No labels yet."
-msgstr "Пока нет меток."
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "Нет строк"
@@ -23813,9 +23777,6 @@ msgstr "Таблица"
 msgid "Table actions"
 msgstr "Действия таблицы"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "Добавьте теги элементам по дереву, например по дисциплине."
-
 msgid "Tags"
 msgstr "Теги"
 
@@ -24604,6 +24565,9 @@ msgstr "Тип значения, который принимает этот ат
 msgid "The label and document printers your company prints to"
 msgstr "Принтеры этикеток и документов, на которые печатает ваша организация"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Самая поздняя дата размещения этого заказа поставщику, чтобы он прибыл к нужной дате, с учетом срока поставки поставщика."
 
@@ -25063,6 +25027,9 @@ msgstr "Состояние этой строки предложения — Че
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "Группа отчетов, которую будут использовать все учетные записи в этой группе."
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "часы календаря станции из ее смен. Укомплектованные часы (люди, которых вы назначили) показаны ниже."

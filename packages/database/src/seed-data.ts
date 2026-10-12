@@ -2472,6 +2472,63 @@ export const periodCloseTaskDefinitions = [
 ];
 
 /**
+ * The project states every company starts with (Settings → Projects). States
+ * are company-wide: every project and service order uses the same set. The
+ * migration `20261012164218_project-states-company-wide.sql` seeds the same
+ * rows for companies that had none.
+ */
+export const projectStates: {
+  name: string;
+  group: "Backlog" | "Unstarted" | "Started" | "Completed" | "Cancelled";
+  color: string;
+  sortOrder: number;
+  isDefault: boolean;
+}[] = [
+  {
+    name: "Backlog",
+    group: "Backlog",
+    color: "#60646C",
+    sortOrder: 1,
+    isDefault: true
+  },
+  {
+    name: "Todo",
+    group: "Unstarted",
+    color: "#60646C",
+    sortOrder: 2,
+    isDefault: true
+  },
+  {
+    name: "In Progress",
+    group: "Started",
+    color: "#F59E0B",
+    sortOrder: 3,
+    isDefault: true
+  },
+  {
+    name: "In Review",
+    group: "Started",
+    color: "#3B82F6",
+    sortOrder: 4,
+    isDefault: false
+  },
+  {
+    name: "Done",
+    group: "Completed",
+    color: "#46A758",
+    sortOrder: 5,
+    isDefault: true
+  },
+  {
+    name: "Cancelled",
+    group: "Cancelled",
+    color: "#9AA4BC",
+    sortOrder: 6,
+    isDefault: true
+  }
+];
+
+/**
  * Default location seeded for new companies
  * Required for inventory quantities, jobs, and other location-dependent features
  */

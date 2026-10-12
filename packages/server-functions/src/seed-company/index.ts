@@ -24,6 +24,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  projectStates,
   returnReasons,
   scrapReasons,
   sequences,
@@ -338,6 +339,19 @@ const seedCompany = defineServerFn({
         await trx
           .insertInto("sequence")
           .values(sequences.map((s) => ({ ...s, companyId })))
+          .execute();
+
+        // project states: company-wide, shared by every project and service
+        // order (Settings → Projects)
+        await trx
+          .insertInto("projectState")
+          .values(
+            projectStates.map((state) => ({
+              ...state,
+              companyId,
+              createdBy: "system"
+            }))
+          )
           .execute();
 
         // period-close checklist definitions (system template rows). The table is

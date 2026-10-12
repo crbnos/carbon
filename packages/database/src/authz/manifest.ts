@@ -1226,7 +1226,13 @@ export const manifest = {
   projectElementLink: projectTable(),
   projectElementMaterial: projectTable(),
   projectExpenseEntry: projectTable(),
-  projectLabel: projectTable(),
+  // Company-wide (Settings → Projects): any employee reads; Settings or
+  // Projects writers edit.
+  projectLabel: company("projects", {
+    create: anyOf("projects_create", "settings_update"),
+    update: anyOf("projects_update", "settings_update"),
+    delete: anyOf("projects_delete", "settings_update")
+  }),
   projectLedger: company("projects", {
     read: projectModule("projectId", "view", { standard: "employee" }),
     create: false,
@@ -1244,7 +1250,13 @@ export const manifest = {
     update: false,
     delete: false
   }),
-  projectState: projectTable(),
+  // Company-wide (Settings → Projects): any employee reads; Settings or
+  // Projects writers edit.
+  projectState: company("projects", {
+    create: anyOf("projects_create", "settings_update"),
+    update: anyOf("projects_update", "settings_update"),
+    delete: anyOf("projects_delete", "settings_update")
+  }),
   projectStockTransfer: company("projects"),
   projectStockTransferLine: company("projects"),
   projectUserPreference: policies({

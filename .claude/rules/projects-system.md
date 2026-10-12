@@ -544,6 +544,14 @@ each through its picker (`StatePill` / `OwnerPill` / `DatePill`); labels are rea
 a click anywhere else opens the element's page. A hover row menu has Open, Add child,
 Move to…, Copy id and Delete.
 
+States and labels are company-wide (`20261012164218_project-states-company-wide.sql`):
+`projectState` and `projectLabel` have no `projectId`, a name is unique per company, and each
+state group has at most one default per company. Settings → Projects edits them in two grids
+(`ProjectStatesGrid`, `ProjectLabelsGrid`, posting to `settings+/projects.tsx`); the project
+Settings page has no states or labels. `seed-company` seeds the six default states; creating,
+copying or building a project, a template or a service order seeds or copies none, and an
+element keeps its state id. `projectElement_state_fkey` is `("stateId", "companyId")`.
+
 An element opens on its own page, `path.to.projectElement` → `/x/project/$id/element/$elementId`
 (`ElementView`), from the List, the Tree, the Reader, the sidebar tree, links and child rows.
 There is no element panel: the old `/elements/$elementId` URL only redirects to the page (its

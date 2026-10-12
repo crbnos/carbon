@@ -597,18 +597,14 @@ export async function getLineChargeNumber(
 // --- States ------------------------------------------------------------------
 
 /**
- * Lists the workflow states of a project in board order.
+ * Lists the company's project states in board order. States are
+ * company-wide: every project and service order uses them.
  * @mcp read
  */
-export async function getProjectStates(
-  client: Client,
-  projectId: string,
-  companyId: string
-) {
+export async function getProjectStates(client: Client, companyId: string) {
   return client
     .from("projectState")
     .select("*")
-    .eq("projectId", projectId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true });
 }
@@ -616,7 +612,7 @@ export async function getProjectStates(
 type ProjectStateFields = Omit<z.infer<typeof projectStateValidator>, "id">;
 
 /**
- * Creates or updates a workflow state of a project. A new state goes after
+ * Creates or updates a project state of the company. A new state goes after
  * the last state.
  * @mcp upsert
  */
@@ -624,7 +620,6 @@ export async function upsertProjectState(
   client: Client,
   state:
     | (ProjectStateFields & {
-        projectId: string;
         companyId: string;
         createdBy: string;
       })
@@ -638,7 +633,6 @@ export async function upsertProjectState(
     const last = await client
       .from("projectState")
       .select("sortOrder")
-      .eq("projectId", state.projectId)
       .eq("companyId", state.companyId)
       .order("sortOrder", { ascending: false })
       .limit(1)
@@ -649,7 +643,6 @@ export async function upsertProjectState(
       .from("projectState")
       .insert([
         {
-          projectId: state.projectId,
           companyId: state.companyId,
           name: state.name,
           group: state.group,
@@ -678,14 +671,15 @@ export async function upsertProjectState(
 }
 
 /**
- * Deletes a workflow state of a project. Refuses when an element uses the
- * state or when it is the last state of its group. When the state is its
- * group's default, the next state of the group becomes the default.
+ * Deletes a project state of the company. Refuses when an element of any
+ * project uses the state or when it is the last state of its group. When the
+ * state is its group's default, the next state of the group becomes the
+ * default.
  * @mcp delete
  */
 export async function deleteProjectState(
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string; id: string }
+  args: { companyId: string; id: string }
 ) {
   try {
     await db.transaction().execute(async (trx) => {
@@ -693,7 +687,6 @@ export async function deleteProjectState(
         .selectFrom("projectState")
         .select(["id", "group", "isDefault"])
         .where("id", "=", args.id)
-        .where("projectId", "=", args.projectId)
         .where("companyId", "=", args.companyId)
         .forUpdate()
         .executeTakeFirst();
@@ -715,7 +708,6 @@ export async function deleteProjectState(
       const next = await trx
         .selectFrom("projectState")
         .select("id")
-        .where("projectId", "=", args.projectId)
         .where("companyId", "=", args.companyId)
         .where("group", "=", state.group)
         .where("id", "<>", args.id)
@@ -724,7 +716,7 @@ export async function deleteProjectState(
         .executeTakeFirst();
       if (!next) {
         throw new Error(
-          `This is the last ${state.group} state. A project needs one state in each group.`
+          `This is the last ${state.group} state. Projects need one state in each group.`
         );
       }
 
@@ -759,7 +751,7 @@ export async function deleteProjectState(
  */
 export async function setProjectStateDefault(
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; projectId: string; id: string; updatedBy: string }
+  args: { companyId: string; id: string; updatedBy: string }
 ) {
   try {
     await db.transaction().execute(async (trx) => {
@@ -767,7 +759,6 @@ export async function setProjectStateDefault(
         .selectFrom("projectState")
         .select(["id", "group"])
         .where("id", "=", args.id)
-        .where("projectId", "=", args.projectId)
         .where("companyId", "=", args.companyId)
         .forUpdate()
         .executeTakeFirst();
@@ -776,7 +767,6 @@ export async function setProjectStateDefault(
       await trx
         .updateTable("projectState")
         .set({ isDefault: false })
-        .where("projectId", "=", args.projectId)
         .where("companyId", "=", args.companyId)
         .where("group", "=", state.group)
         .where("isDefault", "=", true)
@@ -804,18 +794,13 @@ export async function setProjectStateDefault(
 // --- Labels ------------------------------------------------------------------
 
 /**
- * Lists the labels of a project.
+ * Lists the company's project labels. Labels are company-wide.
  * @mcp read
  */
-export async function getProjectLabels(
-  client: Client,
-  projectId: string,
-  companyId: string
-) {
+export async function getProjectLabels(client: Client, companyId: string) {
   return client
     .from("projectLabel")
     .select("*")
-    .eq("projectId", projectId)
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("name", { ascending: true });
@@ -824,14 +809,13 @@ export async function getProjectLabels(
 type ProjectLabelFields = Omit<z.infer<typeof projectLabelValidator>, "id">;
 
 /**
- * Creates or updates a label of a project.
+ * Creates or updates a project label of the company.
  * @mcp upsert
  */
 export async function upsertProjectLabel(
   client: Client,
   label:
     | (ProjectLabelFields & {
-        projectId: string;
         companyId: string;
         createdBy: string;
       })
@@ -846,7 +830,6 @@ export async function upsertProjectLabel(
       .from("projectLabel")
       .insert([
         {
-          projectId: label.projectId,
           companyId: label.companyId,
           name: label.name,
           color: label.color,
@@ -872,7 +855,7 @@ export async function upsertProjectLabel(
 }
 
 /**
- * Deletes a label of a project. Its element links go with it.
+ * Deletes a project label of the company. Its element links go with it.
  * @mcp delete
  */
 export async function deleteProjectLabel(

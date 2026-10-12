@@ -1932,7 +1932,7 @@ export type MemoSpec = {
   notes: string;
 };
 
-/** One of the six states `createProject` seeds (`defaultProjectStates`). */
+/** One of the six company-wide states the company seed inserts (`projectStates`). */
 export type ProjectStateName =
   | "Backlog"
   | "Todo"

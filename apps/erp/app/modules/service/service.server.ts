@@ -21,10 +21,7 @@ import { insertServiceOrder } from "@carbon/server-functions/lib/service-orders"
 import { datetime, openChargeIds, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import {
-  BUILD_FROM_PART_MAX_DEPTH,
-  defaultProjectStates
-} from "../projects/projects.models";
+import { BUILD_FROM_PART_MAX_DEPTH } from "../projects/projects.models";
 import {
   insertElementsFromPart,
   postTimesheetEntries
@@ -414,22 +411,6 @@ export async function createServiceTemplate(
       .set({ identifier: serviceTemplateIdentifier(project.id) })
       .where("id", "=", project.id)
       .where("companyId", "=", companyId)
-      .execute();
-
-    await trx
-      .insertInto("projectState")
-      .values(
-        defaultProjectStates.map((state) => ({
-          projectId: project.id,
-          companyId,
-          name: state.name,
-          group: state.group,
-          color: state.color,
-          sortOrder: state.sortOrder,
-          isDefault: state.isDefault,
-          createdBy: userId
-        }))
-      )
       .execute();
 
     return { id: project.id };

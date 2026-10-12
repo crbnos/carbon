@@ -1210,9 +1210,6 @@ msgstr "ビューを保存するには名前が必要です"
 msgid "A negotiated price pinned for a specific item — by customer, customer type, or all customers — that replaces the base price outright, optionally with quantity breaks."
 msgstr "得意先、得意先タイプ、またはすべての得意先ごとに設定され、基本価格を完全に置き換える交渉済み価格で、オプションで数量スケールを含みます。"
 
-msgid "A new element takes the default state"
-msgstr "新しい要素はデフォルト状態になります"
-
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "仕入先ごとに新しい発注書が作成されます。または、既存の下書き発注書を選択して、外注工程を追加することもできます。"
 
@@ -2001,10 +1998,6 @@ msgstr "選択済みの {0} 件を追加"
 msgid "Add & Issue"
 msgstr "追加して発行"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Add a {0} state"
-msgstr "{0}状態を追加"
-
 msgid "Add a column below to sort the view"
 msgstr "下のカラムを追加してビューをソートします"
 
@@ -2172,9 +2165,6 @@ msgstr "アイテムを追加"
 
 msgid "Add Journal Entry"
 msgstr "仕訳行を追加"
-
-msgid "Add Label"
-msgstr "ラベルを追加"
 
 msgid "Add line"
 msgstr ""
@@ -5626,8 +5616,8 @@ msgstr "段取りを折りたたむ"
 msgid "Collapse subtree"
 msgstr "サブツリーを折りたたむ"
 
-msgid "Color"
-msgstr "色"
+msgid "Colour"
+msgstr ""
 
 #. placeholder {0}: index + 1
 msgid "Column {0} of {count}"
@@ -7739,10 +7729,6 @@ msgstr "デフォルト（ファンド済：原価プラスまたはタイムア
 msgid "Default (not funded: no Cost Plus or Time & Materials line)"
 msgstr "デフォルト（未ファンド：原価プラスまたはタイムアンドマテリアルズ明細がない）"
 
-#. placeholder {0}: groupLabels[group]
-msgid "Default {0} state"
-msgstr "デフォルト {0} 状態"
-
 msgid "Default Account"
 msgstr "デフォルト勘定科目"
 
@@ -7927,8 +7913,8 @@ msgid "Delete"
 msgstr "削除"
 
 #. placeholder {0}: deleting.name
-#. placeholder {0}: label.name
 #. placeholder {0}: monthLabel(deleting.periodStart)
+#. placeholder {0}: row.account?.number ?? ""
 msgid "Delete {0}"
 msgstr "{0} を削除"
 
@@ -8276,20 +8262,12 @@ msgid "Delete the {0} invoice"
 msgstr "{0}の請求書を削除"
 
 #. placeholder {0}: deleting.name
-msgid "Delete the label {0}? It is removed from every element that has it."
-msgstr "ラベル {0} を削除しますか？このラベルを持つすべての要素から削除されます。"
-
-#. placeholder {0}: deleting.name
 msgid "Delete the milestone {0}? Its elements stay, without a milestone."
 msgstr "マイルストーン {0} を削除しますか？その要素は残りますが、マイルストーンは付けられません。"
 
 #. placeholder {0}: pendingDelete.quantity
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "数量{0}の価格スケールを削除しますか？この操作は取り消せません。"
-
-#. placeholder {0}: deleting.name
-msgid "Delete the state {0}? A state that elements use cannot be deleted."
-msgstr "状態 {0} を削除しますか？要素が使用している状態は削除できません。"
 
 msgid "Delete this line?"
 msgstr "この明細を削除しますか?"
@@ -9066,9 +9044,6 @@ msgstr "各セルは、その日の作業に必要な人員に対して配置さ
 msgid "Each contract modification that funds this line, by ACRN."
 msgstr "この明細に資金を提供する契約変更書（ACRN 別）。"
 
-msgid "Each element is in one state. The group decides what the state means: an element in a Started state takes charges, and a new element takes its group's default state."
-msgstr "各要素は1つの状態に置かれます。グループは状態の意味を決定します。「開始」状態の要素は請求を受け、新規要素はグループのデフォルト状態を取得します。"
-
 msgid "Each final asset is built in this Construction in Progress class"
 msgstr "各最終資産はこの「建設進行中」クラスで構築されます"
 
@@ -9179,11 +9154,6 @@ msgstr "経済事業者登録・識別番号。EU/UK関税国境を越える商�
 
 msgid "Edit"
 msgstr "編集"
-
-#. placeholder {0}: label.name
-#. placeholder {0}: state.name
-msgid "Edit {0}"
-msgstr "{0}を編集"
 
 msgid "Edit <0>Issue</0> Workflow"
 msgstr "<0>問題</0>ワークフローを編集"
@@ -9338,9 +9308,6 @@ msgstr "仕訳行を編集"
 
 msgid "Edit Kanban"
 msgstr "かんばんを編集"
-
-msgid "Edit Label"
-msgstr "ラベル編集"
 
 msgid "Edit Labor Category"
 msgstr "労務カテゴリ編集"
@@ -9503,9 +9470,6 @@ msgstr "出荷方法を編集"
 
 msgid "Edit Size"
 msgstr "サイズを編集"
-
-msgid "Edit State"
-msgstr "状態編集"
 
 msgid "Edit Stock Transfer"
 msgstr "在庫移動を編集"
@@ -14161,6 +14125,9 @@ msgstr "{quantity} を製造"
 msgid "Make Active"
 msgstr "アクティブにする"
 
+msgid "Make default"
+msgstr ""
+
 msgid "Make Default"
 msgstr "デフォルトに設定"
 
@@ -15080,9 +15047,6 @@ msgstr "サービスされたことがない"
 msgid "New"
 msgstr "新規"
 
-msgid "New {groupLabel} State"
-msgstr "新しい{groupLabel}状態"
-
 msgid "New <0>Issue</0> Workflow"
 msgstr "新しい<0>Issue</0>ワークフロー"
 
@@ -15243,8 +15207,8 @@ msgstr "新しいアイテムグループ"
 msgid "New Kanban"
 msgstr "新規かんばん"
 
-msgid "New Label"
-msgstr "新しいラベル"
+msgid "New label"
+msgstr ""
 
 msgid "New Labor Category"
 msgstr "新しい労務カテゴリ"
@@ -15422,6 +15386,9 @@ msgstr "新規出荷方法"
 
 msgid "New Size"
 msgstr "新しいサイズ"
+
+msgid "New state"
+msgstr ""
 
 msgid "New Storage Type"
 msgstr "新しい保管タイプ"
@@ -15997,11 +15964,8 @@ msgstr "この期間の対象仕訳明細がありません"
 msgid "No labels"
 msgstr "ラベルなし"
 
-msgid "No labels in this project"
-msgstr "このプロジェクトにはラベルがありません"
-
-msgid "No labels yet."
-msgstr "ラベルがまだありません。"
+msgid "No labels yet. Add them in Settings → Projects."
+msgstr ""
 
 msgid "No lines"
 msgstr "ラインなし"
@@ -23813,9 +23777,6 @@ msgstr "テーブル"
 msgid "Table actions"
 msgstr "テーブルアクション"
 
-msgid "Tag elements across the tree, for example by discipline."
-msgstr "ツリー全体の要素にタグを付ける（例：規律別）。"
-
 msgid "Tags"
 msgstr "タグ"
 
@@ -24604,6 +24565,9 @@ msgstr "この属性が受け入れる値の種類（テキスト、数字、日
 msgid "The label and document printers your company prints to"
 msgstr "あなたの会社が印刷するラベルおよび文書プリンター"
 
+msgid "The labels every project can put on its elements."
+msgstr ""
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "仕入先のリードタイムを考慮して、この発注書が必要日までに到着するように発注書を出すべき最後の日付。"
 
@@ -25063,6 +25027,9 @@ msgstr "この見積明細の状態 — 下書き、見積辞退、完了。見�
 
 msgid "The statement bucket all accounts under this group will use."
 msgstr "このグループ下のすべてのアカウントが使用するステートメントバケット。"
+
+msgid "The states every project and service order uses. The default of each group is the state a new element takes."
+msgstr ""
 
 msgid "the station's calendar hours from its shifts. Staffed hours (the people you've assigned) show beneath."
 msgstr "ステーションのシフトからのカレンダー時間。配員時間（割り当てた人員）が下に表示されます。"

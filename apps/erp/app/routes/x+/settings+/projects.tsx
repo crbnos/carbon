@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
@@ -24,12 +25,26 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import {
+  deleteProjectLabel,
+  deleteProjectState,
+  getProjectLabels,
+  getProjectStates,
+  projectLabelValidator,
+  projectStateValidator,
+  setProjectStateDefault,
+  upsertProjectLabel,
+  upsertProjectState
+} from "~/modules/projects";
+import { ProjectLabelsGrid } from "~/modules/projects/ui/Settings/ProjectLabelsGrid";
+import { ProjectStatesGrid } from "~/modules/projects/ui/Settings/ProjectStatesGrid";
 import {
   getCompanySettings,
   projectSettingsValidator,
   updateProjectSettings
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -45,7 +60,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, states, labels] = await Promise.all([
+    getCompanySettings(client, companyId),
+    getProjectStates(client, companyId),
+    getProjectLabels(client, companyId)
+  ]);
+  for (const [what, result] of [
+    ["states", states],
+    ["labels", labels]
+  ] as const) {
+    if (result.error) {
+      logger.error(`Failed to load the project ${what}`, {
+        companyId,
+        error: result.error
+      });
+    }
+  }
   if (!companySettings.data) {
     logger.error("Failed to load company settings", {
       companyId,
@@ -59,7 +89,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
   }
-  return { companySettings: companySettings.data };
+  return {
+    companySettings: companySettings.data,
+    states: states.data ?? [],
+    labels: labels.data ?? []
+  };
 }
 
 /** Which setting each switch posts, by intent. */
@@ -68,13 +102,123 @@ const SETTING_BY_INTENT = {
   requireElement: "requireProjectElement"
 } as const;
 
+/**
+ * The company's project states and labels (company-wide, used by every
+ * project), and the two switches. A grid cell posts `quiet` and gets
+ * `{ error }` back; the buttons read `message`.
+ */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings"
   });
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+  const id = formData.get("id");
+  const refuse = (err: unknown, message: string) => {
+    if (err) logger.error(message, { companyId, intent, error: err });
+    return data({ success: false, message, error: message }, { status: 400 });
+  };
+  const done = (message: string) => ({ success: true, message, error: null });
+
+  switch (intent) {
+    case "upsertState": {
+      const validation = await validator(projectStateValidator).validate(
+        formData
+      );
+      if (validation.error) {
+        return refuse(
+          null,
+          Object.values(validation.error.fieldErrors ?? {})[0] ??
+            "Invalid state"
+        );
+      }
+      const { id: stateId, ...state } = validation.data;
+      const result = stateId
+        ? await upsertProjectState(client, {
+            ...state,
+            id: stateId,
+            companyId,
+            updatedBy: userId
+          })
+        : await upsertProjectState(client, {
+            ...state,
+            companyId,
+            createdBy: userId
+          });
+      if (result.error) {
+        return refuse(
+          result.error,
+          result.error.code === "23505"
+            ? "A state with this name already exists"
+            : "Failed to save the state"
+        );
+      }
+      return done("State saved");
+    }
+    case "deleteState": {
+      if (typeof id !== "string") return refuse(null, "No state was given");
+      const result = await deleteProjectState(getDatabaseClient(), {
+        companyId,
+        id
+      });
+      if (result.error) return refuse(null, result.error.message);
+      return done("State deleted");
+    }
+    case "setDefaultState": {
+      if (typeof id !== "string") return refuse(null, "No state was given");
+      const result = await setProjectStateDefault(getDatabaseClient(), {
+        companyId,
+        id,
+        updatedBy: userId
+      });
+      if (result.error) return refuse(null, result.error.message);
+      return done("Default state changed");
+    }
+    case "upsertLabel": {
+      const validation = await validator(projectLabelValidator).validate(
+        formData
+      );
+      if (validation.error) {
+        return refuse(
+          null,
+          Object.values(validation.error.fieldErrors ?? {})[0] ??
+            "Invalid label"
+        );
+      }
+      const { id: labelId, ...label } = validation.data;
+      const result = labelId
+        ? await upsertProjectLabel(client, {
+            ...label,
+            id: labelId,
+            companyId,
+            updatedBy: userId
+          })
+        : await upsertProjectLabel(client, {
+            ...label,
+            companyId,
+            createdBy: userId
+          });
+      if (result.error) {
+        return refuse(
+          result.error,
+          result.error.code === "23505"
+            ? "A label with this name already exists"
+            : "Failed to save the label"
+        );
+      }
+      return done("Label saved");
+    }
+    case "deleteLabel": {
+      if (typeof id !== "string") return refuse(null, "No label was given");
+      const result = await deleteProjectLabel(client, id, companyId);
+      if (result.error) {
+        return refuse(result.error, "Failed to delete the label");
+      }
+      return done("Label deleted");
+    }
+  }
+
   if (typeof intent !== "string" || !Object.hasOwn(SETTING_BY_INTENT, intent)) {
     return { success: false, message: "Unknown intent" };
   }
@@ -101,7 +245,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function ProjectsSettingsRoute() {
-  const { companySettings } = useLoaderData<typeof loader>();
+  const { companySettings, states, labels } = useLoaderData<typeof loader>();
   const fetcher = useAction<typeof action>({
     onSuccess: (data) => toast.success(data.message),
     onError: (data) => toast.error(data.message)
@@ -175,6 +319,9 @@ export default function ProjectsSettingsRoute() {
             </HStack>
           </CardContent>
         </Card>
+
+        <ProjectStatesGrid states={states} />
+        <ProjectLabelsGrid labels={labels} />
       </VStack>
     </ScrollArea>
   );
