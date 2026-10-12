@@ -57,6 +57,7 @@ import type {
   projectElementValidator,
   projectIssueValidator,
   projectValidator,
+  RdActivityRole,
   RequirementStatus,
   VerificationElement
 } from "./projects.models";
@@ -3738,6 +3739,9 @@ export async function saveTimesheetEntry(args: {
   mode?: "cell" | "add";
   status?: "Draft" | "Submitted";
   serviceVisitId?: string | null;
+  /** R&D tax: left out takes the default; "" or null is none. */
+  workLocationId?: string | null;
+  rdActivityRole?: RdActivityRole | "" | null;
   companyId: string;
   userId: string;
 }): Promise<
@@ -3749,7 +3753,15 @@ export async function saveTimesheetEntry(args: {
     .system({ db: getDatabaseClient(), companyId, userId })
     .invoke("save-timesheet-entry", {
       ...input,
-      projectElementId: input.projectElementId || null
+      projectElementId: input.projectElementId || null,
+      workLocationId:
+        input.workLocationId === undefined
+          ? undefined
+          : input.workLocationId || null,
+      rdActivityRole:
+        input.rdActivityRole === undefined
+          ? undefined
+          : input.rdActivityRole || null
     });
   if (saved.error || !saved.data) {
     logger.error("Failed to save a timesheet entry", {
@@ -4581,28 +4593,38 @@ export async function getTimesheetWeekView(
     monday.add({ days: index }).toString()
   );
 
-  const [entries, timecard, laborCategories, settings] = await Promise.all([
-    getTimesheetWeek(client, {
-      companyId,
-      employeeId,
-      from: weekStart,
-      to: weekEnd
-    }),
-    client
-      .from("timeCardEntry")
-      .select("clockIn, clockOut")
-      .eq("employeeId", employeeId)
-      .eq("companyId", companyId)
-      .gte("clockIn", from)
-      .lte("clockIn", to),
-    getLaborCategoriesList(client, companyId),
-    client.from("companySettings").select("*").eq("id", companyId).single()
-  ]);
+  const [entries, timecard, laborCategories, settings, job] = await Promise.all(
+    [
+      getTimesheetWeek(client, {
+        companyId,
+        employeeId,
+        from: weekStart,
+        to: weekEnd
+      }),
+      client
+        .from("timeCardEntry")
+        .select("clockIn, clockOut")
+        .eq("employeeId", employeeId)
+        .eq("companyId", companyId)
+        .gte("clockIn", from)
+        .lte("clockIn", to),
+      getLaborCategoriesList(client, companyId),
+      client.from("companySettings").select("*").eq("id", companyId).single(),
+      // R&D tax: a new row's work location defaults to the job location.
+      client
+        .from("employeeJob")
+        .select("locationId")
+        .eq("id", employeeId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]
+  );
   for (const [what, result] of [
     ["the timesheet", entries],
     ["the timecard", timecard],
     ["labor categories", laborCategories],
-    ["company settings", settings]
+    ["company settings", settings],
+    ["the employee job", job]
   ] as const) {
     if (result.error) {
       logger.error("Failed to load the timesheet week", {
@@ -4653,7 +4675,8 @@ export async function getTimesheetWeekView(
       days,
       rows: groupTimesheetRows(entries.data ?? []),
       timecardHours,
-      laborCategories: laborCategories.data ?? []
+      laborCategories: laborCategories.data ?? [],
+      jobLocationId: job.data?.locationId ?? null
     },
     settings: settings.data,
     isDcaa,

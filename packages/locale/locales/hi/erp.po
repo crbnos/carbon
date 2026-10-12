@@ -2491,6 +2491,9 @@ msgstr "सभी मॉड्यूल"
 msgid "All open jobs"
 msgstr "सभी खुले जॉब"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "सभी रिटर्न योग्य पंक्तियाँ"
 
@@ -8400,6 +8403,15 @@ msgstr "सीधी वित्तपोषण पट्टा"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "आपके Slack वर्कस्पेस में प्रत्येक प्राप्तकर्ता को सीधा संदेश।"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "दिशा"
 
@@ -8722,6 +8734,9 @@ msgstr "अपनी फ़ाइल यहाँ ड्रॉप करें, 
 
 msgid "Drop-ship"
 msgstr "ड्रॉप-शिप"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "देय"
@@ -9963,6 +9978,9 @@ msgstr "इस रन में निर्माण होने वाली 
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "आंतरिक नोट्स"
 
 msgid "Internal Notes"
 msgstr "आंतरिक नोट्स"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "इन्व"
@@ -16263,6 +16284,9 @@ msgstr "गैर-अनुरूपताएँ"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "गैर-इन्वेंटरी"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "अभी नहीं"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "उत्पादित आइटम"
 msgid "Produced item"
 msgstr "उत्पादित आइटम"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "हाइपरकेयर के दौरान उत्पाद समस्याएं"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "पुनर्निर्धारण सहनशीलता"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "इकाइयों को कहाँ वितरित किय�
 msgid "Where the units ship from"
 msgstr "इकाइयों को कहाँ से भेजा जाता है"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
 
@@ -27718,6 +27754,9 @@ msgstr "कार्य निर्देश"
 
 msgid "Work Instructions"
 msgstr "कार्य निर्देश"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "कार्य फोन"

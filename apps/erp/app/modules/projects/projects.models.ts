@@ -821,7 +821,10 @@ export const timesheetChangeValidator = z
 export const timesheetRowValidator = z.object({
   projectId: z.string().min(1, { message: "Charge number is required" }),
   projectElementId: zfd.text(z.string().optional()),
-  laborCategoryId: z.string().min(1, { message: "Labor category is required" })
+  laborCategoryId: z.string().min(1, { message: "Labor category is required" }),
+  // R&D tax: an empty value is none.
+  workLocationId: z.string().optional(),
+  rdActivityRole: z.union([z.enum(rdActivityRoles), z.literal("")]).optional()
 });
 
 /** The grid key of a timesheet row, as `groupTimesheetRows` builds it. */

@@ -2491,6 +2491,9 @@ msgstr "All modules"
 msgid "All open jobs"
 msgstr "All open jobs"
 
+msgid "All Others"
+msgstr "All Others"
+
 msgid "All returnable lines"
 msgstr "All returnable lines"
 
@@ -8400,6 +8403,15 @@ msgstr "Direct financing lease"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Direct message to each recipient in your Slack workspace."
 
+msgid "Direct Research"
+msgstr "Direct Research"
+
+msgid "Direct Supervision"
+msgstr "Direct Supervision"
+
+msgid "Direct Support"
+msgstr "Direct Support"
+
 msgid "Direction"
 msgstr "Direction"
 
@@ -8722,6 +8734,9 @@ msgstr "Drop your file here, or click to browse."
 
 msgid "Drop-ship"
 msgstr "Drop-ship"
+
+msgid "Dual Function"
+msgstr "Dual Function"
 
 msgid "Due"
 msgstr "Due"
@@ -9963,6 +9978,9 @@ msgstr "Everything this run makes lands in one lot. The shop floor can't change 
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
+
+msgid "Excepted"
+msgstr "Excepted"
 
 msgid "Exception Project"
 msgstr "Exception Project"
@@ -12493,6 +12511,9 @@ msgstr "Internal notes"
 
 msgid "Internal Notes"
 msgstr "Internal Notes"
+
+msgid "Internal Use"
+msgstr "Internal Use"
 
 msgid "inv"
 msgstr "inv"
@@ -16263,6 +16284,9 @@ msgstr "Non-conformances"
 msgid "Non-Exempt"
 msgstr "Non-Exempt"
 
+msgid "Non-Internal Use"
+msgstr "Non-Internal Use"
+
 msgid "Non-Inventory"
 msgstr "Non-Inventory"
 
@@ -16316,6 +16340,9 @@ msgstr "Not now"
 
 msgid "Not planned"
 msgstr "Not planned"
+
+msgid "Not Qualified"
+msgstr "Not Qualified"
 
 msgid "Not reached"
 msgstr "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "produced item"
 msgid "Produced item"
 msgstr "Produced item"
 
+msgid "Product"
+msgstr "Product"
+
 msgid "Product issues during hypercare"
 msgstr "Product issues during hypercare"
 
@@ -20150,6 +20180,9 @@ msgstr "Reschedule Tolerance"
 
 msgid "Reschedule Visit"
 msgstr "Reschedule Visit"
+
+msgid "Research role"
+msgstr "Research role"
 
 msgid "Reserve floor"
 msgstr "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "Where the units are delivered"
 msgid "Where the units ship from"
 msgstr "Where the units ship from"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr "Where the work took place. Decides domestic or foreign research for R&D tax."
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 
@@ -27718,6 +27754,9 @@ msgstr "Work instruction"
 
 msgid "Work Instructions"
 msgstr "Work Instructions"
+
+msgid "Work location"
+msgstr "Work location"
 
 msgid "Work Phone"
 msgstr "Work Phone"

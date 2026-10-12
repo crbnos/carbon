@@ -2491,6 +2491,9 @@ msgstr "すべてのモジュール"
 msgid "All open jobs"
 msgstr "すべてのオープン製造指図"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "すべての返品対象明細"
 
@@ -8400,6 +8403,15 @@ msgstr "直接融資リース"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Slackワークスペース内の各受信者への直接メッセージ。"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "方向"
 
@@ -8722,6 +8734,9 @@ msgstr "ファイルをここにドラッグするか、クリックして参照
 
 msgid "Drop-ship"
 msgstr "直送"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "期限"
@@ -9963,6 +9978,9 @@ msgstr "このランで製造されるすべてが1つのロットに入りま�
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBを超えています。送信するために一部の添付ファイルを除去してください。"
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "社内メモ"
 
 msgid "Internal Notes"
 msgstr "社内メモ"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "在庫"
@@ -16263,6 +16284,9 @@ msgstr "不適合"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "非在庫"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "後で"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "製造品目"
 msgid "Produced item"
 msgstr "製造品目"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "ハイパーケア中の製品の問題"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "スケジュール変更許容値"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "個がどこに配送されるか"
 msgid "Where the units ship from"
 msgstr "個がどこから発送されるか"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "このエントリーの発生元（手動入力、販売/購買からの転記、定期テンプレートなど）。"
 
@@ -27718,6 +27754,9 @@ msgstr "作業手順書"
 
 msgid "Work Instructions"
 msgstr "作業手順書"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "仕事用電話"

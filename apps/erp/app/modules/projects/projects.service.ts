@@ -2538,7 +2538,7 @@ export async function getLaborCategoriesList(
 ) {
   return client
     .from("laborCategory")
-    .select("id, name")
+    .select("id, name, rdActivityRole")
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });

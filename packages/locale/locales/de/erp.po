@@ -2491,6 +2491,9 @@ msgstr "Alle Module"
 msgid "All open jobs"
 msgstr "Alle offenen Fertigungsaufträge"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "Alle rückgabefähigen Positionen"
 
@@ -8400,6 +8403,15 @@ msgstr "Finanzierungsleasing"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Direktnachricht an jeden Empfänger in Ihrem Slack-Arbeitsbereich."
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "Richtung"
 
@@ -8722,6 +8734,9 @@ msgstr "Datei hier ablegen oder zum Durchsuchen klicken."
 
 msgid "Drop-ship"
 msgstr "Direktlieferung"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "Fällig"
@@ -9963,6 +9978,9 @@ msgstr "Alles, was dieser Durchlauf herstellt, landet in einer Charge. Die Werks
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Überschreitet {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB insgesamt – entfernen Sie einige Anhänge zum Senden."
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "Interne Notizen"
 
 msgid "Internal Notes"
 msgstr "Interne Notizen"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "Inv"
@@ -16263,6 +16284,9 @@ msgstr "Nichtkonformitäten"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Nicht lagergeführt"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "Jetzt nicht"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "erzeugter Artikel"
 msgid "Produced item"
 msgstr "Erzeugter Artikel"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "Produktprobleme während der Hypercare"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "Umplanungstoleranz"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "Wo die Einheiten geliefert werden"
 msgid "Where the units ship from"
 msgstr "Wo die Einheiten versendet werden"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Woher dieser Eintrag stammt (manuelle Eingabe, Buchung aus Vertrieb/Einkauf, wiederkehrende Vorlage, usw.)."
 
@@ -27718,6 +27754,9 @@ msgstr "Arbeitsanweisung"
 
 msgid "Work Instructions"
 msgstr "Arbeitsanweisungen"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "Geschäftstelefon"

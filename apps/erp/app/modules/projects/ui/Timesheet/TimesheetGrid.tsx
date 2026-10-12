@@ -41,6 +41,7 @@ import { INPUT_FORMAT, INPUT_STEP, isEntryDateAllowed } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useMemo, useRef, useState } from "react";
 import {
+  LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
   LuPencil,
@@ -53,26 +54,32 @@ import { Link, useFetcher, useNavigate } from "react-router";
 import {
   ChargeNumber,
   Hidden,
+  Location,
   Number as NumberFormField,
   Select,
+  SelectControlled,
   Submit,
   TextArea,
   useChargeNumbers
 } from "~/components/Form";
+import { useLocations } from "~/components/Form/Location";
 import { useCellSave } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
 import type {
+  RdActivityRole,
   TimesheetCell,
   TimesheetEntryStatus as TimesheetEntryStatusType
 } from "../../projects.models";
 import {
+  rdActivityRoles,
   timesheetCorrectionValidator,
   timesheetRowKey,
   timesheetRowValidator
 } from "../../projects.models";
 import { TimesheetEntryStatus } from "../Element/TimesheetEntryStatus";
+import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
 import { CertificationModal } from "./CertificationModal";
 import {
   TimesheetChangeModal,
@@ -89,6 +96,10 @@ type GridRow = {
   projectId: string;
   projectElementId: string | null;
   laborCategoryId: string;
+  /** R&D tax: where the work took place, and its research role. */
+  workLocationId: string | null;
+  workLocationName: string | null;
+  rdActivityRole: RdActivityRole | null;
   /**
    * The project identifier, or the element's readable id; on a service
    * order, the order's readable id.
@@ -116,6 +127,8 @@ type TimesheetGridProps = {
     projectId: string;
     projectElementId: string | null;
     laborCategoryId: string;
+    workLocationId: string | null;
+    rdActivityRole: RdActivityRole | null;
     cells: Record<string, TimesheetCell>;
     total: number;
     entry: {
@@ -127,10 +140,18 @@ type TimesheetGridProps = {
       } | null;
       element: { readableId: string; name: string; isLeave?: boolean } | null;
       laborCategory: { name: string } | null;
+      workLocation?: { id: string; name: string } | null;
     };
   }[];
   timecardHours: Record<string, number>;
-  laborCategories: { id: string; name: string }[];
+  laborCategories: {
+    id: string;
+    name: string;
+    /** R&D tax: the default research role of the category's time. */
+    rdActivityRole?: RdActivityRole | null;
+  }[];
+  /** R&D tax: the employee's job location, a new row's default. */
+  jobLocationId?: string | null;
   /** DCAA mode's controls (5a); null in Standard mode. */
   controls: TimesheetControls | null;
   /**
@@ -199,10 +220,13 @@ export default function TimesheetGrid({
   rows,
   timecardHours,
   laborCategories,
+  jobLocationId = null,
   controls,
   employee = null
 }: TimesheetGridProps) {
   const { t } = useLingui();
+  const roleLabels = useRdActivityRoleLabels();
+  const locations = useLocations();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
   const navigate = useNavigate();
@@ -210,13 +234,7 @@ export default function TimesheetGrid({
   const chargeNumbers = useChargeNumbers();
   const submitFetcher = useFetcher();
   const [addingRow, setAddingRow] = useState(false);
-  const [addedRows, setAddedRows] = useState<
-    {
-      projectId: string;
-      projectElementId: string | null;
-      laborCategoryId: string;
-    }[]
-  >([]);
+  const [addedRows, setAddedRows] = useState<AddedRow[]>([]);
   const [correcting, setCorrecting] = useState<{
     entryId: string;
     hours: number;
@@ -265,6 +283,9 @@ export default function TimesheetGrid({
         projectId: row.projectId,
         projectElementId: row.projectElementId,
         laborCategoryId: row.laborCategoryId,
+        workLocationId: row.workLocationId,
+        workLocationName: row.entry.workLocation?.name ?? null,
+        rdActivityRole: row.rdActivityRole,
         readableId: isService
           ? (serviceOrder?.serviceOrderId ?? "")
           : (row.entry.element?.readableId ?? project?.identifier ?? ""),
@@ -295,6 +316,9 @@ export default function TimesheetGrid({
         );
         return {
           ...row,
+          workLocationName:
+            locations.find((location) => location.value === row.workLocationId)
+              ?.label ?? null,
           readableId: chargeNumber?.readableId ?? "",
           name: chargeNumber?.name ?? "",
           to: row.projectElementId
@@ -310,7 +334,7 @@ export default function TimesheetGrid({
         };
       });
     return [...serverRows, ...localRows];
-  }, [rows, addedRows, chargeNumbers, laborCategories]);
+  }, [rows, addedRows, chargeNumbers, laborCategories, locations]);
 
   const dayTotals = days.map((day) =>
     gridRows.reduce((sum, row) => sum + (row.cells[day]?.hours ?? 0), 0)
@@ -471,8 +495,19 @@ export default function TimesheetGrid({
                           <span className="truncate">{row.name}</span>
                         )}
                       </span>
-                      <span className="truncate text-xs text-muted-foreground">
-                        {row.laborCategory}
+                      <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                        <span className="truncate">
+                          {row.laborCategory}
+                          {/* R&D tax: the place, when it is not the job's. */}
+                          {row.workLocationName &&
+                            row.workLocationId !== jobLocationId &&
+                            ` · ${row.workLocationName}`}
+                        </span>
+                        {row.rdActivityRole && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {roleLabels[row.rdActivityRole]}
+                          </Badge>
+                        )}
                       </span>
                     </div>
                   </Td>
@@ -629,6 +664,7 @@ export default function TimesheetGrid({
       {addingRow && (
         <AddRowModal
           laborCategories={laborCategories}
+          jobLocationId={jobLocationId}
           onAdd={(row) => {
             setAddedRows((previous) => [...previous, row]);
             setAddingRow(false);
@@ -748,6 +784,9 @@ function HoursCell({
       projectId: row.projectId,
       projectElementId: row.projectElementId ?? "",
       laborCategoryId: row.laborCategoryId,
+      // R&D tax: the row's own values; an empty one is none.
+      workLocationId: row.workLocationId ?? "",
+      rdActivityRole: row.rdActivityRole ?? "",
       hours: String(hours)
     };
     if (
@@ -839,20 +878,41 @@ function LockedCell({
   );
 }
 
+/** A row added in the grid, empty until hours are entered. */
+type AddedRow = {
+  projectId: string;
+  projectElementId: string | null;
+  laborCategoryId: string;
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
+};
+
 function AddRowModal({
   laborCategories,
+  jobLocationId,
   onAdd,
   onClose
 }: {
-  laborCategories: { id: string; name: string }[];
-  onAdd: (row: {
-    projectId: string;
-    projectElementId: string | null;
-    laborCategoryId: string;
-  }) => void;
+  laborCategories: TimesheetGridProps["laborCategories"];
+  jobLocationId: string | null;
+  onAdd: (row: AddedRow) => void;
   onClose: () => void;
 }) {
   const { t } = useLingui();
+  const roleLabels = useRdActivityRoleLabels();
+  const [showMore, setShowMore] = useState(false);
+  // The user's picks; the defaults follow the chosen labor category.
+  const [categoryChoice, setCategoryChoice] = useState<string | null>(null);
+  const [roleChoice, setRoleChoice] = useState<RdActivityRole | "" | null>(
+    null
+  );
+  const categoryId = categoryChoice ?? laborCategories[0]?.id ?? "";
+  const role =
+    roleChoice ??
+    laborCategories.find((category) => category.id === categoryId)
+      ?.rdActivityRole ??
+    "";
+
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>
       <ModalOverlay />
@@ -862,14 +922,18 @@ function AddRowModal({
           defaultValues={{
             projectId: "",
             projectElementId: "",
-            laborCategoryId: laborCategories[0]?.id ?? ""
+            laborCategoryId: laborCategories[0]?.id ?? "",
+            workLocationId: jobLocationId ?? "",
+            rdActivityRole: role
           }}
           onSubmit={(values, event) => {
             event.preventDefault();
             onAdd({
               projectId: values.projectId,
               projectElementId: values.projectElementId || null,
-              laborCategoryId: values.laborCategoryId
+              laborCategoryId: values.laborCategoryId,
+              workLocationId: values.workLocationId || null,
+              rdActivityRole: values.rdActivityRole || null
             });
           }}
         >
@@ -891,7 +955,47 @@ function AddRowModal({
                   value: category.id,
                   label: category.name
                 }))}
+                onChange={(option) => {
+                  setCategoryChoice(option?.value ?? null);
+                  // A new category brings its own default role.
+                  setRoleChoice(null);
+                }}
               />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="self-start"
+                rightIcon={showMore ? <LuChevronDown /> : <LuChevronRight />}
+                onClick={() => setShowMore((open) => !open)}
+              >
+                <Trans>More</Trans>
+              </Button>
+              {/* Hidden, not unmounted: the defaults still submit. */}
+              <div
+                className={cn(
+                  "flex w-full flex-col gap-4",
+                  !showMore && "hidden"
+                )}
+              >
+                <Location
+                  name="workLocationId"
+                  label={t`Work location`}
+                  helperText={t`Where the work took place. Decides domestic or foreign research for R&D tax.`}
+                />
+                <SelectControlled
+                  name="rdActivityRole"
+                  label={t`Research role`}
+                  isOptional
+                  value={role}
+                  options={rdActivityRoles.map((value) => ({
+                    value,
+                    label: roleLabels[value]
+                  }))}
+                  onChange={(option) =>
+                    setRoleChoice((option?.value as RdActivityRole) ?? "")
+                  }
+                />
+              </div>
             </VStack>
           </ModalBody>
           <ModalFooter>

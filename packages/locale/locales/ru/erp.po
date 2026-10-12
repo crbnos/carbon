@@ -2491,6 +2491,9 @@ msgstr "Все модули"
 msgid "All open jobs"
 msgstr "Все открытые производственные заказы"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "Все возвратные строки"
 
@@ -8400,6 +8403,15 @@ msgstr "Прямая финансовая аренда"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Прямое сообщение каждому получателю в вашем рабочем пространстве Slack."
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "Направление"
 
@@ -8722,6 +8734,9 @@ msgstr "Перетащите файл сюда или нажмите для об
 
 msgid "Drop-ship"
 msgstr "Прямая поставка"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "Срок"
@@ -9963,6 +9978,9 @@ msgstr "Всё, что производится в этом цикле, попа
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "Внутренние примечания"
 
 msgid "Internal Notes"
 msgstr "Внутренние примечания"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "инв"
@@ -16263,6 +16284,9 @@ msgstr "Несоответствия"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "Нескладской"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "Не сейчас"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "произведенная номенклатура"
 msgid "Produced item"
 msgstr "Произведенная номенклатура"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "Проблемы с продуктом во время гиперпомощи"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "Допуск переноса"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "Где доставляются единицы"
 msgid "Where the units ship from"
 msgstr "Откуда отправляются единицы"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Откуда произошла эта запись (ручной ввод, проведение из продаж/закупок, повторяющийся шаблон и т. д.)."
 
@@ -27718,6 +27754,9 @@ msgstr "Рабочая инструкция"
 
 msgid "Work Instructions"
 msgstr "Рабочие инструкции"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "Рабочий телефон"

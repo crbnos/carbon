@@ -864,7 +864,7 @@
     {"name":"projects_getElementHistoryByItem","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"398efaf3fb7d","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getItemNumericCustomFields","classification":"READ","paramCount":1,"schema":"fe0e9264c8ae","response":"17a01397ed2e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getLaborCategories","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"96d53a3f0956","injectAuth":"companyId","permission":"projects:view","paginates":true,"defaults":"always"},
-    {"name":"projects_getLaborCategoriesList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"ce08332e0ce6","injectAuth":"companyId","permission":"projects:view","paginates":false},
+    {"name":"projects_getLaborCategoriesList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"e5bde8fc00d0","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getLaborCategory","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"c2a36ee65f9e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getLaborCategoryRates","classification":"READ","paramCount":1,"schema":"df2ef53b9356","response":"0e6509aeda9e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getPendingReviewEntries","classification":"READ","paramCount":1,"schema":"3d90cb5d0437","response":"6b08f18aecd2","injectAuth":"companyId","permission":"projects:view","paginates":false},

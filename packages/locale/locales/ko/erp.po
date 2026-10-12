@@ -2491,6 +2491,9 @@ msgstr "모든 모듈"
 msgid "All open jobs"
 msgstr "모든 미결 작업 지시"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "모든 반품 가능 라인"
 
@@ -8400,6 +8403,15 @@ msgstr "직접금융 임차"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Slack 작업 공간의 각 수신자에게 직접 메시지를 보냅니다."
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "방향"
 
@@ -8722,6 +8734,9 @@ msgstr "파일을 여기에 놓거나 클릭하여 찾아보세요."
 
 msgid "Drop-ship"
 msgstr "직송"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "기한"
@@ -9963,6 +9978,9 @@ msgstr "이 작업이 생산하는 모든 것은 한 로트로 분류됩니다. 
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "총 {PO_EMAIL_ATTACHMENT_LIMIT_MB}MB를 초과합니다 — 발송하려면 일부 첨부 파일을 제거하세요."
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "내부 메모"
 
 msgid "Internal Notes"
 msgstr "내부 메모"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "재고"
@@ -16263,6 +16284,9 @@ msgstr "부적합"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "비재고"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "나중에"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "생산된 품목"
 msgid "Produced item"
 msgstr "생산된 품목"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "하이퍼케어 기간 중 발생한 제품 이슈"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "재일정 허용도"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "단위가 배송되는 위치"
 msgid "Where the units ship from"
 msgstr "단위가 배송되는 출발지"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "이 항목의 출처 (수동 입력, 영업/구매의 전기, 반복 템플릿 등)."
 
@@ -27718,6 +27754,9 @@ msgstr "작업 표준서"
 
 msgid "Work Instructions"
 msgstr "작업 표준서"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "직장 전화번호"

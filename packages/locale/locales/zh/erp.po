@@ -2491,6 +2491,9 @@ msgstr "所有模块"
 msgid "All open jobs"
 msgstr "所有未结工单"
 
+msgid "All Others"
+msgstr ""
+
 msgid "All returnable lines"
 msgstr "所有可退货的行"
 
@@ -8400,6 +8403,15 @@ msgstr "直接融资租赁"
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "在您的 Slack 工作区中直接消息给每个收件人。"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Direction"
 msgstr "方向"
 
@@ -8722,6 +8734,9 @@ msgstr "将文件拖放到此处，或点击浏览。"
 
 msgid "Drop-ship"
 msgstr "直发"
+
+msgid "Dual Function"
+msgstr ""
 
 msgid "Due"
 msgstr "到期"
@@ -9963,6 +9978,9 @@ msgstr "这次运行生产的所有产品都进入一个批次。车间无法更
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
+
+msgid "Excepted"
+msgstr ""
 
 msgid "Exception Project"
 msgstr ""
@@ -12493,6 +12511,9 @@ msgstr "内部备注"
 
 msgid "Internal Notes"
 msgstr "内部备注"
+
+msgid "Internal Use"
+msgstr ""
 
 msgid "inv"
 msgstr "库存"
@@ -16263,6 +16284,9 @@ msgstr "不合格项"
 msgid "Non-Exempt"
 msgstr ""
 
+msgid "Non-Internal Use"
+msgstr ""
+
 msgid "Non-Inventory"
 msgstr "非库存"
 
@@ -16315,6 +16339,9 @@ msgid "Not now"
 msgstr "暂不"
 
 msgid "Not planned"
+msgstr ""
+
+msgid "Not Qualified"
 msgstr ""
 
 msgid "Not reached"
@@ -18459,6 +18486,9 @@ msgstr "生产物料"
 msgid "Produced item"
 msgstr "生产物料"
 
+msgid "Product"
+msgstr ""
+
 msgid "Product issues during hypercare"
 msgstr "超级护理期间的产品问题"
 
@@ -20149,6 +20179,9 @@ msgid "Reschedule Tolerance"
 msgstr "重新安排容差"
 
 msgid "Reschedule Visit"
+msgstr ""
+
+msgid "Research role"
 msgstr ""
 
 msgid "Reserve floor"
@@ -27464,6 +27497,9 @@ msgstr "设备的交付地点"
 msgid "Where the units ship from"
 msgstr "设备的发货地点"
 
+msgid "Where the work took place. Decides domestic or foreign research for R&D tax."
+msgstr ""
+
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"
 
@@ -27718,6 +27754,9 @@ msgstr "作业指导书"
 
 msgid "Work Instructions"
 msgstr "作业指导书"
+
+msgid "Work location"
+msgstr ""
 
 msgid "Work Phone"
 msgstr "工作电话"

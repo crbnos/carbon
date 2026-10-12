@@ -59,7 +59,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 5: Add the pure R&D tax helpers
 - [x] Task 6: Default the work location and research role on timesheet entries
 - [x] Task 7: Add the validators and service functions
-- [ ] Task 8: Add the work location and research role to My Timesheet
+- [x] Task 8: Add the work location and research role to My Timesheet
 - [ ] Task 9: Add the business component fields to the element
 - [ ] Task 10: Add the research role to the labor category
 - [ ] Task 11: Add the research flags to the contract
@@ -627,3 +627,10 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   5. `isOfficer` is `zfd.checkbox().optional()`, the shape 5a gave `restrictCharging`: a bare `zfd.checkbox()` makes the field required in every caller that builds the type. `updateEmployeeJob` writes it only when it is a boolean, because the column is NOT NULL and the MCP tool may leave it out.
   6. `updateContractResearchFlags` writes only the flags it is given, so each property field saves alone. `sales.models.ts` exports `customerContractResearchFields` for the Task 11 route.
   7. `pnpm run generate:mcp` adds `sales_updateContractResearchFlags` and changes the digests of `people_updateEmployeeJob`, `projects_getTimesheetWeek`, `projects_getProjectOpenTimesheetEntries`, `projects_updateProjectElementField` and `projects_upsertLaborCategory`. `projects-timesheet-week` 7 passed (1 new).
+- Task 8:
+  1. The two routes needed no edit. `getTimesheetWeekView` (shared by My Timesheet and the manager's employee page) now reads the employee's `employeeJob.locationId` and returns it as `jobLocationId`. `getLaborCategoriesList` selects `rdActivityRole` (`pnpm run generate:mcp` changes `projects_getLaborCategoriesList`). Both route actions spread the validated cell into the ERP `saveTimesheetEntry` wrapper, which now maps "" to null and passes a field that is left out as undefined.
+  2. **Add row** has a **More** toggle (a ghost button) that shows **Work location** (the `Location` picker, default the job location) and **Research role** (default the chosen category's role; a category change resets it to that category's role). The fields stay mounted while hidden, so their defaults always submit.
+  3. The row's second line shows the labor category, then " · <location>" when the row's location is not the job location, then the role as a secondary `Badge`. A row added in the grid takes the location name from `useLocations`.
+  4. Each cell posts the row's `workLocationId` and `rdActivityRole`, "" for none, so a row of entries with no role never picks up the category's role.
+  5. The labels of the 4 roles, 3 component types and 4 software types are hooks in the new `ui/RdTax/useRdTaxLabels.ts`, for Tasks 9, 10 and 14 too.
+  6. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
