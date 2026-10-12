@@ -51,6 +51,20 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 9: Shrink the Projects and Service sidebars (Layer 0)
 
+- Projects sidebar: `Manage` (Projects, My Timesheet, Approvals, Reports) and a collapsible `Setup` (Labor Categories, Planning Groups). Transfers and Billing left the sidebar; their URLs still work.
+- The label stays "My Timesheet": Task 2 (terminology) runs in a later run, so this run keeps the current wording.
+- Approvals shows when `timesheetApprovalRequired` is true or `timekeepingControls` is `DCAA`. It carries `approvalCount` from the `projects+` and `project+` layout loaders (`getApprovalCountForUser` in `projects.server.ts`: 0 without `update: projects`). It is also active on `/x/projects/billing` (D13).
+- The demo company requires no approval and is not DCAA, so Approvals and its count do not show in the shots.
+- `projects+/_layout.tsx` had no loader. Its new loader calls `requirePermissions(request, {})`, so each page keeps its own permission check.
+- `isProjectsRoute` and `isServiceOrdersRoute` use the literal record prefixes (`/x/project/`, `/x/service-order/`). The project stock transfer record keeps Projects active.
+- Service sidebar: `Manage` (Service Orders, Schedule, My Visits) and a collapsible `Setup` (Customer Assets, Service Templates). My Timesheet left it.
+- People → Payroll Totals shows only when `useGovernmentContracting()` is true.
+- `pnpm run generate:mcp` updated `tool-manifest.digest.json`.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed.
+- Shots: `09-projects-sidebar.png`, `09-reports-one-active.png` (only Reports active), `09-service-one-active.png` (only Schedule active), `09-setup-open.png` (Setup opens on a Setup page).
+- 7 questions (sidebar only): 1 yes (the Jobs sidebar pattern), 2 yes, 3 yes, 4 yes, 5 n/a, 6 yes, 7 yes (Setup collapsed).
+- Environment: the ERP dev server ran out of heap (4 GB) a second time. `/tmp/uir/start-erp.sh` now sets `NODE_OPTIONS=--max-old-space-size=12288`.
+
 ## Task 10: Simplify the projects list and the New Project drawer (Layer 1)
 
 ## Task 11: Build the project workspace shell and the project sidebar (Layer 2)

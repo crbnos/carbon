@@ -12476,9 +12476,6 @@ msgstr "Kurulum Modu"
 msgid "Installed"
 msgstr "Yüklendi"
 
-msgid "Installed Base"
-msgstr "Kurulu Taban"
-
 msgid "Installed Components"
 msgstr "Kurulu Bileşenler"
 

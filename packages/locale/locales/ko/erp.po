@@ -12476,9 +12476,6 @@ msgstr "설치 모드"
 msgid "Installed"
 msgstr "설치됨"
 
-msgid "Installed Base"
-msgstr "설치된 기반"
-
 msgid "Installed Components"
 msgstr "설치된 부품"
 

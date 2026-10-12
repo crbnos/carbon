@@ -6,6 +6,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { RecordOutlet } from "@carbon/react";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 
+import { getApprovalCountForUser } from "~/modules/projects/projects.server";
 import type { Handle } from "~/utils/handle";
 
 export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
@@ -22,11 +23,13 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "projects"
   });
 
-  return {};
+  return {
+    approvalCount: await getApprovalCountForUser(client, { companyId, userId })
+  };
 }
 
 export default function ProjectRoute() {

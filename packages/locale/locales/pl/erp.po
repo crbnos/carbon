@@ -12476,9 +12476,6 @@ msgstr "Tryb instalacji"
 msgid "Installed"
 msgstr "Zainstalowane"
 
-msgid "Installed Base"
-msgstr "Zainstalowana baza"
-
 msgid "Installed Components"
 msgstr "Zainstalowane komponenty"
 

@@ -12476,9 +12476,6 @@ msgstr "Modo de instalação"
 msgid "Installed"
 msgstr "Instalado"
 
-msgid "Installed Base"
-msgstr "Base Instalada"
-
 msgid "Installed Components"
 msgstr "Componentes Instalados"
 

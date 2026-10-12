@@ -8,16 +8,21 @@ import {
   LuClipboardList,
   LuHardHat,
   LuLayoutTemplate,
-  LuServer,
-  LuTimer
+  LuServer
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
+// `generatePath` drops a trailing slash, so `path.to.serviceOrder("")` is
+// "/x/service-order" — a prefix of "/x/service-orders" too, which lit Service
+// Orders on every page of the module. These are the literal record prefixes.
+const serviceOrderRecordPrefix = `${path.to.serviceOrders.replace(/s$/, "")}/`;
+const customerAssetRecordPrefix = path.to.customerAsset("x").replace(/x$/, "");
+
 // The Service Orders entry owns every page under /x/service-orders except the
-// module's other submodules, plus the order workspace under /x/service-order.
+// module's other entries, plus the order workspace under /x/service-order.
 const otherServiceRoutes = [
   path.to.myVisits,
   path.to.serviceSchedule,
@@ -26,7 +31,7 @@ const otherServiceRoutes = [
 ];
 
 function isServiceOrdersRoute(pathname: string) {
-  if (pathname.startsWith(path.to.serviceOrder(""))) return true;
+  if (pathname.startsWith(serviceOrderRecordPrefix)) return true;
   if (pathname === path.to.serviceOrders) return true;
   return (
     pathname.startsWith(`${path.to.serviceOrders}/`) &&
@@ -39,9 +44,10 @@ export default function useServiceSubmodules() {
   const permissions = usePermissions();
   const { addSavedViewsToRoutes } = useSavedViews();
 
+  // My Timesheet is not listed here: it opens from the avatar menu.
   const serviceRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Work`,
+      name: t`Manage`,
       routes: [
         {
           name: t`Service Orders`,
@@ -51,22 +57,23 @@ export default function useServiceSubmodules() {
           isActive: isServiceOrdersRoute
         },
         {
-          name: t`My Visits`,
-          to: path.to.myVisits,
-          icon: <LuHardHat />,
-          isActive: (pathname: string) => pathname.startsWith(path.to.myVisits)
-        },
-        {
           name: t`Schedule`,
           to: path.to.serviceSchedule,
           icon: <LuCalendarDays />,
           isActive: (pathname: string) =>
             pathname.startsWith(path.to.serviceSchedule)
+        },
+        {
+          name: t`My Visits`,
+          to: path.to.myVisits,
+          icon: <LuHardHat />,
+          isActive: (pathname: string) => pathname.startsWith(path.to.myVisits)
         }
       ]
     },
     {
-      name: t`Installed Base`,
+      name: t`Setup`,
+      collapsible: true,
       routes: [
         {
           name: t`Customer Assets`,
@@ -75,26 +82,14 @@ export default function useServiceSubmodules() {
           table: "customerAsset",
           isActive: (pathname: string) =>
             pathname.startsWith(path.to.customerAssets) ||
-            pathname.startsWith(path.to.customerAsset(""))
-        }
-      ]
-    },
-    {
-      name: t`Setup`,
-      routes: [
+            pathname.startsWith(customerAssetRecordPrefix)
+        },
         {
           name: t`Service Templates`,
           to: path.to.serviceTemplates,
           icon: <LuLayoutTemplate />,
           isActive: (pathname: string) =>
             pathname.startsWith(path.to.serviceTemplates)
-        },
-        {
-          name: t`My Timesheet`,
-          to: path.to.timesheet,
-          icon: <LuTimer />,
-          role: "employee",
-          isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)
         }
       ]
     }

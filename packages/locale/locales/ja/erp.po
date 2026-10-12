@@ -12476,9 +12476,6 @@ msgstr "インストール方式"
 msgid "Installed"
 msgstr "インストール済み"
 
-msgid "Installed Base"
-msgstr "インストール済みベース"
-
 msgid "Installed Components"
 msgstr "インストール済みコンポーネント"
 

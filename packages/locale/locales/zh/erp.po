@@ -12476,9 +12476,6 @@ msgstr "安装模式"
 msgid "Installed"
 msgstr "已安装"
 
-msgid "Installed Base"
-msgstr "已安装基础"
-
 msgid "Installed Components"
 msgstr "已安装组件"
 

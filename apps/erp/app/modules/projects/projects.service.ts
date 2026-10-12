@@ -3707,6 +3707,22 @@ export async function acceptTimesheetReview(
 }
 
 /**
+ * Counts the Submitted timesheet entries of the company: the items waiting
+ * in Projects → Approvals. A head-only count, no rows.
+ * @mcp read
+ */
+export async function getTimesheetApprovalCount(
+  client: Client,
+  companyId: string
+) {
+  return client
+    .from("timesheetEntry")
+    .select("id", { count: "exact", head: true })
+    .eq("companyId", companyId)
+    .eq("status", "Submitted");
+}
+
+/**
  * Lists Submitted entries, grouped by employee and week (Monday). When
  * `ownerId` is set, only entries on projects that user owns are listed;
  * pass null for a user with `projects_update`.

@@ -12476,9 +12476,6 @@ msgstr "इंस्टॉल मोड"
 msgid "Installed"
 msgstr "स्थापित"
 
-msgid "Installed Base"
-msgstr "स्थापित आधार"
-
 msgid "Installed Components"
 msgstr "स्थापित घटक"
 

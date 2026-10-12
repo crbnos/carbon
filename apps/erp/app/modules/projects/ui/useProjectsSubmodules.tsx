@@ -4,34 +4,42 @@
 
 import { useLingui } from "@lingui/react/macro";
 import {
-  LuArrowLeftRight,
   LuBriefcaseBusiness,
   LuClipboardCheck,
   LuFileSpreadsheet,
   LuFolderKanban,
   LuGroup,
-  LuReceipt,
   LuTimer
 } from "react-icons/lu";
+import { useMatches } from "react-router";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
-// The Projects route owns every page under /x/projects except the module's
-// other submodules, plus the project workspace under /x/project.
+// `generatePath` drops a trailing slash, so `path.to.project("")` is
+// "/x/project" — a prefix of "/x/projects" too, which lit Projects on every
+// page of the module. These are the literal record prefixes.
+const projectRecordPrefix = `${path.to.projects.replace(/s$/, "")}/`;
+const stockTransferRecordPrefix = path.to
+  .projectStockTransfer("x")
+  .replace(/x$/, "");
+
+// The Projects entry owns every page under /x/projects except the module's
+// other entries, plus the project workspace and the stock transfers (a
+// transfer opens from a project's Stock page).
 const otherProjectsRoutes = [
   path.to.projectsBilling,
   path.to.projectTimesheetApprovals,
   path.to.projectReports,
-  path.to.projectStockTransfers,
   path.to.laborCategories,
   path.to.planningGroups
 ];
 
 function isProjectsRoute(pathname: string) {
-  if (pathname.startsWith(path.to.project(""))) return true;
+  if (pathname.startsWith(projectRecordPrefix)) return true;
+  if (pathname.startsWith(stockTransferRecordPrefix)) return true;
   if (pathname === path.to.projects) return true;
   return (
     pathname.startsWith(`${path.to.projects}/`) &&
@@ -39,11 +47,30 @@ function isProjectsRoute(pathname: string) {
   );
 }
 
+/** The Approvals count from the projects layouts' loaders, when one is on screen. */
+function useApprovalCount() {
+  const matches = useMatches();
+  for (const match of matches) {
+    const data = match.data as { approvalCount?: unknown } | undefined;
+    if (data && typeof data.approvalCount === "number") {
+      return data.approvalCount;
+    }
+  }
+  return undefined;
+}
+
 export default function useProjectsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const settings = useSettings();
   const { addSavedViewsToRoutes } = useSavedViews();
+  const approvalCount = useApprovalCount();
+
+  // A DCAA labor transfer always waits for approval, so Approvals shows in
+  // DCAA mode even when the company does not require approval of all time.
+  const showApprovals =
+    settings.timesheetApprovalRequired === true ||
+    settings.timekeepingControls === "DCAA";
 
   const projectsRoutes: AuthenticatedRouteGroup[] = [
     {
@@ -62,29 +89,20 @@ export default function useProjectsSubmodules() {
           icon: <LuTimer />,
           isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)
         },
-        {
-          name: t`Transfers`,
-          to: path.to.projectStockTransfers,
-          icon: <LuArrowLeftRight />,
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.projectStockTransfers) ||
-            pathname.startsWith(path.to.projectStockTransfer(""))
-        },
-        {
-          name: t`Billing`,
-          to: path.to.projectsBilling,
-          icon: <LuReceipt />,
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.projectsBilling)
-        },
-        {
-          name: t`Approvals`,
-          to: path.to.projectTimesheetApprovals,
-          icon: <LuClipboardCheck />,
-          setting: "timesheetApprovalRequired",
-          isActive: (pathname: string) =>
-            pathname.startsWith(path.to.projectTimesheetApprovals)
-        },
+        ...(showApprovals
+          ? [
+              {
+                name: t`Approvals`,
+                to: path.to.projectTimesheetApprovals,
+                icon: <LuClipboardCheck />,
+                count: approvalCount,
+                // Billing review joins Approvals (it is a review queue too).
+                isActive: (pathname: string) =>
+                  pathname.startsWith(path.to.projectTimesheetApprovals) ||
+                  pathname.startsWith(path.to.projectsBilling)
+              }
+            ]
+          : []),
         {
           name: t`Reports`,
           to: path.to.projectReports,
@@ -96,13 +114,16 @@ export default function useProjectsSubmodules() {
       ]
     },
     {
-      name: t`Configure`,
+      name: t`Setup`,
+      collapsible: true,
       routes: [
         {
           name: t`Labor Categories`,
           to: path.to.laborCategories,
           icon: <LuBriefcaseBusiness />,
-          role: "employee"
+          role: "employee",
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.laborCategories)
         },
         {
           // Commercial (PLANNING_GROUPS): always listed; a gated company
@@ -110,16 +131,16 @@ export default function useProjectsSubmodules() {
           name: t`Planning Groups`,
           to: path.to.planningGroups,
           icon: <LuGroup />,
-          role: "employee"
+          role: "employee",
+          isActive: (pathname: string) =>
+            pathname.startsWith(path.to.planningGroups)
         }
       ]
     }
   ];
 
   const isVisible = (route: AuthenticatedRouteGroup["routes"][number]) =>
-    (route.role ? permissions.is(route.role) : true) &&
-    (!route.setting ||
-      settings[route.setting as keyof typeof settings] === true);
+    route.role ? permissions.is(route.role) : true;
 
   return {
     groups: projectsRoutes

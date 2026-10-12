@@ -108,6 +108,7 @@ import {
   getProjectElementPlanLines,
   getProjectElements,
   getProjectItemValues,
+  getTimesheetApprovalCount,
   getTimesheetWeek
 } from "./projects.service";
 import type { ProjectElementLink } from "./types";
@@ -4683,4 +4684,31 @@ export async function getTimesheetWeekView(
     today: datetime.today(timeZone).toString(),
     revisedEntryIds
   };
+}
+
+/**
+ * The count the Projects sidebar shows on Approvals: the Submitted timesheet
+ * entries, for a user who may approve them (`update: projects`). Any other
+ * user, or a failed read, gets 0, so the sidebar shows no count.
+ */
+export async function getApprovalCountForUser(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; userId: string }
+): Promise<number> {
+  const canApprove = hasPermission(
+    (await getUserClaims(args.userId, args.companyId))?.permissions,
+    "projects",
+    "update",
+    args.companyId
+  );
+  if (!canApprove) return 0;
+  const result = await getTimesheetApprovalCount(client, args.companyId);
+  if (result.error) {
+    logger.error("Failed to count the timesheet entries waiting for approval", {
+      companyId: args.companyId,
+      error: result.error
+    });
+    return 0;
+  }
+  return result.count ?? 0;
 }

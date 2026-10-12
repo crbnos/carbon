@@ -1,5 +1,5 @@
 {
-  "totalTools": 1636,
+  "totalTools": 1637,
   "modules": 16,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -900,6 +900,7 @@
     {"name":"projects_getProjectStockTransferLines","classification":"READ","paramCount":1,"schema":"03e9ac4f7081","response":"d830e9d45e07","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectStockTransfers","classification":"READ","paramCount":4,"schema":"3f2044f5d0c1","response":"4b7c01e9ea62","injectAuth":"companyId","permission":"projects:view","paginates":true,"defaults":"always"},
     {"name":"projects_getRdComponents","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"655c9f04a616","injectAuth":"companyId","permission":"projects:view","paginates":false},
+    {"name":"projects_getTimesheetApprovalCount","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"8394fbabd845","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getTimesheetApprovals","classification":"READ","paramCount":1,"schema":"01f09d21c462","response":"8ac623a0c76b","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getTimesheetRevisions","classification":"READ","paramCount":1,"schema":"af559d42b762","response":"82c25f1d6594","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getTimesheetWeek","classification":"READ","paramCount":3,"schema":"bc174c3c6dca","response":"b43499c6f0e7","injectAuth":"companyId","permission":"projects:view","paginates":false},

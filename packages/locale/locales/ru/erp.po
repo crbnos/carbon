@@ -12476,9 +12476,6 @@ msgstr "Режим установки"
 msgid "Installed"
 msgstr "Установлено"
 
-msgid "Installed Base"
-msgstr "Установленная база"
-
 msgid "Installed Components"
 msgstr "Установленные компоненты"
 
