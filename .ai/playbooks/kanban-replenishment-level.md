@@ -1,6 +1,6 @@
 # Kanban replenishment level (Transfer kanban)
 
-Last tested: 2026-10-09
+Last tested: 2026-10-13
 Routes: `/x/inventory/kanbans/new?location=<id>`, `/x/inventory/kanbans/<id>`, `/api/kanban/<id>` (scan),
 `/x/inventory/stock-transfers?filter=source:eq:Kanban`, `/x/stock-transfer/<id>`,
 `/x/inventory/quantities/<itemId>/details` (Update Inventory), `/file/kanban/labels/order.pdf?ids=<id>`
@@ -65,3 +65,14 @@ Routes: `/x/inventory/kanbans/new?location=<id>`, `/x/inventory/kanbans/<id>`, `
 ## Common Failures
 - A level far above the quantity creates one transfer per signal, including the hourly sweep. If you
   type a wrong level, clear it at once, or the sweep keeps adding transfers.
+
+## Behaviour since 2026-10-13
+- A level signal moves the fewest whole Quantities that reach the level in ONE transfer
+  (level 30, Quantity 10, empty To unit → one transfer for 30). A scan still moves one Quantity.
+- Draft transfers count as supply: Reopen a kanban transfer, run `SELECT util.sweep_kanban_levels();`,
+  and no duplicate appears. Delete it (Delete is enabled only in Draft) and the sweep replaces it.
+- Two kanbans on one item and To unit: one shortfall → one transfer; the other reports at-level.
+- The ids change when the database is rebuilt. Re-read company, location, storage unit and item ids first.
+- The Inngest dev server port changes with the stack. Read it from `docker ps` (container `*-inngest-1`).
+- A decimal Quantity shows "Quantity must be a whole number". The Quantity field clamps 0 to 1 and
+  the level field refuses a minus sign, so neither invalid value can come from the UI.

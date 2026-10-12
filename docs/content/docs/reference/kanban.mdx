@@ -49,7 +49,7 @@ A `Make` kanban links to the job it created (`jobId`). If you scan **order** aga
 
 ## Replenishment level
 
-A `Transfer` kanban with a replenishment level refills its To storage unit without a scan. The projected quantity is the on-hand quantity at the To storage unit plus the outstanding quantity of `Released` and `In Progress` stock transfers into it. When the projected quantity is strictly below the level, Carbon creates one `Released` stock transfer for the kanban's Quantity per signal.
+A `Transfer` kanban with a replenishment level refills its To storage unit without a scan. The projected quantity is the on-hand quantity at the To storage unit plus the outstanding quantity of every stock transfer into it that is not `Completed`. When the projected quantity is strictly below the level, Carbon creates one `Released` stock transfer for the fewest whole multiples of the kanban's Quantity that reach the level. With a level of 20, a Quantity of 5 and an empty storage unit, one transfer moves 20.
 
 Three events start the check: a stock movement at the To storage unit, a save of the kanban, and an hourly sweep. Each transfer has a "Kanban replenishment" note and shows `Kanban` in the **Source** column. The database sends the signals through the Vault secret `inngest_event_url`, so without it a level never fires ([environment variables](/docs/platform/self-hosting/environment-variables#jobs--cache)).
 
@@ -117,7 +117,7 @@ The From or To storage unit of a `Transfer` kanban is not in the kanban's locati
 The form refuses a replenishment level on a `Buy` or `Make` kanban. Clear the level, or set the replenishment system to `Transfer`. A related save error is "From and to storage units must be different": a `Transfer` kanban cannot feed itself.
 
 ### A transfer kanban with a level never fires
-The level check runs in the jobs runner, and the database sends its signals through the Vault secret `inngest_event_url`. If the secret is missing, `util.send_inngest_event` does nothing, so no transfer is created. A scan still works. Check that the projected quantity (on-hand at the To storage unit plus outstanding quantity on `Released` / `In Progress` stock transfers into it) is strictly below the level. The hourly sweep is the pg_cron job `kanban-level-sweeper`, at minute 7.
+The level check runs in the jobs runner, and the database sends its signals through the Vault secret `inngest_event_url`. If the secret is missing, `util.send_inngest_event` does nothing, so no transfer is created. A scan still works. Check that the projected quantity (on-hand at the To storage unit plus outstanding quantity on stock transfers into it that are not `Completed`) is strictly below the level. The hourly sweep is the pg_cron job `kanban-level-sweeper`, at minute 7. A forgotten `Draft` stock transfer into the To storage unit also counts as supply, so it can keep the kanban from firing. Release it, or delete it if nobody needs it.
 
 ### "Failed to create stock transfer"
 The `Transfer` scan failed for a reason other than the storage-unit checks above, for example a missing item. Check the kanban's item and retry.

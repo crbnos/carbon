@@ -281,7 +281,10 @@ export const kanbanValidator = z
     autoStartJob: zfd.checkbox(),
     completedBarcodeOverride: zfd.text(z.string().optional()),
     quantity: zfd.numeric(
-      z.number().int().min(1, { message: "Quantity must be at least 1" })
+      z
+        .number()
+        .int({ message: "Quantity must be a whole number" })
+        .min(1, { message: "Quantity must be at least 1" })
     ),
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),

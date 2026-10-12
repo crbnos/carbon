@@ -6,6 +6,8 @@
 // (`insertStockTransfer`) and the `kanban-replenish` server function, so both
 // build transfer lines and kanban notes the same way.
 
+import { RoundingMode, round } from "./precision.ts";
+
 export type StockTransferLineDraft = {
   itemId: string;
   fromStorageUnitId?: string | null;
@@ -50,6 +52,31 @@ export function isBelowReplenishmentLevel(
   replenishmentLevel: number
 ): boolean {
   return projectedQuantity < replenishmentLevel;
+}
+
+/**
+ * How much one level signal moves: the fewest whole kanban quantities that
+ * bring the projected quantity back to the level. A level of 20 with a
+ * quantity of 5 and nothing projected moves 20 in one transfer, not 5 now and
+ * 5 more on each later signal. Returns 0 when nothing is below the level.
+ */
+export function levelReplenishmentQuantity(
+  projectedQuantity: number,
+  replenishmentLevel: number,
+  quantity: number
+): number {
+  if (quantity <= 0) return 0;
+  if (!isBelowReplenishmentLevel(projectedQuantity, replenishmentLevel)) {
+    return 0;
+  }
+  // Round to the internal scale first, so float noise in the division
+  // (5.000000001) does not add a whole extra kanban quantity.
+  const quantities = round(
+    round((replenishmentLevel - projectedQuantity) / quantity),
+    0,
+    RoundingMode.Up
+  );
+  return quantities * quantity;
 }
 
 export const KANBAN_REPLENISHMENT_NOTE_PREFIX = "Kanban replenishment";

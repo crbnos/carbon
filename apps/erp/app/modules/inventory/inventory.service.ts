@@ -2519,14 +2519,17 @@ export async function upsertKanban(
   // zod omits a blank optional field, so a plain spread would keep the old
   // level on update. Write null when the field is blank or the kanban is not
   // a Transfer kanban.
-  const replenishmentLevel =
-    row.replenishmentSystem === "Transfer"
-      ? (row.replenishmentLevel ?? null)
-      : null;
+  // The same goes for the From storage unit, which only a Transfer kanban uses:
+  // switching a kanban to Buy or Make must not keep a stale source bin.
+  const isTransfer = row.replenishmentSystem === "Transfer";
+  const replenishmentLevel = isTransfer
+    ? (row.replenishmentLevel ?? null)
+    : null;
+  const fromStorageUnitId = isTransfer ? (row.fromStorageUnitId ?? null) : null;
   if ("createdBy" in row) {
     return client
       .from("kanban")
-      .insert({ ...row, replenishmentLevel })
+      .insert({ ...row, replenishmentLevel, fromStorageUnitId })
       .select("id")
       .single();
   }
@@ -2535,6 +2538,7 @@ export async function upsertKanban(
     .update({
       ...sanitize(row),
       replenishmentLevel,
+      fromStorageUnitId,
       updatedAt: datetime.timestamp()
     })
     .eq("id", row.id)

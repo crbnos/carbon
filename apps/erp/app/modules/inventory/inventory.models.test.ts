@@ -238,6 +238,16 @@ describe("kanbanValidator replenishmentLevel", () => {
     expect(errorPaths(r)).toContain("replenishmentLevel");
   });
 
+  it("refuses a decimal quantity with a readable message", () => {
+    const r = kanbanValidator.safeParse({ ...transfer, quantity: "2.5" });
+    expect(r.success).toBe(false);
+    if (!r.success) {
+      expect(r.error.issues.map((issue) => issue.message)).toContain(
+        "Quantity must be a whole number"
+      );
+    }
+  });
+
   it("refuses a negative level", () => {
     const r = kanbanValidator.safeParse({
       ...transfer,

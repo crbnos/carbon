@@ -6,7 +6,8 @@ import { expect, it } from "vitest";
 import {
   expandSerialTrackedLines,
   isBelowReplenishmentLevel,
-  kanbanReplenishmentNote
+  kanbanReplenishmentNote,
+  levelReplenishmentQuantity
 } from "./stock-transfer.ts";
 
 const line = {
@@ -85,4 +86,24 @@ it("leaves out the unit when the item has none", () => {
   expect(noteText(note)).toBe(
     "Kanban replenishment — MAT-KAPTON, A1-L3 → CleanRoom, 10. Signal: level 4 (projected 3)."
   );
+});
+
+it("moves the fewest whole kanban quantities that reach the level", () => {
+  // level 20, quantity 5, nothing projected: four quantities in one signal
+  expect(levelReplenishmentQuantity(0, 20, 5)).toBe(20);
+  // 15 projected: one quantity reaches the level exactly
+  expect(levelReplenishmentQuantity(15, 20, 5)).toBe(5);
+  // 9 projected, level 10: one quantity, even though it overshoots
+  expect(levelReplenishmentQuantity(9, 10, 5)).toBe(5);
+  // 1 projected, level 30, quantity 10: three quantities
+  expect(levelReplenishmentQuantity(1, 30, 10)).toBe(30);
+});
+
+it("moves nothing at or above the level", () => {
+  expect(levelReplenishmentQuantity(20, 20, 5)).toBe(0);
+  expect(levelReplenishmentQuantity(25, 20, 5)).toBe(0);
+});
+
+it("ignores float noise in the division", () => {
+  expect(levelReplenishmentQuantity(0.1 + 0.2, 10.3, 5)).toBe(10);
 });

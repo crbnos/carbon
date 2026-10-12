@@ -136,6 +136,7 @@ export async function kanbanFixture() {
   return {
     db,
     companyId,
+    locationId,
     kanbanId,
     fromId,
     toId,

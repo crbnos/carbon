@@ -18,7 +18,7 @@ stock transfer (`Transfer`). Lives in the inventory module.
 
 ## Data model
 
-Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261009192317_kanban-replenishment-level.sql`, plus the generated `20261009192320_kanban-level-check-triggers.sql` for its interceptor).
+Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `20261012232517_kanban-replenishment-level.sql`, plus the generated `20261012232520_kanban-level-check-triggers.sql` for its interceptor).
 **Composite PK `("id", "companyId")`.** Key columns:
 
 - `id` TEXT default `id('kb')`, `itemId` FK→item (CASCADE), `companyId` FK→company
@@ -31,9 +31,10 @@ Table `kanban` (initial migration `20250909012102_kanban.sql`; newest `202610091
 - `fromStorageUnitId` FK→storageUnit (nullable) — the **source** bin for a `Transfer` kanban
   (`20260908143722_kanban-transfer.sql`)
 - `replenishmentLevel` NUMERIC (nullable, `>= 0`) — arms a `Transfer` kanban's level signal
-  (`20261009192317_kanban-replenishment-level.sql`). NULL = scan-only. `upsertKanban` writes NULL
+  (`20261012232517_kanban-replenishment-level.sql`). NULL = scan-only. `upsertKanban` writes NULL
   when the form field is blank or the system is not Transfer (zod omits a blank optional field,
-  so a plain spread would keep the old value on update).
+  so a plain spread would keep the old value on update). It also writes `fromStorageUnitId` NULL
+  for a non-Transfer kanban, so a switch to Buy or Make drops the stale source bin.
 - CHECK `kanban_transfer_distinct_storage_units_check` — a Transfer kanban's From and To bins
   differ (the zod refine alone let an API write create a self-feeding kanban).
 - `supplierId` FK→supplier, `purchaseUnitOfMeasureCode` FK→unitOfMeasure, `conversionFactor` NUMERIC default 1 (Buy fields)
@@ -87,10 +88,12 @@ API routes in `apps/erp/app/routes/api+/`: `kanban.$id.tsx`, `kanban.collision.$
 Spec: `.ai/specs/2026-10-06-kanban-internal-replenishment-level.md`.
 
 - **Projected quantity** = on-hand at the To bin (`item_ledger_on_hand_contribution`, so Rejected
-  tracked stock does not count) + `outstandingQuantity` of Released / In Progress stock transfer
-  lines into it, manual or kanban. One function computes it: `get_kanban_projected_quantities(company_id, kanban_ids)`.
+  tracked stock does not count) + `outstandingQuantity` of every stock transfer line into it whose
+  transfer is not Completed (Draft counts: a reopened kanban transfer is still supply), manual or kanban. One function computes it: `get_kanban_projected_quantities(company_id, kanban_ids)`.
 - Fires **strictly below** the level (`isBelowReplenishmentLevel`, `@carbon/database/stock-transfer`).
-  One signal = one transfer of `quantity`; a level above `quantity` catches up one transfer per pick.
+  One level signal = one transfer of `n × quantity`, `n = ceil((level − projected) / quantity)`
+  (`levelReplenishmentQuantity`), so the level is reached in one signal. A scan moves one `quantity`.
+  Kanbans sharing an item and To bin share supply within a call (`addedInbound` in the server function).
 - The open transfer counts as supply, so a second signal for the same shortfall writes nothing, and
   the pick moves stock from "inbound" to "on-hand" without changing the projected quantity.
 - Three wake paths, all sending `carbon/kanban.level-check` `{ companyId, kanbanIds }` and only for

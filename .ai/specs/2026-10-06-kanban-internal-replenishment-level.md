@@ -1,6 +1,6 @@
 # Kanban Internal Replenishment with a Replenishment Level
 
-> Status: implemented (uncommitted, browser-tested 2026-10-09)
+> Status: implemented (PR #1889; browser-tested 2026-10-13)
 > Author: Carbon team (drafted by Claude in an autonomous `/feature` run)
 > Date: 2026-10-06
 > Research: `.ai/research/kanban-internal-replenishment-level.md`
@@ -74,7 +74,7 @@ One term per concept, used in code, UI and docs:
 | **Transfer kanban** | a kanban with `replenishmentSystem = 'Transfer'` | internal kanban (see Open Question 1) |
 | **From storage unit** | `kanban.fromStorageUnitId`, the bulk bin | source bin |
 | **To storage unit** | `kanban.storageUnitId`, the point-of-use bin | destination bin, lineside |
-| **Quantity** | `kanban.quantity`, the fixed amount one signal moves | reorder quantity, lot size |
+| **Quantity** | `kanban.quantity`, the unit one signal moves: a scan moves one Quantity, a level signal moves whole multiples of it | reorder quantity, lot size |
 | **Replenishment level** | `kanban.replenishmentLevel`, the strict minimum for the To storage unit | reorder point (that term is `itemPlanning.reorderPoint`, per location) |
 | **Projected quantity** | on-hand at the To storage unit + outstanding quantity of open transfers into it | available, forecast |
 | **Signal** | one event that creates one transfer: a scan or a level breach | trigger |
@@ -85,7 +85,7 @@ One term per concept, used in code, UI and docs:
 A Transfer kanban gains one optional field, **Replenishment level**:
 
 - `NULL` means scan-only. The kanban behaves exactly as today.
-- A number ≥ 0 arms the level signal. When projected quantity < level, Carbon creates one transfer for `quantity`.
+- A number ≥ 0 arms the level signal. When projected quantity < level, Carbon creates one transfer for the fewest whole Quantities that reach the level.
 
 The level applies to `Transfer` kanbans only in this version. The column is generic so a later spec can arm `Buy` and `Make` kanbans the same way (see Out of scope).
 
@@ -116,7 +116,8 @@ Rules:
 - The on-hand term uses `item_ledger_on_hand_contribution`, the same function `itemStockQuantities` uses (`20260812002454…sql:36-49`). Rejected tracked stock does not count. The wizard RPC counts it; this spec does not copy that.
 - The inbound term counts every open transfer into the bin, manual or kanban. A manual transfer that is already on its way fills the bin too.
 - The condition is strict: `projected < replenishmentLevel`. A bin at exactly the level does not fire. This follows NetSuite "less than" and Epicor "below" (research, Pattern 5), and the user's words "dropping below".
-- One signal creates one transfer for exactly `quantity`. If the level is above `quantity`, the kanban catches up one transfer per pick (research, Pattern 5; see Open Question 3).
+- One level signal creates one transfer for `n × quantity`, with `n = ceil((level − projected) / quantity)` (`levelReplenishmentQuantity`). Level 20, Quantity 5, nothing projected: one transfer for 20. A scan still moves one Quantity (see Open Question 3).
+- Two kanbans can watch the same item at the same To storage unit. Within one call, the server function adds each new transfer to the projected quantity of the next kanban on that item and storage unit, so they never fill the same gap twice.
 - The level check never evaluates a kanban whose From storage unit or To storage unit is `NULL`, or whose `replenishmentLevel` is `NULL`.
 
 **When the check runs.** Three paths wake it. Each sends one Inngest event, `carbon/kanban.level-check`, with `{ companyId, kanbanIds }`.
@@ -192,7 +193,7 @@ A transfer with `kanbanId` set is a **kanban replenishment**. The stock transfer
 | Name of the threshold | `replenishmentLevel`, UI "Replenishment Level" | The user's term. "Reorder point" is taken by `itemPlanning.reorderPoint` (per location). One word, one meaning. |
 | Comparison | strict `projected < level` | NetSuite "less than", Epicor "below", the user's "dropping below". |
 | Quantity per signal | the fixed `quantity`, one transfer | A kanban is a container; the label prints the quantity (research, Pattern 5). Order-up-to-max is Odoo's model, not kanban's. |
-| Supply netting | open Released and In Progress transfers into the To bin count as supply | Odoo, Fishbowl and D365 WMS all net pending supply (Pattern 2). The wizard RPC is the Carbon precedent. |
+| Supply netting | every transfer into the To bin that is not Completed (Draft, Released, In Progress) counts as supply | Odoo, Fishbowl and D365 WMS all net pending supply (Pattern 2). The wizard RPC is the Carbon precedent. |
 | On-hand function | `item_ledger_on_hand_contribution` | Same definition as `itemStockQuantities`. Rejected tracked stock must not satisfy a lineside level. |
 | Primary trigger | `itemLedger` statement handler → Inngest event | Every on-hand change writes `itemLedger`. SAP's quantity signal and Epicor fire on the posting (Pattern 4). A daily batch is too slow for a lineside bin. |
 | Backstop | hourly pg_cron sweep with a has-work check | Covers deleted transfers and lost events. Same pattern as the notification digest sweeper. |
@@ -254,7 +255,7 @@ CREATE OR REPLACE FUNCTION get_kanban_projected_quantities(company_id TEXT, kanb
 RETURNS TABLE ("kanbanId" TEXT, "replenishmentLevel" NUMERIC, "projectedQuantity" NUMERIC)
 LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public, pg_temp AS $$
   -- per armed kanban: on-hand at the To bin (item_ledger_on_hand_contribution)
-  -- + SUM(outstandingQuantity) of Released / In Progress transfer lines into it
+  -- + SUM(outstandingQuantity) of transfer lines into it whose transfer is not Completed
 $$;
 
 -- 5. Backstop sweep (same shape as util.sweep_workflow_run_retention)
@@ -392,7 +393,7 @@ No change in this version. Each dataset's Transfer kanban stays scan-only, with 
 | The level signal fires on every `itemLedger` statement for an armed bin | Low | The statement handler joins through a partial index and sends one event per company. The server function writes nothing at level. Lesson `.ai/lessons.md:2733` on write cost applies: an event with no work is cheap but not free. |
 | Two signals in one second create two transfers | Med | `FOR UPDATE` on the kanban row inside the transaction; the second reads the first's outstanding quantity. Inngest concurrency 1 per company reduces contention. Test (c). |
 | `inngest_event_url` is unset in a self-hosted install | Med | `send_inngest_event` no-ops. The hourly sweep also depends on it. Document the secret in `event-system.md` and the kanban docs page; the kanbans list still shows `Below level` so the gap is visible. |
-| Level above quantity catches up one transfer per pick | Low | Helper text explains it. Open Question 3 records the alternative. |
+| A wrong, very high level moves a large quantity in one signal | Low | The level is a deliberate setting; the transfer note states the level and the projected quantity. |
 | Picking lists also move stock into a lineside To bin | Low | Picking credits unclaimed on-hand at the bin (`supersession-system.md`, Lineside credit). A kanban transfer into a lineside bin becomes unclaimed stock a job's pick credits. No double count; a job may pick less. |
 | Automatic transfer bypasses storage rules | Low | Same as the scan today. No rule runs at pick time either, so a kanban transfer never meets a storage rule. Open Question 7. |
 | The From bin is empty | Low | The transfer is created; the picker sees the shortage. The sweep does not retry a transfer that exists. Open Question 8. |
@@ -415,10 +416,10 @@ No change in this version. Each dataset's Transfer kanban stays scan-only, with 
 
 - [x] **1. The user asked for an "Internal" option. Keep the stored value `Transfer`, or rename it?** Why it matters: a rename touches the enum, the route branch, the table filter, the label, the docs and four datasets. — **Autonomous:** keep `Transfer` as the stored value and the UI label. The document it creates is a Stock Transfer, and one concept keeps one name. Alternative A: `ALTER TYPE "kanbanReplenishmentSystem" RENAME VALUE 'Transfer' TO 'Internal'` plus the code and data changes above. Alternative B: a UI-only label "Internal" over the stored `Transfer`. B is rejected: `Enumerable` renders the stored value, and it gives one concept two names.
 - [x] **2. Strictly below the level, or at or below?** — **Autonomous:** strictly below (`<`). The user wrote "dropping below"; NetSuite and Epicor use "less than" / "below". Alternative: `<=`, SAP's one-card "reaches or falls below".
-- [x] **3. One transfer for `quantity`, or enough transfers to reach the level?** — **Autonomous:** one transfer for the fixed `quantity` per signal. A kanban is a container and the label prints its quantity. Alternative: one transfer of `n × quantity` with `n = ceil((level − projected) / quantity)`, SAP's event-driven split. Easy to add later inside the server function.
+- [x] **3. One transfer for `quantity`, or enough transfers to reach the level?** — **Changed 2026-10-13 after browser testing:** one transfer of `n × quantity`, `n = ceil((level − projected) / quantity)`. The first resolution (one `quantity` per signal) topped a level of 20 with Quantity 5 up by one transfer per signal, about one an hour from the sweep, which read as a fault. A scan still moves one `quantity`.
 - [x] **4. Column, note, or both for the origin?** — **Autonomous:** both. `stockTransfer.kanbanId` for filters and the back-link; the Tiptap note because the user asked for it. Alternative: note only (rejected: not filterable, editable).
 - [x] **5. Event-driven, scheduled, or both?** — **Autonomous:** event-driven on `itemLedger` plus an hourly sweep. SAP and Epicor fire on the posting; a lineside bin cannot wait for a daily batch. Alternative: sweep only every 5 minutes (simpler, but 5-minute latency and a has-work scan every 5 minutes).
-- [x] **6. Count open inbound transfers as supply?** — **Autonomous:** yes, Released and In Progress. Odoo, Fishbowl and D365 WMS do; the wizard RPC is the precedent. Alternative: edge-based trigger (Epicor). Rejected: a lost or deleted transfer would never re-fire.
+- [x] **6. Count open inbound transfers as supply?** — **Autonomous, widened 2026-10-13:** yes, every transfer that is not Completed. Draft was added after browser testing: a kanban transfer reopened to Draft for an edit dropped out of supply, and the next sweep created a duplicate. Odoo, Fishbowl and D365 WMS do; the wizard RPC is the precedent. Alternative: edge-based trigger (Epicor). Rejected: a lost or deleted transfer would never re-fire.
 - [x] **7. Evaluate storage rules on the level path?** — **Autonomous:** no, same as the scan path. No human can acknowledge a warning. Alternative: evaluate, and on an `error` rule skip the transfer and log. Can be added inside the server function.
 - [x] **8. Create the transfer when the From bin is short?** — **Autonomous:** yes. No surveyed system checks the source first; the pick reports the shortage. Alternative: skip and show `Source bin short` on the kanbans list.
 - [x] **9. Field order on the form: From before To, or To before From as the user's list reads?** Why it matters: the screenshot the user mentioned did not reach this session. — **Autonomous:** From then To, matching the table's `from → to` and the label. Alternative: To then From.
@@ -429,8 +430,9 @@ No change in this version. Each dataset's Transfer kanban stays scan-only, with 
 
 ## Changelog
 
+- 2026-10-13: Browser-testing fixes. A level signal moves `n × quantity` to reach the level in one transfer. Draft transfers count as supply (`20261012232517_kanban-replenishment-level.sql`; never deployed, so the change went into that migration). Two kanbans on one item and To storage unit share supply within a call. A decimal Quantity shows "Quantity must be a whole number". Switching a kanban away from Transfer clears its From storage unit.
 - 2026-10-13: Self-review fixes. Scan mode needs `create: "inventory"` and runs as the scanner (`serverFns.as`); a `system` call had dropped the check that `stockTransfer` RLS made. `kanbanIds` is required in level mode. The new kanbans list columns are hidden by default. Only one QR code popover opens at a time.
-- 2026-10-09: Implemented (Tasks 1–18). Deviations: the migrations are `20261009192317` / `20261009192320`, named to sort after the newest `main` migration; the stock transfer header shows the Kanban badge in its meta line, because the header is now `DocumentPageHeader`; the docs page also gained a "never fires" troubleshooting entry and a screenshot slot.
+- 2026-10-09: Implemented (Tasks 1–18). Deviations: the migrations are now `20261012232517` / `20261012232520` (renamed twice to sort after the newest `main` migration); the stock transfer header shows the Kanban badge in its meta line, because the header is now `DocumentPageHeader`; the docs page also gained a "never fires" troubleshooting entry and a screenshot slot.
 - 2026-10-09: Demo dataset seeding removed from scope on the user's request. The datasets' Transfer kanbans stay scan-only.
 - 2026-10-09: Planned (`.ai/plans/2026-10-06-kanban-internal-replenishment-level.md`). Corrections from the code:
   - The migration recreates the `kanbans` view.

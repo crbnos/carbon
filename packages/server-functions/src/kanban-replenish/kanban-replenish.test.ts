@@ -262,3 +262,112 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "a level far above the quantity is reached in one signal",
+  async () => {
+    const f = await kanbanFixture();
+    try {
+      await f.db
+        .updateTable("kanban")
+        .set({ replenishmentLevel: 20 })
+        .where("id", "=", f.kanbanId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const initial = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
+      expect(first(initial.results).outcome).toBe("created");
+      const transfer = first(await transfers(f));
+      expect(await lines(f, transfer.id)).toEqual([
+        expect.objectContaining({ quantity: 20 })
+      ]);
+      expect(noteText(transfer.notes)).toContain(
+        "20 EA. Signal: level 20 (projected 0)."
+      );
+
+      const second = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
+      expect(second.results).toEqual([
+        { kanbanId: f.kanbanId, outcome: "at-level", projectedQuantity: 20 }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "two kanbans on one item and To storage unit share the supply",
+  async () => {
+    const f = await kanbanFixture();
+    try {
+      const secondKanbanId = `${f.kanbanId}-2`;
+      await f.db
+        .insertInto("kanban")
+        .values({
+          id: secondKanbanId,
+          itemId: f.itemId,
+          replenishmentSystem: "Transfer",
+          quantity: 5,
+          replenishmentLevel: 10,
+          locationId: f.locationId,
+          fromStorageUnitId: f.fromId,
+          storageUnitId: f.toId,
+          companyId: f.companyId,
+          createdBy: "system"
+        })
+        .execute();
+
+      const { results } = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId, secondKanbanId]
+      });
+      expect(results.map((r) => r.outcome).sort()).toEqual([
+        "at-level",
+        "created"
+      ]);
+      // One transfer covers both: two kanban quantities of 5 reach level 10.
+      const all = await transfers(f);
+      expect(all).toHaveLength(1);
+      expect(await lines(f, first(all).id)).toEqual([
+        expect.objectContaining({ quantity: 10 })
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a kanban transfer reopened to Draft still counts as supply",
+  async () => {
+    const f = await kanbanFixture();
+    try {
+      await f.adjustToBin(9);
+      await replenish(f, { mode: "level", kanbanIds: [f.kanbanId] });
+      const transfer = first(await transfers(f));
+      await f.db
+        .updateTable("stockTransfer")
+        .set({ status: "Draft" })
+        .where("id", "=", transfer.id)
+        .where("companyId", "=", f.companyId)
+        .execute();
+
+      const { results } = await replenish(f, {
+        mode: "level",
+        kanbanIds: [f.kanbanId]
+      });
+      expect(results).toEqual([
+        { kanbanId: f.kanbanId, outcome: "at-level", projectedQuantity: 14 }
+      ]);
+      expect(await transfers(f)).toHaveLength(1);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

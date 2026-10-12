@@ -1,4 +1,4 @@
--- The kanban replenishment level (20261009142613_kanban-replenishment-level.sql):
+-- The kanban replenishment level (20261012232517_kanban-replenishment-level.sql):
 -- the projected quantity at a Transfer kanban's To storage unit, the backstop
 -- breach set, and the two CHECK constraints on the kanban.
 -- Run from the repository root against an existing local database that has at
@@ -103,6 +103,13 @@ BEGIN
   PERFORM pg_temp.expect('breaches: inbound transfer covers the level',
     EXISTS (SELECT 1 FROM util.kanban_level_breaches() br
             WHERE kanban_id = ANY (br."kanbanIds")), false);
+
+  -- 4b. Reopened to Draft, the transfer is still supply (no duplicate).
+  UPDATE "stockTransfer" SET "status" = 'Draft' WHERE "id" = transfer_id;
+  PERFORM pg_temp.expect('projected: a Draft transfer still counts',
+    (SELECT "projectedQuantity" = 14
+     FROM get_kanban_projected_quantities(company, ARRAY[kanban_id])), true);
+  UPDATE "stockTransfer" SET "status" = 'Released' WHERE "id" = transfer_id;
 
   -- 5. Pick the line: the 5 move from inbound to on-hand.
   UPDATE "stockTransferLine" SET "pickedQuantity" = 5 WHERE "id" = line_id;

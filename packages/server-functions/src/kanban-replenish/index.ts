@@ -7,8 +7,8 @@ import { toJson } from "@carbon/database/json";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   expandSerialTrackedLines,
-  isBelowReplenishmentLevel,
   kanbanReplenishmentNote,
+  levelReplenishmentQuantity,
   type StockTransferLineDraft
 } from "@carbon/database/stock-transfer";
 import { getLogger } from "@carbon/logger";
@@ -58,8 +58,9 @@ export type KanbanReplenishResult = { results: KanbanReplenishOutcome[] };
  *
  * - `scan` always creates (the operator asked for it).
  * - `level` creates only while the projected quantity at the To storage unit
- *   (on-hand + open inbound transfers) is below `replenishmentLevel`, so a
- *   second signal for the same shortfall writes nothing.
+ *   (on-hand + open inbound transfers) is below `replenishmentLevel`, and then
+ *   moves enough whole kanban quantities to reach the level, so a second
+ *   signal for the same shortfall writes nothing.
  *
  * The kanban rows are locked `FOR UPDATE` in id order, so two signals for one
  * kanban serialise and the second reads the first one's transfer as supply.
@@ -160,42 +161,8 @@ const kanbanReplenish = defineServerFn({
         return true;
       });
 
-      const projectedByKanban = new Map<string, number>();
-      if (input.mode === "level" && candidates.length > 0) {
-        const projected = await sql<{
-          kanbanId: string;
-          replenishmentLevel: number;
-          projectedQuantity: number;
-        }>`
-            SELECT * FROM get_kanban_projected_quantities(
-              ${companyId},
-              ${candidates.map((kanban) => kanban.id)}::text[]
-            )
-          `.execute(trx);
-
-        for (const row of projected.rows) {
-          projectedByKanban.set(row.kanbanId, Number(row.projectedQuantity));
-        }
-
-        candidates = candidates.filter((kanban) => {
-          const projectedQuantity = projectedByKanban.get(kanban.id) ?? 0;
-          if (
-            !isBelowReplenishmentLevel(
-              projectedQuantity,
-              Number(kanban.replenishmentLevel)
-            )
-          ) {
-            outcomes.set(kanban.id, {
-              kanbanId: kanban.id,
-              outcome: "at-level",
-              projectedQuantity
-            });
-            return false;
-          }
-          return true;
-        });
-      }
-
+      // Drop a kanban whose item cannot be read before sizing any transfer, so
+      // the level loop below never counts supply for a transfer it will not write.
       const itemIds = [...new Set(candidates.map((kanban) => kanban.itemId))];
       const items =
         itemIds.length > 0
@@ -220,6 +187,58 @@ const kanbanReplenish = defineServerFn({
         }
         return true;
       });
+
+      // Level mode moves enough whole kanban quantities to reach the level in
+      // one signal. Two kanbans can watch the same item at the same To storage
+      // unit; `addedInbound` carries what this call has already created there,
+      // so the second kanban sees the first one's transfer as supply.
+      const projectedByKanban = new Map<string, number>();
+      const transferQuantityByKanban = new Map<string, number>();
+      if (input.mode === "level" && candidates.length > 0) {
+        const projected = await sql<{
+          kanbanId: string;
+          replenishmentLevel: number;
+          projectedQuantity: number;
+        }>`
+            SELECT * FROM get_kanban_projected_quantities(
+              ${companyId},
+              ${candidates.map((kanban) => kanban.id)}::text[]
+            )
+          `.execute(trx);
+        const baseByKanban = new Map(
+          projected.rows.map((row) => [
+            row.kanbanId,
+            Number(row.projectedQuantity)
+          ])
+        );
+
+        const addedInbound = new Map<string, number>();
+        candidates = candidates.filter((kanban) => {
+          const key = `${kanban.itemId}:${kanban.storageUnitId}`;
+          const projectedQuantity =
+            (baseByKanban.get(kanban.id) ?? 0) + (addedInbound.get(key) ?? 0);
+          projectedByKanban.set(kanban.id, projectedQuantity);
+          const quantityToMove = levelReplenishmentQuantity(
+            projectedQuantity,
+            Number(kanban.replenishmentLevel),
+            kanban.quantity
+          );
+          if (quantityToMove <= 0) {
+            outcomes.set(kanban.id, {
+              kanbanId: kanban.id,
+              outcome: "at-level",
+              projectedQuantity
+            });
+            return false;
+          }
+          transferQuantityByKanban.set(kanban.id, quantityToMove);
+          addedInbound.set(key, (addedInbound.get(key) ?? 0) + quantityToMove);
+          return true;
+        });
+      }
+      // A scan always moves one kanban quantity.
+      const transferQuantity = (kanban: { id: string; quantity: number }) =>
+        transferQuantityByKanban.get(kanban.id) ?? kanban.quantity;
 
       if (candidates.length === 0) {
         return {
@@ -253,7 +272,7 @@ const kanbanReplenish = defineServerFn({
             storageUnitById.get(kanban.fromStorageUnitId!)?.name ?? "",
           toStorageUnitName:
             storageUnitById.get(kanban.storageUnitId!)?.name ?? "",
-          quantity: kanban.quantity,
+          quantity: transferQuantity(kanban),
           unitOfMeasureCode: item.unitOfMeasureCode,
           signal:
             input.mode === "scan"
@@ -291,7 +310,7 @@ const kanbanReplenish = defineServerFn({
           itemId: kanban.itemId,
           fromStorageUnitId: kanban.fromStorageUnitId,
           toStorageUnitId: kanban.storageUnitId,
-          quantity: kanban.quantity,
+          quantity: transferQuantity(kanban),
           requiresSerialTracking: item.itemTrackingType === "Serial",
           requiresBatchTracking: item.itemTrackingType === "Batch"
         };

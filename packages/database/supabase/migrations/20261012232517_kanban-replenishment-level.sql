@@ -69,6 +69,9 @@ CREATE INDEX IF NOT EXISTS "stockTransfer_kanbanId_idx"
 -- 4. Projected quantity for the armed kanbans of one company.
 -- kanban_ids NULL = every armed kanban of the company.
 -- On-hand uses item_ledger_on_hand_contribution, the itemStockQuantities definition.
+-- Inbound counts every transfer that is not Completed. Draft counts too: a kanban
+-- transfer reopened to Draft for an edit is still supply, or the next signal
+-- would create a duplicate for the same shortfall.
 CREATE OR REPLACE FUNCTION get_kanban_projected_quantities(
   company_id TEXT,
   kanban_ids TEXT[] DEFAULT NULL
@@ -98,7 +101,7 @@ AS $$
     JOIN "stockTransfer" st
       ON st."id" = stl."stockTransferId" AND st."companyId" = stl."companyId"
     WHERE stl."companyId" = k."companyId"
-      AND st."status" IN ('Released', 'In Progress')
+      AND st."status" <> 'Completed'
       AND stl."itemId" = k."itemId"
       AND stl."toStorageUnitId" = k."storageUnitId"
   ) inbound ON true
