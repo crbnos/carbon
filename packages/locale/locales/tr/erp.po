@@ -5417,9 +5417,6 @@ msgstr "Yeni üst öğeyi seç"
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Bu sözleşmenin faturaladığı hizmetleri seçin. Her biri, ızgarada fiyatlandırabileceğiniz yinelenen bir satır olarak eklenir."
 
-msgid "Choose the unit to see its customer and warranty."
-msgstr "Müşterisini ve garantisini görmek için birimi seç."
-
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
@@ -24952,8 +24949,8 @@ msgstr "İzlenen varlıkların kaydedilmiş soy ağacı — hangi girdilerin han
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Diğer her şeyin bağlı olduğu referans veriler. Önce yüklenir."
 
-msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
-msgstr "Stokta seri numarasının yenilenmesi. Seri numara siparişi tamamlanana kadar tutulur ve işin maliyeti seri numaranın maliyetine geçer."
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes."
+msgstr ""
 
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""

@@ -10,7 +10,7 @@ import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import {
   getServiceOrderFormOptions,
@@ -105,19 +105,19 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function NewServiceOrderRoute() {
   const { customerAssetId, options } = useLoaderData<typeof loader>();
   const { defaults } = useUser();
+  const navigate = useNavigate();
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <ServiceOrderForm
-        initialValues={{
-          type: "Field Visit",
-          customerAssetId: customerAssetId ?? "",
-          locationId: defaults?.locationId ?? "",
-          priority: "None",
-          startFrom: "Empty"
-        }}
-        options={options}
-      />
-    </div>
+    <ServiceOrderForm
+      initialValues={{
+        type: "Field Visit",
+        customerAssetId: customerAssetId ?? "",
+        locationId: defaults?.locationId ?? "",
+        priority: "None",
+        startFrom: "Empty"
+      }}
+      options={options}
+      onClose={() => navigate(path.to.serviceOrders)}
+    />
   );
 }

@@ -223,7 +223,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 28: Edit labor category rates in a grid
 - [x] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 - [x] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
-- [ ] Task 31: Open New Service Order in a drawer
+- [x] Task 31: Open New Service Order in a drawer
 - [ ] Task 32: Give service templates a standard record page
 - [ ] Task 33: Show a locked contract line as read-only text
 - [x] Task 34: Rebuild Projects → Reports as one list (Brad asked for accounting-style report pages instead: the list links to `/x/projects/reports/<key>`, one full-width page per report with its table, inputs and Download CSV)
@@ -1731,3 +1731,6 @@ Run of 2026-10-12, Part C (Tasks 30–38):
 - Task 30: Brad's standing rule ("empty sections hidden, or one muted line") outranks step 3 for sections inside a card. `Empty` replaces the empty state where the list is the whole page or tab: My Visits, the Schedule, a customer's Assets tab and the contract's Service Orders tab. The in-card lines (the visit list card, Last orders, No photos, the work tree card, the element peek's charges, History by Component, Installed Components, the billable items card) were already one muted line and stay.
 - Task 30: My Visits keeps its 576 px list column, now left-aligned under the title instead of centred, as on the Schedule page.
 - Task 30: the contract's Service Orders tab is a read-only `Table compact` with the title "Service Orders" in a bordered box (the card description is gone). With the Properties panel open the 8 columns scroll sideways inside the table.
+- Task 31: `FormSection` (the folded, still-mounted section of the New Project drawer) is now exported from `ProjectForm.tsx` and reused, rather than copied. The drawer opens over an empty page, as New Project does (Open point 3): `service-orders+/new.tsx` is a sibling of the list route, not its child.
+- Task 31: the unit's customer, item and warranty now show as one muted line under the Unit field, not in a second column. The order of the single column is Type, the subject (Unit and Contact, or Item and Serial), Service Location, Problem, then More. The refurbishment description lost its second sentence (the cost moving into the serial's cost).
+- Task 31: created SVC000004 (Draft Field Visit, SAT-1000-S013) to check the drawer.

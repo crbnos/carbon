@@ -5417,9 +5417,6 @@ msgstr "Выберите нового родителя"
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "Выберите услуги, которые этот контракт выставляет. Каждая добавляется как повторяющаяся строка, цену которой вы можете устанавливать в таблице."
 
-msgid "Choose the unit to see its customer and warranty."
-msgstr "Выберите единицу, чтобы увидеть её покупателя и гарантию."
-
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
@@ -24952,8 +24949,8 @@ msgstr "Записанная генеалогия отслеживаемых о�
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "Справочные данные, на которые опирается всё остальное. Загружаются первыми."
 
-msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
-msgstr "Переоборудование серийного номера на запасе. Серийный номер приостанавливается до завершения заказа, и себестоимость работы переводится на себестоимость серийного номера."
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes."
+msgstr ""
 
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""

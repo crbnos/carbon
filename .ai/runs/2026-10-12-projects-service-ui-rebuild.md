@@ -293,6 +293,10 @@ Shots: `30-my-visits.png`, `30-customer-assets.png` (ORBSEC Defense, no assets),
 
 ## Task 31: Open New Service Order in a drawer
 
+Shots: `31-new-service-order.png`, `31-new-service-order-more.png` (unit chosen, More open). Created SVC000004 (Draft Field Visit, unit SAT-1000-S013) from the drawer; it opened on its Details page.
+
+1. Reference pattern: yes — the New Project drawer. 2. No overlap: yes. 3. One toolbar row: n/a. 4. One primary: yes (Save). 5. No input box in a table: n/a. 6. Secondary actions in menus: yes. 7. Advanced fields collapsed: yes (More).
+
 ## Task 32: Give service templates a standard record page
 
 ## Task 33: Show a locked contract line as read-only text

@@ -492,7 +492,7 @@ export default ProjectForm;
  * stay mounted, so the form still posts their values (D14). An unmounted field
  * would post nothing and the action would clear its column.
  */
-function FormSection({
+export function FormSection({
   title,
   defaultOpen = false,
   fieldNames,

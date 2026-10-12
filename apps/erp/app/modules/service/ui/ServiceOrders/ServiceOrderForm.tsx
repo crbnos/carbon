@@ -4,12 +4,17 @@
 
 import { ValidatedForm } from "@carbon/form";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle
+  Button,
+  HStack,
+  ModalDrawer,
+  ModalDrawerBody,
+  ModalDrawerContent,
+  ModalDrawerDescription,
+  ModalDrawerFooter,
+  ModalDrawerHeader,
+  ModalDrawerProvider,
+  ModalDrawerTitle,
+  VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -27,6 +32,7 @@ import {
 import { usePermissions } from "~/hooks";
 import { projectElementPriorities } from "~/modules/projects/projects.models";
 import { SerialSelect } from "~/modules/projects/ui/Element/SerialSelect";
+import { FormSection } from "~/modules/projects/ui/Projects/ProjectForm";
 import type { MethodItemType } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import type {
@@ -45,6 +51,7 @@ type FormOptions = Omit<
 type ServiceOrderFormProps = {
   initialValues: Partial<z.input<typeof serviceOrderValidator>>;
   options: FormOptions;
+  onClose: () => void;
 };
 
 type NewServiceOrderType = (typeof serviceOrderTypes)[number];
@@ -60,7 +67,8 @@ type NewServiceOrderType = (typeof serviceOrderTypes)[number];
  */
 export default function ServiceOrderForm({
   initialValues,
-  options
+  options,
+  onClose
 }: ServiceOrderFormProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -131,186 +139,216 @@ export default function ServiceOrderForm({
   };
 
   return (
-    <Card>
-      <ValidatedForm
-        validator={serviceOrderValidator}
-        method="post"
-        action={path.to.newServiceOrder}
-        defaultValues={initialValues}
+    <ModalDrawerProvider type="drawer">
+      <ModalDrawer
+        open
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
       >
-        <CardHeader>
-          <CardTitle>
-            <Trans>New Service Order</Trans>
-          </CardTitle>
-          <CardDescription>
-            {isRefurbishment ? (
-              <Trans>
-                The refurbishment of a serial in stock. The serial is on hold
-                until the order completes, and the work's cost moves into the
-                serial's cost.
-              </Trans>
-            ) : (
-              <Trans>
-                A field visit to a unit at a customer. The unit decides the
-                customer and the site.
-              </Trans>
-            )}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
-            <Select
-              name="type"
-              label={t`Type`}
-              options={typeOptions}
-              onChange={(value) =>
-                setType(
-                  (value?.value as NewServiceOrderType | undefined) ??
-                    "Field Visit"
-                )
-              }
-            />
-            <Location name="locationId" label={t`Service Location`} />
-            {isRefurbishment ? (
-              <>
-                <Item
-                  name="itemId"
-                  label={t`Item`}
-                  type={itemType}
-                  onTypeChange={setItemType}
-                  value={itemId}
-                  onChange={(value) => setItemId(value?.value ?? "")}
-                />
-                <div className="flex w-full flex-col gap-1.5 min-w-0">
-                  <span className="text-sm font-medium">
-                    <Trans>Serial</Trans>
-                  </span>
-                  {itemId ? (
-                    <SerialSelect
-                      itemId={itemId}
-                      value={trackedEntityId || null}
-                      isReadOnly={false}
-                      onChange={(next) =>
-                        setSerial(
-                          next ? { itemId, trackedEntityId: next } : null
-                        )
-                      }
-                    />
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      <Trans>Choose the item to see its serials.</Trans>
-                    </span>
-                  )}
-                  <Hidden name="trackedEntityId" value={trackedEntityId} />
-                </div>
-              </>
-            ) : (
-              <>
-                <Combobox
-                  name="customerAssetId"
-                  label={t`Unit`}
-                  placeholder={t`Search by serial`}
-                  options={options.assets.map((a) => ({
-                    value: a.id,
-                    label: a.trackedEntity?.readableId ?? a.id,
-                    helper: [a.item?.readableIdWithRevision, a.customer?.name]
-                      .filter(Boolean)
-                      .join(" · ")
-                  }))}
-                  onChange={(value) => setAssetId(value?.value ?? "")}
-                />
-                <div className="flex flex-col gap-1 justify-end min-w-0 pb-2">
-                  {asset ? (
-                    <>
-                      <span className="text-sm truncate">
-                        {asset.customer?.name}
-                      </span>
-                      <span className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
-                        <span className="truncate">
-                          {[
-                            asset.item?.readableIdWithRevision,
-                            asset.item?.name
-                          ]
-                            .filter(Boolean)
-                            .join(" · ")}
-                        </span>
-                        <WarrantyBadge asset={asset} />
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">
-                      <Trans>
-                        Choose the unit to see its customer and warranty.
-                      </Trans>
-                    </span>
-                  )}
-                </div>
-                <CustomerContact
-                  name="customerContactId"
-                  label={t`Contact`}
-                  customer={asset?.customerId}
-                  isOptional
-                />
-                <Combobox
-                  name="customerContractId"
-                  label={t`Coverage Contract`}
-                  isOptional
-                  value={contractId}
-                  options={customerContracts.map((contract) => ({
-                    value: contract.id,
-                    label: contract.customerContractId,
-                    helper: contract.name
-                  }))}
-                  emptyMessage={t`This customer has no active contract`}
+        <ModalDrawerContent>
+          <ValidatedForm
+            validator={serviceOrderValidator}
+            method="post"
+            action={path.to.newServiceOrder}
+            defaultValues={initialValues}
+            className="flex flex-col h-full"
+          >
+            <ModalDrawerHeader>
+              <ModalDrawerTitle>
+                <Trans>New Service Order</Trans>
+              </ModalDrawerTitle>
+              <ModalDrawerDescription>
+                {isRefurbishment ? (
+                  <Trans>
+                    The refurbishment of a serial in stock. The serial is on
+                    hold until the order completes.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    A field visit to a unit at a customer. The unit decides the
+                    customer and the site.
+                  </Trans>
+                )}
+              </ModalDrawerDescription>
+            </ModalDrawerHeader>
+            <ModalDrawerBody>
+              <VStack spacing={4}>
+                <Select
+                  name="type"
+                  label={t`Type`}
+                  termId="service-order"
+                  options={typeOptions}
                   onChange={(value) =>
-                    setChosenContract({
-                      assetId,
-                      contractId: value?.value ?? ""
-                    })
+                    setType(
+                      (value?.value as NewServiceOrderType | undefined) ??
+                        "Field Visit"
+                    )
                   }
                 />
-              </>
-            )}
-            <Select
-              name="priority"
-              label={t`Priority`}
-              options={projectElementPriorities.map((priority) => ({
-                value: priority,
-                label: priorityLabels[priority]
-              }))}
-            />
-            <Select
-              name="startFrom"
-              label={t`Start Work From`}
-              options={startFromOptions}
-              onChange={(value) =>
-                setStartFrom(
-                  (value?.value as ServiceOrderStartFrom | undefined) ?? "Empty"
-                )
-              }
-            />
-            {startFrom === "Template" && (
-              <Combobox
-                name="serviceTemplateId"
-                label={t`Service Template`}
-                options={options.templates.map((template) => ({
-                  value: template.id,
-                  label: template.name
-                }))}
-                emptyMessage={t`No service templates yet`}
-              />
-            )}
-            <div className="md:col-span-2">
-              <TextArea name="problem" label={t`Problem`} />
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Submit isDisabled={!permissions.can("create", "service")}>
-            <Trans>Save</Trans>
-          </Submit>
-        </CardFooter>
-      </ValidatedForm>
-    </Card>
+                {isRefurbishment ? (
+                  <>
+                    <Item
+                      name="itemId"
+                      label={t`Item`}
+                      type={itemType}
+                      onTypeChange={setItemType}
+                      value={itemId}
+                      onChange={(value) => setItemId(value?.value ?? "")}
+                    />
+                    <div className="flex w-full flex-col gap-1.5 min-w-0">
+                      <span className="text-sm font-medium">
+                        <Trans>Serial</Trans>
+                      </span>
+                      {itemId ? (
+                        <SerialSelect
+                          itemId={itemId}
+                          value={trackedEntityId || null}
+                          isReadOnly={false}
+                          onChange={(next) =>
+                            setSerial(
+                              next ? { itemId, trackedEntityId: next } : null
+                            )
+                          }
+                        />
+                      ) : (
+                        <span className="text-sm text-muted-foreground">
+                          <Trans>Choose the item to see its serials.</Trans>
+                        </span>
+                      )}
+                      <Hidden name="trackedEntityId" value={trackedEntityId} />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex w-full flex-col gap-1.5 min-w-0">
+                      <Combobox
+                        name="customerAssetId"
+                        label={t`Unit`}
+                        placeholder={t`Search by serial`}
+                        options={options.assets.map((a) => ({
+                          value: a.id,
+                          label: a.trackedEntity?.readableId ?? a.id,
+                          helper: [
+                            a.item?.readableIdWithRevision,
+                            a.customer?.name
+                          ]
+                            .filter(Boolean)
+                            .join(" · ")
+                        }))}
+                        onChange={(value) => setAssetId(value?.value ?? "")}
+                      />
+                      {asset && (
+                        <span className="flex items-center gap-2 text-xs text-muted-foreground min-w-0">
+                          <span className="truncate">
+                            {[
+                              asset.customer?.name,
+                              asset.item?.readableIdWithRevision,
+                              asset.item?.name
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                          <WarrantyBadge asset={asset} />
+                        </span>
+                      )}
+                    </div>
+                    <CustomerContact
+                      name="customerContactId"
+                      label={t`Contact`}
+                      customer={asset?.customerId}
+                      isOptional
+                    />
+                  </>
+                )}
+                <Location name="locationId" label={t`Service Location`} />
+                <TextArea name="problem" label={t`Problem`} />
+                <div className="flex w-full flex-col gap-2 border-t border-border pt-2">
+                  <FormSection
+                    title={t`More`}
+                    fieldNames={[
+                      "customerContractId",
+                      "priority",
+                      "startFrom",
+                      "serviceTemplateId"
+                    ]}
+                  >
+                    <VStack spacing={4}>
+                      {!isRefurbishment && (
+                        <Combobox
+                          name="customerContractId"
+                          label={t`Coverage Contract`}
+                          termId="coverage"
+                          isOptional
+                          value={contractId}
+                          options={customerContracts.map((contract) => ({
+                            value: contract.id,
+                            label: contract.customerContractId,
+                            helper: contract.name
+                          }))}
+                          emptyMessage={t`This customer has no active contract`}
+                          onChange={(value) =>
+                            setChosenContract({
+                              assetId,
+                              contractId: value?.value ?? ""
+                            })
+                          }
+                        />
+                      )}
+                      <Select
+                        name="priority"
+                        label={t`Priority`}
+                        options={projectElementPriorities.map((priority) => ({
+                          value: priority,
+                          label: priorityLabels[priority]
+                        }))}
+                      />
+                      <Select
+                        name="startFrom"
+                        label={t`Start Work From`}
+                        options={startFromOptions}
+                        onChange={(value) =>
+                          setStartFrom(
+                            (value?.value as
+                              | ServiceOrderStartFrom
+                              | undefined) ?? "Empty"
+                          )
+                        }
+                      />
+                      {startFrom === "Template" && (
+                        <Combobox
+                          name="serviceTemplateId"
+                          label={t`Service Template`}
+                          options={options.templates.map((template) => ({
+                            value: template.id,
+                            label: template.name
+                          }))}
+                          emptyMessage={t`No service templates yet`}
+                        />
+                      )}
+                    </VStack>
+                  </FormSection>
+                </div>
+              </VStack>
+            </ModalDrawerBody>
+            <ModalDrawerFooter>
+              <HStack>
+                {/* Saving navigates to the new order while the form is still
+                    mounted and dirty. */}
+                <Submit
+                  isDisabled={!permissions.can("create", "service")}
+                  withBlocker={false}
+                >
+                  <Trans>Save</Trans>
+                </Submit>
+                <Button size="md" variant="solid" onClick={onClose}>
+                  <Trans>Cancel</Trans>
+                </Button>
+              </HStack>
+            </ModalDrawerFooter>
+          </ValidatedForm>
+        </ModalDrawerContent>
+      </ModalDrawer>
+    </ModalDrawerProvider>
   );
 }

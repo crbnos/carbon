@@ -5417,9 +5417,6 @@ msgstr "选择新的父项"
 msgid "Choose the services this contract bills. Each is added as a recurring line you can price in the grid."
 msgstr "选择此合同开票的服务。每个作为循环行添加，您可以在网格中定价"
 
-msgid "Choose the unit to see its customer and warranty."
-msgstr "选择件以查看其客户和保修。"
-
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
@@ -24952,8 +24949,8 @@ msgstr "已跟踪实体的记录谱系——哪些输入被消耗以生产哪些
 msgid "The reference data everything else hangs off. Loads first."
 msgstr "参考数据是其他一切的基础。首先加载。"
 
-msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes, and the work's cost moves into the serial's cost."
-msgstr "库存中序列号的翻新。序列号处于搁置状态，直到订单完成，该工作的成本移入序列号的成本。"
+msgid "The refurbishment of a serial in stock. The serial is on hold until the order completes."
+msgstr ""
 
 #. placeholder {0}: line.quantityToReceive
 #. placeholder {1}: line.purchaseUnitOfMeasureCode ?? ""
