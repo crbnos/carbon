@@ -550,6 +550,9 @@ msgstr "{done} / {total} フェーズ完了"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行除外} other {# 行除外}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -2214,6 +2217,9 @@ msgstr "月を追加"
 msgid "Add Note"
 msgstr "メモを追加"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "操作を追加"
 
@@ -2334,9 +2340,6 @@ msgstr "在庫移動を追加"
 
 msgid "Add Supplier"
 msgstr "仕入先を追加"
-
-msgid "Add the first milestone"
-msgstr "最初のマイルストーンを追加"
 
 msgid "Add the items to move."
 msgstr "移動する品目を追加してください。"
@@ -4618,9 +4621,6 @@ msgstr "負担行は、適用される負担が総勘定元帳に転記される
 
 msgid "Burden Settings"
 msgstr "負担設定"
-
-msgid "Burn chart"
-msgstr "バーンチャート"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "期限内（期日まで）"
 msgid "due {0}"
 msgstr "納期 {0}"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "期限 {0}"
@@ -9587,6 +9586,9 @@ msgstr "要素タイプ：{0}"
 
 msgid "Elements"
 msgstr "要素"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "開始"
 msgid "From (borrower)"
 msgstr "から（借り手）"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "詳細情報"
 msgid "More options"
 msgstr "その他のオプション"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "データが存在しません"
 msgid "No data yet"
 msgstr "データはまだありません"
 
-msgid "No dates"
-msgstr "日付なし"
-
 msgid "No days off scheduled"
 msgstr "休暇の予定がありません"
 
@@ -16036,8 +16035,8 @@ msgstr "製法なし"
 msgid "No milestone"
 msgstr "マイルストーンなし"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "マイルストーンがまだありません。1つを追加してから、それがカバーしている要素で設定します"
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "モジュールが見つかりません"
@@ -19195,6 +19194,9 @@ msgstr "支払のPV"
 msgid "PV of Residual"
 msgstr "残存価値のPV"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "このかんばんの{0}を作成するためのQR Code"
@@ -21389,6 +21391,9 @@ msgstr "保存中..."
 msgid "Saving…"
 msgstr "保存中…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "スキャン"
 
@@ -22825,6 +22830,12 @@ msgstr "ソートコード"
 
 msgid "Sort Descending"
 msgstr "降順でソート"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "ソース"

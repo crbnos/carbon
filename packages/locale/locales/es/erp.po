@@ -550,6 +550,9 @@ msgstr "{done} de {total} fases completadas"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# fila excluida} other {# filas excluidas}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} de {count}"
 
@@ -2214,6 +2217,9 @@ msgstr "Agregar mes"
 msgid "Add Note"
 msgstr "Agregar Nota"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "Agregar Operación"
 
@@ -2334,9 +2340,6 @@ msgstr "Agregar Transferencia de Stock"
 
 msgid "Add Supplier"
 msgstr "Agregar Proveedor"
-
-msgid "Add the first milestone"
-msgstr "Agregar el primer hito"
 
 msgid "Add the items to move."
 msgstr "Agregar los artículos a mover."
@@ -4618,9 +4621,6 @@ msgstr "Las filas de carga son filas de memo a menos que la carga aplicada las c
 
 msgid "Burden Settings"
 msgstr "Configuración de carga"
-
-msgid "Burn chart"
-msgstr "Gráfico de desgaste"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "Vence (por fecha de vencimiento)"
 msgid "due {0}"
 msgstr "vence {0}"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Vencimiento {0}"
@@ -9587,6 +9586,9 @@ msgstr "Tipo de elemento: {0}"
 
 msgid "Elements"
 msgstr "Elementos"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "Desde"
 msgid "From (borrower)"
 msgstr "De (prestatario)"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "Más información"
 msgid "More options"
 msgstr "Más opciones"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "No existen datos"
 msgid "No data yet"
 msgstr "Aún no hay datos"
 
-msgid "No dates"
-msgstr "Sin fechas"
-
 msgid "No days off scheduled"
 msgstr "Sin días libres programados"
 
@@ -16036,8 +16035,8 @@ msgstr "Sin método"
 msgid "No milestone"
 msgstr "Sin hito"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "Sin hitos aún. Agregue uno y luego configúrelo en los elementos que cubre."
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "No se encontraron módulos"
@@ -19195,6 +19194,9 @@ msgstr "VP de Pagos"
 msgid "PV of Residual"
 msgstr "VP de Residual"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Código QR para crear un {0} para este kanban"
@@ -21389,6 +21391,9 @@ msgstr "Guardando..."
 msgid "Saving…"
 msgstr "Guardando…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "Escanear"
 
@@ -22825,6 +22830,12 @@ msgstr "Código de clasificación"
 
 msgid "Sort Descending"
 msgstr "Ordenar descendente"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Origen"

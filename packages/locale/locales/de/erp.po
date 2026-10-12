@@ -550,6 +550,9 @@ msgstr "{done} von {total} Phasen abgeschlossen"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# Zeile ausgeschlossen} other {# Zeilen ausgeschlossen}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} von {count}"
 
@@ -2214,6 +2217,9 @@ msgstr "Monat hinzufügen"
 msgid "Add Note"
 msgstr "Notiz hinzufügen"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "Operation hinzufügen"
 
@@ -2334,9 +2340,6 @@ msgstr "Bestandsübertrag hinzufügen"
 
 msgid "Add Supplier"
 msgstr "Lieferant hinzufügen"
-
-msgid "Add the first milestone"
-msgstr "Fügen Sie den ersten Meilenstein hinzu"
 
 msgid "Add the items to move."
 msgstr "Fügen Sie die Artikel zum Umlagern hinzu."
@@ -4618,9 +4621,6 @@ msgstr "Lastenzeilen sind Notizzeilen, sofern die angewendete Last sie nicht ins
 
 msgid "Burden Settings"
 msgstr "Lasteneinstellungen"
-
-msgid "Burn chart"
-msgstr "Burndown-Diagramm"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "Fällig (zum Fälligkeitsdatum)"
 msgid "due {0}"
 msgstr "fällig {0}"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Fällig {0}"
@@ -9587,6 +9586,9 @@ msgstr "Elementtyp: {0}"
 
 msgid "Elements"
 msgstr "Elemente"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "Von"
 msgid "From (borrower)"
 msgstr "Von (Kreditnehmer)"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "Weitere Informationen"
 msgid "More options"
 msgstr "Weitere Optionen"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "Keine Daten vorhanden"
 msgid "No data yet"
 msgstr "Noch keine Daten"
 
-msgid "No dates"
-msgstr "Keine Daten"
-
 msgid "No days off scheduled"
 msgstr "Keine Tage frei geplant"
 
@@ -16036,8 +16035,8 @@ msgstr "Keine Methode"
 msgid "No milestone"
 msgstr "Kein Meilenstein"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "Noch keine Meilensteine. Fügen Sie einen hinzu und setzen Sie ihn auf die Elemente, die er abdeckt."
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "Keine Module gefunden"
@@ -19195,6 +19194,9 @@ msgstr "GW der Zahlungen"
 msgid "PV of Residual"
 msgstr "GW des Restwerts"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "QR-Code zum Erstellen eines {0} für diesen Kanban"
@@ -21389,6 +21391,9 @@ msgstr "Wird gespeichert..."
 msgid "Saving…"
 msgstr "Wird gespeichert…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "Scannen"
 
@@ -22825,6 +22830,12 @@ msgstr "Sortiercode"
 
 msgid "Sort Descending"
 msgstr "Absteigend sortieren"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Quelle"

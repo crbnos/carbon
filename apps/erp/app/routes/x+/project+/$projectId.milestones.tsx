@@ -25,8 +25,7 @@ import {
   upsertProjectMilestone
 } from "~/modules/projects";
 import { createProjectBaseline } from "~/modules/projects/projects.server";
-import { MilestoneBurnChart } from "~/modules/projects/ui/Milestones/MilestoneBurnChart";
-import MilestonesList from "~/modules/projects/ui/Milestones/MilestonesList";
+import MilestoneSchedule from "~/modules/projects/ui/Milestones/MilestoneSchedule";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -83,7 +82,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const selected = summaries.find((m) => m.id === selectedId) ?? null;
   let burn: {
     milestoneId: string;
-    name: string;
     plannedHours: number;
     series: ReturnType<typeof buildBurnSeries>;
   } | null = null;
@@ -112,7 +110,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
     burn = {
       milestoneId: selected.id,
-      name: selected.name,
       plannedHours: selected.estimatedHours,
       series:
         selected.startDate && selected.endDate
@@ -248,24 +245,13 @@ export default function ProjectMilestonesRoute() {
   };
 
   return (
-    <MilestonesList
-      projectId={projectId}
+    <MilestoneSchedule
       milestones={milestones}
       action={path.to.projectMilestones(projectId)}
       isDisabled={routeData.project.status === "Closed"}
-      selectedId={burn?.milestoneId ?? null}
+      today={today}
+      selected={burn}
       onSelect={selectMilestone}
-      aside={
-        burn ? (
-          <MilestoneBurnChart
-            name={burn.name}
-            series={burn.series}
-            plannedHours={burn.plannedHours}
-            today={today}
-            onClose={() => selectMilestone(null)}
-          />
-        ) : null
-      }
     />
   );
 }

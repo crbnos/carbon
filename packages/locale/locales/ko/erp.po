@@ -550,6 +550,9 @@ msgstr "{done}개 중 {total}개 단계 완료"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 행 제외됨} other {# 행 제외됨}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{count}개 중 {from}–{to}"
 
@@ -2214,6 +2217,9 @@ msgstr "월 추가"
 msgid "Add Note"
 msgstr "메모 추가"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "공정작업 추가"
 
@@ -2334,9 +2340,6 @@ msgstr "재고 이전 추가"
 
 msgid "Add Supplier"
 msgstr "공급업체 추가"
-
-msgid "Add the first milestone"
-msgstr "첫 번째 마일스톤 추가"
 
 msgid "Add the items to move."
 msgstr "이동할 품목들을 추가하세요."
@@ -4618,9 +4621,6 @@ msgstr "부담 라인은 적용된 부담이 총계정원장에 전기되지 않
 
 msgid "Burden Settings"
 msgstr "부담 설정"
-
-msgid "Burn chart"
-msgstr "번다운 차트"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "마감 (마감일 기준)"
 msgid "due {0}"
 msgstr "{0} 예정"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "기한 {0}"
@@ -9587,6 +9586,9 @@ msgstr "요소 유형: {0}"
 
 msgid "Elements"
 msgstr "요소"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "출발지"
 msgid "From (borrower)"
 msgstr "(차용인)에서"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "자세한 정보"
 msgid "More options"
 msgstr "추가 옵션"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "데이터가 없습니다."
 msgid "No data yet"
 msgstr "아직 데이터가 없습니다"
 
-msgid "No dates"
-msgstr "날짜 없음"
-
 msgid "No days off scheduled"
 msgstr "예정된 휴무가 없습니다"
 
@@ -16036,8 +16035,8 @@ msgstr "방법 없음"
 msgid "No milestone"
 msgstr "마일스톤 없음"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "아직 마일스톤이 없습니다. 하나를 추가한 후 포함된 요소에 설정하세요."
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "모듈이 없습니다"
@@ -19195,6 +19194,9 @@ msgstr "지불의 현재가치"
 msgid "PV of Residual"
 msgstr "잔존가치의 현재가치"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "이 칸반에 대한 {0}을(를) 생성하는 QR 코드"
@@ -21389,6 +21391,9 @@ msgstr "저장 중..."
 msgid "Saving…"
 msgstr "저장 중…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "스캔"
 
@@ -22825,6 +22830,12 @@ msgstr "소팅 코드"
 
 msgid "Sort Descending"
 msgstr "내림차순 정렬"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "소스"

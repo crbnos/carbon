@@ -210,7 +210,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 15: Simplify the Costs page
 - [x] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 - [x] Task 17: Simplify the Time page
-- [ ] Task 18: Turn Milestones into the Schedule page
+- [x] Task 18: Turn Milestones into the Schedule page
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
 - [x] Task 20: Give Plan one toolbar row and add rows in the grid
 - [x] Task 21: Delete the List, Board and Timeline layouts
@@ -1642,4 +1642,6 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 16: the row buttons Pay Back (Stock) and Override (Pegging) moved into row ⋯ menus (Rule: secondary actions live in a row menu). `ManualPegForm.tsx` needed no change.
 - Task 16: the Stock page's Transfers list shows the 10 latest transfers; "All transfers" opens the full list.
 - Task 17: "All time is posted" is one muted line, not `Empty`, so the page never stacks two cabinet illustrations (the ledger below keeps its `Empty`).
+- Task 18, Brad's decision (2026-10-12, after the first build): no table under the timeline. The Schedule is one aligned layout: milestone names on the left, each bar on the same row on the right, Weekly / Monthly / Quarterly scales, the current period tinted instead of a today line, and a drawer for the details (status, dates, progress, hours, cost, burn chart, actions). This replaces steps 2, 3 and 6 (the timeline over a table, the burn chart under the table). The row menu has Open (the drawer, which holds the burn chart) instead of Burn chart.
+- Task 18: `MilestoneTimeline.tsx` and `MilestonesList.tsx` are gone; `MilestoneSchedule.tsx` and `schedule-scale.ts` replace them. `timeline-geometry.ts` stays (`dayIndex`).
 

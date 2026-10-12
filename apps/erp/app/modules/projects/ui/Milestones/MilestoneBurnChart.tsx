@@ -2,14 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  IconButton
-} from "@carbon/react";
+import { Subheading } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import {
   ChartContainer,
@@ -17,7 +10,7 @@ import {
   ChartTooltipContent
 } from "@carbon/react/Chart";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuChartLine, LuX } from "react-icons/lu";
+import { LuChartLine } from "react-icons/lu";
 import {
   CartesianGrid,
   Line,
@@ -35,19 +28,15 @@ import type { BurnPoint } from "../../projects.models";
  * Hours only; cost is not drawn.
  */
 export function MilestoneBurnChart({
-  name,
   series,
   plannedHours,
-  today,
-  onClose
+  today
 }: {
-  name: string;
   /** Empty when the milestone has no start or end date. */
   series: BurnPoint[];
   plannedHours: number;
   /** `YYYY-MM-DD` in the company's zone, for the today line. */
   today: string;
-  onClose: () => void;
 }) {
   const { t } = useLingui();
   const formatQuantity = useQuantityFormatter();
@@ -64,22 +53,11 @@ export function MilestoneBurnChart({
     today <= series[series.length - 1]!.date;
 
   return (
-    <Card>
-      <CardHeader className="flex-row items-start justify-between gap-2">
-        <div className="flex min-w-0 flex-col gap-1">
-          <CardTitle className="truncate">{name}</CardTitle>
-          <CardDescription>
-            <Trans>Hours burn · {formatQuantity(plannedHours)} planned</Trans>
-          </CardDescription>
-        </div>
-        <IconButton
-          aria-label={t`Close`}
-          icon={<LuX />}
-          variant="ghost"
-          onClick={onClose}
-        />
-      </CardHeader>
-      <CardContent>
+    <section className="flex flex-col gap-2">
+      <Subheading as="h3" variant="light">
+        <Trans>Hours burn · {formatQuantity(plannedHours)} planned</Trans>
+      </Subheading>
+      <div>
         {series.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
             <LuChartLine className="size-6" />
@@ -160,7 +138,7 @@ export function MilestoneBurnChart({
             </LineChart>
           </ChartContainer>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

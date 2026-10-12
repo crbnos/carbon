@@ -550,6 +550,9 @@ msgstr "{done} / {total} aşama tamamlandı"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# satır hariç tutuldu} other {# satır hariç tutuldu}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} / {count}"
 
@@ -2214,6 +2217,9 @@ msgstr "Ay Ekle"
 msgid "Add Note"
 msgstr "Not Ekle"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "İşlem Ekle"
 
@@ -2334,9 +2340,6 @@ msgstr "Stok Transferi Ekle"
 
 msgid "Add Supplier"
 msgstr "Tedarikçi Ekle"
-
-msgid "Add the first milestone"
-msgstr "İlk Dönüm Noktasını Ekle"
 
 msgid "Add the items to move."
 msgstr "Taşınacak stok kartlarını Ekleyiniz."
@@ -4618,9 +4621,6 @@ msgstr "Yük satırları, uygulanmış yük bunları büyük deftere nakletmedi�
 
 msgid "Burden Settings"
 msgstr "Yük Ayarları"
-
-msgid "Burn chart"
-msgstr "Tüketim grafiği"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "Son tarih (son tarih'e göre)"
 msgid "due {0}"
 msgstr "teslim {0}"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Vadesi {0}"
@@ -9587,6 +9586,9 @@ msgstr "Element türü: {0}"
 
 msgid "Elements"
 msgstr "Elementler"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "Başlangıç"
 msgid "From (borrower)"
 msgstr "Kaldı (Borçlu)"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "Daha fazla bilgi"
 msgid "More options"
 msgstr "Daha fazla seçenek"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "Veri yok"
 msgid "No data yet"
 msgstr "Henüz veri yok"
 
-msgid "No dates"
-msgstr "Tarih yok"
-
 msgid "No days off scheduled"
 msgstr "Planlanmış izin yok"
 
@@ -16036,8 +16035,8 @@ msgstr "Yöntem yok"
 msgid "No milestone"
 msgstr "Kilometre taşı yok"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "Henüz kilometre taşı yok. Bir tane ekleyin, ardından kapsadığı öğelere ayarlayın."
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "Modül bulunamadı"
@@ -19195,6 +19194,9 @@ msgstr "Ödemelerin BDH"
 msgid "PV of Residual"
 msgstr "Kalıntıların BDH"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "Bu kanban için bir {0} oluşturmak için QR Kod"
@@ -21389,6 +21391,9 @@ msgstr "Kaydediliyor..."
 msgid "Saving…"
 msgstr "Kaydediliyor…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "Tara"
 
@@ -22825,6 +22830,12 @@ msgstr "Sıralama kodu"
 
 msgid "Sort Descending"
 msgstr "Azalan Sıra"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "Kaynak"

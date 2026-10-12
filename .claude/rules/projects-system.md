@@ -323,10 +323,11 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
     borrower's cost: the layers then do not change while the journal moves inventory.
     Pinned at 12.00 and 8.00 against a borrow at 10.00 in
     `post-project-stock-transfer.test.ts`.
-- **Stock tab** (`$projectId.stock.tsx`, `ProjectStock`, shown when `projectStock` is on): the
-  project's on-hand by item, location, bin and lot (`getProjectStockOnHand`), its open
-  borrows owed and lent (overdue in red, `isBorrowOverdue`), and **Transfer**, **Borrow** and
-  **Payback** buttons that open a prefilled Draft (`?type`, `?to`, `?borrow`).
+- **Stock page** (`$projectId.stock.tsx`, `ProjectStock`, under Costs in the project
+  sidebar when the project holds stock): the project's on-hand by item, location, bin and
+  lot (`getProjectStockOnHand`), its open borrows owed and lent (overdue in red,
+  `isBorrowOverdue`), its 10 latest transfers, and a **Transfer** split button (Borrow and
+  Payback in its menu) that opens a prefilled Draft (`?type`, `?to`, `?borrow`).
 - **Planning (Phase 2b).** MRP nets the project in its own netting segment
   (`planningSegmentId` = the project id; `project_planning_segment`). Plan-line
   materials of Unstarted / Started elements are `Project Material` demand; an
@@ -587,8 +588,12 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
   `projectElementMaterial.jobId` / `purchaseOrderLineId`.
 - Reimbursement lines carry `projectId` + `projectElementId` (`ChargeNumberControlled`);
   charge lines show the charge number read-only.
-- The milestone burn chart (`buildBurnSeries`) plots Posted timesheet hours against
-  the ideal line.
+- The Schedule page (`$projectId.milestones.tsx`, `MilestoneSchedule`) lists the milestones
+  on the left and draws each one's bar on the same row of a timeline, at a Weekly, Monthly
+  or Quarterly scale (`?scale`; the window and the header periods come from the pure
+  `scheduleLayout`, `ui/Milestones/schedule-scale.ts`, tested). A row or a bar opens the
+  milestone's drawer (`?milestone=`): dates, progress, hours, cost, actions and the burn
+  chart (`buildBurnSeries`), which plots Posted timesheet hours against the ideal line.
 
 ## Baselines, change requests and the plan lock
 

@@ -550,6 +550,9 @@ msgstr "{done}个/{total}个阶段已完成"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
+msgid "{from} – {to}"
+msgstr ""
+
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} 共 {count}"
 
@@ -2214,6 +2217,9 @@ msgstr "添加月份"
 msgid "Add Note"
 msgstr "添加备注"
 
+msgid "Add one, then set it on the elements it covers."
+msgstr ""
+
 msgid "Add Operation"
 msgstr "添加操作"
 
@@ -2334,9 +2340,6 @@ msgstr "添加库存转移"
 
 msgid "Add Supplier"
 msgstr "添加供应商"
-
-msgid "Add the first milestone"
-msgstr "添加第一个里程碑"
 
 msgid "Add the items to move."
 msgstr "添加要移动的物料。"
@@ -4618,9 +4621,6 @@ msgstr "负担行是备忘录行，除非应用的负担将其过账到总账。
 
 msgid "Burden Settings"
 msgstr "负担设置"
-
-msgid "Burn chart"
-msgstr "燃尽图"
 
 msgid "Business"
 msgstr ""
@@ -8902,7 +8902,6 @@ msgstr "截止期限（按截止日期）"
 msgid "due {0}"
 msgstr "截止 {0}"
 
-#. placeholder {0}: formatDate(milestone.endDate)
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "截止日期 {0}"
@@ -9587,6 +9586,9 @@ msgstr "元素类型：{0}"
 
 msgid "Elements"
 msgstr "元素"
+
+msgid "Elements completed"
+msgstr ""
 
 msgid "Elements done"
 msgstr ""
@@ -11290,7 +11292,6 @@ msgstr "从"
 msgid "From (borrower)"
 msgstr "来自 (借款方)"
 
-#. placeholder {0}: formatDate(milestone.startDate)
 #. placeholder {0}: formatDate(startDate)
 #. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
@@ -14797,6 +14798,7 @@ msgstr "更多信息"
 msgid "More options"
 msgstr "更多选项"
 
+#. placeholder {0}: milestone.name
 #. placeholder {0}: row.original.readableId
 msgid "More options for {0}"
 msgstr ""
@@ -15778,9 +15780,6 @@ msgstr "不存在数据"
 msgid "No data yet"
 msgstr "暂无数据"
 
-msgid "No dates"
-msgstr "没有日期"
-
 msgid "No days off scheduled"
 msgstr "未安排休息日"
 
@@ -16036,8 +16035,8 @@ msgstr "没有方法"
 msgid "No milestone"
 msgstr "没有里程碑"
 
-msgid "No milestones yet. Add one, then set it on the elements it covers."
-msgstr "还没有里程碑。添加一个，然后将其设置在其覆盖的元素上。"
+msgid "No milestones yet"
+msgstr ""
 
 msgid "No modules found"
 msgstr "未找到模块"
@@ -19195,6 +19194,9 @@ msgstr "付款现值"
 msgid "PV of Residual"
 msgstr "残值现值"
 
+msgid "Q{quarterNumber}"
+msgstr ""
+
 #. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
@@ -21389,6 +21391,9 @@ msgstr "保存中..."
 msgid "Saving…"
 msgstr "保存中…"
 
+msgid "Scale"
+msgstr ""
+
 msgid "Scan"
 msgstr "扫码"
 
@@ -22825,6 +22830,12 @@ msgstr "分行号"
 
 msgid "Sort Descending"
 msgstr "按降序排序"
+
+msgid "Sort earliest first"
+msgstr ""
+
+msgid "Sort latest first"
+msgstr ""
 
 msgid "Source"
 msgstr "来源"

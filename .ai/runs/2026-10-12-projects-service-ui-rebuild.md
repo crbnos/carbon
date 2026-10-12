@@ -190,6 +190,17 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 18: Turn Milestones into the Schedule page
 
+- First build (a timeline over a 6-column table) was rejected by Brad before commit: thin bars with squeezed labels, rows not aligned with the table, a red today line (`bad-schedule-bars.jpg`). Rebuilt to `good-schedule-bars.png`.
+- `MilestoneSchedule` (replaces `MilestonesList` and the unused `MilestoneTimeline`): a toolbar row (Today, the Weekly / Monthly / Quarterly `Tabs` that write `?scale`, New Milestone), then two panes sharing one vertical scroll. The left pane (320 px) has "Milestones", the count and a sort toggle (start date, earliest or latest first), then one 60 px row per milestone: a status icon and the name; a hover ⋯ menu (Open, Edit, Complete or Reopen, Delete). The right pane draws each milestone's bar on the same row: 36 px, `rounded-md`, a pastel fill by status (green Completed, blue Active, neutral Upcoming), the name inside with 12 px padding, and a sticky label that stays readable when the bar starts off-screen.
+- Header: the period row (months, quarters or years, with a "Current" tag), then the column row (weeks, months or quarters). The current column has a solid pill on its label and a faint tint down the whole pane; faint gridlines at column boundaries; no today line.
+- `scheduleLayout`, `scheduleBar`, `spanHolds` (`ui/Milestones/schedule-scale.ts`, 11 tests): whole top-row periods that hold every date and today, one column of margin, at least the pane's width in days, built with `@internationalized/date`.
+- Opening scroll: the earliest bar when today's column still fits in view, else today a quarter of the way in; once the pane has a width, and again on a scale change. Today scrolls back to today.
+- The drawer (`?milestone=`, the loader's burn read as before) shows status, start, end, elements completed (`Progress`), hours, cost and the burn chart, with Delete, Edit and Complete or Reopen. `MilestoneBurnChart` lost its card and close button (the drawer is its only caller).
+- The four intents (`upsert`, `complete`, `reopen`, `delete`) are unchanged.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; erp 200 files, 2,272 tests passed; `pnpm --filter erp build` exit 0 (on the first build; it runs again at the end of the batch).
+- Shots: `18-schedule.png` (1440), `18-schedule-1920.png`, `18-schedule-drawer.png`.
+- Environment: the browser session crashed during a shot and the magic link did not arrive; opening `/x` signed in through the dev bypass.
+
 ## Task 19: Reduce the Plan loader to Table, Tree and Reader
 
 - Demo data moved: the database was rebuilt, so the company is "Carbon Development" (`db6d4ukm20gg2a6iv1vg`), the only user is `test@carbon.ms` (the dev bypass signs it in, no magic link), OB2 is `prj_5vCwDZeAP2MHdjqYeYe7iP` (10 elements) and NSOPS is `prj_Xn8Bq9qYwbQ6tsjQVHuD7h` (0 elements). `login.sh` now takes `LOGIN_EMAIL`.
