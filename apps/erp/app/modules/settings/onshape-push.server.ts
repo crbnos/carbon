@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
@@ -292,9 +293,34 @@ export async function findOpenReleaseNotice(
     });
     return null;
   }
-  const open = (notices.data ?? []).find((notice) =>
+  const editable = (notices.data ?? []).filter((notice) =>
     canEditChangeNoticeEngineering(notice.status)
   );
+  // A pending approval freezes the notice's engineering content; one can be
+  // pending only at Engineering Complete. approvalRequest is service-role only.
+  const awaitingIds = editable
+    .filter((notice) => notice.status === "Engineering Complete")
+    .map((notice) => notice.id);
+  const awaiting = new Set<string>();
+  if (awaitingIds.length > 0) {
+    const pending = await getCarbonServiceRole()
+      .from("approvalRequest")
+      .select("documentId")
+      .eq("companyId", companyId)
+      .eq("documentType", "changeOrder")
+      .eq("status", "Pending")
+      .in("documentId", awaitingIds);
+    if (pending.error) {
+      logger.warn("Could not read a release's change notice approvals", {
+        companyId,
+        releaseId,
+        error: pending.error
+      });
+      return null;
+    }
+    for (const row of pending.data ?? []) awaiting.add(row.documentId);
+  }
+  const open = editable.find((notice) => !awaiting.has(notice.id));
   return open
     ? {
         id: open.id,
