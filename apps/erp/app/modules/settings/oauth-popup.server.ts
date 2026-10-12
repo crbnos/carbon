@@ -6,20 +6,9 @@ import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
 
 /**
- * The page an OAuth callback renders when the provider redirects the user's
- * browser back to Carbon.
- *
- * The authorize URL is opened in a popup, so the callback runs inside that
- * popup. Post the result to the window that opened the popup and close;
- * `IntegrationCard` turns it into a revalidation (success) or a toast
- * (failure).
- *
- * `fallbackUrl` covers the no-opener cases — popups blocked (the install hook
- * navigated the current window instead) or the callback opened directly. It is
- * the integrations page, with the error query string on failure.
- *
- * Only Carbon-authored values reach the page: the integration id and an error
- * code from `integration-errors`, never provider text.
+ * OAuth callback page: posts the outcome to the popup's opener and closes, or
+ * goes to `fallbackUrl` when there is no opener (popup blocked, callback opened
+ * directly). Only Carbon-authored values reach the page, never provider text.
  */
 export function oauthPopupResponse(
   outcome: OAuthPopupOutcome,

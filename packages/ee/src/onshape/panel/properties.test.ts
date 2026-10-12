@@ -176,7 +176,6 @@ describe("coerceOnshapeValue / propertyDisplayValue", () => {
       ok: true,
       value: "Steel 4140"
     });
-    // The ERP reads a ticked Yes/No custom field as the string "on".
     expect(coerceOnshapeValue(true, 1, null)).toEqual({
       ok: true,
       value: "on"
@@ -199,7 +198,6 @@ describe("coerceOnshapeValue / propertyDisplayValue", () => {
       value: "2026-08-31"
     });
     expect(coerceOnshapeValue("soon", 2, null).ok).toBe(false);
-    // Shape alone is not a date.
     expect(coerceOnshapeValue("2026-13-40", 2, null).ok).toBe(false);
     expect(coerceOnshapeValue("2026-02-30", 2, null).ok).toBe(false);
     expect(coerceOnshapeValue(12.5, 4, null)).toEqual({
@@ -615,7 +613,6 @@ describe("customFieldWrites", () => {
       customFieldWrites({ "cf-title": "Rubber pad" }, [field(null)])
     ).toHaveLength(1);
     expect(customFieldWrites({}, [field(null)])).toEqual([]);
-    // The item form saves a blank field as "".
     expect(customFieldWrites({ "cf-title": "" }, [field(null)])).toEqual([]);
   });
 
@@ -655,8 +652,6 @@ describe("customFieldKeptDifferences", () => {
 
 describe("mergeCustomFieldValues", () => {
   it("clears an allowed key whose value is null", () => {
-    // An owned property emptied in Onshape empties in Carbon; a key the
-    // caller does not list is untouched.
     expect(
       mergeCustomFieldValues(
         { cf_text: "ACME", cf_keep: "ours" },
@@ -681,12 +676,6 @@ describe("mergeCustomFieldValues", () => {
 });
 
 describe("MAPPABLE_VALUE_TYPES", () => {
-  /*
-   * The supported set is a product decision, not an implementation detail:
-   * one Carbon type per Onshape value type, every textual type on Text. A
-   * pushed property is reference data Onshape owns, so Carbon holds a
-   * faithful copy rather than a constrained one.
-   */
   it("offers exactly one target per value type", () => {
     expect(MAPPABLE_VALUE_TYPES).toEqual({
       STRING: [CUSTOM_FIELD_DATA_TYPES.text],
@@ -724,8 +713,6 @@ describe("propertyMapEqual", () => {
   });
 
   it("ignores the order the entries arrive in", () => {
-    // Editing one row moves it to the end of the draft, so a positional
-    // comparison would call every map dirty after a single click.
     expect(
       propertyMapEqual(
         [entry("p1", "f1"), entry("p2", "f2")],
@@ -770,8 +757,6 @@ describe("propertyMapEqual", () => {
   });
 
   it("ignores the display fields a load refreshes from Onshape", () => {
-    // onshapeName and valueType are re-read on every load; a rename in
-    // Onshape is not an unsaved decision by the user.
     const stored: PropertyMapEntry[] = [
       {
         ...entry("p1", "f1"),

@@ -34,26 +34,11 @@ export {
 } from "./session-policy";
 
 /**
- * Onshape panel sessions: a bearer credential for the Carbon UI that runs inside
- * Onshape's right-panel iframe.
- *
- * The `carbon` session cookie is `SameSite=Lax`, so it never reaches a
- * cross-site iframe. Instead, a popup on Carbon's own origin (which does have
- * the cookie) mints one of these: an opaque `cps_…` token whose identity lives
- * in Redis for at most `PANEL_SESSION_TTL_SECONDS`. The iframe keeps the token
- * in `sessionStorage` and sends it as `Authorization: Bearer cps_…`.
- *
- * The session holds identity only, never a Supabase token. Each request builds
- * its database client from a short-lived token signed for the user
- * (`getUserScopedClient`, as the MCP bearer path does). Sharing the cookie
- * session's refresh token would have both sides rotating one chain, and GoTrue
- * revokes the whole session family on the first reuse it sees.
- *
- * Opaque by design: nothing about the user is decodable from the token, and
- * deleting the Redis key revokes it immediately.
+ * Opaque `cps_` bearer tokens for the Onshape iframe, which the SameSite=Lax
+ * cookie never reaches. Redis holds identity only: sharing the cookie's refresh
+ * token would rotate one chain, and GoTrue revokes the family on reuse.
  */
 
-/** How often a request re-stamps `lastActiveAt`, like the cookie heartbeat. */
 const ACTIVITY_STAMP_INTERVAL_MS = 60_000;
 
 const TOKEN_PREFIX = "cps_";
@@ -76,7 +61,7 @@ export function panelSessionTokenFromRequest(request: Request): string | null {
   return isPanelSessionToken(token) ? token : null;
 }
 
-/** Null when the ERP session has no time left to lend the panel. */
+/** Null when the ERP session has no time left or Redis did not store it. */
 export async function createPanelSession(
   authSession: AuthSession
 ): Promise<string | null> {
@@ -95,7 +80,6 @@ export async function createPanelSession(
     "EX",
     ttl
   );
-  // The client is fail-soft: a token Redis never stored would 401 on first use.
   return stored === "OK" ? token : null;
 }
 
@@ -106,8 +90,7 @@ async function loadPanelSession(token: string): Promise<PanelSession | null> {
     const session = JSON.parse(raw) as Partial<PanelSession> & {
       accessToken?: string;
     };
-    // A session minted before panel sessions stopped carrying Supabase tokens:
-    // it has to sign in again once.
+    // An entry carrying a Supabase token or lacking identity is invalid.
     if (session.accessToken || !session.userId || !session.createdAt) {
       await redis.del(keyFor(token));
       return null;
@@ -134,10 +117,8 @@ export async function deletePanelSession(token: string): Promise<void> {
 }
 
 /**
- * The session policy the cookie path applies on every request
- * (`requireAuthSession`), applied to a panel session. Every refusal is a 401:
- * the panel sends the user back through the sign-in popup, and the cookie path
- * there routes them through `/unlock` or `/mfa`.
+ * Every refusal is a 401; the sign-in popup's cookie path then routes the user
+ * through `/unlock` or `/mfa`.
  */
 async function requirePanelSession(token: string): Promise<PanelSession> {
   const session = await loadPanelSession(token);
@@ -161,20 +142,9 @@ async function requirePanelSession(token: string): Promise<PanelSession> {
 }
 
 /**
- * The Onshape panel's own gate, purpose-built for the bearer-token iframe path.
- *
- * It mirrors `requirePermissions`' claims check but is deliberately separate:
- * `requirePermissions` is the cookie/API-key gate for the rest of Carbon and
- * carries no Onshape coupling. Panel API routes call THIS instead, and get the
- * same return shape.
- *
- * Stricter than the cookie path in two ways. Only employees pass: a portal,
- * deactivated or role-less account is refused outright. And the acting user is
- * always the session user: console pin-ins never reach a cross-site iframe.
- *
- * A panel request is always a fetch from an iframe, so both failure modes are a
- * status, never a redirect: 401 when the token is missing/expired/revoked, 403
- * when the user lacks the permission.
+ * Panel counterpart of `requirePermissions` with the same return shape.
+ * Employees only, the acting user is always the session user, and failures are
+ * 401 or 403, never redirects, since every caller is an iframe fetch.
  */
 export async function requireOnshapePanelPermissions(
   request: Request,
@@ -196,8 +166,6 @@ export async function requireOnshapePanelPermissions(
 }> {
   const token = panelSessionTokenFromRequest(request);
   if (!token) {
-    // Panel-only endpoint: refuse rather than falling back to a cookie session
-    // (which can never reach the cross-site iframe anyway).
     throw new Response("Unauthorized", { status: 401 });
   }
 
@@ -231,8 +199,7 @@ export async function requireOnshapePanelPermissions(
             ? permission
             : null;
       if (!permissions) return false;
-      // `hasPermission` honours the "0" all-companies scope, as
-      // `requirePermissions` and the panel's own `me` route do.
+      // `hasPermission` honours the "0" all-companies scope.
       return permissions.every((p) =>
         hasPermission(
           myClaims.permissions,

@@ -3,12 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Where the panel keeps its session token in the browser.
- *
- * `sessionStorage` inside the Onshape iframe is partitioned by Onshape's
- * top-level site, so the token is visible only to this panel on this Onshape
- * origin, and it dies with the tab. Every access is guarded: storage can throw
- * in a sandboxed or storage-blocked frame, and the panel must still render.
+ * The panel token lives in `sessionStorage`, partitioned by Onshape's top-level
+ * site and gone with the tab. Every access is guarded: storage throws in a
+ * sandboxed or storage-blocked frame and the panel must still render.
  */
 
 const STORAGE_KEY = "carbon:onshape-panel-session";
@@ -46,10 +43,8 @@ export class PanelUnauthorizedError extends Error {
 }
 
 /**
- * How long the panel waits for Carbon before giving up on a request. Generous,
- * because Onshape generates an assembly's BOM on first request and the status
- * read waits for it; finite, because a request that never settles left its
- * section loading with no message and no Refresh.
+ * Long because Onshape builds an assembly's BOM on first request; finite so a
+ * stalled read shows a message and Refresh.
  */
 export const PANEL_FETCH_TIMEOUT_MS = 60_000;
 
@@ -63,11 +58,8 @@ export class PanelTimeoutError extends Error {
 }
 
 /**
- * `fetch` with the panel token as a bearer header. A 401 means the session is
- * gone (expired, revoked, or the stack restarted with an empty Redis): the
- * token is dropped so the panel offers sign-in again. A request still open
- * after `timeoutMs` is aborted and throws {@link PanelTimeoutError}; `null`
- * waits indefinitely (a push, which keeps writing after the panel gives up).
+ * Bearer `fetch`. A 401 drops the token so the panel offers sign-in again.
+ * `timeoutMs: null` waits indefinitely, for pushes that keep writing anyway.
  */
 export async function panelFetch(
   token: string,
@@ -111,15 +103,12 @@ export async function panelFetch(
   return normalizeErrorBody(response);
 }
 
-/** Copy a permission denial can carry, whatever the server's body said. */
 export const PANEL_FORBIDDEN_MESSAGE =
   "Your Carbon account doesn't have permission for this. Ask an admin in Carbon to grant it.";
 
 /**
- * Every caller reads a failed response as `{ error }` JSON, and two kinds of
- * failure are not JSON: a permission denial (plain-text "Forbidden") and
- * anything a gateway or the framework answers with an HTML page. A successful
- * response is never touched.
+ * Callers read a failure as `{ error }` JSON; a 403 (plain-text "Forbidden")
+ * or a gateway's HTML page is rewritten to that shape.
  */
 async function normalizeErrorBody(response: Response): Promise<Response> {
   if (response.ok) return response;

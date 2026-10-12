@@ -16,13 +16,9 @@ export const config = {
 const logger = getLogger("erp", "integrations-onshape-detach");
 
 /**
- * Remove the Onshape panel's link from an item. The item keeps everything it
- * has (model, documents, fields); name and description become editable in
- * Carbon again, and the panel shows the part as unlinked.
- *
- * Only the `onshape-v2` link is removed, whatever the form posts. A sync
- * connection's `onshape` row is BOM-import bookkeeping that the BoM Explorer
- * reads, and it never locked anything.
+ * Remove an item's `onshape-v2` link; the item keeps its model, documents and
+ * fields. A sync connection's `onshape` row is BOM-import bookkeeping the BoM
+ * Explorer reads, so it is never removed here.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId } = await requirePermissions(request, {

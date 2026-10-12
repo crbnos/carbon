@@ -37,16 +37,9 @@ type ExternalSourceMapping = {
 };
 
 /**
- * The one item-page footprint of the Onshape panel: a self-contained card
- * that loads the item's panel link and renders nothing when the item was never
- * pushed. No loader changes, no form fields.
- *
- * Only the panel's `onshape-v2` link counts. A sync connection's `onshape`
- * row is BOM-import bookkeeping and never meant Onshape owns the item.
- *
- * The card names the fields a push replaces: the ones the panel's Fields page
- * sets to "Update on every push". Every other field is Carbon's, so an edit
- * here stays.
+ * Self-loading card for the item's `onshape-v2` link: the fields a push
+ * replaces, last push time, Open in Onshape and Detach. Renders nothing when
+ * the item has no link.
  */
 export function ExternalSourceCard({
   itemId,
@@ -60,11 +53,9 @@ export function ExternalSourceCard({
   const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
   const [confirmingDetach, setConfirmingDetach] = useState(false);
-  // Bumped after a detach so the link is read again: the card goes only when
-  // the link is gone, and stays (with Confirm's error toast) when it is not.
+  // Bumped after a detach: the card re-reads the link and goes once it is gone.
   const [reload, setReload] = useState(0);
-  // Null until read, and when the integration's settings are not readable by
-  // this user (they need settings view).
+  // Null until read, or when this user lacks settings view.
   const [replaced, setReplaced] = useState<string[] | null>(null);
   const itemFieldLabel: Record<StandardFieldId, string> = {
     mpn: t`Manufacturer Part Number`,
@@ -141,8 +132,8 @@ export function ExternalSourceCard({
   if (!mapping) return null;
 
   const meta = mapping.metadata ?? {};
-  // A child linked by an assembly push records no workspace or version, so it
-  // opens its document rather than an exact tab.
+  // A child linked by an assembly push records no workspace, so it opens the
+  // document.
   const onshapeUrl = !meta.documentId
     ? null
     : meta.wvId && meta.elementId

@@ -202,12 +202,9 @@ export async function onshapeOnUninstall(companyId: string): Promise<void> {
 }
 
 /**
- * Whether an Onshape connection's grant still works. Building the client
- * refreshes an expired token, and one read proves the token is accepted, so a
- * revoked grant or a dead refresh token shows as unhealthy on the integration
- * card; the fix is Reconnect. The settings page caches a healthy answer for
- * five hours (`getIntegrationHealth`), which bounds the quota this spends and
- * also how long a grant that has since died still reads healthy.
+ * Building the client refreshes an expired token and one read proves it is
+ * accepted, so a revoked grant reads unhealthy. `getIntegrationHealth` caches a
+ * healthy answer for five hours, which bounds the quota this spends.
  */
 export function onshapeHealthcheck(integrationId: OnshapeOAuthIntegrationId) {
   return async (companyId: string): Promise<boolean> => {

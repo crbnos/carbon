@@ -2,14 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Contracts for the Carbon panel inside Onshape's element right panel.
- *
- * Onshape loads the panel's action URL in an iframe with the document context
- * as query parameters, then talks to it over `postMessage`. Every message from
- * Onshape must come from the `server` origin the panel was loaded with — the
- * docs make that the one hard security rule. Client-safe: no server imports.
- */
+// The Onshape iframe contract: context arrives as query parameters, messages
+// over postMessage, and every Onshape message must come from the `server`
+// origin the panel was loaded with. Client-safe: no server imports.
 
 /** cad.onshape.com, enterprise `<name>.onshape.com`, and Onshape's dev stacks. */
 const ONSHAPE_SERVER_PATTERN = /^https:\/\/([a-z0-9-]+\.)*onshape\.com$/i;
@@ -41,9 +36,8 @@ function param(searchParams: URLSearchParams, name: string) {
   const value = searchParams.get(name);
   if (value === null) return null;
   const trimmed = value.trim();
-  // A parameter Onshape cannot resolve in the current context arrives as the
-  // literal placeholder (`{$partNumber}` in a Part Studio with nothing
-  // selected) or as the empty string.
+  // Onshape sends an unresolved parameter as its literal placeholder
+  // (`{$partNumber}` with nothing selected) or as the empty string.
   if (trimmed === "" || /^\{\$[A-Za-z]+\}$/.test(trimmed)) return null;
   return trimmed;
 }
@@ -71,13 +65,12 @@ export function parsePanelContext(searchParams: URLSearchParams): {
       locale: param(searchParams, "locale"),
       clientId: param(searchParams, "clientId")
     },
-    // Only an Onshape origin may be trusted as a message source; anything else
-    // (or nothing) means the page was not opened by Onshape.
+    // Anything else means Onshape did not open the page.
     serverOrigin: isOnshapeServerOrigin(server) ? server : null
   };
 }
 
-/** Sent by the panel once it is ready; Onshape starts sending SELECTION after it. */
+/** Sent once the panel is ready; Onshape sends SELECTION after it. */
 export function postApplicationInit(
   context: OnshapePanelContext,
   serverOrigin: string
@@ -109,11 +102,7 @@ export function isOnshapeClientMessage(
   );
 }
 
-/**
- * The popup on Carbon's own origin posts the minted panel session token back
- * to the panel with this message. Same-origin only; the panel checks
- * `event.origin` before accepting it.
- */
+/** The auth popup posts the panel session token with this; same origin only. */
 export const PANEL_SESSION_MESSAGE = "carbon_onshape_panel_session" as const;
 
 export type PanelSessionMessage = {

@@ -22,23 +22,9 @@ type Client = SupabaseClient<Database>;
 const logger = getLogger("erp", "onshape", "draft-method");
 
 /**
- * The Draft make method a push should write into, for an item whose current
- * method is released.
- *
- * Carbon never edits a live method in place: a change is a new Draft version
- * that supersedes the Active one when it is released (the `Version` change
- * type does exactly this).
- *
- * Creating a Draft changes nothing live. The new version sits beside the
- * Active one until a person releases it.
- *
- * A Draft is reused only when this integration made it from the current
- * Active method (`pickReusableDraft`): a second push finds the Draft the first
- * one made. Any other Draft — a person's, a change notice's, one copied from
- * an older version, one whose copy failed — is left alone and a new version
- * is created beside it. The marker row that makes a Draft reusable is written
- * only once its copy and line ownership are complete; a failure before that
- * deletes the new Draft, so a half-built one is never released by mistake.
+ * The Draft a push writes into when the item's method is Active: the one this
+ * integration made from that method (`pickReusableDraft`), else a new copy. The
+ * reusable marker is written last; a failure before it deletes the new Draft.
  */
 export async function ensureDraftMakeMethod(
   client: Client,
@@ -47,10 +33,7 @@ export async function ensureDraftMakeMethod(
     activeMethodId: string;
     companyId: string;
     userId: string;
-    /**
-     * The reusable Draft when the caller already loaded it for many items
-     * (`loadReusableDrafts`); null when it found none. Omitted, it is read.
-     */
+    /** Preloaded with `loadReusableDrafts`; null when none, omitted to read it here. */
     reusableDraft?: DraftCandidate | null;
   }
 ): Promise<
@@ -86,8 +69,7 @@ export async function ensureDraftMakeMethod(
     };
   }
 
-  // Numbered off every version, not off the Active one: parallel authoring of
-  // the same item otherwise collides on makeMethod (itemId, version).
+  // max(version) + 1, not Active + 1: parallel Drafts collide on (itemId, version).
   const highest = await client
     .from("makeMethod")
     .select("version")
@@ -103,8 +85,7 @@ export async function ensureDraftMakeMethod(
 
   const draft = await upsertMakeMethodVersion(client, {
     copyFromId: activeMethodId,
-    // Deliberately no `activeVersionId`: that flips a version to Active, and
-    // this push must leave what is live exactly as it found it.
+    // No `activeVersionId`: it sets a version Active, and the push leaves live methods alone.
     version,
     companyId,
     createdBy: userId
@@ -117,9 +98,7 @@ export async function ensureDraftMakeMethod(
   }
   const draftId = draft.data.id;
 
-  // The new version is an empty shell — `upsertMakeMethodVersion` copies the
-  // method's own columns, not its BOM or routing. Without this the draft would
-  // release as an assembly stripped of every line nobody pushed.
+  // `upsertMakeMethodVersion` copies only the method row; the BOM and routing come here.
   const copied = await copyMakeMethod(client, getDatabaseClient(), {
     sourceId: activeMethodId,
     targetId: draftId,
@@ -146,8 +125,7 @@ export async function ensureDraftMakeMethod(
         entityType: DRAFT_MARKER_ENTITY_TYPE,
         entityId: draftId,
         integration: ONSHAPE_V2_INTEGRATION_ID,
-        // Unique per Draft; the source is in metadata, so two Drafts made
-        // from one Active method never collide on the externalId index.
+        // Not the source id: two Drafts of one method would collide on the unique index.
         externalId: draftId,
         metadata: { sourceMethodId: activeMethodId, itemId } as Json,
         lastSyncedAt: datetime.timestamp(),
@@ -163,9 +141,8 @@ export async function ensureDraftMakeMethod(
     return { ok: true, id: draftId, created: true, version };
   }
 
-  // A half-built Draft must not survive: released, it would ship the assembly
-  // without whatever failed to copy. The panel user lacks parts_delete, so the
-  // service role removes it; its lines and mappings cascade or are cleared.
+  // A half-built Draft, released, would ship without what failed to copy. Service
+  // role: line mappings have no user DELETE policy. The lines cascade.
   const discarded = await discardDraft(serviceRole, {
     draftId,
     companyId
@@ -208,17 +185,8 @@ async function discardDraft(
 }
 
 /**
- * Re-point this integration's line mappings at the copied lines.
- *
- * Ownership is what stops a push replacing a line somebody added by hand, and
- * it lives in `externalIntegrationMapping` keyed on the line id. The copy has
- * new ids, so without this every Onshape-owned line in the draft reads as
- * manual and the next push inserts a duplicate beside each.
- *
- * The mappings are read with the service role, like every other reader of
- * them; the new rows are written as the user.
- *
- * Returns an error message, or null when the ownership carried across.
+ * Copy this integration's line mappings onto the copied lines: ownership is
+ * keyed on line id, and unmapped copies would read as manual and be duplicated.
  */
 async function carryLineOwnership(
   client: Client,
@@ -267,8 +235,7 @@ async function carryLineOwnership(
   const inserts = [];
   for (const mapping of mappings.data ?? []) {
     const targetLineId = paired.get(mapping.entityId);
-    // Unpaired means the copy has no counterpart; leaving it unmapped makes
-    // the line manual, which preserves it. Duplicating is the worse failure.
+    // Unpaired: left unmapped, so it reads as manual and is kept, not duplicated.
     if (!targetLineId) continue;
     const metadata = {
       ...((mapping.metadata as Record<string, unknown> | null) ?? {}),

@@ -2,12 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Refresh this many seconds BEFORE the recorded expiry. Onshape access tokens
- * live about an hour; a two-minute margin covers a slow request, a clock
- * difference between Carbon and Onshape, and a token that would otherwise
- * expire between the check and the call.
- */
+// Refresh early to cover clock skew and a token expiring mid-call.
 const REFRESH_MARGIN_SECONDS = 120;
 
 export type StoredOnshapeCredentials = {
@@ -27,11 +22,9 @@ export function isFresh(
 }
 
 /**
- * What a refresh does with the pair stored now. Another caller may have
- * refreshed since this request loaded its copy: a live token it stored is
- * adopted, and otherwise the stored refresh token is spent, because Onshape
- * rotates refresh tokens and the copy's is usually dead by then. The request's
- * copy is the fallback only when the row could not be read.
+ * Adopts a live token another caller stored, else exchanges the stored refresh
+ * token: Onshape rotates them, so this request's copy is usually dead. The
+ * request's copy is used only when the row could not be read.
  */
 export function resolveOnshapeRefresh(
   stored: StoredOnshapeCredentials | null,

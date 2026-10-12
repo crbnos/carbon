@@ -36,21 +36,7 @@ import {
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./plan";
 
-/**
- * The three Carbon-side manufacturing attributes a push sets on an item, as a
- * row of compact icon-only dropdowns.
- *
- * The panel is about twenty rows tall and a review can run to hundreds, so the
- * trigger shows only the value's icon (`hideIcon` drops the chevron); the label
- * lives in the open list and in the trigger's title/aria-label. Icons mirror the
- * ERP's own (`apps/erp/app/components/Icons.tsx`) — replicated here from
- * `react-icons` because `@carbon/ee` cannot import app code.
- *
- * The editor is seeded from `baseline` and reports only what the user changes
- * through `onChange`; the apply routes diff against the live value, so an
- * untouched control writes nothing.
- */
-
+// Icons mirror apps/erp/app/components/Icons.tsx; @carbon/ee cannot import app code.
 function replenishmentIcon(value: string): ReactNode {
   switch (value) {
     case "Buy":
@@ -136,6 +122,7 @@ function FieldSelect<T extends string>({
   );
 }
 
+/** Icon-only Replenishment, Method and Tracking selects; onChange reports only what the user changes. */
 export function ItemFieldSelects({
   baseline,
   existing,
@@ -143,13 +130,9 @@ export function ItemFieldSelects({
   disabled,
   onChange
 }: {
-  /** Proposal (create) or the item's current values (existing). */
+  /** The create proposal, the "everyPush" target, or the item's current values. */
   baseline: ItemFieldSnapshot;
-  /**
-   * The item is in Carbon: a new Replenishment sets the method the item page
-   * sets (Make to Order for Make, Purchase to Order for Buy). A new item
-   * follows the Part form, which keeps a method the new Replenishment allows.
-   */
+  /** In Carbon: a Replenishment change sets the method as the item page does; else as the Part form does. */
   existing?: boolean;
   edit: ItemEdit | undefined;
   disabled?: boolean;
@@ -174,9 +157,7 @@ export function ItemFieldSelects({
         icon={replenishmentIcon}
         disabled={disabled}
         onChange={(next) =>
-          // Changing replenishment can invalidate the method, so set a legal
-          // one, as the item page or the Part form would, and send both so
-          // the apply never sees an illegal pair.
+          // Send both so the apply never sees an illegal pair.
           onChange({
             replenishmentSystem: next,
             defaultMethodType: existing

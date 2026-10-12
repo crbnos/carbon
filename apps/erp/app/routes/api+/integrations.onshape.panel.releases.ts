@@ -30,10 +30,8 @@ const logger = getLogger("erp", "integrations-onshape-panel-releases");
 const MAX_RELEASES = 20;
 
 /**
- * Releases for the current Onshape document: the document revisions list (one
- * live call, dev-cached) grouped by releaseId, joined to Carbon items by
- * part number + revision letter so the panel can show what each release
- * already has in Carbon.
+ * The document's releases (revisions grouped by releaseId), each with what
+ * Carbon already holds by part number and revision letter.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -49,8 +47,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
 
-  // The service role: `companyIntegration` is visible only with settings
-  // view, which a panel user need not have.
   const onshape = await getOnshapeClient(
     getCarbonServiceRole(),
     companyId,
@@ -79,8 +75,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     MAX_RELEASES
   );
 
-  // Release management is an Onshape company feature, while a part can still
-  // carry a revision letter as plain metadata. When the list is empty, one
+  // Release management is an Onshape company feature: on an empty list, one
   // call tells "none yet" from "not available to the connected account".
   let releaseManagementAvailable = true;
   if (releases.length === 0) {
@@ -113,10 +108,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const carbonRows = rows.data as ReleaseCarbonItemRow[];
 
-  // A pushed drawing is the PDF the sync job attached to its model item; the
-  // panel keeps no row of its own for it. Read with the service role, scoped
-  // by company: whether a release is in Carbon does not depend on the user's
-  // document permissions.
+  // A pushed drawing is only the PDF attached to its model item. Read with the
+  // service role, company-scoped: release state ignores document permissions.
   const drawingNames = [
     ...new Set(
       releases.flatMap((release) =>

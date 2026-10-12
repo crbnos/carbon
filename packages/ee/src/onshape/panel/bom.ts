@@ -3,25 +3,16 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Onshape indented multi-level BOM → a typed tree.
- *
- * The payload is column-driven: `headers[]` (id, name) and `rows[]` holding
- * `headerIdToValue[headerId]`. Columns are addressed by display name — the
- * same convention the existing import route uses — and object-valued cells
- * unwrap through `displayName`. Nesting is the dotted "Item" index ("1",
- * "1.1", "1.1.2"), not a children array. Rows may also carry `itemSource`
- * (documentId/elementId/partId of the row's origin), which Carbon uses to
- * link child parts when present.
- *
- * Every non-empty cell is kept on its row as an Onshape property (the column
- * id stands in for the property id), so a BOM row resolves through the
+ * Onshape indented BOM → typed tree. Columns are addressed by display name;
+ * nesting comes from the dotted "Item" index ("1.1.2"). Non-empty cells are
+ * kept as properties keyed by column id, so a row resolves through the
  * company's property map like a part.
  */
 
 import { isNotApplicable, type OnshapePropertyValue } from "./properties";
 
 export type OnshapeBomNode = {
-  /** Dotted position, e.g. "1.2". The top-level assembly row is "0". */
+  /** Dotted position, e.g. "1.2". */
   index: string;
   level: number;
   partNumber: string | null;
@@ -29,15 +20,10 @@ export type OnshapeBomNode = {
   name: string | null;
   description: string | null;
   quantity: number;
-  /**
-   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so the
-   * BOM carries none of its components. Structure only: it says nothing about
-   * whether the company buys or builds it.
-   */
+  /** "Show Assembly only": one line, no components. Not a make/buy signal. */
   shownAsUnit?: true;
-  /** The row comes from Onshape's Standard content library (bought hardware). */
   standardContent?: true;
-  /** The row's non-empty cells, one per column. Dropped before a plan is stored. */
+  /** Non-empty cells, one per column. Dropped before a plan is stored. */
   properties?: OnshapePropertyValue[];
   itemSource: {
     documentId?: string;
@@ -58,12 +44,7 @@ type BomRow = {
   isStandardContent?: unknown;
 };
 
-/**
- * Onshape's "Subassembly BOM behavior" for a sub-assembly listed as one line
- * with no components. Designers use it for sub-assemblies they buy and for
- * ones they build, so it decides structure only. The API returns the label as
- * text; compared case-insensitively.
- */
+/** "Subassembly BOM behavior" label; the API returns it as text. */
 const SHOWN_AS_UNIT = "show assembly only";
 
 function cell(value: unknown): string | null {
@@ -79,22 +60,16 @@ function cell(value: unknown): string | null {
 }
 
 /**
- * The columns a BOM cannot be read without. "Item" carries the nesting — with
- * it gone every row reads as the root and the tree comes back empty, which a
- * push would apply as "the assembly has no lines". "Part number" is what every
- * row joins to Carbon by.
+ * Without "Item" every row reads as the root and a push would apply an empty
+ * BOM. "Part number" is the join key to Carbon.
  */
 export const BOM_REQUIRED_COLUMNS = ["Item", "Part number"] as const;
 
 export function parseBomTree(payload: unknown): {
   /** The assembly's own row (index "0"), when the export included it. */
   root: OnshapeBomNode | null;
-  /** Top-level BOM lines, children nested. */
   lines: OnshapeBomNode[];
-  /**
-   * Required columns the payload's headers lack, when it has rows. Non-empty
-   * means `lines` cannot be trusted: callers refuse rather than plan from it.
-   */
+  /** Non-empty: callers refuse to plan from `lines`. */
   missingColumns: string[];
 } {
   const bom = (payload ?? {}) as {
@@ -105,7 +80,6 @@ export function parseBomTree(payload: unknown): {
   const rows = Array.isArray(bom.rows) ? bom.rows : [];
 
   const headerIdByName = new Map(headers.map((h) => [h.name, h.id]));
-  // An empty BOM has nothing to misread, whatever its headers say.
   const missingColumns =
     rows.length === 0
       ? []
@@ -196,7 +170,6 @@ export function parseBomTree(payload: unknown): {
   return { root, lines, missingColumns };
 }
 
-/** Where one part of an assembly lives, for a metadata read. */
 export type AssemblyPartSource = {
   documentId: string;
   /** "v" for a part linked from a version; null for one in this document. */
@@ -207,11 +180,8 @@ export type AssemblyPartSource = {
 };
 
 /**
- * The first part an assembly definition lists that is not Standard content.
- * Its metadata lists the properties scoped to parts, which an assembly's own
- * metadata does not carry. A part linked from another document names the
- * version it is linked at; a part of the same document has none, so the
- * caller reads it where it reads the assembly.
+ * First non-Standard-content part of an assembly definition: its metadata
+ * lists the part-scoped properties an assembly's metadata lacks.
  */
 export function firstOwnAssemblyPart(
   definition: unknown
@@ -251,7 +221,6 @@ export function firstOwnAssemblyPart(
   return null;
 }
 
-/** The tree without its cells: a stored plan needs the structure only. */
 export function withoutProperties(nodes: OnshapeBomNode[]): OnshapeBomNode[] {
   return nodes.map(({ properties: _properties, children, ...node }) => ({
     ...node,
@@ -266,7 +235,6 @@ export function missingBomColumnsMessage(missingColumns: string[]): string {
   } back to the assembly's BOM table in Onshape, then try again.`;
 }
 
-/** Depth-first flatten for display. */
 export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {
   const out: OnshapeBomNode[] = [];
   const walk = (list: OnshapeBomNode[]) => {
@@ -279,10 +247,7 @@ export function flattenBomTree(lines: OnshapeBomNode[]): OnshapeBomNode[] {
   return out;
 }
 
-/**
- * Pull a named property (e.g. "Part number", "Name") out of an Onshape
- * metadata payload: `{ properties: [{ name, value }, ...] }`.
- */
+/** Non-empty string value of a named property in Onshape metadata. */
 export function metadataProperty(
   payload: unknown,
   name: string

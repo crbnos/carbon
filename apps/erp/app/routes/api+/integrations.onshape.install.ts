@@ -39,11 +39,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 /**
- * The integration drawer's Reconnect action: the same authorization as an
- * install, answered as a `redirectUrl` the action button follows. The consent
- * screen replaces the page, and the callback, finding no popup opener, lands
- * back on the integrations page. A failure goes there too, as the
- * `?integration=&error=` toast an install failure shows.
+ * The drawer's Reconnect action: the same authorization, answered as a
+ * `redirectUrl`. With no popup opener the callback returns to the integrations
+ * page, where a failure shows as the install-failure toast.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const started = await authorize(request);

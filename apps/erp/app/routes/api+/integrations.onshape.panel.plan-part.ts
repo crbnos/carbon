@@ -39,7 +39,6 @@ const payloadSchema = z.object({
   wv: z.enum(["w", "v"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1),
-  /** The Part Studio configuration the panel was opened in; absent = default. */
   configuration: z.string().nullish(),
   partIds: z.array(z.string().min(1)).min(1).max(50)
 });
@@ -67,8 +66,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const configuration = normalizeConfiguration(parsed.data.configuration);
   const partIds = [...new Set(parsed.data.partIds)];
 
-  // The service role: `companyIntegration` is visible only with settings
-  // view, which a panel user need not have.
   const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
     serviceRole,
@@ -146,8 +143,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }));
   const matchedItems = (matches.data ?? []) as PlanItemRow[];
 
-  // An item renumbered after linking is not in `matches`; loading it by id
-  // tells a live link from a stale mapping row.
+  // A linked item renumbered since is not in `matches`; reading it by id tells
+  // a live link from a stale mapping row.
   const mappedItemIds = [
     ...new Set(
       mappingRows
@@ -168,7 +165,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const mappedItems = mappedResult.data as PlanItemRow[];
 
   const candidates = [...matchedItems, ...mappedItems];
-  // A part a release push made a revision of is left to its releases.
   let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
   try {
     released = await loadReleasedRevisions(client, companyId, matchedItems);
@@ -182,7 +178,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Planning without the map would silently skip "everyPush" values.
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(

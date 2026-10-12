@@ -13,15 +13,12 @@ export type PanelSession = {
   email: string;
   mfaVerified?: boolean;
   ssoProviderId?: string;
-  /** When the ERP session it was minted from began: the absolute cap's clock. */
+  /** Start of the source ERP session; the absolute cap counts from it. */
   createdAt: number;
   lastActiveAt: number;
 };
 
-/**
- * The identity a panel session carries, taken from the cookie session that
- * minted it. The Supabase tokens are deliberately left behind.
- */
+/** Identity only: the cookie session's Supabase tokens are left behind. */
 export function panelSessionFromAuthSession(
   authSession: AuthSession,
   now: number
@@ -41,12 +38,8 @@ export function panelSessionFromAuthSession(
 }
 
 /**
- * Why a panel session must sign in again, or null when it may continue. The
- * policy `requireAuthSession` applies to the cookie session:
- *
- * - Controlled environments: the absolute cap and the idle lock, with the same
- *   comparisons as `isSessionExpiredAbsolute` and `isSessionIdleLocked`.
- * - A user who enrolled TOTP after the session was minted must pass it.
+ * The cookie session's policy: in a controlled environment the absolute cap
+ * and idle lock; everywhere, a TOTP factor enrolled after minting.
  */
 export function panelSessionRefusal(
   session: Pick<PanelSession, "createdAt" | "lastActiveAt" | "mfaVerified">,
@@ -68,10 +61,7 @@ export function panelSessionRefusal(
   return null;
 }
 
-/**
- * A panel session never outlives the session it was minted from: in a
- * controlled environment its TTL stops at the absolute cap.
- */
+/** Controlled environment: the TTL stops at the ERP session's absolute cap. */
 export function panelSessionTtlSeconds(
   session: Pick<PanelSession, "createdAt">,
   now: number,

@@ -48,17 +48,8 @@ import {
 } from "./status";
 
 /**
- * Plan / apply for the panel's pushes.
- *
- * PLAN reads Onshape and Carbon and returns what would happen — every item it
- * would create with the values it would use, every BOM line it would replace
- * or leave alone — and APPLY consumes that plan (stored server-side, plus the
- * user's edits and deselections) without reading Onshape again. The builders
- * here are pure so the decision a user reviewed is the decision that runs.
- *
- * Onshape owns identity (part number, revision). Every other value a push
- * writes to an existing item comes from a mapping, or a description, in
- * "everyPush" mode; Carbon locks no field.
+ * Plan builders for panel pushes. APPLY runs the stored plan plus the user's
+ * edits without reading Onshape again, so these stay pure.
  */
 
 export type {
@@ -84,11 +75,9 @@ export type PlanOptions = {
   defaults: OnshapePushDefaults;
 };
 
-/** The row a create would write, before and after the user's edits. */
 export type ProposedItem = {
-  /** Locked: the Onshape part number. */
   readableId: string;
-  /** Locked: the Onshape revision, "0" when none. */
+  /** "0" when Onshape has no revision. */
   revision: string;
   name: string;
   description: string | null;
@@ -96,9 +85,8 @@ export type ProposedItem = {
   defaultMethodType: ItemMethodType;
   itemTrackingType: ItemTrackingType;
   unitOfMeasureCode: string;
-  /** From a mapping only; written right after the item is created. */
+  /** Mapped only; apply writes both after the insert (`createdItemExtras`). */
   mpn?: string | null;
-  /** From a mapping only, on a Buy and Make item. */
   sourcingType?: ItemSourcingType | null;
 };
 
@@ -122,10 +110,6 @@ export type PlanMappingRow = {
   metadata?: Record<string, unknown> | null;
 };
 
-/**
- * A Short Description (`name`) or Long Description (`description`) the push
- * overwrites with Onshape's.
- */
 export type OwnedFieldChange = {
   field: "name" | "description";
   from: string | null;
@@ -138,14 +122,9 @@ export type PlanItemRow = {
   revision: string;
   name: string;
   description?: string | null;
-  /** item.type — Part, Material, Consumable, … */
   type?: string | null;
-  /** False for a revision not yet in use (a change notice's, say). */
+  /** False for a revision a change notice has not released. */
   active?: boolean | null;
-  /**
-   * The three Carbon-side manufacturing attributes the panel can edit on an
-   * existing item. `currentItemFields` coerces whatever is present.
-   */
   replenishmentSystem?: string | null;
   defaultMethodType?: string | null;
   itemTrackingType?: string | null;
@@ -157,7 +136,6 @@ export type PlanItemRow = {
 /** methodMaterial.itemType accepts only these (shared.models methodItemType). */
 export const BOM_LINE_ITEM_TYPES = ["Part", "Material", "Consumable"] as const;
 
-/** The line itemType for a reused item, or null when it cannot be a BOM line. */
 export function bomLineItemType(
   item: Pick<PlanItemRow, "type">
 ): (typeof BOM_LINE_ITEM_TYPES)[number] | null {
@@ -167,13 +145,7 @@ export function bomLineItemType(
     : null;
 }
 
-/**
- * The latest revision among rows sharing a part number — the row a BOM line
- * points at when the plan reuses an item. Active rows win over inactive ones
- * (a revision a change notice has not released yet is not the one in use).
- * Order-independent, so plan and apply agree whatever the query returned.
- * A release uses `pickRevisionBase` and `pickBomChildRow` instead.
- */
+/** Latest revision, active rows first, whatever order the rows came in. */
 export function pickLatestRow<
   T extends { revision: string | null; active?: boolean | null }
 >(rows: T[]): T | undefined {
@@ -188,11 +160,8 @@ export function pickLatestRow<
 }
 
 /**
- * The row a new release revision is copied from: the newest revision below
- * the released one, whether or not its change notice is released. Onshape
- * releases revisions in order, so Rev B builds on Rev A even while A waits in
- * its notice; the newest active row would skip A and copy an older revision.
- * With no row below the released revision, the latest row.
+ * The newest revision below the released one, active or not: Rev B builds on
+ * a Rev A still in its change notice. With none below, the latest row.
  */
 export function pickRevisionBase<
   T extends { revision: string | null; active?: boolean | null }
@@ -208,11 +177,8 @@ export function pickRevisionBase<
 }
 
 /**
- * The row a released BOM line points at for a child that is not in the
- * release: the revision Onshape's released BOM names, when Carbon has it,
- * released or still waiting in its change notice. Otherwise, or when the BOM
- * row names no revision, the latest row; `missingRevision` is then the named
- * revision Carbon does not have, so the review can say which one the line uses.
+ * The revision the released BOM names when Carbon has it, else the latest row
+ * with the named revision in `missingRevision`.
  */
 export function pickBomChildRow<
   T extends {
@@ -236,10 +202,8 @@ export function pickBomChildRow<
 }
 
 /**
- * Which hand-added lines a push takes over. Each Onshape line first pairs with
- * a line an earlier push wrote for the same part number, then with a manual
- * one of the same item type, in line order — the pairing apply makes. Manual lines left unpaired are
- * kept as they are.
+ * Pairs each Onshape line with a pushed line of its part number, else a manual
+ * line of the same item type, in order. Unpaired manual lines are kept.
  */
 export function pairManualLines(
   writes: Array<{ partNumber: string; quantity: number; itemType?: string }>,
@@ -261,8 +225,7 @@ export function pairManualLines(
       ownedLeft.set(write.partNumber, owns - 1);
       continue;
     }
-    // Item numbers are unique per type: a Material sharing a Part's number
-    // is a different item, so its line is kept, never repointed.
+    // Item numbers are unique per type; a Material's line is not a Part's.
     const index = manualLeft.findIndex(
       (line) =>
         line.readableId === write.partNumber &&
@@ -275,13 +238,7 @@ export function pairManualLines(
   return { takesOver, keeps: manualLeft };
 }
 
-/**
- * Which existing row an assembly push reuses when several share a part number:
- * the latest Part, else the latest row that can be a BOM line, else the latest
- * row (which the plan then reports as unusable). Item numbers are unique per
- * type, so a Tool can share a Part's number; picking it by revision alone
- * dropped the line although the Part was there.
- */
+/** The latest Part, else the latest row that can be a BOM line, else any. */
 export function pickReuseRow<
   T extends {
     revision: string | null;
@@ -295,12 +252,7 @@ export function pickReuseRow<
   return pickLatestRow(usable.length > 0 ? usable : rows);
 }
 
-/**
- * Which existing row an Onshape part adopts when several share its part
- * number: a Part at the same revision, else the latest Part, else nothing — an
- * Onshape part never adopts a Material or Tool that happens to share the
- * number.
- */
+/** A Part at the same revision, else the latest Part; never another type. */
 export function pickAdoptTarget(
   rows: PlanItemRow[],
   revision: string | null
@@ -312,49 +264,35 @@ export function pickAdoptTarget(
 
 export type PlanMethodRow = {
   id: string;
-  /** makeMethodStatus: Draft | Active | Archived. */
   status: string;
 };
 
-/** A BOM line as the plan shows it — what a method will gain, lose or keep. */
 export type PlanLine = {
   readableId: string;
   quantity: number;
-  /** Manual lines only: the line's item type, which a takeover must match. */
+  /** Manual lines only: a takeover must match it. */
   itemType?: string | null;
 };
 
-// ---------------------------------------------------------------------------
-// Proposals and edits
-// ---------------------------------------------------------------------------
-
-/** "EA" when the company has it, else its first unit — never a code it lacks. */
+/** Configured unit, else "EA", else the first; only codes the company has. */
 export function defaultUnitOfMeasureCode(options: PlanOptions): string {
   const codes = options.unitsOfMeasure.map((u) => u.code);
-  // The configured unit wins, but only while the company still has it: a unit
-  // the settings name and the company deleted would fail the same validation
-  // `mergeItemEdits` applies to a user's edit.
   const configured = options.defaults.unitOfMeasureCode;
   if (configured && codes.includes(configured)) return configured;
   if (codes.includes("EA")) return "EA";
   return codes[0] ?? "EA";
 }
 
-/** What a push knows about an item it would create. */
 export type ProposalInput = {
   partNumber: string;
   name: string | null;
   description?: string | null;
   revision?: string | null;
-  /** A BOM row with children: Make, unless a mapping says otherwise. */
   hasChildren?: boolean;
-  /** A BOM row from Standard content: Buy, unless a mapping says otherwise. */
   standardContent?: boolean;
-  /** Mapped item field values, which win over every rule below them. */
   mapped?: MappedItemValues;
 };
 
-/** The item a push would create for an Onshape part, assembly or BOM row. */
 export function proposeItem(
   input: ProposalInput,
   options: PlanOptions
@@ -363,13 +301,9 @@ export function proposeItem(
 }
 
 /**
- * The item a push would create, and the mapped values it cannot use.
- *
- * For each field the first rule that gives a value wins: the mapped value,
- * then (Replenishment only) a BOM row with children is Make, then a Standard
- * content row is Buy, then the push defaults. A mapped Replenishment with no
- * mapped method takes the push default method for that Replenishment. The
- * reviewer's choice in the review sits above all of these.
+ * Per field, the first rule with a value wins: the mapped value, a BOM row with
+ * children is Make, a Standard content row is Buy, the push defaults. The
+ * reviewer's choice overrides all; also returns mapped values it cannot use.
  */
 export function proposeMappedItem(
   input: ProposalInput,
@@ -422,12 +356,10 @@ export function proposeMappedItem(
   };
 }
 
-/** Whether a proposed item carries a mapped item field's value. */
 function proposedHolds(proposed: ProposedItem, field: PlanItemField): boolean {
   return (proposed as Record<string, unknown>)[field.field] === field.value;
 }
 
-/** The push defaults as item fields: the last rule of the precedence order. */
 function pushDefaultFields(options: PlanOptions): ItemFieldSnapshot {
   return {
     replenishmentSystem: options.defaults.replenishmentSystem,
@@ -441,12 +373,7 @@ export type MergeResult =
   | { ok: true; item: ProposedItem }
   | { ok: false; errors: string[] };
 
-/**
- * Apply a user's edits to a proposal, refusing anything the Part form would:
- * unknown enum values, a unit the company does not have, an empty name, a
- * method type the replenishment system does not allow. Unknown keys and
- * locked fields are ignored, never applied.
- */
+/** Refuses what the Part form would; ignores unknown keys and locked fields. */
 export function mergeItemEdits(
   proposed: ProposedItem,
   edit: ItemEdit | null | undefined,
@@ -522,8 +449,7 @@ export function mergeItemEdits(
     }
   }
 
-  // The interlock is checked on the merged pair, so an edit that changes only
-  // one side is still held to the rule.
+  // Checked on the merged pair, so an edit to one side still meets the rule.
   if (
     !VALID_METHOD_TYPES_BY_REPLENISHMENT[item.replenishmentSystem].includes(
       item.defaultMethodType
@@ -537,15 +463,7 @@ export function mergeItemEdits(
   return errors.length > 0 ? { ok: false, errors } : { ok: true, item };
 }
 
-// ---------------------------------------------------------------------------
-// Item fields: mapped values, the interlock, and reviewer edits
-// ---------------------------------------------------------------------------
-
-/**
- * An item's fields the panel can set. The review edits the first three; the
- * rest change only through a mapping. A field the plan did not read is
- * absent, and a push never writes an absent field.
- */
+/** A field the plan did not read is absent, and a push never writes it. */
 export type ItemFieldSnapshot = {
   replenishmentSystem: ItemReplenishmentSystem;
   defaultMethodType: ItemMethodType;
@@ -564,16 +482,12 @@ const SNAPSHOT_FIELDS = [
   "mpn"
 ] as const satisfies readonly StandardFieldId[];
 
-/** A value a push writes to an existing item's field, for the review. */
 export type ItemFieldChange = {
   field: StandardFieldId;
   label: string;
   from: string | null;
   to: string | null;
-  /**
-   * The Onshape property behind the change. Null when Carbon derived it: the
-   * method that goes with a new Replenishment or Sourcing.
-   */
+  /** Null when Carbon derived it: the method a Replenishment or Sourcing sets. */
   onshapeName: string | null;
 };
 
@@ -584,37 +498,24 @@ export type KeptDifference = {
   carbon: string | null;
 };
 
-/**
- * What the property map does to one plan row. On a create: the custom field
- * values and item field values it writes. On an existing item: the values
- * "everyPush" mappings write, and the "create" values it keeps out.
- */
 export type MappedRowPlan = {
-  /** Custom field values the push writes. */
   customFields?: PlanCustomField[];
-  /** Mapped item field values, with the property each came from. */
   itemFields?: PlanItemField[];
-  /** Existing items: the item fields the push changes. */
+  /** Existing items only, as are `target` and `keptDifferences`. */
   itemFieldChanges?: ItemFieldChange[];
-  /**
-   * Existing items: the fields after the push's mapped writes, before the
-   * reviewer's edits. Absent when no mapping changes a field.
-   */
+  /** After the mapped writes, before the reviewer's edits; absent if unchanged. */
   target?: ItemFieldSnapshot;
-  /** Existing items: Onshape values the push does not write. */
   keptDifferences?: KeptDifference[];
-  /** Mapped values the push cannot write; shown, never written. */
+  /** Shown in the review, never written. */
   mappedFieldProblems?: string[];
-  /** Valued Onshape properties no map entry covers. */
   unmappedProperties?: UnmappedProperty[];
 };
 
-/** What a plan builder needs to resolve the company's property map. */
 export type PlanMappingContext = {
   map: PropertyMapEntry[];
   definitions: PlanCustomFieldDefinition[];
   descriptionModes: DescriptionModes;
-  /** `part.customFields` per part number, for the existing items. */
+  /** `part.customFields` per part number. */
   heldCustomFields: ReadonlyMap<string, unknown>;
 };
 
@@ -636,7 +537,7 @@ function isOneOf<T extends string>(
   return (allowed as readonly string[]).includes(value);
 }
 
-/** A method the replenishment system allows, keeping the given one when legal. */
+/** The Part form's rule: keep the method when allowed, else the first allowed. */
 export function reconcileMethodForReplenishment(
   replenishment: ItemReplenishmentSystem,
   method: ItemMethodType
@@ -645,11 +546,7 @@ export function reconcileMethodForReplenishment(
   return allowed.includes(method) ? method : (allowed[0] ?? method);
 }
 
-/**
- * The method Carbon sets with a new Replenishment, as the item page does
- * (`deriveItemMethodUpdate`): Make pins Make to Order, Buy pins Purchase to
- * Order, and Buy and Make leaves the method.
- */
+/** Item page rule: Make pins Make to Order, Buy pins Purchase to Order. */
 export function methodForReplenishment(
   replenishment: ItemReplenishmentSystem,
   method: ItemMethodType
@@ -669,13 +566,7 @@ function methodForSourcing(
   return method;
 }
 
-/**
- * An existing item's current fields, coerced to the enums. A stored value
- * outside the enum (or a legacy replenishment/method pair that no longer
- * interlocks) falls back to something legal, so the review always renders and
- * the seed the editor shows is always a valid starting point. Sourcing, unit
- * and MPN are carried only when the row has them.
- */
+/** Coerced to legal values so the review always seeds a valid choice. */
 export function currentItemFields(row: {
   replenishmentSystem?: string | null;
   defaultMethodType?: string | null;
@@ -720,7 +611,6 @@ export function currentItemFields(row: {
   };
 }
 
-/** Mapped item field values, typed: the input to the interlock. */
 export type MappedItemValues = {
   mpn?: string;
   replenishmentSystem?: ItemReplenishmentSystem;
@@ -730,11 +620,7 @@ export type MappedItemValues = {
   unitOfMeasureCode?: string;
 };
 
-/**
- * The values of the given mapped item fields that a push can use. "No value"
- * gives none. A unit the company no longer has is a problem: a translation
- * row can outlive the unit it names.
- */
+/** A unit the company lacks is a problem: a translation can outlive its unit. */
 export function mappedItemValues(
   itemFields: readonly PlanItemField[],
   units: readonly PlanUnitOfMeasure[]
@@ -777,14 +663,9 @@ export function mappedItemValues(
 }
 
 /**
- * Lay mapped values over an item's fields, in the order the item page's
- * interlock needs:
- *
- * 1. Replenishment, with the method `methodFor` gives for it.
- * 2. The default method, refused when the final Replenishment does not allow
- *    it.
- * 3. Sourcing, on a Buy and Make item only, with the method it sets.
- * 4. Tracking type, unit and MPN.
+ * Lays mapped values over an item's fields in the item page's order:
+ * Replenishment with `methodFor`'s method, the method if allowed, Sourcing
+ * (Buy and Make only) with its method, then tracking, unit and MPN.
  */
 export function interlockItemFields(
   start: ItemFieldSnapshot,
@@ -841,15 +722,10 @@ export function interlockItemFields(
   return { values, problems };
 }
 
-/** The label the item page uses for a snapshot field. */
 function fieldLabel(field: StandardFieldId): string {
   return standardField(field)?.label ?? field;
 }
 
-/**
- * The fields where `next` differs from `current`. A field `next` does not
- * carry is not a change.
- */
 export function changedItemFields(
   current: ItemFieldSnapshot,
   next: ItemFieldSnapshot
@@ -871,17 +747,9 @@ const DESCRIPTION_LABELS = {
 } as const;
 
 /**
- * What a push does to an item it does not create but links, or that is
- * linked to its source: the "everyPush" values it writes, and the "create"
- * values it keeps out (shown as kept differences).
- *
- * - Descriptions: only a value Onshape gives is compared; an empty one never
- *   blanks Carbon's text.
- * - Item fields: the "everyPush" values go through the interlock, with the
- *   method the item page would set (`methodForReplenishment`).
- * - Custom fields: an "everyPush" value replaces Carbon's, and an empty one
- *   clears it. The part row is shared by every revision, so a new revision is
- *   not a creation here.
+ * What a push does to an item it links or that is linked to its source:
+ * "everyPush" values are written (an empty custom field value clears Carbon's)
+ * and "create" values become kept differences.
  */
 export function planExistingItem({
   current,
@@ -950,21 +818,17 @@ export function planExistingItem({
         return {
           field: id,
           label: fieldLabel(id),
-          // The value Carbon holds: `current` moves a method the item page
-          // leaves in place (Make to Order on a Buy and Make item) to one
-          // the pair allows, so the editor starts from a valid choice.
           from:
             (id === "defaultMethodType" ? item.defaultMethodType : null) ??
             (current[field as keyof ItemFieldSnapshot] as string | null) ??
             null,
           to: (to as string | null) ?? null,
-          // A mapping is credited only with its own value; any other change
-          // goes with one of them (the method Replenishment or Sourcing sets).
+          // Credited to a mapping only when the value is the mapped one.
           onshapeName:
             mapped.values[id] === to ? (sourceByField.get(id) ?? null) : null
         };
       })
-      // A change that goes with another one is listed after it.
+      // Derived changes list after the mapped ones.
       .sort(
         (a, b) =>
           Number(a.onshapeName === null) - Number(b.onshapeName === null)
@@ -997,7 +861,6 @@ export function planExistingItem({
         ? heldCustomFields
         : {}
     ) as Record<string, unknown>;
-    // Carbon's value of a mapped custom field, as display text.
     const heldText = (field: PlanCustomField) => {
       const heldValue = held[field.fieldId];
       return heldValue === undefined || heldValue === null || heldValue === ""
@@ -1039,11 +902,6 @@ export function planExistingItem({
   return out;
 }
 
-/**
- * What the property map does to an item a push creates: the proposal with
- * the mapped values in it, the custom field values the create writes, and
- * the mapped values it cannot use.
- */
 export function planCreatedItem(
   input: Omit<ProposalInput, "mapped">,
   resolved: {
@@ -1062,8 +920,7 @@ export function planCreatedItem(
   const out: MappedRowPlan & { proposed: ProposedItem } = { proposed };
   const customFields = resolved.fields.filter((field) => field.value !== null);
   if (customFields.length > 0) out.customFields = customFields;
-  // Only values the new item takes: a mapped value the interlock skips (a
-  // Sourcing on an item that is not Buy and Make) is a problem, not a value.
+  // A mapped value the interlock skipped is a problem, not a value.
   const itemFields = resolved.itemFields.filter(
     (field) => field.value !== null && proposedHolds(proposed, field)
   );
@@ -1074,9 +931,8 @@ export function planCreatedItem(
 }
 
 /**
- * The item fields a create writes right after the insert, which `upsertPart`
- * does not take: MPN, and Sourcing while the item is still Buy and Make after
- * the reviewer's edits.
+ * Fields `upsertPart` does not take, written after the insert: MPN, and
+ * Sourcing while the item is still Buy and Make after the reviewer's edits.
  */
 export function createdItemExtras(
   item: ProposedItem
@@ -1090,13 +946,8 @@ export function createdItemExtras(
 }
 
 /**
- * Apply the panel's three manufacturing edits on top of `base` — the item's
- * fields after the push's mapped writes, or its current fields — refusing an
- * unknown enum or a method the replenishment system does not allow (the same
- * interlock `mergeItemEdits` enforces for creates). Name, description, unit
- * and custom fields on the edit are ignored. Returns the merged values and
- * the subset that differs from `current`, so a push that changes nothing
- * writes nothing and stamps no audit fields.
+ * `changed` diffs against `current`, so a push that changes nothing writes
+ * nothing and stamps no audit fields.
  */
 export function mergeExistingItemEdits(
   current: ItemFieldSnapshot,
@@ -1150,20 +1001,13 @@ export function mergeExistingItemEdits(
   return { ok: true, values, changed: changedItemFields(current, values) };
 }
 
-// ---------------------------------------------------------------------------
-// Part plan
-// ---------------------------------------------------------------------------
-
 export type PartPlanAction =
   | "create"
   | "adopt"
   | "update"
   | "unchanged"
   | "skip-no-part-number"
-  /**
-   * A release push made a revision of this part number: the push changes
-   * nothing, because the part's changes now come through a release.
-   */
+  /** A release made a revision of this part number; the push writes nothing. */
   | "released";
 
 export type PartPlanRow = MappedRowPlan & {
@@ -1174,24 +1018,15 @@ export type PartPlanRow = MappedRowPlan & {
   revision: string | null;
   microversionId: string | null;
   action: PartPlanAction;
-  /** The Carbon item an adopt/update/unchanged points at. */
   itemId: string | null;
   item: { readableId: string; revision: string; name: string } | null;
   /** Create only. */
   proposed: ProposedItem | null;
-  /**
-   * adopt/update/unchanged only: the linked/matched item's CURRENT
-   * manufacturing fields, so the review can seed the editor with what Carbon
-   * holds and only send the ones the user changes.
-   */
+  /** adopt/update/unchanged only: seeds the review's selects. */
   current?: ItemFieldSnapshot | null;
   /** Descriptions in "everyPush" mode that the push overwrites. */
   changes: OwnedFieldChange[];
-  /**
-   * An update only because mapped values or descriptions differ: the CAD is
-   * the one the last push exported, so apply writes the values and the link
-   * but skips the model export.
-   */
+  /** An update only for mapped values or descriptions; skips the model export. */
   cadUnchanged?: true;
 };
 
@@ -1201,10 +1036,7 @@ export type PartPlan = {
   wv: "w" | "v";
   wvId: string;
   elementId: string;
-  /**
-   * The Part Studio configuration the parts were read in, null for the
-   * default. Part of every mapping key the apply writes.
-   */
+  /** Null for the default; part of every mapping key apply writes. */
   configuration?: string | null;
   rows: PartPlanRow[];
   options: PlanOptions;
@@ -1233,9 +1065,8 @@ export function buildPartPlan({
   options: PlanOptions;
   /** `releasedRevisionsByPartNumber` over `items`. */
   released?: ReadonlyMap<string, ReleasedRevision>;
-  /** The company's property map; absent, only descriptions are planned. */
+  /** Absent: only descriptions are planned. */
   mapping?: PlanMappingContext;
-  /** Each part's Onshape properties, read when the map is not empty. */
   propertiesByPartId?: ReadonlyMap<string, OnshapePropertyValue[]>;
 }): PartPlanRow[] {
   const mappingByExternalId = new Map(
@@ -1326,8 +1157,6 @@ export function buildPartPlan({
         typeof lastMicroversion === "string" &&
         part.microversionId === lastMicroversion;
       const planned = existingPlan(linked, part);
-      // The CAD is the one the last push exported, but a mapped value or a
-      // description in "everyPush" mode still has to reach Carbon.
       const writes =
         planned.changes.length > 0 ||
         (planned.itemFieldChanges?.length ?? 0) > 0 ||
@@ -1393,7 +1222,6 @@ export function buildPartPlan({
   return rows;
 }
 
-/** `{ [key]: list }` when the list has entries, else `{}`. */
 function nonEmpty<K extends string, T>(
   key: K,
   list: T[]
@@ -1402,9 +1230,8 @@ function nonEmpty<K extends string, T>(
 }
 
 /**
- * The descriptions an assembly push overwrites on a reused item. Only values
- * Onshape gives are written: Name and Description are optional BOM columns,
- * so an empty cell may mean "no column", and must not blank Carbon's text.
+ * Only values Onshape gives count: Name and Description are optional BOM
+ * columns, so an empty cell must not blank Carbon's text.
  */
 export function assemblyTextChanges(
   item: Pick<PlanItemRow, "name" | "description">,
@@ -1427,52 +1254,34 @@ export function assemblyTextChanges(
   return changes;
 }
 
-// ---------------------------------------------------------------------------
-// Assembly plan
-// ---------------------------------------------------------------------------
-
 export type AssemblyPlanItem = MappedRowPlan & {
   partNumber: string;
   name: string | null;
   revision: string | null;
   action: "create" | "reuse";
   itemId: string | null;
-  /**
-   * Reuse only, and set only when true: the Carbon item was found by part
-   * number alone, with no link to this Onshape part. Equal numbers are not
-   * proof of the same part, so the review warns before the push writes into it.
-   */
+  /** Reuse only: matched by part number with no link to this Onshape part. */
   conflict?: boolean;
   /** Create only. */
   proposed: ProposedItem | null;
-  /** Reuse only: the existing item's current manufacturing fields. */
+  /** Reuse only. */
   current?: ItemFieldSnapshot | null;
-  /**
-   * Reuse only, when the item is or becomes linked to this BOM row's Onshape
-   * part: the descriptions in "everyPush" mode the push overwrites.
-   */
+  /** Reuse only, when the item is or becomes linked to this BOM row. */
   changes?: OwnedFieldChange[];
   /**
-   * Reuse only: a release push made a revision of this part number, so a
-   * workspace push writes no fields, link or model for it. Changes to its BOM
-   * still go into a Draft.
+   * Reuse only: a release made a revision of this part number, so a workspace
+   * push writes no fields, link or model; BOM changes still go into a Draft.
    */
   released?: { revision: string };
-  /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
-  /**
-   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so the
-   * push writes no BOM for it. Its Buy or Make comes from the precedence order.
-   */
+  /** "Show Assembly only" in Onshape: the push writes no BOM for it. */
   shownAsUnit?: true;
 };
 
 export type AssemblyPlanMethodStatus =
-  /** Existing Draft method: lines are applied. */
   | "draft"
-  /** Existing released method. */
   | "active"
-  /** The parent item will be created, so the method will be too. */
+  /** The parent item will be created, and its method with it. */
   | "new"
   /** Existing item without a make method: refused. */
   | "missing";
@@ -1481,33 +1290,22 @@ export type AssemblyPlanMethod = {
   parentPartNumber: string;
   parentItemId: string | null;
   status: AssemblyPlanMethodStatus;
-  /**
-   * `active` only: the version of the Draft an earlier push made from this
-   * method, which this push writes into. Absent, the push creates a new Draft.
-   */
+  /** `active` only: the panel's Draft this push writes into; absent, a new one. */
   reusedDraftVersion?: number | null;
-  /** Lines the push writes, in BOM order. */
   writes: Array<{
     index: string;
     partNumber: string;
     name: string | null;
     quantity: number;
   }>;
-  /** Existing Onshape-origin lines a previous push wrote. */
+  /** Lines a previous push wrote. */
   replaces: PlanLine[];
-  /**
-   * Lines added by hand for a part number Onshape's BOM also lists. The push
-   * takes each over (Onshape's quantity, Carbon's operation and scrap kept)
-   * instead of writing a second line for the same part beside it.
-   */
+  /** Manual lines taking Onshape's quantity; their operation and scrap stay. */
   takesOver: Array<PlanLine & { onshapeQuantity: number }>;
-  /** Lines added by hand for parts Onshape doesn't list: left untouched. */
   keeps: PlanLine[];
   /**
-   * `active` with no reusable Draft only: Onshape's lines already equal the
-   * method's Onshape lines (part number and quantity, in order) and nothing is
-   * taken over, so the push makes no Draft. The apply checks again, with the
-   * child-method pointers.
+   * `active` with no reusable Draft: Onshape's lines equal the method's and
+   * none is taken over, so no Draft is made. Apply rechecks child methods.
    */
   unchanged?: true;
 };
@@ -1519,33 +1317,18 @@ export type AssemblyPlanRoot = MappedRowPlan & {
   revision: string | null;
   action: "create" | "reuse";
   itemId: string | null;
-  /** As on {@link AssemblyPlanItem}: reused by part number alone. */
+  /** `conflict`, `current`, `changes` and `released` as on AssemblyPlanItem. */
   conflict?: boolean;
   proposed: ProposedItem | null;
-  /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
-  /** Reuse only: the descriptions in "everyPush" mode the push overwrites. */
   changes?: OwnedFieldChange[];
-  /**
-   * Reuse only: a release push made a revision of this part number, so a
-   * workspace push writes no fields, link or model for it. Changes to its BOM
-   * still go into a Draft.
-   */
   released?: { revision: string };
 };
 
 /**
- * How far down the BOM a push writes.
- *
- * `all` explodes the whole tree: every sub-assembly gets its own make method
- * and its own lines, in one push.
- *
- * `top` writes ONE method — the root's — and treats each sub-assembly as an
- * item to create or reuse rather than a tree to explode. It exists because a
- * BOM line already points at its child's own make method
- * (`methodMaterial.materialMakeMethodId`), so a multi-level structure composes
- * from levels pushed separately. A push is then bounded by one level's line
- * count instead of by the whole tree.
+ * `all` writes every sub-assembly's method in one push. `top` writes only the
+ * root's: a line points at its child's own make method, so a multi-level
+ * structure composes from levels pushed separately.
  */
 export type AssemblyPlanDepth = "all" | "top";
 
@@ -1555,21 +1338,17 @@ export type AssemblyPlan = {
   wv: "w" | "v";
   wvId: string;
   elementId: string;
-  /** The assembly configuration the BOM was read in, null for the default. */
   configuration?: string | null;
   root: AssemblyPlanRoot;
-  /** Every distinct BOM part number below the root. */
   items: AssemblyPlanItem[];
   methods: AssemblyPlanMethod[];
   /** BOM rows the push cannot place ("<name>: no part number in Onshape"). */
   skipped: string[];
   options: PlanOptions;
   depth: AssemblyPlanDepth;
-  /** Only on a `top` plan: what this push is NOT writing. */
+  /** `top` plans only: what the push leaves out. */
   deeper?: {
-    /** Sub-assemblies directly under the root, each pushable on its own. */
     subAssemblies: string[];
-    /** Distinct part numbers below the top level. */
     partCount: number;
   };
 };
@@ -1629,36 +1408,20 @@ export function buildAssemblyPlan({
   manualLinesByMethodId: Map<string, PlanLine[]>;
   options: PlanOptions;
   depth?: AssemblyPlanDepth;
-  /**
-   * The item each `onshape-v2` item mapping points at, keyed by externalId —
-   * the same join the status badges use. A reuse with no mapping to its own
-   * item is a conflict. Omitted, every reuse is one.
-   */
+  /** `onshape-v2` item mappings by externalId; a reuse without one conflicts. */
   linkedItemIdByExternalId?: Map<string, string>;
-  /**
-   * Existing items carrying any Onshape link. One linked elsewhere keeps that
-   * link, so the push neither links it nor writes its descriptions. Omitted,
-   * only items already linked to their BOM row get their descriptions written.
-   */
+  /** Items with any Onshape link; one linked elsewhere is left as it is. */
   linkedItemIds?: ReadonlySet<string>;
   configuration?: string | null;
-  /**
-   * Per item whose method is Active, the Draft the push would reuse
-   * (`loadReusableDrafts`), so the review counts that Draft's lines.
-   */
+  /** `loadReusableDrafts`: the Draft a push reuses per Active-method item. */
   reusableDraftByItemId?: Map<string, { id: string; version: number | null }>;
-  /** The company's property map; absent, only descriptions are planned. */
   mapping?: PlanMappingContext;
-  /** The assembly's own properties (element metadata). BOM rows carry theirs. */
+  /** Element metadata; BOM rows carry their own. */
   rootProperties?: OnshapePropertyValue[] | null;
-  /** `releasedRevisionsByPartNumber` over `items`. */
   released?: ReadonlyMap<string, ReleasedRevision>;
 }): AssemblyPlan {
-  // One row per part number: the latest revision, whatever order the rows
-  // arrived in, so the plan pins the same item the apply would pick.
   const rowsByReadableId = new Map<string, PlanItemRow[]>();
-  // Every item id → its part number, across all revisions. A link that points
-  // at ANY revision of a part is still a link to that part (see below).
+  // A link to any revision of a part is a link to that part.
   const readableIdByItemId = new Map<string, string>();
   for (const item of items) {
     readableIdByItemId.set(item.id, item.readableId);
@@ -1666,21 +1429,18 @@ export function buildAssemblyPlan({
     list.push(item);
     rowsByReadableId.set(item.readableId, list);
   }
-  // The same pick the apply makes (`pickReuseRow`).
+  // The pick apply makes.
   const itemByReadableId = new Map<string, PlanItemRow>();
   for (const [readableId, rows] of rowsByReadableId) {
     const latest = pickReuseRow(rows);
     if (latest) itemByReadableId.set(readableId, latest);
   }
   const everything = flattenNodes(nodes);
-  // At `top` depth only the root's own children become items: the rest of the
-  // tree is somebody else's push. `everything` is still needed to describe
-  // what is being left out.
+  // At `top` only the root's children become items; `everything` still
+  // describes what is left out.
   const all = depth === "top" ? nodes : everything;
 
-  // A node with children is made, at every depth — a sub-assembly the push is
-  // not exploding is still an assembly, and classifying it as bought
-  // because this push declined to look inside it would be wrong.
+  // A node with children is made at every depth, exploded or not.
   const madePartNumbers = new Set<string>([root.partNumber]);
   for (const node of everything) {
     if (node.partNumber && node.children.length > 0) {
@@ -1688,13 +1448,9 @@ export function buildAssemblyPlan({
     }
   }
 
-  // A part number is linked when any BOM row carrying it maps to an item that
-  // IS that part number — any revision of it, not only the latest. A release
-  // mints a higher revision and repoints the default to it while leaving the
-  // part-studio mapping on the old revision; matching on the mapped item's own
-  // part number (not id-identity with the latest revision) keeps that row
-  // linked instead of flipping every released part to a false conflict. A row
-  // with no source can never be linked, as in status.
+  // Linked when a row's source maps to any revision of its part number: a
+  // release repoints the default revision but leaves the part-studio mapping
+  // on the old one.
   const linkedPartNumbers = new Set<string>();
   for (const node of everything) {
     if (!node.partNumber) continue;
@@ -1755,7 +1511,7 @@ export function buildAssemblyPlan({
     revision: root.revision
   };
   // The pushed assembly is always linked, so it takes "everyPush" values,
-  // unless a release push made a revision of it: then only its BOM is written.
+  // unless a release made a revision of it: then only its BOM is written.
   const rootReleased = released.get(root.partNumber);
   const planRoot: AssemblyPlanRoot = rootItem
     ? rootReleased
@@ -1784,9 +1540,9 @@ export function buildAssemblyPlan({
         itemId: null
       };
 
-  // Which BOM rows this push links to their Onshape part, the way apply's
-  // `linkChildParts` decides: already linked to it, or neither the item nor
-  // the source linked anywhere, with the source not shared by two numbers.
+  // As apply's `linkChildParts`: a row takes "everyPush" values when linked to
+  // it already, or when neither item nor source is linked anywhere and the
+  // source carries one part number.
   const numbersBySource = new Map<string, Set<string>>();
   for (const node of everything) {
     const externalId = externalIdForBomLine(node.itemSource ?? null);
@@ -1795,8 +1551,6 @@ export function buildAssemblyPlan({
     numbers.add(node.partNumber);
     numbersBySource.set(externalId, numbers);
   }
-  // An item the push links, or one linked to this row already, takes the
-  // "everyPush" values. One linked to another source is left alone.
   const pushWrites = (node: OnshapeBomNode, item: PlanItemRow) => {
     if (!node.partNumber) return false;
     if (linkedPartNumbers.has(node.partNumber)) return true;
@@ -1812,8 +1566,7 @@ export function buildAssemblyPlan({
   const planItems: AssemblyPlanItem[] = [];
   const seen = new Set<string>([root.partNumber]);
   const skipped: string[] = [];
-  // Part numbers whose Carbon item can never be a BOM line (a Tool, say):
-  // shown as skipped here so the apply's refusal is no surprise.
+  // Items that cannot be a BOM line (a Tool): skipped, as apply refuses them.
   const unusable = new Set<string>();
   for (const node of all) {
     if (!node.partNumber) {
@@ -1870,7 +1623,6 @@ export function buildAssemblyPlan({
           name: node.name,
           description: node.description,
           revision: node.revision,
-          // A sub-assembly this push does not explode is still made.
           hasChildren: madePartNumbers.has(node.partNumber),
           standardContent: node.standardContent === true
         },
@@ -1900,7 +1652,7 @@ export function buildAssemblyPlan({
         : method.status === "Active"
           ? "active"
           : "draft";
-    // A released method is written through a Draft: the reused one's lines,
+    // An Active method is written through a Draft: the reused Draft's lines,
     // or the Active method's, which a new Draft copies with their ownership.
     const reusedDraft =
       status === "active" && parentItemId
@@ -1921,9 +1673,7 @@ export function buildAssemblyPlan({
     const manual = linesMethodId
       ? (manualLinesByMethodId.get(linesMethodId) ?? [])
       : [];
-    // Each write carries the type of the item it will point at (a new item
-    // is a Part), so a hand-added line for another item sharing the number
-    // is kept rather than taken over.
+    // The type of the item each write points at; a new item is a Part.
     const { takesOver, keeps } = pairManualLines(
       writes.map((write) => {
         const existing = itemByReadableId.get(write.partNumber);
@@ -1935,7 +1685,6 @@ export function buildAssemblyPlan({
       replaces,
       manual
     );
-    // A released method whose lines already match gets no Draft.
     const unchanged =
       status === "active" &&
       !reusedDraft &&
@@ -2007,8 +1756,7 @@ export function buildAssemblyPlan({
     configuration: normalizeConfiguration(configuration),
     root: planRoot,
     items: planItems,
-    // One method: the root's. `addMethod` recursed into the children, so drop
-    // everything it added below the top.
+    // `addMethod` recursed; keep only the root's method.
     methods: methods.slice(0, 1),
     skipped,
     options,
@@ -2022,20 +1770,13 @@ export function buildAssemblyPlan({
   };
 }
 
-// ---------------------------------------------------------------------------
-// Release plan
-// ---------------------------------------------------------------------------
-
 export type ReleasePlanItemAction =
   /** An item already exists at the released letter. */
   | "reuse"
-  /** A new revision is created from the existing item. */
   | "revision"
-  /** The part number was never in Carbon: a new item at the letter. */
   | "create"
-  /** A released drawing that attaches to a model item of the same number. */
+  /** A released drawing with a model item to attach to. */
   | "drawing"
-  /** A released drawing with no model item to attach to. */
   | "drawing-unmatched";
 
 export type ReleasePlanItem = MappedRowPlan & {
@@ -2044,12 +1785,8 @@ export type ReleasePlanItem = MappedRowPlan & {
   elementType: number;
   elementId: string;
   versionId: string;
-  /**
-   * Part Studio items: the released part. The export translates exactly this
-   * part, so an item without one is not exported.
-   */
+  /** Part Studio items: the part the export translates; without one, none. */
   partId?: string | null;
-  /** The released configuration, null for the default. */
   configuration?: string | null;
   action: ReleasePlanItemAction;
   baseItemId: string | null;
@@ -2057,26 +1794,16 @@ export type ReleasePlanItem = MappedRowPlan & {
   existingItemId: string | null;
   /** Create only. */
   proposed: ProposedItem | null;
-  /**
-   * reuse/revision only: the manufacturing fields the target item currently
-   * has — the reused letter item, or the base a revision is copied from (the
-   * new revision inherits them). Seeds the editor; only changes are sent.
-   */
+  /** reuse/revision only: the reused item's fields, or the base's. */
   current?: ItemFieldSnapshot | null;
-  /** reuse/revision only: the descriptions in "everyPush" mode it takes. */
+  /** reuse/revision only. */
   changes?: OwnedFieldChange[];
-  /**
-   * Released assemblies only: whether the BOM can be applied to the target
-   * method. A reused item with a released (Active) method is refused.
-   */
+  /** Released assemblies only; a reused item's Active method is refused. */
   methodStatus: "draft" | "active" | "new" | "missing" | null;
   /**
-   * Drawings only: the model the drawing attaches to — the model item with
-   * the drawing's part number in this release, else the model the release
-   * package lists under the drawing. `itemId` is set when that model is not
-   * in this release and Carbon already has it at the package's revision. An
-   * unmatched drawing keeps the model it waits for (never with an `itemId`),
-   * or null when the package lists none.
+   * Drawings only: the release's model item with the drawing's number, else
+   * the model the package lists, with `itemId` when Carbon has it outside the
+   * release at the package's revision.
    */
   drawingOf?: {
     partNumber: string;
@@ -2094,13 +1821,9 @@ export type ReleasePlanChild = MappedRowPlan & {
   itemId: string | null;
   /** Reuse only: the Carbon revision the line points at. */
   itemRevision?: string | null;
-  /**
-   * Reuse only: the revision Onshape's BOM names when Carbon does not have
-   * it; the line then points at `itemRevision` instead.
-   */
+  /** Reuse only: the revision the BOM names that Carbon lacks. */
   missingRevision?: string;
   proposed: ProposedItem | null;
-  /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
 };
 
@@ -2112,12 +1835,9 @@ export type ReleasePlan = {
   createdAt: string | null;
   items: ReleasePlanItem[];
   children: ReleasePlanChild[];
-  /** Null when nothing new is created (re-push): no change notice then. */
+  /** Null when the push creates no release item; BOM children do not count. */
   changeNotice: { name: string; description: string | null } | null;
-  /**
-   * The open change notice an earlier push of this release made (from another
-   * document): the push adds to it instead of making a new one.
-   */
+  /** An open notice an earlier push of this release made; the push adds to it. */
   existingChangeNotice?: string | null;
   makeDefault: boolean;
   alreadyPushed: boolean;
@@ -2139,19 +1859,12 @@ export function buildReleasePlan({
   release: PanelRelease;
   /** Every Carbon revision row for the release's and the BOMs' part numbers. */
   items: PlanItemRow[];
-  /**
-   * Top-level BOM lines per released assembly element, read at its version;
-   * null when the read failed (the apply then leaves that method alone).
-   */
+  /** Null when the read failed; apply then leaves that method alone. */
   bomLinesByElementId: Record<string, OnshapeBomNode[] | null>;
   methodByItemId: Map<string, PlanMethodRow>;
   options: PlanOptions;
-  /** The company's property map; absent, only descriptions are planned. */
   mapping?: PlanMappingContext;
-  /**
-   * Each released model item's properties at its released version, by part
-   * number. BOM children carry theirs on the BOM row.
-   */
+  /** Model items' properties at the released version; BOM rows carry theirs. */
   propertiesByPartNumber?: ReadonlyMap<string, OnshapePropertyValue[]>;
   /** `drawingModels` over the release package, per drawing element. */
   drawingModelByElementId?: ReadonlyMap<
@@ -2174,8 +1887,7 @@ export function buildReleasePlan({
           matchByName
         })
       : null;
-  // A reused letter and a new revision's base are existing items: the new
-  // revision copies the base, then takes the "everyPush" values.
+  // A new revision copies its base, then takes the "everyPush" values.
   const existingPlan = (
     item: PlanItemRow,
     onshape: { name: string | null; description: string | null },
@@ -2209,8 +1921,7 @@ export function buildReleasePlan({
   const modelItems = release.items.filter(isModelReleaseItem);
   const modelPartNumbers = new Set(modelItems.map((item) => item.partNumber));
 
-  // Names for release-created items come from the BOM rows that reference
-  // them; the revisions list only carries part numbers.
+  // Fallback text for release items: the revisions list has part numbers only.
   const bomNodeByPartNumber = new Map<string, OnshapeBomNode>();
   for (const lines of Object.values(bomLinesByElementId)) {
     for (const node of lines ?? []) {
@@ -2223,9 +1934,6 @@ export function buildReleasePlan({
   const planItems: ReleasePlanItem[] = [];
   for (const item of release.items) {
     if (!isModelReleaseItem(item)) {
-      // A drawing attaches to the model with its part number in this release,
-      // else to the model the package lists under it: in this release, or
-      // already in Carbon at that revision.
       const model = modelPartNumbers.has(item.partNumber)
         ? { partNumber: item.partNumber, revision: item.revision }
         : (drawingModelByElementId.get(item.elementId) ?? null);
@@ -2323,10 +2031,8 @@ export function buildReleasePlan({
     });
   }
 
-  // Level-1 BOM children that are not release items: reused when Carbon has
-  // any revision of them (bought hardware), created otherwise. A reused child
-  // is the revision the BOM names when Carbon has it. It is not linked by the
-  // release, so it takes no mapped value.
+  // Level-1 BOM children outside the release: reused when Carbon has any
+  // revision, else created. A reused child is not linked, so takes no values.
   const children: ReleasePlanChild[] = [];
   const childSeen = new Set<string>();
   for (const lines of Object.values(bomLinesByElementId)) {
@@ -2375,14 +2081,12 @@ export function buildReleasePlan({
     }
   }
 
-  // The change notice records the release items the push creates — the apply
-  // writes one affected row per created revision or item, and none for BOM
-  // children — so only those propose one.
+  // The notice gets one affected row per created release item and none for
+  // BOM children, so only release items propose one.
   const createsReleaseItems = planItems.some(
     (item) => item.action === "revision" || item.action === "create"
   );
-  // "Already pushed" is broader: a release whose items are all in Carbon can
-  // still mint a missing BOM child.
+  // A release whose items are all in Carbon can still create a BOM child.
   const createsAnything =
     createsReleaseItems || children.some((child) => child.action === "create");
 
@@ -2394,7 +2098,6 @@ export function buildReleasePlan({
     createdAt: release.createdAt,
     items: planItems,
     children,
-    // The engineer already named the release, so that name carries over.
     changeNotice: createsReleaseItems
       ? {
           name: release.releaseName ?? `Onshape release ${release.releaseId}`,
@@ -2407,7 +2110,6 @@ export function buildReleasePlan({
   };
 }
 
-/** A text property's value ("Name", "Description"); null when empty. */
 function propertyText(
   properties: OnshapePropertyValue[] | undefined,
   name: string
@@ -2430,10 +2132,6 @@ function releaseIdentity(item: PanelReleaseItem) {
     configuration: item.configuration ?? null
   };
 }
-
-// ---------------------------------------------------------------------------
-// Apply-time helpers shared by the push routes
-// ---------------------------------------------------------------------------
 
 export type ChangeNoticeEdit = {
   name: string;
@@ -2473,10 +2171,7 @@ export function mergeChangeNoticeEdit(
   return errors.length > 0 ? { ok: false, errors } : { ok: true, changeNotice };
 }
 
-/**
- * changeOrder.description is a tiptap document, not text: wrap the plan's
- * free text the way the ERP's own New Change Notice form does.
- */
+/** changeOrder.description is a tiptap document; wraps text as the ERP form does. */
 export function changeNoticeDescriptionJson(text: string | null): {
   type: "doc";
   content: Array<{
@@ -2491,11 +2186,7 @@ export function changeNoticeDescriptionJson(text: string | null): {
   };
 }
 
-/**
- * Merge edits for every create in a plan at once, keyed the way the plan is
- * (partId for parts, part number for assemblies and releases). Returns the
- * merged item per key, or the first error per key.
- */
+/** Keyed as the plan is: partId for parts, part number otherwise. */
 export function mergeEditsForCreates(
   creates: Array<{ key: string; proposed: ProposedItem }>,
   edits: Record<string, ItemEdit> | null | undefined,

@@ -14,18 +14,10 @@ import {
   type OnshapeOAuthIntegrationId
 } from "./integration-id";
 
-/**
- * Writes to an Onshape integration row, one owner per key.
- *
- * Three writers share the metadata column: the token refresh, the OAuth
- * callback and the settings save, plus the panel's Fields save (the property
- * map, the description modes and the push defaults). Each used to
- * write the whole column back from a copy read earlier, so whichever landed
- * last reverted the others. Every write here names only the keys it owns and
- * goes through `patchIntegrationState`, which applies it under a row lock.
- */
+// Token refresh, OAuth callback, settings save, the webhook's company id and
+// the panel's Fields save share the metadata column, so each patch names only
+// its own keys and goes through `patchIntegrationState` (a row lock).
 
-/** The keys each integration's settings form owns. Secrets are listed apart. */
 const SETTINGS_PATHS: Record<OnshapeOAuthIntegrationId, readonly string[]> = {
   [ONSHAPE_INTEGRATION_ID]: ["assetSyncEnabled"],
   [ONSHAPE_GOVERNMENT_INTEGRATION_ID]: [
@@ -33,7 +25,7 @@ const SETTINGS_PATHS: Record<OnshapeOAuthIntegrationId, readonly string[]> = {
     "clientId",
     "assetSyncEnabled"
   ],
-  // The panel's Fields save owns the push defaults, with the property map.
+  // The panel's Fields save owns its keys.
   [ONSHAPE_V2_INTEGRATION_ID]: []
 };
 
@@ -77,7 +69,6 @@ export function onshapeSettingsPatch(
   return { metadata: patch, removeMetadata, secrets };
 }
 
-/** The settings save: only the fields the integration's form declares. */
 export async function patchOnshapeSettings(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
@@ -105,8 +96,7 @@ export function onshapeTokenPatch(tokens: OnshapeTokenSet) {
   const secrets: Record<string, Json> = {
     "credentials.accessToken": tokens.accessToken
   };
-  // Onshape rotates refresh tokens; a response without one leaves the stored
-  // token in place rather than erasing it.
+  // A response without a refresh token keeps the stored one.
   if (tokens.refreshToken) {
     secrets["credentials.refreshToken"] = tokens.refreshToken;
   }
@@ -119,7 +109,6 @@ export function onshapeTokenPatch(tokens: OnshapeTokenSet) {
   };
 }
 
-/** A token refresh owns the token pair and its expiry, nothing else. */
 export async function patchOnshapeRefreshedTokens(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
@@ -142,10 +131,8 @@ export type OnshapeGrant = OnshapeTokenSet & {
 };
 
 /**
- * A completed authorization owns the grant: tokens, scope and host. The Onshape
- * company is re-resolved from the new token, so the cached one is dropped. A
- * grant without write scope turns asset sync off, because a refresh can never
- * widen it.
+ * Drops the cached Onshape company so it is re-resolved from the new token. A
+ * grant without write scope turns asset sync off: a refresh cannot widen it.
  */
 export function onshapeGrantPatch(grant: OnshapeGrant) {
   const tokens = onshapeTokenPatch(grant);

@@ -23,7 +23,6 @@ async function authorize(request: Request) {
 export async function loader({ request }: LoaderFunctionArgs) {
   const started = await authorize(request);
 
-  // `error` is an integration-errors code; the client reports it.
   if (!started.ok) {
     return data(
       { error: started.reason },
@@ -37,13 +36,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 }
 
-/**
- * The integration drawer's Reconnect action: the same authorization as an
- * install, answered as a `redirectUrl` the action button follows. The consent
- * screen replaces the page, and the callback, finding no popup opener, lands
- * back on the integrations page. A failure goes there too, as the
- * `?integration=&error=` toast an install failure shows.
- */
+/** The drawer's Reconnect action, as in `integrations.onshape.install.ts`. */
 export async function action({ request }: ActionFunctionArgs) {
   const started = await authorize(request);
   if (!started.ok) {

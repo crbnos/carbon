@@ -5,14 +5,9 @@
 import { describe, expect, it } from "vitest";
 import { chunkFilterValues, selectInBatches } from "./batched-filter";
 
-/**
- * The numbers here are the measured gateway limit, not a guess: an encoded
- * request line of 3,821 bytes succeeded against Supabase's Kong + PostgREST
- * and one of 4,001 failed. Every batch these produce has to leave room for the
- * path and the rest of the query on top of the filter itself.
- */
+// Measured gateway limit: a 3,821-byte request line succeeds, 4,001 fails.
 
-/** What supabase-js actually puts on the wire for `.in(column, values)`. */
+/** What supabase-js puts on the wire for `.in(column, values)`. */
 function encodedFilterLength(column: string, values: string[]): number {
   const params = new URLSearchParams();
   params.append(
@@ -38,7 +33,6 @@ describe("chunkFilterValues", () => {
   });
 
   it("keeps every batch under the limit for long values too", () => {
-    // The case a fixed count of 100 gets wrong: 58-character external ids.
     const values = Array.from({ length: 334 }, (_, i) => externalId(i));
     const batches = chunkFilterValues(values);
     for (const batch of batches) {
@@ -55,8 +49,6 @@ describe("chunkFilterValues", () => {
     const long = chunkFilterValues(
       Array.from({ length: count }, (_, i) => externalId(i))
     );
-    // Same number of values, longer strings, so strictly more requests. This
-    // is the whole point of budgeting bytes rather than counting values.
     expect(long.length).toBeGreaterThan(short.length);
   });
 
@@ -108,7 +100,6 @@ describe("selectInBatches", () => {
     });
     expect(calls).toBe(1);
     expect(result.error).toEqual({ message: "boom" });
-    // A partial result read as a whole one is how a sync deletes live rows.
     expect(result.data).toEqual([]);
   });
 

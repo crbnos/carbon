@@ -2,25 +2,8 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Onshape properties → Carbon fields.
- *
- * Onshape objects carry properties — standard (Name, Part number, Vendor,
- * Project, …) and company-defined custom ones — each with a stable
- * `propertyId` and a value type. A property can feed one of two targets:
- * a part custom field (`customField`, table "part", values as JSON on the
- * row keyed by field id), or a Carbon item field from the target list
- * (`standard-fields.ts`). The bridge is one explicit map per company, stored
- * on the Onshape integration's settings metadata.
- *
- * Each mapping has a mode. "create" (Set at creation) writes the value only
- * when a push creates the item. "everyPush" (Update on every push) also
- * writes it to an existing item the push links, replacing Carbon's value.
- * Name and Description are not mappings; their modes are on
- * `descriptionModes`.
- *
- * Everything here is pure so the plan a user reviewed is the plan that runs.
- */
+// Onshape properties → part custom fields and item fields, through the
+// company's property map (`propertyMap` on the integration metadata).
 
 import { parseDate } from "@internationalized/date";
 import type { PlanUnitOfMeasure } from "./plan";
@@ -32,11 +15,9 @@ import {
   translateValue
 } from "./standard-fields";
 
-/** One property on an Onshape object, as the metadata API returns it. */
 export type OnshapePropertyValue = {
   propertyId: string;
   name: string;
-  /** STRING | BOOL | INT | DOUBLE | DATE | ENUM | USER | OBJECT | BLOB … */
   valueType: string;
   value: unknown;
   editable?: boolean;
@@ -45,19 +26,17 @@ export type OnshapePropertyValue = {
 };
 
 /**
- * "create": Set at creation — the value reaches an item the push creates, and
- * Carbon owns the field after that. "everyPush": Update on every push — the
- * value also replaces Carbon's on an existing item the push links.
+ * "create" (Set at creation): written only to an item the push creates.
+ * "everyPush" (Update on every push): also replaces Carbon's value on an
+ * existing item the push links.
  */
 export const MAPPING_MODES = ["create", "everyPush"] as const;
 export type MappingMode = (typeof MAPPING_MODES)[number];
 
-/** What a mapping writes: a part custom field or an item field. */
 export type PropertyMapTarget =
   | { kind: "customField"; fieldId: string }
   | { kind: "item"; field: StandardFieldId };
 
-/** One entry of the company's property map (integration settings metadata). */
 export type PropertyMapEntry = {
   onshapePropertyId: string;
   /** Display, and the BOM column fallback; the propertyId is the join. */
@@ -69,7 +48,6 @@ export type PropertyMapEntry = {
   translations?: ValueTranslation[];
 };
 
-/** The modes of the two descriptions, which every push reads from Onshape. */
 export type DescriptionModes = {
   /** Short Description (`item.name`). */
   name: MappingMode;
@@ -82,16 +60,14 @@ export const DEFAULT_DESCRIPTION_MODES: DescriptionModes = {
   description: "create"
 };
 
-/** A Carbon custom field definition the panel needs (customField row). */
 export type PlanCustomFieldDefinition = {
   id: string;
   name: string;
-  /** attributeDataType id: 1 Yes/No, 2 Date, 3 List, 4 Numeric, 5 Text. */
+  /** A `CUSTOM_FIELD_DATA_TYPES` value. */
   dataTypeId: number;
   listOptions: string[] | null;
 };
 
-/** A mapped field on a plan row: what apply would write, shown for review. */
 export type PlanCustomField = {
   fieldId: string;
   name: string;
@@ -100,30 +76,20 @@ export type PlanCustomField = {
   listOptions: string[] | null;
   /** Coerced to the Carbon type; null when Onshape holds no value. */
   value: string | number | boolean | null;
-  /** The Onshape property it came from, for the review's provenance line. */
   onshapeName: string;
-  /**
-   * A write to an existing item only: Carbon's value it replaces, as display
-   * text; null when Carbon holds none.
-   */
+  /** Existing items only: Carbon's current value as text, null when none. */
   replaces?: string | null;
 };
 
-/** A mapped item field on a plan row, with the property it came from. */
 export type PlanItemField = {
   field: StandardFieldId;
   label: string;
-  /**
-   * The Carbon value after translation. Null is "No value": nothing is
-   * written, and the next rule in the precedence order decides.
-   */
+  /** After translation; null writes nothing. */
   value: string | null;
   mode: MappingMode;
-  /** The Onshape property it came from, for the review's provenance line. */
   onshapeName: string;
 };
 
-/** An Onshape property with a value that no map entry covers. */
 export type UnmappedProperty = {
   propertyId: string;
   name: string;
@@ -131,7 +97,10 @@ export type UnmappedProperty = {
   value: string;
 };
 
-/** What a ticked Yes/No custom field stores (the ERP checkbox's post value). */
+/**
+ * A ticked Yes/No custom field: the ERP checkbox's post value, and what its
+ * tables test for. A JSON `true` renders unticked; unticked is no key.
+ */
 export const BOOLEAN_TRUE = "on";
 
 export const CUSTOM_FIELD_DATA_TYPES = {
@@ -142,7 +111,6 @@ export const CUSTOM_FIELD_DATA_TYPES = {
   text: 5
 } as const;
 
-/** A custom field type's name, as Carbon's custom field settings show it. */
 export const CUSTOM_FIELD_TYPE_LABELS: Record<number, string> = {
   [CUSTOM_FIELD_DATA_TYPES.boolean]: "Yes/No",
   [CUSTOM_FIELD_DATA_TYPES.date]: "Date",
@@ -152,19 +120,9 @@ export const CUSTOM_FIELD_TYPE_LABELS: Record<number, string> = {
 };
 
 /**
- * Which Carbon data types an Onshape value type may map onto. Types absent
- * here (USER, BLOB, computed OBJECTs other than Material's display name) are
- * not mappable.
- *
- * One target per value type, and every textual type lands on Text. A pushed
- * property is REFERENCE data: Onshape is where it is authored and validated,
- * and Carbon holds a copy. A List target would constrain a value Carbon does
- * not own — Onshape's option set can gain a value mid-push, and a free-text
- * property pointed at a dropdown turns the list into a bin for its typos.
- *
- * Numbers and dates keep their real types because Carbon sorts, filters and
- * renders those columns by type; a numeric shipped as text sorts "10" before
- * "9".
+ * The custom field type each Onshape value type maps onto; absent types (USER,
+ * BLOB, …) are not mappable. Textual types land on Text, never List: Onshape
+ * owns the value and its options, so Carbon keeps an unconstrained copy.
  */
 export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
   STRING: [CUSTOM_FIELD_DATA_TYPES.text],
@@ -177,7 +135,7 @@ export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
   OBJECT: [CUSTOM_FIELD_DATA_TYPES.text]
 };
 
-/** Properties the panel already writes through first-class item fields. */
+/** Identity, description and lifecycle properties: never "not mapped". */
 const RESERVED_PROPERTY_NAMES = new Set([
   "Name",
   "Part number",
@@ -193,10 +151,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * A list value as its option's label. The metadata API sends a list's stored
- * value ("2"), the BOM table its label ("Released"). Reading the label here
- * gives a mapping the same text from a part push and a BOM row. A value with
- * no option, or an option with no label, stays as it is.
+ * A list value as its option's label: the metadata API sends the stored value
+ * ("2"), a BOM cell the label ("Released"), and a mapping must see one text.
  */
 function enumLabel(value: unknown, options: unknown): unknown {
   if (typeof value !== "string" || !Array.isArray(options)) return value;
@@ -207,7 +163,6 @@ function enumLabel(value: unknown, options: unknown): unknown {
   return typeof label === "string" && label.trim() !== "" ? label : value;
 }
 
-/** A list's options as labels, the text a BOM cell shows; null when absent. */
 function enumOptions(options: unknown): string[] | null {
   if (!Array.isArray(options)) return null;
   const labels: string[] = [];
@@ -220,15 +175,13 @@ function enumOptions(options: unknown): string[] | null {
 }
 
 /**
- * Onshape's text for a property the object does not have: a BOM row shows
- * "N/A" for a part-only property on an assembly row. It is no value. A value
- * typed as "N/A" reads the same way on a part push, so both paths agree.
+ * "N/A" is Onshape's BOM text for a property the row does not have (a
+ * part-only property on an assembly row). Read as no value on every path.
  */
 export function isNotApplicable(value: unknown): boolean {
   return typeof value === "string" && value.trim() === "N/A";
 }
 
-/** The `properties` array of a metadata payload, normalised. */
 export function parseProperties(payload: unknown): OnshapePropertyValue[] {
   const properties = isRecord(payload) ? payload.properties : null;
   if (!Array.isArray(properties)) return [];
@@ -258,11 +211,7 @@ export function parseProperties(payload: unknown): OnshapePropertyValue[] {
   return out;
 }
 
-/**
- * Per-part properties from an element metadata read at part depth
- * (`depth=2`), or null when the payload does not nest parts — the caller
- * then falls back to per-part metadata reads.
- */
+/** Per-part properties from element metadata at `depth=2`; null if not nested. */
 export function partPropertiesFromElementMetadata(
   payload: unknown
 ): Map<string, OnshapePropertyValue[]> | null {
@@ -279,7 +228,6 @@ export function partPropertiesFromElementMetadata(
   return byPartId.size > 0 ? byPartId : null;
 }
 
-/** A property's value as display text; null when absent/blank. */
 export function propertyDisplayValue(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   if (typeof value === "string") {
@@ -298,11 +246,7 @@ export function propertyDisplayValue(value: unknown): string | null {
   return null;
 }
 
-/**
- * An Onshape value coerced to a Carbon custom field's type. `ok: false`
- * carries the reason for the review ("2026-13-40 is not a date"); an absent
- * Onshape value is `ok: true, value: null` — the field is simply not written.
- */
+/** An absent value is `{ ok: true, value: null }`: not written, no problem. */
 export function coerceOnshapeValue(
   value: unknown,
   dataTypeId: number,
@@ -313,10 +257,6 @@ export function coerceOnshapeValue(
   const text = propertyDisplayValue(value);
   switch (dataTypeId) {
     case CUSTOM_FIELD_DATA_TYPES.boolean: {
-      // The ERP stores a Yes/No custom field the way its checkbox posts it:
-      // the string "on" when ticked, and no key at all when not — tables read
-      // `customFields[id] === "on"` (apps/erp useCustomColumns). A JSON `true`
-      // written here would render unticked everywhere, so emit "on"/null.
       if (typeof value === "boolean") {
         return { ok: true, value: value ? BOOLEAN_TRUE : null };
       }
@@ -329,8 +269,6 @@ export function coerceOnshapeValue(
     }
     case CUSTOM_FIELD_DATA_TYPES.date: {
       if (text === null) return { ok: true, value: null };
-      // Onshape dates arrive ISO; Carbon date fields store YYYY-MM-DD. The
-      // shape is not enough — "2026-13-40" matches it and is not a day.
       const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
       if (!match) return { ok: false, reason: `"${text}" is not a date` };
       const [, year, month, day] = match as unknown as [
@@ -339,7 +277,7 @@ export function coerceOnshapeValue(
         string,
         string
       ];
-      // `parseDate` refuses a day the month does not have.
+      // The regex passes "2026-13-40"; `parseDate` refuses it.
       try {
         return {
           ok: true,
@@ -362,8 +300,7 @@ export function coerceOnshapeValue(
     }
     case CUSTOM_FIELD_DATA_TYPES.list: {
       if (text === null) return { ok: true, value: null };
-      // Membership is not enforced here: apply adds unseen options to the
-      // list (add-only) right before the write.
+      // Not checked against listOptions: the text is written as it is.
       return { ok: true, value: text };
     }
     case CUSTOM_FIELD_DATA_TYPES.text:
@@ -391,13 +328,9 @@ function parseTranslations(value: unknown): ValueTranslation[] | null {
 }
 
 /**
- * The stored property map, tolerating absent/malformed metadata.
- *
- * It also reads the earlier shape: a `carbonFieldId` is a custom field
- * target, and a stored mode of "owned" is Update on every push, which is how
- * every push behaved when that map was saved. Any other mode reads as Set at
- * creation. A list item field saved without a translation gets the default
- * rows.
+ * Also reads a bare `carbonFieldId` as a custom field target and mode "owned"
+ * as "everyPush". A list item field stored without translations gets the
+ * default rows.
  */
 export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
   const raw = isRecord(metadata) ? metadata.propertyMap : null;
@@ -444,7 +377,6 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
   return out;
 }
 
-/** The two descriptions' modes; a missing or unknown value is Set at creation. */
 export function parseDescriptionModes(metadata: unknown): DescriptionModes {
   const raw = isRecord(metadata) ? metadata.descriptionModes : null;
   const modes = isRecord(raw) ? raw : {};
@@ -454,11 +386,7 @@ export function parseDescriptionModes(metadata: unknown): DescriptionModes {
   };
 }
 
-/**
- * The Carbon fields every push replaces, read from the integration's
- * metadata: the descriptions and the mapping targets in "everyPush" mode. The
- * item card names them so a person knows which edits a push overwrites.
- */
+/** The Carbon fields every push overwrites, for the item card. */
 export function everyPushTargets(metadata: unknown): {
   descriptions: Array<keyof DescriptionModes>;
   itemFields: StandardFieldId[];
@@ -481,7 +409,6 @@ export function everyPushTargets(metadata: unknown): {
   };
 }
 
-/** A target as one string, for a Select value or a duplicate check. */
 export function targetKey(target: PropertyMapTarget): string {
   return target.kind === "customField"
     ? `customField:${target.fieldId}`
@@ -489,10 +416,8 @@ export function targetKey(target: PropertyMapTarget): string {
 }
 
 /**
- * What a mapping decision is, for comparing two maps. Looser than
- * `PropertyMapEntry`: `onshapeName` and `valueType` are display, re-read from
- * Onshape on every load, and a change in either is not a decision the user
- * made.
+ * A map entry without `onshapeName` and `valueType`: both are re-read from
+ * Onshape on every load, so a change in either is not the user's decision.
  */
 type PropertyMapDecision = {
   onshapePropertyId: string;
@@ -501,7 +426,6 @@ type PropertyMapDecision = {
   translations?: ValueTranslation[];
 };
 
-/** A mapping's decisions as one comparable string. */
 function decisionKey(entry: PropertyMapDecision): string {
   return JSON.stringify([
     targetKey(entry.target),
@@ -510,12 +434,7 @@ function decisionKey(entry: PropertyMapDecision): string {
   ]);
 }
 
-/**
- * Whether two property maps say the same thing, order ignored. The Fields
- * editor's Save posts the whole map, so it needs to know whether the draft
- * differs from what the company holds. Order is ignored because editing one
- * row moves it to the end of the draft.
- */
+/** Order is ignored: editing a row moves it to the end of the Fields draft. */
 export function propertyMapEqual(
   a: readonly PropertyMapDecision[],
   b: readonly PropertyMapDecision[]
@@ -536,11 +455,6 @@ export function propertyMapEqual(
 }
 
 /**
- * Resolve one object's properties through the map: the custom fields and
- * item fields a push would write, the values that cannot be written (shown,
- * never dropped silently) and the valued properties nothing maps yet. The
- * review shows those as "not mapped" so the map grows from real parts.
- *
  * `matchByName` is for a BOM row: its cells are keyed by column, and a column
  * whose id is not the property id still matches by the property's name.
  */
@@ -581,7 +495,6 @@ export function resolveMappedFields({
     const property =
       propertyById.get(entry.onshapePropertyId) ??
       (entry.onshapeName ? propertyByName.get(entry.onshapeName) : undefined);
-    // The object does not carry the property: there is nothing to write.
     if (!property) continue;
     used.add(property.propertyId);
 
@@ -656,10 +569,8 @@ export function resolveMappedFields({
 }
 
 /**
- * The values a push writes for a row's mapped fields, keyed by field id. On
- * an item the push creates, every non-empty value. On an existing item, the
- * "everyPush" fields only, and their nulls too: `mergeCustomFieldValues`
- * deletes the key, so a property emptied in Onshape empties in Carbon.
+ * A create takes every non-null value. An existing item takes the "everyPush"
+ * fields only, nulls included, so a property emptied in Onshape is cleared.
  */
 export function mappedFieldValues(
   fields: PlanCustomField[],
@@ -678,11 +589,6 @@ export function mappedFieldValues(
   return { values, fieldIds };
 }
 
-/**
- * A mapped value as review text; "—" when nothing will be written. A Yes/No
- * field stores BOOLEAN_TRUE or no key, so the raw "on" never reaches the
- * review text.
- */
 export function customFieldDisplayValue(
   field: Pick<PlanCustomField, "value" | "dataTypeId">
 ): string {
@@ -694,10 +600,7 @@ export function customFieldDisplayValue(
   return String(field.value);
 }
 
-/**
- * Merge mapped values into a row's stored customFields JSON: only the given
- * keys change, everything Carbon owns survives.
- */
+/** Only keys in `allowedFieldIds` change; a null deletes its key. */
 export function mergeCustomFieldValues(
   current: unknown,
   values: Record<string, string | number | boolean | null>,
@@ -706,28 +609,21 @@ export function mergeCustomFieldValues(
   const out: Record<string, unknown> = isRecord(current) ? { ...current } : {};
   for (const [fieldId, value] of Object.entries(values)) {
     if (!allowedFieldIds.has(fieldId)) continue;
-    // A field the caller does not list is untouched, so this only ever clears
-    // values the push is responsible for.
     if (value === null) delete out[fieldId];
     else out[fieldId] = value;
   }
   return out;
 }
 
-/**
- * A custom field Carbon holds no value for. The item forms save a blank field
- * as `""`, so an empty string is as empty as a missing key.
- */
+/** The item forms save a blank custom field as `""`. */
 function isBlankCustomValue(value: unknown): boolean {
   return value === undefined || value === null || value === "";
 }
 
 /**
- * The fields an existing item takes: the "everyPush" ones whose value differs
- * from Carbon's. A clear of a field Carbon doesn't hold is dropped, so the
- * review says "will be cleared" only when something is. A part whose CAD is
- * unchanged still needs a push when this is not empty: a property was mapped,
- * or remapped, after its last push.
+ * The "everyPush" fields whose value differs from Carbon's. A clear of a field
+ * Carbon does not hold is dropped, so the review says "Clears" only when
+ * something is.
  */
 export function customFieldWrites(
   current: unknown,
@@ -743,10 +639,7 @@ export function customFieldWrites(
   });
 }
 
-/**
- * The "create" fields Onshape holds a different value for, on an existing
- * item. The push writes none of them; the review shows each one.
- */
+/** "create" fields Onshape holds another value for: shown, never written. */
 export function customFieldKeptDifferences(
   current: unknown,
   fields: PlanCustomField[]

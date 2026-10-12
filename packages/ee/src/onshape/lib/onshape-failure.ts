@@ -8,32 +8,23 @@ import type { OnshapeApiError } from "./client";
 const logger = getLogger("ee", "onshape", "panel");
 
 /**
- * What a panel route says when a call to Onshape fails.
- *
- * The client keeps axios's own text on a transport failure — "Onshape request
- * failed: timeout of 60000ms exceeded" — which is right for a log and wrong for
- * a person. This maps each cause to a sentence that says what happened and
- * what to do. The original text is logged here.
- *
- * Status codes are chosen for the panel, not echoed from Onshape. Onshape's own
- * 401/403 must never reach the panel as a 401: the panel reads a 401 as "your
- * Carbon session is gone" and signs the user out, when the thing actually
- * rejected is Carbon's stored Onshape grant.
+ * The status and user-facing message a panel route returns for a failed Onshape
+ * call. Onshape's 401/403 maps to 422: the panel reads a 401 as an expired
+ * Carbon session and signs the user out.
  */
 export type OnshapeFailure = {
   status: 404 | 422 | 429 | 502 | 504;
   body: { error: string; retryAfterSeconds?: number };
 };
 
-/** A BOM read gets its own timeout wording: on-demand generation is the cause. */
+/** A BOM read gets its own timeout wording: Onshape builds BOMs on demand. */
 export type OnshapeRead = "bom" | "other";
 
 export function onshapeFailure(
   error: unknown,
   read: OnshapeRead = "other"
 ): OnshapeFailure {
-  // Read structurally, not with `instanceof`: importing the client class
-  // loads the environment, which this pure mapping has no reason to need.
+  // Structural read: `instanceof` would import the client, which loads the env.
   const apiError = error as Partial<OnshapeApiError> | null;
   const status =
     typeof apiError?.status === "number" ? apiError.status : undefined;
@@ -41,8 +32,7 @@ export function onshapeFailure(
   logger.warn("Onshape call failed", { read, status, message });
 
   if (status === undefined) {
-    // No response at all. Axios reports its own timeout as "timeout of Nms
-    // exceeded"; anything else is the network, DNS or a refused connection.
+    // No response: axios says "timeout of Nms exceeded"; else the network.
     if (/timeout/i.test(message)) {
       return {
         status: 504,
@@ -97,8 +87,8 @@ export function onshapeFailure(
     };
   }
 
-  // Onshape answers 402 to every call once the yearly API limit of the
-  // account that owns the OAuth app is used up. A retry cannot help.
+  // Onshape answers 402 once the OAuth app owner's yearly API limit is used up;
+  // a retry cannot help.
   if (status === 402) {
     return {
       status: 502,

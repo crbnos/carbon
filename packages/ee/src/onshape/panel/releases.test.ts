@@ -136,7 +136,6 @@ describe("resolveReleaseStates", () => {
     expect(landed[0]?.state).toBe("pushed");
     const drawing = landed[0]?.items.find((i) => i.partNumber === "DRW-001");
     expect(drawing?.state).toBe("in-carbon");
-    // A drawing has no item of its own.
     expect(drawing?.itemId).toBeNull();
   });
 

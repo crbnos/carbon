@@ -3,17 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * The Carbon item fields an Onshape property can set: the target list.
- *
- * This is the one place an item field becomes mappable. Each field declares
- * its kind, its valid values, the Onshape value types it accepts and the
- * writer that sets it on an existing item. The ERP holds one function per
- * writer key (`STANDARD_FIELD_WRITERS`, apps/erp onshape-push.server.ts), and
- * each is the code the item page itself uses, so its cascades run. There is
- * no generic "property X into column Y" write.
- *
- * A list field carries a value translation, Onshape value → Carbon value. A
- * value no row matches is a problem the review shows; the push skips it.
+ * The item fields an Onshape property can set. Each `writer` key has one
+ * function in the ERP's `STANDARD_FIELD_WRITERS` (onshape-push.server.ts),
+ * the item page's own write, so its cascades run.
  */
 
 import {
@@ -36,29 +28,21 @@ export const STANDARD_FIELD_IDS = [
 export type StandardFieldId = (typeof STANDARD_FIELD_IDS)[number];
 
 /**
- * How an existing item's field is written:
  * - `itemColumn`: the column alone, as the Properties panel writes it.
- * - `itemMethod`: replenishment, default method and sourcing, with the
- *   cascade onto Draft make methods.
- * - `itemTracking`: tracking type, with the cascade onto Draft and Planned
- *   jobs and Draft receipt and shipment lines.
+ * - `itemMethod`: replenishment, method, sourcing; cascades to Draft methods.
+ * - `itemTracking`: tracking type; cascades to open jobs, receipts, shipments.
  */
 export type StandardFieldWriter = "itemColumn" | "itemMethod" | "itemTracking";
 
 export type StandardField = {
   id: StandardFieldId;
-  /** The label the item page uses. */
   label: string;
   kind: "text" | "list";
-  /**
-   * The Carbon values of a fixed list. Null for text, and for the unit, whose
-   * values are the company's own units, read at plan time.
-   */
+  /** Null for text, and for the unit: the company's units, read at plan time. */
   values: readonly string[] | null;
-  /** The Onshape value types the field accepts. */
   valueTypes: readonly string[];
   writer: StandardFieldWriter;
-  /** A write also changes Draft BOMs or open jobs (help text on the Fields page). */
+  /** A write also changes Draft BOMs or open jobs; the Fields page says so. */
   cascades: boolean;
 };
 
@@ -133,14 +117,12 @@ export function isStandardFieldId(value: unknown): value is StandardFieldId {
   return typeof value === "string" && FIELD_BY_ID.has(value);
 }
 
-/** One row of a translation: an Onshape value and the Carbon value it sets. */
 export type ValueTranslation = {
   onshape: string;
-  /** Null is "No value": the next rule in the precedence order decides. */
+  /** Null is "No value": the next precedence rule decides. */
   carbon: string | null;
 };
 
-/** The Carbon values a list field accepts: its fixed list or the unit codes. */
 export function standardFieldValues(
   field: StandardField,
   units: readonly PlanUnitOfMeasure[]
@@ -149,11 +131,7 @@ export function standardFieldValues(
   return field.values ? [...field.values] : units.map((unit) => unit.code);
 }
 
-/**
- * The Onshape values a translation can list as fixed rows: Yes and No for a
- * BOOL, an ENUM's options when Onshape listed them. Null when the values are
- * free text or unknown, so the rows are typed by hand.
- */
+/** The fixed rows a translation can list; null when rows are typed by hand. */
 export function onshapeValueOptions(
   valueType: string,
   options: readonly string[] | undefined
@@ -166,13 +144,9 @@ export function onshapeValueOptions(
 }
 
 /**
- * The rows a new mapping starts with. With the Onshape list's options known,
- * each option that names a Carbon value gets that value, and the rest get no
- * row, so the review flags them until the user picks one. Without them, a
- * fixed list gets one row per Carbon value with its own text on the Onshape
- * side, so an Onshape list with the same options needs no setup. A BOOL
- * property gets Yes and No, both "No value". The unit gets none: a value
- * matches a unit's code or name.
+ * A new mapping's rows. Known Onshape options get a row only when they name a
+ * Carbon value, so the review flags the rest. Unknown options: one identity
+ * row per Carbon value. The unit gets none: values match a unit's code or name.
  */
 export function defaultTranslations(
   field: StandardField,
@@ -198,10 +172,6 @@ export function defaultTranslations(
   return values.map((value) => ({ onshape: value, carbon: value }));
 }
 
-/**
- * The Onshape options a push could not translate: no row matches them and,
- * for the unit, no unit's code or name either. The review flags each one.
- */
 export function untranslatedOptions(
   field: StandardField,
   options: readonly string[],
@@ -221,10 +191,8 @@ export function untranslatedOptions(
 }
 
 /**
- * The typed rows of a values window that repeat an Onshape value it already
- * lists: one of the list's options or an earlier row, ignoring case and the
- * spaces at the two ends. The save refuses two rows for one value, so the
- * window stops them first. An empty row is not a repeat; Apply drops it.
+ * Typed rows that repeat a fixed option or an earlier row, so the values
+ * window stops what the save would refuse. An empty row is not a repeat.
  */
 export function repeatedTranslationRows(
   rows: readonly { onshape: string; fixed: boolean }[]
@@ -240,10 +208,7 @@ export function repeatedTranslationRows(
   return repeated;
 }
 
-/**
- * The company unit an Onshape value matches with no translation row, by code
- * first and then by name, as the push matches it. Null when none does.
- */
+/** The unit a value matches with no translation row: by code, then by name. */
 export function matchingUnit(
   text: string,
   units: readonly PlanUnitOfMeasure[]
@@ -258,7 +223,6 @@ function sameText(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
-/** A BOOL value as the "Yes" or "No" a translation row names. */
 function booleanText(text: string): string {
   if (/^(true|yes|on)$/i.test(text)) return "Yes";
   if (/^(false|no|off)$/i.test(text)) return "No";
@@ -270,12 +234,8 @@ export type TranslatedValue =
   | { ok: false; reason: string };
 
 /**
- * An Onshape value as the Carbon value of an item field.
- *
- * An empty value gives no value; it is never a problem. A list value matches
- * a translation row, ignoring case and the spaces at the two ends; a unit
- * value then matches a unit's code or name. A value nothing matches is a
- * problem.
+ * Matching ignores case and surrounding spaces. An empty value is no value,
+ * never a problem; a list value nothing matches is a problem.
  */
 export function translateValue({
   field,
@@ -285,7 +245,6 @@ export function translateValue({
   units
 }: {
   field: StandardField;
-  /** The Onshape value as display text; null when empty. */
   text: string | null;
   valueType: string;
   translations: readonly ValueTranslation[];
@@ -308,10 +267,6 @@ export function translateValue({
   return { ok: false, reason: `"${value}" has no Carbon value` };
 }
 
-/**
- * Why a translation cannot be saved: a Carbon value outside the field's list,
- * or two rows for one Onshape value. Empty when it is valid.
- */
 export function translationErrors(
   field: StandardField,
   translations: readonly ValueTranslation[],

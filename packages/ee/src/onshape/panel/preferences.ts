@@ -2,15 +2,9 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Company preferences for Onshape pushes.
- *
- * These live on the integration's settings metadata alongside `credentials` and
- * `propertyMap`. Everything here is pure and total: a stored value that no
- * longer parses (a unit that was deleted, an enum that was renamed, a
- * hand-edited row) falls back to the documented default rather than failing a
- * push, because a plan is built from these and a plan must always build.
- */
+// The push defaults, stored as `default*` keys on the integration metadata.
+// Parsing is total: a value that does not parse falls back to the default, so
+// a plan always builds.
 
 import type {
   ItemMethodType,
@@ -25,11 +19,7 @@ import {
 } from "./plan";
 
 export type OnshapePushDefaults = {
-  /**
-   * Unit code for created items. Null means "decide from the company's list"
-   * — the units themselves are per-company, so this is stored as a code and
-   * resolved against the live list at plan time.
-   */
+  /** Null: resolved from the company's units at plan time. */
   unitOfMeasureCode: string | null;
   /** Replenishment when no mapping and no BOM rule decides it. */
   replenishmentSystem: ItemReplenishmentSystem;
@@ -102,12 +92,8 @@ export function parsePushDefaults(metadata: unknown): OnshapePushDefaults {
 }
 
 /**
- * Make a set of defaults internally legal.
- *
- * The ERP refuses a replenishment/method pair its own Part form would, and the
- * two are configured independently — so a pair that stopped being legal (the
- * replenishment changed, the method did not) resolves to the first method that
- * replenishment allows rather than failing a plan.
+ * Replenishment and method are saved independently, so a pair the Part form
+ * would refuse resolves to a method the replenishment allows.
  */
 export function reconcilePushDefaults(
   defaults: OnshapePushDefaults
@@ -127,7 +113,6 @@ export function reconcilePushDefaults(
   };
 }
 
-/** A method the replenishment system allows, preferring the configured one. */
 function reconcileMethodType(
   replenishment: ItemReplenishmentSystem,
   configured: ItemMethodType,
@@ -136,7 +121,6 @@ function reconcileMethodType(
   const allowed = VALID_METHOD_TYPES_BY_REPLENISHMENT[replenishment];
   if (allowed.includes(configured)) return configured;
   if (allowed.includes(fallback)) return fallback;
-  // Every replenishment system has at least one allowed method, but the type
-  // of a readonly index is still `| undefined`.
+  // Unreachable: the readonly index type only adds `undefined`.
   return allowed[0] ?? DEFAULT_PUSH_DEFAULTS.methodTypeForMake;
 }

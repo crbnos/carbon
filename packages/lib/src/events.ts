@@ -657,9 +657,7 @@ export type Events = {
     };
   };
 
-  // Onshape released-asset backfill / reconcile
-  // Panel push: export one pushed element's assets onto an item the push
-  // route already created/linked.
+  // Panel push: export one element's assets onto the item the push linked.
   "carbon/onshape-panel-sync": {
     data: {
       companyId: string;
@@ -674,14 +672,12 @@ export type Events = {
       /** Non-default configuration to export; absent = default. */
       configuration?: string;
       assetBaseName?: string;
-      /**
-       * Workspace pushes only: the part's reviewed microversion, so a changed
-       * part gets a new model rather than the workspace's earlier one.
-       */
+      /** Workspace pushes: the part microversion the review saw. */
       microversionId?: string;
     };
   };
 
+  // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {
       companyId: string;

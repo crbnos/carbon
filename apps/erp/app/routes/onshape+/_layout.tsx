@@ -6,30 +6,20 @@ import { TooltipProvider } from "@carbon/react";
 import { Outlet } from "react-router";
 import type { Handle } from "~/utils/handle";
 
-/**
- * Onshape passes its theme as `theme`. The panel matches it, and is light when
- * the parameter is missing, so it never follows the Carbon user's own mode.
- */
+/** Onshape's `theme` parameter sets the mode; light when it is missing. */
 export const handle: Handle = {
   hostMode: (searchParams) =>
     searchParams.get("theme")?.toLowerCase() === "dark" ? "dark" : "light"
 };
 
-/**
- * Bare shell for pages that render inside another product (the Onshape right
- * panel): no app chrome, no navigation, the host supplies both.
- */
+/** Bare shell for pages Onshape frames: no app chrome or navigation. */
 export default function OnshapeLayout() {
   return (
     <TooltipProvider>
       {/*
-       * A real scroll container, not `min-h-dvh`. The app shell pins
-       * `html`/`body` to `h-full` with `overflow-x: hidden`, which makes the
-       * ROOT element a fixed-height scroller. Radix's Select does not survive
-       * that combination: opening one snapped the document to scrollTop 0 and
-       * closed the popup before it could be used. Owning the scroll here keeps
-       * the document itself unscrolled, which fixes it and is what lets the
-       * panel pin a header and an action bar.
+       * Owns the scroll; never `min-h-dvh`. The app shell makes the root element
+       * a fixed-height scroller, and opening a Radix Select there snaps it to
+       * the top and closes the popup.
        */}
       <div className="isolate flex h-dvh flex-col overflow-hidden bg-card text-foreground antialiased">
         <Outlet />

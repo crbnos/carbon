@@ -24,28 +24,14 @@ import {
 import { selectInBatches } from "./batched-filter";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
-/**
- * Carbon reads the panel's plan and apply routes share. Every function here
- * takes the ids it needs in one call and returns plain maps the pure builders
- * in `panel/plan.ts` consume.
- *
- * "One call" is bounded by the gateway: an `.in()` list rides in the URL and
- * the request line dies past 4 KB. Every list sized by the BOM therefore goes
- * through `selectInBatches`, which splits on encoded bytes — a count would be
- * wrong, since these ids range from 22 to 58 characters.
- */
+// Carbon reads shared by the panel's plan and apply routes.
 
 type Client = SupabaseClient<Database>;
 
 /**
- * The company's units and its configured push defaults — everything the pure
- * planners need that is neither Onshape's nor the user's. Both reads are
- * fail-soft: no units yields the "EA" fallback, and unreadable settings yield
- * the documented defaults, because a plan must always build.
- *
- * Takes the service role. `companyIntegration` is visible only to users with
- * settings view, so through a user's client the row reads as absent and every
- * push silently takes the built-in defaults. Both reads are scoped by company.
+ * Fail-soft so a plan always builds. Takes the service role: the
+ * `companyIntegration` SELECT needs settings view, so through a user's client
+ * the row reads as absent and every push takes the built-in defaults.
  */
 export async function loadPlanOptions(
   client: Client,
@@ -73,11 +59,7 @@ export async function loadPlanOptions(
   };
 }
 
-/**
- * Throws on a failed read: an empty map reads as "no method" for every item,
- * so a plan would call every existing method missing and an apply would skip
- * or flatten every BOM. Callers answer 500.
- */
+/** Throws on a failed read: an empty map reads as "no method" everywhere. */
 export async function loadActiveMakeMethods(
   client: Client,
   companyId: string,
@@ -105,10 +87,8 @@ export async function loadActiveMakeMethods(
 }
 
 /**
- * Per part number, the newest revision a release push made: an item with a
- * `release:` link. A workspace push leaves such a part alone, because its
- * changes now come through a release. Throws on a failed read: an empty map
- * would let a workspace push write into a released part.
+ * Per part number, the newest revision with a `release:` link. Throws on a
+ * failed read, so a workspace push never writes into a released part.
  */
 export async function loadReleasedRevisions(
   client: Client,
@@ -137,10 +117,8 @@ export async function loadReleasedRevisions(
 }
 
 /**
- * For each item whose method is Active, the Draft a push would write into
- * rather than create (`pickReusableDraft`). Items with none are absent: the
- * push creates a new Draft from the Active method. Throws on a failed read —
- * "no reusable Draft" would make every push mint another version.
+ * Per item with an Active method, the Draft a push would reuse. Throws on a
+ * failed read, which would otherwise make every push mint another version.
  */
 export async function loadReusableDrafts(
   client: Client,
@@ -210,12 +188,7 @@ export async function loadReusableDrafts(
   return result;
 }
 
-/**
- * An Onshape-owned line as it stands in Carbon right now. The last three are
- * the only columns a push is authoritative for, and they are carried so apply
- * can tell an unchanged line from a changed one and skip the write entirely —
- * an untouched re-push should cost no UPDATEs and leave no audit trail.
- */
+/** Carries the push-owned columns so apply can skip an unchanged line. */
 export type MappedLineRow = {
   mappingId: string;
   lineId: string;
@@ -225,16 +198,12 @@ export type MappedLineRow = {
   materialMakeMethodId: string | null;
 };
 
-/**
- * A line nothing pushed, as it stands in Carbon. A push takes one over when
- * Onshape's BOM lists the same part number: it is updated in place and gains
- * an ownership row, rather than getting an Onshape copy beside it.
- */
+/** A push takes a manual line over when Onshape lists the same part number. */
 export type ManualLineRow = {
   lineId: string;
   itemId: string;
   readableId: string;
-  /** The line's own item type: only a line of the same type is taken over. */
+  /** Only a line of the same item type is taken over. */
   itemType: string | null;
   quantity: number | null;
   order: number | null;
@@ -242,28 +211,21 @@ export type ManualLineRow = {
 };
 
 export type MethodLineOwnership = {
-  /** Lines a previous Onshape push wrote, per method id. */
+  /** Lines a previous push wrote, per method id. */
   mapped: Map<string, PlanLine[]>;
-  /** Lines nothing pushed (manual), per method id. */
   manual: Map<string, PlanLine[]>;
   /**
-   * The Onshape-owned rows apply reconciles against the plan, per method id.
-   * `itemId` is what pairs an existing line with the write for the same
-   * component, so the line can be UPDATED in place — a delete-and-reinsert
-   * drops every Carbon-owned column on it (the operation link, scrap, tags,
-   * kit, the line's own custom fields).
+   * `itemId` pairs a line with its write so it is updated in place; a reinsert
+   * would drop its operation, scrap and custom fields.
    */
   mappedRows: Map<string, MappedLineRow[]>;
-  /** The manual rows apply can take over, per method id, in line order. */
+  /** In line order. */
   manualRows: Map<string, ManualLineRow[]>;
 };
 
 /**
- * Which lines on each method are Onshape's and which are the user's. Line
- * provenance lives only in `externalIntegrationMapping` (entityType
- * `methodMaterial`, `metadata.makeMethodId`), so both sets come from joining
- * the method's lines to those rows — the mapping table is read with the
- * service role, as the pushes do.
+ * Line provenance lives only in `externalIntegrationMapping` (`methodMaterial`
+ * rows keyed by `metadata.makeMethodId`), read with the service role.
  */
 export async function loadMethodLineOwnership(
   client: Client,
@@ -301,8 +263,8 @@ export async function loadMethodLineOwnership(
     )
   ]);
 
-  // A read that failed is not "no Onshape lines": treating it so would make
-  // the apply rewrite a method without deleting the lines it already holds.
+  // Read as empty, a failure would make apply rewrite a method without deleting
+  // its lines.
   if (lines.error || mappings.error) {
     throw new Error(
       `Failed to read the existing BOM lines: ${
@@ -324,8 +286,6 @@ export async function loadMethodLineOwnership(
       .eq("companyId", companyId)
       .in("id", batch)
   );
-  // Without it every line's part number falls back to an item uuid, which the
-  // review shows as the component of each replaced and kept line.
   if (items.error) {
     throw new Error(
       `Failed to read the existing BOM lines: ${items.error.message}`
@@ -344,7 +304,7 @@ export async function loadMethodLineOwnership(
     }
   };
 
-  // Line order, so plan and apply pair a part number's lines the same way.
+  // Batches arrive in batch order; plan and apply must pair lines the same way.
   const ordered = [...(lines.data ?? [])].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
@@ -399,8 +359,7 @@ export async function loadPartCustomFieldDefinitions(
     .eq("companyId", companyId)
     .eq("table", "part")
     .order("sortOrder");
-  // A failed read is not "no fields": resolving a map against [] would call
-  // every mapped field deleted. Callers answer 500.
+  // Read as empty, a failure would mark every mapped custom field deleted.
   if (rows.error) {
     throw new Error(
       `Failed to read custom field definitions: ${rows.error.message}`
@@ -417,15 +376,8 @@ export async function loadPartCustomFieldDefinitions(
 }
 
 /**
- * What a plan builder needs to resolve the company's property map: the map,
- * the description modes, the part custom field definitions and the custom
- * field values Carbon holds for the given part numbers. Reads only what the
- * map needs: no custom field target, no custom field reads.
- *
- * Throws on a failed read, like `loadPartCustomFieldDefinitions`: planning
- * against an unread map would skip every "everyPush" value. Callers answer 500.
- * Takes the service role for the reason `loadPlanOptions` gives: without
- * settings view the map reads as empty, not as an error.
+ * Reads custom field definitions and held values only when the map targets a
+ * custom field. Takes the service role for the reason `loadPlanOptions` gives.
  */
 export async function loadPlanMapping(
   client: Client,

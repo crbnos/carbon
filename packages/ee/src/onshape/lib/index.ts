@@ -2,7 +2,6 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-// Pure panel helpers the push routes need that the root barrel does not carry.
 export type { DraftCandidate } from "../panel/method-version";
 export {
   DRAFT_MARKER_ENTITY_TYPE,

@@ -48,9 +48,7 @@ const backfillAction = {
   enabledWhenSetting: "assetSyncEnabled"
 };
 
-// Re-runs the connection's consent screen when its grant has died (the card
-// reads Unhealthy): a revoked grant or an expired refresh token cannot be
-// refreshed, only re-authorized. Settings and links are kept.
+// A revoked grant or dead refresh token can only be re-authorized.
 export function onshapeReconnectAction(installEndpoint: string) {
   return {
     id: "reconnect",
@@ -80,27 +78,20 @@ export const Onshape = defineIntegration({
     backfillAction
   ],
   onClientInstall: async () => {
-    // Opened here, inside the click, so the browser still holds user
-    // activation; the fetch below can take as long as it needs.
     const popup = beginOAuthPopup();
     let error = "unexpected";
     try {
       const response = await fetch("/api/integrations/onshape/install");
       const body = (await response.json()) as { url?: string; error?: string };
       if (body?.url) {
-        // The callback (api/integrations/onshape/oauth) posts an
-        // OAuthPopupResult back to this window and closes the popup;
-        // IntegrationCard listens for it.
         popup.navigate(body.url);
         return;
       }
       error = body?.error ?? error;
     } catch {
-      // Fall through to the error toast below.
+      // Falls through to the error redirect.
     }
     popup.close();
-    // The integrations page turns `?integration=&error=` into a toast — the
-    // same place a failed callback lands (see integration-errors.ts).
     window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error}`;
   }
 });

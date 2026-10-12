@@ -1,15 +1,6 @@
--- NIST 800-171 3.13.16: `onshape-v2` joins @carbon/ee SECRET_KEYS, so its OAuth
--- tokens move out of companyIntegration.metadata INTO Supabase Vault.
---
--- The integration was added after 20260817132607 ran, and was never in that
--- migration's map, so every existing v2 row still carries plaintext tokens.
--- This is the same move-and-strip, for one integration id: vault the present,
--- non-empty values, then remove the paths from the column in the same pass so
--- the plaintext cannot outlive the vault write. Idempotent — a row already
--- stripped has nothing to vault and is skipped.
---
--- The jsonschema needs no change: 20261011050300 already left the token paths
--- out of it.
+-- NIST 800-171 3.13.16: moves `onshape-v2` OAuth tokens from
+-- companyIntegration.metadata into Supabase Vault and strips them in the same
+-- pass. Idempotent: a stripped row has nothing to vault.
 DO $$
 DECLARE
   r RECORD;

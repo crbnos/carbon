@@ -59,10 +59,7 @@ const querySchema = z.object({
   elementId: z.string().min(1)
 });
 
-/**
- * Fields editor data: properties, the property map, the description modes,
- * the push defaults, the custom field definitions and the company's units.
- */
+/** Fields page data for the element the panel is open on. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -105,9 +102,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     wvmId: wvId
   };
 
-  // A part studio's properties live on its parts, so take the union across
-  // them. An assembly has its own, plus the ones scoped to parts, which only
-  // its parts carry.
+  // A part studio's properties live on its parts: take the union across them.
   let properties: OnshapePropertyValue[];
   try {
     const elements = await onshape.client.getElementsIn(document);
@@ -142,8 +137,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
-  // loadPartCustomFieldDefinitions throws on a failed read; an empty list
-  // would read as every mapped field deleted.
   const reads = await Promise.all([
     client
       .from("companyIntegration")
@@ -230,11 +223,8 @@ const payloadSchema = z.object({
   })
 });
 
-/**
- * The metadata keys the push defaults are stored under, read by
- * `parsePushDefaults`. The unit has no key when it is left to the company's
- * list.
- */
+// The metadata keys `parsePushDefaults` reads. No unit key when the unit is
+// left to the company's list.
 function pushDefaultsMetadata(defaults: OnshapePushDefaults) {
   return {
     defaultReplenishmentSystem: defaults.replenishmentSystem,
@@ -256,10 +246,7 @@ function orList(values: readonly string[]): string {
     : (values[0] ?? "");
 }
 
-/**
- * Replace the property map, the description modes and the push defaults; the
- * panel always posts all of them.
- */
+/** Replace the property map, the description modes and the push defaults. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requireOnshapePanelPermissions(request, {
     update: "settings"
@@ -331,8 +318,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Item fields: the value type the field takes, and a translation whose
-  // every Carbon value is one the field allows.
   const itemEntries = entries.filter((entry) => entry.target.kind === "item");
   let units: Awaited<ReturnType<typeof loadPlanOptions>>["unitsOfMeasure"] = [];
   if (itemEntries.length > 0 || pushDefaults.unitOfMeasureCode) {
@@ -418,8 +403,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // A translation is kept for a list item field only; text fields take the
-  // value as it is.
+  // Translations are kept for list item fields only.
   const mapEntries: PropertyMapEntry[] = entries.map((entry) => {
     const field =
       entry.target.kind === "item" ? standardField(entry.target.field) : null;
@@ -440,9 +424,8 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   });
 
-  // jsonb_set and the merge patch only the keys this page owns: the map, the
-  // modes and the push defaults. Other writers own the sibling keys. The
-  // column is json, hence the casts.
+  // Writes only this page's keys (map, modes, push defaults); other writers own
+  // the sibling keys. The column is json, hence the casts.
   const db = getDatabaseClient();
   let updatedRows: bigint;
   try {

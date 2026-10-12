@@ -8,9 +8,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { acquireLease, releaseLease, renewLease, withLease } from "./lease";
 import { withResilience } from "./resilient";
 
-// The lease runs its real scripts against ioredis-mock, wrapped in the same
-// fail-soft proxy the app uses. `down` swaps in a client whose every command
-// rejects, as an unreachable Redis does.
+// Real scripts against ioredis-mock behind the app's fail-soft proxy.
+// `unreachable()` is a client whose every command rejects.
 const current = vi.hoisted(() => ({ client: null as unknown as Redis }));
 
 vi.mock("./client", () => ({
@@ -24,8 +23,7 @@ function unreachable(): Redis {
   return { on: () => undefined, eval: reject } as unknown as Redis;
 }
 
-// Real clock: a renewal every sixth of the lease leaves room for a loaded CI
-// runner, and expiry waits sit well past the lease.
+// Real clock: renewing every sixth of the lease tolerates a loaded CI runner.
 const KEY = "lease:test";
 const LEASE_MS = 300;
 const RENEW_MS = 50;

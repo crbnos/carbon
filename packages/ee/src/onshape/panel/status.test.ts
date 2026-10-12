@@ -223,8 +223,6 @@ describe("buildAssemblyLineStatuses", () => {
 
 describe("externalIdForBomLine", () => {
   it("keys a sub-assembly row the way that assembly's own push keys it", () => {
-    // No partId: the row is a sub-assembly, so one mapping serves both the
-    // parent's BOM line and the sub-assembly's own panel.
     expect(
       externalIdForBomLine({ documentId: "d1", elementId: "sub-el" })
     ).toBe(externalIdForAssembly("d1", "sub-el"));

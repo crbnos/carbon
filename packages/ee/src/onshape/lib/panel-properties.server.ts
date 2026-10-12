@@ -15,10 +15,9 @@ import type { OnshapeDocument, OnshapeWVMType } from "./document.type";
 const logger = getLogger("ee", "onshape", "part-properties");
 
 /**
- * Per-part property values for one element, quota-frugally: one metadata read
- * at part depth (`depth=2` nests `parts.items[]`), plus one read per requested
- * part that payload does not carry. Onshape's depth semantics are loosely
- * documented, so the shape is probed at runtime rather than assumed.
+ * One element metadata read at `depth=2`, plus one read per requested part that
+ * payload lacks. Onshape's depth semantics are loosely documented, so the
+ * nested shape is probed rather than assumed.
  */
 export async function readPartProperties(
   client: OnshapeClient,
@@ -36,8 +35,6 @@ export async function readPartProperties(
       )
     ) ?? new Map<string, OnshapePropertyValue[]>();
 
-  // The nested payload can carry only some of the requested parts; taking it
-  // wholesale would drop the rest's mapped fields from the plan.
   for (const partId of [...new Set(partIds)]) {
     if (byPartId.has(partId)) continue;
     try {
@@ -53,9 +50,8 @@ export async function readPartProperties(
         )
       );
     } catch (error) {
-      // A part Onshape no longer has simply has no mapped values. Anything
-      // else — a 401, a rate limit, an outage — fails the plan: reading it as
-      // "no values" would push stale mapped fields as if they were current.
+      // Only a 404 means "no values"; any other failure fails the plan rather
+      // than push stale mapped fields as current.
       if (error instanceof OnshapeApiError && error.status === 404) {
         logger.warn("Onshape part has no metadata; no mapped values", {
           documentId: document.documentId,
@@ -77,13 +73,9 @@ export async function readPartProperties(
 }
 
 /**
- * An assembly's properties for the Fields page: its own, then those of one of
- * its own parts. A property scoped to parts never shows on the assembly
- * element, so without the part the page could not offer it. The part comes
- * from the assembly definition, which is far cheaper than the BOM, and is
- * read where it lives: at its version when linked from another document,
- * where the assembly is read when it is in the same document. A failed
- * definition or part read leaves the assembly's own list.
+ * The assembly's own properties plus one of its parts', since part-scoped
+ * properties never show on the assembly element. The part comes from the
+ * assembly definition (cheaper than the BOM); a failed read keeps the own list.
  */
 export async function readAssemblyProperties(
   client: OnshapeClient,

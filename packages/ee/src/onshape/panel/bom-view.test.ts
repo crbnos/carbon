@@ -19,10 +19,7 @@ function line(
   return { index, partNumber, quantity };
 }
 
-/**
- * One sub-assembly used twice, with a bracket shared between it and the top
- * level — the shape that separates a correct roll-up from a wrong one.
- */
+// A sub-assembly, and a bracket listed both inside it and at the top level.
 const lines: BomViewLine[] = [
   line("1", "PLATE-1", 2),
   line("2", "SUB-1", 3),

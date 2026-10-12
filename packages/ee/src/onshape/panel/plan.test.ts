@@ -159,7 +159,6 @@ describe("mergeItemEdits", () => {
   });
 
   it("holds the merged pair to the replenishment/method interlock", () => {
-    // Make + Purchase to Order is refused by the Part form; so here.
     const merged = mergeItemEdits(
       proposed,
       { defaultMethodType: "Purchase to Order" },
@@ -208,7 +207,6 @@ describe("reconcileMethodForReplenishment", () => {
     expect(reconcileMethodForReplenishment("Make", "Make to Order")).toBe(
       "Make to Order"
     );
-    // "Make to Order" is not allowed for Buy, so it falls to the first allowed.
     expect(reconcileMethodForReplenishment("Buy", "Make to Order")).toBe(
       "Pull from Inventory"
     );
@@ -231,8 +229,6 @@ describe("currentItemFields", () => {
   });
 
   it("falls back for missing values and reconciles an illegal pair", () => {
-    // A legacy Buy item carrying a Make-only method resolves to a legal pair
-    // rather than seeding the editor with something the interlock refuses.
     expect(
       currentItemFields({
         replenishmentSystem: "Buy",
@@ -359,8 +355,7 @@ describe("buildPartPlan", () => {
     ]);
     expect(rows[0]?.proposed?.readableId).toBe("TOP-001");
     expect(rows[1]?.itemId).toBe("item-1");
-    // Descriptions are Set at creation unless the company says otherwise:
-    // the push keeps Carbon's text and shows the difference.
+    // Descriptions default to Set at creation: kept, shown as a difference.
     expect(rows[1]?.changes).toEqual([]);
     expect(rows[1]?.keptDifferences).toEqual([
       {
@@ -539,7 +534,6 @@ describe("buildAssemblyPlan", () => {
       const plan = build("all");
       expect(plan.depth).toBe("all");
       expect(plan.deeper).toBeUndefined();
-      // Root + the sub-assembly: two methods.
       expect(plan.methods.map((m) => m.parentPartNumber)).toEqual([
         "WB-100",
         "ASM-008"
@@ -557,7 +551,7 @@ describe("buildAssemblyPlan", () => {
       expect(plan.methods).toHaveLength(1);
       const [rootMethod] = plan.methods;
       expect(rootMethod?.parentPartNumber).toBe("WB-100");
-      // The root's own BOM is unchanged — the sub-assembly is still a line.
+      // The sub-assembly is still a line of the root.
       expect(rootMethod?.writes.map((w) => w.partNumber)).toEqual([
         "ASM-008",
         "TOP-001"
@@ -569,9 +563,6 @@ describe("buildAssemblyPlan", () => {
     });
 
     it("still classifies an unexploded sub-assembly as an assembly", () => {
-      // The trap: with its children out of scope, ASM-008 looks like a leaf.
-      // Treating it as bought would create it as a Buy part and break the
-      // link to its own make method.
       const item = build("top").items.find((i) => i.partNumber === "ASM-008");
       expect(item?.isAssembly).toBe(true);
       expect(item?.proposed?.replenishmentSystem).toBe("Make");
@@ -580,8 +571,7 @@ describe("buildAssemblyPlan", () => {
     it("reports what a top-level push leaves out", () => {
       const plan = build("top");
       expect(plan.deeper?.subAssemblies).toEqual(["ASM-008"]);
-      // LEG-003 and HDW-010 sit below the top level; the unnamed row has no
-      // part number and is not counted.
+      // LEG-003 and HDW-010; the unnamed row has no part number.
       expect(plan.deeper?.partCount).toBe(2);
     });
   });
@@ -680,7 +670,6 @@ describe("buildAssemblyPlan", () => {
   });
 
   it("reuses the Part when a Tool shares its number", () => {
-    // Item numbers are unique per type; the Tool must not shadow the Part.
     const plan = buildAssemblyPlan({
       documentId: "d",
       wv: "w",
@@ -747,7 +736,6 @@ describe("buildAssemblyPlan", () => {
       ["WB-100", "active"],
       ["ASM-008", "missing"]
     ]);
-    // A row that has children is made.
     expect(plan.root.proposed).toBeNull();
   });
 
@@ -807,7 +795,7 @@ describe("buildAssemblyPlan", () => {
       ).toEqual({
         "LEG-003": undefined,
         "HDW-010": true,
-        // No itemSource: nothing to link through, so it can only conflict.
+        // No itemSource, so nothing to link through.
         "PAD-005": true,
         "TOP-001": undefined
       });
@@ -818,10 +806,8 @@ describe("buildAssemblyPlan", () => {
     });
 
     it("keeps a part linked when a release added a higher revision the mapping does not point at", () => {
-      // A release minted Rev B for the root and for LEG-003, made B the
-      // default, and left the part-studio mappings on the Rev A items. The
-      // plan resolves each part number to the latest revision (B), but the
-      // link on Rev A is still a link to that same part — not a conflict.
+      // A release made Rev B the default and left the mappings on the Rev A
+      // items; a link to Rev A is still a link to the part.
       const plan = buildAssemblyPlan({
         documentId: "d",
         wv: "w",
@@ -866,7 +852,7 @@ describe("buildAssemblyPlan", () => {
         Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]))
       ).toEqual({
         "LEG-003": undefined,
-        // Still linked to no item at all → a genuine conflict.
+        // Linked to no item: a conflict.
         "HDW-010": true,
         "PAD-005": true,
         "TOP-001": undefined
@@ -1555,8 +1541,6 @@ describe("buildAssemblyPlan descriptions", () => {
 
 describe("pairManualLines", () => {
   it("keeps a manual line for another item type that shares the number", () => {
-    // A Material and a Part can share a number; the Part's write must not
-    // repoint the Material's line.
     const { takesOver, keeps } = pairManualLines(
       [{ partNumber: "X-1", quantity: 2, itemType: "Part" }],
       [],
@@ -1832,10 +1816,6 @@ describe("buildAssemblyPlan Show Assembly only", () => {
     ]);
   });
 });
-
-// ---------------------------------------------------------------------------
-// Mapped item fields
-// ---------------------------------------------------------------------------
 
 const itemField = (
   field: PlanItemField["field"],
@@ -2115,8 +2095,8 @@ describe("planExistingItem — modes", () => {
   });
 
   it("names the method Carbon holds, not the one the editor starts from", () => {
-    // The item page leaves Make to Order when Replenishment moves to Buy and
-    // Make; the snapshot reconciles it to a method the pair allows.
+    // Carbon stores Make to Order on a Buy and Make item; the snapshot
+    // reconciles it to a method the pair allows.
     const row = {
       name: "Bracket",
       description: null,

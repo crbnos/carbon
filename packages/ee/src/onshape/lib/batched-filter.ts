@@ -2,51 +2,25 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-/**
- * Batched PostgREST filters, for lists sized by a customer's CAD data.
- *
- * Scoped to the Onshape integration on purpose. The gateway limit below is
- * not Onshape-specific — it applies to every Supabase REST call Carbon
- * makes — but the Onshape panel is the only place that turns an arbitrary
- * customer assembly straight into an unbounded filter list, so the fix is
- * housed here rather than in shared code.
- */
-
-/**
- * PostgREST filters travel in the URL, so an `.in()` list is bounded by the
- * gateway's request-line limit rather than by anything in Postgres. Measured
- * against Supabase's Kong + PostgREST: an encoded request line of 3,821 bytes
- * succeeds and one of 4,001 fails, so the ceiling is 4 KB. Above ~6 KB Kong
- * answers 414 itself; between the two it forwards and PostgREST rejects the
- * request line, which Kong reports as a 502 "invalid response from upstream".
- *
- * The limit is BYTES, not values. A batch of 200 nine-character part numbers
- * fits; 60 fifty-eight-character external ids does not. Chunking on a fixed
- * count is therefore not safe on its own.
- */
-
-/** Bytes left for everything else on the line: path, select, other filters. */
+// PostgREST filters travel in the URL, so an `.in()` list is bounded by the
+// gateway's 4 KB request line (Kong answers 414 or 502 above it), measured in
+// bytes rather than values.
 const FILTER_BYTE_BUDGET = 3000;
 
-/** An encoded "," between two values. */
 const SEPARATOR_BYTES = 3;
 
-/** Two encoded quotes, added by supabase-js when a value contains , ( or ). */
+// supabase-js quotes a value containing , ( or ).
 const QUOTE_BYTES = 6;
 
 function filterValueBytes(value: string): number {
-  // `v=` is two characters of the serialization, not of the value.
+  // - 2 drops the "v=" of the serialization.
   const encoded = new URLSearchParams({ v: value }).toString().length - 2;
   return encoded + (/[,()]/.test(value) ? QUOTE_BYTES : 0);
 }
 
 /**
- * Split values for an `.in()` filter into batches whose encoded length stays
- * under the request-line limit. Values are deduped, and order is preserved so
- * a caller reassembling results gets them in a predictable sequence.
- *
- * A single value longer than the budget still gets its own batch: it cannot be
- * split, and failing loudly on that one request beats silently dropping it.
+ * Dedupes values and splits them, in order, into `.in()` batches under the byte
+ * budget. A value over the budget gets its own batch rather than being dropped.
  */
 export function chunkFilterValues(
   values: string[],
@@ -72,10 +46,8 @@ export function chunkFilterValues(
 }
 
 /**
- * Run a PostgREST query once per batch of `values` and concatenate the rows.
- *
- * The first error wins and stops the run: a partial result read as a whole
- * one is how a sync decides a row is missing and deletes it.
+ * Runs the query once per batch and concatenates the rows. The first error
+ * returns no rows: a partial result read as whole makes a sync delete rows.
  */
 export async function selectInBatches<Row, Err>(
   values: string[],

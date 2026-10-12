@@ -6,16 +6,8 @@ import type { OnshapeElementPart } from "../lib/client";
 import { compareRevisions } from "./revision";
 
 /**
- * What the panel shows per part of the current element: whether Carbon already
- * has it, and through which relationship.
- *
- * - `linked`: an `externalIntegrationMapping` row points at this exact part
- *   (documentId:elementId:partId). The strong join; survives renames.
- * - `matched`: no mapping, but an item's readableId equals the Onshape part
- *   number. The candidate join; a push adopts it and writes the mapping.
- * - `missing`: Carbon has nothing for it.
- * - `released`: a release push made a revision of this part number. A
- *   workspace push leaves it alone; `item` is the newest released revision.
+ * `linked`: a mapping row holds the part's key. `matched`: an item's readableId
+ * equals the part number. `released`: a release push made a revision of it.
  */
 export type PanelPartStatus = {
   partId: string;
@@ -34,18 +26,9 @@ export type PanelPartStatus = {
 };
 
 /**
- * An Onshape configuration as it takes part in identity, or null for the
- * default one.
- *
- * A configured part is ONE Onshape part (one partId) whose variants can carry
- * different part numbers. So the configuration is part of what identifies a
- * Carbon item's Onshape source; without it two items claim the same key and
- * the unique mapping index rejects the second.
- *
- * The default configuration is null so every key written before configurations
- * were considered still matches: Onshape reports it as "default" (the BOM's
- * `itemSource.configuration`) or as nothing at all. Values may arrive
- * URL-encoded from the panel's launch parameters, so they are decoded first.
+ * One partId's configured variants can carry different part numbers, so a
+ * non-default configuration is part of identity. "default" and empty are null;
+ * launch parameters may arrive URL-encoded.
  */
 export function normalizeConfiguration(
   configuration: string | null | undefined
@@ -66,7 +49,6 @@ function withConfiguration(key: string, configuration?: string | null) {
   return normalized ? `${key}:${normalized}` : key;
 }
 
-/** Mapping key for an assembly element pushed as a whole. */
 export function externalIdForAssembly(
   documentId: string,
   elementId: string,
@@ -103,14 +85,9 @@ export type PanelItemRow = {
   name: string;
 };
 
-/** The newest revision a release push made, per part number. */
 export type ReleasedRevision = { itemId: string; revision: string };
 
-/**
- * Per part number, the newest revision among the items a release push made
- * (`releasedItemIds`: items carrying a `release:` link). Revisions compare the
- * way Carbon counts them, so "10" is newer than "9".
- */
+/** Per part number, the newest revision among items with a `release:` link. */
 export function releasedRevisionsByPartNumber(
   items: Array<{ id: string; readableId: string; revision: string | null }>,
   releasedItemIds: ReadonlySet<string>
@@ -209,14 +186,8 @@ export function buildPartStatuses({
 }
 
 /**
- * What the panel shows per line of the current assembly's BOM. Same vocabulary
- * as {@link PanelPartStatus}: `linked` is the mapping join, `matched` is the
- * part-number join, `missing` is neither.
- *
- * A BOM line's mapping is keyed by the line's *source* part studio
- * (`itemSource`), not by the assembly element being viewed — that is the key an
- * assembly push writes for each child. A line whose BOM row carries no
- * `itemSource` can only ever reach `matched`; there is no part to key on.
+ * States as {@link PanelPartStatus}. A line is keyed by its `itemSource`, as an
+ * assembly push writes it; a line without one can only reach `matched`.
  */
 export type PanelAssemblyLineStatus = {
   index: string;
@@ -246,12 +217,8 @@ export type PanelAssemblyLineInput = {
 };
 
 /**
- * The mapping key for a BOM line, or null when the row names no usable source.
- *
- * A part row names a part studio and a partId, and keys like any pushed part.
- * A sub-assembly row names an assembly element and no partId, so it keys the
- * way a pushed assembly does — which is what makes one key work from both the
- * parent's BOM and the sub-assembly's own panel.
+ * A sub-assembly row has no partId and keys like a pushed assembly, so one key
+ * works from the parent's BOM and from the sub-assembly's own panel.
  */
 export function externalIdForBomLine(
   itemSource: PanelAssemblyLineInput["itemSource"]
@@ -280,7 +247,6 @@ export function buildAssemblyLineStatuses({
   lines: PanelAssemblyLineInput[];
   mappings: PanelMappingRow[];
   items: PanelItemRow[];
-  /** `releasedRevisionsByPartNumber` over the lines' items. */
   released?: ReadonlyMap<string, ReleasedRevision>;
 }): PanelAssemblyLineStatus[] {
   const mappingByExternalId = new Map(
@@ -306,8 +272,7 @@ export function buildAssemblyLineStatuses({
     const mapping = externalId
       ? mappingByExternalId.get(externalId)
       : undefined;
-    // A mapping whose item is gone is not a link: entityId is polymorphic and
-    // carries no foreign key, so rows outlive the items they point at.
+    // entityId has no foreign key, so a mapping can outlive its item.
     const linkedItem = mapping ? itemById.get(mapping.entityId) : undefined;
     if (mapping && linkedItem) {
       return {

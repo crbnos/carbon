@@ -48,8 +48,6 @@ describe("parsePushDefaults", () => {
   });
 
   it("reconciles a method the replenishment system stopped allowing", () => {
-    // Make to Order is not valid for Buy: the two settings are saved
-    // independently, so this pair is reachable without any hand-editing.
     const parsed = parsePushDefaults({
       defaultReplenishmentSystem: "Buy",
       defaultMethodTypeForMake: "Make to Order",

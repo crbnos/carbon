@@ -3,19 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Release grouping for the panel's Releases section.
- *
- * Onshape has no "release packages for a document" endpoint; what it has is
- * the document revisions list (`GET /revisions/d/{did}`), where every released
- * revision carries its releaseId/releaseName. Grouping those rows by releaseId
- * reconstructs the release packages with zero extra calls. Pure functions so
- * the API route and the panel share one shape and the logic is testable
- * without Onshape.
+ * Onshape has no per-document release endpoint, so releases are rebuilt by
+ * grouping `GET /revisions/d/{did}` rows on releaseId.
  */
 
 import { normalizeConfiguration } from "./status";
 
-/** The subset of an Onshape document revision the panel needs. */
 export type ReleaseRevisionLike = {
   partNumber: string;
   revision: string;
@@ -24,7 +17,7 @@ export type ReleaseRevisionLike = {
   documentId: string;
   versionId: string;
   elementId: string;
-  /** Part Studio releases: the released part within the studio. */
+  /** Part Studio releases: the released part, which the export needs. */
   partId?: string | null;
   releaseId?: string | null;
   releaseName?: string | null;
@@ -41,11 +34,10 @@ export type PanelReleaseItem = {
   documentId: string;
   versionId: string;
   elementId: string;
-  /** Part Studio items: the part the release names, which the export needs. */
   partId: string | null;
   configuration: string | null;
   obsolete: boolean;
-  /** Carbon join — filled by resolveReleaseStates; "missing" until then. */
+  /** "missing" until resolveReleaseStates fills it. */
   state: "in-carbon" | "missing";
   itemId: string | null;
 };
@@ -56,7 +48,6 @@ export type PanelRelease = {
   releaseName: string | null;
   createdAt: string | null;
   items: PanelReleaseItem[];
-  /** Over every item: a model item by its letter, a drawing by its landed PDF. */
   state: "pushed" | "partial" | "not-pushed";
 };
 
@@ -74,18 +65,13 @@ export function releaseKeyFor(revision: ReleaseRevisionLike): string {
   );
 }
 
-/** Assemblies first, then parts, then drawings; part number breaks ties. */
+/** Assemblies, then parts, then drawings. */
 function itemSortWeight(elementType: number): number {
   if (elementType === 1) return 0;
   if (elementType === 0) return 1;
   return 2;
 }
 
-/**
- * Group a document's released revisions into releases, newest first. States
- * come back as "missing" — pass the result through resolveReleaseStates with
- * Carbon's item rows to fill them in.
- */
 export function groupRevisionsIntoReleases(
   revisions: ReleaseRevisionLike[]
 ): PanelRelease[] {
@@ -152,13 +138,9 @@ export type ReleaseCarbonItemRow = {
 };
 
 /**
- * Join releases to Carbon: a model item is "in-carbon" when an item row exists
- * with its part number AND its release revision letter; a drawing when the
- * PDF the release push exports for it has landed on an item
- * (`attachedDrawings`: file names, see `releaseDrawingFileName`). The state
- * counts every item, so a drawing-only release reads pushed once its PDFs are
- * in Carbon, and a release whose drawing export is still running reads
- * partial until a refresh.
+ * A model item is in Carbon when an item has its part number and release
+ * letter; a drawing when its PDF name is in `attachedDrawings`. Release state
+ * counts every item, so a running drawing export reads partial.
  */
 export function resolveReleaseStates(
   releases: PanelRelease[],
@@ -203,11 +185,7 @@ export function resolveReleaseStates(
   });
 }
 
-/**
- * The file name the release push gives a drawing's PDF: the export's
- * `assetBaseName` (`<partNumber>-<revision>`) plus the extension the sync job
- * adds. The Releases tab reads a drawing back by this name.
- */
+/** Pushed drawing PDF name; the Releases tab reads drawings back by it. */
 export function releaseDrawingFileName(
   item: Pick<PanelReleaseItem, "partNumber" | "revision">
 ) {
@@ -219,11 +197,8 @@ export type ReleaseExportSelection =
   | { ok: false; reason: string };
 
 /**
- * What a released model's export must select. A Part Studio release is one
- * part, and the export job refuses a studio export without exactly one
- * `partId` rather than translate the whole studio. The configuration is the
- * released one, sent as Onshape returned it (as the release sync does); the
- * default is sent as nothing.
+ * The export job refuses a Part Studio export without exactly one `partId`.
+ * A non-default configuration is sent as Onshape returned it.
  */
 export function releaseExportSelection(item: {
   elementType: number;
@@ -247,7 +222,6 @@ export function releaseExportSelection(item: {
   return { ok: true, partId, ...(configuration ? { configuration } : {}) };
 }
 
-/** A package item as `drawingModels` reads it. */
 export type ReleasePackageItemLike = {
   id: string;
   parentId: string | null;
@@ -258,10 +232,8 @@ export type ReleasePackageItemLike = {
 };
 
 /**
- * Per drawing element in a release package, the model it depicts: the first
- * part or assembly the package lists under the drawing. A company can require
- * a drawing's part number to differ from its model's, so the part number alone
- * cannot tie a drawing to its model.
+ * Per drawing element, the first model the release package lists under it.
+ * Part numbers cannot tie the two: a drawing's may differ from its model's.
  */
 export function drawingModels(
   items: ReleasePackageItemLike[]

@@ -1,18 +1,6 @@
--- The Onshape panel becomes its own integration, alongside the original.
---
--- `onshape` stays the pull-shaped one (released-asset webhook sync).
--- `onshape-v2` is the push-only panel: its own OAuth grant, its own
--- companyIntegration row, and its own externalIntegrationMapping namespace, so
--- a company can install either or both and uninstalling one never disturbs the
--- other. companyIntegration.id is a foreign key to this table, so the row has
--- to exist before anyone can install it.
---
--- The pair is expected to be temporary while v2 replaces v1.
---
--- `credentials` is required and `baseUrl` is not: the OAuth callback always
--- writes both, but the panel defaults the base URL to cad.onshape.com, and a
--- company that has saved push defaults without ever connecting is a legitimate
--- state — the settings form writes metadata before any grant exists.
+-- `onshape-v2`: the push-only panel integration, with its own OAuth grant,
+-- companyIntegration row and mapping namespace beside `onshape`.
+-- `baseUrl` is optional: the client defaults it to cad.onshape.com.
 INSERT INTO "integration" ("id", "jsonschema")
 VALUES
   (

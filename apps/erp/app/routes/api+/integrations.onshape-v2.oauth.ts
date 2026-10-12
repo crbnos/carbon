@@ -12,9 +12,9 @@ export const config = {
 };
 
 /**
- * The panel integration's own OAuth callback. Register this URL alongside the
- * v1 one on the same Onshape application — the two integrations hold separate
- * grants so either can be uninstalled without disturbing the other.
+ * OAuth callback for the panel's own grant, kept apart from the sync
+ * connection's so either can be uninstalled alone. Register it on the same
+ * Onshape app.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {

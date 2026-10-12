@@ -67,8 +67,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { documentId, releaseId } = parsed.data;
 
-  // The service role: `companyIntegration` is visible only with settings
-  // view, which a panel user need not have.
   const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
     serviceRole,
@@ -156,7 +154,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (releaseRows.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // A null revision reads as "0", as in plan-assembly.
   const toPlanRow = <T extends { revision: string | null }>(row: T) => ({
     ...row,
     revision: row.revision ?? "0"
@@ -174,8 +171,6 @@ export async function action({ request }: ActionFunctionArgs) {
         .map((row) => row.id)
     );
   const [methods, options] = await Promise.all([
-    // A failure must answer 500, not read as "no method": that would plan a
-    // BOM write over a released method.
     loadActiveMakeMethods(client, companyId, letterAssemblyItemIds).then(
       (byItemId) => ({ byItemId, error: null }),
       (error: unknown) => ({ byItemId: null, error })
@@ -208,9 +203,9 @@ export async function action({ request }: ActionFunctionArgs) {
       .map((item) => item.elementId)
   );
 
-  // BOMs are read sequentially: parallel bursts hit Onshape rate limits. A
-  // failed read stores null lines, which apply treats as "leave the method
-  // alone"; an empty array is a genuinely empty BOM.
+  // BOMs are read sequentially: parallel bursts hit Onshape rate limits. Null
+  // lines (a failed read) tell the apply to leave the method alone; an empty
+  // array is an empty BOM.
   const bomLinesByElementId: Record<string, OnshapeBomNode[] | null> = {};
   for (const item of modelItems) {
     if (item.elementType !== 1) continue;
@@ -274,7 +269,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   items.push(...childRows.data.map(toPlanRow));
 
-  // Planning without the map would silently skip "everyPush" values.
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(
@@ -294,9 +288,9 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Each released item's properties at its released version: one read per
-  // released element, sequential like the BOMs. BOM children carry theirs on
-  // the BOM row. Read only when the map or a description mode needs them.
+  // Released items' properties at the released version, read sequentially:
+  // one read per assembly, one per Part Studio version. BOM children carry
+  // theirs on the BOM row.
   const propertiesByPartNumber = new Map<string, OnshapePropertyValue[]>();
   const needsProperties =
     mapping.map.length > 0 ||
@@ -374,8 +368,7 @@ export async function action({ request }: ActionFunctionArgs) {
     ? { ...built, existingChangeNotice: openNotice.changeNoticeId }
     : built;
 
-  // Only the stored copy carries the BOM lines the apply walks, without
-  // their cells.
+  // Only the stored copy carries the BOM lines the apply walks, minus cells.
   const stored: StoredReleasePlan = {
     ...plan,
     bomLinesByElementId: Object.fromEntries(

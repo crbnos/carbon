@@ -89,8 +89,7 @@ export function getOnshapeOAuthConfig(
     };
   }
 
-  // The panel authorizes against the same public app as `onshape`, through a
-  // second redirect URI registered on it, so the two grants stay separate.
+  // The panel uses the same public app through a second redirect URI.
   const redirectUri =
     integrationId === ONSHAPE_V2_INTEGRATION_ID
       ? ONSHAPE_V2_OAUTH_REDIRECT_URL
@@ -144,10 +143,8 @@ export class OnshapeTokenError extends Error {
   }
 }
 
-/**
- * A token exchange that hangs would hold the refresh lease for as long as it
- * hangs, and every other request for the connection waits behind it.
- */
+// A hung token exchange would hold the refresh lease and stall every request
+// for the connection.
 const TOKEN_REQUEST_TIMEOUT_MS = 15_000;
 
 async function requestToken(

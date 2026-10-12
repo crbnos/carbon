@@ -6,18 +6,9 @@ import { randomBytes } from "node:crypto";
 import redis from "./client";
 
 /**
- * An owner-bound Redis lease: one holder at a time, renewed while the holder
- * works, released only by its owner.
- *
- * The lease is short and renewed, so a holder that dies stops renewing and the
- * key lapses within one lease instead of blocking everyone for a long TTL.
- * Renewal and release compare the stored owner first, so a holder whose lease
- * lapsed can never extend or delete the lease a later caller took.
- *
- * The client is fail-soft (a down Redis resolves `null`), so acquisition runs
- * as a script that answers 1 or 0: `null` then only ever means Redis is
- * unavailable, never "someone else holds it". Callers decide what to do
- * without a lock.
+ * Owner-bound Redis lease: a dead holder stops renewing and the key lapses;
+ * renew and release check the owner first. Acquire answers 1 or 0, so `null`
+ * from the fail-soft client means Redis is unavailable, never held.
  */
 export type LeaseAcquisition =
   | { status: "acquired"; owner: string }
@@ -39,7 +30,7 @@ export async function acquireLease(
   return { status: "unavailable" };
 }
 
-/** Extend the lease. False when it is no longer this owner's. */
+/** False when the lease is no longer this owner's. */
 export async function renewLease(
   key: string,
   owner: string,
@@ -59,11 +50,7 @@ export async function releaseLease(key: string, owner: string): Promise<void> {
   await redis.eval(RELEASE_IF_OWNER, 1, key, owner);
 }
 
-/**
- * Run `work` while holding the lease, renewing it every `renewMs` and releasing
- * it afterwards. Renewal failures are ignored: the worst case is the lease
- * lapsing, which the owner check makes safe.
- */
+/** Renewal failures are ignored: the owner check makes a lapsed lease safe. */
 export async function withLease<T>(
   key: string,
   owner: string,

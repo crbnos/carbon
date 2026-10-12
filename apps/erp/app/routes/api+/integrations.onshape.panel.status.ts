@@ -45,8 +45,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const wv = url.searchParams.get("wv");
   const wvId = url.searchParams.get("wvId");
   const elementId = url.searchParams.get("elementId");
-  // Part of every identity key and Onshape read: a configured part's part
-  // number depends on it.
+  // Part of every identity key: a configured part's part number depends on it.
   const configuration = normalizeConfiguration(
     url.searchParams.get("configuration")
   );
@@ -60,8 +59,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
 
-  // The service role: `companyIntegration` is visible only with settings
-  // view, which a panel user need not have.
   const onshape = await getOnshapeClient(
     getCarbonServiceRole(),
     companyId,
@@ -123,7 +120,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         { status: 422 }
       );
     }
-    // The BOM omits the assembly's own row; its identity is in element metadata.
     let rootPartNumber = bomRoot?.partNumber ?? null;
     let rootName = bomRoot?.name ?? null;
     // Non-fatal: the BOM itself read fine.
@@ -203,7 +199,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     ]);
 
-    // selectInBatches returns empty data on failure, so check every error.
     if (lineMappings.error || rootMapping.error || items.error) {
       return data(
         {
@@ -213,8 +208,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    // entityId is polymorphic and unconstrained, so a mapping can outlive its
-    // item. Load the mapped items to tell a live link from a stale row.
+    // entityId has no foreign key, so a mapping can outlive its item. Load the
+    // mapped items to tell a live link from a stale row.
     const assemblyItems = (items.data ?? []) as PanelItemRow[];
     const mappedItemIds = [
       ...new Set(

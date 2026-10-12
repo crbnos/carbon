@@ -49,10 +49,8 @@ const payloadSchema = z.object({
   configuration: z.string().nullish()
 });
 
-/**
- * Most distinct part numbers one push plans. A push is one request with no
- * rollback, so a gateway can cut a large one off mid-BOM. `top` is exempt.
- */
+// Most distinct part numbers an `all` push plans: a push is one request with no
+// rollback, and a gateway can cut a large one off mid-BOM.
 const MAX_PLAN_PARTS = 1500;
 
 /** Plan an assembly push without writing; the apply reuses the stored plan. */
@@ -76,8 +74,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const { documentId, wv, wvId, elementId, depth } = parsed.data;
   const configuration = normalizeConfiguration(parsed.data.configuration);
 
-  // The service role: `companyIntegration` is visible only with settings
-  // view, which a panel user need not have.
   const serviceRole = getCarbonServiceRole();
   const onshape = await getOnshapeClient(
     serviceRole,
@@ -110,7 +106,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
-  // The indented BOM omits the assembly's own row; element metadata names it.
+  // Element metadata names the assembly; the BOM's top row is the fallback.
   const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
   // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
@@ -140,7 +136,6 @@ export async function action({ request }: ActionFunctionArgs) {
     metadataError = error;
   }
   if (!rootPartNumber) {
-    // A failed read is not a missing part number; report the read failure.
     if (metadataError !== null) {
       const failure = onshapeFailure(metadataError);
       return data(failure.body, { status: failure.status });
@@ -163,8 +158,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const subAssemblies = lines.filter(
       (node) => node.children.length > 0
     ).length;
-    // The count covers the whole tree whatever Carbon holds, so pushing the
-    // sub-assemblies first does not help; `code` lets the panel offer `top`.
+    // Counts the whole tree, so pushing sub-assemblies first does not help;
+    // `code` lets the panel offer `top`.
     return data(
       {
         code: "too-large" as const,
@@ -221,7 +216,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const [options, methods, links, itemLinks] = await Promise.all([
     loadPlanOptions(serviceRole, companyId),
-    // Settled so a failure answers 500 instead of planning methods as missing.
     loadActiveMakeMethods(client, companyId, parentItemIds).then(
       (byItemId) => ({ byItemId, error: null }),
       (error: unknown) => ({ byItemId: null, error })
@@ -235,7 +229,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .eq("entityType", "item")
         .in("externalId", batch)
     ),
-    // An item linked elsewhere keeps its link, and this push leaves its text.
+    // An item linked elsewhere keeps its link and takes no mapped values.
     selectInBatches(
       items.map((item) => item.id),
       (batch) =>
@@ -305,9 +299,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Planning without the map would silently skip "everyPush" values. BOM
-  // rows carry their own cells; the root's properties are the element
-  // metadata read above, so the map costs no extra Onshape call.
   let mapping: PlanMappingContext;
   try {
     mapping = await loadPlanMapping(
@@ -326,12 +317,12 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 500 }
     );
   }
+  // The root's mapped values come from its element metadata.
   if (mapping.map.length > 0 && elementMetadata === null && metadataError) {
     const failure = onshapeFailure(metadataError);
     return data(failure.body, { status: failure.status });
   }
 
-  // Parts a release push made a revision of are left to their releases.
   let released: Awaited<ReturnType<typeof loadReleasedRevisions>>;
   try {
     released = await loadReleasedRevisions(client, companyId, items);
@@ -373,8 +364,7 @@ export async function action({ request }: ActionFunctionArgs) {
     released
   });
 
-  // The parsed BOM is stored for the apply; the panel never needs it.
-  // Without the cells: the apply needs the structure only.
+  // The apply walks the stored BOM structure; the property cells are dropped.
   const stored: StoredAssemblyPlan = {
     ...plan,
     nodes: withoutProperties(lines)

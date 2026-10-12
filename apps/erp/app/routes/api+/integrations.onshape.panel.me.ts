@@ -13,18 +13,13 @@ export const config = {
   runtime: "nodejs"
 };
 
-/**
- * Who the panel's bearer token belongs to, and whether they may edit the
- * company's property map (the panel's Fields page). 401 when the token is
- * missing or dead.
- */
+/** The panel user and company, and whether they may edit the Fields page. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId, sessionUserId, email } =
     await requireOnshapePanelPermissions(request, {});
 
-  // `requireOnshapePanelPermissions` cannot be probed a second time for a
-  // yes/no, so the claims check is re-run directly.
-  // Claims belong to the session user, matching what the Fields route enforces.
+  // `requireOnshapePanelPermissions` throws on a denial, so the Fields
+  // permission is read from the claims directly.
   const [company, claims] = await Promise.all([
     client.from("company").select("id, name").eq("id", companyId).maybeSingle(),
     getUserClaims(sessionUserId, companyId)

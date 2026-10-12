@@ -38,21 +38,15 @@ interface OnshapeClientConfig {
   baseUrl: string;
   accessToken: string;
   /**
-   * Re-acquire an access token after Onshape rejects the current one, so a
-   * single request can recover instead of surfacing a 401.
-   *
-   * A stored expiry cannot know about a revocation, a clock difference, or a
-   * token that dies between the expiry check and the call going out.
-   * Returns null when no new token could be obtained.
+   * Called after a 401 for a new token, or null. A stored expiry cannot see a
+   * revocation, clock skew or a token that dies mid-call.
    */
   onUnauthorized?: () => Promise<string | null>;
 }
 
 /**
- * A row from `GET /parts/d/{did}/{wvm}/{wvmId}/e/{eid}`. The API names the
- * stable per-studio identifier `partId`; `microversionId` moves whenever the
- * part's definition changes, which makes it the cheap "did anything change
- * since the last push" check.
+ * `microversionId` changes with the part's definition: the cheap "changed since
+ * the last push" check.
  */
 export interface OnshapeElementPart {
   partId: string;
@@ -85,16 +79,15 @@ export interface OnshapeElementRow {
   [key: string]: unknown;
 }
 
-// Stable content reads only — never /translations (a status poll) and never
-// anything paginated by cursor.
+// Stable content reads only: caching a polled endpoint (/translations) would
+// break the poll loop.
 const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/parts\//,
   /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
   /^\/api\/v\d+\/documents\//,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
-  // A fresh Onshape release can take up to the TTL to show in a dev panel;
-  // flush the onshape-dev-cache:* keys to see it sooner.
+  // A new release shows after the TTL; flush onshape-dev-cache:* for sooner.
   /^\/api\/v\d+\/revisions\/d\//
 ];
 
@@ -165,10 +158,7 @@ export interface OnshapeRevision {
   [key: string]: unknown;
 }
 
-/**
- * One item of an Onshape release package, as the panel needs it. `parentId`
- * is the item it sits under: a drawing's children are the models it depicts.
- */
+/** `parentId`: the item it sits under; a drawing's children are its models. */
 export interface OnshapeReleasePackageItem {
   id: string;
   parentId: string | null;
@@ -178,10 +168,7 @@ export interface OnshapeReleasePackageItem {
   revision: string | null;
 }
 
-/**
- * `&configuration=…` for a non-default configuration, nothing for the default:
- * an unconfigured read keeps the URL (and so the dev cache key) it always had.
- */
+/** Empty for the default configuration, so its URL and cache key stay put. */
 function configurationQuery(configuration?: string | null): string {
   const normalized = normalizeConfiguration(configuration);
   return normalized ? `&configuration=${encodeURIComponent(normalized)}` : "";
@@ -247,12 +234,7 @@ export class OnshapeClient {
     path: string,
     body?: Record<string, unknown>
   ): Promise<T> {
-    // Every Onshape call counts against an annual per-account quota (private
-    // apps debit the app owner). In dev, ONSHAPE_DEV_CACHE=1 serves repeated
-    // GETs from Redis.
-    //
-    // Allow-list, not "all GETs": polling endpoints (translation status) change
-    // between calls, and caching one poisons the poll loop.
+    // Dev-only cache to spare the annual API quota.
     const cacheable =
       method === "GET" && DEV_CACHEABLE_PATHS.some((re) => re.test(path));
     const cacheKey =
@@ -314,11 +296,7 @@ export class OnshapeClient {
     }
   }
 
-  /**
-   * Tally of live calls per year, so quota use is observable without the dev
-   * portal: `GET onshape:api-calls:<year>` in Redis. Best-effort and never
-   * awaited: a slow Redis must not slow the call it counts.
-   */
+  /** Counts in Redis `onshape:api-calls:<year>`; never awaited. */
   private async countLiveCall(path: string) {
     try {
       const year = new Date().getUTCFullYear();
@@ -504,12 +482,8 @@ export class OnshapeClient {
     >("GET", nextUrl);
   }
 
-  // Released revisions for ONE document. Every item carries
-  // releaseId/releaseName plus the released versionId/elementId, so grouping
-  // by releaseId reconstructs the release packages without a per-package call
-  // (Onshape has no packages-by-document endpoint).
-  // Follows `next` so older releases are listed too, up to
-  // DOCUMENT_REVISION_MAX_PAGES pages.
+  // Onshape has no packages-by-document endpoint; grouping these revisions by
+  // releaseId rebuilds the packages. Follows `next` up to the page limit.
   async getDocumentRevisions(
     documentId: string
   ): Promise<{ items: OnshapeRevision[]; next: string | null }> {
@@ -532,9 +506,8 @@ export class OnshapeClient {
   }
 
   /**
-   * A release package's items, flattened, each with the item it sits under.
-   * Onshape nests a package's items while it is being set up and lists them
-   * flat with `parentId` once released; both shapes are read.
+   * Flattened. Onshape nests a package's items while it is being set up and
+   * lists them flat with `parentId` once released; both shapes are read.
    */
   async getReleasePackageItems(
     releaseId: string
@@ -610,11 +583,7 @@ export class OnshapeClient {
     );
   }
 
-  /**
-   * Mass properties for every part of an element in one call. SI units
-   * (kg, m); numeric triples are [value, min, max]. Parts without an assigned
-   * material come back with hasMass=false.
-   */
+  /** SI units; triples are [value, min, max]; no material: hasMass=false. */
   async getPartStudioMassProperties(
     document: OnshapeDocument,
     elementId: string
@@ -646,11 +615,7 @@ export class OnshapeClient {
     );
   }
 
-  /**
-   * The assembly definition at w/v/m without mates: its instances, its
-   * sub-assemblies, and every part it uses with the document and version the
-   * part lives in. Far cheaper than the BOM when only the parts are needed.
-   */
+  /** Without mates. Far cheaper than the BOM when only the parts are needed. */
   async getAssemblyDefinitionIn(
     document: OnshapeDocument,
     elementId: string,
@@ -662,10 +627,7 @@ export class OnshapeClient {
     );
   }
 
-  /**
-   * Element metadata (the properties panel: Part number, Name, ...) at w/v/m.
-   * Used for an assembly's own identity, which the BOM omits.
-   */
+  /** An assembly's own identity comes from here: the BOM omits it. */
   async getElementMetadata(
     document: OnshapeDocument,
     elementId: string,
@@ -677,12 +639,7 @@ export class OnshapeClient {
     );
   }
 
-  /**
-   * Element metadata with the element's parts nested (`depth=2`): for a Part
-   * Studio the response carries `parts.items[].properties`, so every part's
-   * standard and custom property values arrive in one read. Onshape's metadata
-   * depth semantics are documented loosely.
-   */
+  /** `depth=2` nests a Part Studio's `parts.items[].properties`: one read. */
   async getElementMetadataWithParts(
     document: OnshapeDocument,
     elementId: string,
@@ -926,25 +883,17 @@ export class OnshapeClient {
   }
 }
 
-/** The refresh lease is short and renewed while the token exchange runs. */
 const REFRESH_LEASE_MS = 5_000;
 const REFRESH_LEASE_RENEW_MS = 2_000;
-/** How long a caller waits on another caller's refresh before giving up. */
 const REFRESH_WAIT_DEADLINE_MS = 20_000;
 const REFRESH_WAIT_MS = 250;
 
 export async function getOnshapeClient(
-  /**
-   * Reads the connection row. The panel passes the service role: the row is
-   * visible only with settings view, which a panel user need not have.
-   */
+  /** The panel passes the service role: the row needs settings view. */
   client: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  /**
-   * Which Onshape grant to authenticate as. The panel passes its own
-   * (`onshape-v2`). Omitted, or a sync id, it is the company's sync connection.
-   */
+  /** Omitted or a sync id: the company's active sync connection. */
   requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
@@ -970,8 +919,7 @@ export async function getOnshapeClient(
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
   const serviceRole = getCarbonServiceRole();
   const integrationId = integration.data.id as OnshapeOAuthIntegrationId;
-  // A row with no vaulted secret is a company that saved panel settings but
-  // never connected: that is "not connected", not a server error.
+  // No vaulted secret means never connected, not a server error.
   let metadata: Record<string, any>;
   try {
     metadata = (await resolveIntegrationSecrets(
@@ -996,11 +944,7 @@ export async function getOnshapeClient(
   let accessToken = credentials.accessToken;
   const baseUrl = metadata?.baseUrl ?? ONSHAPE_DEFAULT_BASE_URL;
 
-  /**
-   * Make a refreshed pair the one this request uses from now on. Onshape
-   * rotates refresh tokens, so a later refresh in this request must spend the
-   * new one.
-   */
+  /** Onshape rotates refresh tokens: a later refresh must spend the new one. */
   const adoptCredentials = (next: Record<string, any> | undefined) => {
     if (!next?.accessToken) return;
     credentials.accessToken = next.accessToken;
@@ -1009,7 +953,7 @@ export async function getOnshapeClient(
     accessToken = next.accessToken;
   };
 
-  /** The row's credentials as stored now, not as read when this request started. */
+  /** The credentials as stored now, not as loaded when this request started. */
   const readStoredCredentials = async (): Promise<Record<
     string,
     any
@@ -1069,8 +1013,7 @@ export async function getOnshapeClient(
       });
       return null;
     }
-    // The old refresh token is spent either way, so this request keeps the new
-    // pair even if saving it fails.
+    // The old refresh token is spent: keep the new pair even if saving fails.
     adoptCredentials(next);
     try {
       await patchOnshapeRefreshedTokens(
@@ -1090,18 +1033,12 @@ export async function getOnshapeClient(
   };
 
   /**
-   * Refresh once across concurrent callers. Onshape rotates refresh tokens, so
-   * two callers refreshing the same connection cannot both succeed, and the
-   * loser would store a dead pair over the winner's live one.
-   *
-   * The lease holder re-reads the stored pair before spending it: an earlier
-   * holder has usually rotated the one this request loaded. Waiters adopt the
-   * holder's result, or take the lease once it frees. With Redis down there is
-   * no lock to take, so the refresh runs without one.
+   * One refresh across concurrent callers, under a Redis lease: with rotating
+   * refresh tokens the losing caller would store a dead pair over the live one.
+   * Waiters adopt the holder's result. With Redis down it runs unlocked.
    */
   const refreshNow = async (): Promise<string | null> => {
-    // Per integration, not per company: each Onshape integration holds its own
-    // refresh token.
+    // Per integration: each holds its own refresh token.
     const leaseKey = `onshape-token-refresh:${companyId}:${integrationId}`;
     const deadline = Date.now() + REFRESH_WAIT_DEADLINE_MS;
 
@@ -1140,8 +1077,7 @@ export async function getOnshapeClient(
     }
   };
 
-  // A connection with no recorded expiry (an older install) would otherwise
-  // never refresh at all.
+  // No `expiresAt` guard: a connection without a stored expiry must refresh.
   if (credentials.refreshToken && !isFresh(credentials, Date.now())) {
     const refreshedToken = await refreshNow();
     if (!refreshedToken) {

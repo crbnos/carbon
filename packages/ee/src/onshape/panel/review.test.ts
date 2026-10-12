@@ -382,7 +382,6 @@ describe("applyRequestBody", () => {
       ...review,
       selected: new Set(["p1", "p2"]),
       edits: {
-        // name is Onshape-owned on an existing item: it must be stripped.
         p1: { name: "Nope", replenishmentSystem: "Buy" },
         p2: { itemTrackingType: "Serial" }
       }
@@ -477,8 +476,6 @@ describe("applyRequestBody", () => {
   });
 
   it("leaves the notice decision to the apply when the plan proposed none", () => {
-    // A row that vanished since review becomes a create the plan never saw; an
-    // explicit false here would stop the apply recording it.
     const review = releaseReview(
       releasePlan({ changeNotice: null, alreadyPushed: true })
     );
@@ -582,8 +579,6 @@ describe("describeMethod", () => {
   });
 
   it("describes a released method as a new Draft version, with its counts", () => {
-    // The push writes a Draft copy rather than skipping a released method, so
-    // the review must not promise a no-op.
     const described = describeMethod(method({ status: "active" }), new Set());
     expect(described).toEqual({
       text: "ASM-001 · released in Carbon — new Draft version: 2 added, 0 replaced, 0 manual kept",
@@ -598,7 +593,6 @@ describe("describeMethod", () => {
       text: "ASM-001 · released in Carbon — no change",
       tone: "muted"
     });
-    // Excluding one of its parts would remove that line: then it changes.
     expect(describeMethod(unchanged, new Set(["PAD-005"])).tone).toBe("notice");
   });
 

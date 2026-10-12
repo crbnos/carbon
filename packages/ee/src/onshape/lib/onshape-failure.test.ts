@@ -61,8 +61,6 @@ describe("onshapeFailure", () => {
   });
 
   it("never answers Onshape's 401 or 403 as a 401", () => {
-    // The panel reads a 401 as its own session being gone and signs the user
-    // out; Onshape rejecting Carbon's stored grant is a different problem.
     for (const status of [401, 403]) {
       const failure = onshapeFailure(new OnshapeApiError("x", status));
       expect(failure.status).toBe(422);

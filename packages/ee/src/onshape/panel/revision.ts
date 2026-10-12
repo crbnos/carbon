@@ -3,14 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Revision order, matching the sequences `getNextRevision` steps through:
- * numbers count up (9 → 10), letters go A → Z → AA → AB. A text compare gets
- * both wrong ("9" > "10", "Y" > "AA"), and Onshape's default scheme skips Z,
- * so a letter release lands on AA straight after Y.
- *
- * Numbers sort before letters (Carbon's unrevised "0" precedes a first
- * release's "A"); anything outside both schemes sorts after them, compared
- * naturally. Empty sorts first.
+ * Revision order as `getNextRevision` counts: numbers by value (9 < 10),
+ * letters by length then alphabet (Z < AA). Empty first, then numbers,
+ * letters, other text.
  */
 export function compareRevisions(
   a: string | null | undefined,

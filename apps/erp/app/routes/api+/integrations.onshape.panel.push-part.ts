@@ -43,8 +43,6 @@ export const config = {
   runtime: "nodejs"
 };
 
-// Loose on purpose: mergeItemEdits validates and answers 422 with per-row
-// field errors, which a strict zod enum would turn into a bare 400.
 const itemEditSchema = z.object({
   name: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -68,10 +66,7 @@ type ApplyResult = {
   message?: string;
 };
 
-/**
- * Apply a reviewed part plan: create or link the kept items, write the
- * mappings and queue the model export. Makes no Onshape call.
- */
+/** Apply a reviewed part plan: create or adopt items, link them, queue model exports. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -91,7 +86,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const selected = [...new Set(parsed.data.selected)];
   const edits = parsed.data.edits as Record<string, ItemEdit>;
 
-  // Peek, not take: a 422 below must leave the plan in place for a retry.
   const stored = await peekPanelPlan(planId, { companyId, userId });
   if (!stored) {
     return data(
@@ -126,7 +120,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // One-shot from here: a concurrent apply of the same review finds nothing.
   if (!(await takePanelPlan(planId, { companyId, userId }))) {
     return data(
       { error: "This review has expired — review again" },
@@ -134,8 +127,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Re-resolve: a create whose number now exists adopts it instead, because
-  // upsertPart reads its id back by readableId and can get another revision.
+  // A create whose number now exists adopts it: `upsertPart` reads its new id
+  // back by readableId and could get another revision.
   const partNumbers = [
     ...new Set(
       selectedRows
@@ -198,8 +191,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return target;
   };
 
-  // part.id is the item's readableId, shared across revisions. The map is kept
-  // current as the loop writes, so a later row cannot clobber a create.
+  // `part.id` is the readableId, shared across revisions. Kept current as the
+  // loop writes, so a later row cannot clobber a create.
   const partCustomFieldsByReadableId = new Map<string, unknown>();
   const ownedReadableIds = [
     ...new Set(
@@ -259,9 +252,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (row.action === "unchanged") {
-      // The CAD and every mapped value are unchanged, but a reviewer edit to
-      // a manufacturing field is still a real update. No mapping re-stamp and
-      // no export.
+      // A reviewer edit is still written; no link re-stamp, no export.
       if (row.itemId && edits[partId]) {
         const applied = await applyExistingItemFields(client, db, {
           itemId: row.itemId,
@@ -329,7 +320,6 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       itemId = created.data.id as string;
       readableId = item.readableId;
-      // upsertPart takes neither MPN nor Sourcing.
       const extras = createdItemExtras(item);
       if (Object.keys(extras).length > 0) {
         const error = await applyItemFieldWrites(client, db, {
@@ -366,8 +356,6 @@ export async function action({ request }: ActionFunctionArgs) {
     } else {
       itemId = (target as PlanItemRow).id;
       readableId = (target as PlanItemRow).readableId;
-      // Descriptions and item fields in "everyPush" mode, with the
-      // reviewer's edits on top.
       const applied = await applyExistingItemFields(client, db, {
         itemId,
         companyId,
@@ -428,7 +416,7 @@ export async function action({ request }: ActionFunctionArgs) {
         configuration,
         wv,
         wvId,
-        // The reviewed microversion: a later plan's only "unchanged" signal.
+        // A later plan's only "unchanged" signal.
         microversionId: row.microversionId,
         partNumber: row.partNumber,
         name: row.name,
@@ -452,7 +440,6 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Deterministic id: a retried apply cannot queue the export twice.
     try {
       await trigger(
         "onshape-panel-sync",
@@ -475,9 +462,8 @@ export async function action({ request }: ActionFunctionArgs) {
         { id: `${planId}:${itemId}:${elementId}` }
       );
     } catch (error) {
-      // Roll the mapping back so the next plan does not read "unchanged" and
-      // skip the export. Delete by id, not externalId: a concurrent push may
-      // already have replaced this row with its own.
+      // Unlink so the next plan does not read "unchanged" and skip the export.
+      // By id, not externalId: a concurrent push may have replaced the row.
       const rolledBack = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
@@ -532,18 +518,13 @@ function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
   );
 }
 
-/** Every mapped value a create writes, keyed by field id (nulls dropped). */
 function planCustomFieldValues(
   row: PartPlanRow
 ): Record<string, string | number | boolean | null> {
   return mappedFieldValues(row.customFields ?? [], true).values;
 }
 
-/**
- * The "everyPush" values an adopt/update writes, or null when the row has
- * none. A null deletes the key, so a value emptied in Onshape empties in
- * Carbon.
- */
+/** The "everyPush" values an adopt or update writes; a null value deletes the key. */
 function existingCustomFieldValues(row: PartPlanRow): {
   values: Record<string, string | number | boolean | null>;
   fieldIds: Set<string>;

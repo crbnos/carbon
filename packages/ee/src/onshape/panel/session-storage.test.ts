@@ -61,8 +61,6 @@ describe("panelFetch", () => {
   });
 
   it("turns a plain-text 403 into readable JSON", async () => {
-    // requirePermissions answers a panel token with the text "Forbidden";
-    // reading that as JSON is what showed users a parser error.
     answer("Forbidden", 403, "text/plain");
     const response = await panelFetch("t", "/api/x");
     expect(response.status).toBe(403);

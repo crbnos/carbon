@@ -19,25 +19,14 @@ import { customFieldDisplayValue } from "./properties";
 import type { PanelPartStatus } from "./status";
 
 /**
- * The panel's review state: a stored plan plus what the user changed before
- * applying it. Everything here is pure so the transitions the panel makes
- * between "plan came back" and "apply request goes out" can be tested without
- * React. Panel.tsx owns the fetches; this file owns the shape of what they
- * send and receive.
- *
- * Edits are sparse, so an untouched row sends nothing. The key is the plan's
- * own: partId for parts, part number for assemblies and releases.
+ * The panel's review state: a stored plan plus the user's sparse edits, keyed
+ * by partId for parts and by part number for assemblies and releases.
  */
 
 type ReviewBase = {
   planId: string;
   expiresAt: string;
-  /**
-   * The Onshape context the plan was built for (element for parts and
-   * assemblies, document for releases). A review whose scope no longer
-   * matches the panel's context is dropped: the stored plan describes
-   * another element.
-   */
+  /** The element, or the document for a release; another drops the review. */
   scope: string;
   edits: Record<string, ItemEdit>;
   applying: boolean;
@@ -64,7 +53,6 @@ export type ReleaseReview = ReviewBase & {
   kind: "release";
   plan: ReleasePlan;
   changeNotice: ChangeNoticeEdit | null;
-  /** Whether this push records a change notice. Decided per push, not by config. */
   createChangeNotice: boolean;
   makeDefault: boolean;
   /** Assemblies whose BOM the plan could not read; their lines are empty. */
@@ -73,12 +61,7 @@ export type ReleaseReview = ReviewBase & {
 
 export type ReviewState = PartReview | AssemblyReview | ReleaseReview;
 
-/**
- * Rows a part review ticks by default: the ones a push would act on. An
- * `unchanged` row is shown for context and left unticked so the button count
- * is the number of items the apply touches; a row without a part number
- * cannot be pushed at all.
- */
+/** `unchanged` rows start unticked: the button counts what apply touches. */
 export function defaultSelectedPartIds(rows: PartPlanRow[]): Set<string> {
   return new Set(
     rows
@@ -133,11 +116,6 @@ export function createReview(input: {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Edits
-// ---------------------------------------------------------------------------
-
-/** The proposal with the user's edits laid over it — what the editor shows. */
 export function editedItem(
   proposed: ProposedItem,
   edit: ItemEdit | undefined
@@ -158,10 +136,8 @@ export function editedItem(
 }
 
 /**
- * Items whose Buy or Make, after the push's mapped values and the review's
- * edits, disagrees with Onshape's BOM: a Buy item the push writes a BOM into,
- * and a Make item Onshape lists as one unit, which gets no BOM. The push
- * writes both as they are, and the review says so.
+ * A Buy item the push writes a BOM into, and a Make item Onshape shows as one
+ * unit (no BOM), after mapped values and edits. The push writes both anyway.
  */
 export function replenishmentMismatches(
   plan: AssemblyPlan,
@@ -214,23 +190,19 @@ export function replenishmentMismatches(
   return lines;
 }
 
-/** Under the item choices: what a choice in the review does and does not do. */
 export const CARBON_ONLY_NOTE =
   "Changes here apply to Carbon only. Onshape keeps its values.";
 
-/** A mapped item field value with its source: `Buy · from Onshape "Make or buy"`. */
 export function mappedValueText(field: PlanItemField): string {
   return `${field.label}: ${field.value ?? "—"} · from Onshape "${field.onshapeName}"`;
 }
 
-/** An Onshape value the push does not write to an existing item. */
 export function keptDifferenceText(kept: KeptDifference): string {
   return `${kept.label}: Onshape has ${kept.onshape}. Carbon keeps ${
     kept.carbon ?? "no value"
   } (set at creation only).`;
 }
 
-/** A custom field value an "everyPush" mapping writes over Carbon's. */
 export function customFieldChangeText(field: PlanCustomField): string {
   const replaces = field.replaces ?? null;
   const verb =
@@ -242,7 +214,6 @@ export function customFieldChangeText(field: PlanCustomField): string {
   return `${field.name}: ${verb} (updated on every push).`;
 }
 
-/** A value an "everyPush" mapping writes over Carbon's. */
 export function itemFieldChangeText(change: ItemFieldChange): string {
   const verb =
     change.from === null
@@ -254,10 +225,6 @@ export function itemFieldChangeText(change: ItemFieldChange): string {
       : "updated on every push"
   }).`;
 }
-
-// ---------------------------------------------------------------------------
-// Apply
-// ---------------------------------------------------------------------------
 
 export type PartApplyBody = {
   planId: string;
@@ -276,15 +243,14 @@ export type ReleaseApplyBody = {
   edits: Record<string, ItemEdit>;
   changeNotice: ChangeNoticeEdit | null;
   /**
-   * Sent only when the plan proposed a notice.
-   * Omitted otherwise: the apply then records one if the push creates
-   * something the plan did not foresee (a row that vanished since review).
+   * Sent only when the plan proposed a notice. Omitted, apply still records
+   * one for a create the plan did not foresee (a row gone since review).
    */
   createChangeNotice?: boolean;
   makeDefault: boolean;
 };
 
-/** A create keeps its whole edit; an existing item keeps only what it may change. */
+/** An existing item keeps only its manufacturing choices. */
 function scopeEdit(
   edit: ItemEdit | undefined,
   isCreate: boolean
@@ -316,11 +282,7 @@ function collectEdits(
   return out;
 }
 
-/**
- * The apply request for a review. A row the user edited then deselected or
- * excluded sends nothing, and the server recomputes what actually changed, so
- * an edit that matches the current value writes nothing.
- */
+/** A deselected or excluded row sends nothing, even when edited. */
 export function applyRequestBody(
   review: ReviewState
 ): PartApplyBody | AssemblyApplyBody | ReleaseApplyBody {
@@ -400,7 +362,6 @@ export function applyRequestBody(
   }
 }
 
-/** How many Carbon items the apply will touch — the number on the button. */
 export function applyCount(review: ReviewState): number {
   switch (review.kind) {
     case "part":
@@ -452,12 +413,7 @@ export function clearFieldErrors(
   return out;
 }
 
-/**
- * plan-release reports assemblies whose BOM could not be read (their lines
- * are stored empty rather than failing the plan). The panel renders them as
- * text: strings pass through, an object with a string `message` contributes
- * that, anything else is dropped rather than shown as "[object Object]".
- */
+/** plan-release's unreadable-BOM warnings as text; anything else is dropped. */
 export function normalizeWarnings(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   const out: string[] = [];
@@ -474,25 +430,16 @@ export function normalizeWarnings(value: unknown): string[] {
   return out;
 }
 
-// ---------------------------------------------------------------------------
-// Rendering helpers
-// ---------------------------------------------------------------------------
-
 /**
- * `warning`: this method will NOT be written — the reviewer must see it before
- * pushing. `notice`: it will be written, into a new Draft version, so nothing
- * live changes until someone releases it. Neither is an error.
+ * `warning`: the method is not written. `notice`: it is written into a Draft
+ * version, so nothing live changes until someone releases it.
  */
 export type MethodDescription = {
   text: string;
   tone: "normal" | "muted" | "notice" | "warning";
 };
 
-/**
- * One line per make method in the assembly review. Counts reflect the user's
- * exclusions: an excluded child is not written, and a method whose parent is
- * excluded is not applied at all because the parent item will not exist.
- */
+/** Leaves out excluded children; an excluded parent's method is not applied. */
 export function describeMethod(
   method: AssemblyPlanMethod,
   excluded: Set<string>
@@ -529,8 +476,8 @@ export function describeMethod(
       tone: "muted"
     };
   }
-  // A released method is not skipped: the push writes a Draft version of it
-  // (see `ensureDraftMakeMethod`) — the one an earlier push made, or a new one.
+  // The push writes a Draft version (`ensureDraftMakeMethod`): the one an
+  // earlier push made, or a new one.
   if (method.status === "active") {
     const draft =
       method.reusedDraftVersion != null
@@ -545,7 +492,6 @@ export function describeMethod(
   return { text: `${parent} · ${label}: ${counts}`, tone: "normal" };
 }
 
-/** The counts of a release push the result line is built from. */
 export type ReleaseResultCounts = {
   revisionsCreated: number;
   itemsCreated: number;
@@ -562,12 +508,7 @@ export type ReleaseResultCounts = {
 const countOf = (count: number, noun: string) =>
   `${count} ${noun}${count === 1 ? "" : "s"}`;
 
-/**
- * The one-line result of a release push. What the change notice holds comes
- * first, then BOM parts the push created (they are not on the notice), then
- * the BOM lines. Zero counts are left out, and BOMs are mentioned only when
- * the release wrote one.
- */
+/** BOM parts the push created are listed apart: they are not on the notice. */
 export function releaseResultText(s: ReleaseResultCounts): string {
   const staged = [
     s.revisionsCreated > 0 ? countOf(s.revisionsCreated, "new revision") : null,
@@ -612,11 +553,8 @@ export type PartApplyResult = {
 };
 
 /**
- * Patch the panel's part list from apply results so a pushed part shows as
- * linked without another Onshape read. The Carbon item's identity comes from
- * the result; its revision and name come from the plan — the values the
- * server just wrote (the merged proposal for a create, the Onshape name for
- * an adopt or update). Rows the apply did not link are left as they were.
+ * Marks pushed parts linked without another Onshape read. Identity comes from
+ * the result; revision and name from the plan, which is what the server wrote.
  */
 export function patchPartStatuses(
   rows: PanelPartStatus[],

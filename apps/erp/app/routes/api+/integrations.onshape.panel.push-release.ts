@@ -70,7 +70,6 @@ export const config = {
   runtime: "nodejs"
 };
 
-// Shape only: `mergeItemEdits` validates values and answers a 422 naming the row.
 const itemEditSchema = z.object({
   name: z.string().optional(),
   description: z.string().nullable().optional(),
@@ -153,16 +152,13 @@ function partInsert(
   } as any;
 }
 
-/**
- * Apply a reviewed release plan. Makes no Onshape call; Carbon's state at apply time outranks the plan.
- */
+/** Apply a reviewed release plan; Carbon's state at apply time outranks the plan. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
     {
       create: "parts",
       update: "parts",
-      // Re-pushing replaces the BOM lines an earlier push wrote.
       delete: "parts"
     }
   );
@@ -176,7 +172,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const { planId, changeNotice: changeNoticeEdit } = parsed.data;
   const edits = parsed.data.edits as Record<string, ItemEdit>;
 
-  // Peek, not take: a 422 must leave the plan in place for a retry.
   const stored = await peekPanelPlan(planId, { companyId, userId });
   if (!stored) {
     return data(
@@ -195,7 +190,6 @@ export async function action({ request }: ActionFunctionArgs) {
   // Unset: a notice whenever this push creates something.
   const createChangeNoticeChoice = parsed.data.createChangeNotice;
 
-  // Merge the review's edits before any write.
   const merged = mergeEditsForCreates(
     [
       ...plan.items
@@ -262,10 +256,7 @@ export async function action({ request }: ActionFunctionArgs) {
     errors: []
   };
 
-  // What the plan says about each item it does not create: its current
-  // fields, and for a release item the "everyPush" values and descriptions.
-  // A part number that is both a release item and a BOM child uses the
-  // release item's plan.
+  // A part number that is both a release item and a BOM child uses the release item's plan.
   type PlannedRow = MappedRowPlan & {
     current?: ItemFieldSnapshot | null;
     changes?: OwnedFieldChange[];
@@ -277,8 +268,7 @@ export async function action({ request }: ActionFunctionArgs) {
   for (const item of plan.items) {
     if (item.current) plannedByPartNumber.set(item.partNumber, item);
   }
-  // A create writes these at the insert; a revision copies its base and is
-  // not a creation for a custom field.
+  // Written at insert. A revision shares its base's `part` row: no create-time values.
   const createdFieldsByPartNumber = new Map<string, PlanCustomField[]>();
   for (const row of [...plan.children, ...plan.items]) {
     if (row.action === "create" && row.customFields) {
@@ -286,11 +276,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
   const fieldEditsApplied = new Set<string>();
-  /**
-   * The descriptions, mapped values and reviewer edits for an item the push
-   * does not create. The row's method, Sourcing and unit are updated in place,
-   * because a BOM line written later copies them.
-   */
+  /** Writes the plan's values to an item the push did not create; updates `row` in place. */
   const applyItemFieldEdit = async (partNumber: string, row: ItemRow) => {
     if (fieldEditsApplied.has(partNumber)) return;
     const planned = plannedByPartNumber.get(partNumber);
@@ -317,7 +303,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const values = mappedFieldValues(planned.customFields ?? [], false);
     if (values.fieldIds.size === 0) return;
-    // `part` is keyed by readableId and shared by every revision.
     const held = await client
       .from("part")
       .select("customFields")
@@ -349,7 +334,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
   };
-  /** The values `upsertPart` does not take: MPN, and Sourcing. */
+  /** The values `upsertPart` does not take: MPN and Sourcing. */
   const writeCreatedExtras = async (
     label: string,
     itemId: string,
@@ -370,7 +355,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   };
 
-  // Re-read every part number (all revisions): the plan may be minutes old.
+  // Every revision of every part number, re-read: the plan may be minutes old.
   const partNumbers = [
     ...new Set([
       ...modelItems.map((item) => item.partNumber),
@@ -402,7 +387,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const letterRowFor = (partNumber: string, revision: string) =>
     (byReadable.get(partNumber) ?? []).find((row) => row.revision === revision);
 
-  // Pass 1: an item at every released letter.
   const created: CreatedEntry[] = [];
   const revisionItemByPartNumber = new Map<string, ItemRow>();
 
@@ -431,8 +415,8 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   });
 
-  // An assembly whose BOM was not read at review is not minted: a revision would carry the
-  // base's Onshape lines with no mapping rows, and a new item would have no BOM.
+  // An assembly whose BOM was not read at review is not minted: a revision would
+  // carry the base's Onshape lines unmapped, and a new item would have no BOM.
   for (const decision of decisions) {
     if (
       decision.kind !== "reuse" &&
@@ -476,8 +460,8 @@ export async function action({ request }: ActionFunctionArgs) {
     fullBaseById.set(row.id, row);
   }
 
-  // `createRevision` copies the base's lines without mapping rows. Key its Onshape lines now:
-  // once the revision exists, a failed read leaves copies that look manual.
+  // `createRevision` copies the base's lines without mapping rows. Key the base's
+  // Onshape lines now: after the revision exists, a failed read leaves manual-looking copies.
   const assemblyBaseIds = [
     ...new Set(
       decisions.flatMap((decision) =>
@@ -553,8 +537,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Take the plan only after the reads the writes depend on, so a failed read keeps the review.
-  // One-shot from here: a concurrent apply of the same review finds nothing.
+  // Taken after the reads the writes depend on, so a failed read keeps the review;
+  // one-shot, so a concurrent apply of the same review finds nothing.
   if (!(await takePanelPlan(planId, { companyId, userId }))) {
     return data(
       { error: "This review has expired — review again" },
@@ -562,11 +546,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // A notice stages what this push creates: each new revision or item is
-  // inactive and owned by the notice until it is released in Carbon. Created
-  // first, so every item is tied to it as it is written. A release pushed
-  // from a second document adds to the notice its first push made, while
-  // that notice still takes items.
+  // The notice exists before the first item write, so each item is staged as it
+  // is written. A second document of the same release reuses the open notice.
   let changeNotice: { id: string; changeNoticeId: string } | null = null;
   let noticeReused = false;
   let noticeSortOrder = 0;
@@ -686,7 +667,7 @@ export async function action({ request }: ActionFunctionArgs) {
         decision.base.id
       );
     } else {
-      // `upsertPart` reads the new id back by readableId, safe only because no other revision exists.
+      // Safe with `upsertPart`'s readback by readableId: no other revision exists.
       const { proposed } = decision;
       const insertedItem = await upsertPart(
         client,
@@ -737,7 +718,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   summary.alreadyPushed = created.length === 0;
   if (changeNotice && !noticeReused && created.length === 0) {
-    // Every create failed, so the notice holds nothing.
     const dropped = await deleteChangeNotice(
       client,
       db,
@@ -754,8 +734,8 @@ export async function action({ request }: ActionFunctionArgs) {
     changeNotice = null;
   }
 
-  // Pass 2: BOMs for released assemblies. Any read failure skips every BOM write:
-  // deleting or inserting on a partial read duplicates or orphans lines.
+  // Any BOM read failure skips every BOM write: writing on a partial read
+  // duplicates or orphans lines.
   let bomReadFailure: string | null = null;
 
   const methodByItemId = new Map(baseMethodByItemId);
@@ -777,7 +757,6 @@ export async function action({ request }: ActionFunctionArgs) {
       error instanceof Error ? error.message : "failed to read make methods";
   }
 
-  // 2a: assemblies that take their BOM. A method released since review keeps its BOM (a skip).
   type BomTarget = {
     item: ReleasePlanItem;
     label: string;
@@ -806,8 +785,8 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // null is a BOM the review could not read: leave the method alone rather than erase it.
-    // An empty BOM is [] and is applied.
+    // null: the review could not read the BOM, so the method is left alone. An
+    // empty BOM is [] and is applied.
     const lines = plan.bomLinesByElementId[item.elementId];
     if (!lines) {
       summary.skipped.push(
@@ -832,7 +811,6 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  // 2b: line items: this release's letter item, else the revision the BOM names (else the latest), else a create.
   const childItemByPartNumber = new Map<string, ItemRow>();
   const childFailed = new Set<string>();
   for (const target of bomTargets) {
@@ -901,15 +879,12 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Sub-assembly lines, and Make to Order lines as Carbon's BOM editor does,
-  // point at the child's make method.
   const madeChildItemIds = [
     ...new Set(
       bomTargets.flatMap((target) =>
         target.lines.flatMap((child) => {
           if (!child.partNumber) return [];
           const row = childItemByPartNumber.get(child.partNumber);
-          // A sub-assembly, or a made part whose line is Make to Order.
           if (
             child.children.length === 0 &&
             row?.defaultMethodType !== "Make to Order"
@@ -931,7 +906,7 @@ export async function action({ request }: ActionFunctionArgs) {
         methodByItemId.set(itemId, method);
       }
     } catch (error) {
-      // Without them every sub-assembly line would get a null method and flatten the tree.
+      // Without them every sub-assembly line gets a null method and flattens the tree.
       bomReadFailure =
         error instanceof Error
           ? error.message
@@ -939,8 +914,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // 2c: delete the revision copies of the base's Onshape lines (manual lines stay), then the
-  // lines a previous release push wrote.
+  // Delete the revision's copies of the base's Onshape lines (manual lines stay),
+  // then the lines a previous push of this release wrote.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
     bomTargets.flatMap(
       (target): Array<[string, string]> =>
@@ -1016,7 +991,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (mapped && !bomReadFailure) {
-    // A line whose delete failed keeps its ownership row, or it would read as manual.
     const failedLineIds = new Set<string>();
     for (const batch of chunkFilterValues(
       mapped.data.map((mapping) => mapping.entityId)
@@ -1052,7 +1026,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   summary.methodsTouched += bomTargets.length;
 
-  // 2d: write the released lines. Level 1 only; sub-assemblies get theirs from their own entries.
+  // One level only: a sub-assembly gets its lines from its own release item.
   for (const target of bomTargets) {
     const { item, label, methodId } = target;
     const lines: OwnedMethodLine[] = [];
@@ -1066,7 +1040,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const childItem = childItemByPartNumber.get(child.partNumber);
       if (!childItem) continue; // creation failed above; error already recorded
 
-      // A reused Material is a Material line; a Tool cannot be a line at all.
+      // A reused Material or Consumable keeps its type; a Tool or Service cannot be a line.
       const itemType = bomLineItemType(childItem);
       if (!itemType) {
         summary.errors.push(
@@ -1124,9 +1098,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Pass 3: release mappings and default revisions.
-  // An item holds one Onshape link. A reused revision already linked to its
-  // part or assembly keeps that link, which status and change detection read.
+  // An item holds one Onshape link: a reused revision linked to its part or
+  // assembly keeps that link, which status and change detection read.
   const reusedIds = decisions
     .filter((decision) => decision.kind === "reuse")
     .map((decision) => decision.row.id);
@@ -1186,9 +1159,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Make Default repoints sibling revisions' methodMaterial lines to the new revision.
-  // A staged revision is left out: until its notice is released it is inactive,
-  // and the release supersedes the old revision instead.
+  // Make Default repoints every BOM line using a sibling revision to the new one.
+  // Not for a staged revision: releasing its notice supersedes the old one instead.
   if (makeDefault && !changeNotice) {
     for (const entry of created) {
       if (!entry.baseItemId) continue; // brand-new item: it is the only revision
@@ -1206,7 +1178,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Pass 4: asset exports at the released versions.
   const assetTargets: Array<{
     item: ReleasePlanItem;
     itemId: string;
@@ -1222,8 +1193,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
   for (const drawing of drawingItems) {
-    // The model the plan tied the drawing to: in this release, or already in
-    // Carbon at the revision the release package names.
+    // The drawing's model: in this release, or in Carbon at the revision the plan named.
     const model = drawing.drawingOf;
     const targetId = model
       ? (revisionItemByPartNumber.get(model.partNumber)?.id ??
@@ -1253,8 +1223,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       continue;
     }
-    // The event id dedupes a retried apply; the job spends Onshape quota on every run.
-    // Per-target try: the writes have landed, so a queue failure is a partial success.
+    // The event id dedupes a retried apply (each run spends Onshape quota). The
+    // writes have landed, so a queue failure is reported, not thrown.
     try {
       await trigger(
         "onshape-panel-sync",

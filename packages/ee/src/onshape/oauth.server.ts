@@ -59,12 +59,9 @@ export type OnshapeAuthorizationStart =
   | { ok: false; reason: "not-configured" | "connection-conflict" };
 
 /**
- * Start the OAuth round trip for an Onshape integration: resolve its client,
- * refuse a sync connection while the OTHER one is active (the panel holds its
- * own grant beside either), and issue the state the callback will consume. The
- * state is bound to this browser, user, company and integration — otherwise
- * anyone could hand a victim a callback URL carrying their own Onshape code and
- * link the victim's company to the attacker's account.
+ * Refuses a sync connection while the other one is active; the panel's grant
+ * sits beside either. The state is bound to this browser, user, company and
+ * integration, so a callback URL carrying another account's code is refused.
  */
 export async function beginOnshapeAuthorization(
   request: Request,

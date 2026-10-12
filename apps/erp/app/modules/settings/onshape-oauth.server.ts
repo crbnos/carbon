@@ -44,18 +44,11 @@ function integrationsUrl(request: Request) {
 }
 
 /**
- * The OAuth callback for every Onshape integration — the public app
- * (`/api/integrations/onshape/oauth`), a Government customer's private app
- * (`/api/integrations/onshape-government/oauth`) and the panel
- * (`/api/integrations/onshape-v2/oauth`). Only where the client comes from
- * differs, and `loadOnshapeOAuthConfig` owns that.
- *
- * Onshape reaches this by redirecting the user's browser — inside the popup
- * `Onshape.onClientInstall` opened, or the whole tab when the connect started
- * from a settings save — so a failure has to render as something the user can
- * act on. `oauthPopupResponse` posts the outcome to the page that opened the
- * popup and closes it. Only a code crosses the boundary; `integrationErrors`
- * owns the copy.
+ * The OAuth callback for every Onshape grant (`onshape`, `onshape-government`,
+ * `onshape-v2`); `loadOnshapeOAuthConfig` picks the client. Onshape redirects
+ * the browser here, in the install popup or the whole tab, so the outcome
+ * renders through `oauthPopupResponse`. Only an error code crosses;
+ * `integrationErrors` owns the copy.
  */
 export async function completeOnshapeAuthorization({
   request,
@@ -128,8 +121,8 @@ export async function completeOnshapeAuthorization({
   const serviceRole = getCarbonServiceRole();
 
   // A company holds one Onshape sync connection at a time; two would leave
-  // every background job guessing which tenant to talk to. The panel holds its
-  // own grant beside either and is not part of that rule.
+  // every background job guessing which tenant to talk to. The panel's grant
+  // is outside that rule.
   if (
     isOnshapeIntegrationId(integrationId) &&
     (await getConflictingOnshapeIntegration(
@@ -166,11 +159,8 @@ export async function completeOnshapeAuthorization({
     // The scope actually granted by this authorization. Onshape returns it on
     // the token response; fall back to what we requested. A token minted
     // without write can't export assets or manage the release webhook, and a
-    // refresh can't widen it, so the grant patch turns asset sync off.
-    //
-    // Only the grant's own keys are written: settings (a Government app's
-    // client and tenant, the asset-sync toggle, the panel's property map and
-    // push defaults) survive a reconnect.
+    // refresh can't widen it, so the grant patch turns asset sync off. The
+    // patch writes only the grant's keys, so settings survive a reconnect.
     const scope = tokenData.scope ?? ONSHAPE_OAUTH_SCOPES.join(" ");
     let saved: Awaited<ReturnType<typeof patchOnshapeOAuthGrant>>;
     try {

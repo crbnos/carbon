@@ -130,9 +130,8 @@ export const ITAR_RIDER_PDF_PATH = "https://carbon.ms/itar-rider.pdf";
 export const ONSHAPE_CLIENT_ID = getEnv("ONSHAPE_CLIENT_ID");
 export const ONSHAPE_CLIENT_SECRET = getEnv("ONSHAPE_CLIENT_SECRET");
 export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL");
-// The panel integration (`onshape-v2`) holds its own OAuth grant, so it needs
-// its own callback. Register BOTH URLs on the same Onshape application in the
-// dev portal.
+// The panel (`onshape-v2`) has its own OAuth grant and callback; register both
+// redirect URLs on the same Onshape app.
 export const ONSHAPE_V2_OAUTH_REDIRECT_URL = getEnv(
   "ONSHAPE_V2_OAUTH_REDIRECT_URL"
 );

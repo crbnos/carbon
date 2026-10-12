@@ -21,13 +21,6 @@ import {
   updateItemMethodAndSourcing
 } from "~/modules/items";
 
-/**
- * The panel pushes' multi-row writes that must land together, as Kysely
- * transactions: the Supabase client has none, and a half-written pair here
- * leaves Carbon in a state the next push reads wrongly — an item with no link,
- * or lines with no ownership rows (which the next push duplicates).
- */
-
 const logger = getLogger("erp", "onshape", "push");
 
 type MethodMaterialInsert =
@@ -35,15 +28,13 @@ type MethodMaterialInsert =
 
 export type OwnedMethodLine = {
   row: Omit<MethodMaterialInsert, "companyId" | "createdBy">;
-  /** The line's ownership row metadata; `makeMethodId` names its method. */
+  /** Ownership row metadata; `makeMethodId` names the line's method. */
   metadata: Record<string, unknown>;
 };
 
 /**
- * Replace an item's Onshape link: clear any row for this item and any row for
- * this external id, then insert the one canonical row. Both uniqueness
- * constraints depend on the deletes landing first, and all three either land
- * or none do. Returns the new mapping id.
+ * Replace an item's Onshape link in one transaction: delete any row for this
+ * item or this externalId, then insert. Both unique indexes need the deletes first.
  */
 export async function swapItemMapping(
   db: Kysely<KyselyDatabase>,
@@ -102,11 +93,8 @@ export async function swapItemMapping(
 }
 
 /**
- * Insert BOM lines and the ownership row for each, together. A line without
- * its ownership row reads as one a person added, so the next push keeps it and
- * inserts a second copy beside it; a short insert therefore rolls back rather
- * than pair mapping rows with the wrong lines. Returns the new mapping ids, in
- * the order the lines were given.
+ * Insert BOM lines and their ownership rows in one transaction. A line without
+ * its ownership row reads as manual, so the next push keeps it and adds a copy.
  */
 export async function insertOwnedMethodLines(
   db: Kysely<KyselyDatabase>,
@@ -135,8 +123,7 @@ export async function insertOwnedMethodLines(
         )
         .returning("id")
         .execute();
-      // Ids come back in insertion order, which is what pairs each line with
-      // its mapping; that only holds while the counts match.
+      // Mappings pair with lines by index (RETURNING follows VALUES order).
       if (inserted.length !== lines.length) {
         throw new Error(
           `wrote ${inserted.length} of ${lines.length} lines; nothing was kept`
@@ -175,10 +162,8 @@ export async function insertOwnedMethodLines(
 }
 
 /**
- * Take over a line someone added by hand: set the columns Onshape owns and
- * write its ownership row, together. Only `quantity`, `order`, the child
- * method pointer and the item change; the line's operation, scrap, tags and
- * kit stay Carbon's. Returns the new mapping id.
+ * Take over a manual line in one transaction: set the Onshape-owned columns and
+ * write its ownership row. Operation, scrap, tags and kit are kept.
  */
 export async function claimManualMethodLine(
   db: Kysely<KyselyDatabase>,
@@ -240,19 +225,8 @@ export async function claimManualMethodLine(
 }
 
 /**
- * Put an item a push created under a change notice, the way
- * `createChangeNoticeDraftMethod` stages a Revision or a New Part: the item is
- * inactive, it and its Draft make method carry the notice's id, and an
- * affected-item row points at both. Releasing the notice then activates the
- * Draft, reveals the item and, for a Revision, writes the old-to-new
- * supersession. The stamps and the row land together or not at all.
- */
-/**
- * The change notice an earlier push of the same Onshape release made, while it
- * can still take items. One release can span two documents, and each document
- * is pushed on its own: the second push adds to the first push's notice instead
- * of making a second notice with the same name. Null when there is none, or
- * when it is past Engineering Complete.
+ * The notice an earlier push of this release made, while it still takes items:
+ * a release spanning two documents is pushed once per document into one notice.
  */
 export async function findOpenReleaseNotice(
   client: SupabaseClient<Database>,
@@ -330,6 +304,10 @@ export async function findOpenReleaseNotice(
     : null;
 }
 
+/**
+ * Stage a created item under a change notice as `createChangeNoticeDraftMethod`
+ * does: item inactive, item and Draft method stamped, one affected-item row.
+ */
 export async function stageChangeNoticeItem(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -432,10 +410,6 @@ type WriterContext = {
   userId: string;
 };
 
-/**
- * Write the plain item columns the Properties panel writes directly (MPN and
- * unit of measure), as that panel does. It adds no rule of its own.
- */
 export async function updateItemColumns(
   client: SupabaseClient<Database>,
   args: {
@@ -460,12 +434,8 @@ export async function updateItemColumns(
 }
 
 /**
- * One function per writer key of the target list (`standard-fields.ts`). A
- * new key fails the typecheck until it has a function here. Each writes the
- * way the item page does, so what depends on the field follows:
- * `updateItemMethodAndSourcing` mirrors method and sourcing onto Draft method
- * materials, and `cascadeItemTrackingType` updates open jobs and draft lines.
- * Returns an error message, or null.
+ * One writer per `StandardFieldWriter` key. Each writes as the item page does,
+ * so the cascades onto Draft method lines and open documents follow.
  */
 const STANDARD_FIELD_WRITERS: Record<
   StandardFieldWriter,
@@ -518,21 +488,13 @@ const STANDARD_FIELD_WRITERS: Record<
   }
 };
 
-/**
- * The order the writers run in: replenishment, method and sourcing first, as
- * one interlocked write; then tracking; then the plain columns.
- */
 const WRITER_ORDER: StandardFieldWriter[] = [
   "itemMethod",
   "itemTracking",
   "itemColumn"
 ];
 
-/**
- * Write item field values to an existing item through each field's writer.
- * The values are final: the plan's interlock and the reviewer's edits are
- * already applied. Returns an error message, or null.
- */
+/** Values must be final: this applies no interlock. Returns an error message, or null. */
 export async function applyItemFieldWrites(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -569,11 +531,9 @@ export async function applyItemFieldWrites(
 }
 
 /**
- * What a push writes to an item it did not create: the descriptions in
- * "everyPush" mode, then the item fields — the plan's mapped target with the
- * reviewer's edits on top — through their writers. Returns the item's fields
- * after the write (a BOM line written later copies its method from them),
- * or the errors.
+ * Write to an item the push did not create: the "everyPush" descriptions, then
+ * the plan's target with the reviewer's edits on top. Returns the fields after
+ * the write, which a BOM line written later copies its method and unit from.
  */
 export async function applyExistingItemFields(
   client: SupabaseClient<Database>,

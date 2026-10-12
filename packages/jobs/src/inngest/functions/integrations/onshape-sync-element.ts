@@ -19,16 +19,15 @@ import {
   type OnshapeModelFile
 } from "./onshape-attach";
 
-// Export→download→attach for ONE released Onshape element. Wires the OnshapeClient
-// export methods (@carbon/ee) to the Carbon-side attach helper. Flow: create
-// translation -> poll to DONE -> download from resultDocumentId/
-// resultExternalDataIds -> attach. Poll-with-backoff (real completions take
-// seconds); no translation.complete webhook needed.
+// Export→download→attach for ONE Onshape element, released or in a workspace.
+// Wires the OnshapeClient export methods (@carbon/ee) to the Carbon-side attach
+// helper. Flow: create translation -> poll to DONE -> download from
+// resultDocumentId/resultExternalDataIds -> attach. Poll-with-backoff (real
+// completions take seconds); no translation.complete webhook needed.
 //
-// The caller (release-sync / backfill job) is responsible for turning a release
-// event into these inputs: resolve itemId by part number (readableIdWithRevision,
-// LINK-ONLY skip if none), and the documentId/versionId/elementId of the released
-// geometry, including the released partId and configuration. Individual-part
+// Callers (the release-sync and backfill jobs, and onshape-panel-sync) resolve
+// itemId and the documentId/version-or-workspace/elementId of the geometry,
+// including its partId and configuration. Individual-part
 // thumbnails come from that selected model after optimization; an element
 // thumbnail represents the entire Part Studio and must never be attached to it.
 
@@ -38,16 +37,14 @@ type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
 export interface SyncOnshapeElementInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
-  // Which Onshape connection to export through. The panel pushes on
-  // `onshape-v2`; released-asset sync keeps the original default.
+  // Omitted: the company's active sync connection.
   integrationId?: OnshapeOAuthIntegrationId;
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
-  versionId: string; // the released version — or a workspace id when sourceWvm is "w"
+  versionId: string; // released version, or workspace id when sourceWvm is "w"
   sourceWvm?: "w" | "v"; // path segment for export/thumbnail calls; default "v"
-  // A workspace id is mutable, so a workspace export's model identity also
-  // carries the microversion it was reviewed at.
+  // Workspace ids are mutable, so a Part Studio model id also hashes this.
   sourceMicroversionId?: string;
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)

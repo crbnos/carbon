@@ -3,25 +3,9 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * Correlating a make method's BOM lines with the copy taken of them.
- *
- * A push must never write into a released (Active) method — Carbon's model is
- * that a live method is superseded by a new Draft version. So when the panel
- * meets an Active method it takes a Draft copy and writes there instead.
- *
- * A push only replaces lines a previous push wrote, identified by an
- * `externalIntegrationMapping` row keyed on the line id; the copy has new line
- * ids and no mappings, so every Onshape-owned line would read as manual and
- * the next push would insert a second copy beside each one. The mappings have
- * to be carried across, and the copy carries no back-pointer to say which new
- * line came from which old one.
- *
- * So they are paired on natural key, the same way `diffMethod` correlates a
- * change notice's draft against its base: by component item, and by `order`
- * within a component so an assembly that lists the same part twice keeps both
- * lines distinct. Anything that cannot be paired is left unmapped — an
- * unmapped line is treated as manual, which preserves it. The failure that
- * matters is pairing two lines wrongly, not pairing too few.
+ * Pairs a Draft copy's lines with the Active method's so push-ownership
+ * mappings survive the copy, which has new line ids and no back-pointer.
+ * Pairs by component item, then `order`; an unpaired line reads as manual.
  */
 
 export type CorrelatableLine = {
@@ -30,10 +14,6 @@ export type CorrelatableLine = {
   order: number | null;
 };
 
-/**
- * Map each source line id to the copied line that corresponds to it. Lines
- * with no counterpart are absent from the map rather than guessed at.
- */
 export function correlateCopiedLines(
   source: CorrelatableLine[],
   target: CorrelatableLine[]
@@ -45,8 +25,7 @@ export function correlateCopiedLines(
     list.push(line);
     byItem.set(line.itemId, list);
   }
-  // `order` is the only thing separating repeated components, and a copy is
-  // not guaranteed to preserve row order, so sort both sides the same way.
+  // A copy may not keep row order, so both sides sort by `order`, then id.
   for (const list of byItem.values()) list.sort(byOrderThenId);
 
   const consumed = new Map<string, number>();
@@ -57,7 +36,7 @@ export function correlateCopiedLines(
     if (!candidates) continue;
     const taken = consumed.get(line.itemId) ?? 0;
     const match = candidates[taken];
-    if (!match) continue; // fewer copies than sources: leave the rest unmapped
+    if (!match) continue;
     consumed.set(line.itemId, taken + 1);
     paired.set(line.id, match.id);
   }
@@ -71,10 +50,7 @@ function byOrderThenId(a: CorrelatableLine, b: CorrelatableLine): number {
   return a.id.localeCompare(b.id);
 }
 
-/**
- * The marker a push writes on a Draft it created (`externalIntegrationMapping`,
- * entityType `makeMethod`): which Active method the Draft was copied from.
- */
+/** entityType of the mapping row that marks a Draft the push made. */
 export const DRAFT_MARKER_ENTITY_TYPE = "makeMethod";
 
 export type DraftCandidate = {
@@ -90,16 +66,8 @@ export type DraftMarker = {
 };
 
 /**
- * The Draft a push may write into instead of creating another, or null.
- *
- * Only a Draft this integration made from the CURRENT Active method qualifies:
- * - a person's own "New Version" Draft has no marker, and writing into it
- *   would put Onshape lines beside theirs;
- * - a change notice's Draft is authored through the notice, and the ERP's own
- *   tools leave it alone;
- * - a marker naming another method is stale: releasing that Draft would roll
- *   back whatever the newer Active version changed;
- * - a Draft whose copy failed carries no marker, so it is never reused.
+ * Newest Draft the push made from the current Active method that no change
+ * notice holds: a person's Draft or a half-built copy has no marker to match.
  */
 export function pickReusableDraft(
   drafts: DraftCandidate[],
@@ -120,13 +88,9 @@ export function pickReusableDraft(
 }
 
 /**
- * Which copied line each Onshape-owned source line became.
- *
- * Pairing runs over EVERY source line, owned or manual: pairing the owned ones
- * alone would let an owned line claim the copy of a manual line on the same
- * component, swapping which of the two the next push replaces. Zero-quantity
- * lines are left out because the copy drops them, and counting them would
- * shift every later pair on that component. Only owned lines are returned.
+ * Pairs over every source line so an owned line cannot claim a manual line's
+ * copy on the same component; returns owned lines only. Zero-quantity lines
+ * are skipped because the copy drops them.
  */
 export function pairOwnedCopiedLines(
   source: Array<CorrelatableLine & { quantity: number | null }>,

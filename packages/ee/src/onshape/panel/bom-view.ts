@@ -3,26 +3,12 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 /**
- * The assembly's BOM as the panel shows it: Onshape's structured view.
- *
- * The status route hands the panel one pre-order array of lines, each carrying
- * Onshape's dotted item number ("1", "1.1", "1.1.2") — the same `index`
- * `parseBomTree` assigns. That is enough to rebuild the hierarchy on the
- * client, so the view costs no second Onshape call.
- *
- * Structured is the tree, collapsed to the top level. A real assembly runs to
- * hundreds of rows and the panel is about twenty tall, so showing every level
- * at once is unreadable; a sub-assembly opens when someone asks for it.
- *
- * Everything here is pure and total. A malformed index (a level that skips, a
- * parent that never appeared) resolves to a top-level row rather than throwing
- * or dropping the line — a line the user cannot see is worse than a line at the
- * wrong indent.
+ * The panel's structured BOM view, rebuilt from the dotted item numbers the
+ * status route returns. A malformed index (skipped level, missing parent)
+ * becomes a top-level row rather than a dropped line.
  */
 
-/** The little a view needs from a BOM line; callers pass their own richer row. */
 export type BomViewLine = {
-  /** Onshape's dotted item number. */
   index: string;
   partNumber: string | null;
   quantity: number;
@@ -33,7 +19,6 @@ export type BomViewNode<T extends BomViewLine> = {
   children: BomViewNode<T>[];
 };
 
-/** 1 for a top-level line, 2 for its children, and so on. */
 export function bomViewLevel(index: string): number {
   if (!index) return 1;
   return index.split(".").length;
@@ -43,15 +28,13 @@ function byIndex(a: { index: string }, b: { index: string }): number {
   return a.index.localeCompare(b.index, undefined, { numeric: true });
 }
 
-/** Rebuild the hierarchy from the dotted item numbers. */
 export function buildBomViewTree<T extends BomViewLine>(
   lines: T[]
 ): BomViewNode<T>[] {
   const nodes = new Map<string, BomViewNode<T>>();
   const roots: BomViewNode<T>[] = [];
 
-  // Shallowest first, so a parent is always in the map before its children —
-  // whatever order the caller's array arrived in.
+  // Shallowest first, so a parent is in the map before its children.
   const ordered = [...lines].sort(
     (a, b) => bomViewLevel(a.index) - bomViewLevel(b.index) || byIndex(a, b)
   );
@@ -75,20 +58,15 @@ export function buildBomViewTree<T extends BomViewLine>(
 
 export type BomViewRow<T extends BomViewLine> = {
   line: T;
-  /** 1-based, for the indent. */
+  /** 1-based. */
   level: number;
-  /** Sub-assembly: it has a row to open. */
   hasChildren: boolean;
-  /** Every line beneath it, at any depth — what opening it reveals. */
+  /** Lines beneath it at any depth. */
   descendantCount: number;
   open: boolean;
 };
 
-/**
- * The structured view's rows: the top level, plus the subtrees of whichever
- * sub-assemblies are open. A closed sub-assembly hides its whole subtree, so
- * an index inside a closed one is never consulted.
- */
+/** The top level plus the subtrees of open sub-assemblies. */
 export function visibleBomRows<T extends BomViewLine>(
   nodes: BomViewNode<T>[],
   open: ReadonlySet<string>
