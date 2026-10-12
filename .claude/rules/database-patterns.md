@@ -126,13 +126,15 @@ const suppliers = await Promise.all(
   lines.map((line) => client.from("supplier").select("*").eq("id", line.supplierId).single())
 );
 
-// Yes: one query, indexed by id.
-const { data } = await client
+// Yes: one query, indexed by id. Read `error` BEFORE `data ?? []` — an empty
+// map on a failed read looks exactly like "no suppliers" to every caller.
+const { data, error } = await client
   .from("supplier")
   .select("id, name")
   .in("id", [...new Set(lines.map((line) => line.supplierId))])
   .eq("companyId", companyId);
-const byId = new Map((data ?? []).map((row) => [row.id, row]));
+if (error) return { data: null, error };
+const byId = new Map(data.map((row) => [row.id, row]));
 ```
 
 Real precedents: `getWorkflowVersionNumbers` (flat `.in()` lookup instead of a nested embed),
