@@ -9,7 +9,11 @@ import {
   estimateAtCompletion,
   formatPercent,
   formatQuantity,
-  round
+  type QualifiedHours,
+  round,
+  type Section6765Input,
+  wageQres,
+  workCountryClass
 } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
@@ -4325,4 +4329,253 @@ export function buildLaborDistribution(
   return result.sort((a, b) =>
     (a.employeeName ?? "￿").localeCompare(b.employeeName ?? "￿")
   );
+}
+
+// --- R&D tax reports (Government Contracting 5d) -------------------------------
+
+/**
+ * One `projectLedger` row of a business component's subtree in the tax year
+ * (`getRdLedgerRows`): the work country (decision D3), the research role and
+ * whether the row is funded research (decision D10).
+ */
+export type RdLedgerRow = {
+  componentId: string;
+  costType: ProjectCostType;
+  documentType: string;
+  amount: number;
+  employeeId: string | null;
+  quantity: number;
+  countryCode: string | null;
+  rdActivityRole: RdActivityRole | null;
+  costObjective: Enums["projectCostObjective"] | null;
+  funded: boolean;
+};
+
+/** A business component (`getRdComponents`). */
+export type RdComponent = {
+  id: string;
+  readableId: string;
+  name: string;
+  rdComponentType: string | null;
+  rdSoftwareType: string | null;
+};
+
+/** One employee's year (`getRdEmployeeYear`). */
+export type RdEmployeeYear = {
+  employeeId: string;
+  employeeName: string | null;
+  /** Posted timesheet hours in the tax year, on every project. */
+  totalHours: number;
+  /** Σ imported gross wages; null when no payroll row is in the year. */
+  grossWages: number | null;
+  /** Σ Labor ledger amount in the tax year. */
+  laborAmount: number;
+  isOfficer: boolean;
+};
+
+export type Section174ARow = {
+  componentId: string;
+  readableId: string;
+  name: string;
+  domestic: number;
+  foreign: number;
+  unknown: number;
+  /** Burden rows, shown for review; not in `total`. */
+  burden: number;
+  /** The part of domestic, foreign and unknown that is funded research. */
+  funded: number;
+  total: number;
+  isTotal: boolean;
+};
+
+/**
+ * The §174A R&E rows: per business component, its ledger cost split by work
+ * country (Domestic, Foreign, Unknown). Burden rows go to a Burden column for
+ * review and stay out of the total. Funded research is not excluded (D6):
+ * "Of which funded" shows it. A last row holds the totals.
+ */
+export function buildSection174ARows(
+  rows: RdLedgerRow[],
+  components: RdComponent[]
+): Section174ARow[] {
+  const byComponent = new Map<string, Section174ARow>(
+    components.map((component) => [
+      component.id,
+      {
+        componentId: component.id,
+        readableId: component.readableId,
+        name: component.name,
+        domestic: 0,
+        foreign: 0,
+        unknown: 0,
+        burden: 0,
+        funded: 0,
+        total: 0,
+        isTotal: false
+      }
+    ])
+  );
+
+  for (const row of rows) {
+    const line = byComponent.get(row.componentId);
+    if (!line) continue;
+    const amount = Number(row.amount);
+    if (row.costType === "Burden") {
+      line.burden += amount;
+      continue;
+    }
+    const country = workCountryClass(row.countryCode);
+    if (country === "Domestic") line.domestic += amount;
+    else if (country === "Foreign") line.foreign += amount;
+    else line.unknown += amount;
+    if (row.funded) line.funded += amount;
+  }
+
+  const lines = [...byComponent.values()].map((line) => ({
+    ...line,
+    domestic: round(line.domestic),
+    foreign: round(line.foreign),
+    unknown: round(line.unknown),
+    burden: round(line.burden),
+    funded: round(line.funded),
+    total: round(line.domestic + line.foreign + line.unknown)
+  }));
+  const sum = (
+    field: "domestic" | "foreign" | "unknown" | "burden" | "funded"
+  ) => round(lines.reduce((total, line) => total + line[field], 0));
+
+  return [
+    ...lines,
+    {
+      componentId: "",
+      readableId: "",
+      name: "Total",
+      domestic: sum("domestic"),
+      foreign: sum("foreign"),
+      unknown: sum("unknown"),
+      burden: sum("burden"),
+      funded: sum("funded"),
+      total: round(sum("domestic") + sum("foreign") + sum("unknown")),
+      isTotal: true
+    }
+  ];
+}
+
+export const RD_WAGES_ESTIMATED_NOTE = "Estimated from labor cost";
+
+/**
+ * The inputs of the Form 6765 Section G rows (`section6765Rows`):
+ * 1. Qualified hours: Timesheet rows with a role other than Not Qualified,
+ *    not funded, in a Domestic country.
+ * 2. Wages: the employee's imported gross wages, else the Labor ledger
+ *    amount (decision D4), counted in `estimatedEmployeeCount`.
+ * 3. Supplies: Material rows; contract research: Outside Processing and
+ *    Purchased Service rows; both not funded and Domestic. Computer rental
+ *    is 0 (decision D7).
+ * A component with no QRE at all is left out. `unknownCountryHours` is the
+ * qualified, unfunded time that has no work country (decision D2).
+ */
+export function buildSection6765Input(
+  rows: RdLedgerRow[],
+  employees: RdEmployeeYear[],
+  components: RdComponent[]
+): {
+  components: Section6765Input[];
+  officerWages: number;
+  estimatedEmployeeCount: number;
+  unknownCountryHours: number;
+} {
+  const componentIds = new Set(components.map((component) => component.id));
+  const qualifiedByEmployee = new Map<string, QualifiedHours[]>();
+  const supplies = new Map<string, number>();
+  const contractResearch = new Map<string, number>();
+  let unknownCountryHours = 0;
+
+  for (const row of rows) {
+    if (!componentIds.has(row.componentId) || row.funded) continue;
+    const country = workCountryClass(row.countryCode);
+    if (row.documentType === "Timesheet" && row.costType === "Labor") {
+      const role = row.rdActivityRole;
+      if (!role || role === "Not Qualified" || !row.employeeId) continue;
+      const hours = Number(row.quantity);
+      if (country === "Unknown") {
+        unknownCountryHours += hours;
+        continue;
+      }
+      if (country !== "Domestic") continue;
+      const qualified = qualifiedByEmployee.get(row.employeeId) ?? [];
+      const existing = qualified.find(
+        (q) => q.componentId === row.componentId && q.role === role
+      );
+      if (existing) existing.hours += hours;
+      else qualified.push({ componentId: row.componentId, role, hours });
+      qualifiedByEmployee.set(row.employeeId, qualified);
+      continue;
+    }
+    if (country !== "Domestic") continue;
+    if (row.costType === "Material") {
+      supplies.set(
+        row.componentId,
+        (supplies.get(row.componentId) ?? 0) + Number(row.amount)
+      );
+    } else if (
+      row.costType === "Outside Processing" ||
+      row.costType === "Purchased Service"
+    ) {
+      contractResearch.set(
+        row.componentId,
+        (contractResearch.get(row.componentId) ?? 0) + Number(row.amount)
+      );
+    }
+  }
+
+  let estimatedEmployeeCount = 0;
+  const wageInput = employees
+    .filter((employee) => qualifiedByEmployee.has(employee.employeeId))
+    .map((employee) => {
+      const estimated = employee.grossWages === null;
+      if (estimated) estimatedEmployeeCount += 1;
+      return {
+        employeeId: employee.employeeId,
+        wages: Number(
+          estimated ? employee.laborAmount : (employee.grossWages ?? 0)
+        ),
+        totalHours: Number(employee.totalHours),
+        isOfficer: employee.isOfficer,
+        qualified: qualifiedByEmployee.get(employee.employeeId) ?? []
+      };
+    });
+  const wages = wageQres(wageInput);
+
+  const inputs = components
+    .map((component): Section6765Input => {
+      const componentWages = wages.byComponent[component.id];
+      return {
+        componentId: component.id,
+        name: `${component.readableId} ${component.name}`,
+        componentType: component.rdComponentType,
+        softwareType: component.rdSoftwareType,
+        research: componentWages?.research ?? 0,
+        supervision: componentWages?.supervision ?? 0,
+        support: componentWages?.support ?? 0,
+        supplies: round(supplies.get(component.id) ?? 0),
+        computerRental: 0,
+        contractResearch: round(contractResearch.get(component.id) ?? 0)
+      };
+    })
+    .filter(
+      (input) =>
+        input.research !== 0 ||
+        input.supervision !== 0 ||
+        input.support !== 0 ||
+        input.supplies !== 0 ||
+        input.contractResearch !== 0
+    );
+
+  return {
+    components: inputs,
+    officerWages: wages.officerWages,
+    estimatedEmployeeCount,
+    unknownCountryHours: round(unknownCountryHours)
+  };
 }

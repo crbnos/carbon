@@ -40,7 +40,9 @@ import type {
   projectMilestoneValidator,
   projectStateValidator,
   projectStockTransferLineValidator,
-  projectValidator
+  projectValidator,
+  RdEmployeeYear,
+  RdLedgerRow
 } from "./projects.models";
 import {
   apportionedBaseRefusal,
@@ -4789,6 +4791,157 @@ export async function getLaborDistributionRows(
     timecards: timecards.rows,
     payroll: payroll.rows
   };
+}
+
+// --- R&D tax reports (Government Contracting 5d) -------------------------------
+
+/**
+ * The `projectLedger` rows posted in the range to a business component or
+ * its subtree, down to the next business component (decision D5), in one
+ * query. Per row: the work country (D3: the timesheet entry's work location
+ * for a Timesheet row, else the project's location), the research role (the
+ * entry's, else its labor category's), the project's cost objective, and
+ * `funded` (D10: a Direct project with a line on a contract whose
+ * `researchFunded`, else whether it has a Cost Plus or Time & Materials line).
+ */
+export async function getRdLedgerRows(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<RdLedgerRow>`
+    WITH RECURSIVE bc AS (
+      SELECT e."id" AS "elementId", e."id" AS "componentId", e."companyId"
+      FROM "projectElement" e
+      WHERE e."companyId" = ${args.companyId} AND e."isBusinessComponent"
+      UNION ALL
+      SELECT c."id", bc."componentId", c."companyId"
+      FROM "projectElement" c
+      JOIN bc ON c."parentId" = bc."elementId" AND c."companyId" = bc."companyId"
+      WHERE NOT c."isBusinessComponent"
+    ),
+    contract_projects AS (
+      SELECT cc."id" AS "contractId", cc."projectId"
+      FROM "customerContract" cc
+      WHERE cc."companyId" = ${args.companyId} AND cc."projectId" IS NOT NULL
+      UNION
+      SELECT l."customerContractId", COALESCE(l."projectId", be."projectId")
+      FROM "customerContractLine" l
+      LEFT JOIN "projectElement" be
+        ON be."id" = l."projectElementId" AND be."companyId" = l."companyId"
+      WHERE l."companyId" = ${args.companyId}
+        AND COALESCE(l."projectId", be."projectId") IS NOT NULL
+    ),
+    funded_contracts AS (
+      SELECT cc."id"
+      FROM "customerContract" cc
+      WHERE cc."companyId" = ${args.companyId}
+        AND COALESCE(
+          cc."researchFunded",
+          EXISTS (
+            SELECT 1 FROM "customerContractLine" l
+            WHERE l."customerContractId" = cc."id"
+              AND l."companyId" = cc."companyId"
+              AND l."billingMethod" IN ('Cost Plus', 'Time & Materials')
+          )
+        )
+    ),
+    funded_projects AS (
+      SELECT DISTINCT cp."projectId"
+      FROM contract_projects cp
+      JOIN funded_contracts fc ON fc."id" = cp."contractId"
+    )
+    SELECT bc."componentId", pl."costType", pl."documentType", pl."amount",
+      pl."employeeId", COALESCE(pl."quantity", 0) AS "quantity",
+      CASE WHEN pl."documentType" = 'Timesheet' THEN wl."countryCode"
+        ELSE prl."countryCode" END AS "countryCode",
+      COALESCE(te."rdActivityRole", lc."rdActivityRole") AS "rdActivityRole",
+      p."costObjective",
+      (p."costObjective" = 'Direct' AND fp."projectId" IS NOT NULL) AS "funded"
+    FROM "projectLedger" pl
+    JOIN bc ON bc."elementId" = pl."projectElementId" AND bc."companyId" = pl."companyId"
+    JOIN "project" p ON p."id" = pl."projectId" AND p."companyId" = pl."companyId"
+    LEFT JOIN "location" prl ON prl."id" = p."locationId" AND prl."companyId" = p."companyId"
+    LEFT JOIN "timesheetEntry" te
+      ON pl."documentType" = 'Timesheet'
+      AND te."id" = pl."documentId" AND te."companyId" = pl."companyId"
+    LEFT JOIN "location" wl ON wl."id" = te."workLocationId" AND wl."companyId" = te."companyId"
+    LEFT JOIN "laborCategory" lc
+      ON lc."id" = COALESCE(te."laborCategoryId", pl."laborCategoryId")
+      AND lc."companyId" = pl."companyId"
+    LEFT JOIN funded_projects fp ON fp."projectId" = p."id"
+    WHERE pl."companyId" = ${args.companyId}
+      AND pl."postingDate" BETWEEN ${args.from}::date AND ${args.to}::date
+  `.execute(db);
+  return result.rows;
+}
+
+/**
+ * Per employee for the range: Posted timesheet hours (every project), the
+ * gross wages of imported payroll rows whose `periodEnd` is in the range
+ * (null with none), the Labor ledger amount, and the officer flag.
+ */
+export async function getRdEmployeeYear(
+  db: Kysely<KyselyDatabase>,
+  args: ReportRange
+) {
+  const result = await sql<RdEmployeeYear>`
+    WITH hours AS (
+      SELECT t."employeeId", SUM(t."hours") AS "totalHours"
+      FROM "timesheetEntry" t
+      WHERE t."companyId" = ${args.companyId}
+        AND t."status" = 'Posted'
+        AND t."entryDate" BETWEEN ${args.from}::date AND ${args.to}::date
+      GROUP BY t."employeeId"
+    ),
+    payroll AS (
+      SELECT pt."employeeId", SUM(pt."grossWages") AS "grossWages"
+      FROM "payrollPeriodTotal" pt
+      WHERE pt."companyId" = ${args.companyId}
+        AND pt."periodEnd" BETWEEN ${args.from}::date AND ${args.to}::date
+      GROUP BY pt."employeeId"
+    ),
+    labor AS (
+      SELECT pl."employeeId", SUM(pl."amount") AS "laborAmount"
+      FROM "projectLedger" pl
+      WHERE pl."companyId" = ${args.companyId}
+        AND pl."costType" = 'Labor'
+        AND pl."employeeId" IS NOT NULL
+        AND pl."postingDate" BETWEEN ${args.from}::date AND ${args.to}::date
+      GROUP BY pl."employeeId"
+    ),
+    employees AS (
+      SELECT "employeeId" FROM hours
+      UNION SELECT "employeeId" FROM payroll
+      UNION SELECT "employeeId" FROM labor
+    )
+    SELECT e."employeeId", u."fullName" AS "employeeName",
+      COALESCE(h."totalHours", 0) AS "totalHours",
+      pa."grossWages",
+      COALESCE(l."laborAmount", 0) AS "laborAmount",
+      COALESCE(ej."isOfficer", false) AS "isOfficer"
+    FROM employees e
+    LEFT JOIN hours h ON h."employeeId" = e."employeeId"
+    LEFT JOIN payroll pa ON pa."employeeId" = e."employeeId"
+    LEFT JOIN labor l ON l."employeeId" = e."employeeId"
+    LEFT JOIN "employeeJob" ej
+      ON ej."id" = e."employeeId" AND ej."companyId" = ${args.companyId}
+    LEFT JOIN "user" u ON u."id" = e."employeeId"
+  `.execute(db);
+  return result.rows;
+}
+
+/**
+ * The business components of the company (R&D tax): id, readable id, name,
+ * component type and software type.
+ * @mcp read
+ */
+export async function getRdComponents(client: Client, companyId: string) {
+  return client
+    .from("projectElement")
+    .select("id, readableId, name, rdComponentType, rdSoftwareType")
+    .eq("companyId", companyId)
+    .eq("isBusinessComponent", true)
+    .order("readableId", { ascending: true });
 }
 
 /**

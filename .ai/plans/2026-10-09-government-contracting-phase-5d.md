@@ -64,7 +64,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 10: Add the research role to the labor category
 - [x] Task 11: Add the research flags to the contract
 - [x] Task 12: Add the officer flag to the employee job
-- [ ] Task 13: Add the R&D report queries and builders
+- [x] Task 13: Add the R&D report queries and builders
 - [ ] Task 14: Add the two reports to the CSV route and the Reports page
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 16: Verify in the browser
@@ -650,3 +650,9 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   4. The §41(d)(4)(H) hint shows when both switches are on and the EFFECTIVE value is funded (a stored Funded, or Default on a contract with a Cost Plus or Time & Materials line). The plan says "the value is Funded"; a Default that resolves to funded has the same effect on the report.
   5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
 - Task 12: **Officer** is a `Boolean` after **FLSA status**, with the description "Used for Form 6765 Section E". The route action already spreads the validated fields into `updateEmployeeJob` (step 2). The route's initial values now pass the stored `isOfficer`, so the switch shows it. Browser verification deferred.
+- Task 13:
+  1. `getRdLedgerRows(db, { companyId, from, to })` is one raw `sql` query over Kysely, starting with the CTE of step 1. Funded research is 3 more CTEs in the same query (`contract_projects`: a contract's `projectId`, a line's `projectId` or its billing element's project; `funded_contracts`: `COALESCE("researchFunded", has a Cost Plus or T&M line)`; `funded_projects`), so no row calls the TS helper. Each row also returns `documentType`, which the builders need to tell a Timesheet row. A Timesheet row with no work location has no country (Unknown); it does not fall back to the project's location.
+  2. `getRdEmployeeYear` returns `grossWages` null when the employee has no payroll row in the range, so the builder can tell "none" from 0. It also returns the employee's name. `getRdComponents(client, companyId)` is an `@mcp read` tool (`pnpm run generate:mcp` adds `projects_getRdComponents`).
+  3. `buildSection174ARows` keeps Burden rows out of Domestic, Foreign and Unknown and out of **Total**: a Burden row is a memo row by default (no GL), so the column is "for review" only. **Of which funded** is the funded part of the 3 country columns.
+  4. `buildSection6765Input` returns `unknownCountryHours` as hours. A component with no QRE in any column is left out of Section G. The component's name in the input is "<readable id> <name>", for column 49(c).
+  5. Both queries ran against the local database with `ON_ERROR_STOP`. In a rolled-back transaction with a business component marked, the ledger query returned its subtree's 2 rows. `projects-rd-tax` 4 passed.
