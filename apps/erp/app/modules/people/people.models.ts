@@ -63,7 +63,9 @@ export const employeeJobValidator = z.object({
   /** The technician's van: where a service part is issued from first. */
   defaultStorageUnitId: zfd.text(z.string().optional()),
   /** Government Contracting 5a: dilution applies to Exempt staff. */
-  flsaStatus: zfd.text(z.enum(flsaStatuses).optional())
+  flsaStatus: zfd.text(z.enum(flsaStatuses).optional()),
+  /** Government Contracting 5d: Form 6765 Section E, line 38. */
+  isOfficer: zfd.checkbox().optional()
 });
 
 export const holidayValidator = z.object({

@@ -374,11 +374,40 @@ export const projectElementEditableFields = [
   // Government Contracting 5a element flags.
   "isUnallowable",
   "isPreproduction",
-  "isLeave"
+  "isLeave",
+  // Government Contracting 5d: the R&D tax business component.
+  "isBusinessComponent",
+  "rdComponentType",
+  "rdSoftwareType"
 ] as const;
 
 export type ProjectElementEditableField =
   (typeof projectElementEditableFields)[number];
+
+// --- R&D tax (Government Contracting 5d) ---------------------------------------
+
+export type RdActivityRole = Enums["rdActivityRole"];
+
+/** The research role of time: Form 6765 columns 50–52, or none. */
+export const rdActivityRoles = [
+  "Direct Research",
+  "Direct Supervision",
+  "Direct Support",
+  "Not Qualified"
+] as const satisfies readonly RdActivityRole[];
+
+/** Form 6765 column 49(d): the type of a business component. */
+export const rdComponentTypes = ["Product", "Process", "All Others"] as const;
+export type RdComponentType = (typeof rdComponentTypes)[number];
+
+/** Form 6765 column 49(e): the software type of a business component. */
+export const rdSoftwareTypes = [
+  "Internal Use",
+  "Dual Function",
+  "Non-Internal Use",
+  "Excepted"
+] as const;
+export type RdSoftwareType = (typeof rdSoftwareTypes)[number];
 
 export const projectElementFieldUpdateValidator = z.object({
   ids: zfd.repeatable(
@@ -575,6 +604,8 @@ export const laborCategoryValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   description: zfd.text(z.string().trim().optional()),
+  /** R&D tax: the default research role of time in this category. */
+  rdActivityRole: zfd.text(z.enum(rdActivityRoles).optional()),
   active: zfd.checkbox().optional()
 });
 
@@ -717,7 +748,12 @@ export const timesheetCellValidator = z.object({
   ),
   // DCAA mode: the reason for a late entry, and for a change to a saved one.
   lateReason: zfd.text(z.string().trim().optional()),
-  reason: zfd.text(z.string().trim().optional())
+  reason: zfd.text(z.string().trim().optional()),
+  // R&D tax: where the work took place and its research role. A field that
+  // is not sent takes its default in save-timesheet-entry; an empty one is
+  // none.
+  workLocationId: z.string().optional(),
+  rdActivityRole: z.union([z.enum(rdActivityRoles), z.literal("")]).optional()
 });
 
 /** A project member: who may charge time to a project that restricts it. */
@@ -793,10 +829,16 @@ export function timesheetRowKey(row: {
   projectId: string;
   projectElementId?: string | null;
   laborCategoryId: string;
+  workLocationId?: string | null;
+  rdActivityRole?: RdActivityRole | null;
 }): string {
-  return [row.projectId, row.projectElementId ?? "", row.laborCategoryId].join(
-    "\u001f"
-  );
+  return [
+    row.projectId,
+    row.projectElementId ?? "",
+    row.laborCategoryId,
+    row.workLocationId ?? "",
+    row.rdActivityRole ?? ""
+  ].join("\u001f");
 }
 
 export const timesheetCorrectionValidator = z.object({
@@ -1109,6 +1151,8 @@ export type TimesheetRow<T> = {
   projectId: string;
   projectElementId: string | null;
   laborCategoryId: string;
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
   /** The first entry of the row, for its display fields. */
   entry: T;
   cells: Record<string, TimesheetCell>;
@@ -1116,8 +1160,8 @@ export type TimesheetRow<T> = {
 };
 
 /**
- * Groups timesheet entries into grid rows: one row per project, element and
- * labor category, with one cell per date. Two entries on the same date (a
+ * Groups timesheet entries into grid rows: one row per project, element,
+ * labor category, work location and research role, with one cell per date. Two entries on the same date (a
  * correction and its reversal) add up in one cell; the cell names the Draft
  * entry when there is one, because that is the entry a user can edit.
  */
@@ -1127,6 +1171,8 @@ export function groupTimesheetRows<
     projectId: string;
     projectElementId: string | null;
     laborCategoryId: string;
+    workLocationId?: string | null;
+    rdActivityRole?: RdActivityRole | null;
     entryDate: string;
     hours: number;
     status: TimesheetEntryStatus;
@@ -1142,6 +1188,8 @@ export function groupTimesheetRows<
         projectId: entry.projectId,
         projectElementId: entry.projectElementId,
         laborCategoryId: entry.laborCategoryId,
+        workLocationId: entry.workLocationId ?? null,
+        rdActivityRole: entry.rdActivityRole ?? null,
         entry,
         cells: {},
         total: 0

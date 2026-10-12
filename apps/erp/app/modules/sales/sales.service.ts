@@ -10062,6 +10062,45 @@ export async function updateContractType(
 }
 
 /**
+ * Sets the R&D tax flags of a contract in any status: they are tax facts,
+ * not terms. A flag left out keeps its value. `researchFunded` null means
+ * the default: funded when the contract has a Cost Plus or Time & Materials
+ * line.
+ * @mcp update
+ */
+export async function updateContractResearchFlags(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    researchFunded?: boolean | null;
+    paymentContingentOnSuccess?: boolean;
+    contractorRetainsRights?: boolean;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("customerContract")
+    .update({
+      ...(args.researchFunded !== undefined
+        ? { researchFunded: args.researchFunded }
+        : {}),
+      ...(args.paymentContingentOnSuccess !== undefined
+        ? { paymentContingentOnSuccess: args.paymentContingentOnSuccess }
+        : {}),
+      ...(args.contractorRetainsRights !== undefined
+        ? { contractorRetainsRights: args.contractorRetainsRights }
+        : {}),
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+}
+
+/**
  * Sets a contract's notes in any status: notes are not a term, so they stay
  * editable after Confirm.
  * @mcp update

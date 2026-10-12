@@ -58,7 +58,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 4: Apply migrations and regenerate types
 - [x] Task 5: Add the pure R&D tax helpers
 - [x] Task 6: Default the work location and research role on timesheet entries
-- [ ] Task 7: Add the validators and service functions
+- [x] Task 7: Add the validators and service functions
 - [ ] Task 8: Add the work location and research role to My Timesheet
 - [ ] Task 9: Add the business component fields to the element
 - [ ] Task 10: Add the research role to the labor category
@@ -619,3 +619,11 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   2. Each of the 3 inserts writes both fields. The DCAA revision's `before` and `after` hold both fields.
   3. `createTimesheetCorrection` takes optional `workLocationId` and `rdActivityRole`. The reversal copies the original's values; the replacement takes the new values, else the original's. Its DCAA revision fields are unchanged (the plan names only the copy). `pnpm run generate:mcp` changes `projects_createTimesheetCorrection` (8 parameters).
   4. `save-timesheet-entry` 12 passed (2 new). The second test also checks that an employee with no `employeeJob` row gets no work location.
+- Task 7:
+  1. `timesheetCellValidator` keeps `workLocationId` and `rdActivityRole` as plain optional strings (not `zfd.text`), so a sent empty value stays "" (none) and a field that is not sent stays undefined (the default of Task 6). The role accepts one of the 4 roles or "".
+  2. `timesheetRowKey` and `groupTimesheetRows` add both fields to the row key, and `TimesheetRow` carries them. `TIMESHEET_ENTRY_COLUMNS` selects `workLocationId`, `rdActivityRole` and `workLocation:location!timesheetEntry_workLocationId_fkey(id, name)`, so `getTimesheetWeek` and `getProjectOpenTimesheetEntries` return them.
+  3. `rdActivityRoles` (typed against the enum), `rdComponentTypes` and `rdSoftwareTypes` are value arrays in `projects.models.ts`, with their types.
+  4. `updateProjectElementField` clears both type fields when `isBusinessComponent` turns off. It refuses a type outside the list, and a type on an element that is not a business component ("Mark the element as a business component first"), in place of the raw CHECK error.
+  5. `isOfficer` is `zfd.checkbox().optional()`, the shape 5a gave `restrictCharging`: a bare `zfd.checkbox()` makes the field required in every caller that builds the type. `updateEmployeeJob` writes it only when it is a boolean, because the column is NOT NULL and the MCP tool may leave it out.
+  6. `updateContractResearchFlags` writes only the flags it is given, so each property field saves alone. `sales.models.ts` exports `customerContractResearchFields` for the Task 11 route.
+  7. `pnpm run generate:mcp` adds `sales_updateContractResearchFlags` and changes the digests of `people_updateEmployeeJob`, `projects_getTimesheetWeek`, `projects_getProjectOpenTimesheetEntries`, `projects_updateProjectElementField` and `projects_upsertLaborCategory`. `projects-timesheet-week` 7 passed (1 new).

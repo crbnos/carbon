@@ -49,6 +49,30 @@ describe("groupTimesheetRows", () => {
       status: "Draft"
     });
   });
+
+  it("makes two rows for two entries that differ only by work location", () => {
+    const entry = (id: string, workLocationId: string) => ({
+      id,
+      projectId: "p1",
+      projectElementId: "e1",
+      laborCategoryId: "c1",
+      workLocationId,
+      rdActivityRole: "Direct Research" as const,
+      entryDate: "2026-03-16",
+      hours: 4,
+      status: "Draft" as const
+    });
+    const rows = groupTimesheetRows([
+      entry("t1", "plant-us"),
+      entry("t2", "plant-de")
+    ]);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.workLocationId)).toEqual([
+      "plant-us",
+      "plant-de"
+    ]);
+    expect(rows[1].cells["2026-03-16"]?.entryId).toBe("t2");
+  });
 });
 
 describe("rollUpCostSummary", () => {

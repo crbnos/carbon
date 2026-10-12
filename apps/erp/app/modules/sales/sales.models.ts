@@ -1637,6 +1637,18 @@ export const customerContractTypes = [
   "Contraction"
 ] as const satisfies readonly Enums["customerContractType"][];
 
+/**
+ * The R&D tax facts of a contract (Government Contracting 5d). They stay
+ * editable in any status: they are tax facts, not terms.
+ */
+export const customerContractResearchFields = [
+  "researchFunded",
+  "paymentContingentOnSuccess",
+  "contractorRetainsRights"
+] as const;
+export type CustomerContractResearchField =
+  (typeof customerContractResearchFields)[number];
+
 export const contractRevenueTypes = [
   "One-time",
   "Recurring"

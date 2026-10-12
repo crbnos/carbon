@@ -50,6 +50,8 @@ import {
   PARAMETER_ITEM_UNIT_COST,
   parameterSources,
   projectStockTransferActionFrom,
+  rdComponentTypes,
+  rdSoftwareTypes,
   requirementCategories,
   requirementTargetOperators,
   requirementVerificationMethods,
@@ -1412,6 +1414,40 @@ export async function updateProjectElementField(
     case "isPreproduction":
       update[args.field] = raw === "true" || raw === "on";
       break;
+    case "isBusinessComponent": {
+      // R&D tax: an element that is no longer a business component has no
+      // component or software type (projectElement_rdComponent_check).
+      const value = raw === "true" || raw === "on";
+      update.isBusinessComponent = value;
+      if (!value) {
+        update.rdComponentType = null;
+        update.rdSoftwareType = null;
+      }
+      break;
+    }
+    case "rdComponentType":
+    case "rdSoftwareType": {
+      const allowed: readonly string[] =
+        args.field === "rdComponentType" ? rdComponentTypes : rdSoftwareTypes;
+      if (raw !== null) {
+        if (!allowed.includes(raw))
+          return refusal("Choose a type from the list");
+        const notComponents = await client
+          .from("projectElement")
+          .select("id", { count: "exact", head: true })
+          .in("id", args.ids)
+          .eq("companyId", args.companyId)
+          .eq("isBusinessComponent", false);
+        if (notComponents.error) {
+          return { data: null, error: notComponents.error };
+        }
+        if ((notComponents.count ?? 0) > 0) {
+          return refusal("Mark the element as a business component first");
+        }
+      }
+      update[args.field] = raw;
+      break;
+    }
     case "isLeave": {
       // Leave is an indirect cost: only an Indirect project has leave elements.
       const value = raw === "true" || raw === "on";
@@ -2527,6 +2563,7 @@ export async function upsertLaborCategory(
   const fields = {
     name: category.name,
     description: category.description ?? null,
+    rdActivityRole: category.rdActivityRole ?? null,
     active: category.active ?? true
   };
   if ("createdBy" in category) {
@@ -3221,7 +3258,7 @@ export async function deletePlanningGroup(
 // --- Timesheets --------------------------------------------------------------
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, employeeId, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), hours, note, status, submittedAt, approvedAt, rejectionNote, costRate, reversalOfId, correctionReason, postedAt, project:project!timesheetEntry_project_fkey(id, identifier, name, projectType, serviceOrder!serviceOrder_project_fkey(id, serviceOrderId)), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 /**
  * Gets an employee's timesheet entries between two dates (inclusive), with

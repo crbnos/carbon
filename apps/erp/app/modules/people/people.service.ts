@@ -661,6 +661,10 @@ export async function updateEmployeeJob(
       laborCategoryId: sanitized.laborCategoryId,
       defaultStorageUnitId: sanitized.defaultStorageUnitId,
       flsaStatus: sanitized.flsaStatus,
+      // NOT NULL: a caller that leaves it out keeps the stored flag.
+      ...(typeof sanitized.isOfficer === "boolean"
+        ? { isOfficer: sanitized.isOfficer }
+        : {}),
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
