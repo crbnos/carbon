@@ -13,6 +13,10 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 3: Give Empty a title and a description
 
+- `Empty` takes `title` and `description`. `description={null}` renders no line. The default text is the same.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed.
+- `03-empty-unchanged.png` matches `00-project-costs.png` pixel for pixel by eye. The 7 questions do not apply: the task changes no layout.
+
 ## Task 4: Add ReadOnlyField for read-only values
 
 ## Task 5: Add the grid helpers EditableByRow and useStableEditableComponents
