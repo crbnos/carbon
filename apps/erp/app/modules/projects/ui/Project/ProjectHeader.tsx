@@ -2,25 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { stopWorkDaysLeft, stopWorkEnd } from "@carbon/ee/project-control";
 import {
-  Badge,
   Button,
-  Copy,
-  DropdownMenu,
   DropdownMenuCheckboxItem,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
+  DropdownMenuSeparator,
   useDisclosure
 } from "@carbon/react";
-import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useLocale } from "@react-aria/i18n";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   LuBuilding2,
@@ -28,19 +19,18 @@ import {
   LuCirclePause,
   LuCirclePlay,
   LuCopy,
-  LuEllipsisVertical,
-  LuHandCoins,
+  LuGitPullRequestArrow,
+  LuHistory,
   LuLock,
   LuOctagonX,
   LuRocket,
   LuRotateCcw
 } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
-import { EmployeeAvatar } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
-import { DetailsTopbar } from "~/components/Layout";
+import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
-import { useCompanyToday, usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ProjectStatus as ProjectStatusType } from "../../projects.models";
 import { canChangeProjectStatus } from "../../projects.models";
@@ -48,25 +38,26 @@ import type { Project } from "../../types";
 import { PlaceInServiceModal } from "../Element/PlaceInServiceModal";
 import ProjectStatus from "../Projects/ProjectStatus";
 import StopWorkModal from "./StopWorkModal.ee";
-import { useProjectNavigation } from "./useProjectNavigation";
 
+/**
+ * The project workspace's one-line header (Layer 2): the identifier and name,
+ * the status, ONE primary action (the next step for the status) and a ⋯ menu
+ * with everything else. Facts and exceptions (owner, cost treatment,
+ * stop-work, overdue borrows) are on the Overview page.
+ */
 const ProjectHeader = () => {
   const { t } = useLingui();
-  const links = useProjectNavigation();
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
+  const { toggleExplorer } = usePanels();
 
   const routeData = useRouteData<{
     project: Project;
     underConstructionAssets: number;
-    overdueBorrowCount: number;
   }>(path.to.project(projectId));
-  const overdueBorrowCount = routeData?.overdueBorrowCount ?? 0;
   const project = routeData?.project;
   const [placing, setPlacing] = useState(false);
   const [stoppingWork, setStoppingWork] = useState(false);
-  const { locale } = useLocale();
-  const today = useCompanyToday();
 
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "projects");
@@ -86,195 +77,193 @@ const ProjectHeader = () => {
       { method: "post", action: path.to.projectStatus(projectId) }
     );
   };
-  // A stop-work order keeps the project On Hold until Resume (C16).
+  // A stop-work order keeps the project On Hold until Resume work (C16).
   const stopWorkDate = project.stopWorkDate;
   const can = (to: ProjectStatusType) =>
     canUpdate && !stopWorkDate && canChangeProjectStatus(status, to);
-  const canStopWork =
-    canUpdate && status === "Released" && project.costObjective === "Direct";
+  const canPlaceInService =
+    project.costTreatment === "Capitalize" &&
+    (routeData?.underConstructionAssets ?? 0) > 0;
+  const showStopWork =
+    status === "Released" && project.costObjective === "Direct";
+
+  // The one primary action: the next step for the status. A stop-work order
+  // overrides it, because nothing else can change until work resumes.
+  let primary: ReactNode = null;
+  if (stopWorkDate) {
+    primary = (
+      <Button
+        leftIcon={<LuCirclePlay />}
+        isLoading={resumeFetcher.state !== "idle"}
+        isDisabled={!canUpdate || isChanging}
+        onClick={() =>
+          resumeFetcher.submit(
+            { intent: "resume" },
+            { method: "post", action: path.to.projectStopWork(projectId) }
+          )
+        }
+      >
+        <Trans>Resume work</Trans>
+      </Button>
+    );
+  } else if (status === "Draft") {
+    primary = (
+      <Button
+        leftIcon={<LuRocket />}
+        isLoading={isChanging}
+        isDisabled={!can("Released") || isChanging}
+        onClick={() => changeStatus("Released")}
+      >
+        <Trans>Release</Trans>
+      </Button>
+    );
+  } else if (status === "Released") {
+    primary = (
+      <Button
+        leftIcon={<LuCircleCheck />}
+        isLoading={isChanging}
+        isDisabled={!can("Technically Complete") || isChanging}
+        onClick={() => changeStatus("Technically Complete")}
+      >
+        <Trans>Technically complete</Trans>
+      </Button>
+    );
+  } else if (status === "On Hold") {
+    primary = (
+      <Button
+        leftIcon={<LuCirclePlay />}
+        isLoading={isChanging}
+        isDisabled={!can("Released") || isChanging}
+        onClick={() => changeStatus("Released")}
+      >
+        <Trans>Resume</Trans>
+      </Button>
+    );
+  } else if (status === "Technically Complete") {
+    primary = (
+      <Button
+        leftIcon={<LuLock />}
+        isDisabled={!can("Closed") || isChanging}
+        onClick={closeDisclosure.onOpen}
+      >
+        <Trans>Close</Trans>
+      </Button>
+    );
+  }
+
+  const menu = (
+    <>
+      {status === "Released" && (
+        <DropdownMenuItem
+          disabled={!can("On Hold") || isChanging}
+          onClick={() => changeStatus("On Hold")}
+        >
+          <DropdownMenuIcon icon={<LuCirclePause />} />
+          <Trans>Put on hold</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "On Hold" && (
+        <DropdownMenuItem
+          disabled={!can("Technically Complete") || isChanging}
+          onClick={() => changeStatus("Technically Complete")}
+        >
+          <DropdownMenuIcon icon={<LuCircleCheck />} />
+          <Trans>Technically complete</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "Technically Complete" && (
+        <DropdownMenuItem
+          disabled={!can("Released") || isChanging}
+          onClick={() => changeStatus("Released")}
+        >
+          <DropdownMenuIcon icon={<LuRotateCcw />} />
+          <Trans>Reopen</Trans>
+        </DropdownMenuItem>
+      )}
+      {canPlaceInService && (
+        <DropdownMenuItem
+          disabled={!canUpdate || !permissions.can("create", "accounting")}
+          onClick={() => setPlacing(true)}
+        >
+          <DropdownMenuIcon icon={<LuBuilding2 />} />
+          <Trans>Place in service</Trans>
+        </DropdownMenuItem>
+      )}
+      {showStopWork && (
+        <DropdownMenuItem
+          disabled={!canUpdate}
+          onClick={() => setStoppingWork(true)}
+        >
+          <DropdownMenuIcon icon={<LuOctagonX />} />
+          <Trans>Stop work</Trans>
+        </DropdownMenuItem>
+      )}
+      {(status !== "Closed" || canPlaceInService) && <DropdownMenuSeparator />}
+      <DropdownMenuItem asChild>
+        <Link to={path.to.projectBaselines(projectId)}>
+          <DropdownMenuIcon icon={<LuHistory />} />
+          <Trans>Baselines</Trans>
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <Link to={path.to.projectChangeRequests(projectId)}>
+          <DropdownMenuIcon icon={<LuGitPullRequestArrow />} />
+          <Trans>Change requests</Trans>
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        disabled={!permissions.can("create", "projects")}
+        asChild
+      >
+        <Link to={`${path.to.newProject}?copyFrom=${projectId}`}>
+          <DropdownMenuIcon icon={<LuCopy />} />
+          <Trans>Copy project</Trans>
+        </Link>
+      </DropdownMenuItem>
+      <DropdownMenuCheckboxItem
+        checked={
+          templateFetcher.formData
+            ? templateFetcher.formData.get("isTemplate") === "true"
+            : project.isTemplate
+        }
+        disabled={!canUpdate}
+        onCheckedChange={(checked) =>
+          templateFetcher.submit(
+            { isTemplate: checked ? "true" : "false" },
+            {
+              method: "post",
+              action: path.to.projectTemplate(projectId)
+            }
+          )
+        }
+      >
+        <Trans>Template</Trans>
+      </DropdownMenuCheckboxItem>
+    </>
+  );
 
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 px-4 py-2 bg-card border-b border-border h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="min-w-0 flex-1">
-          <Link to={path.to.projectDetails(projectId)} className="shrink-0">
-            <Heading size="h4" className="flex items-center gap-2">
-              <span className="whitespace-nowrap">{project.identifier}</span>
-            </Heading>
-          </Link>
-          <Copy text={project.identifier ?? ""} />
-          <span className="truncate text-sm text-muted-foreground">
-            {project.name}
+      <RecordHeader
+        title={
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 whitespace-nowrap">
+              {project.identifier}
+            </span>
+            <span className="min-w-0 truncate font-normal text-muted-foreground">
+              {project.name}
+            </span>
           </span>
-          <ProjectStatus status={status} />
-          <Enumerable value={project.costTreatment} />
-          {project.ownerId && (
-            <EmployeeAvatar employeeId={project.ownerId} size="xs" />
-          )}
-          {stopWorkDate && (
-            // an exception, not a status: FAR 52.242-15 runs 90 days
-            <Badge variant="red" className="shrink-0 gap-1 whitespace-nowrap">
-              <LuOctagonX />
-              <Trans>
-                Stop-work order {formatDate(stopWorkDate, undefined, locale)} ·
-                ends {formatDate(stopWorkEnd(stopWorkDate), undefined, locale)}{" "}
-                · {stopWorkDaysLeft(today, stopWorkDate)} days left
-              </Trans>
-            </Badge>
-          )}
-          {overdueBorrowCount > 0 && (
-            // an exception, not a status: an Open borrow past its payback date
-            <Link to={path.to.projectStock(projectId)} className="shrink-0">
-              <Badge variant="red" className="gap-1 whitespace-nowrap">
-                <LuHandCoins />
-                <Trans>Overdue borrows: {overdueBorrowCount}</Trans>
-              </Badge>
-            </Link>
-          )}
-        </HStack>
-        <HStack className="shrink-0">
-          {can("Released") && status === "Draft" && (
-            <Button
-              variant="primary"
-              leftIcon={<LuRocket />}
-              isLoading={isChanging}
-              isDisabled={isChanging}
-              onClick={() => changeStatus("Released")}
-            >
-              <Trans>Release</Trans>
-            </Button>
-          )}
-          {can("On Hold") && (
-            <Button
-              variant="secondary"
-              leftIcon={<LuCirclePause />}
-              isLoading={isChanging}
-              isDisabled={isChanging}
-              onClick={() => changeStatus("On Hold")}
-            >
-              <Trans>Put on hold</Trans>
-            </Button>
-          )}
-          {can("Released") && status === "On Hold" && (
-            <Button
-              variant="primary"
-              leftIcon={<LuCirclePlay />}
-              isLoading={isChanging}
-              isDisabled={isChanging}
-              onClick={() => changeStatus("Released")}
-            >
-              <Trans>Resume</Trans>
-            </Button>
-          )}
-          {stopWorkDate && canUpdate && (
-            <Button
-              variant="primary"
-              leftIcon={<LuCirclePlay />}
-              isLoading={resumeFetcher.state !== "idle"}
-              isDisabled={isChanging}
-              onClick={() =>
-                resumeFetcher.submit(
-                  { intent: "resume" },
-                  { method: "post", action: path.to.projectStopWork(projectId) }
-                )
-              }
-            >
-              <Trans>Resume</Trans>
-            </Button>
-          )}
-          {can("Technically Complete") && (
-            <Button
-              variant={status === "Released" ? "primary" : "secondary"}
-              leftIcon={<LuCircleCheck />}
-              isLoading={isChanging}
-              isDisabled={isChanging}
-              onClick={() => changeStatus("Technically Complete")}
-            >
-              <Trans>Technically complete</Trans>
-            </Button>
-          )}
-          {can("Released") && status === "Technically Complete" && (
-            <Button
-              variant="secondary"
-              leftIcon={<LuRotateCcw />}
-              isLoading={isChanging}
-              isDisabled={isChanging}
-              onClick={() => changeStatus("Released")}
-            >
-              <Trans>Reopen</Trans>
-            </Button>
-          )}
-          {project.costTreatment === "Capitalize" &&
-            (routeData?.underConstructionAssets ?? 0) > 0 && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuBuilding2 />}
-                isDisabled={
-                  !canUpdate || !permissions.can("create", "accounting")
-                }
-                onClick={() => setPlacing(true)}
-              >
-                <Trans>Place in service</Trans>
-              </Button>
-            )}
-          {can("Closed") && (
-            <Button
-              variant="primary"
-              leftIcon={<LuLock />}
-              isDisabled={isChanging}
-              onClick={closeDisclosure.onOpen}
-            >
-              <Trans>Close</Trans>
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuCheckboxItem
-                checked={
-                  templateFetcher.formData
-                    ? templateFetcher.formData.get("isTemplate") === "true"
-                    : project.isTemplate
-                }
-                disabled={!canUpdate}
-                onCheckedChange={(checked) =>
-                  templateFetcher.submit(
-                    { isTemplate: checked ? "true" : "false" },
-                    {
-                      method: "post",
-                      action: path.to.projectTemplate(projectId)
-                    }
-                  )
-                }
-              >
-                <Trans>Template</Trans>
-              </DropdownMenuCheckboxItem>
-              {canStopWork && (
-                <DropdownMenuItem onClick={() => setStoppingWork(true)}>
-                  <DropdownMenuIcon icon={<LuOctagonX />} />
-                  <Trans>Stop work</Trans>
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem
-                disabled={!permissions.can("create", "projects")}
-                asChild
-              >
-                <Link to={`${path.to.newProject}?copyFrom=${projectId}`}>
-                  <DropdownMenuIcon icon={<LuCopy />} />
-                  <Trans>Copy project</Trans>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <DetailsTopbar links={links} />
-        </HStack>
-      </div>
+        }
+        titleTo={path.to.project(projectId)}
+        copyValue={project.identifier ?? ""}
+        menu={menu}
+        status={<ProjectStatus status={status} />}
+        onToggleExplorer={toggleExplorer}
+        actions={
+          primary ? <RecordAction slot="primary">{primary}</RecordAction> : null
+        }
+      />
       {stoppingWork && (
         <StopWorkModal
           projectId={projectId}

@@ -17312,9 +17312,6 @@ msgstr "In ritardo"
 msgid "Overdue borrows"
 msgstr "Prestiti in ritardo"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "Prestiti in ritardo: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "Costi generali"
 
@@ -20411,6 +20408,9 @@ msgstr "Riprendi ricezione"
 msgid "Resume Shipping"
 msgstr "Riprendi Spedizione"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Utili non distribuiti"
 
@@ -23019,12 +23019,6 @@ msgstr "Interrompi il lavoro"
 
 msgid "Stop Work"
 msgstr "Interrompi il lavoro"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "Ordine di interruzione del lavoro {0} · termina {1} · {2} giorni rimasti"
 
 msgid "Stop-Work Orders"
 msgstr "Ordini di interruzione del lavoro"

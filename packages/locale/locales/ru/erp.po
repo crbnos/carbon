@@ -17312,9 +17312,6 @@ msgstr "Просрочено"
 msgid "Overdue borrows"
 msgstr "Просроченные заимствования"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "Просроченные заимствования: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "Накладные расходы"
 
@@ -20411,6 +20408,9 @@ msgstr "Возобновить получение"
 msgid "Resume Shipping"
 msgstr "Возобновить доставку"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Нераспределенная прибыль"
 
@@ -23019,12 +23019,6 @@ msgstr "Остановить работу"
 
 msgid "Stop Work"
 msgstr "Остановить работу"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "Приказ об остановке работы {0} · заканчивается {1} · осталось {2} дней"
 
 msgid "Stop-Work Orders"
 msgstr "Приказы об остановке работы"

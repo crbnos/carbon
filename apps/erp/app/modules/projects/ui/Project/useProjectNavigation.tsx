@@ -7,10 +7,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
   LuCoins,
-  LuFileText,
   LuFlag,
-  LuGitPullRequestArrow,
-  LuHistory,
   LuLayoutDashboard,
   LuLink2,
   LuListTree,
@@ -24,107 +21,6 @@ import { useRouteData } from "~/hooks";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type { Project } from "../../types";
-
-export function useProjectNavigation() {
-  const { t } = useLingui();
-  const { projectId } = useParams();
-  if (!projectId) throw new Error("projectId not found");
-  const routeData = useRouteData<{ project: Project }>(
-    path.to.project(projectId)
-  );
-  // The Stock tab shows for a project that keeps project stock.
-  const hasProjectStock = routeData?.project?.projectStock === true;
-  // The Pegging tab shows for a member of a planning group. A company without
-  // PLANNING_GROUPS still sees it, with the upgrade overlay.
-  const isGroupMember = Boolean(routeData?.project?.planningGroupId);
-  // The Billing tab shows for a Contract project: only its cost bills a
-  // customer contract line.
-  const billsContract = routeData?.project?.costTreatment === "Contract";
-
-  return [
-    {
-      name: t`Elements`,
-      to: path.to.projectElements(projectId),
-      icon: LuListTree,
-      shortcut: PROJECT_TAB_SHORTCUTS.elements,
-      isActive: (pathname: string) =>
-        pathname.startsWith(path.to.projectElements(projectId)) ||
-        pathname.startsWith(`${path.to.project(projectId)}/element/`)
-    },
-    {
-      name: t`Milestones`,
-      to: path.to.projectMilestones(projectId),
-      icon: LuFlag,
-      shortcut: PROJECT_TAB_SHORTCUTS.milestones
-    },
-    {
-      name: t`Baselines`,
-      to: path.to.projectBaselines(projectId),
-      icon: LuHistory,
-      shortcut: PROJECT_TAB_SHORTCUTS.baselines
-    },
-    {
-      name: t`Change requests`,
-      to: path.to.projectChangeRequests(projectId),
-      icon: LuGitPullRequestArrow,
-      shortcut: PROJECT_TAB_SHORTCUTS.changeRequests
-    },
-    {
-      name: t`Costs`,
-      to: path.to.projectCosts(projectId),
-      icon: LuCoins,
-      shortcut: PROJECT_TAB_SHORTCUTS.costs
-    },
-    {
-      name: t`Time & materials`,
-      to: path.to.projectTime(projectId),
-      icon: LuTimer,
-      shortcut: PROJECT_TAB_SHORTCUTS.time
-    },
-    ...(billsContract
-      ? [
-          {
-            name: t`Billing`,
-            to: path.to.projectBilling(projectId),
-            icon: LuReceipt,
-            shortcut: PROJECT_TAB_SHORTCUTS.billing
-          }
-        ]
-      : []),
-    ...(hasProjectStock
-      ? [
-          {
-            name: t`Stock`,
-            to: path.to.projectStock(projectId),
-            icon: LuPackage,
-            shortcut: PROJECT_TAB_SHORTCUTS.stock
-          }
-        ]
-      : []),
-    ...(isGroupMember
-      ? [
-          {
-            name: t`Pegging`,
-            to: path.to.projectPegging(projectId),
-            icon: LuLink2,
-            shortcut: PROJECT_TAB_SHORTCUTS.pegging
-          }
-        ]
-      : []),
-    {
-      name: t`Settings`,
-      to: path.to.projectSettings(projectId),
-      icon: LuSettings2,
-      shortcut: PROJECT_TAB_SHORTCUTS.settings
-    },
-    {
-      name: t`Details`,
-      to: path.to.projectDetails(projectId),
-      icon: LuFileText,
-      shortcut: PROJECT_TAB_SHORTCUTS.details
-    }
-  ];
-}
 
 export type ProjectSidebarLink = {
   name: string;

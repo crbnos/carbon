@@ -17312,9 +17312,6 @@ msgstr "अतिदेय"
 msgid "Overdue borrows"
 msgstr "अतिदेय उधार"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "अतिदेय उधार: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "उपरिव्यय"
 
@@ -20411,6 +20408,9 @@ msgstr "प्राप्ति को फिर से शुरू करे�
 msgid "Resume Shipping"
 msgstr "शिपिंग फिर से शुरू करें"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "प्रतिधारित आय"
 
@@ -23019,12 +23019,6 @@ msgstr "काम बंद करें"
 
 msgid "Stop Work"
 msgstr "काम बंद करें"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "काम बंद करने का आदेश {0} · समाप्त {1} · {2} दिन बचे हैं"
 
 msgid "Stop-Work Orders"
 msgstr "काम बंद करने के आदेश"

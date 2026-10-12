@@ -17312,9 +17312,6 @@ msgstr "Atrasado"
 msgid "Overdue borrows"
 msgstr "Empréstimos em Atraso"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "Empréstimos em Atraso: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "Custos indiretos"
 
@@ -20411,6 +20408,9 @@ msgstr "Retomar Recebimento"
 msgid "Resume Shipping"
 msgstr "Retomar Envio"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Lucros acumulados"
 
@@ -23019,12 +23019,6 @@ msgstr "Parar trabalho"
 
 msgid "Stop Work"
 msgstr "Parar trabalho"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "Ordem de parada de trabalho {0} · termina {1} · {2} dias restantes"
 
 msgid "Stop-Work Orders"
 msgstr "Ordens de parada de trabalho"

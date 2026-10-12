@@ -17312,9 +17312,6 @@ msgstr "Overdue"
 msgid "Overdue borrows"
 msgstr "Overdue borrows"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "Overdue borrows: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "Overhead"
 
@@ -20411,6 +20408,9 @@ msgstr "Resume Receiving"
 msgid "Resume Shipping"
 msgstr "Resume Shipping"
 
+msgid "Resume work"
+msgstr "Resume work"
+
 msgid "Retained Earnings"
 msgstr "Retained Earnings"
 
@@ -23019,12 +23019,6 @@ msgstr "Stop work"
 
 msgid "Stop Work"
 msgstr "Stop Work"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "Stop-work order {0} · ends {1} · {2} days left"
 
 msgid "Stop-Work Orders"
 msgstr "Stop-Work Orders"

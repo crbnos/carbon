@@ -17312,9 +17312,6 @@ msgstr "期限超過"
 msgid "Overdue borrows"
 msgstr "期限超過の借用"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "期限超過の借用：{overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "間接費"
 
@@ -20411,6 +20408,9 @@ msgstr "受信を再開"
 msgid "Resume Shipping"
 msgstr "出荷を再開"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "利益剰余金"
 
@@ -23019,12 +23019,6 @@ msgstr "作業停止"
 
 msgid "Stop Work"
 msgstr "作業停止"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "停止指示 {0} · 終了 {1} · あと {2} 日"
 
 msgid "Stop-Work Orders"
 msgstr "停止指示"

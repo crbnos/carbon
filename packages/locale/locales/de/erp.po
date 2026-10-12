@@ -17312,9 +17312,6 @@ msgstr "Überfällig"
 msgid "Overdue borrows"
 msgstr "Überfällige Ausleihungen"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "Überfällige Ausleihungen: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "Gemeinkosten"
 
@@ -20411,6 +20408,9 @@ msgstr "Empfang fortsetzen"
 msgid "Resume Shipping"
 msgstr "Versand fortsetzen"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "Gewinnvortrag"
 
@@ -23019,12 +23019,6 @@ msgstr "Arbeit stoppen"
 
 msgid "Stop Work"
 msgstr "Arbeit stoppen"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "Stoppauftrag {0} · endet {1} · {2} Tage verbleibend"
 
 msgid "Stop-Work Orders"
 msgstr "Stoppaufträge"

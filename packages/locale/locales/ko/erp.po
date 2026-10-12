@@ -17312,9 +17312,6 @@ msgstr "기한 초과"
 msgid "Overdue borrows"
 msgstr "기한 초과 대여"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "기한 초과 대여: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "간접비"
 
@@ -20411,6 +20408,9 @@ msgstr "수령 재개"
 msgid "Resume Shipping"
 msgstr "배송 재개"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "이익잉여금"
 
@@ -23019,12 +23019,6 @@ msgstr "작업 중지"
 
 msgid "Stop Work"
 msgstr "작업 중지"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "작업 중지 명령 {0} · {1}에 종료 · {2}일 남음"
 
 msgid "Stop-Work Orders"
 msgstr "작업 중지 명령"

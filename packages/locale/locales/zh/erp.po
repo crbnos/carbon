@@ -17312,9 +17312,6 @@ msgstr "已逾期"
 msgid "Overdue borrows"
 msgstr "逾期借用"
 
-msgid "Overdue borrows: {overdueBorrowCount}"
-msgstr "逾期借用: {overdueBorrowCount}"
-
 msgid "Overhead"
 msgstr "制造费用"
 
@@ -20411,6 +20408,9 @@ msgstr "恢复接收"
 msgid "Resume Shipping"
 msgstr "恢复发货"
 
+msgid "Resume work"
+msgstr ""
+
 msgid "Retained Earnings"
 msgstr "未分配利润"
 
@@ -23019,12 +23019,6 @@ msgstr "停止工作"
 
 msgid "Stop Work"
 msgstr "停止工作"
-
-#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
-#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
-#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
-msgid "Stop-work order {0} · ends {1} · {2} days left"
-msgstr "停止工作订单 {0} · 结束时间 {1} · 剩余 {2} 天"
 
 msgid "Stop-Work Orders"
 msgstr "停止工作订单"

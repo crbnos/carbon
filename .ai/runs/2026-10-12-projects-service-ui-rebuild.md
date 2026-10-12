@@ -99,6 +99,18 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 12: Rebuild the project header on RecordHeader
 
+- `ProjectHeader` now renders `RecordHeader` (copied from `JobHeader.tsx`): the identifier, then the name in `text-muted-foreground` (truncates), `Copy`, the ⋯ menu, ONE `ProjectStatus`, the explorer toggle (`usePanels().toggleExplorer`), and ONE `RecordAction slot="primary"`.
+- Primary action by status: Draft → Release; Released → Technically complete; On Hold → Resume; Technically Complete → Close (the existing `Confirm`); Closed → none; a stop-work order → Resume work (`intent=resume`). The label stays "Technically complete" because Task 2 (terminology) runs later.
+- ⋯ menu: Put on hold (Released), Technically complete (On Hold), Reopen (Technically Complete), Place in service (Capitalize with an asset under construction), Stop work (Released + Direct), a separator, Baselines, Change requests, Copy project, Template.
+- Deviation: the plan's menu has no item for On Hold → Technically Complete. The old header offered it, and `projectStatusTransitions` allows it, so the menu keeps it.
+- Stop work now shows for a Released Direct project and is disabled without `update: projects` (before, it hid). The status items are disabled, not hidden, without the permission or under a stop-work order.
+- Removed from the header: the cost treatment `Enumerable`, the owner avatar, the stop-work badge, the overdue borrows badge and `DetailsTopbar`. Task 13 shows them on Overview.
+- Deleted `useProjectNavigation` (the tab list). `useProjectSidebarLinks` stays in that file.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed.
+- Shots: `12-header-1440.png`, `12-header-1024.png`, `12-header-menu-open.png`, `12-icr-draft.png` (primary is Release; not clicked), `12-nsg3-on-hold.png`.
+- NSG3: Put on hold set `On Hold`; Resume set `Released`. NSG3 ends Released (checked in the database).
+- 7 questions: 1 yes (`00-ref-job.png`; not like `bad-project-header.jpg`), 2 yes at 1440 and 1024, 3 yes, 4 yes, 5 n/a, 6 yes, 7 yes.
+
 ## Task 13: Add the project Overview page
 
 ## Task 14: Fold Details into the project Settings page
