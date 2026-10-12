@@ -18888,6 +18888,9 @@ msgstr "Den Buchungssatz ohne die Dimension verbuchen"
 msgid "Push to accounting"
 msgstr "Zur Buchhaltung senden"
 
+msgid "Put a contract project on hold under a stop-work order, with its 90-day end date, and resume it when the order ends."
+msgstr ""
+
 msgid "Put on hold"
 msgstr ""
 
@@ -22888,7 +22891,19 @@ msgstr "Versand stoppen"
 msgid "Stop using {0} in this step"
 msgstr "Verwendung von {0} in diesem Schritt beenden"
 
+msgid "Stop work"
+msgstr ""
+
 msgid "Stop Work"
+msgstr ""
+
+#. placeholder {0}: formatDate(stopWorkDate, undefined, locale)
+#. placeholder {1}: formatDate(stopWorkEnd(stopWorkDate), undefined, locale)
+#. placeholder {2}: stopWorkDaysLeft(today, stopWorkDate)
+msgid "Stop-work order {0} · ends {1} · {2} days left"
+msgstr ""
+
+msgid "Stop-Work Orders"
 msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
@@ -24474,6 +24489,9 @@ msgid "The processes this work center can run; appears in process-pickers when s
 msgstr "Die Verfahren, die dieser Arbeitsplatz ausführen kann; erscheint in Verfahren-Auswahlfeldern beim Planen von Arbeitsgängen und begrenzt, welche Fertigungsaufträge über diesen Arbeitsplatz laufen können."
 
 msgid "The progress behind each project contract line in this run."
+msgstr ""
+
+msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr ""
 
 msgid "The project had no pegs on that day."

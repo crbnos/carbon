@@ -103,7 +103,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 16: Add stop-work orders
 - [x] Task 17: Add the control fields to project settings and the element page
 - [x] Task 18: Add earned value to the Costs tab
-- [ ] Task 19: Add Stop work and Resume to the project header
+- [x] Task 19: Add Stop work and Resume to the project header
 - [ ] Task 20: Extend the demo datasets
 - [ ] Task 21: Run the scoped gates
 - [ ] Task 22: Update the rules, docs and spec
@@ -1222,4 +1222,8 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   5. CPI and SPI use `useQuantityFormatter`, as the plan says, so they show up to 5 decimals, not 2. A 2-digit format needs inline fraction digits, which `no-inline-fraction-digits` refuses.
   6. The component's row types are declared in the `.ee.tsx` file (structural copies of the ee result types), so no client module imports a type from `project-control.server`.
   7. The ee warnings (for example "Take a baseline first") are server strings in English.
+- Task 19:
+  1. Task 16 added the route but no path helper; `path.to.projectStopWork` is new.
+  2. **Stop work** is in the header's ⋯ menu, for a user with `update: projects` on a Released Direct project, on every plan. `StopWorkModal.ee.tsx` shows the order date form, or `UpgradeOverlayDialog` when the company is gated, so the item stays visible. The modal posts through `useAction` and closes when the action settles; the route redirects back with a flash in every case.
+  3. While `stopWorkDate` is set, the header hides every status button (the status route refuses them), shows a red badge "Stop-work order <date> · ends <date> · <n> days left" (`stopWorkEnd`, `stopWorkDaysLeft`, today from `useCompanyToday`), and shows **Resume**, which posts `intent: resume`. The badge follows the Overdue borrows badge: an exception, not a status.
 

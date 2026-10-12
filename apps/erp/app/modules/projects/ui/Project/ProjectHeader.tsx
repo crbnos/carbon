@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { stopWorkDaysLeft, stopWorkEnd } from "@carbon/ee/project-control";
 import {
   Badge,
   Button,
@@ -17,7 +18,9 @@ import {
   IconButton,
   useDisclosure
 } from "@carbon/react";
+import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import {
   LuBuilding2,
@@ -28,6 +31,7 @@ import {
   LuEllipsisVertical,
   LuHandCoins,
   LuLock,
+  LuOctagonX,
   LuRocket,
   LuRotateCcw
 } from "react-icons/lu";
@@ -36,13 +40,14 @@ import { EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { DetailsTopbar } from "~/components/Layout";
 import Confirm from "~/components/Modals/Confirm/Confirm";
-import { usePermissions, useRouteData } from "~/hooks";
+import { useCompanyToday, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ProjectStatus as ProjectStatusType } from "../../projects.models";
 import { canChangeProjectStatus } from "../../projects.models";
 import type { Project } from "../../types";
 import { PlaceInServiceModal } from "../Element/PlaceInServiceModal";
 import ProjectStatus from "../Projects/ProjectStatus";
+import StopWorkModal from "./StopWorkModal.ee";
 import { useProjectNavigation } from "./useProjectNavigation";
 
 const ProjectHeader = () => {
@@ -59,12 +64,17 @@ const ProjectHeader = () => {
   const overdueBorrowCount = routeData?.overdueBorrowCount ?? 0;
   const project = routeData?.project;
   const [placing, setPlacing] = useState(false);
+  const [stoppingWork, setStoppingWork] = useState(false);
+  const { locale } = useLocale();
+  const today = useCompanyToday();
 
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "projects");
   const statusFetcher = useFetcher<{}>();
   const templateFetcher = useFetcher<{}>();
-  const isChanging = statusFetcher.state !== "idle";
+  const resumeFetcher = useFetcher<{}>();
+  const isChanging =
+    statusFetcher.state !== "idle" || resumeFetcher.state !== "idle";
   const closeDisclosure = useDisclosure();
 
   if (!project) return null;
@@ -76,8 +86,12 @@ const ProjectHeader = () => {
       { method: "post", action: path.to.projectStatus(projectId) }
     );
   };
+  // A stop-work order keeps the project On Hold until Resume (C16).
+  const stopWorkDate = project.stopWorkDate;
   const can = (to: ProjectStatusType) =>
-    canUpdate && canChangeProjectStatus(status, to);
+    canUpdate && !stopWorkDate && canChangeProjectStatus(status, to);
+  const canStopWork =
+    canUpdate && status === "Released" && project.costObjective === "Direct";
 
   return (
     <>
@@ -96,6 +110,17 @@ const ProjectHeader = () => {
           <Enumerable value={project.costTreatment} />
           {project.ownerId && (
             <EmployeeAvatar employeeId={project.ownerId} size="xs" />
+          )}
+          {stopWorkDate && (
+            // an exception, not a status: FAR 52.242-15 runs 90 days
+            <Badge variant="red" className="shrink-0 gap-1 whitespace-nowrap">
+              <LuOctagonX />
+              <Trans>
+                Stop-work order {formatDate(stopWorkDate, undefined, locale)} ·
+                ends {formatDate(stopWorkEnd(stopWorkDate), undefined, locale)}{" "}
+                · {stopWorkDaysLeft(today, stopWorkDate)} days left
+              </Trans>
+            </Badge>
           )}
           {overdueBorrowCount > 0 && (
             // an exception, not a status: an Open borrow past its payback date
@@ -137,6 +162,22 @@ const ProjectHeader = () => {
               isLoading={isChanging}
               isDisabled={isChanging}
               onClick={() => changeStatus("Released")}
+            >
+              <Trans>Resume</Trans>
+            </Button>
+          )}
+          {stopWorkDate && canUpdate && (
+            <Button
+              variant="primary"
+              leftIcon={<LuCirclePlay />}
+              isLoading={resumeFetcher.state !== "idle"}
+              isDisabled={isChanging}
+              onClick={() =>
+                resumeFetcher.submit(
+                  { intent: "resume" },
+                  { method: "post", action: path.to.projectStopWork(projectId) }
+                )
+              }
             >
               <Trans>Resume</Trans>
             </Button>
@@ -214,6 +255,12 @@ const ProjectHeader = () => {
               >
                 <Trans>Template</Trans>
               </DropdownMenuCheckboxItem>
+              {canStopWork && (
+                <DropdownMenuItem onClick={() => setStoppingWork(true)}>
+                  <DropdownMenuIcon icon={<LuOctagonX />} />
+                  <Trans>Stop work</Trans>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 disabled={!permissions.can("create", "projects")}
                 asChild
@@ -228,6 +275,12 @@ const ProjectHeader = () => {
           <DetailsTopbar links={links} />
         </HStack>
       </div>
+      {stoppingWork && (
+        <StopWorkModal
+          projectId={projectId}
+          onClose={() => setStoppingWork(false)}
+        />
+      )}
       {placing && (
         <PlaceInServiceModal
           projectId={projectId}

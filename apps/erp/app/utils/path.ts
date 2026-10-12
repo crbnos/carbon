@@ -2126,6 +2126,8 @@ export const path = {
     projectStockTransferStatus: (id: string) =>
       generatePath(`${x}/project-stock-transfer/${id}/status`),
     projectStockTransfers: `${x}/projects/transfers`,
+    projectStopWork: (id: string) =>
+      generatePath(`${x}/project/${id}/stop-work`),
     projects: `${x}/projects`,
     projectsBilling: `${x}/projects/billing`,
     projectsBillingUpdate: `${x}/projects/billing/update`,
