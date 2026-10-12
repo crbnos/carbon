@@ -413,6 +413,27 @@ export const rdSoftwareTypes = [
 ] as const;
 export type RdSoftwareType = (typeof rdSoftwareTypes)[number];
 
+/**
+ * The Form 6765 column 49(e) text of each software type, as the IRS
+ * instructions word it. No letter codes: the instructions disagree on them.
+ */
+const RD_SOFTWARE_TYPE_IRS_TEXT: Record<RdSoftwareType, string> = {
+  "Internal Use": "IUS—internal use software",
+  "Dual Function": "DFS—dual function software",
+  "Non-Internal Use": "Non-IUS",
+  Excepted: "Excepted from IUS treatment"
+};
+
+/** Column 49(e) for a stored software type; blank when there is none. */
+export function rdSoftwareTypeIrsText(
+  softwareType: string | null
+): string | null {
+  if (!softwareType) return null;
+  return (
+    RD_SOFTWARE_TYPE_IRS_TEXT[softwareType as RdSoftwareType] ?? softwareType
+  );
+}
+
 export const projectElementFieldUpdateValidator = z.object({
   ids: zfd.repeatable(
     z.array(z.string().min(1)).min(1, { message: "No elements selected" })

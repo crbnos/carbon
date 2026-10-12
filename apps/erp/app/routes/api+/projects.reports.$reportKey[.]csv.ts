@@ -5,7 +5,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
-import { chunkArray, section6765Rows, taxYearBounds } from "@carbon/utils";
+import {
+  chunkArray,
+  section6765FilingRows,
+  section6765OfficerWages,
+  taxYearBounds
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   buildLaborDistribution,
@@ -25,6 +30,7 @@ import {
   monthNumber,
   type ProjectReportKey,
   type RdComponent,
+  rdSoftwareTypeIrsText,
   type rdTaxReportKeys,
   reportChargeNumber
 } from "~/modules/projects";
@@ -425,20 +431,23 @@ const SECTION_6765_FIELDS = [
   "49(c) Business Component",
   "49(d) Component Type",
   "49(e) Software Type",
+  "49(f) Information Sought to Be Discovered",
   "50 Direct Research Wages",
   "51 Direct Supervision Wages",
   "52 Direct Support Wages",
   "53 Total Wages",
   "54 Supplies",
   "55 Computer Rental",
-  "56 Contract Research (65%)",
+  "56 Applicable Contract Research",
   "Total QRE"
 ];
 
 /**
- * Form 6765 Section G: one line per row of `section6765Rows` (descending
- * QRE, then the aggregate row), then the notes. Column 53 is the sum of
- * columns 50–52 (decision D8).
+ * Form 6765 Section G in whole dollars: one line per row of
+ * `section6765FilingRows` (descending QRE, the aggregate row, then the Total
+ * row), then the notes. Column 53 is the sum of columns 50–52 (decision D8,
+ * confirmed against the Form 6765 instructions). The aggregate and Total rows
+ * leave 49(a), (b), (d), (e) and (f) blank, as the instructions say.
  */
 function section6765Csv(
   rows: Awaited<ReturnType<typeof getRdLedgerRows>>,
@@ -447,31 +456,75 @@ function section6765Csv(
   company: { ein: string | null }
 ): Csv {
   const input = buildSection6765Input(rows, employees, components);
+  const filingRows = section6765FilingRows(input.components);
+  const totalRow = filingRows[filingRows.length - 1]!;
+  const aggregateCount = filingRows.find(
+    (row) => row.isAggregate
+  )?.aggregateCount;
   const note = (text: string) => ({ "49(a) EIN": text });
   return {
     fields: SECTION_6765_FIELDS,
     rows: [
-      ...section6765Rows(input.components).map((row) => ({
-        "49(a) EIN": company.ein,
-        "49(b) Principal Business Activity Code": null,
-        "49(c) Business Component": row.name,
-        "49(d) Component Type": row.componentType,
-        "49(e) Software Type": row.softwareType,
-        "50 Direct Research Wages": row.research,
-        "51 Direct Supervision Wages": row.supervision,
-        "52 Direct Support Wages": row.support,
-        "53 Total Wages": row.wageTotal,
-        "54 Supplies": row.supplies,
-        "55 Computer Rental": row.computerRental,
-        "56 Contract Research (65%)": row.contractResearchQre,
-        "Total QRE": row.total
-      })),
-      note(`Section E line 38, officers' wage QREs: ${input.officerWages}`),
+      ...filingRows.map((row) => {
+        const isComponent = !row.isAggregate && !row.isTotal;
+        return {
+          "49(a) EIN": isComponent ? company.ein : null,
+          "49(b) Principal Business Activity Code": null,
+          "49(c) Business Component": row.name,
+          "49(d) Component Type": isComponent ? row.componentType : null,
+          "49(e) Software Type": isComponent
+            ? rdSoftwareTypeIrsText(row.softwareType)
+            : null,
+          "49(f) Information Sought to Be Discovered": null,
+          "50 Direct Research Wages": row.research,
+          "51 Direct Supervision Wages": row.supervision,
+          "52 Direct Support Wages": row.support,
+          "53 Total Wages": row.wageTotal,
+          "54 Supplies": row.supplies,
+          "55 Computer Rental": row.computerRental,
+          "56 Applicable Contract Research": row.contractResearchQre,
+          "Total QRE": row.total
+        };
+      }),
+      note(
+        `Section E line 38, officers' wage QREs: ${section6765OfficerWages(input.officerWages, totalRow.wageTotal)}`
+      ),
+      note(
+        "The Total row sums every row, the aggregate row included. Its columns 53 to 56 go to Section F lines 42 to 45."
+      ),
+      note(
+        "All amounts are in whole dollars. Columns 53, Total QRE and the Total row add the rounded amounts."
+      ),
+      ...(aggregateCount
+        ? [
+            note(
+              `Aggregate Business Components: the sum of ${aggregateCount} business components.`
+            )
+          ]
+        : []),
+      note(
+        "Column 49(b): enter the principal business activity (PBA) code from your return."
+      ),
+      note(
+        "Column 49(f): required only on an amended return. Enter the information sought to be discovered for each business component."
+      ),
       note("Column 55: Not tracked in Carbon"),
+      note(
+        "Column 56 applies 65 % to all contract research. Adjust payments to a qualified research consortium (75 %) or for qualified energy research by an eligible small business, university or federal laboratory (100 %), and move basic research payments to line 46."
+      ),
+      note(
+        "Column 56 includes Outside Processing and Purchased Service costs. They are contract research only when the work meets Reg. §1.41-2(e)."
+      ),
+      note(
+        "Column 54 includes every Material cost. Remove the cost of depreciable property (§41(b)(2)(C))."
+      ),
       ...(input.estimatedEmployeeCount > 0
         ? [
             note(
               `Employees with wages estimated from labor cost: ${input.estimatedEmployeeCount}`
+            ),
+            note(
+              "Carbon estimates wages from the Labor ledger when no payroll is imported. An estimate can exceed the employee's W-2 wages."
             )
           ]
         : []),

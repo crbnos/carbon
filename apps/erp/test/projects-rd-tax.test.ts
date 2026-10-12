@@ -8,7 +8,8 @@ import {
   buildSection6765Input,
   type RdComponent,
   type RdEmployeeYear,
-  type RdLedgerRow
+  type RdLedgerRow,
+  rdSoftwareTypeIrsText
 } from "~/modules/projects/projects.models";
 
 const components: RdComponent[] = [
@@ -85,5 +86,21 @@ describe("buildSection6765Input", () => {
     );
     expect(input.estimatedEmployeeCount).toBe(1);
     expect(input.components[0]?.research).toBe(1_000);
+  });
+});
+
+describe("rdSoftwareTypeIrsText", () => {
+  it("writes column 49(e) as the IRS instructions word it", () => {
+    expect(rdSoftwareTypeIrsText("Internal Use")).toBe(
+      "IUS—internal use software"
+    );
+    expect(rdSoftwareTypeIrsText("Dual Function")).toBe(
+      "DFS—dual function software"
+    );
+    expect(rdSoftwareTypeIrsText("Non-Internal Use")).toBe("Non-IUS");
+    expect(rdSoftwareTypeIrsText("Excepted")).toBe(
+      "Excepted from IUS treatment"
+    );
+    expect(rdSoftwareTypeIrsText(null)).toBeNull();
   });
 });

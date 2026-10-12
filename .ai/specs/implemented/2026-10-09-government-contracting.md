@@ -192,7 +192,7 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 - **Officer flag:** `employeeJob.isOfficer` (Form 6765 Section E, line 38).
 - **Reports:**
   - **§174A R&E:** domestic and foreign research expenditure by tax year, from ledger rows of business components, split by work country.
-  - **Form 6765 Section G:** one row per business component, in descending QRE order. The rows cover at least 80 % of total QREs, with at most 50 rows, then one aggregate row. Columns 49(a)–(e) and 50–56. Wages use the "substantially all" rule (80 % or more of an employee's time qualified → all of it counts).
+  - **Form 6765 Section G:** one row per business component, in descending QRE order. The rows cover at least 80 % of total QREs, with at most 50 rows, then one aggregate row ("Aggregate Business Components") and a Total row. Columns 49(a)–(f) and 50–56; 49(f) only for amended returns. Amounts are in whole dollars. Wages use the "substantially all" rule (80 % or more of an employee's time qualified → all of it counts).
 
 ### Design Decisions
 
@@ -266,7 +266,7 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 | D5 | What a business component owns (5d plan) | Its own ledger rows and its subtree's, down to the next business component. A nested business component owns its own subtree. | Each row counts once. |
 | D6 | Funded research in §174A (5d plan) | Not excluded. A column shows the funded part. | §174A covers all R&E; the preparer decides on the funded part. |
 | D7 | Column 55, computer rental (5d plan) | 0, with the note "Not tracked in Carbon". | Carbon has no source for it. |
-| D8 | Column 53 (5d plan) | The sum of columns 50–52. | The research file does not define column 53. This is an assumption: check it against the Form 6765 instructions before a filing. |
+| D8 | Column 53 (5d plan) | The sum of columns 50–52. | Confirmed: Form 6765 (Rev. 12-2024) column 53 'Total qualified wages (add line 50, line 51, and line 52)'; Instructions (12/2025). |
 | D9 | Tax year (5d plan) | Twelve months from `fiscalYearSettings.taxStartMonth`, named by the calendar year in which it starts. | The company's own tax year. |
 | D10 | `researchFunded` left empty (5d plan) | True when the contract has a Cost Plus or Time & Materials line, else false. | The spec default: cost-reimbursed work is paid whatever the result. |
 
@@ -519,4 +519,4 @@ Resolved autonomously (2026-10-09), open to veto:
 - 2026-10-11: Phase 5a implemented (`.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34). Decisions P1–P10 of the plan are recorded in *Design Decisions*. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 35) is deferred.
 - 2026-10-11: Phase 5b implemented (`.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21). Decisions B1–B15 of the plan are recorded in *Design Decisions*; *Data Model Changes* and *API / Service Changes* now name `indirectRateRun`, the burden columns, `post-project-burden` and the ee runs. Rule: `.claude/rules/indirect-rates.md`. The browser verification (Task 22) is deferred.
 - 2026-10-11: Phase 5c implemented (`.ai/plans/2026-10-09-government-contracting-phase-5c.md`, Tasks 1–22). Decisions C1–C17 of the plan are recorded in *Design Decisions*; *Data Model Changes* now names `earnedValuePercent`, the `earnedValuePeriod` columns and the 2 values of `materialMeasurementPoint`; *API / Service Changes* names the ee helpers and `closeEarnedValuePeriod`. Rule: `.claude/rules/project-control.md`. The browser verification (Task 23) is deferred.
-- 2026-10-11: Phase 5d implemented (`.ai/plans/2026-10-09-government-contracting-phase-5d.md`, Tasks 1–15). Decisions D1–D10 of the plan are recorded in *Design Decisions*; D8 (column 53) needs a check against the Form 6765 instructions. The work location FK is composite. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 16) is deferred. Every phase is implemented, so the spec moves to `implemented/`.
+- 2026-10-11: Phase 5d implemented (`.ai/plans/2026-10-09-government-contracting-phase-5d.md`, Tasks 1–15). Decisions D1–D10 of the plan are recorded in *Design Decisions*; D8 (column 53) is confirmed: Form 6765 (Rev. 12-2024) column 53 'Total qualified wages (add line 50, line 51, and line 52)'; Instructions (12/2025). The work location FK is composite. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 16) is deferred. Every phase is implemented, so the spec moves to `implemented/`.

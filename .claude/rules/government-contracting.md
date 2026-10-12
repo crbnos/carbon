@@ -212,8 +212,14 @@ location and the category's role): the ERP from Add row, the MES from the loader
 D2), `taxYearBounds` (twelve months from the tax start month, named by the year it
 starts in, D9), `isFundedResearch` (D10), `wageQres` (80 % or more of the hours
 qualified counts all the wages), `section6765Rows` (descending QRE, rows while fewer
-than 50 and below 80 % of the total, then one aggregate row; contract research at
-65 %).
+than 50 and below 80 % of the total, then one aggregate row named exactly
+`SECTION_G_AGGREGATE_NAME`, "Aggregate Business Components"; contract research at
+65 %), `section6765FilingRows` (the filing boundary: columns 50–52 and 54–56 rounded
+to whole dollars with `irsWholeDollars` / `IRS_WHOLE_DOLLAR_SCALE = 0`, then 53, the
+total and a Total row added from the rounded values; the Total row sums every row,
+the aggregate row included, and feeds Section F lines 42–45) and
+`section6765OfficerWages` (line 38 in whole dollars, capped at the Total row's
+column 53).
 
 **Reports** (`rd-section-174a`, `rd-form-6765-g`; `view: projects` and
 `view: accounting`; query `taxYear`). `getRdLedgerRows` is one query: a recursive CTE
@@ -226,9 +232,18 @@ the Labor ledger amount per employee. The pure builders are in `projects.models.
 "Of which funded", D6) and `buildSection6765Input` (qualified hours from Timesheet rows
 that are qualified, unfunded and Domestic; supplies from Material rows; contract
 research from Outside Processing and Purchased Service rows; computer rental 0, D7).
-The Section G CSV writes column 53 as the sum of 50–52 (D8) and ends with notes:
-officers' wage QREs, column 55, the estimated-wage count, the hours of an unknown
-country.
+The Section G CSV writes column 53 as the sum of 50–52 (D8, confirmed against Form
+6765 Rev. 12-2024 and its 12/2025 instructions). It has 49(a)–(f): 49(a) is the
+company EIN on component rows only (the aggregate and Total rows leave 49(a), (b),
+(d), (e) and (f) blank), 49(b) and 49(f) are always blank, and 49(e) takes the IRS
+text from `rdSoftwareTypeIrsText` (`projects.models.ts`). Column 56 is "Applicable
+Contract Research": 65 % of every Outside Processing and Purchased Service cost.
+The notes after the rows: officers' wage QREs, the Total row, whole dollars, the
+aggregate count, 49(b) (PBA code), 49(f) (amended returns only), column 55, the
+65 % caveat for column 56 (75 % consortium, 100 % energy research, basic research to
+line 46), Reg. §1.41-2(e) for contract research, depreciable property in column 54,
+the estimated-wage count with the W-2 caveat, the hours of an unknown country. A
+supplier-level contract research rate and a PBA code field need a schema change.
 
 ## Known gaps
 

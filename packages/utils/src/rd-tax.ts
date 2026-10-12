@@ -37,6 +37,20 @@ export const CONTRACT_RESEARCH_SHARE = 0.65;
 export const SECTION_G_MAX_ROWS = 50;
 /** Section G lists components until they hold this share of the total. */
 export const SECTION_G_MIN_SHARE = 0.8;
+/** Column 49(c) of the Section G row that sums the unlisted components. */
+export const SECTION_G_AGGREGATE_NAME = "Aggregate Business Components";
+/** Column 49(c) of the Section G row that sums every row (Section F). */
+export const SECTION_G_TOTAL_NAME = "Total";
+/**
+ * Form 6765 is filed in whole dollars. This is the IRS boundary's contract,
+ * not an internal scale choice (compare the Xero adapter's constants).
+ */
+export const IRS_WHOLE_DOLLAR_SCALE = 0;
+
+/** An amount in whole dollars, as Form 6765 takes it. */
+export function irsWholeDollars(value: number): number {
+  return round(value, IRS_WHOLE_DOLLAR_SCALE);
+}
 
 export type WorkCountryClass = "Domestic" | "Foreign" | "Unknown";
 
@@ -161,6 +175,9 @@ export type Section6765Row = Section6765Input & {
   contractResearchQre: number;
   total: number;
   isAggregate: boolean;
+  /** The number of components the aggregate row sums; 0 on other rows. */
+  aggregateCount: number;
+  isTotal: boolean;
 };
 
 function toRow(component: Section6765Input): Section6765Row {
@@ -180,7 +197,9 @@ function toRow(component: Section6765Input): Section6765Row {
         component.computerRental +
         contractResearchQre
     ),
-    isAggregate: false
+    isAggregate: false,
+    aggregateCount: 0,
+    isTotal: false
   };
 }
 
@@ -220,7 +239,7 @@ export function section6765Rows(
     ...listed,
     {
       componentId: "",
-      name: `All other business components (${rest.length})`,
+      name: SECTION_G_AGGREGATE_NAME,
       componentType: null,
       softwareType: null,
       research: sum("research"),
@@ -232,7 +251,83 @@ export function section6765Rows(
       wageTotal: sum("wageTotal"),
       contractResearchQre: sum("contractResearchQre"),
       total: sum("total"),
-      isAggregate: true
+      isAggregate: true,
+      aggregateCount: rest.length,
+      isTotal: false
     }
   ];
+}
+
+/**
+ * A Section G row in whole dollars: columns 50, 51, 52, 54, 55 and 56 are
+ * rounded first, then column 53 and the total add the rounded values, so
+ * every printed row adds up. `contractResearch` (the 100 % base) is not a
+ * column and stays at internal scale.
+ */
+function toWholeDollars(row: Section6765Row): Section6765Row {
+  const research = irsWholeDollars(row.research);
+  const supervision = irsWholeDollars(row.supervision);
+  const support = irsWholeDollars(row.support);
+  const supplies = irsWholeDollars(row.supplies);
+  const computerRental = irsWholeDollars(row.computerRental);
+  const contractResearchQre = irsWholeDollars(row.contractResearchQre);
+  const wageTotal = research + supervision + support;
+  return {
+    ...row,
+    research,
+    supervision,
+    support,
+    supplies,
+    computerRental,
+    contractResearchQre,
+    wageTotal,
+    total: wageTotal + supplies + computerRental + contractResearchQre
+  };
+}
+
+/**
+ * The Form 6765 Section G rows as filed: the rows of `section6765Rows` in
+ * whole dollars, then a Total row. The Total row sums every row, the
+ * aggregate row included; its columns 53–56 and total feed Section F
+ * lines 42–45.
+ */
+export function section6765FilingRows(
+  components: Section6765Input[]
+): Section6765Row[] {
+  const rows = section6765Rows(components).map(toWholeDollars);
+  const sum = (field: keyof Section6765Row) =>
+    rows.reduce((total, row) => total + (row[field] as number), 0);
+  return [
+    ...rows,
+    {
+      componentId: "",
+      name: SECTION_G_TOTAL_NAME,
+      componentType: null,
+      softwareType: null,
+      research: sum("research"),
+      supervision: sum("supervision"),
+      support: sum("support"),
+      supplies: sum("supplies"),
+      computerRental: sum("computerRental"),
+      contractResearch: round(sum("contractResearch")),
+      wageTotal: sum("wageTotal"),
+      contractResearchQre: sum("contractResearchQre"),
+      total: sum("total"),
+      isAggregate: false,
+      aggregateCount: 0,
+      isTotal: true
+    }
+  ];
+}
+
+/**
+ * Section E line 38, the officers' wage QREs, in whole dollars. Officers'
+ * wages are part of the wages in column 53, but each column rounds on its
+ * own, so the value is capped at the Total row's column 53 (line 42).
+ */
+export function section6765OfficerWages(
+  officerWages: number,
+  totalWages: number
+): number {
+  return Math.min(irsWholeDollars(officerWages), totalWages);
 }

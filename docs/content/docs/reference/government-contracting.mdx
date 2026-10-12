@@ -108,7 +108,7 @@ Carbon tags the data a US research tax filing needs and reports it by tax year. 
 The two R&D tax reports:
 
 - **§174A R&E** lists each business component's cost in Domestic, Foreign and Unknown Country columns (a location with no country is unknown). Burden shows apart for review, and **Of Which Funded** shows the funded part.
-- **Form 6765 Section G** lists the business components in descending order of qualified research expenses until they hold 80 % of the total or 50 rows, then one row for all the others. Wages use the employee's imported payroll totals, else their labor cost, and an employee with 80 % or more of their hours qualified counts all of their wages. Contract research counts at 65 %. The file ends with the officers' wage total for Section E line 38 and notes for anything Carbon estimated or left out.
+- **Form 6765 Section G** lists the business components in descending order of qualified research expenses until they hold 80 % of the total or 50 rows, then one row for all the others. Wages use the employee's imported payroll totals, else their labor cost, and an employee with 80 % or more of their hours qualified counts all of their wages. Contract research counts at 65 % (column 56, **Applicable Contract Research**). Carbon applies 65 % to all contract research: adjust payments to a qualified research consortium (75 %) or for qualified energy research (100 %) yourself. All amounts are in whole dollars, and columns 53 and Total QRE add the rounded amounts. A **Total** row after the components sums every row; its columns 53 to 56 go to Section F lines 42 to 45. The file ends with the officers' wage total for Section E line 38 and notes for anything Carbon estimated or left out.
 
 ## Reports
 
@@ -123,7 +123,7 @@ Open **Projects → Reports**. Each report downloads as a CSV for a date range, 
 | **Timesheet export for auditors** | Every entry in the range and every change made to it | Projects |
 | **Cost by CLIN** | Allowable and unallowable cost of each contract line item, with its funding and the amount billed | Sales |
 | **§174A R&E (domestic and foreign)** | Research cost of each business component by work country | Projects and Accounting |
-| **Form 6765 Section G** | Qualified research expenses of each business component, columns 49(a)–56 | Projects and Accounting |
+| **Form 6765 Section G** | Qualified research expenses of each business component, columns 49(a)–56, and a Total row, in whole dollars | Projects and Accounting |
 
 A report you do not have the permission for is not shown. In labor distribution, an employee with no imported payroll for the period shows "No payroll imported".
 
@@ -134,7 +134,7 @@ Internals (Government Contracting Phase 5a, rule `.claude/rules/government-contr
 - Every timesheet save goes through the `save-timesheet-entry` server function and every week submit through `submit-timesheet-week`, from the ERP and the MES.
 - `projectLedger.unallowable` is stamped at posting by `isUnallowableCharge`. Revisions are in `timesheetEntryRevision`, certifications in `timesheetCertification`, payroll totals in `payrollPeriodTotal`, funding actions in `customerContractFunding`, invoice ACRN splits in `salesInvoiceFundingAllocation`.
 - The missing-time check runs from pg_cron `timesheet-missing-time-sweeper` at 12:00 UTC.
-- R&D tax (Phase 5d): `projectElement.isBusinessComponent`, `rdComponentType`, `rdSoftwareType`; `timesheetEntry.workLocationId` and `rdActivityRole` (defaults filled by `save-timesheet-entry`); `laborCategory.rdActivityRole`; `customerContract.researchFunded`, `paymentContingentOnSuccess`, `contractorRetainsRights`; `employeeJob.isOfficer`. The pure rules are `@carbon/utils` `rd-tax.ts`. Section G column 53 is the sum of columns 50–52 and column 55 is always 0.
+- R&D tax (Phase 5d): `projectElement.isBusinessComponent`, `rdComponentType`, `rdSoftwareType`; `timesheetEntry.workLocationId` and `rdActivityRole` (defaults filled by `save-timesheet-entry`); `laborCategory.rdActivityRole`; `customerContract.researchFunded`, `paymentContingentOnSuccess`, `contractorRetainsRights`; `employeeJob.isOfficer`. The pure rules are `@carbon/utils` `rd-tax.ts`. Section G column 53 is the sum of columns 50–52 (confirmed against Form 6765 Rev. 12-2024) and column 55 is always 0. `section6765FilingRows` rounds columns 50–52 and 54–56 to whole dollars (`IRS_WHOLE_DOLLAR_SCALE`), adds 53, Total QRE and the Total row from the rounded values, and the aggregate row is named "Aggregate Business Components". Column 56 applies 65 % to all contract research; there is no supplier rate for 75 % or 100 %.
 
 Exact messages and what they mean:
 
