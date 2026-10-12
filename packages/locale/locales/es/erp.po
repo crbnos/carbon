@@ -4613,6 +4613,9 @@ msgstr "Configuración de carga"
 msgid "Burn chart"
 msgstr "Gráfico de desgaste"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "Cobrado en cada línea de factura de renta"
 
 msgid "Charges"
 msgstr "Cargos"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "Gráfico"
@@ -9559,9 +9565,6 @@ msgstr "Efectivo desde"
 
 msgid "Element"
 msgstr "Elemento"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "Los ID comienzan con el identificador, por lo que no pueden cambiar"
 
 msgid "Element of cost"
 msgstr "Elemento de Costo"
@@ -18161,6 +18164,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planifica adelante proyectando la demanda por artículo y ubicación, luego envíala directamente a MRP y programación."
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Planifique varios proyectos como uno, compre una sola vez para todos y vea para qué proyecto es cada pedido."
 
@@ -23126,6 +23132,9 @@ msgstr "Aún adeudado"
 msgid "Stock"
 msgstr "Existencias"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "Existencias que otro proyecto adeuda a este."
 
@@ -27374,9 +27383,6 @@ msgstr "Advertencia — las ediciones se procesan con una advertencia"
 
 msgid "Warn but allow"
 msgstr "Advertir pero permitir"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "Advertir o bloquear un cargo que lleva un elemento por encima de su presupuesto, y medir el valor ganado por cuenta de control."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "Advertir guarda el cargo y muestra el exceso. Bloquear lo rechaza."

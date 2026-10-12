@@ -4613,6 +4613,9 @@ msgstr "बर्डन सेटिंग्स"
 msgid "Burn chart"
 msgstr "बर्न चार्ट"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "प्रत्येक किराया चालान पंक्
 
 msgid "Charges"
 msgstr "शुल्क"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "चार्ट"
@@ -9559,9 +9565,6 @@ msgstr "से प्रभावी"
 
 msgid "Element"
 msgstr "तत्व"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "तत्व IDs पहचान से शुरू होते हैं, इसलिए यह बदल नहीं सकता"
 
 msgid "Element of cost"
 msgstr "लागत का तत्व"
@@ -18161,6 +18164,9 @@ msgstr "योजना"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "आइटम और स्थान के अनुसार मांग का अनुमान लगाकर आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "कई प्रोजेक्ट को एक के रूप में योजना बनाएँ, सभी के लिए एक बार खरीद करें, और देखें कि प्रत्येक आदेश किस प्रोजेक्ट के लिए है।"
 
@@ -23126,6 +23132,9 @@ msgstr "अभी भी बकाया"
 msgid "Stock"
 msgstr "स्टॉक"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "स्टॉक जो एक अन्य परियोजना इसे बकाया है।"
 
@@ -27374,9 +27383,6 @@ msgstr "चेतावनी — संपादन एक चेतावन�
 
 msgid "Warn but allow"
 msgstr "चेतावनी दें लेकिन अनुमति दें"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "किसी चार्ज को चेतावनी दें या ब्लॉक करें जो किसी तत्व को इसके बजट से अधिक ले जाता है, और प्रति नियंत्रण खाते के अनुसार अर्जित मूल्य को मापें।"
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "चेतावनी चार्ज को सहेजती है और ओवररन दिखाती है। ब्लॉक इसे अस्वीकार करता है।"

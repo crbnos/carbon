@@ -206,7 +206,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 11: Build the project workspace shell and the project sidebar (Layer 2)
 - [x] Task 12: Rebuild the project header on `RecordHeader`
 - [x] Task 13: Add the project Overview page
-- [ ] Task 14: Fold Details into the project Settings page
+- [x] Task 14: Fold Details into the project Settings page
 - [ ] Task 15: Simplify the Costs page
 - [ ] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 - [ ] Task 17: Simplify the Time page
@@ -1632,4 +1632,8 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 8: `timesheetWeek` also returns `from` and `to` (the week's first and last instants). The ERP loader filters the timecard rows on them, so without them it would call `datetime.weekBounds` a second time.
 - Task 8: Settings → Company refuses a save without an address, so setting the time zone in the browser also gave the dev company the Headquarters address (123 Main Street, Austin, TX 78701, US).
 - Task 8: the brief's database port (60387) is stale. After the reset the stack runs Postgres on 60663 (`.env.local`); with 60387 the dataset check skips with "no database connection".
+- Task 14: Brad's scope change (2026-10-12): project states and labels, with their colours, move to company-wide settings in a separate task with a schema change. So Task 14 leaves the States and Labels cards and their modals as they were, including "No labels yet." (step 4's `Empty` is not done).
+- Task 14: the Project card posts through a fetcher. The details route has no page now, so a plain form post would move the browser to `/details` to show a validation error.
+- Task 14: a folded section opens while one of its fields has a validation error, so an error is never hidden.
+- Task 14: the Identifier is read-only text (`ReadOnlyField`) with a `Hidden` input, not a read-only input (D6).
 

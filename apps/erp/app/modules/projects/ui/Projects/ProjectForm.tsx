@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
-import { ValidatedForm } from "@carbon/form";
+import { useFormContext, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Card,
@@ -31,6 +31,7 @@ import { useEffect, useState } from "react";
 import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
+import { ReadOnlyField } from "~/components";
 import {
   Account,
   Boolean as BooleanField,
@@ -77,13 +78,20 @@ type ProjectFormProps = {
   milestones?: { value: string; label: string }[];
   /** Project stock is chosen while the project is Draft only. */
   isProjectStockLocked?: boolean;
+  /** An existing project only: the route its form posts to. */
+  action?: string;
+  /** An existing project only: the company has a planning group. */
+  hasPlanningGroups?: boolean;
 };
 
 /**
  * A new project opens in a drawer and posts to `path.to.newProject`. An
- * existing project renders as a card on its Details tab and posts to the
- * current route. The identifier is fixed once the project exists, because
- * every element's readable id starts with it.
+ * existing project renders as the "Project" card of its Settings page and
+ * posts to `action` (the details route). The everyday fields show; the
+ * accounting, stock, charging and plan lock fields sit in folded sections
+ * that stay mounted, so a save posts them unchanged. The identifier is fixed
+ * once the project exists, because every element's readable id starts with
+ * it.
  */
 const ProjectForm = ({
   initialValues,
@@ -91,7 +99,9 @@ const ProjectForm = ({
   isDisabled = false,
   copyFrom,
   milestones,
-  isProjectStockLocked = false
+  isProjectStockLocked = false,
+  action,
+  hasPlanningGroups = false
 }: ProjectFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -138,8 +148,11 @@ const ProjectForm = ({
   const [projectStock, setProjectStock] = useState(
     initialValues.projectStock ?? false
   );
-  // A project joins a planning group after it exists, on its Details tab.
-  const planningGroups = usePlanningGroups(isEditing && projectStock);
+  // A project joins a planning group after it exists, on its Settings page,
+  // and only a company with a planning group sees the field.
+  const planningGroups = usePlanningGroups(
+    isEditing && hasPlanningGroups && projectStock
+  );
 
   const treatmentOptions = projectCostTreatments.map((treatment) => ({
     label: treatment,
@@ -150,6 +163,8 @@ const ProjectForm = ({
     value: priority
   }));
 
+  // A new project only: the identifier is suggested from the name until the
+  // user types one.
   const nameAndIdentifier = (
     <>
       <InputControlled
@@ -157,19 +172,14 @@ const ProjectForm = ({
         label={t`Name`}
         value={name}
         onChange={setName}
-        autoFocus={!isEditing}
+        autoFocus
       />
       <InputControlled
         name="identifier"
         label={t`Identifier`}
         value={shownIdentifier}
         isUppercase
-        isReadOnly={isEditing}
-        helperText={
-          isEditing
-            ? t`Element ids start with the identifier, so it cannot change`
-            : t`2 to 6 capital letters or digits, such as SNS`
-        }
+        helperText={t`2 to 6 capital letters or digits, such as SNS`}
         onChange={(value) => {
           setIdentifierEdited(true);
           setIdentifier(value.toUpperCase());
@@ -181,6 +191,7 @@ const ProjectForm = ({
     <SelectControlled
       name="costTreatment"
       label={t`Cost Treatment`}
+      termId="cost-treatment"
       options={treatmentOptions}
       value={costTreatment}
       onChange={(option) => setCostTreatment(option?.value ?? "")}
@@ -201,6 +212,7 @@ const ProjectForm = ({
     <SelectControlled
       name="costObjective"
       label={t`Cost Objective`}
+      termId="cost-objective"
       isOptional
       helperText={t`Where the project's cost lands for government contract reporting`}
       options={costObjectiveOptions}
@@ -244,111 +256,172 @@ const ProjectForm = ({
     </>
   );
 
+  // Cost Objective shows only to a company that does government
+  // contracting; for any other company it still posts the saved value.
+  const costObjectiveOrHidden = isGovernmentContracting ? (
+    costObjectiveField
+  ) : (
+    <Hidden name="costObjective" value={costObjective} />
+  );
+
   const fields = (
-    <>
-      <Hidden name="id" />
+    <div className="flex w-full flex-col gap-4">
       <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
-        {nameAndIdentifier}
+        <InputControlled
+          name="name"
+          label={t`Name`}
+          value={name}
+          onChange={setName}
+        />
+        <ReadOnlyField label={t`Identifier`}>
+          {initialValues.identifier}
+        </ReadOnlyField>
         <div className="@xl:col-span-2">
           <TextArea name="description" label={t`Description`} />
         </div>
-        {costTreatmentField}
-        {costTreatment === "Capitalize" ? (
-          cipClassField
-        ) : (
-          <Account
-            name="costAccountId"
-            label={t`Cost Account`}
-            helperText={t`Leave empty to use the account default`}
-          />
-        )}
-        {costObjectiveField}
         <Customer name="customerId" label={t`Customer`} />
         <Employee name="ownerId" label={t`Owner`} />
         <Location name="locationId" label={t`Location`} />
         <Select name="priority" label={t`Priority`} options={priorityOptions} />
         <DatePicker name="startDate" label={t`Start Date`} />
         <DatePicker name="endDate" label={t`End Date`} />
-        <div className="flex flex-col gap-4 @xl:col-span-2">
+      </div>
+      <div className="flex w-full flex-col gap-2 border-t border-border pt-2">
+        <FormSection
+          title={t`Accounting`}
+          fieldNames={[
+            "costTreatment",
+            "costAccountId",
+            "fixedAssetClassId",
+            "costObjective"
+          ]}
+        >
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+            {costTreatmentField}
+            {costTreatment === "Capitalize" ? (
+              cipClassField
+            ) : (
+              <Account
+                name="costAccountId"
+                label={t`Cost Account`}
+                helperText={t`Leave empty to use the account default`}
+              />
+            )}
+            {costObjectiveOrHidden}
+          </div>
+        </FormSection>
+        <FormSection
+          title={t`Stock and planning`}
+          fieldNames={[
+            "projectStock",
+            "chargeAtReceipt",
+            "governmentFurnished",
+            "planningGroupId",
+            "planningPriority"
+          ]}
+        >
+          <div className="flex w-full flex-col gap-4">
+            <BooleanField
+              name="projectStock"
+              label={t`Project stock`}
+              termId="project-stock"
+              bordered
+              description={
+                isProjectStockLocked
+                  ? t`Chosen while the project is Draft`
+                  : t`Stock received for the project is the project's own, and only its demand draws it`
+              }
+              isDisabled={isProjectStockLocked}
+              onChange={setProjectStock}
+            />
+            {projectStock && (
+              <>
+                <BooleanField
+                  name="chargeAtReceipt"
+                  label={t`Charge at receipt`}
+                  bordered
+                  description={t`Charge the project when its stock is received, not when it is issued`}
+                />
+                <BooleanField
+                  name="governmentFurnished"
+                  label={t`Government-furnished`}
+                  bordered
+                  description={t`The project's stock moves only to projects of the same customer`}
+                />
+              </>
+            )}
+            {hasPlanningGroups && projectStock && (
+              <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+                <Select
+                  name="planningGroupId"
+                  label={t`Planning Group`}
+                  termId="planning-group"
+                  isOptional
+                  helperText={t`Members net their demand together in MRP. The group must be at the project's location`}
+                  options={planningGroups.map((group) => ({
+                    label: group.name,
+                    value: group.id
+                  }))}
+                />
+                <NumberField
+                  name="planningPriority"
+                  label={t`Planning Priority`}
+                  helperText={t`Under the Project Priority rule, a lower number gets the group's supply first`}
+                  minValue={0}
+                />
+              </div>
+            )}
+          </div>
+        </FormSection>
+        <FormSection title={t`Charging`} fieldNames={["restrictCharging"]}>
           <BooleanField
             name="restrictCharging"
             label={t`Restrict charging to members`}
+            bordered
             description={t`In DCAA timekeeping, only the project's members can charge time to it`}
           />
-          <BooleanField
-            name="projectStock"
-            label={t`Project stock`}
-            description={
-              isProjectStockLocked
-                ? t`Chosen while the project is Draft`
-                : t`Stock received for the project is the project's own, and only its demand draws it`
-            }
-            isDisabled={isProjectStockLocked}
-            onChange={setProjectStock}
-          />
-          {projectStock && (
-            <>
-              <BooleanField
-                name="chargeAtReceipt"
-                label={t`Charge at receipt`}
-                description={t`Charge the project when its stock is received, not when it is issued`}
-              />
-              <BooleanField
-                name="governmentFurnished"
-                label={t`Government-furnished`}
-                description={t`The project's stock moves only to projects of the same customer`}
-              />
-            </>
-          )}
-          {isEditing && projectStock && (
-            <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
-              <Select
-                name="planningGroupId"
-                label={t`Planning Group`}
-                isOptional
-                helperText={t`Members net their demand together in MRP. The group must be at the project's location`}
-                options={planningGroups.map((group) => ({
-                  label: group.name,
-                  value: group.id
-                }))}
-              />
-              <NumberField
-                name="planningPriority"
-                label={t`Planning Priority`}
-                helperText={t`Under the Project Priority rule, a lower number gets the group's supply first`}
-                minValue={0}
-              />
-            </div>
-          )}
-        </div>
-        {isEditing && (
-          <Select
-            name="lockPlanAfterMilestoneId"
-            label={t`Lock Plan After Milestone`}
-            isOptional
-            helperText={t`When this milestone completes, the plan changes only through a change request`}
-            options={milestones ?? []}
-          />
-        )}
+        </FormSection>
+        <FormSection
+          title={t`Plan lock`}
+          fieldNames={["lockPlanAfterMilestoneId"]}
+        >
+          <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+            <Select
+              name="lockPlanAfterMilestoneId"
+              label={t`Lock Plan After Milestone`}
+              isOptional
+              helperText={t`When this milestone completes, the plan changes only through a change request`}
+              options={milestones ?? []}
+            />
+          </div>
+        </FormSection>
       </div>
-    </>
+    </div>
   );
 
   if (isEditing) {
     return (
       <Card>
+        {/* A fetcher: the details route has no page, so a validation error
+            must come back here rather than move the page to its URL. */}
         <ValidatedForm
           method="post"
+          action={action}
           validator={projectValidator}
           defaultValues={initialValues}
+          fetcher={fetcher}
           isDisabled={isDisabled}
         >
           <CardHeader>
             <CardTitle>
-              <Trans>Details</Trans>
+              <Trans>Project</Trans>
             </CardTitle>
           </CardHeader>
-          <CardContent className="@container">{fields}</CardContent>
+          <CardContent className="@container">
+            <Hidden name="id" />
+            <Hidden name="identifier" value={initialValues.identifier ?? ""} />
+            {fields}
+          </CardContent>
           <CardFooter>
             <Submit isDisabled={!canSave || isDisabled}>
               <Trans>Save</Trans>
@@ -422,13 +495,19 @@ export default ProjectForm;
 function FormSection({
   title,
   defaultOpen = false,
+  fieldNames,
   children
 }: {
   title: ReactNode;
   defaultOpen?: boolean;
+  /** The section opens while one of these fields has an error. */
+  fieldNames?: string[];
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [userOpen, setOpen] = useState(defaultOpen);
+  const { fieldErrors } = useFormContext();
+  const open =
+    userOpen || (fieldNames ?? []).some((name) => Boolean(fieldErrors[name]));
   return (
     <Collapsible open={open} onOpenChange={setOpen} className="w-full">
       <CollapsibleTrigger className="flex w-full items-center gap-1.5 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">

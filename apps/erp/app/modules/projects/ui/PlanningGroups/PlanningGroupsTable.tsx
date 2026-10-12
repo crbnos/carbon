@@ -123,9 +123,7 @@ const PlanningGroupsTable = memo(
           header: t`Exception Project`,
           cell: ({ row }) =>
             row.original.exceptionProject ? (
-              <Hyperlink
-                to={path.to.projectDetails(row.original.exceptionProject.id)}
-              >
+              <Hyperlink to={path.to.project(row.original.exceptionProject.id)}>
                 <span className="whitespace-nowrap">
                   {row.original.exceptionProject.identifier}
                 </span>

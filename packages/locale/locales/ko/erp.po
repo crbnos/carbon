@@ -4613,6 +4613,9 @@ msgstr "부담 설정"
 msgid "Burn chart"
 msgstr "번다운 차트"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "각 렌트 송장 라인에서 청구됩니다"
 
 msgid "Charges"
 msgstr "청구"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "차트"
@@ -9559,9 +9565,6 @@ msgstr "효력 발생일"
 
 msgid "Element"
 msgstr "요소"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "요소 ID는 식별자로 시작하므로 변경할 수 없습니다"
 
 msgid "Element of cost"
 msgstr "원가 요소"
@@ -18161,6 +18164,9 @@ msgstr "계획"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "품목 및 사업장별 소요량을 예측하여 미리 계획하고, 이를 직접 MRP 및 일정에 입력하세요."
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "여러 프로젝트를 하나로 계획하고, 한 번에 구매하며, 각 주문이 어느 프로젝트용인지 확인하세요."
 
@@ -23126,6 +23132,9 @@ msgstr "여전히 대금이 남음"
 msgid "Stock"
 msgstr "재고"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "다른 프로젝트가 이 프로젝트에 빚진 재고입니다."
 
@@ -27374,9 +27383,6 @@ msgstr "경고 — 편집이 경고와 함께 성공했습니다"
 
 msgid "Warn but allow"
 msgstr "경고 후 허용"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "예산을 초과하는 비용에 대해 경고하거나 차단하고, 통제 계정당 획득 가치를 측정합니다."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "경고는 비용을 저장하고 초과분을 표시합니다. 차단은 거부합니다."

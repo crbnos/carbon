@@ -15,7 +15,12 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
-import type { Project, ProjectLabel, ProjectState } from "~/modules/projects";
+import type {
+  Project,
+  ProjectLabel,
+  ProjectMilestone,
+  ProjectState
+} from "~/modules/projects";
 import {
   addProjectMember,
   deleteProjectLabel,
@@ -33,6 +38,7 @@ import ProjectControlSettings from "~/modules/projects/ui/Project/ProjectControl
 import ProjectLabels from "~/modules/projects/ui/Project/ProjectLabels";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectStates from "~/modules/projects/ui/Project/ProjectStates";
+import { ProjectForm } from "~/modules/projects/ui/Projects";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -265,14 +271,64 @@ export default function ProjectSettingsRoute() {
     project: Project;
     states: ProjectState[];
     labels: ProjectLabel[];
+    milestones: ProjectMilestone[];
+    hasPlanningGroups: boolean;
   }>(path.to.project(projectId));
-  if (!routeData?.project) return null;
+  const project = routeData?.project;
+  if (!routeData || !project) return null;
 
   const action = path.to.projectSettings(projectId);
-  const isDisabled = routeData.project.status === "Closed";
+  const isDisabled = project.status === "Closed";
 
   return (
     <VStack spacing={4} className="p-4 max-w-[60rem] mx-auto">
+      <ProjectForm
+        key={project.id}
+        action={path.to.projectDetails(projectId)}
+        isDisabled={isDisabled}
+        hasPlanningGroups={routeData.hasPlanningGroups}
+        initialValues={{
+          id: project.id,
+          name: project.name,
+          identifier: project.identifier ?? undefined,
+          description: project.description ?? undefined,
+          // By Coverage belongs to Service projects, which never open here.
+          costTreatment:
+            project.costTreatment === "By Coverage"
+              ? "Expense"
+              : project.costTreatment,
+          costAccountId: project.costAccountId ?? undefined,
+          fixedAssetClassId: project.fixedAssetClassId ?? undefined,
+          customerId: project.customerId ?? undefined,
+          ownerId: project.ownerId ?? undefined,
+          locationId: project.locationId ?? undefined,
+          startDate: project.startDate ?? undefined,
+          endDate: project.endDate ?? undefined,
+          priority: project.priority ?? undefined,
+          lockPlanAfterMilestoneId:
+            project.lockPlanAfterMilestoneId ?? undefined,
+          projectStock: project.projectStock,
+          chargeAtReceipt: project.chargeAtReceipt,
+          governmentFurnished: project.governmentFurnished,
+          planningGroupId: project.planningGroupId ?? undefined,
+          planningPriority: project.planningPriority,
+          costObjective: project.costObjective ?? undefined,
+          restrictCharging: project.restrictCharging
+        }}
+        isProjectStockLocked={project.status !== "Draft"}
+        milestones={(routeData.milestones ?? []).map((milestone) => ({
+          value: milestone.id,
+          label: milestone.name
+        }))}
+      />
+      {project.restrictCharging && (
+        <ProjectMembers
+          projectId={projectId}
+          members={members}
+          action={action}
+          isDisabled={isDisabled}
+        />
+      )}
       <ProjectStates
         states={routeData.states}
         action={action}
@@ -284,18 +340,10 @@ export default function ProjectSettingsRoute() {
         isDisabled={isDisabled}
       />
       <ProjectControlSettings
-        project={routeData.project}
+        project={project}
         action={action}
         isDisabled={isDisabled}
       />
-      {routeData.project.restrictCharging && (
-        <ProjectMembers
-          projectId={projectId}
-          members={members}
-          action={action}
-          isDisabled={isDisabled}
-        />
-      )}
     </VStack>
   );
 }

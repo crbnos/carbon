@@ -145,6 +145,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 14: Fold Details into the project Settings page
 
+- Settings opens with a "Project" card: Name, Identifier (read-only text), Description, Customer, Owner, Location, Priority, Start and End Date. Four folded sections stay mounted (D14): Accounting (Cost Treatment, CIP Class or Cost Account, Cost Objective), Stock and planning (Project stock and its 2 flags, Planning Group and Priority), Charging, Plan lock. A section opens on its own while one of its fields has an error (`useFormContext().fieldErrors`).
+- Cost Objective shows only with `useGovernmentContracting()`; otherwise a `Hidden` field posts the saved value. Planning Group and Priority show only with `hasPlanningGroups`. Every boolean is `bordered`; `termId` on Cost Treatment, Cost Objective, Project stock and Planning Group.
+- The card posts to the details action through a fetcher. `/details` redirects to `/settings` (`redirectBeforeLoaders`); its action redirects to Settings. Links that opened Details now open Settings (projects list "Edit Project") or Overview (planning group members, exception project).
+- Order: Project, Members (only with Restrict charging on), States, Labels, Project control. Project control shows one `UpgradeOverlayRow` when gated.
+- States and Labels are unchanged (Brad's scope change: they move to company settings in a later task).
+- Verify: `/details` → `/settings` (`14-details-redirect.png`). With every section folded, the Description changed and saved ("Project updated"); `costTreatment` Contract, `costAccountId` null, `costObjective` Direct, `planningGroupId`, `planningPriority` 10 and `projectStock` stayed the same. The description was put back afterwards.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; erp 2,261 tests passed.
+- Shots: `14-settings.png` (sections folded), `14-settings-open.png` and `14-settings-open-2.png` (Accounting, Stock and planning open).
+- Screenshot check: 1 yes (Settings → Inventory cards); 2 yes; 3 yes (no toolbar); 4 yes: the header's next step is the page's primary action, and each card has its own Save, as the settings precedent does; 5 yes; 6 yes; 7 yes (4 folded sections, Layer 5 on Cost Objective and Planning Group).
+
 ## Task 15: Simplify the Costs page
 
 ## Task 16: Rebuild the Stock, Pegging and Billing pages under Costs

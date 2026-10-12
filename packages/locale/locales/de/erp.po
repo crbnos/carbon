@@ -4613,6 +4613,9 @@ msgstr "Lasteneinstellungen"
 msgid "Burn chart"
 msgstr "Burndown-Diagramm"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "Berechnet auf jeder Mietrechnungsposition"
 
 msgid "Charges"
 msgstr "Belastungen"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "Diagramm"
@@ -9559,9 +9565,6 @@ msgstr "Gültig ab"
 
 msgid "Element"
 msgstr "Element"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "Element-IDs beginnen mit dem Kennzeichen, daher kann es nicht geändert werden"
 
 msgid "Element of cost"
 msgstr "Kostenelement"
@@ -18161,6 +18164,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planen Sie voraus, indem Sie den Bedarf pro Artikel und Standort projizieren und ihn dann direkt in MRP und Planung einspeisen."
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Planen Sie mehrere Projekte als eines, kaufen Sie einmal für alle und sehen Sie, für welches Projekt jede Bestellung bestimmt ist."
 
@@ -23126,6 +23132,9 @@ msgstr "Noch geschuldet"
 msgid "Stock"
 msgstr "Bestand"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "Bestand, den ein anderes Projekt diesem schuldet."
 
@@ -27374,9 +27383,6 @@ msgstr "Warnen – Bearbeitungen sind erfolgreich mit einer Warnung"
 
 msgid "Warn but allow"
 msgstr "Warnen, aber zulassen"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "Warnen oder blockieren Sie einen Posten, der ein Element über sein Budget hinaus bringt, und messen Sie den Leistungswert pro Kontrollkonto."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "Warnung speichert den Posten und zeigt den Überlauf. Blockierung lehnt ihn ab."

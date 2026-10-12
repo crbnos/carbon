@@ -4613,6 +4613,9 @@ msgstr "Burden Settings"
 msgid "Burn chart"
 msgstr "Burn chart"
 
+msgid "Business"
+msgstr "Business"
+
 msgid "Business component"
 msgstr "Business component"
 
@@ -5243,6 +5246,9 @@ msgstr "Charged on each rent invoice line"
 
 msgid "Charges"
 msgstr "Charges"
+
+msgid "Charging"
+msgstr "Charging"
 
 msgid "Chart"
 msgstr "Chart"
@@ -9559,9 +9565,6 @@ msgstr "Effective From"
 
 msgid "Element"
 msgstr "Element"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "Element ids start with the identifier, so it cannot change"
 
 msgid "Element of cost"
 msgstr "Element of cost"
@@ -18161,6 +18164,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 
+msgid "Plan lock"
+msgstr "Plan lock"
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Plan several projects as one, buy once for all of them, and see which project each order is for."
 
@@ -23126,6 +23132,9 @@ msgstr "Still Owed"
 msgid "Stock"
 msgstr "Stock"
 
+msgid "Stock and planning"
+msgstr "Stock and planning"
+
 msgid "Stock another project owes this one."
 msgstr "Stock another project owes this one."
 
@@ -27374,9 +27383,6 @@ msgstr "Warn — edits succeed with a warning"
 
 msgid "Warn but allow"
 msgstr "Warn but allow"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "Warn saves the charge and shows the overrun. Block refuses it."

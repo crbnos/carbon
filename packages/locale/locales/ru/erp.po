@@ -4613,6 +4613,9 @@ msgstr "Настройки затрат"
 msgid "Burn chart"
 msgstr "График выполнения"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "Начисляется на каждую строку счета-фак�
 
 msgid "Charges"
 msgstr "Списания"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "График"
@@ -9559,9 +9565,6 @@ msgstr "Действует с"
 
 msgid "Element"
 msgstr "Элемент"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "Идентификаторы элементов начинаются с идентификатора, поэтому они не могут измениться"
 
 msgid "Element of cost"
 msgstr "Элемент стоимости"
@@ -18161,6 +18164,9 @@ msgstr "План"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Планируйте заранее, прогнозируя потребность по номенклатуре и площадке, затем подавайте ее прямо в MRP и планирование."
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Планируйте несколько проектов как один, купите один раз для всех и узнайте, для какого проекта предназначен каждый заказ."
 
@@ -23126,6 +23132,9 @@ msgstr "Все еще задолжено"
 msgid "Stock"
 msgstr "Запас"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "Запас, который другой проект задолжен этому."
 
@@ -27374,9 +27383,6 @@ msgstr "Предупредить — изменения выполняются �
 
 msgid "Warn but allow"
 msgstr "Предупредить, но разрешить"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "Предупредить или заблокировать начисление, превышающее бюджет элемента, и измерить освоенную стоимость по счету управления."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "Предупреждение сохраняет начисление и показывает переполнение. Блокировка отказывает в нем."

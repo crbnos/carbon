@@ -4613,6 +4613,9 @@ msgstr "负担设置"
 msgid "Burn chart"
 msgstr "燃尽图"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "在每个租赁发票行计费"
 
 msgid "Charges"
 msgstr "卡消费"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "图表"
@@ -9559,9 +9565,6 @@ msgstr "有效期自"
 
 msgid "Element"
 msgstr "元素"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "元素 ID 以标识符开头，因此无法更改"
 
 msgid "Element of cost"
 msgstr "成本要素"
@@ -18161,6 +18164,9 @@ msgstr "计划"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "将多个项目作为一个计划，为所有项目一次购买，并查看每个订单对应的项目。"
 
@@ -23126,6 +23132,9 @@ msgstr "仍欠"
 msgid "Stock"
 msgstr "库存"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "另一个项目欠该项目的库存。"
 
@@ -27374,9 +27383,6 @@ msgstr "警告 — 编辑成功，但显示警告"
 
 msgid "Warn but allow"
 msgstr "警告但允许"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "警告或阻止一项费用将某个要素超过其预算，并按成本控制科目计算所获价值。"
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "警告保存费用并显示超支。阻止拒绝它。"

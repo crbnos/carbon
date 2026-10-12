@@ -7,12 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { VStack } from "@carbon/react";
-import { redirect } from "@carbon/utils";
-import type { ActionFunctionArgs } from "react-router";
-import { data, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
-import type { Project, ProjectMilestone } from "~/modules/projects";
+import { redirect, redirectBeforeLoaders } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data } from "react-router";
 import {
   COST_OBJECTIVE_REQUIRED,
   getProject,
@@ -20,12 +17,24 @@ import {
   updateProject
 } from "~/modules/projects";
 import { ensureCapitalAssets } from "~/modules/projects/projects.server";
-import { ProjectForm } from "~/modules/projects/ui/Projects";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "project-details");
+
+/**
+ * The project's fields moved to its Settings page; this route keeps only the
+ * action that saves them. An old link to Details lands on Settings.
+ */
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  await requirePermissions(request, { view: "projects" });
+  const { projectId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+  throw redirect(path.to.projectSettings(projectId));
+}
+
+export const middleware = [redirectBeforeLoaders(loader)];
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -159,7 +168,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           error: err
         });
         throw redirect(
-          path.to.projectDetails(projectId),
+          path.to.projectSettings(projectId),
           await flash(
             request,
             error(err, "Failed to create the assets under construction")
@@ -170,61 +179,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.projectDetails(projectId),
+    path.to.projectSettings(projectId),
     await flash(request, success("Project updated"))
-  );
-}
-
-export default function ProjectDetailsRoute() {
-  const { projectId } = useParams();
-  if (!projectId) throw new Error("Could not find projectId");
-
-  const routeData = useRouteData<{
-    project: Project;
-    milestones: ProjectMilestone[];
-  }>(path.to.project(projectId));
-  const project = routeData?.project;
-  if (!project) return null;
-
-  return (
-    <VStack spacing={4} className="p-4 max-w-[80rem] mx-auto">
-      <ProjectForm
-        key={project.id}
-        isDisabled={project.status === "Closed"}
-        initialValues={{
-          id: project.id,
-          name: project.name,
-          identifier: project.identifier ?? undefined,
-          description: project.description ?? undefined,
-          // By Coverage belongs to Service projects, which never open here.
-          costTreatment:
-            project.costTreatment === "By Coverage"
-              ? "Expense"
-              : project.costTreatment,
-          costAccountId: project.costAccountId ?? undefined,
-          fixedAssetClassId: project.fixedAssetClassId ?? undefined,
-          customerId: project.customerId ?? undefined,
-          ownerId: project.ownerId ?? undefined,
-          locationId: project.locationId ?? undefined,
-          startDate: project.startDate ?? undefined,
-          endDate: project.endDate ?? undefined,
-          priority: project.priority ?? undefined,
-          lockPlanAfterMilestoneId:
-            project.lockPlanAfterMilestoneId ?? undefined,
-          projectStock: project.projectStock,
-          chargeAtReceipt: project.chargeAtReceipt,
-          governmentFurnished: project.governmentFurnished,
-          planningGroupId: project.planningGroupId ?? undefined,
-          planningPriority: project.planningPriority,
-          costObjective: project.costObjective ?? undefined,
-          restrictCharging: project.restrictCharging
-        }}
-        isProjectStockLocked={project.status !== "Draft"}
-        milestones={(routeData?.milestones ?? []).map((milestone) => ({
-          value: milestone.id,
-          label: milestone.name
-        }))}
-      />
-    </VStack>
   );
 }

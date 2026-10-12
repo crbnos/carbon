@@ -4613,6 +4613,9 @@ msgstr "負担設定"
 msgid "Burn chart"
 msgstr "バーンチャート"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "各レンタル請求書明細に請求されます。"
 
 msgid "Charges"
 msgstr "カード請求"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "チャート"
@@ -9559,9 +9565,6 @@ msgstr "有効開始日"
 
 msgid "Element"
 msgstr "要素"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "要素IDは識別子で始まるため、変更できません"
 
 msgid "Element of cost"
 msgstr "原価要素"
@@ -18161,6 +18164,9 @@ msgstr "計画"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "複数のプロジェクトを1つとして計画し、すべて一度に購入し、各注文がどのプロジェクト用かを確認します。"
 
@@ -23126,6 +23132,9 @@ msgstr "未払い"
 msgid "Stock"
 msgstr "在庫"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "別のプロジェクトがこのプロジェクトに負っている在庫。"
 
@@ -27374,9 +27383,6 @@ msgstr "警告 — 編集は警告付きで成功します"
 
 msgid "Warn but allow"
 msgstr "警告するが許可する"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "要素の予算を超える請求に対して警告またはブロック設定し、コントロールアカウント別に獲得価値を測定します。"
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "警告は請求を保存してオーバーランを表示します。ブロックはそれを拒否します。"

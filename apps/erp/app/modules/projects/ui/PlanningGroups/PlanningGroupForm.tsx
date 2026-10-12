@@ -186,9 +186,7 @@ const PlanningGroupForm = ({
                               <Tr key={member.id}>
                                 <Td>
                                   <div className="flex min-w-0 flex-col">
-                                    <Hyperlink
-                                      to={path.to.projectDetails(member.id)}
-                                    >
+                                    <Hyperlink to={path.to.project(member.id)}>
                                       <span className="whitespace-nowrap">
                                         {member.identifier}
                                       </span>

@@ -19,10 +19,9 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuGauge } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Hidden, Number, Select, Submit } from "~/components/Form";
-import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
+import { UpgradeOverlayRow } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import type { Project } from "../../types";
 
@@ -42,28 +41,21 @@ type ProjectControlSettingsProps = {
 /**
  * The control settings of a project (Government Contracting 5c): budget
  * control with its tolerance, and the material point of measurement. A
- * company without government contracting sees them behind the upgrade
- * overlay.
+ * company without government contracting sees one upgrade row.
  */
 export default function ProjectControlSettings(
   props: ProjectControlSettingsProps
 ) {
   const { isGated } = usePlanGate({ feature: "GOVERNMENT_CONTRACTING" });
 
+  // Layer 5: a company without the feature sees one compact row, not a
+  // full overlay inside the settings page.
   if (isGated) {
     return (
-      <UpgradeOverlaySection
-        icon={<LuGauge className="size-6 text-muted-foreground" />}
+      <UpgradeOverlayRow
         title={<Trans>Project Control</Trans>}
-        description={
-          <Trans>
-            Warn or block a charge that takes an element over its budget, and
-            measure earned value per control account.
-          </Trans>
-        }
-      >
-        <ProjectControlCard {...props} isDisabled />
-      </UpgradeOverlaySection>
+        plan={<Trans>Business</Trans>}
+      />
     );
   }
 

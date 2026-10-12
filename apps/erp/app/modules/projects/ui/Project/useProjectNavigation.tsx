@@ -128,8 +128,7 @@ export function useProjectSidebarLinks({
       icon: <LuSettings2 />,
       shortcut: PROJECT_TAB_SHORTCUTS.settings,
       isActive: (pathname) =>
-        pathname.startsWith(path.to.projectSettings(projectId)) ||
-        pathname.startsWith(path.to.projectDetails(projectId))
+        pathname.startsWith(path.to.projectSettings(projectId))
     }
   };
 }

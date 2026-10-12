@@ -4613,6 +4613,9 @@ msgstr "Yük Ayarları"
 msgid "Burn chart"
 msgstr "Tüketim grafiği"
 
+msgid "Business"
+msgstr ""
+
 msgid "Business component"
 msgstr ""
 
@@ -5243,6 +5246,9 @@ msgstr "Her kiralama faturası satırında ücretlendirilir"
 
 msgid "Charges"
 msgstr "Harcamalar"
+
+msgid "Charging"
+msgstr ""
 
 msgid "Chart"
 msgstr "Grafik"
@@ -9559,9 +9565,6 @@ msgstr "Geçerlilik Tarihi"
 
 msgid "Element"
 msgstr "Element"
-
-msgid "Element ids start with the identifier, so it cannot change"
-msgstr "Element kimlikleri tanımlayıcıyla başlar, bu nedenle değişemez"
 
 msgid "Element of cost"
 msgstr "Maliyet Öğesi"
@@ -18161,6 +18164,9 @@ msgstr "Plan"
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Stok kartı ve lokasyon başına talep projeksiyonu yaparak önceden planlayın, sonra bunu doğrudan MRP ve planlama'ya besleyin."
 
+msgid "Plan lock"
+msgstr ""
+
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Birkaç projeyi bir olarak planlayın, hepsi için bir kez satın alın ve her siparişin hangi proje için olduğunu görün."
 
@@ -23126,6 +23132,9 @@ msgstr "Henüz Ödenmemiş"
 msgid "Stock"
 msgstr "Stok"
 
+msgid "Stock and planning"
+msgstr ""
+
 msgid "Stock another project owes this one."
 msgstr "Başka bir projenin bu projeye borçlu olduğu stok."
 
@@ -27374,9 +27383,6 @@ msgstr "Uyar — düzenlemeler bir uyarı ile başarılı olur"
 
 msgid "Warn but allow"
 msgstr "Uyarı ver ama izin ver"
-
-msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
-msgstr "Bir öğeyi bütçesinin üzerinde alan bir maliyeti uyar veya engelle ve kontrol hesabı başına kazanılan değeri ölç."
 
 msgid "Warn saves the charge and shows the overrun. Block refuses it."
 msgstr "Uyar maliyeti kaydeder ve aşımı gösterir. Engelle reddet."
