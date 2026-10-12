@@ -12,6 +12,7 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
+  cn,
   IconButton,
   Popover,
   PopoverContent,
@@ -32,17 +33,17 @@ import {
   Panel,
   ReactFlow,
   ReactFlowProvider,
+  useNodesInitialized,
   useReactFlow
 } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuInfo, LuMaximize, LuSearch } from "react-icons/lu";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { path } from "~/utils/path";
 import type {
   ProjectElementLinkType,
-  ProjectElementType,
-  RequirementStatus
+  ProjectElementType
 } from "../../projects.models";
 import { canLink, projectElementLinkTypes } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
@@ -71,10 +72,12 @@ import {
   type TraceHighlight,
   type TreeBox
 } from "./graph/tree-layout";
+import { TREE_MIN_ZOOM, treeViewport } from "./graph/tree-viewport";
 
 const nodeTypes: NodeTypes = { box: ElementBoxNode, card: ElementCardNode };
 const edgeTypes: EdgeTypes = { link: LinkEdge };
 const proOptions = { hideAttribution: true };
+const nodesInitializedOptions = { includeHiddenNodes: true };
 
 type ElementGraphProps = {
   projectId: string;
@@ -83,7 +86,6 @@ type ElementGraphProps = {
   elements: ProjectElementListItem[];
   type: ProjectElementType | null;
   links: ProjectElementLink[];
-  requirementStatus: Record<string, RequirementStatus>;
   commentCounts: Record<string, number>;
   canUpdate: boolean;
 };
@@ -126,7 +128,6 @@ function ElementGraphCanvas({
   elements,
   type,
   links,
-  requirementStatus,
   commentCounts,
   canUpdate
 }: ElementGraphProps) {
@@ -134,7 +135,7 @@ function ElementGraphCanvas({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { elementId: openElementId } = useParams();
-  const { fitView, setCenter } = useReactFlow();
+  const { setCenter, setViewport } = useReactFlow();
   const labels = useLinkTypeLabels();
   const store = getProjectGraphStore(projectId);
   const collapsed = useStore(store, (s) => s.collapsed);
@@ -173,13 +174,20 @@ function ElementGraphCanvas({
     [byId]
   );
 
-  const { layout, boxById, nodes, cardNodes, edges } = useMemo(() => {
-    const layout = layoutElementTree({
-      elements,
-      rootId,
-      collapsed: new Set(collapsed),
-      type
-    });
+  // The layout depends on the tree only, so a highlight or an open card
+  // reuses it (and does not re-fit the view).
+  const layout = useMemo(
+    () =>
+      layoutElementTree({
+        elements,
+        rootId,
+        collapsed: new Set(collapsed),
+        type
+      }),
+    [elements, rootId, collapsed, type]
+  );
+
+  const { boxById, nodes, cardNodes, edges } = useMemo(() => {
     const counts = countTraceLinks(links);
     const lit = highlight ? highlightTraceLinks(links, highlight) : null;
 
@@ -235,6 +243,10 @@ function ElementGraphCanvas({
           parentId: card.boxId,
           extent: "parent",
           position: { x: card.x, y: card.y },
+          // A card has a fixed size; stating it lets `useNodesInitialized`
+          // count the node as sized (see `nodesInitializedOptions`).
+          width: CARD_WIDTH,
+          height: CARD_HEIGHT,
           draggable: false,
           data: {
             readableId: element.readableId,
@@ -242,10 +254,6 @@ function ElementGraphCanvas({
             type: element.type,
             state: element.state,
             ownerId: element.ownerId,
-            status:
-              element.type === "Requirement"
-                ? (requirementStatus[element.id] ?? null)
-                : null,
             commentCount: commentCounts[element.id] ?? 0,
             linkCount:
               element.type === "Requirement"
@@ -318,12 +326,9 @@ function ElementGraphCanvas({
 
     // A parent renders before its children: boxes first, then the cards.
     const nodes = [...boxNodes, ...cardNodes];
-    return { layout, boxById, nodes, cardNodes, edges };
+    return { boxById, nodes, cardNodes, edges };
   }, [
-    elements,
-    rootId,
-    collapsed,
-    type,
+    layout,
     links,
     highlight,
     byId,
@@ -332,18 +337,59 @@ function ElementGraphCanvas({
     setRoot,
     toggleCollapsed,
     toggleHighlight,
-    requirementStatus,
     commentCounts,
     openElementId,
     labels
   ]);
 
-  // Fit the view when the root, the lens or the set of nodes changes.
-  const nodeSignature = `${layout.rootId}:${type}:${nodes.length}`;
+  // Fit and centre the tree once the nodes are measured and the canvas has
+  // a size, again when the boxes move (a filter, the root or a collapse
+  // changes them), and when the canvas resizes. The viewport comes from the
+  // layout's own box sizes (`treeViewport`), so it never races a node
+  // measurement the way the `fitView` prop did and clamped to a speck.
+  const containerRef = useRef<HTMLDivElement>(null);
+  // The plain hook reads `measured` off the node objects, which only an
+  // onNodesChange handler writes back; this canvas has none. With
+  // `includeHiddenNodes` it reads each node's measured handles and its
+  // declared size instead (every node states its width and height).
+  const nodesInitialized = useNodesInitialized(nodesInitializedOptions);
+  const [isFitted, setIsFitted] = useState(false);
+  const boxesRef = useRef(layout.boxes);
+  boxesRef.current = layout.boxes;
+  const nodesInitializedRef = useRef(nodesInitialized);
+  nodesInitializedRef.current = nodesInitialized;
+
+  const fitTree = useCallback(
+    (duration = 0) => {
+      const container = containerRef.current;
+      if (!container || !nodesInitializedRef.current) return;
+      const viewport = treeViewport(
+        boxesRef.current,
+        container.clientWidth,
+        container.clientHeight
+      );
+      if (!viewport) return;
+      setViewport(viewport, { duration });
+      setIsFitted(true);
+    },
+    [setViewport]
+  );
+
+  const boxSignature = layout.boxes
+    .map((box) => `${box.id}:${box.x}:${box.y}:${box.width}:${box.height}`)
+    .join("|");
+  // biome-ignore lint/correctness/useExhaustiveDependencies: the box signature is the trigger; fitTree reads the boxes from a ref.
   useEffect(() => {
-    if (!nodeSignature) return;
-    requestAnimationFrame(() => fitView({ padding: 0.15, duration: 200 }));
-  }, [nodeSignature, fitView]);
+    if (nodesInitialized) fitTree();
+  }, [nodesInitialized, boxSignature, fitTree]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => fitTree());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [fitTree]);
 
   const query = searchParams.toString();
   const openElement = useCallback(
@@ -422,13 +468,38 @@ function ElementGraphCanvas({
 
   return (
     <div className="flex h-full w-full flex-col">
-      <div className="flex h-9 shrink-0 items-center border-b border-border px-2">
-        <TreeBreadcrumb
-          projectName={projectName}
-          path={elementTreePath(elements, layout.rootId)}
-        />
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-border px-2">
+        <div className="min-w-0 flex-1">
+          <TreeBreadcrumb
+            projectName={projectName}
+            path={elementTreePath(elements, layout.rootId)}
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-0.5">
+          <IconButton
+            aria-label={t`Find an element`}
+            icon={<LuSearch />}
+            size="sm"
+            variant="ghost"
+            onClick={() => setSearching(true)}
+          />
+          <IconButton
+            aria-label={t`Fit view`}
+            icon={<LuMaximize />}
+            size="sm"
+            variant="ghost"
+            onClick={() => fitTree(200)}
+          />
+          <LinkLegend labels={labels} />
+        </div>
       </div>
-      <div className="min-h-0 flex-1">
+      <div
+        ref={containerRef}
+        className={cn(
+          "min-h-0 flex-1 transition-opacity",
+          isFitted ? "opacity-100" : "opacity-0"
+        )}
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -444,26 +515,10 @@ function ElementGraphCanvas({
           onKeyDown={(event) => {
             if (event.key === "Escape") setHighlight(null);
           }}
-          minZoom={0.2}
+          minZoom={TREE_MIN_ZOOM}
           maxZoom={1.5}
-          fitView
         >
           <Background variant={BackgroundVariant.Dots} gap={16} size={1} />
-          <Panel position="top-left" className="flex gap-1">
-            <IconButton
-              aria-label={t`Fit view`}
-              icon={<LuMaximize />}
-              variant="secondary"
-              onClick={() => fitView({ padding: 0.15, duration: 200 })}
-            />
-            <IconButton
-              aria-label={t`Search`}
-              icon={<LuSearch />}
-              variant="secondary"
-              onClick={() => setSearching(true)}
-            />
-            <LinkLegend labels={labels} />
-          </Panel>
           {pending && (
             <Panel position="top-center">
               <div className="flex flex-col gap-2 rounded-lg border border-border bg-card p-3 text-sm shadow-md">
@@ -553,13 +608,11 @@ function LinkLegend({
         <IconButton
           aria-label={t`Legend`}
           icon={<LuInfo />}
-          variant="secondary"
+          size="sm"
+          variant="ghost"
         />
       </PopoverTrigger>
-      <PopoverContent
-        align="start"
-        className="flex w-56 flex-col gap-2 text-sm"
-      >
+      <PopoverContent align="end" className="flex w-56 flex-col gap-2 text-sm">
         <span className="flex items-center gap-2">
           <svg width="28" height="8" aria-hidden>
             <line

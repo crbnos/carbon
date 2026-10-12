@@ -171,6 +171,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 22: Restyle the Tree cards and fix the fit-view
 
+- Cause of the speck: the canvas fitted with the `fitView` prop and a `requestAnimationFrame` effect. Both ran before the card nodes had a size, and the effect re-ran on every highlight because the layout `useMemo` also held the highlight. The fit clamped to `minZoom` 0.2 and put the tree in the top-left corner.
+- A second cause, found in the browser: `useNodesInitialized()` reads `measured` from the node objects. Only an `onNodesChange` handler writes it back, and this canvas has none, so the flag never turns true. The fix: each card states its fixed size (`width`, `height`), and the canvas calls `useNodesInitialized({ includeHiddenNodes: true })`, which reads the measured handles and the declared size.
+- The fit is now `treeViewport` (`graph/tree-viewport.ts`, 6 tests). It computes the viewport from the layout's box sizes with `getViewportForBounds`: padding 0.15, at most 100 %. Below 50 % it fits the top box and its first 6 cards. `minZoom` is 0.1. It runs when the nodes are sized, when the box geometry changes (a filter, the root, a collapse) and when the canvas resizes (`ResizeObserver`). The canvas stays transparent until the first fit, so the speck never paints.
+- Cards: a grey type label with its icon, then the comment count, the link count (an icon and a number, still the highlight button) and the owner avatar on the right; the name in 2 lines; one chip, the state. The verification icon and the suspect badge left the card; the amber border stays. The readable id is in the `title` tooltip. The link handles show on hover only.
+- Boxes: the parent's name sits above the box in the layout's header band. The box is `rounded-lg border border-border bg-muted/30` with no type tint. `elementTypeColors` lost its `label` and `box` colours and became the private `iconColors` in `ElementTypeIcon.tsx`.
+- The Fit view, Find and Legend buttons moved from a panel over the canvas (it covered the cards) to the right of the breadcrumb row.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; `erp test` 199 files, 2,261 tests passed (`tree-layout` and `tree-viewport` included); `pnpm --filter erp build` exit 0.
+- Shots: `22-plan-tree.png` (1440), `22-plan-tree-1920.png`, `22-plan-tree-filter.png` (Type is Requirement: refit and centred), `22-plan-tree-nsops.png` (empty project: one centred box), `22-plan-tree-owner.png` (an owner set on OB2-2 for the shot, then cleared), `22-plan-tree-panel.png` (element panel open: the fallback fits the top box at 100 %).
+- Screenshot check: 1 yes (Flow's quiet cards and boxes); 2 yes; 3 yes (the breadcrumb row is the canvas's own header, as in Flow); 4 yes (New Element); 5 yes; 6 yes; 7 yes.
+
 ## Task 23: Rebuild the element panel and page (Layer 4)
 
 ## Task 24: Put all plan lines in one grid

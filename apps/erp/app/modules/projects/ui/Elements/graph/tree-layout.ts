@@ -9,7 +9,7 @@ import type {
 } from "../../../projects.models";
 
 export const CARD_WIDTH = 256;
-export const CARD_HEIGHT = 88;
+export const CARD_HEIGHT = 100;
 export const CARD_GAP = 8;
 export const BOX_PADDING = 8;
 export const BOX_HEADER_HEIGHT = 32;

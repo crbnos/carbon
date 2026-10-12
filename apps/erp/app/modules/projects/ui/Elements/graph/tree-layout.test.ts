@@ -74,10 +74,10 @@ describe("layoutElementTree", () => {
   it("sizes the boxes and places the cards at fixed offsets", () => {
     const result = layout();
     expect(box(result, "box:P").width).toBe(272);
-    expect(box(result, "box:P").height).toBe(232);
+    expect(box(result, "box:P").height).toBe(256);
     expect(card(result, "S1")).toMatchObject({ x: 8, y: 40 });
-    expect(card(result, "T1")).toMatchObject({ x: 8, y: 136 });
-    expect(box(result, "box:S1").height).toBe(328);
+    expect(card(result, "T1")).toMatchObject({ x: 8, y: 148 });
+    expect(box(result, "box:S1").height).toBe(364);
   });
 
   it("flows the boxes left to right", () => {

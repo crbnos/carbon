@@ -477,7 +477,6 @@ export default function ProjectElementsRoute() {
               elements={elements}
               type={type}
               links={links}
-              requirementStatus={requirementStatus}
               commentCounts={commentCounts}
               canUpdate={canUpdate}
             />

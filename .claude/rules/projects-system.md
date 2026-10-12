@@ -546,9 +546,14 @@ a card below it matches. `?root=` shows one subtree under a breadcrumb, and the 
 route skips its own reload when only `root` changes.
 
 `countTraceLinks` and `highlightTraceLinks` give the "N tests" and "N reqs" counts
-and their highlight. `elementTypeColors` (`ElementTypeIcon.tsx`) is the one colour map
-of the types, on every layout. `getProjectElementCommentCounts` reads the comment counts
-in one paged read. `ChangeRequestPicker` in the project sidebar lists
+and their highlight. `ElementTypeIcon` holds the one colour of each type (its icon);
+the Tree's cards and boxes are neutral, as in Flow. A card states its fixed size
+(`CARD_WIDTH` × `CARD_HEIGHT`), and the view fits from the layout's box sizes
+(`treeViewport`, `graph/tree-viewport.ts`, tested) once `useNodesInitialized({
+includeHiddenNodes: true })` is true, when the boxes move and when the canvas resizes.
+The plain `useNodesInitialized()` never turns true on this canvas: it reads `measured`
+off the node objects, and the canvas has no `onNodesChange` to write it back.
+`getProjectElementCommentCounts` reads the comment counts in one paged read. `ChangeRequestPicker` in the project sidebar lists
 `openChangeRequestStatuses` and sets `?cr=`.
 
 `projectView` and `projectUserPreference` are no longer read or written (saved views

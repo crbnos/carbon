@@ -213,7 +213,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
 - [x] Task 20: Give Plan one toolbar row and add rows in the grid
 - [x] Task 21: Delete the List, Board and Timeline layouts
-- [ ] Task 22: Restyle the Tree cards and fix the fit-view
+- [x] Task 22: Restyle the Tree cards and fix the fit-view
 - [ ] Task 23: Rebuild the element panel and page (Layer 4)
 - [ ] Task 24: Put all plan lines in one grid
 - [ ] Task 25: Rebuild ERP My Time as a grid
@@ -1620,3 +1620,12 @@ Run of 2026-10-12, Tasks 19–21 (the Plan page), with Brad's instruction of the
 - Task 21: `MoveElementModal` moved to its own file (`ui/Elements/MoveElementModal.tsx`) as well as `QuickAddRow`, because the Table's row menu keeps Move to…. `elementFieldKey` stays as a private helper of `useElementField` rather than being deleted.
 - Task 21: the Verify grep `ElementList\b` also matches `overlayElementList` (a server function); with a leading `\b` the count is 0.
 - Tasks 19–21: the docs pages (`docs/content/docs/reference/projects.mdx`, `government-contracting.mdx`) still describe the List layout, Views and the old Elements tab; Task 42 updates them.
+
+Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
+
+- Task 22: `CARD_HEIGHT` went from 88 to 100 so a card holds the type row, 2 lines of name and the state chip. Only the constant changed; the `tree-layout.test.ts` box heights and card offsets that follow from it moved with it (232 → 256, 328 → 364, y 136 → 148).
+- Task 22: the fit does not call `fitView`. `treeViewport` computes the viewport from the layout's own box sizes with `getViewportForBounds` and sets it with `setViewport`. In React Flow 12.10 `fitView` resolves later (it queues until the nodes are measured), so a zoom read just after it is stale, and step 3.4 ("if the zoom after that is below 0.5") could not be tested that way.
+- Task 22: `useNodesInitialized()` never turns true on this canvas (it has no `onNodesChange`), so step 3.1 uses `useNodesInitialized({ includeHiddenNodes: true })`, and every card node states its size.
+- Task 22: the Fit view, Find and Legend buttons moved off the canvas into the breadcrumb row; the panel covered the top-left cards.
+- Task 22: the verification status icon and the suspect badge left the card ("at most one chip"). The amber border still marks a link that needs review; the element panel and the Reader still show the verification.
+
