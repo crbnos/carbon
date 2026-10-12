@@ -642,9 +642,18 @@ msgstr "{off} скидка до {0}"
 msgid "{onHand} on hand"
 msgstr "{onHand} в наличии"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} будет переоткрыт для редактирования как ревизия {0}. Отправленный поставщику документ останется неизменным, пока вы не завершите и не переотправите заказ."
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} должен {lender}, срок {due}"
@@ -1897,6 +1906,9 @@ msgstr "Фактический режим отказа"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "Фактическая включает заказы услуг: {serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "Фактический параметр"
@@ -9461,6 +9473,9 @@ msgstr "Тип элемента: {0}"
 msgid "Elements"
 msgstr "Элементы"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Исключено"
 
@@ -14848,6 +14863,9 @@ msgstr "Требуется план Business или Partner."
 msgid "Needs a chargeable element below a control account"
 msgstr "Требует затратного элемента ниже контрольного счета"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "Требует ускорения"
 
@@ -15346,6 +15364,9 @@ msgstr "Следующая счет-фактура на {date} создаетс�
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Следующий счет-фактура {date} создается автоматически, затем проводится."
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "Следующая страница"
 
@@ -15478,6 +15499,9 @@ msgstr "Нет периодов выставления счетов."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Ни один вход BOM не имеет политики срока хранения"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "Нет модели CAD для предпросмотра."
@@ -16251,6 +16275,9 @@ msgstr "Нет непроведенных документов, датирова
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "На этом процессе в этом месте нет неначатых, необработанных операций."
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "Нет значения"
 
@@ -16488,6 +16515,9 @@ msgstr "Ничего не синхронизируется, пока вы не �
 
 msgid "Nothing lent"
 msgstr "Ничего не ссужено"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "Нечего платить"
@@ -23019,6 +23049,9 @@ msgstr "Остановить работу"
 
 msgid "Stop Work"
 msgstr "Остановить работу"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "Приказы об остановке работы"

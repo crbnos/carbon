@@ -642,9 +642,18 @@ msgstr "{off} indirim {0} tarihine kadar"
 msgid "{onHand} on hand"
 msgstr "{onHand} elde"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} revizyon {0} olarak düzenlenmek üzere yeniden açılacaktır. Tedarikçiye gönderilen belge, siparişi sonlandırıp yeniden gönderene kadar değişmez."
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower}, {lender} ile borçludur, {due} vadesi"
@@ -1897,6 +1906,9 @@ msgstr "Gerçekleşen Arıza Modu"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "Gerçek hizmet siparişlerini içerir: {serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "Gerçek Parametre"
@@ -9461,6 +9473,9 @@ msgstr "Element türü: {0}"
 msgid "Elements"
 msgstr "Elementler"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Ortadan Kaldırılmış"
 
@@ -14848,6 +14863,9 @@ msgstr "Business veya Partner planı gereklidir."
 msgid "Needs a chargeable element below a control account"
 msgstr "Kontrol hesabının altında şarj edilebilir bir öğeye ihtiyaç duyar"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "Hızlandırılması gerekli"
 
@@ -15346,6 +15364,9 @@ msgstr "Sonraki fatura {date} otomatik olarak oluşturulur, ardından muhasebele
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Sonraki fatura {date} otomatik olarak oluşturulur, ardından muhasebeleştirilir."
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "Sonraki sayfa"
 
@@ -15478,6 +15499,9 @@ msgstr "Fatura dönemi yok."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Hiçbir BOM girdisi raf ömrü politikasına sahip değil"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "Önizlemek için CAD modeli yok."
@@ -16251,6 +16275,9 @@ msgstr "Cutover'dan ön tarihlenen muhasebeleştirilmemiş belgeler yok"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Bu konumdaki bu işlemde başlatılmamış, toplu işe eklenmemiş operasyon yok."
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "Değer yok"
 
@@ -16488,6 +16515,9 @@ msgstr "Senkronizasyonu açana kadar hiçbir şey senkronize edilmez. Tüm gerek
 
 msgid "Nothing lent"
 msgstr "Hiçbir şey ödünç verilmedi"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "Ödenmesi gereken bir şey yok"
@@ -23019,6 +23049,9 @@ msgstr "İşi durdur"
 
 msgid "Stop Work"
 msgstr "İşi Durdur"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "İş Durdurma Emirleri"

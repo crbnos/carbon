@@ -113,6 +113,17 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 13: Add the project Overview page
 
+- `$projectId._index.tsx` no longer redirects to Plan. Its loader reads `getProjectElements`, `getProjectCostSummary`, `getChildServiceProjectCosts`, `getProjectMilestones`, `getProjectOpenTimesheetEntries` and the company time zone, in one `Promise.all`. `today` is in the company time zone.
+- `ProjectOverview` has no form and no button: Details (`ReadOnlyFields`: Status, Owner, Customer, Start, Due, Cost Treatment with `termId="cost-treatment"`), Budget (`BarProgress` of actual / budget, then Budget, Committed, Actual), Next milestone (first not completed whose end date is today or later, with elements done; links to Schedule), and Needs attention.
+- Needs attention rows: stop-work (links to Settings), overdue borrows (Stock), open change requests (Change requests), time not posted yet (Time). With none: `Empty title="Nothing needs attention" description={null}`.
+- The budget figures use `buildProjectCostFigures`, so they equal the Costs page's "Project total" row ($275,000 budget for OB2). The open change request count and the overdue borrows come from the `$projectId.tsx` loader, so this page adds no query for them.
+- Deviation: `getProjectElements` has no `estimateAtCompletion`; the Overview passes `null` for it, which changes only the estimate at completion, and the Overview does not show that figure.
+- The time-not-posted count is the length of `getProjectOpenTimesheetEntries` (that read stops at 500 rows).
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed, `pnpm --filter erp build` exit 0 with no "Server-only module" line.
+- Shots: `13-overview.png` (1440), `13-overview-1920.png`, `13-plan-1920.png`, `13-header-menu-open.png`, `13-plan-from-sidebar.png`, `13-projects-list.png`.
+- 7 questions: 1 yes (`flow-agent-panel.jpg` quiet panels), 2 yes at 1440 and 1920, 3 yes (no toolbar), 4 yes (none), 5 yes (no input box anywhere), 6 yes, 7 yes.
+- Not in scope and still open: the Plan page body keeps its old toolbar until Tasks 19–20. At 1440 its type chips clip after "System".
+
 ## Task 14: Fold Details into the project Settings page
 
 ## Task 15: Simplify the Costs page

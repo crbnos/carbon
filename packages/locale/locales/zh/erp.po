@@ -642,9 +642,18 @@ msgstr "{off} 折扣至 {0}"
 msgid "{onHand} on hand"
 msgstr "{onHand}库存"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} 欠 {lender}，应付期限 {due}"
@@ -1897,6 +1906,9 @@ msgstr "实际故障模式"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "实际包括服务订单：{serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "实际参数"
@@ -9461,6 +9473,9 @@ msgstr "元素类型：{0}"
 msgid "Elements"
 msgstr "元素"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "已消除"
 
@@ -14848,6 +14863,9 @@ msgstr "需要业务或合作伙伴计划。"
 msgid "Needs a chargeable element below a control account"
 msgstr "需要在控制账户下有可计费元素"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "需要加急"
 
@@ -15346,6 +15364,9 @@ msgstr "下一张发票在 {date} 时自动创建，然后过账并通过 Stripe
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "下一份发票 {date} 将自动创建，然后过账。"
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "下一页"
 
@@ -15478,6 +15499,9 @@ msgstr "无计费期间。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "没有CAD模型可预览。"
@@ -16251,6 +16275,9 @@ msgstr "没有日期在结转之前的未过账文档"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "没有值"
 
@@ -16488,6 +16515,9 @@ msgstr "在您打开同步之前，没有任何内容被同步。每个必需的
 
 msgid "Nothing lent"
 msgstr "没有借出任何东西"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "没有欠任何东西"
@@ -23019,6 +23049,9 @@ msgstr "停止工作"
 
 msgid "Stop Work"
 msgstr "停止工作"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "停止工作订单"

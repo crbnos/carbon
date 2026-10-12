@@ -642,9 +642,18 @@ msgstr "{off} rabatu do {0}"
 msgid "{onHand} on hand"
 msgstr "{onHand} w magazynie"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} zostanie ponownie otwarty do edycji jako rewizja {0}. Dokument już wysłany do dostawcy pozostaje niezmieniony, aż go sfinalizujesz i ponownie wyślesz zamówienie."
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} jest winny {lender}, termin {due}"
@@ -1897,6 +1906,9 @@ msgstr "Rzeczywisty tryb awarii"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "Rzeczywistość obejmuje zamówienia serwisowe: {serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "Rzeczywisty parametr"
@@ -9461,6 +9473,9 @@ msgstr "Typ elementu: {0}"
 msgid "Elements"
 msgstr "Elementy"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "Wyeliminowane"
 
@@ -14848,6 +14863,9 @@ msgstr "Wymaga planu Business lub Partner."
 msgid "Needs a chargeable element below a control account"
 msgstr "Wymaga elementu do obciążenia poniżej konta kontrolnego"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "Wymaga przyspieszenia"
 
@@ -15346,6 +15364,9 @@ msgstr "Następna faktura {date} jest tworzona automatycznie, a następnie zaksi
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "Następna faktura {date} jest tworzona automatycznie, a następnie zaksięgowana."
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "Następna strona"
 
@@ -15478,6 +15499,9 @@ msgstr "Brak okresów rozliczeniowych."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "Żadne wejście BOM nie ma polityki przydatności do spożycia"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "Brak modelu CAD do podglądu."
@@ -16251,6 +16275,9 @@ msgstr "Brak niezaksięgowanych dokumentów datowanych przed datą przejścia"
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "Brak nierozpoczętych, niezagregowanych operacji na tym procesie w tej lokalizacji."
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "Brak wartości"
 
@@ -16488,6 +16515,9 @@ msgstr "Nic nie jest synchronizowane, dopóki nie włączysz synchronizacji. Ka�
 
 msgid "Nothing lent"
 msgstr "Nic nie pożyczone"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "Nic się nie należy"
@@ -23019,6 +23049,9 @@ msgstr "Wstrzymaj pracę"
 
 msgid "Stop Work"
 msgstr "Wstrzymaj Pracę"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "Polecenia Wstrzymania Pracy"

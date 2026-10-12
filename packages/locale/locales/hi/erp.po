@@ -642,9 +642,18 @@ msgstr "{off} छूट {0} तक"
 msgid "{onHand} on hand"
 msgstr "{onHand} हाथ में"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} को रिवीजन {0} के रूप में संपादन के लिए फिर से खोला जाएगा। आपूर्तिकर्ता को भेजा गया दस्तावेज़ अपरिवर्तित रहेगा जब तक आप क्रय आदेश को अंतिम रूप न दें और पुनः न भेजें।"
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower} का {lender} पर {due} तक बकाया है"
@@ -1897,6 +1906,9 @@ msgstr "वास्तविक विफलता मोड"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "वास्तविक में सेवा आदेश शामिल हैं: {serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "वास्तविक पैरामीटर"
@@ -9461,6 +9473,9 @@ msgstr "तत्व प्रकार: {0}"
 msgid "Elements"
 msgstr "तत्व"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "समाप्त किया गया"
 
@@ -14848,6 +14863,9 @@ msgstr "एक बिजनेस या पार्टनर प्लान �
 msgid "Needs a chargeable element below a control account"
 msgstr "नियंत्रण खाते के नीचे एक प्रभार्य तत्व की आवश्यकता है"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "तेजी की आवश्यकता"
 
@@ -15346,6 +15364,9 @@ msgstr "अगला चालान {date} को स्वचालित र�
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "अगला चालान {date} स्वचालित रूप से बनाया जाता है, फिर पोस्ट किया जाता है।"
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "अगला पृष्ठ"
 
@@ -15478,6 +15499,9 @@ msgstr "कोई बिलिंग अवधि नहीं।"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "कोई BOM इनपुट शेल्फ-लाइफ नीति नहीं है"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "पूर्वावलोकन के लिए कोई CAD मॉडल नहीं है।"
@@ -16251,6 +16275,9 @@ msgstr "कटऑवर से पहले की कोई गैर-पोस
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "इस स्थान पर इस प्रक्रिया पर कोई अप्रारंभ, अनबैच्ड ऑपरेशन नहीं।"
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "कोई मान नहीं"
 
@@ -16488,6 +16515,9 @@ msgstr "जब तक आप सिंक चालू नहीं करते
 
 msgid "Nothing lent"
 msgstr "कुछ भी उधार नहीं दिया"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "कुछ भी बकाया नहीं"
@@ -23019,6 +23049,9 @@ msgstr "काम बंद करें"
 
 msgid "Stop Work"
 msgstr "काम बंद करें"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "काम बंद करने के आदेश"

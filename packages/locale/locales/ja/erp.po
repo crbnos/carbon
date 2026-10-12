@@ -642,9 +642,18 @@ msgstr "{off} の割引は {0} まで有効"
 msgid "{onHand} on hand"
 msgstr "{onHand}在庫"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} はリビジョン {0} として編集のため再度オープンされます。仕入先に送信済みの文書は、ファイナライズして発注書を再送信するまで変更されません。"
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed}×{itemLabel}—{borrower}は{lender}に負債があり、期限は{due}"
@@ -1897,6 +1906,9 @@ msgstr "実際の故障モード"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "実績にはサービスオーダーが含まれます：{serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "実績パラメータ"
@@ -9461,6 +9473,9 @@ msgstr "要素タイプ：{0}"
 msgid "Elements"
 msgstr "要素"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "削除済み"
 
@@ -14848,6 +14863,9 @@ msgstr "ビジネスプランまたはパートナープランが必要です。
 msgid "Needs a chargeable element below a control account"
 msgstr "管理会計の下に請求可能な要素が必要"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "加速が必要"
 
@@ -15346,6 +15364,9 @@ msgstr "次の請求書は{date}に自動的に作成され、その後転記さ
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "次の請求書 {date} は自動的に作成され、その後転記済になります。"
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "次のページ"
 
@@ -15478,6 +15499,9 @@ msgstr "請求期間がありません。"
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOMインプットに棚卸資産有効期限ポリシーがありません"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "プレビューするCADモデルがありません。"
@@ -16251,6 +16275,9 @@ msgstr "カットオーバーの前の日付の未転記文書がありません
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "この拠点のこの工法で未開始で未バッチの工程がありません"
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "値がありません"
 
@@ -16488,6 +16515,9 @@ msgstr "同期をオンにするまで、何も同期されません。必要な
 
 msgid "Nothing lent"
 msgstr "何も貸していません"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "何も負っていません"
@@ -23019,6 +23049,9 @@ msgstr "作業停止"
 
 msgid "Stop Work"
 msgstr "作業停止"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "停止指示"

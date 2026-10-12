@@ -204,7 +204,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 10: Simplify the projects list and the New Project drawer (Layer 1)
 - [x] Task 11: Build the project workspace shell and the project sidebar (Layer 2)
 - [x] Task 12: Rebuild the project header on `RecordHeader`
-- [ ] Task 13: Add the project Overview page
+- [x] Task 13: Add the project Overview page
 - [ ] Task 14: Fold Details into the project Settings page
 - [ ] Task 15: Simplify the Costs page
 - [ ] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
@@ -1577,3 +1577,19 @@ git diff --stat -- packages/locale/locales | tail -1
 4. The demo company has no Time & Materials or Cost Plus line, no baseline, no change request and no billable item. Tasks 16, 27 and 29 check those screens empty, or with a test record.
 5. Labor category rates have no delete endpoint. The grid shows no delete.
 6. Project states and labels keep their small modals. They are not tables, and the grid has no colour editor.
+
+## Execution notes
+
+Run of 2026-10-12 (Tasks 1, 3–7, 9–13). Tasks 2 and 8 run later, so the screens keep the current wording ("My Timesheet", "Live plan", "Technically complete").
+
+- Environment: the ERP dev server ran out of heap (4 GB) twice during the gates. The restart script `/tmp/uir/start-erp.sh` sources `.env.local` first and sets `NODE_OPTIONS=--max-old-space-size=12288`. The shell exports `SUPABASE_URL`, `SUPABASE_DB_URL` and `REDIS_URL` for another stack, and those override `.env.local` in Vite.
+- Task 4 and later: the license-header fixer walks tracked files only. Run `git add -N <file>` before `pnpm --filter @carbon/checks license-headers`.
+- Task 9: `projects+/_layout.tsx` had no loader. Its new loader calls `requirePermissions(request, {})` and returns `approvalCount`; each page keeps its own permission check. Approvals is also active on `/x/projects/billing` (D13).
+- Task 10: the primary action was a `Button` that opened `ProjectForm` from the table. It is now `New label="Project" to={path.to.newProject}` ("Add Project"). The drawer opens over an empty page (Open point 3).
+- Task 10: when Cost Objective is hidden in the New Project drawer, a `Hidden` field still posts its default (Direct for a Contract project).
+- Task 10: created the test project URC "UI Rebuild Check" (`prj_M5jo99bAWiZXcgCzpFnLfy`, Draft). The ERP has no project delete route.
+- Task 11: the project switcher is a ghost `Button` that opens a `Popover` + `Command` search, not the form `Combobox`, which draws a bordered input. Precedent: `CompanySwitcher`.
+- Task 11: `useProjectSidebarLinks` is a new export in `useProjectNavigation.tsx`; Task 12 deleted the old `useProjectNavigation` tab list.
+- Task 12: the ⋯ menu also offers "Technically complete" for an On Hold project. The old header offered it and `projectStatusTransitions` allows it.
+- Task 13: `getProjectElements` has no `estimateAtCompletion`, so the Overview passes `null` to `buildProjectCostFigures`. The Overview does not show that figure.
+- In this dev stack `usePlanGate` is never gated (not Cloud, not Community), so `useGovernmentContracting()` is true for every company and the government contracting fields still show.

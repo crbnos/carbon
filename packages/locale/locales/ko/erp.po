@@ -642,9 +642,18 @@ msgstr "{0}까지 {off} 할인"
 msgid "{onHand} on hand"
 msgstr "{onHand}개 재고"
 
+msgid "{openChangeRequestCount, plural, one {# open change request} other {# open change requests}}"
+msgstr ""
+
+msgid "{openTimeCount, plural, one {# time entry is not posted yet} other {# time entries are not posted yet}}"
+msgstr ""
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel}은(는) 리비전 {0}으로 편집하기 위해 다시 열립니다. 이미 공급업체로 전송된 문서는 리비전을 완료하고 다시 전송할 때까지 변경되지 않습니다."
+
+msgid "{overdueBorrowCount, plural, one {# borrow is past its payback date} other {# borrows are past their payback date}}"
+msgstr ""
 
 msgid "{owed} × {itemLabel} — {borrower} owes {lender}, due {due}"
 msgstr "{owed} × {itemLabel} — {borrower}은(는) {lender}에 {due}에 만기인 채무가 있습니다."
@@ -1897,6 +1906,9 @@ msgstr "실제 고장 모드"
 
 msgid "Actual includes service orders: {serviceAmount}"
 msgstr "실제는 서비스 주문을 포함합니다: {serviceAmount}"
+
+msgid "Actual of budget"
+msgstr ""
 
 msgid "Actual parameter"
 msgstr "실제 매개변수"
@@ -9461,6 +9473,9 @@ msgstr "요소 유형: {0}"
 msgid "Elements"
 msgstr "요소"
 
+msgid "Elements done"
+msgstr ""
+
 msgid "Eliminated"
 msgstr "제거됨"
 
@@ -14848,6 +14863,9 @@ msgstr "Business 또는 Partner 요금제가 필요합니다."
 msgid "Needs a chargeable element below a control account"
 msgstr "통제 계정 아래에 청구 가능한 요소가 필요합니다"
 
+msgid "Needs attention"
+msgstr ""
+
 msgid "Needs expedite"
 msgstr "긴급 처리 필요"
 
@@ -15346,6 +15364,9 @@ msgstr "다음 송장은 {date}에 자동으로 생성되고 전기되며 Stripe
 msgid "Next invoice {date} is created automatically, then posted."
 msgstr "다음 송장 {date}는 자동으로 생성된 후 전기됩니다."
 
+msgid "Next milestone"
+msgstr ""
+
 msgid "Next page"
 msgstr "다음 페이지"
 
@@ -15478,6 +15499,9 @@ msgstr "청구 기간이 없습니다."
 
 msgid "No BOM input has a shelf-life policy"
 msgstr "BOM 투입 항목 중 유효기간 정책이 설정된 항목이 없습니다"
+
+msgid "No budget set on the plan."
+msgstr ""
 
 msgid "No CAD model to preview."
 msgstr "미리 볼 수 있는 CAD 모델이 없습니다."
@@ -16251,6 +16275,9 @@ msgstr "정산일 이전 날짜의 전기되지 않은 문서가 없습니다."
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "이 위치의 이 공정에서 시작되지 않은 배치 처리되지 않은 작업이 없습니다."
 
+msgid "No upcoming milestone"
+msgstr ""
+
 msgid "No value"
 msgstr "값 없음"
 
@@ -16488,6 +16515,9 @@ msgstr "동기화를 켜야 동기화됩니다. 필요한 모든 계정이 매�
 
 msgid "Nothing lent"
 msgstr "대여된 것 없음"
+
+msgid "Nothing needs attention"
+msgstr ""
 
 msgid "Nothing owed"
 msgstr "빚진 것 없음"
@@ -23019,6 +23049,9 @@ msgstr "작업 중지"
 
 msgid "Stop Work"
 msgstr "작업 중지"
+
+msgid "Stop-work order since {stopWorkStart}, ends {stopWorkEndDate}"
+msgstr ""
 
 msgid "Stop-Work Orders"
 msgstr "작업 중지 명령"
