@@ -95,6 +95,7 @@ export default function PersonJobRoute() {
     laborCategoryId: job.laborCategoryId ?? "",
     defaultStorageUnitId: job.defaultStorageUnitId ?? "",
     flsaStatus: job.flsaStatus ?? undefined,
+    isOfficer: job.isOfficer ?? false,
     ...getCustomFields(job.customFields)
   };
 

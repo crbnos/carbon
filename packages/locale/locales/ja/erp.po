@@ -16566,6 +16566,9 @@ msgstr "オフ — 同期外で処理"
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "デフォルト材料ディメンションにメートル法を使用し
 
 msgid "Use Sub-Assembly"
 msgstr "サブアセンブリを使用"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "で使用"

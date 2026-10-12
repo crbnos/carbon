@@ -16566,6 +16566,9 @@ msgstr "Off — handled outside the sync"
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
 
+msgid "Officer"
+msgstr "Officer"
+
 msgid "Offset Absorbed Overhead"
 msgstr "Offset Absorbed Overhead"
 
@@ -26571,6 +26574,9 @@ msgstr "Use metric system for default material dimensions."
 
 msgid "Use Sub-Assembly"
 msgstr "Use Sub-Assembly"
+
+msgid "Used for Form 6765 Section E"
+msgstr "Used for Form 6765 Section E"
 
 msgid "Used in"
 msgstr "Used in"

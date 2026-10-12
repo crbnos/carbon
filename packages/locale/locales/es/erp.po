@@ -16566,6 +16566,9 @@ msgstr "Off — manejado fuera de la sincronización"
 msgid "Off — released revisions stay editable"
 msgstr "Desactivado — las revisiones lanzadas permanecen editables"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "Utilizar el sistema métrico para las dimensiones predeterminadas del ma
 
 msgid "Use Sub-Assembly"
 msgstr "Usar subconjunto"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "Utilizado en"

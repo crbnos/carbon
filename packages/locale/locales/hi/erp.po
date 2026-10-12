@@ -16566,6 +16566,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए रिवीजन संपादन योग्य रहते हैं"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "डिफ़ॉल्ट सामग्री आयामों के
 
 msgid "Use Sub-Assembly"
 msgstr "उप-विधानसभा का उपयोग करें"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "में प्रयुक्त"

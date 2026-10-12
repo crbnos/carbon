@@ -16566,6 +16566,9 @@ msgstr "Отключено — обработано вне синхрониза�
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "Используйте метрическую систему для из
 
 msgid "Use Sub-Assembly"
 msgstr "Использовать под-сборку"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "Используется в"

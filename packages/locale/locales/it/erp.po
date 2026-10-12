@@ -16566,6 +16566,9 @@ msgstr "Disattivato — gestito al di fuori della sincronizzazione"
 msgid "Off — released revisions stay editable"
 msgstr "Disattivato — le revisioni rilasciate rimangono modificabili"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "Utilizza il sistema metrico per le dimensioni predefinite dei materiali.
 
 msgid "Use Sub-Assembly"
 msgstr "Utilizza Sotto-insieme"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "Utilizzato in"

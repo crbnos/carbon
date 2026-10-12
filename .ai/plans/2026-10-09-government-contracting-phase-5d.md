@@ -63,7 +63,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 9: Add the business component fields to the element
 - [x] Task 10: Add the research role to the labor category
 - [x] Task 11: Add the research flags to the contract
-- [ ] Task 12: Add the officer flag to the employee job
+- [x] Task 12: Add the officer flag to the employee job
 - [ ] Task 13: Add the R&D report queries and builders
 - [ ] Task 14: Add the two reports to the CSV route and the Reports page
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
@@ -649,3 +649,4 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   3. Each field posts `intent=researchFlag` with `field` and `value` ("true", "false", or "" for Default) to `update.tsx`, which calls `updateContractResearchFlags` in any status. The route already requires `update: sales`. The fields stay editable on an Ended contract, as tax facts, for a user with `update: sales`.
   4. The §41(d)(4)(H) hint shows when both switches are on and the EFFECTIVE value is funded (a stored Funded, or Default on a contract with a Cost Plus or Time & Materials line). The plan says "the value is Funded"; a Default that resolves to funded has the same effect on the report.
   5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 12: **Officer** is a `Boolean` after **FLSA status**, with the description "Used for Form 6765 Section E". The route action already spreads the validated fields into `updateEmployeeJob` (step 2). The route's initial values now pass the stored `isOfficer`, so the switch shows it. Browser verification deferred.

@@ -8,6 +8,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Boolean,
   CustomFormFields,
   DatePicker,
   Department,
@@ -72,6 +73,11 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
                 label: flsaLabels[status]
               }))}
               helperText={t`In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour.`}
+            />
+            <Boolean
+              name="isOfficer"
+              label={t`Officer`}
+              description={t`Used for Form 6765 Section E`}
             />
             <LaborCategory
               name="laborCategoryId"

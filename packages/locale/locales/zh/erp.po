@@ -16566,6 +16566,9 @@ msgstr "关闭 — 在同步外处理"
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
 
+msgid "Officer"
+msgstr ""
+
 msgid "Offset Absorbed Overhead"
 msgstr ""
 
@@ -26571,6 +26574,9 @@ msgstr "使用公制作为默认原材料尺寸。"
 
 msgid "Use Sub-Assembly"
 msgstr "使用子装配体"
+
+msgid "Used for Form 6765 Section E"
+msgstr ""
 
 msgid "Used in"
 msgstr "用在"
