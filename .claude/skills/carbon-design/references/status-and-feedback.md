@@ -139,12 +139,13 @@ Reset or key the fetcher per selection (e.g. `fetcher.load(url)` on open, render
 | Context | Pattern |
 |---|---|
 | Table | built in: "No data exists" + Add; "No results found" + Remove Filters; `emptyState` override for pre-filtered tables |
-| Panel / explorer / card list | `<Empty>` (`components/Empty.tsx`): `LuCircleDashed` muted, `text-xs` "Looks empty here 👀", optional children = **one** secondary `Button leftIcon={<LuCirclePlus/>}` "Add …", shown only with permission and not locked |
+| A whole page, list or tab with no rows | `<Empty>` (`components/Empty.tsx`): the `EmptyCabinet` illustration (`@carbon/viewer/empty-cabinet`), a `title` (`text-lg font-medium`, default "No data yet") and a `description` (`text-xs` muted, max 224 px; `description={null}` renders none). Give it a specific title ("No billable items yet"). Optional children = **one** secondary action, shown only with permission and not locked, and never a second copy of the page's primary action. On a `Table`, pass it as `emptyState` (only while no filter or search is set, so a filtered miss keeps the built-in "No results found") |
+| A section inside a page or card (a sub-list, a summary block, a drawer section) | hide the section, or one muted line (`text-sm text-muted-foreground`, "Nothing owed"). Never the cabinet: several stacked illustrations are louder than the data. Never a dashed box (projects and service rebuild, 2026-10-12) |
 | Selector / combobox | `useEmptyState` → "No <plural> yet" + inline link "Add your first <noun> so you can assign it here." (permission-aware; without permission "Ask an admin with <module> permission…") |
 | Specific text | "No <things> yet" (lifecycle hasn't produced data) vs "No <things> found" (search/filter miss); sentence case |
 | Feature not set up / preview unavailable | an invitation: soft icon, short title, one-line hint, one action — never an error look (`daaddf5a85`) |
 
-No illustrations. No emoji except the single generic `Empty` line.
+The `Empty` cabinet is the only illustration. No other images, and no emoji.
 
 ## 8. Errors, not-found, access denied
 

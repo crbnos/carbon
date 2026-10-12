@@ -199,7 +199,7 @@ Phase-7 write) and throws on failure.
      The key includes `projectId` (`''` = common, Projects Phase 2a). `runMrp`
      reads every stripe and `planCompany` sums each into its netting segment
      (`planningSegmentOf`); `generatePlanningActions` does the same through
-     `loadSegmentOnHand`. `quote-lead-time.ts` still reads common stock only.
+     `loadSegmentOnHand`. `quote-lead-time.ts` still reads unassigned stock only.
      `get-method` reads the job's stripes (`jobStockStripes`: common, plus the
      job's project).
    - **Reads paginate**: every PostgREST read goes through `fetchAll`
@@ -285,7 +285,7 @@ project stock gets output identical to before, row for row.
   4. What is left is new supply in the segment.
   A draw is skipped for a location and item in `commonSurplusBlocked`
   (`itemPlanning.allowCommonSupplyForProjects = false`; no row allows it). The
-  flag is the **Common stock for projects** switch on `ItemPlanningForm`.
+  flag is the **Unassigned stock for projects** switch on `ItemPlanningForm`.
   `horizonPeriods` limits how far a surplus looks ahead. `planCompany` returns
   the draws as `commonSurplusDraws`.
 - **Common only.** Forecast consumption, demand projections, the Phase 4.5
@@ -649,7 +649,7 @@ never offered a Cancel, Defer or Expedite.
   stock. Its filter writes `planningSegment` (`common` or a project id);
   `resolvePlanningSegmentScope` strips it in the loader and the services apply
   `planningSegmentFilter` (`eq.""` for Common — an `in` list cannot hold the
-  empty string). A Transfer line reads "Transfer N from common stock" and its
+  empty string). A Transfer line reads "Transfer N from unassigned stock" and its
   button is **Create transfer**; the toast links each created transfer.
   **Overdue borrows** (`PlanningOverdueBorrows`): the Open borrows at the
   location past their payback date, read-only above the grid, under the

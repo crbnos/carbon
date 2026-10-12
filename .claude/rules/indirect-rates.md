@@ -32,9 +32,32 @@ function cannot import `@carbon/ee`, so the ee run computes the rows and calls
 `post-project-burden` through `serverFns`.
 
 UI: Accounting → **Indirect Pools** (Configure) and **Indirect Rates** (Closing),
-`IndirectRatesUpgradeOverlay` for a gated company; the rate ceilings on a Cost
-Plus line's Billing tab (`ContractRateCeilings.ee.tsx`); burden by pool on the
-project Costs tab (`ProjectBurdenByPool.ee.tsx`).
+`IndirectRatesUpgradeOverlay` for a gated company; the rate ceilings grid on a Cost
+Plus line's billing page (`ContractRateCeilings.ee.tsx`); burden by pool on the
+project Costs page (`ProjectBurdenByPool.ee.tsx`).
+
+**Indirect Rates** (`accounting+/indirect-rates.tsx`, `IndirectRateRuns.ee.tsx`) is a
+runs list, like the Revenue Recognition runs. The fiscal year picker sits beside the
+title (`Table` `titleBadge`). **Run Period** is the one primary action, with a ⋯ menu
+beside it: **Rates**, **Run True-Up** (only when every pool that applies to projects
+has a Final rate for period 12, `canTrueUp`), **Statement** and **ICE Export**. With no
+run, the list shows `Empty`. The route's intents are `set-rate`, `run` and `true-up`.
+
+- **Rates** opens a drawer (`indirect-rates.rates.tsx`) over the runs. It reads the
+  page's loader data and shows the read-only 12-period grid (`IndirectRatesGrid`). Its
+  **Set Rate** button opens `SetIndirectRateModal`, which posts `set-rate`. The cells
+  are not editable: `setIndirectRate` writes the rate from `fromPeriod` to period 12,
+  so one cell is not one rate entry.
+- **Statement** (`indirect-rates.statement.tsx`) and **ICE Export**
+  (`indirect-rates.ice.tsx`) are drawers. With no `fiscalYear` in the URL they open
+  the current fiscal year: `getCurrentFiscalYear(client, companyId)`
+  (`accounting.server.ts`: today in the company time zone, counted from the fiscal
+  year's start month). The runs page uses the same helper.
+- **Burden Settings** (`burdenRateType`, `postAppliedBurden`) are a card in Settings →
+  Accounting (`settings+/accounting.tsx`, `BurdenSettingsForm`). Its intent
+  `burdenSettings` needs `update: settings` and calls `requireFeature`, then
+  `updateBurdenSettings`. A gated company sees one `UpgradeOverlayRow` (Business) in
+  place of the card.
 
 ## The run order
 

@@ -82,6 +82,10 @@ once per task.
 | Unsure how far to reuse vs invent | `references/worked-examples.md` |
 
 ### Step 2 — Find the sibling and read it
+Name the **precedent screen** before anything else: the existing Carbon screen this one copies,
+by route or component path, and take a screenshot of it. If no screen fits, stop and ask —
+autonomous runs that skipped this built bespoke, crowded screens that were rejected
+(`.ai/lessons.md` "Every UI task names its precedent screen", worked example 4).
 Pick the archetype (`page-archetypes.md` §15) and open its exemplar files. Also find the
 closest existing screen *in the same module*. Read their actual code — the exemplar is the
 spec. Read its **routes** too (`$id.new`, `$id.$lineId.details`, `update.tsx`, `status`,
@@ -218,6 +222,7 @@ mention any drift you touched in your summary.
 
 - [ ] Design brief written (Step 4) and followed, including the capability table
 - [ ] Every capability wired to a real endpoint and exercised once in the browser
+- [ ] Precedent screen named, and the new screen's 1440 px screenshot compared side by side with it
 - [ ] Screenshots at 1440 / 1024 / 390 px reviewed; no overflow, clipping or wrapping IDs
 - [ ] Every reuse/extend/create decision recorded with its reason
 - [ ] `references/design-review.md` checklist all PASS or justified N/A; red-flag grep clean or justified

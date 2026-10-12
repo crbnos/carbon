@@ -186,7 +186,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL, project_id TEXT DEFAULT NULL)` — the central
 read. Newest definition is `20261010035358_inventory-rpcs-project-stripe.sql`, which adds
-`project_id` (NULL: every stripe; `''`: common stock; an id: that project's stock — see
+`project_id` (NULL: every stripe; `''`: unassigned stock; an id: that project's stock — see
 *Project stock* below) to the body of `20261006130001_demand-forecast-consumption.sql` (the
 `20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
 `item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
@@ -208,8 +208,8 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 Projects Phase 2a (`.ai/plans/2026-10-08-projects-phase-2a.md`, execution notes; spec
 `.ai/specs/2026-10-03-projects.md` → *Project stock*). A project with `project.projectStock`
 owns the stock received for it. The model is **valuated striping**: `itemLedger.projectId` and
-`costLedger.projectId` name the owning project, and NULL is common stock.
-`itemStockQuantities.projectId` is part of its primary key, with `''` for common stock (a key
+`costLedger.projectId` name the owning project, and NULL is unassigned stock.
+`itemStockQuantities.projectId` is part of its primary key, with `''` for unassigned stock (a key
 column cannot be NULL). `trackedEntity` has no `projectId`: a partial transfer leaves one lot in
 two stripes, and a lot's stripe is the stripe of its rows with the most net on-hand
 (`trackedEntityStripe`).
@@ -219,11 +219,11 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   row that draws stock sets the stripe it drew. A reversal or correction copies the row it
   reverses.
 - **The stripe set of a demand.** A job or a plan line of a project with project stock draws
-  that project's stock, then common stock. Every other demand draws common stock only.
+  that project's stock, then unassigned stock. Every other demand draws unassigned stock only.
   Another project's stock needs a Transfer or a Borrow first. The helpers are in
   `packages/server-functions/src/lib/stock-stripes.ts`: `stripesForDemand`,
   `loadDemandStripes`, `splitAcrossStripes` / `drawFromStripes` (one row per stripe drawn),
-  `itemLedgerInStripes`, `stripeKey` (`''` for common), `assertEntitiesInStripes`,
+  `itemLedgerInStripes`, `stripeKey` (`''` for unassigned stock), `assertEntitiesInStripes`,
   `assertEntitiesInCommonStock`, `loadProjectStock`, `withStripe`.
 - **Handler and key order.** `20261010021027_item-stock-quantities-project.sql` changes the
   primary key and `reconcile_item_stock_quantities`. The generated authz migration
@@ -238,8 +238,8 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
   `get_picking_schedule` read the line's or job's stripes (`20261010024754`,
   `20261010032726`). `pickingListLine.projectId` and `inventoryCountLine.projectId` carry the
   stripe.
-- **Common stock only.** Sales shipments, direct sales invoices, return-to-customer shipments,
-  warehouse transfers and maintenance draw common stock. A purchase return draws the stripe
+- **Unassigned stock only.** Sales shipments, direct sales invoices, return-to-customer shipments,
+  warehouse transfers and maintenance draw unassigned stock. A purchase return draws the stripe
   its stock came in on.
 - **Counts** give one line per (item, bin, lot, stripe). The `inventoryCountLines` view
   (`20261010124108`) carries `projectId`, `projectIdentifier` and `projectName`, and the count
@@ -255,7 +255,7 @@ two stripes, and a lot's stripe is the stripe of its rows with the most net on-h
 - **Grouped receipts and completions** (Projects Phase 3). A PO line or job with
   `planningGroupId` is received or completed into its members' stripes by its pegs:
   `harden_pegs_for_supply` returns one row per member plus the excess (the exception project,
-  else common stock), and `post-receipt` / `complete_job_to_inventory` write one item ledger
+  else unassigned stock), and `post-receipt` / `complete_job_to_inventory` write one item ledger
   row and one cost layer per row, at the receipt's or the job's unit cost. A negative receipt
   takes units back through `soften_pegs_for_return`. Details: `projects-system.md` →
   *Planning groups, pegging and distribution*.

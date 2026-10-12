@@ -236,7 +236,7 @@ sweep (the lineside bin is shared per work center). Spec:
 
 ## Project stock stripes and lots
 
-Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = common stock; see
+Projects Phase 2a stripes stock by owner on `itemLedger.projectId` (NULL = unassigned stock; see
 `inventory-system.md` → *Project stock*). `trackedEntity` has **no** `projectId`: a partial
 transfer can leave one lot in two stripes. A lot's stripe is the stripe of its ledger rows
 with the most net on-hand (`trackedEntityStripe`, `server-functions/src/lib/stock-stripes.ts`;

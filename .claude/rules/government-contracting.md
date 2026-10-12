@@ -27,7 +27,11 @@ Every timekeeping control waits for `companySettings.timekeepingControls = 'DCAA
 (enum `timekeepingControls`: Standard, DCAA; default Standard). In Standard mode each
 timesheet path keeps its Phase 1a behavior, and the tests pin that per path. Settings →
 Timekeeping (`x+/settings+/timekeeping.tsx`, `updateTimekeepingSettings`) holds the
-mode and these `companySettings` columns:
+mode and these `companySettings` columns. The page uses the `SettingsPage` /
+`SettingsPageHeading` shell, like Settings → Inventory: a Controls card, then a DCAA
+rules card. One `ValidatedForm` spans both cards, because the action saves every field
+at once. The DCAA rules card follows the Controls picker before a save and is only
+hidden (not unmounted) under Standard, so its fields still post.
 
 | Column | Default | Used by |
 |---|---|---|
@@ -43,6 +47,17 @@ cost objective field, so it is not counted.
 Unallowable cost, cost objectives, CLIN numbers and funding actions work in both modes.
 In DCAA mode the funding actions own the line's funded totals (below).
 
+**Where the fields show.** A company that does not use government contracting does
+not see its fields. `useGovernmentContracting()`
+(`apps/erp/app/modules/projects/ui/useGovernmentContracting.ts`) is true when
+`timekeepingControls = 'DCAA'` or the company has the `GOVERNMENT_CONTRACTING` feature
+(`usePlanGate`). It is display only; the server gates stay. Its callers: Cost Objective
+in `ProjectForm` (the New Project drawer and the project Settings page; when hidden, a
+`Hidden` field posts the saved value or the default), the Funding Actions card on a
+contract line's billing page (also shown when DCAA owns the totals or the line has
+actions), and People → Payroll Totals in the sidebar. The element page does not use
+it: its Government contracting group shows only under DCAA (below).
+
 ## Cost objectives and unallowable cost
 
 - `project.costObjective` (`projectCostObjective`: Direct, IR&D, B&P, Indirect,
@@ -55,15 +70,18 @@ In DCAA mode the funding actions own the line's funded totals (below).
   accounts only (`ChartOfAccountForm`). `accountValidator` keeps all 3 optional with no
   default, so a form or MCP call without them does not reset an unallowable account.
 - `projectElement.isUnallowable`, `isPreproduction`, `isLeave` (P1: a leave element
-  needs an Indirect project). The element sidebar shows the switches; a Parameter
-  element shows none.
+  needs an Indirect project). The element page (`ElementSidebar`) shows the switches in
+  its Government contracting group, with the charge number, the business component
+  fields and earned value. The group shows only with `timekeepingControls = 'DCAA'` and
+  the feature; with DCAA on and the feature gated, only earned value's locked row shows.
+  A Parameter element shows none.
 - `isUnallowableCharge(ctx, accountId)` (`lib/project-posting.ts`) is true when the
   account is not Allowable or the element or an ancestor is unallowable. Every posting
   path stamps `projectLedger.unallowable` with it; a reversal copies its original's
   flag. The ledger keeps the flag, so a later account edit never changes history.
 - An unallowable row creates no billable item (`buildContractBillableItem` and the
   Cost Plus generator skip it).
-- `get_project_cost_summary` returns `actualUnallowable`; the Costs tab shows Allowable
+- `get_project_cost_summary` returns `actualUnallowable`; the Costs page shows Allowable
   and Unallowable columns, and `preproductionActual` counts a preproduction subtree
   once.
 
@@ -108,9 +126,9 @@ server refuses another user's save, so that page is read-only.
 
 ## Charge restrictions
 
-`project.restrictCharging` with `projectMember` rows (project Settings tab,
-`ProjectMembers`). `assertChargeable(ctx, mode, timeEmployeeId)` refuses time from a
-non-member. `post-timesheet` passes the employee only in DCAA mode and only for a new
+`project.restrictCharging` with `projectMember` rows (project Settings page;
+`ProjectMembers` shows while `restrictCharging` is on).
+`assertChargeable(ctx, mode, timeEmployeeId)` refuses time from a non-member. `post-timesheet` passes the employee only in DCAA mode and only for a new
 entry; a reversal is never refused.
 
 ## Dilution
@@ -137,7 +155,8 @@ unique per employee and period) is filled by the CSV import wizard (P8): import 
 `payrollPeriodTotal`, permission `people`, importer
 `import-csv/payroll-total-import.ts` (`readPayrollTotalRow`, `importPayrollTotals`;
 an upsert per employee and period, a repeated row in one file is skipped). List: People
-→ Payroll Totals (`x+/people+/payroll-totals.tsx`).
+→ Payroll Totals (`x+/people+/payroll-totals.tsx`); the sidebar lists it only when
+`useGovernmentContracting()` is true.
 
 ## Missing time
 
@@ -161,7 +180,8 @@ privileged Kysely client, so the count does not depend on the closing user's acc
   SubCLIN's parent is a CLIN of the same contract with the same first 4 digits.
 - `customerContractFunding`: funding actions of a billing line (P10), each with
   modification number, date, ACRN, funded cost, funded fee and expiry
-  (`ContractFundingActions`, route `$id.$lineId.funding-actions.tsx`). In DCAA mode
+  (`ContractFundingActions`, an inline-edit grid on the line billing page; route
+  `$id.$lineId.funding-actions.tsx`). In DCAA mode
   `syncContractLineFunding` writes the line's `fundedCost` and `fundedAmount` as their
   sums (`sumFunding`), and the line form stops writing them.
 - A Cost Plus or Time & Materials invoice with numbered lines gets a Comment line per
@@ -204,8 +224,8 @@ reversal and the replacement (unless the correction names new values). Both grid
 group rows by those two fields too and post each row's own values (`""` for none),
 so a save edits the row's own entry. A new row starts at the defaults (the job
 location and the category's role): the ERP from Add row, the MES from the loader's
-`jobLocationId` and the category's `rdActivityRole`. Add row on My Timesheet has a **More** toggle with **Work location** and
-**Research role**.
+`jobLocationId` and the category's `rdActivityRole`. Add row on My Time has a **More**
+toggle with **Work location** and **Research role**.
 
 **Pure rules** (`@carbon/utils` `rd-tax.ts`, pinned by `rd-tax.test.ts`):
 `workCountryClass` (US, PR, GU, VI, AS, MP, UM are Domestic, D1; no code is Unknown,

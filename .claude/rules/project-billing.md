@@ -93,12 +93,18 @@ limit" or a user's note.
 
 ## Review and the audit log
 
-Projects → **Billing** (`projects+/billing.tsx`, default Unbilled and On Hold) and the
-project **Billing** tab (Contract projects) list the items in
-`ProjectBillableItemsTable`; the bulk actions post to `projects+/billing.update.tsx`
-(`update: projects`) → `updateProjectBillableItems`: hold (reason), release, write off
-(reason), price (one item; `amount = round(quantity × unitPrice)`; releases a "No bill
-rate" hold). Billed and Written Off items are refused.
+Billing review is the **Billing** tab of Projects → **Approvals**
+(`projects+/approvals.tsx?tab=billing`; the loader reads only the open tab's rows, and
+with no status filter shows Unbilled and On Hold). The tab needs what the page needs,
+`update: projects`. `projects+/billing.tsx` is a loader-only redirect to that tab that
+keeps the query (`redirectBeforeLoaders`). The sidebar lists Approvals only while
+time approval or DCAA is on (`useProjectsSubmodules`), so with both off billing review
+has no sidebar link; the line billing page links it. The project **Billing** page lists the
+project's items too. Both use `ProjectBillableItemsTable`; the bulk actions post to
+`projects+/billing.update.tsx` (`update: projects`) → `updateProjectBillableItems`:
+hold (reason), release, write off (reason), price (one item;
+`amount = round(quantity × unitPrice)`; releases a "No bill rate" hold). Billed and
+Written Off items are refused.
 
 Every change reaches the audit log ("Billable Item"): the table is in `auditConfig`
 AND has `events: true` in `event-system/attachments.ts` (migration
@@ -232,8 +238,8 @@ delete the relief rows.
 **Review.** The run page shows a **Project Revenue** card above its sections
 (`ProjectRevenueProgress.ee.tsx`): per line the EAC, price, progress, earned to date,
 this month, cost relieved and loss provision change. A Right to Invoice line has no
-EAC, price or progress. The project **Billing** tab shows **Percent Complete** and
-**Revenue Recognized** per billing line, and the contract's **Project Billing** card
+EAC, price or progress. The project **Billing** page shows **Complete** and
+**Recognized** per billing line, and the contract's **Project Billing** card
 shows **Revenue Recognized** (`getProjectContractRevenue`, `projects.service.ts`).
 
 ## Commercial gating
@@ -252,10 +258,36 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
 - Line form and the amend modal's added line: **Billing Method** and
   `ContractLineBillingFields` (billing element via `BillingElement` +
   `api+/projects.billing-elements.ts`, handling or fee, funding, notice).
-- Line billing page (`contract+/$id.$lineId.billing.tsx`, `ContractLineBilling`):
-  funding (`FundingBar`), labor rates (T&M), items, **Edit Funding**, **Generate
-  Billable Items**. The contract explorer opens a billing line here.
-- Labor categories: a **Bill Rate** beside the cost rate.
+- **Billing element.** The element page's Work properties have a **Billing element**
+  switch on a Contract project, for any type but Parameter (`ElementSidebar`). It posts
+  `field=isBilling` to the element update route (`$projectId.elements.update.tsx`),
+  which refuses it on a non-Contract project and calls `updateProjectElementBilling`
+  (`projects.service.ts`). That function refuses a second billing element in one branch
+  (an element and its ancestor) and a Parameter (`refuseBillingInBranch`), and refuses
+  turning the flag off while a contract line bills the element (`refuseBilledElement`).
+  It is a live write, not a plan-layer field. Without a flagged element, the line form's
+  Billing Element picker has nothing to offer (`getProjectBillingElements`).
+- Line billing page (`contract+/$id.$lineId.billing.tsx`, `ContractLineBilling`): one
+  primary action, **Generate Billable Items**. **Line Details** and **Edit Funding** are
+  in the ⋯ menu. The cards: Funding (`FundingBar`); funding actions
+  (`ContractFundingActions`, shown when `useGovernmentContracting()` is true, DCAA owns
+  the totals, or the line has actions); labor rates (`ContractLaborRates`, T&M); rate
+  ceilings (`ContractRateCeilings.ee.tsx`, Cost Plus); and Billable Items. Funding
+  actions, labor rates and rate ceilings are inline-edit grids (`Table compact
+  withInlineEditing`): an "Add …" button under the grid adds a draft row, Delete is in
+  the row ⋯ menu, and there is no modal. Each edit posts the whole row with the
+  existing intent; the routes answer `quiet` with `{ error }` and no flash. The Billable Items card's description links Projects →
+  Approvals (`?tab=billing`), where items are reviewed. The contract explorer opens a
+  billing line here.
+- Project **Billing** page (`$projectId.billing.tsx`): in the project sidebar under
+  Costs, only for a Contract project with a T&M or Cost Plus line
+  (`hasBillingLines`: `costTreatment = 'Contract'` and `getContractBillingLines`, which
+  skips Fixed lines). Its contract lines table (`ProjectBillingLines`) has the columns
+  Line (the contract id, then the line name, truncated with a tooltip, linking the line
+  billing page), Billing Element, Funding, Complete and Recognized. Below it, the
+  project's billable items.
+- Labor categories: the rates are a `Grid` on the category drawer (Effective From, Cost
+  Rate, **Bill Rate**). Rates have no delete endpoint, so the grid has no delete.
 
 ## Known gaps
 
@@ -264,7 +296,7 @@ upgrade notice (`ProjectRevenueUpgrade`) and Save disabled. An MCP
 - Through MCP or the API, the close checklist's revenue run preview leaves out the
   Percent Complete rows: the 3 MCP tools pass no synthesizers (above). The ERP close
   page and every run call site include them.
-- The project **Billing** tab and the contract's **Project Billing** card list billing
+- The project **Billing** page and the contract's **Project Billing** card list billing
   lines only, so a Fixed Percent Complete line shows its figures in the run review only.
 - The run page's **Amount** sums every line, cost relief and loss provision included.
 - Browser verification of Phase 4a (plan Task 21) and Phase 4b (plan Task 14) is

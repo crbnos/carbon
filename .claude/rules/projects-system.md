@@ -34,6 +34,41 @@ an element) is the cost object that jobs, PO lines, purchase invoice lines, char
 reimbursement lines, timesheet entries and project issues post to. `projectLedger` is the
 project's subledger of actual cost.
 
+## Information architecture
+
+The UI was rebuilt on 2026-10-12 (`.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
+Its *Execution notes* record the later decisions that override the plan text. The UI
+opens in layers. Each layer shows the least that a user needs.
+
+- **Module sidebar** (`ui/useProjectsSubmodules.tsx`). Manage: **Projects**, **My Time**,
+  **Approvals**, **Reports**. Setup: **Labor Categories**, **Planning Groups**. The groups
+  do not collapse. Approvals shows only while `timesheetApprovalRequired` is on or
+  `timekeepingControls = 'DCAA'`. Its count comes from the `projects+/_layout.tsx` loader
+  (`getApprovalCountForUser`). Transfers and Billing are not in the sidebar: a transfer
+  opens from the project's Stock page, and billing review is the Billing tab of Approvals.
+  The old URLs still work.
+- **Projects list** (`ProjectsTable`): Identifier, Name, Status, Owner, Due and Budget used.
+  The other columns are hidden by default. **New Project** opens a drawer (`projects+/new.tsx`).
+- **Project workspace** (`project+/$projectId.tsx`). The left project sidebar
+  (`ProjectSidebar`) starts with the change request picker and a Baselines (history)
+  button. Then the page links (`useProjectSidebarLinks`): Overview, Plan, Schedule, Costs
+  and Time, with Settings pinned at the bottom. While a Plan page is open, the element tree
+  and its "Search elements" box show under the links. Under Costs, each link shows only
+  when it applies: Stock (the project has an `itemLedger` row), Pegging (a current
+  `projectPeg`) and Billing (a Contract project that a contract line bills). The header
+  (`ProjectHeader`, on `RecordHeader`) is one line: the identifier and the name (a button
+  that opens the project switcher), the status badge, then the copy button and the ⋯ menu
+  at the right end. It has no primary button. The ⋯ menu lists the status transitions
+  first, the next step first, then Place in service, Stop work, Baselines, Change
+  requests, Copy project and Template.
+- **Element page** (`/x/project/$id/element/$elementId`, `ElementView`): a full-screen page
+  with no project header and no project sidebar. See *The Plan page*.
+- **Layer 5: a feature shows only when it is used.** Stock, Pegging and Billing as above.
+  Earned value on the Costs page needs an element with `isControlAccount`. The government
+  contracting fields of the project form need `useGovernmentContracting()` (DCAA
+  timekeeping, or the `GOVERNMENT_CONTRACTING` feature); the element page's group needs DCAA
+  timekeeping. The planning group fields on Settings need at least one `planningGroup` row.
+
 ## Treatment is decided at the source
 
 The cost treatment decides the GL account when the cost is posted, not later. There
@@ -201,7 +236,7 @@ and `parentProjectId` names a coverage contract's project. Field service owns th
   Contract project under a Time & Materials contract line (`buildContractBillableItem`;
   project billing, below). `projectElement.fixedPrice` bills a node's whole subtree as
   one line.
-- **Parent roll-up** (field service Phase D). The Costs tab lists a project's child
+- **Parent roll-up** (field service Phase D). The Costs page lists a project's child
   Service projects, one row per order, from `get_child_service_project_costs`; their
   actual adds to the project total only (`buildProjectCostFigures`, third argument). A
   Contract charge on a Closed parent is refused. `updateServiceOrderCoverageContract`
@@ -227,8 +262,10 @@ Contract project's billing element and its subtree. The whole subsystem is in
   `create-project-billing-invoices` runs that backfill before it reads the items, so
   those rows reach the review list on the next invoice run, not at posting. The
   line's billing page has **Generate Billable Items** to do it at once.
-- Review: Projects → **Billing** and the project **Billing** tab (Contract projects
-  only), `update: projects`. Each change reaches the audit log ("Billable Item").
+- Review: Projects → **Approvals** → **Billing** tab (`projects+/approvals.tsx?tab=billing`;
+  `projects+/billing.tsx` redirects there with its query) and the project's **Billing** page
+  under Costs (a Contract project that a contract line bills), `update: projects`. Each
+  change reaches the audit log ("Billable Item").
 - `laborCategoryRate.billRate` is a category's default price of an hour, beside its
   cost rate.
 - **Revenue (Phase 4b).** The monthly revenue recognition run recognizes Right to
@@ -262,14 +299,14 @@ What it changes here:
   line, and the billing backup shows the pool, rate and base.
 - **Cost relief.** Memo rows are never relieved (no journal debit on an Asset
   account); applied burden is relieved with the rest of the cost.
-- **Costs tab.** `get_project_burden_summary` (`getProjectBurdenSummary`) gives
-  burden per element and pool. The tab lists it per pool under the tree, and an
+- **Costs page.** `get_project_burden_summary` (`getProjectBurdenSummary`) gives
+  burden per element and pool. The page lists it per pool under the tree, and an
   element's Allowable cell says "of which burden".
 
 ## Project stock (Phase 2a)
 
-`project.projectStock` (set while Draft only; `$projectId.details.tsx` keeps the stored value
-after that) makes the project own the stock received for it. The stripes, the stripe set of a
+`project.projectStock` (set while Draft only; the Settings page posts to `$projectId.details.tsx`,
+which keeps the stored value after that) makes the project own the stock received for it. The stripes, the stripe set of a
 demand and the key order are in `inventory-system.md` → *Project stock*. What it changes here:
 
 - **Receipts.** A stocked item on a PO line charged to a project with project stock is
@@ -282,7 +319,7 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   project, Make to Asset or a sales order line; `chargeNumberError` refuses it on a project
   without project stock) receives the output into the project's stripe
   (`complete_job_to_inventory`, `20261010030228`). A job of a project with project stock
-  draws that project's stock, then common stock, in `issue`, the backflush and picking.
+  draws that project's stock, then unassigned stock, in `issue`, the backflush and picking.
 - **The accounting cutover.** The enable's inventory reset opens one layer per item and
   stripe at the item's unit cost (`splitOpeningLayersByStripe`), and the re-cost replays
   each stripe as its own pool. A Transfer or Borrow after the cutover opens its layer at
@@ -294,10 +331,12 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   stripes at the bin (`splitAcrossStripes`), one `bookAdjustment` per stripe sharing one
   journal and one `projectLedger` row. A Return goes back to the project's stock.
 - **`projectStockTransfer`** (Draft → Approved → Posted, or Cancelled) with lines;
-  `projectBorrow` records an open borrow. Pages: Projects → **Transfers**
-  (`projects+/transfers.tsx`, `transfers.new.tsx`) and the document
-  (`project-stock-transfer+/$id.tsx`, `$id.lines.tsx`, `$id.status.tsx`). The owner pickers
-  carry `common` for common stock (`COMMON_STOCK_OWNER`, `toStockOwner`).
+  `projectBorrow` records an open borrow. Transfers open from the project's Stock page;
+  its "All transfers" link opens the list (`projects+/transfers.tsx`, `transfers.new.tsx`),
+  which is no longer in the module sidebar. The document is
+  `project-stock-transfer+/$id.tsx`, `$id.lines.tsx`, `$id.status.tsx`. The owner pickers
+  carry `common` for unassigned stock (`COMMON_STOCK_OWNER`, `toStockOwner`); the UI label
+  is "Unassigned stock".
 - **Approval** is `update: projects`, not the approvals engine (`updateProjectStockTransferStatus`).
   Approve refuses a transfer without lines and runs the government-furnished guard
   (`governmentFurnishedRefusal`): stock of a `governmentFurnished` project moves only to a
@@ -332,18 +371,18 @@ demand and the key order are in `inventory-system.md` → *Project stock*. What 
   (`planningSegmentId` = the project id; `project_planning_segment`). Plan-line
   materials of Unstarted / Started elements are `Project Material` demand; an
   Open borrow is firm demand on the borrower and firm supply on the lender. The
-  segment draws common stock only from the common segment's true surplus, and
+  segment draws unassigned stock only from the unassigned segment's true surplus, and
   only through a **Transfer** planning action. Applying it creates a Draft
   transfer (`applyTransferPlanningActions` → `createProjectStockTransfersFromActions`,
   `projects.server.ts`, `planningActionId` on the header). An Order or Make in the
   segment creates a PO line charged to the project or a job with
   `receiveToProjectStock`. The project's manager owns its planning actions.
   Details: `mrp-system.md` → *Project netting segments*.
-- **Overdue borrows.** `ProjectHeader` shows a red **Overdue borrows** badge,
-  linked to the Stock tab, when an Open borrow the project owes or lent is past
+- **Overdue borrows.** The Overview page's *Needs attention* list shows a row,
+  linked to the Stock page, when an Open borrow the project owes or lent is past
   its due date on the company's calendar (`getProjectBorrows` with `dueBefore`,
-  in the `$projectId.tsx` loader). The planning worklists list the same
-  borrows above the grid.
+  in the `$projectId.tsx` loader, as `overdueBorrowCount`). The header has no badge.
+  The planning worklists list the same borrows above the grid.
 
 ## Planning groups, pegging and distribution (Phase 3)
 
@@ -370,7 +409,7 @@ without groups.
   **Planning Groups** (`projects+/planning-groups*.tsx`). The list shows
   `PlanningGroupsUpgradeOverlay` through `usePlanGate`; the write routes call `requireFeature`.
 - **Membership.** `project.planningGroupId` and `project.planningPriority` (lower first), set on
-  an existing project's Details tab. The CHECK `project_planningGroup_stock_check` requires
+  an existing project's Settings page (shown only when the company has a group). The CHECK `project_planningGroup_stock_check` requires
   project stock, and the `$projectId.details.tsx` action requires the group at the project's
   location. `project_planning_segment` returns the group id for a member of an active group.
 - **Grouped supply.** A PO line or job made for the group carries `planningGroupId` and no
@@ -385,13 +424,13 @@ without groups.
   |---|---|---|
   | Soft | the MRP run, on open or planned supply | yes, on every run |
   | Hard | `harden_pegs_for_supply`, at receipt or completion | never |
-  | Manual | **Override** on the Pegging tab, with a reason (`createManualPeg`) | no; a gone demand sets `exception` |
+  | Manual | **Override** on the Pegging page, with a reason (`createManualPeg`) | no; a gone demand sets `exception` |
 
 - **One way, one rule.** Only `harden_pegs_for_supply(supplyType, supplyId, quantity)`
   (`20261010155314`) turns Soft pegs Hard. It locks the supply's current pegs in need date,
   project priority and demand source order, supersedes each peg it covers, and inserts a Hard row
   with `hardenedAt`. The uncovered part keeps the peg's state. It returns one row per member
-  stripe plus an excess row: the exception project, else common stock. `post-receipt` and
+  stripe plus an excess row: the exception project, else unassigned stock. `post-receipt` and
   `complete_job_to_inventory` both call it. The reverse for a negative receipt is
   `soften_pegs_for_return` (`20261010162300`): the excess first, then the Hard pegs, latest
   first.
@@ -406,7 +445,7 @@ without groups.
   stripe list: one stripe for an ungrouped job, the harden rows for a grouped job. The Output
   layer is written per stripe at the job's unit cost, so scrap spreads through the unit cost
   with no separate posting. The backflush of a grouped job draws the members' stock in the
-  pegs' order, then common stock.
+  pegs' order, then unassigned stock.
 - **Price variance.** At invoice, `allocateVarianceAcrossLayers` spreads the variance over the
   striped layers. For a PO line with `planningGroupId`, the share of units already consumed goes
   to each member's project account as a `Material Variance` `projectLedger` row
@@ -419,11 +458,11 @@ without groups.
   **Borrow** (with a payback date in `triggerValues`) from the rest of a sibling's stock, when
   the sibling needs it later. `createProjectStockTransfersFromActions` (`projects.server.ts`)
   makes a Draft transfer of the action's type. It refuses a Borrow with no payback date.
-- **The Pegging tab** (`$projectId.pegging.tsx`, `ProjectPegging`, shown for a project with
-  `planningGroupId`) lists the project's current pegs by item (`getProjectPegs`). With **As of**
+- **The Pegging page** (`$projectId.pegging.tsx`, `ProjectPegging`, under Costs in the project
+  sidebar while the project has a current peg) lists the project's current pegs by item (`getProjectPegs`). With **As of**
   it shows the rows current at the start of the next day in the company timezone:
   `createdAt <= asOf AND (supersededAt IS NULL OR supersededAt > asOf)`. **Override**
-  (`$projectId.pegging.manual.tsx`) replaces a Soft peg with a Manual peg on another open PO line
+  (`$projectId.pegging.manual.tsx`, in the row ⋯ menu) replaces a Soft peg with a Manual peg on another open PO line
   or job of the group (`getPlanningGroupOpenSupplies`). The state colours are
   `PROJECT_PEG_STATE_COLOR_MAP`.
 
@@ -444,7 +483,7 @@ Each entry also carries a work location and a research role (R&D tax, Phase 5d);
 `save-timesheet-entry` defaults them from the job location and the labor category, and
 both are part of a cell's key (`government-contracting.md` → *R&D tax*).
 
-**My Timesheet** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
+**My Time** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
 the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is
 read-only there: service time posts from Draft at Stop Work or Add Time on the order,
 so `submit-timesheet-week` submits Standard entries only and `post-timesheet` posts a
@@ -537,8 +576,8 @@ posts a default name per type to `path.to.newProjectElement` under the open elem
 The page's only search is the project sidebar's "Search elements" box
 (`ProjectElementTree`): it filters the tree at once and writes `?search=` (debounced)
 on the Plan page. The List is not an editable table: it groups the rows by state
-(`sortStates` order, empty groups hidden, each group collapsible, a hover "+" adds an
-element in that state), keeps tree order inside a group and indents a row only under a
+(`sortStates` order, empty groups hidden, each group collapsible, a hover "+" adds a
+Task in that state), keeps tree order inside a group and indents a row only under a
 parent in the same group. Only the state, the owner and the target date edit in place,
 each through its picker (`StatePill` / `OwnerPill` / `DatePill`); labels are read-only;
 a click anywhere else opens the element's page. A hover row menu has Open, Add child,
@@ -556,23 +595,33 @@ An element opens on its own page, `path.to.projectElement` → `/x/project/$id/e
 (`ElementView`), from the List, the Tree, the Reader, the sidebar tree, links and child rows.
 There is no element panel: the old `/elements/$elementId` URL only redirects to the page (its
 plan, job, purchase order line, comment and delete action routes stay under it), and the project
-layout hides the project sidebar on the page. The page is a breadcrumb row (back, the project,
-the ancestors) with one ⋯ menu (Log time, Issue material, Add child, Add link, Add plan line, Copy
-id, Delete), a main column of at most 800 px (title, description, then Children, Plan, Links,
-Time & materials and Activity, each only when it has something) and a 300 px properties column
-(`ElementSidebar`: the properties, the type's fields from `ElementTypeBlock`, work, costs with
-children, and the government contracting fields under `useGovernmentContracting`). The earned
-value form posts to the page route's action. All plan lines are ONE grid (`ElementPlanLines`)
-with a Type column; a cell posts the whole line with `quiet=true` to the plan route (the service
-template node route answers the same), and a draft row from "Add line" saves once its item, labor
-category or description is set.
+layout hides the project header and the project sidebar on the page. The page has one header
+row: back, the project and the ancestors, a copy button for the readable id, and one ⋯ menu (Log
+time, Issue material, Add child, Add link, Add plan line, Delete). Below it are a main column of
+at most 800 px (title, description, then Children, Plan, Links and Time & materials, each only
+when it applies, then Activity) and a 300 px properties column (`ElementSidebar`, inline fields
+from `ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`,
+Work, Costs with children, and the Government contracting group, shown only with DCAA
+timekeeping). The earned value form posts to the page route's action.
+
+On a Contract project the Work group has a **Billing element** switch for every type but
+Parameter. It posts `field=isBilling` to the element update route
+(`$projectId.elements.update.tsx`), which refuses a project that is not Contract and calls
+`updateProjectElementBilling` (`projects.service.ts`). That refuses a second billing element in
+one branch (an element and its ancestor), a Parameter, and turning the flag off while a contract
+line bills the element. It is a live write, not a plan-layer field.
+
+All plan lines are ONE grid (`ElementPlanLines`: Type, Line, Quantity, Amount). The row ⋯ menu's
+**Edit** opens `PlanLineModal` for the whole line. A cell posts the whole line with `quiet=true`
+to the plan route (the service template element route answers the same), and a draft row from
+"Add line" saves once its item, labor category or description is set.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the
 boxes, left to right only, and the cards stack in their box at fixed offsets. The type
 filter is a lens on the Tree: the loader drops `type` for the Tree, and a box stays while
-a card below it matches. `?root=` shows one subtree under a breadcrumb, and the Elements
-route skips its own reload when only `root` changes.
+a card below it matches. `?root=` shows one subtree under a breadcrumb, and the Plan
+route (`$projectId.elements.tsx`) skips its own reload when only `root` changes.
 
 `countTraceLinks` and `highlightTraceLinks` give the "N tests" and "N reqs" counts
 and their highlight. `ElementTypeIcon` holds the one colour of each type (its icon);
@@ -590,8 +639,8 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
 
 ## Templates, Build from part and part links
 
-- `copyProject` copies states, labels, milestones, elements (renumbered), links and
-  plan lines; it clears history (assets, verdicts, reviews, issued quantities, job and
+- `copyProject` copies milestones, elements (renumbered), element labels, links and
+  plan lines (states and labels are company-wide, so a copied element keeps its ids); it clears history (assets, verdicts, reviews, issued quantities, job and
   PO line ids). `project.isTemplate` marks a template.
 - An element (not a Parameter) links an item and optionally one serial
   (`trackedEntityId`); a trigger refuses a serial of another item and fills an empty
@@ -607,7 +656,8 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
   copies (a service order passes it; Projects does not). `insertElementsFromPart` is the
   same build in the caller's transaction.
 - `get_element_history_by_item` averages hours and material cost over the elements
-  that charged the same item; the Budget section shows it.
+  that charged the same item. `getProjectElementPage` still loads it, but the element page
+  no longer shows it.
 
 ## Plan-line actions and other charge numbers
 
@@ -697,7 +747,7 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   (Brad 2026-10-10); a customer turns each one on in the integration's settings.
 - Ids inside the JSONB of `projectBaseline.snapshot` and `projectChangeRequestItem`
   (`payload`, `baseRow`) are not rewritten by a restore into another company.
-- With the plan locked, the Elements page turns off only create and delete; the other
+- With the plan locked, the Plan page turns off only create and delete; the other
   plan-layer controls stay enabled and the server refuses them.
 - The demo datasets seed no baseline, change request, item, comment or view.
 - The demo datasets seed project stock and one Posted Transfer per Contract project
@@ -705,7 +755,7 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
 - The satellite dataset seeds the **Star Tracker** planning group (`seedPlanningGroups`, tier
   09): a striped receipt with Hard pegs and an open PO line with Soft pegs. The other three
   datasets seed no group.
-- Phase 3: a group segment can get a Transfer from common stock (`commonSurplusDraws`) with
+- Phase 3: a group segment can get a Transfer from unassigned stock (`commonSurplusDraws`) with
   the group id as `toProjectId`; applying it fails on the project FK. Without the feature, the
   planning RPCs still group on-hand by `project_planning_segment`, so a lapsed plan shows group
   rows. The void of a negative receipt puts units back in the member stripes but leaves the

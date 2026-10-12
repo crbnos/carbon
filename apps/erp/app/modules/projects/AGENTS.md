@@ -7,7 +7,8 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 
 - **Project** — `project` row with an `identifier` (`^[A-Z][A-Z0-9]{1,5}$`, unique per
   company). Status: Draft → Released → On Hold / Technically Complete → Closed
-  (`projectStatusTransitions`, `canChangeProjectStatus`). Closed has no way back.
+  (`projectStatusTransitions`, `canChangeProjectStatus`). Closed has no way back. The UI
+  labels Technically Complete "Work Complete" (the enum value stays).
 - **Element** — `projectElement`, typed System / Requirement / Function / Task / Test Case /
   Folder / Parameter. `readableId` is `<identifier>-<sequence>` from
   `project.nextElementSequence`; a move never changes it. A Parameter's children are
@@ -43,15 +44,16 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   replacement).
 - **Project stock** — `project.projectStock` (set while Draft). The project owns the stock
   received for it: `itemLedger.projectId` / `costLedger.projectId` stripe it, NULL is
-  common stock. `chargeAtReceipt` charges the project at receipt; `governmentFurnished`
+  unassigned stock. `chargeAtReceipt` charges the project at receipt; `governmentFurnished`
   keeps the stock with the project's customer.
 - **Project stock transfer** — `projectStockTransfer` + lines: Transfer, Borrow or Payback,
   Draft → Approved → Posted, or Cancelled. A Borrow opens a `projectBorrow`; a Payback
   settles it and charges the borrower the Payback Variance.
 - **Netting segment** (Phase 2b) — MRP plans a project with project stock on its own
-  (`planningSegmentId` = the project id). A **Transfer** planning action proposes common
-  stock the common segment does not need; applying it creates a Draft transfer with
-  `planningActionId`. An overdue Open borrow shows as a badge in `ProjectHeader`.
+  (`planningSegmentId` = the project id). A **Transfer** planning action proposes unassigned
+  stock the unassigned segment does not need; applying it creates a Draft transfer with
+  `planningActionId`. An overdue Open borrow shows as a *Needs attention* row on the project
+  Overview (`ProjectOverview`).
 - **Planning group** (Phase 3, commercial `PLANNING_GROUPS`) — `planningGroup` pools
   projects with project stock at one location; members (`project.planningGroupId`,
   `planningPriority`) net in the group's segment. Grouped PO lines and jobs carry
@@ -63,8 +65,10 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 ## Safety
 
 ### Always
-- MUST create a project with `createProject` (`projects.server.ts`) — it inserts the six
-  states in the same transaction; `insertProjectElement` needs a default Unstarted state.
+- MUST create a project with `createProject` (`projects.server.ts`) — it inserts the Draft
+  project in one transaction. States are company-wide, so it seeds none;
+  `insertProjectElement` needs the company's default Unstarted state (`seed-company` inserts
+  it).
 - MUST insert elements with `insertProjectElement` and move them with `moveProjectElement` —
   they allocate `readableId`, refuse a cycle, and refuse a non-Parameter child under a
   Parameter. Bulk inserts (`copyProject`, `buildElementsFromPart`) lock the project row
@@ -77,10 +81,10 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
 - MUST post a project stock transfer with `postProjectStockTransfer` (`projects.server.ts`,
   `post-project-stock-transfer`) and approve or cancel it with
   `updateProjectStockTransferStatus` — Approve runs the government-furnished guard.
-- MUST store common stock as a null owner: the owner pickers send `COMMON_STOCK_OWNER`
+- MUST store unassigned stock as a null owner: the owner pickers send `COMMON_STOCK_OWNER`
   (`common`), and the routes map it with `toStockOwner`.
 - MUST pass `db` (Kysely) from the route to `deleteProjectState`, `setProjectStateDefault`
-  and the `projects.server.ts` functions.
+  (both called by `settings+/projects.tsx`) and the `projects.server.ts` functions.
 - MUST route every plan-layer write through `readChangeRequestId` +
   `requireEditablePlanRoute`, and send the open change request from the UI with
   `withChangeRequest` — a write that skips them bypasses the draft and the plan lock.
@@ -117,7 +121,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | Table / Function | Purpose |
 |---|---|
 | `project` | Header: identifier, status, `costTreatment`, `costAccountId`, `nextElementSequence` |
-| `projectState`, `projectLabel`, `projectMilestone` | Per-project workflow, labels, milestones |
+| `projectState`, `projectLabel` | Company-wide element states and labels, unique by name per company (Settings → Projects) |
+| `projectMilestone` | Per-project milestones (the Schedule page) |
 | `projectElement` (+ `projectElementLabel`, `projectElementComment`) | The element tree |
 | `projectElementMaterial` / `Labor` / `Cost` | Plan lines (budget) |
 | `laborCategory`, `laborCategoryRate` | Effective-dated cost rates (`rateOn`) and the default `billRate` |
@@ -145,7 +150,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 
 ## Key Service Functions
 - `getChargeNumbers` — Released projects and chargeable elements for the picker.
-- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs tab. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
+- `getProjectCostSummary` + `rollUpCostSummary` / `buildProjectCostFigures` — the Costs page. `getChildServiceProjectCosts` (`get_child_service_project_costs`) adds the service orders of a contract project; their actual goes to the project total through `buildProjectCostFigures`'s third argument.
 - `getProjectElementPage` (`.server`) — everything the element page loads, in parallel.
 - `getProjectElementCommentCounts` — the comment count per element for the Tree layout's cards (one paged read; no `@mcp` tag).
 - `saveTimesheetEntry`, `submitTimesheetWeek` (`.server`) — the grid saves a cell and
@@ -170,7 +175,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   (models) — Build from part.
 - `parseElementFilters`, `canonicalElementsParams`, `elementLayoutFromParams`
   (models) — the Plan page's filters (`filter=type:eq:…` for the Type filter;
-  the old `?type=` still reads) and its layouts (Table, Tree, Reader).
+  the old `?type=` still reads) and its layouts (List, Tree, Reader).
 - `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline` (`.server`),
   `getProjectBaselines`, `getProjectBaseline`, `diffPlanSnapshots` (models) — baselines.
 - `createChangeRequest`, `upsertChangeRequestItems`, `loadChangeRequestOverlay`,
@@ -187,7 +192,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `projectStockTransferValidator`, `projectStockTransferLineValidator`,
   `governmentFurnishedRefusal`, `isBorrowOverdue` (models) — project stock.
   `getProjectBorrows` filters by project, status, `locationId` and `dueBefore` (the
-  overdue borrows of the header badge and the planning worklists).
+  overdue borrows of the project Overview and the planning worklists).
 - `applyTransferPlanningActions`, `createProjectStockTransfersFromActions` (`.server`) —
   Apply of Transfer planning actions from both planning routes: needs `update: projects`;
   one transaction claims the actions and creates one Draft transfer each, readable ids
@@ -201,16 +206,23 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `getContractBillableItems` (rows typed `ContractBillableItemRow`), `getContractBillingLines`,
   `getProjectBillingElements`, `updateProjectBillableItems` (hold, release, write off,
   price; refuses Billed and Written Off items); `billableItemActionValidator` (models) —
-  contract billing review (Phase 4a): Projects → **Billing** (`projects+/billing.tsx`,
-  `billing.update.tsx`) and the project **Billing** tab (`$projectId.billing.tsx`,
-  Contract projects only), UI in `ui/Billing/`.
+  contract billing review (Phase 4a): the **Billing** tab of Projects → Approvals
+  (`projects+/approvals.tsx?tab=billing`; `billing.tsx` only redirects there, and
+  `billing.update.tsx` still takes the actions) and the project's **Billing** page under
+  Costs (`$projectId.billing.tsx`, a Contract project that a contract line bills), UI in
+  `ui/Billing/`.
+- `updateProjectElementBilling` — the element page's **Billing element** switch
+  (`isBilling`); refuses a second billing element in one branch, a Parameter, and turning
+  the flag off while a contract line bills the element. The update route refuses a project
+  that is not Contract.
 - `getProjectContractRevenue` (`ProjectContractRevenue`) — per contract line, the revenue
-  recognized to date and the latest month's progress, EAC and price (Phase 4b). The Billing
-  tab passes it to `ProjectBillingLines` (**Percent Complete**, **Revenue Recognized**), and
-  the contract page (`contract+/$id.details.tsx`) to `ContractProjectBilling`.
+  recognized to date and the latest month's progress, EAC and price (Phase 4b). The project's
+  Billing page passes it to `ProjectBillingLines` (**Percent Complete**, **Revenue
+  Recognized**), and the contract page (`contract+/$id.details.tsx`) to
+  `ContractProjectBilling`.
 - `getProjectMembers`, `addProjectMember`, `removeProjectMember`;
   `getTimesheetRevisions`, `getPendingReviewEntries`, `acceptTimesheetReview`;
-  `getTimesheetWeekView` (`.server`, shared by My Timesheet and the manager's employee
+  `getTimesheetWeekView` (`.server`, shared by My Time and the manager's employee
   timesheet page `projects+/timesheets.$employeeId.tsx`) — DCAA timekeeping (5a).
 - `getLateTimesheetEntries`, `getMissingTimesheetDays`, `getLaborTransfers`,
   `getTimesheetAuditRows`, `getLaborDistributionRows`, `getLaborDistributionPeriods`,
@@ -222,11 +234,44 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `taxYearOf`, `monthNumber`, `rdActivityRoles`, `rdComponentTypes`, `rdSoftwareTypes`
   (models) — the R&D tax reports `rd-section-174a` and `rd-form-6765-g` by tax year
   (Government Contracting 5d). The role and type labels are hooks in
-  `ui/RdTax/useRdTaxLabels.ts`; the element sidebar's type pickers use `ChoicePill`
-  (`ui/Elements/ElementProperties.tsx`).
+  `ui/RdTax/useRdTaxLabels.ts`; the element page's type pickers use `PropertySelect`
+  (`ui/Element/PropertyFields.tsx`).
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.
+
+## UI Layout
+The screens open in layers (`.claude/rules/projects-system.md` → *Information architecture*;
+plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
+- `ui/useProjectsSubmodules.tsx` — the module sidebar: Projects, My Time, Approvals (with a
+  count, only while time approval or DCAA is on), Reports; Setup: Labor Categories, Planning
+  Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5).
+- `ui/Projects/` — the projects list (`ProjectsTable`) and `ProjectForm` (the New Project
+  drawer and the project Settings page; its folded `FormSection` keeps fields mounted).
+- `ui/Project/` — the workspace: `ProjectHeader` (switcher, status, ⋯ menu with the status
+  transitions; no primary button), `ProjectSidebar` + `useProjectSidebarLinks`
+  (`useProjectNavigation.tsx`), `ProjectElementTree` (the sidebar tree and the Plan page's
+  only search), `ProjectOverview`, `ProjectMembers`, `ProjectControlSettings.ee`,
+  `StopWorkModal.ee`.
+- `ui/Elements/` — the Plan page: `ElementsHeader` (layout switch, Filter, New Element),
+  `ElementList` (the List: rows grouped by state, Linear style), `ElementGraph` + `graph/`
+  (the Tree), `ElementReader`, `MoveElementModal`, `BuildFromPartDrawer`.
+- `ui/Element/` — the element's full page (`/x/project/$id/element/$elementId`): `ElementView`,
+  `ElementSidebar` with `PropertyFields.tsx` (inline fields, the **Billing element** switch),
+  `ElementPlanLines` (one grid for every plan line, with `PlanLineModal` behind the row's
+  **Edit**), `ElementChildren`, `ElementLinks`, `ElementTimeAndMaterials`, `LogTimeModal`,
+  `IssueMaterialModal`, `ElementEarnedValue.ee`.
+- `ui/Milestones/` — the Schedule page (`MilestoneSchedule`, `schedule-scale.ts`, the burn
+  chart). `ui/Costs/`, `ui/Stock/`, `ui/Pegging/`, `ui/Billing/` — the Costs page and the
+  pages under it. `ui/Transfers/` — the stock transfer list and document. `ui/Baselines/`,
+  `ui/ChangeRequests/` — baselines, change requests and the sidebar's `ChangeRequestPicker`.
+- `ui/Timesheet/` — `TimesheetGrid` (My Time at `x+/timesheet.tsx`, and the manager's
+  `projects+/timesheets.$employeeId.tsx`), `TimesheetApprovals` (the Time tab of
+  `projects+/approvals.tsx`; its Billing tab is the billing review).
+- `ui/Settings/` — `ProjectStatesGrid`, `ProjectLabelsGrid`, `ColorCell`: the company-wide
+  states and labels on Settings → Projects (`settings+/projects.tsx`).
+- `ui/LaborCategories/`, `ui/PlanningGroups/`, `ui/RdTax/` — the Setup pages and the R&D
+  labels.
 
 ## Related Modules
 - **production** — `job.projectId/projectElementId/consumeToProject`; `getJobProjectCharge`;

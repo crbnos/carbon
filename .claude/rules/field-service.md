@@ -38,8 +38,9 @@ Module guide: `apps/erp/app/modules/service/AGENTS.md`.
 - **Service order** (`serviceOrder`, readable id `SVC…`, sequence `serviceOrder`): one
   subject serial, one customer asset (none for a Refurbishment), and its own **Service project**
   (`project.projectType = 'Service'`, `costTreatment = 'By Coverage'`, identifier = the
-  order's readable id). The project's elements are the **work tree** ("nodes"). There is
-  no order line table.
+  order's readable id). The project's elements are the **work tree**. The UI says
+  "element"; code names still say "node" (`ServiceWorkNode`, `NodePeek`, `NodePicker`,
+  `requireServiceOrderNode`). There is no order line table.
 - **Visit** (`serviceVisit`): technician, planned window (typed in the company's time
   zone: `ScheduleVisitModal` passes `useCompanyTimeZone()` to `DateTimePicker`'s
   `timeZone`), status, travel / arrival /
@@ -50,7 +51,8 @@ Module guide: `apps/erp/app/modules/service/AGENTS.md`.
   On Hold / Billed / Written Off.
 
 At most one open order per subject serial (`serviceOrder_open_subject_key`). The New
-form creates Field Visit and Refurbishment orders (`serviceOrderTypes`). A Depot Repair
+Service Order drawer (`service-orders+/new.tsx`, `ServiceOrderForm`) creates Field Visit
+and Refurbishment orders (`serviceOrderTypes`). A Depot Repair
 order comes only from an RMA receipt (below); the list filters all 3
 (`listedServiceOrderTypes`).
 
@@ -66,10 +68,32 @@ Visits, Schedule, assets, templates) and `x+/service-order+/` (the order workspa
 Helpers are `serviceOrder*`, `customerAsset*`, `serviceVisit*`, `serviceTemplate*`,
 `myVisits` and `serviceSchedule`.
 
-Two pages opt out of their parent layout with a trailing `_`, so they render as full
+Three pages opt out of their parent layout with a trailing `_`, so they render as full
 pages: the visit page `service-order+/$id_.visits.$visitId.tsx` (not inside the order
-workspace) and the template page `service-orders+/templates_.$id.tsx` (not under the
-list table). The asset page is its own folder, `customer-asset+/$assetId.tsx`.
+workspace), the template page `service-orders+/templates_.$id.tsx` (not under the
+list table) and the template element page `service-orders+/templates_.$id_.$elementId.tsx`
+(not under the template page). The asset page is its own folder,
+`customer-asset+/$assetId.tsx`.
+
+## The module UI
+
+- **Sidebar** (`useServiceSubmodules`): Manage holds Service Orders, Schedule and My
+  Visits. Setup holds Customer Assets and Service Templates; it is a plain group that
+  is always open. My Time is not in it; it opens from the avatar menu.
+- **New Service Order** is a drawer (`service-orders+/new.tsx`). The route is a sibling
+  of the list, so the drawer opens over an empty page. The form reuses `FormSection`
+  (the folded section that keeps its fields mounted) from the projects
+  `ProjectForm.tsx`.
+- **Service template page** (`templates_.$id.tsx`): a standard `RecordHeader` with the
+  identifier, the name and the copy button at the right end (`toolsPlacement="end"`). It
+  has no ⋯ menu: no route renames or deletes a template. A template element opens as a
+  full page (`templates_.$id_.$elementId.tsx`): one header row (back, the breadcrumb,
+  Copy, a ⋯ menu with Add plan line and Delete), then the Plan section
+  (`ElementPlanLines`). Delete posts the template route's `intent=delete`.
+- **Empty states**: My Visits, the Schedule, a customer's Assets tab
+  (`CustomerAssetsTable` with `customerId`) and the contract's Service Orders tab use
+  `Empty`. The Service Orders and Service Templates lists pass `Empty` only when no
+  filter or search is set. An empty section inside a card is one muted line.
 
 ## Status: visits drive the order
 
@@ -94,7 +118,7 @@ charge when it posts:
 
 1. A Refurbishment charge is Capitalized.
 2. Time inside the asset's labor warranty is Warranty. A part inside the asset's parts
-   warranty, or the warranty of the installed component on the node, is Warranty. An
+   warranty, or the warranty of the installed component on the element, is Warranty. An
    expense is never Warranty.
 3. Else Contract, when the order names a coverage contract.
 4. Else Billable.
@@ -136,14 +160,17 @@ Service project of every order it covers (`project.parentProjectId`).
   billed and unbilled. It is separate from `get_project_cost_summary`, so Projects Phase 3
   can redefine that one alone. `getChildServiceProjectCosts` (`projects.service.ts`) adds
   each order's serial with one `.in()` query.
-- **Costs tab** (`$projectId.costs.tsx`): `ServiceOrderCosts` lists the orders under the
+- **Costs page** (`$projectId.costs.tsx`): `ServiceOrderCosts` lists the orders under the
   tree, and `buildProjectCostFigures`'s third argument adds their actual to the project
   total only. RLS hides Service projects without `service_view`, so such a user sees no
   rows and a total without service cost.
 - **Contract page**: the header shows route tabs **Details** and **Service Orders**
-  (`DetailTopbar`, only with `service_view`); `contract+/$id.service-orders.tsx` lists
-  `getContractServiceOrders` with the roll-up's actual and billed. A contract with no
-  project shows the posted cost only (`getServiceOrderCosts`).
+  (`DetailTopbar`, only with `service_view`). `contract+/$id.service-orders.tsx` lists
+  `getContractServiceOrders` in `ContractServiceOrders`, a read-only `Table compact` with
+  5 columns: Service Order, Status, Customer Asset, Scheduled and Total Cost. Scheduled is
+  the planned start of the next unfinished visit (`nextVisitStart`, from the embedded
+  visits). Total Cost is the roll-up's actual; a contract with no project shows the
+  posted cost (`getServiceOrderCosts`). The tab shows no billed amount.
 
 ## Charges post through server functions
 
@@ -159,18 +186,18 @@ company's accounting cutover, Posted after it (`journalPostingStatus`). None rea
 | Charge | Server function | Notes |
 |---|---|---|
 | Time | `post-timesheet` | `saveTimesheetEntry` (`mode: "add"`, `save-timesheet-entry`) writes a Draft entry with the visit; a Service project's Draft entry posts at once. Journal line "Service Labor" with the Customer dimension. |
-| Part | `post-project-issue` | `post-project-issue/service.ts`: billable item, installed component, replacement of the node's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
+| Part | `post-project-issue` | `post-project-issue/service.ts`: billable item, installed component, replacement of the element's component, and the `Service` genealogy activity. A return reverses one whole open issue (`findServiceIssueToReturn`). |
 | Expense | `post-project-expense` | `addServiceExpense`; Dr the coverage account / Cr GRNI. |
 | Reclass | `reclass-project-coverage` | Refuses Capitalized either way. |
 | Reverse | `post-timesheet` / `post-project-expense` | `reverseServiceCharge`, with a reason (`serviceChargeReversalValidator`). Time: `createTimesheetCorrection` to 0 hours (`correctionReason`; the correction keeps the entry's `serviceVisitId`), posted at once. Expense: `buildExpenseReversal`, a `projectExpenseEntry` with `reversalOfId` and `reversalReason`. Both post at the original's coverage and reverse its billable item. A reversal saved but not posted is posted again on the next Reverse, never written twice. |
 
-The node drawer (`NodePeek`) shows **Reverse** on a time or expense row
-(`canReverseCharge`: not a reversal, not reversed since). A part has no Reverse: it is
+The element drawer (`NodePeek`, route `$id.work.$elementId.tsx`) shows **Reverse** on a
+time or expense row (`canReverseCharge`: not a reversal, not reversed since). A part has no Reverse: it is
 returned with Issue Part. Reversing the last standing charge is what lets
 `cancelServiceOrder` through.
 
 `loadServicePostingContexts` (`lib/project-posting.ts`) loads the order, its asset's
-warranty dates, the labor item's price and the node's installed component in 3 queries
+warranty dates, the labor item's price and the element's installed component in 3 queries
 for any number of charges. `buildBillableItem` builds the item: a covered item is priced
 0 and its description says "(Covered by warranty)" or "(Covered by contract)".
 
@@ -242,7 +269,7 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
 - **Guard** (`assertNoOpenRefurbishment`, `lib/service-orders.ts`): `post-shipment` (Sales
   Order) and `post-picking` (serial case) refuse a serial with an open Refurbishment order.
 - **Complete** (`complete-service-order`, one transaction, from Draft, Scheduled or In
-  Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by node, the item cost,
+  Progress): `loadRefurbishmentCompletion` (`load.ts`) reads the WIP by element, the item cost,
   the open layers and children as `calculateCOGS` selects them, the on-hand (Average) and
   the cap; `planRefurbishmentCompletion` (`plan.ts`, pure, tested) decides:
 
@@ -257,7 +284,7 @@ The company refurbishes a serial it owns. Labor, parts and expenses collect in W
   when its sales unit is empty or the inventory unit and its currency is the base
   currency; otherwise the completion skips the cap and warns. The journal has source type
   `Service Order` (not pushed to external ledgers by default, `POSTING_POLICY`); the WIP
-  credit is split by node with the Project and Project Element dimensions. The serial goes
+  credit is split by element with the Project and Project Element dimensions. The serial goes
   Available with a `Service` activity, and the order saves `capitalizedAmount`,
   `writeDownAmount`, `completionJournalId` and `completionCostingMethod`
   (`serviceOrder_refurbishment_check`: only a Refurbishment has amounts).
@@ -287,13 +314,13 @@ Pinned by `complete-service-order/plan.test.ts`, `complete-service-order.test.ts
   Manual. It refuses an item that is not serial-tracked and a serial the item already
   has.
 - **History:** `getCustomerAssetHistoryByComponent` groups the ledger rows of the
-  asset's orders by the node's serial, else its item, else its name.
+  asset's orders by the element's serial, else its item, else its name.
 
 ## Invoicing
 
 `create-service-order-invoice` drafts one invoice of a Completed order's Unbilled items,
-laid out by the tree (`planServiceInvoiceLines`): a heading per node, `Service` lines,
-items on no node last under "Other charges", and one line per fixed-price node
+laid out by the tree (`planServiceInvoiceLines`): a heading per element, `Service` lines,
+items on no element last under "Other charges", and one line per fixed-price element
 (`projectElement.fixedPrice`) for its whole subtree. It stamps each item Billed and
 closes the order (`serviceOrder.salesInvoiceId`). Tax is 0.
 
@@ -312,12 +339,13 @@ closes the order (`serviceOrder.salesInvoiceId`). Tax is 0.
 - `buildServiceEstimate` (`service.models.ts`, pure, tested) prices the tree's plan
   lines: labor at the service labor item's sale price
   (`companySettings.serviceLaborItemId`), materials at their item's `unitSalePrice`,
-  other costs at their amount. A fixed-price node is one line and its subtree is left
+  other costs at their amount. A fixed-price element is one line and its subtree is left
   out. `ServiceEstimatePDF` (`@carbon/documents`) is hand-built, not a template-engine
   document; the route is `file+/service-estimate+/$id[.]pdf.tsx`.
 - A **service template** is a Service project with `isTemplate`, identifier
   `serviceTemplateIdentifier(id)` (`TPL-` + 6 characters of the id). `createServiceTemplate`
-  makes one. Its nodes carry plan lines (`ElementPlanLines` with an `action` override).
+  makes one. Its elements carry plan lines (`ElementPlanLines` with an `action` override,
+  `path.to.serviceTemplateNode`).
 - Building an order's tree from a template passes `includePlanLines` to
   `insertElementsFromPart`, so the plan lines come along and the estimate has prices.
   Projects' Build from part does not pass it.
@@ -325,8 +353,9 @@ closes the order (`serviceOrder.salesInvoiceId`). Tax is 0.
 ## The phone pages
 
 - **My Visits** (`service-orders+/my-visits.tsx`): the user's visits today and the next 7
-  days, by the company's day.
-- **The visit page**: status buttons, the unit and its last 3 orders, `NodePicker`,
+  days, by the company's day. The list column is left-aligned under the title.
+- **The visit page**: status buttons, the unit and its last 3 orders, the element picker
+  (`NodePicker`),
   `WorkTimer` (the clock is per device in `localStorage`; Stop Work opens Log Time with the
   elapsed hours), Issue Part (defaults to the van, `employeeJob.defaultStorageUnitId`),
   Add Expense, notes, photos under `${companyId}/service/${orderId}/${visitId}/`, the

@@ -30,9 +30,25 @@ The engine is in `packages/ee/src/project-control/`: `@carbon/ee/project-control
 | `resumeWork` | none, so a company that loses the feature can still release a stopped project |
 
 The write routes call `requireFeature` and catch `EntitlementError`. The UI is
-`.ee.tsx` and shows the upgrade overlay when gated: `ProjectControlSettings`
-(project Settings tab), `ElementEarnedValue` (element sidebar),
-`ProjectEarnedValue` (Costs tab), `StopWorkModal` (header ⋯ menu).
+`.ee.tsx`. A gated company sees one compact upgrade row, not a full overlay:
+`ProjectControlSettings` (project Settings page, `UpgradeOverlayRow`),
+`ElementEarnedValue` (element page, a locked row), `ProjectEarnedValue` (Costs page,
+`UpgradeOverlayRow`). `StopWorkModal` (header ⋯ menu) opens an upgrade dialog.
+
+Where earned value shows (Layer 5 of the UI rebuild):
+
+- **Costs page** (`$projectId.costs.tsx`, `loadEarnedValue`): only when the project has
+  an element with `isControlAccount`. Without one the loader returns null before it
+  checks the feature, so a company without the feature sees the upgrade row only on a
+  project with a control account.
+- **Element page** (`ElementSidebar`, the properties column of
+  `$projectId.element.$elementId.tsx`): only with
+  `companySettings.timekeepingControls = 'DCAA'`, and never on a Parameter. With the
+  feature it sits in the Government contracting group; with DCAA on and the feature
+  gated, only its locked row shows. The form keeps its **Save** button (no autosave):
+  its fields depend on each other (control account and manager, technique and percent,
+  base and factor) and the validator checks them together. The page route's action
+  calls `updateElementEarnedValue`.
 
 ## Budget control
 
@@ -60,7 +76,7 @@ Block refuses the save; Warn saves and adds the overrun to the flash (C4).
 entry date. Warn and Block both give a warning; Block also sends
 `NotificationEvent.ProjectBudgetExceeded` to the project owner. Each app wraps it
 in a `timesheetBudgetWarning` that never throws (ERP `projects.server.ts`, MES
-`services/project-budget.server.ts`). The callers are My Timesheet
+`services/project-budget.server.ts`). The callers are My Time
 (`timesheet.update.tsx`), Log time, the manager edit route
 (`timesheets.$employeeId.tsx`), service time (`service-order+/$id.charge.tsx`,
 checked after the save and before the entry posts) and the MES timesheet.
@@ -122,7 +138,7 @@ in first out by quantity (`holdUntilIssued`). The issues are the project stripe'
 ## The ACWP export
 
 `api+/earned-value.acwp[.]csv.ts` (`path.to.api.earnedValueAcwpCsv`), shown as
-**Export ACWP** on the Costs tab for a Closed period. `buildAcwpExport` refuses an
+**Export ACWP** on the Costs page for a Closed period. `buildAcwpExport` refuses an
 Open or Locked period (C15). One row per charge number × element of cost, Direct
 or Burden, hours on Labor rows. Without `projectId` it covers the Direct cost
 objective projects.
