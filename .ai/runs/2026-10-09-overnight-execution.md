@@ -7,7 +7,8 @@ Brad asked for continuous, autonomous work overnight: finish every plan and impl
 **Repository:** `/Users/barbinbrad/conductor/workspaces/carbon/kelowna`, branch `projects-wbs-research-spec`. Never switch branches. Never push.
 
 **Database:** this worktree has its own stack (Postgres on `localhost:60387`).
-- 🛑 The shell exports `SUPABASE_DB_URL` for port 54322, another worktree's database. Before any command, run `export SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:60387/postgres`. Without it, the backup check and the authz tests read the wrong database or skip.
+- 🛑 The shell exports `SUPABASE_DB_URL` for port 54322, another worktree's database. Before any command, run `export $(grep '^SUPABASE_DB_URL=' .env.local)`. Read the port from `.env.local`; never hard-code it. `crbn reset` on 2026-10-12 moved the database from 60387 to 60663.
+- 🛑 The ERP dev server is crbn's, on `PORT_ERP` from `.env.local`. Never start a second ERP dev server on this worktree. Two Vite servers share `node_modules/.vite` and blank each other's pages. If crbn's server is down, start it with `/tmp/uir/start-erp.sh` (it reads `PORT_ERP`) only after `lsof -iTCP:$PORT_ERP` shows nothing listening.
 - Run `pnpm db:migrate:new <name> </dev/null`. With a pipe on stdin it hangs and leaves an empty file.
 - Before the authz tests, run `pnpm exec turbo run build --filter=@carbon/config`.
 - Apply migrations with `pnpm db:migrate`. Regenerate types with `pnpm run generate:types`.

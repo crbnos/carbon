@@ -6284,10 +6284,6 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
-#. placeholder {0}: element.readableId
-msgid "Copied {0}"
-msgstr ""
-
 msgid "Copied {readableId}"
 msgstr ""
 

@@ -230,7 +230,8 @@ export default function ProjectRoute() {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
-  // An element opens on its own full-width page: no project sidebar there.
+  // An element opens on its own full-width page: no project header and no
+  // project sidebar there.
   const { pathname } = useLocation();
   const isElementPage = pathname.startsWith(
     `${path.to.project(projectId)}/element/`
@@ -239,20 +240,30 @@ export default function ProjectRoute() {
   return (
     <PanelProvider>
       <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-        <ProjectHeader key={projectId} />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
-          <div className="flex flex-grow overflow-hidden">
-            <ResizablePanels
-              explorerLabel={t`Project`}
-              explorer={isElementPage ? undefined : <ProjectSidebar />}
-              content={
-                <div className="bg-card h-full overflow-y-auto w-full">
-                  <RecordOutlet />
-                </div>
-              }
-            />
+        {isElementPage ? (
+          // The element page draws its own one header row (back, the
+          // breadcrumb, copy, ⋯); the topbar breadcrumb names the project.
+          <div className="bg-card min-h-0 flex-1 overflow-hidden w-full">
+            <RecordOutlet />
           </div>
-        </div>
+        ) : (
+          <>
+            <ProjectHeader key={projectId} />
+            <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+              <div className="flex flex-grow overflow-hidden">
+                <ResizablePanels
+                  explorerLabel={t`Project`}
+                  explorer={<ProjectSidebar />}
+                  content={
+                    <div className="bg-card h-full overflow-y-auto w-full">
+                      <RecordOutlet />
+                    </div>
+                  }
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </PanelProvider>
   );

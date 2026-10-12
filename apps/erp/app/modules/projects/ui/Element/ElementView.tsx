@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -11,7 +12,6 @@ import {
   DropdownMenuTrigger,
   IconButton,
   Subheading,
-  toast,
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -20,9 +20,8 @@ import { Fragment, useMemo, useRef, useState } from "react";
 import {
   LuArrowLeft,
   LuChevronRight,
-  LuCopy,
   LuCornerDownRight,
-  LuEllipsis,
+  LuEllipsisVertical,
   LuLink,
   LuListPlus,
   LuPackageMinus,
@@ -248,69 +247,63 @@ export function ElementView({
             {element.readableId}
           </span>
         </nav>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <IconButton
-              aria-label={t`More options`}
-              icon={<LuEllipsis />}
-              variant="ghost"
-            />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
-              disabled={!canLogTime}
-              onClick={() => setLoggingTime(true)}
-            >
-              <DropdownMenuIcon icon={<LuTimer />} />
-              <Trans>Log time</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!canIssue}
-              onClick={() => setIssuing(true)}
-            >
-              <DropdownMenuIcon icon={<LuPackageMinus />} />
-              <Trans>Issue material</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem disabled={!canAddChild} onClick={addChild}>
-              <DropdownMenuIcon icon={<LuCornerDownRight />} />
-              <Trans>Add child</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!canUpdate}
-              onClick={() => setAddingLink(true)}
-            >
-              <DropdownMenuIcon icon={<LuLink />} />
-              <Trans>Add link</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              disabled={!canUpdate}
-              onClick={() => setPlanAddRequest((n) => n + 1)}
-            >
-              <DropdownMenuIcon icon={<LuListPlus />} />
-              <Trans>Add plan line</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                navigator.clipboard.writeText(element.readableId);
-                toast.success(t`Copied ${element.readableId}`);
-              }}
-            >
-              <DropdownMenuIcon icon={<LuCopy />} />
-              <Trans>Copy id</Trans>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              destructive
-              disabled={!canDelete}
-              onClick={() => setDeleting(true)}
-            >
-              <DropdownMenuIcon icon={<LuTrash />} />
-              <Trans>Delete</Trans>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="flex shrink-0 items-center gap-2">
+          <Copy text={element.readableId} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More options`}
+                icon={<LuEllipsisVertical />}
+                variant="secondary"
+                size="sm"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                disabled={!canLogTime}
+                onClick={() => setLoggingTime(true)}
+              >
+                <DropdownMenuIcon icon={<LuTimer />} />
+                <Trans>Log time</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canIssue}
+                onClick={() => setIssuing(true)}
+              >
+                <DropdownMenuIcon icon={<LuPackageMinus />} />
+                <Trans>Issue material</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem disabled={!canAddChild} onClick={addChild}>
+                <DropdownMenuIcon icon={<LuCornerDownRight />} />
+                <Trans>Add child</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canUpdate}
+                onClick={() => setAddingLink(true)}
+              >
+                <DropdownMenuIcon icon={<LuLink />} />
+                <Trans>Add link</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                disabled={!canUpdate}
+                onClick={() => setPlanAddRequest((n) => n + 1)}
+              >
+                <DropdownMenuIcon icon={<LuListPlus />} />
+                <Trans>Add plan line</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                disabled={!canDelete}
+                onClick={() => setDeleting(true)}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       <div className="@container flex min-h-0 flex-1 overflow-y-auto @min-[56rem]:overflow-hidden">
