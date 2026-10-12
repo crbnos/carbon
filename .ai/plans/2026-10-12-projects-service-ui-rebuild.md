@@ -192,7 +192,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 
 ## Progress
 
-- [ ] Task 1: Set up the screenshot scripts, the run log and the baseline shots
+- [x] Task 1: Set up the screenshot scripts, the run log and the baseline shots
 - [ ] Task 2: Apply the terminology table and add the glossary entries
 - [ ] Task 3: Give `Empty` a title and a description
 - [ ] Task 4: Add `ReadOnlyField` for read-only values
