@@ -776,6 +776,9 @@ msgstr "0 suggerisce uno spostamento per qualsiasi differenza di data."
 msgid "0-4 weeks"
 msgstr "0-4 settimane"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 Cespite"
 
@@ -895,6 +898,9 @@ msgstr "Minimo 5 utenti"
 
 msgid "5-8 weeks"
 msgstr "5-8 settimane"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "Fabbisogno di 52 settimane"
@@ -2946,6 +2952,9 @@ msgstr "Applicazione in corso"
 msgid "Applying demo data"
 msgstr "Applicazione dei dati demo"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Avvicinandosi al limite di {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
 
@@ -4017,6 +4026,9 @@ msgstr "Valuta base"
 msgid "Base Currency"
 msgstr "Valuta di Base"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "Materiale di base — ad es. acciaio vs alluminio"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "Bucket"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "Piano dei Conti"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Seleziona le operazioni a sinistra per creare il batch."
@@ -6028,8 +6046,14 @@ msgstr "Collaboratori esterni"
 msgid "Control"
 msgstr "Controllo"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "Conto di controllo"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controllare le modifiche di progettazione con revisioni / ECO"
@@ -8903,6 +8927,15 @@ msgstr "Inizio operazione anticipato"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "Guadagnato, non fatturato"
 
@@ -10176,6 +10209,9 @@ msgstr "Informazioni aggiuntive inviate con la richiesta, come una chiave di aut
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Tag aggiuntivi per suddividere la rendicontazione della contabilità generale"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "Non conforme"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "Come il noleggio di ogni unità è diviso in periodi e quando in un periodo viene fatturato."
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "Configuriamo il tuo account"
 msgid "Letter"
 msgstr "Lettera"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Conto di debito per gli importi dovuti ai dipendenti per rimborsi spese. Ricade su Debiti quando non impostato"
 
@@ -14137,6 +14179,9 @@ msgstr "articolo di materiale"
 msgid "Material item"
 msgstr "Articolo di Materiale"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "Pianificazione del materiale"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Richiede un piano Business o Partner."
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "Richiede urgenza"
@@ -17600,6 +17648,9 @@ msgstr "Forzatura per riga dell'ubicazione di spedizione dell'ordine; utilizzata
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Forzatura per riga dell'ubicazione di consegna dell'ordine d'acquisto; utilizzata per consegne suddivise a più depositi o consegne dirette."
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "Ricalcolo in corso…"
 
 msgid "Receipt"
 msgstr "Ricevuta"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "ID Ricevuta"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "Tol-"
 msgid "Tol+"
 msgstr "Tol+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "Tolleranza (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "Avviso — le modifiche hanno successo con un avviso"
 
 msgid "Warn but allow"
 msgstr "Avvisa ma consenti"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "Avvisa questo numero di giorni prima della scadenza"

@@ -387,6 +387,7 @@ export function ElementView({
           <ElementSidebar
             projectId={projectId}
             element={element}
+            elements={elements}
             capitalAsset={capitalAsset}
             costTreatment={project?.costTreatment ?? null}
             costObjective={project?.costObjective ?? null}

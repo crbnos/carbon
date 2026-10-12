@@ -31,10 +31,12 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "../Elements/ElementTypeIcon";
+import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
 
 type Element = ProjectElementPage["element"];
+type ListElement = ProjectElementPage["elements"][number];
 type CapitalAsset = ProjectElementPage["capitalAsset"];
 
 /** One property row: a 120 px label column and the value's ghost editor. */
@@ -52,6 +54,7 @@ function Property({ label, children }: { label: string; children: ReactNode }) {
 export function ElementSidebar({
   projectId,
   element,
+  elements,
   capitalAsset,
   costTreatment,
   costObjective,
@@ -63,6 +66,7 @@ export function ElementSidebar({
 }: {
   projectId: string;
   element: Element;
+  elements: ListElement[];
   capitalAsset: CapitalAsset;
   costTreatment: ProjectCostTreatment | null;
   costObjective: ProjectCostObjective | null;
@@ -219,6 +223,16 @@ export function ElementSidebar({
             isDisabled={isDisabled}
           />
         </Property>
+      )}
+      {element.type !== "Parameter" && (
+        <div className="mt-4">
+          <ElementEarnedValue
+            projectId={projectId}
+            element={element}
+            elements={elements}
+            isDisabled={isDisabled}
+          />
+        </div>
       )}
     </div>
   );

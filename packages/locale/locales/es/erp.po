@@ -776,6 +776,9 @@ msgstr "0 sugiere un cambio para cualquier diferencia de fecha."
 msgid "0-4 weeks"
 msgstr "0-4 semanas"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 Activo"
 
@@ -895,6 +898,9 @@ msgstr "Mínimo de 5 usuarios"
 
 msgid "5-8 weeks"
 msgstr "5-8 semanas"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "Demanda de 52 semanas"
@@ -2946,6 +2952,9 @@ msgstr "Aplicando"
 msgid "Applying demo data"
 msgstr "Aplicando datos de demostración"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Aproximándose al límite de {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB."
 
@@ -4017,6 +4026,9 @@ msgstr "Moneda base"
 msgid "Base Currency"
 msgstr "Moneda Base"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "Material base — por ej. acero vs aluminio"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "Depósito"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "Plan de Cuentas"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Marque las operaciones a la izquierda para construir el lote."
@@ -6028,8 +6046,14 @@ msgstr "Contratistas"
 msgid "Control"
 msgstr "Control"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "Cuenta de control"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Controlar cambios de diseño con revisiones / ECOs"
@@ -8903,6 +8927,15 @@ msgstr "Inicio más temprano de la operación"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "Ganado, no facturado"
 
@@ -10176,6 +10209,9 @@ msgstr "Información adicional enviada con la solicitud, como una clave de autor
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Etiquetas adicionales para segmentar tu informe del Libro mayor"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "No conforme"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "Cómo se divide la renta de cada unidad en períodos, y cuándo en un período se factura."
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "Configuremos tu cuenta"
 msgid "Letter"
 msgstr "Letra"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Cuenta de pasivo para montos adeudados a empleados por reembolsos de gastos. Se devuelve a Cuentas por Pagar si no está establecido"
 
@@ -14137,6 +14179,9 @@ msgstr "artículo de material"
 msgid "Material item"
 msgstr "Artículo de material"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "Planificación de materiales"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Requiere un plan Business o Partner."
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "Requiere agilización"
@@ -17600,6 +17648,9 @@ msgstr "Sobrescritura de línea de la Ubicación de despacho del encabezado del 
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Sobrescritura de línea de la Ubicación de entrega del encabezado de la OC; se utiliza para entregas divididas a múltiples almacenes o envíos directos."
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "Recalculando…"
 
 msgid "Receipt"
 msgstr "Recepción"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "ID de Recepción"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "Tol-"
 msgid "Tol+"
 msgstr "Tol+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "Tolerancia (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "Advertencia — las ediciones se procesan con una advertencia"
 
 msgid "Warn but allow"
 msgstr "Advertir pero permitir"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "Avisar esta cantidad de días antes de la caducidad"

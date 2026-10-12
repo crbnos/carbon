@@ -776,6 +776,9 @@ msgstr "0 は任意の日付差異に対して移動を提案します。"
 msgid "0-4 weeks"
 msgstr "0～4週間"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 固定資産"
 
@@ -895,6 +898,9 @@ msgstr "最低 5 ユーザー"
 
 msgid "5-8 weeks"
 msgstr "5～8週間"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "52 週間の所要量"
@@ -2946,6 +2952,9 @@ msgstr "適用中"
 msgid "Applying demo data"
 msgstr "デモデータを適用中"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBの上限に近づいています。"
 
@@ -4017,6 +4026,9 @@ msgstr "基本通貨"
 msgid "Base Currency"
 msgstr "基本通貨"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "ベース材料 — 例：鋼 vs アルミニウム"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "バケット"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "勘定科目表"
 
 msgid "Chat"
 msgstr "チャット"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "左側の工程をチェックしてバッチを構築してください。"
@@ -6028,8 +6046,14 @@ msgstr "外部作業者"
 msgid "Control"
 msgstr "管理"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "管理勘定"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "設計変更をリビジョン/ECOで管理"
@@ -8903,6 +8927,15 @@ msgstr "最早操作開始"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "発生済み、未請求"
 
@@ -10176,6 +10209,9 @@ msgstr "認可キーなど、リクエストと共に送信される追加情報
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "総勘定元帳報告をスライスするための追加タグ"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "不合格"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "各個のレンタル料がどのように期間に分割され、期間内のいつ請求されるかを説明します。"
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "アカウントをセットアップしましょう"
 msgid "Letter"
 msgstr "文字"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "従業員への費用払戻に対する負債勘定です。未設定の場合は買掛金にフォールバックします。"
 
@@ -14137,6 +14179,9 @@ msgstr "材料品目"
 msgid "Material item"
 msgstr "材料品目"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "材料計画"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "加速が必要"
@@ -17600,6 +17648,9 @@ msgstr "注文ヘッダーの出荷拠点を行ごとに上書き。分割出荷
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "発注書ヘッダーの配送先拠点を行ごとに上書き。複数倉庫への分割配送または直送に使用。"
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "計算中…"
 
 msgid "Receipt"
 msgstr "領収書"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "受取ID"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "許容差-"
 msgid "Tol+"
 msgstr "許容差+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "警告 — 編集は警告付きで成功します"
 
 msgid "Warn but allow"
 msgstr "警告するが許可する"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "使用期限の何日前に警告"

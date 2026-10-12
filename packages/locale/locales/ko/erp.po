@@ -776,6 +776,9 @@ msgstr "0은 날짜 차이가 있으면 항상 주문을 이동할 것을 제안
 msgid "0-4 weeks"
 msgstr "0-4주"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "자산 1개"
 
@@ -895,6 +898,9 @@ msgstr "최소 5명의 사용자"
 
 msgid "5-8 weeks"
 msgstr "5-8주"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "52주 소요량"
@@ -2946,6 +2952,9 @@ msgstr "적용 중"
 msgid "Applying demo data"
 msgstr "데모 데이터 적용 중"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB}MB 한도에 근접했습니다."
 
@@ -4017,6 +4026,9 @@ msgstr "기준 통화"
 msgid "Base Currency"
 msgstr "기준 통화"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "기본 자재 — 예: 강철 vs 알루미늄"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "버킷"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "계정과목표"
 
 msgid "Chat"
 msgstr "채팅"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "왼쪽의 공정을 확인하여 배치를 빌드합니다."
@@ -6028,8 +6046,14 @@ msgstr "외주 인력"
 msgid "Control"
 msgstr "제어"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "통제 계정"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "리비전/ECO로 설계 변경을 관리하세요"
@@ -8903,6 +8927,15 @@ msgstr "최초 작업 시작"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "발생, 미청구"
 
@@ -10176,6 +10209,9 @@ msgstr "요청과 함께 전송되는 추가 정보(예: 인증 키); 실행 이
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "총계정원장 보고를 세분화하기 위한 추가 태그"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "불합격"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "각 단위의 렌트가 기간으로 나뉘는 방식과 기간 내 언제 송장이 발행되는지입니다."
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "계정을 설정해봅시다"
 msgid "Letter"
 msgstr "레터"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "직원 비용 환급에 대해 직원에게 빚진 금액의 부채 계정입니다. 설정하지 않으면 매입채무로 대체됩니다"
 
@@ -14137,6 +14179,9 @@ msgstr "자재 품목"
 msgid "Material item"
 msgstr "자재 품목"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "물질 계획"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "긴급 처리 필요"
@@ -17600,6 +17648,9 @@ msgstr "주문 헤더의 출하 사업장에 대한 라인별 재정의; 분할 
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "구매주문 헤더의 납품 위치를 라인별로 재정의한 값으로, 여러 창고로의 분할 납품이나 직송에 사용됩니다."
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "재계산 중…"
 
 msgid "Receipt"
 msgstr "입고"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "입고 ID"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "공차-"
 msgid "Tol+"
 msgstr "공차+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "공차(+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "경고 — 편집이 경고와 함께 성공했습니다"
 
 msgid "Warn but allow"
 msgstr "경고 후 허용"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "유통기한 {0}일 전에 경고"

@@ -776,6 +776,9 @@ msgstr "0 किसी भी तारीख के अंतर के लि�
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 अचल संपत्ति"
 
@@ -895,6 +898,9 @@ msgstr "न्यूनतम 5 उपयोगकर्ता"
 
 msgid "5-8 weeks"
 msgstr "5-8 सप्ताह"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "52-सप्ताह की मांग"
@@ -2946,6 +2952,9 @@ msgstr "लागू कर रहे हैं"
 msgid "Applying demo data"
 msgstr "डेमो डेटा लागू कर रहे हैं"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB सीमा के करीब पहुंच रहे हैं।"
 
@@ -4017,6 +4026,9 @@ msgstr "आधार मुद्रा"
 msgid "Base Currency"
 msgstr "आधार मुद्रा"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "आधार सामग्री — उदा. स्टील बनाम एल्यूमीनियम"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "बकेट"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "खातों का चार्ट"
 
 msgid "Chat"
 msgstr "चैट"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "बैच बनाने के लिए बाईं ओर ऑपरेशन की जांच करें।"
@@ -6028,8 +6046,14 @@ msgstr "ठेकेदार"
 msgid "Control"
 msgstr "नियंत्रण"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "नियंत्रण खाता"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "रिवीजन / ECO के साथ डिज़ाइन परिवर्तनों को नियंत्रित करें"
@@ -8903,6 +8927,15 @@ msgstr "सबसे पहले संचालन शुरू"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "अर्जित, बिल नहीं किया गया"
 
@@ -10176,6 +10209,9 @@ msgstr "अनुरोध के साथ भेजी गई अतिरि�
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "आपकी सामान्य खाता बही रिपोर्टिंग को स्लाइस करने के लिए अतिरिक्त टैग"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "अनुत्तीर्ण"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "प्रत्येक इकाई का किराया अवधि में कैसे काटा जाता है, और अवधि में इसे कब चालान दिया जाता है।"
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "आइए अपना खाता सेट अप करें"
 msgid "Letter"
 msgstr "अक्षर"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "कर्मचारियों को व्यय प्रतिपूर्ति के लिए देय राशियों का देयता खाता। जब सेट नहीं है तो देय राशि में वापस जाता है"
 
@@ -14137,6 +14179,9 @@ msgstr "सामग्री आइटम"
 msgid "Material item"
 msgstr "सामग्री आइटम"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "सामग्री योजना"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "एक बिजनेस या पार्टनर प्लान की आवश्यकता है।"
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "तेजी की आवश्यकता"
@@ -17600,6 +17648,9 @@ msgstr "ऑर्डर हेडर के पूर्ति स्थान �
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "PO हेडर के डिलीवरी स्थान का प्रति-पंक्ति ओवरराइड; एकाधिक गोदाम या ड्रॉप-शिपमेंट के लिए विभाजित डिलीवरी के लिए उपयोग किया जाता है।"
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "पुनः गणना की जा रही है…"
 
 msgid "Receipt"
 msgstr "रसीद"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "रसीद आईडी"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "Tol-"
 msgid "Tol+"
 msgstr "Tol+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "सहनशीलता (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "चेतावनी — संपादन एक चेतावन�
 
 msgid "Warn but allow"
 msgstr "चेतावनी दें लेकिन अनुमति दें"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "समाप्ति से पहले इतने दिन पहले चेतावनी दें"

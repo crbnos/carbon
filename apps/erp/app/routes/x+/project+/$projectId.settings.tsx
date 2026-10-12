@@ -5,6 +5,10 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { projectControlSettingsValidator } from "@carbon/ee/project-control";
+import { updateProjectControlSettings } from "@carbon/ee/project-control.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
@@ -25,6 +29,7 @@ import {
   upsertProjectLabel,
   upsertProjectState
 } from "~/modules/projects";
+import ProjectControlSettings from "~/modules/projects/ui/Project/ProjectControlSettings.ee";
 import ProjectLabels from "~/modules/projects/ui/Project/ProjectLabels";
 import ProjectMembers from "~/modules/projects/ui/Project/ProjectMembers";
 import ProjectStates from "~/modules/projects/ui/Project/ProjectStates";
@@ -40,7 +45,8 @@ const intents = [
   "upsertLabel",
   "deleteLabel",
   "addMember",
-  "removeMember"
+  "removeMember",
+  "control-settings"
 ] as const;
 type Intent = (typeof intents)[number];
 
@@ -206,6 +212,45 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
       return done("Member added");
     }
+    case "control-settings": {
+      // Government Contracting 5c: commercial. `requireFeature` is the
+      // upgrade redirect; `requireEntitlement` in the ee function is the lock.
+      await requireFeature({
+        request,
+        client,
+        companyId,
+        feature: "GOVERNMENT_CONTRACTING",
+        redirectTo: path.to.projectSettings(projectId)
+      });
+      formData.set("projectId", projectId);
+      const validation = await validator(
+        projectControlSettingsValidator
+      ).validate(formData);
+      if (validation.error) return validationError(validation.error);
+      try {
+        const result = await updateProjectControlSettings(client, {
+          ...validation.data,
+          companyId,
+          userId
+        });
+        if (result.error) {
+          logger.error("Failed to save the project control settings", {
+            companyId,
+            projectId,
+            error: result.error
+          });
+          return refuse(result.error, "Failed to save the control settings");
+        }
+      } catch (err) {
+        if (!(err instanceof EntitlementError)) throw err;
+        logger.error("Project control is not in the company's plan", {
+          companyId,
+          projectId
+        });
+        return refuse(err, err.message);
+      }
+      return done("Control settings saved");
+    }
     default:
       return refuse(null, "Unknown action");
   }
@@ -235,6 +280,11 @@ export default function ProjectSettingsRoute() {
       />
       <ProjectLabels
         labels={routeData.labels}
+        action={action}
+        isDisabled={isDisabled}
+      />
+      <ProjectControlSettings
+        project={routeData.project}
         action={action}
         isDisabled={isDisabled}
       />

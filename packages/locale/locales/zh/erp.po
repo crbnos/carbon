@@ -776,6 +776,9 @@ msgstr "0 代表为任何日期差异建议移动。"
 msgid "0-4 weeks"
 msgstr "0-4 周"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 个资产"
 
@@ -895,6 +898,9 @@ msgstr "最少需要5个用户"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "52周需求"
@@ -2946,6 +2952,9 @@ msgstr "正在应用"
 msgid "Applying demo data"
 msgstr "正在应用演示数据"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "接近 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 上限。"
 
@@ -4017,6 +4026,9 @@ msgstr "基础货币"
 msgid "Base Currency"
 msgstr "基础货币"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "基础材料 — 例如 钢 与 铝"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "存储桶"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "会计科目表"
 
 msgid "Chat"
 msgstr "聊天"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "勾选左侧的操作以构建批次。"
@@ -6028,8 +6046,14 @@ msgstr "外协人员"
 msgid "Control"
 msgstr "控制"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "控制账户"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "通过修订版/ECO控制设计变更"
@@ -8903,6 +8927,15 @@ msgstr "最早操作开始"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "已获得但未计费"
 
@@ -10176,6 +10209,9 @@ msgstr "与请求一起发送的额外信息，例如授权密钥；标头值在
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "不合格"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "如何将每件的租赁分成周期，以及在周期内何时开具发票。"
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "让我们设置您的账户"
 msgid "Letter"
 msgstr "字母"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "员工费用报销应付账户。如未设置，则回退到应付款项"
 
@@ -14137,6 +14179,9 @@ msgstr "原材料物料"
 msgid "Material item"
 msgstr "原材料物料"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "物料规划"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "需要加急"
@@ -17600,6 +17648,9 @@ msgstr "对订单标题的发货地点的按行覆盖；用于分批发货和直
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "对采购订单标题的交货地点的按行覆盖；用于分批交货到多个仓库或直发。"
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "重新计算中…"
 
 msgid "Receipt"
 msgstr "收据"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "收据ID"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "容差-"
 msgid "Tol+"
 msgstr "公差+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "警告 — 编辑成功，但显示警告"
 
 msgid "Warn but allow"
 msgstr "警告但允许"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "在有效期前提醒多少天"

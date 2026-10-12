@@ -101,7 +101,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 14: Add the close checklist task
 - [x] Task 15: Add the ACWP export
 - [x] Task 16: Add stop-work orders
-- [ ] Task 17: Add the control fields to project settings and the element page
+- [x] Task 17: Add the control fields to project settings and the element page
 - [ ] Task 18: Add earned value to the Costs tab
 - [ ] Task 19: Add Stop work and Resume to the project header
 - [ ] Task 20: Extend the demo datasets
@@ -1201,3 +1201,17 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   3. The status route guard (C16) refuses any status but On Hold while `stopWorkDate` is set. Other writers of `project.status` (the `updateProjectStatus` MCP tool) meet the CHECK `project_stopWork_check` instead, which raises a database error.
   4. Tests: an order on 2026-10-01 ends on 2026-12-30; on 2026-10-11 it has 80 days left; after its end it has 0. 23 project-control tests pass.
 - After Task 16: `pnpm --filter erp build` passes with no "Server-only module referenced by client"; `pnpm --filter mes build` passes too (Task 11 changed the MES). The erp suite: 2,221 tests pass; `test/mcp-upsert-job-material.test.ts` fails at import, a failure that `d06d673703` introduced before this session (see the run log follow-ups).
+- Fixes before Task 17 (Brad's brief of 2026-10-11, one commit each):
+  1. `test/mcp-upsert-job-material.test.ts` mocks `@carbon/ee/pegging.server` (`planningGroupMrpDeps: {}`). The module imports the real one for `runMRP`, and the real one boots the server env through `@carbon/ee/plan.server`. The erp suite: 193 files, 2,226 tests pass.
+  2. `deleteProjectElement` counts the `earnedValuePeriod` rows of the subtree (as work package or as control account) and refuses with "Earned value is recorded for this element or an element below it. It cannot be deleted." The refusal order moved into the pure `elementDeleteRefusal` (`projects.models.ts`), tested in `projects-element-tree.test.ts`. The change request apply refuses the same delete ("<readableId> has earned value recorded. The change request cannot delete it."). The delete route already flashes the service message, so it needed no change.
+  3. `updateProjectStatus` reads `stopWorkDate` and refuses any status but On Hold with the pure `stopWorkStatusRefusal` (`projects.models.ts`, `test/projects-stop-work.test.ts`). The status route keeps its early check through the same function, so a stopped project creates no capital assets before the refusal. `generate:mcp` changed nothing (the signature is the same).
+  4. The manager edit route (`timesheets.$employeeId.tsx`) returns `warning` from `timesheetBudgetWarning`, which the grid toasts. The service order charge route checks after the save and before the entry posts, so the entry's cost is not counted twice, and adds the warning to the "Time logged" flash. Test: `$id.charge.test.ts` (the order of save, check and post, and the flash text). A route test needs module mocks; the precedent is `$jobId.status.test.ts`.
+- Task 17:
+  1. `ElementEarnedValue.ee.tsx` is a form with a **Save** button at the end of the element sidebar (below the property rows), not autosaved pills: `updateElementEarnedValue` saves all the fields at once and clears the ones the technique does not use. It is hidden on a Parameter element.
+  2. The control account manager uses the `Employee` combobox, not the `User` picker. Both store a user id; `Employee` lists the company's employees, as `ProjectMembers` does.
+  3. The technique field shows on a chargeable element below a control account, and also on an element that already has a technique, so a user can clear it. The base element list holds the project's work packages (elements with a technique) other than the element itself.
+  4. `PROJECT_ELEMENT_LIST_COLUMNS` gained `isControlAccount` and `earnedValueTechnique`, so the sidebar can walk the ancestors. The regenerated MCP digest is in the commit.
+  5. The `earned-value` action lives on `$projectId.elements.$elementId.tsx` (the peek route had no action). It refuses a Closed project, like the element update route. A refusal of `updateElementEarnedValue` is a field error on `earnedValueTechnique` (on `isControlAccount` when the element is a control account).
+  6. The settings intent is `control-settings` and the element intent `earned-value`, as the plan names them; the other settings intents are camelCase.
+  7. New strings get empty `msgstr` in the catalogs, as in Tasks 14–16. A `/translate` pass is still due.
+

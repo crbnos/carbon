@@ -776,6 +776,9 @@ msgstr "0 suggests a move for any date difference."
 msgid "0-4 weeks"
 msgstr "0-4 weeks"
 
+msgid "0/100"
+msgstr "0/100"
+
 msgid "1 Asset"
 msgstr "1 Asset"
 
@@ -895,6 +898,9 @@ msgstr "5 user minimum"
 
 msgid "5-8 weeks"
 msgstr "5-8 weeks"
+
+msgid "50/50"
+msgstr "50/50"
 
 msgid "52-week demand"
 msgstr "52-week demand"
@@ -2946,6 +2952,9 @@ msgstr "Applying"
 msgid "Applying demo data"
 msgstr "Applying demo data"
 
+msgid "Apportioned"
+msgstr "Apportioned"
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 
@@ -4017,6 +4026,9 @@ msgstr "Base currency"
 msgid "Base Currency"
 msgstr "Base Currency"
 
+msgid "Base element"
+msgstr "Base element"
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "Base material — e.g. steel vs aluminum"
 
@@ -4382,6 +4394,9 @@ msgstr "Bucket"
 
 msgid "Budget"
 msgstr "Budget"
+
+msgid "Budget Control"
+msgstr "Budget Control"
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "Chart of Accounts"
 
 msgid "Chat"
 msgstr "Chat"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
 
 msgid "Check operations on the left to build the batch."
 msgstr "Check operations on the left to build the batch."
@@ -6028,8 +6046,14 @@ msgstr "Contractors"
 msgid "Control"
 msgstr "Control"
 
+msgid "Control account"
+msgstr "Control account"
+
 msgid "Control Account"
 msgstr "Control Account"
+
+msgid "Control account manager"
+msgstr "Control account manager"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Control design changes with revisions / ECOs"
@@ -8903,6 +8927,15 @@ msgstr "Earliest operation start"
 msgid "Earned to Date"
 msgstr "Earned to Date"
 
+msgid "Earned Value"
+msgstr "Earned Value"
+
+msgid "Earned value rolls up to this element"
+msgstr "Earned value rolls up to this element"
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr "Earned value: CPI, SPI and EAC per control account."
+
 msgid "Earned, not billed"
 msgstr "Earned, not billed"
 
@@ -10176,6 +10209,9 @@ msgstr "Extra information sent with the request, such as an authorization key; h
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Extra tags for slicing your GL reporting"
+
+msgid "Factor"
+msgstr "Factor"
 
 msgid "Fail"
 msgstr "Fail"
@@ -11753,6 +11789,9 @@ msgstr "How each unit's rent is cut into periods, and when in a period it is inv
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
 msgstr "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+
+msgid "How far over the budget a charge may go"
+msgstr "How far over the budget a charge may go"
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
 msgstr "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "Let's setup your account"
 msgid "Letter"
 msgstr "Letter"
 
+msgid "Level of Effort"
+msgstr "Level of Effort"
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 
@@ -14137,6 +14179,9 @@ msgstr "material item"
 msgid "Material item"
 msgstr "Material item"
 
+msgid "Material Measurement Point"
+msgstr "Material Measurement Point"
+
 msgid "Material Planning"
 msgstr "Material Planning"
 
@@ -14698,6 +14743,9 @@ msgstr "Needed when the date is before the entry window"
 
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
+
+msgid "Needs a chargeable element below a control account"
+msgstr "Needs a chargeable element below a control account"
 
 msgid "Needs expedite"
 msgstr "Needs expedite"
@@ -17600,6 +17648,9 @@ msgstr "Per-line override of the order header's fulfillment Location; used for s
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 
+msgid "Percent complete"
+msgstr "Percent complete"
+
 msgid "Percent Complete"
 msgstr "Percent Complete"
 
@@ -18427,6 +18478,9 @@ msgstr "Project Billing"
 msgid "Project Change Requests"
 msgstr "Project Change Requests"
 
+msgid "Project Control"
+msgstr "Project Control"
+
 msgid "Project element"
 msgstr "Project element"
 
@@ -19227,6 +19281,9 @@ msgstr "Recalculating…"
 
 msgid "Receipt"
 msgstr "Receipt"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr "Receipt counts material when it is received. Issue counts it when project stock is issued."
 
 msgid "Receipt ID"
 msgstr "Receipt ID"
@@ -23551,6 +23608,9 @@ msgstr "Technician"
 msgid "Technicians"
 msgstr "Technicians"
 
+msgid "Technique"
+msgstr "Technique"
+
 msgid "Tell the employee what to fix"
 msgstr "Tell the employee what to fix"
 
@@ -25440,6 +25500,9 @@ msgstr "Tol-"
 msgid "Tol+"
 msgstr "Tol+"
 
+msgid "Tolerance"
+msgstr "Tolerance"
+
 msgid "Tolerance (+/-)"
 msgstr "Tolerance (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "Warn — edits succeed with a warning"
 
 msgid "Warn but allow"
 msgstr "Warn but allow"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr "Warn saves the charge and shows the overrun. Block refuses it."
 
 msgid "Warn this many days before expiry"
 msgstr "Warn this many days before expiry"

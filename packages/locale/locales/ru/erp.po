@@ -776,6 +776,9 @@ msgstr "0 предлагает перемещение для любой разн
 msgid "0-4 weeks"
 msgstr "0-4 недели"
 
+msgid "0/100"
+msgstr ""
+
 msgid "1 Asset"
 msgstr "1 Актив"
 
@@ -895,6 +898,9 @@ msgstr "Минимум 5 пользователей"
 
 msgid "5-8 weeks"
 msgstr "5-8 недель"
+
+msgid "50/50"
+msgstr ""
 
 msgid "52-week demand"
 msgstr "Потребность на 52 недели"
@@ -2946,6 +2952,9 @@ msgstr "Применение"
 msgid "Applying demo data"
 msgstr "Применение демо-данных"
 
+msgid "Apportioned"
+msgstr ""
+
 msgid "Approaching {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB cap."
 msgstr "Приближение к лимиту {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ."
 
@@ -4017,6 +4026,9 @@ msgstr "Базовая валюта"
 msgid "Base Currency"
 msgstr "Базовая валюта"
 
+msgid "Base element"
+msgstr ""
+
 msgid "Base material — e.g. steel vs aluminum"
 msgstr "Основной материал — например, сталь или алюминий"
 
@@ -4381,6 +4393,9 @@ msgid "Bucket"
 msgstr "Хранилище"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget Control"
 msgstr ""
 
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
@@ -5089,6 +5104,9 @@ msgstr "План счетов"
 
 msgid "Chat"
 msgstr "Чат"
+
+msgid "Check each charge against the budget of its nearest budgeted element. A timesheet only warns."
+msgstr ""
 
 msgid "Check operations on the left to build the batch."
 msgstr "Отметьте операции слева, чтобы создать пакет."
@@ -6028,8 +6046,14 @@ msgstr "Подрядчики"
 msgid "Control"
 msgstr "Управление"
 
+msgid "Control account"
+msgstr ""
+
 msgid "Control Account"
 msgstr "Счет управления"
+
+msgid "Control account manager"
+msgstr ""
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "Управление изменениями конструкции с помощью ревизий и ECO"
@@ -8903,6 +8927,15 @@ msgstr "Самое раннее начало операции"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned Value"
+msgstr ""
+
+msgid "Earned value rolls up to this element"
+msgstr ""
+
+msgid "Earned value: CPI, SPI and EAC per control account."
+msgstr ""
+
 msgid "Earned, not billed"
 msgstr "Заработано, но не выставлено счетом"
 
@@ -10176,6 +10209,9 @@ msgstr "Дополнительная информация, отправляем�
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Дополнительные теги для разбора отчетности главной книги"
+
+msgid "Factor"
+msgstr ""
 
 msgid "Fail"
 msgstr "Не годен"
@@ -11752,6 +11788,9 @@ msgid "How each unit's rent is cut into periods, and when in a period it is invo
 msgstr "Как аренда каждой единицы делится на периоды и когда в периоде выставляется счет."
 
 msgid "How employees record time on projects. Standard keeps the timesheet simple. DCAA adds the controls a government contract audit checks."
+msgstr ""
+
+msgid "How far over the budget a charge may go"
 msgstr ""
 
 msgid "how far the scheduled work is over the available hours (+) or how many hours are still free."
@@ -13355,6 +13394,9 @@ msgstr "Давайте настроим вашу учетную запись"
 msgid "Letter"
 msgstr "Буква"
 
+msgid "Level of Effort"
+msgstr ""
+
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "Счет обязательств для сумм, причитающихся сотрудникам за возмещение расходов. Использует кредиторскую задолженность, если не установлено"
 
@@ -14137,6 +14179,9 @@ msgstr "номенклатура материала"
 msgid "Material item"
 msgstr "Номенклатура материала"
 
+msgid "Material Measurement Point"
+msgstr ""
+
 msgid "Material Planning"
 msgstr "Планирование материалов"
 
@@ -14698,6 +14743,9 @@ msgstr ""
 
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
+
+msgid "Needs a chargeable element below a control account"
+msgstr ""
 
 msgid "Needs expedite"
 msgstr "Требует ускорения"
@@ -17600,6 +17648,9 @@ msgstr "Переопределение на уровне строки площа
 msgid "Per-line override of the PO header's Delivery Location; used for split deliveries to multiple warehouses or drop-shipments."
 msgstr "Переопределение по строкам местоположения доставки заголовка ПО; используется для разделенных доставок на несколько складов или дроп-шипов."
 
+msgid "Percent complete"
+msgstr ""
+
 msgid "Percent Complete"
 msgstr ""
 
@@ -18427,6 +18478,9 @@ msgstr ""
 msgid "Project Change Requests"
 msgstr ""
 
+msgid "Project Control"
+msgstr ""
+
 msgid "Project element"
 msgstr ""
 
@@ -19227,6 +19281,9 @@ msgstr "Пересчет…"
 
 msgid "Receipt"
 msgstr "Квитанция"
+
+msgid "Receipt counts material when it is received. Issue counts it when project stock is issued."
+msgstr ""
 
 msgid "Receipt ID"
 msgstr "ID квитанции"
@@ -23551,6 +23608,9 @@ msgstr ""
 msgid "Technicians"
 msgstr ""
 
+msgid "Technique"
+msgstr ""
+
 msgid "Tell the employee what to fix"
 msgstr ""
 
@@ -25440,6 +25500,9 @@ msgstr "Тол-"
 msgid "Tol+"
 msgstr "Допуск+"
 
+msgid "Tolerance"
+msgstr ""
+
 msgid "Tolerance (+/-)"
 msgstr "Допуск (+/-)"
 
@@ -26889,6 +26952,12 @@ msgstr "Предупредить — изменения выполняются �
 
 msgid "Warn but allow"
 msgstr "Предупредить, но разрешить"
+
+msgid "Warn or block a charge that takes an element over its budget, and measure earned value per control account."
+msgstr ""
+
+msgid "Warn saves the charge and shows the overrun. Block refuses it."
+msgstr ""
 
 msgid "Warn this many days before expiry"
 msgstr "Предупредить за столько дней до срока годности"
