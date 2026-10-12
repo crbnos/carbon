@@ -733,6 +733,9 @@ msgstr "{variances, plural, one {# Position unterscheidet sich von der erwartete
 msgid "{years}yr"
 msgstr "{years}J."
 
+msgid "§174A R&E (domestic and foreign)"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/Monat/Benutzer"
 
@@ -5210,6 +5213,9 @@ msgstr ""
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "Wählen Sie einen Lieferant für {0} beim Fertigungsauftrag aus"
+
+msgid "Choose a tax year"
+msgstr ""
 
 msgid "Choose a template"
 msgstr ""
@@ -11099,6 +11105,9 @@ msgstr "Form"
 
 msgid "Form"
 msgstr "Formular"
+
+msgid "Form 6765 Section G"
+msgstr ""
 
 msgid "Format"
 msgstr "Format"
@@ -19015,6 +19024,9 @@ msgstr "Qualifiziert"
 msgid "Qualified Employees"
 msgstr "Qualifizierte Mitarbeiter"
 
+msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
+msgstr ""
+
 msgid "quality"
 msgstr "qualität"
 
@@ -19210,6 +19222,9 @@ msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Angebote, Bestellungen, Konfigurieren nach Bestellung"
 
 msgid "R&D"
+msgstr ""
+
+msgid "R&D tax"
 msgstr ""
 
 msgid "Raise it at the weekly status call"
@@ -20224,6 +20239,9 @@ msgid "Reschedule Visit"
 msgstr ""
 
 msgid "Research (R&D tax)"
+msgstr ""
+
+msgid "Research cost of each business component by tax year, split by the country where the work took place"
 msgstr ""
 
 msgid "Research role"
@@ -23735,6 +23753,9 @@ msgstr "Steuerliche Nutzungsdauer (Monate)"
 
 msgid "Tax Useful Life (Months)"
 msgstr "Steuerliche Nutzungsdauer (Monate)"
+
+msgid "Tax year"
+msgstr ""
 
 msgid "Tax:"
 msgstr "Steuern:"

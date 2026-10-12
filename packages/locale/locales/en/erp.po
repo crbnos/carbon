@@ -733,6 +733,9 @@ msgstr "{variances, plural, one {# line differs from the expected quantity} othe
 msgid "{years}yr"
 msgstr "{years}yr"
 
+msgid "§174A R&E (domestic and foreign)"
+msgstr "§174A R&E (domestic and foreign)"
+
 msgid "/month/user"
 msgstr "/month/user"
 
@@ -5210,6 +5213,9 @@ msgstr "Choose a source to see the nodes it creates."
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "choose a supplier for {0} on the job"
+
+msgid "Choose a tax year"
+msgstr "Choose a tax year"
 
 msgid "Choose a template"
 msgstr "Choose a template"
@@ -11099,6 +11105,9 @@ msgstr "form"
 
 msgid "Form"
 msgstr "Form"
+
+msgid "Form 6765 Section G"
+msgstr "Form 6765 Section G"
 
 msgid "Format"
 msgstr "Format"
@@ -19015,6 +19024,9 @@ msgstr "Qualified"
 msgid "Qualified Employees"
 msgstr "Qualified Employees"
 
+msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
+msgstr "Qualified research expenses of each business component, in descending order, with the aggregate row"
+
 msgid "quality"
 msgstr "quality"
 
@@ -19211,6 +19223,9 @@ msgstr "Quoting, Orders, Configure-to-Order"
 
 msgid "R&D"
 msgstr "R&D"
+
+msgid "R&D tax"
+msgstr "R&D tax"
 
 msgid "Raise it at the weekly status call"
 msgstr "Raise it at the weekly status call"
@@ -20225,6 +20240,9 @@ msgstr "Reschedule Visit"
 
 msgid "Research (R&D tax)"
 msgstr "Research (R&D tax)"
+
+msgid "Research cost of each business component by tax year, split by the country where the work took place"
+msgstr "Research cost of each business component by tax year, split by the country where the work took place"
 
 msgid "Research role"
 msgstr "Research role"
@@ -23735,6 +23753,9 @@ msgstr "Tax Useful Life (months)"
 
 msgid "Tax Useful Life (Months)"
 msgstr "Tax Useful Life (Months)"
+
+msgid "Tax year"
+msgstr "Tax year"
 
 msgid "Tax:"
 msgstr "Tax:"

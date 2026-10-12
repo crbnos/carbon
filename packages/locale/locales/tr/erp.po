@@ -733,6 +733,9 @@ msgstr "{variances, plural, one {# satır beklenen miktardan farklıdır} other 
 msgid "{years}yr"
 msgstr "{years}yr"
 
+msgid "§174A R&E (domestic and foreign)"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/ay/kullanıcı"
 
@@ -5210,6 +5213,9 @@ msgstr ""
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "İş emirde {0} için bir tedarikçi seçin"
+
+msgid "Choose a tax year"
+msgstr ""
 
 msgid "Choose a template"
 msgstr ""
@@ -11099,6 +11105,9 @@ msgstr "biçim"
 
 msgid "Form"
 msgstr "Form"
+
+msgid "Form 6765 Section G"
+msgstr ""
 
 msgid "Format"
 msgstr "Biçim"
@@ -19015,6 +19024,9 @@ msgstr "Nitelikli"
 msgid "Qualified Employees"
 msgstr "Nitelikli Çalışanlar"
 
+msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
+msgstr ""
+
 msgid "quality"
 msgstr "kalite"
 
@@ -19210,6 +19222,9 @@ msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Teklifler, Siparişler, Sipariş Yapılandırması"
 
 msgid "R&D"
+msgstr ""
+
+msgid "R&D tax"
 msgstr ""
 
 msgid "Raise it at the weekly status call"
@@ -20224,6 +20239,9 @@ msgid "Reschedule Visit"
 msgstr ""
 
 msgid "Research (R&D tax)"
+msgstr ""
+
+msgid "Research cost of each business component by tax year, split by the country where the work took place"
 msgstr ""
 
 msgid "Research role"
@@ -23735,6 +23753,9 @@ msgstr "Vergi Faydalı ömür (ay)"
 
 msgid "Tax Useful Life (Months)"
 msgstr "Vergi Faydalı ömür (Ay)"
+
+msgid "Tax year"
+msgstr ""
 
 msgid "Tax:"
 msgstr "Vergi:"

@@ -733,6 +733,9 @@ msgstr "{variances, plural, one {# 行が予想数量と異なります} other {
 msgid "{years}yr"
 msgstr "{years}年"
 
+msgid "§174A R&E (domestic and foreign)"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/月/ユーザー"
 
@@ -5210,6 +5213,9 @@ msgstr ""
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "製造指図上の{0}の仕入先を選択してください"
+
+msgid "Choose a tax year"
+msgstr ""
 
 msgid "Choose a template"
 msgstr ""
@@ -11099,6 +11105,9 @@ msgstr "形状"
 
 msgid "Form"
 msgstr "フォーム"
+
+msgid "Form 6765 Section G"
+msgstr ""
 
 msgid "Format"
 msgstr "フォーマット"
@@ -19015,6 +19024,9 @@ msgstr "適格"
 msgid "Qualified Employees"
 msgstr "適格従業員"
 
+msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
+msgstr ""
+
 msgid "quality"
 msgstr "品質"
 
@@ -19210,6 +19222,9 @@ msgid "Quoting, Orders, Configure-to-Order"
 msgstr "見積、注文、構成注文"
 
 msgid "R&D"
+msgstr ""
+
+msgid "R&D tax"
 msgstr ""
 
 msgid "Raise it at the weekly status call"
@@ -20224,6 +20239,9 @@ msgid "Reschedule Visit"
 msgstr ""
 
 msgid "Research (R&D tax)"
+msgstr ""
+
+msgid "Research cost of each business component by tax year, split by the country where the work took place"
 msgstr ""
 
 msgid "Research role"
@@ -23735,6 +23753,9 @@ msgstr "税務耐用年数（月）"
 
 msgid "Tax Useful Life (Months)"
 msgstr "税務耐用年数（月）"
+
+msgid "Tax year"
+msgstr ""
 
 msgid "Tax:"
 msgstr "税:"

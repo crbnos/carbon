@@ -19,7 +19,7 @@ import { parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
-import { methodType, optionalTiptapDoc } from "../shared/shared.models";
+import { methodType, months, optionalTiptapDoc } from "../shared/shared.models";
 
 type Enums = Database["public"]["Enums"];
 
@@ -4137,7 +4137,10 @@ export const projectReportKeys = [
   "labor-distribution",
   "labor-transfers",
   "timesheet-audit",
-  "cost-by-clin"
+  "cost-by-clin",
+  // Government Contracting 5d: R&D tax, by tax year.
+  "rd-section-174a",
+  "rd-form-6765-g"
 ] as const;
 
 export type ProjectReportKey = (typeof projectReportKeys)[number];
@@ -4461,7 +4464,30 @@ export function buildSection174ARows(
   ];
 }
 
-export const RD_WAGES_ESTIMATED_NOTE = "Estimated from labor cost";
+/** The report keys that run for a tax year. */
+export const rdTaxReportKeys = ["rd-section-174a", "rd-form-6765-g"] as const;
+
+export function isRdTaxReportKey(
+  value: string
+): value is (typeof rdTaxReportKeys)[number] {
+  return (rdTaxReportKeys as readonly string[]).includes(value);
+}
+
+/** The month number (1–12) of a `month` enum name; January when unknown. */
+export function monthNumber(month: string | null | undefined): number {
+  const index = months.findIndex((name) => name === month);
+  return index < 0 ? 1 : index + 1;
+}
+
+/**
+ * The tax year that holds `today` (`YYYY-MM-DD`): named by the calendar year
+ * in which it starts (decision D9).
+ */
+export function taxYearOf(today: string, taxStartMonth: number): number {
+  const year = Number(today.slice(0, 4));
+  const month = Number(today.slice(5, 7));
+  return month >= taxStartMonth ? year : year - 1;
+}
 
 /**
  * The inputs of the Form 6765 Section G rows (`section6765Rows`):

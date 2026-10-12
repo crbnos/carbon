@@ -65,7 +65,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 11: Add the research flags to the contract
 - [x] Task 12: Add the officer flag to the employee job
 - [x] Task 13: Add the R&D report queries and builders
-- [ ] Task 14: Add the two reports to the CSV route and the Reports page
+- [x] Task 14: Add the two reports to the CSV route and the Reports page
 - [ ] Task 15: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 16: Verify in the browser
 
@@ -656,3 +656,9 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   3. `buildSection174ARows` keeps Burden rows out of Domestic, Foreign and Unknown and out of **Total**: a Burden row is a memo row by default (no GL), so the column is "for review" only. **Of which funded** is the funded part of the 3 country columns.
   4. `buildSection6765Input` returns `unknownCountryHours` as hours. A component with no QRE in any column is left out of Section G. The component's name in the input is "<readable id> <name>", for column 49(c).
   5. Both queries ran against the local database with `ON_ERROR_STOP`. In a rolled-back transaction with a business component marked, the ledger query returned its subtree's 2 rows. `projects-rd-tax` 4 passed.
+- Task 14:
+  1. `projectReportKeys` gains `rd-section-174a` and `rd-form-6765-g` (`rdTaxReportKeys`, `isRdTaxReportKey`). Both need `view: projects` and `view: accounting`. They read `taxYear` (an integer); the route reads `fiscalYearSettings.taxStartMonth` (a month name, `monthNumber` turns it into 1–12, January when there is no row) and `company.taxId` with the Kysely client, then calls `taxYearBounds`. The components come from `getRdComponents` with the user's client, as the plan's signature says.
+  2. The §174A CSV has Business Component, Name, Domestic, Foreign, Unknown Country, Burden (for review), Of Which Funded and Total, then a **Total** line. The Section G CSV has the 13 columns of step 3 (49(b) empty, 53 = 50 + 51 + 52), then the note lines of step 4, each in the first column.
+  3. The Reports page has a third section, **R&D tax**, with the two cards. Each opens on the tax year that holds the company's today (`taxYearOf`) and offers it and the 5 years before it. The cards show only to a user with `projects` and `accounting` view. The loader reads the tax start month with the Kysely client; a failed read logs and falls back to January.
+  4. The unused constant `RD_WAGES_ESTIMATED_NOTE` of Task 13 is gone: the note line of step 4 carries the estimate count.
+  5. `erp` tests 2,241 passed. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

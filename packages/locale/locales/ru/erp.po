@@ -733,6 +733,9 @@ msgstr "{variances, plural, one {# строка отличается от ожи
 msgid "{years}yr"
 msgstr "{years}год"
 
+msgid "§174A R&E (domestic and foreign)"
+msgstr ""
+
 msgid "/month/user"
 msgstr "/месяц/пользователь"
 
@@ -5210,6 +5213,9 @@ msgstr ""
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
 msgstr "выберите поставщика для {0} в производственном заказе"
+
+msgid "Choose a tax year"
+msgstr ""
 
 msgid "Choose a template"
 msgstr ""
@@ -11099,6 +11105,9 @@ msgstr "форма"
 
 msgid "Form"
 msgstr "Форма"
+
+msgid "Form 6765 Section G"
+msgstr ""
 
 msgid "Format"
 msgstr "Формат"
@@ -19015,6 +19024,9 @@ msgstr "Квалифицирован"
 msgid "Qualified Employees"
 msgstr "Квалифицированные сотрудники"
 
+msgid "Qualified research expenses of each business component, in descending order, with the aggregate row"
+msgstr ""
+
 msgid "quality"
 msgstr "качество"
 
@@ -19210,6 +19222,9 @@ msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Предложения, Заказы, Конфигурирование на заказ"
 
 msgid "R&D"
+msgstr ""
+
+msgid "R&D tax"
 msgstr ""
 
 msgid "Raise it at the weekly status call"
@@ -20224,6 +20239,9 @@ msgid "Reschedule Visit"
 msgstr ""
 
 msgid "Research (R&D tax)"
+msgstr ""
+
+msgid "Research cost of each business component by tax year, split by the country where the work took place"
 msgstr ""
 
 msgid "Research role"
@@ -23735,6 +23753,9 @@ msgstr "Налоговый срок полезного использовани�
 
 msgid "Tax Useful Life (Months)"
 msgstr "Налоговый срок полезного использования (Месяцы)"
+
+msgid "Tax year"
+msgstr ""
 
 msgid "Tax:"
 msgstr "Налог:"

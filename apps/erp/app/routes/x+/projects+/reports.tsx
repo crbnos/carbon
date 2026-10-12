@@ -34,7 +34,9 @@ import { useLoaderData } from "react-router";
 import { useCompanyToday, usePermissions } from "~/hooks";
 import {
   getLaborDistributionPeriods,
-  type ProjectReportKey
+  monthNumber,
+  type ProjectReportKey,
+  taxYearOf
 } from "~/modules/projects";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
@@ -56,19 +58,34 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  try {
-    return {
-      periods: await getLaborDistributionPeriods(getDatabaseClient(), {
-        companyId
+  const db = getDatabaseClient();
+  const [periods, fiscalYear] = await Promise.all([
+    getLaborDistributionPeriods(db, { companyId }).catch((error) => {
+      logger.error("Failed to load the accounting periods", {
+        companyId,
+        error
+      });
+      return [];
+    }),
+    // R&D tax (5d): a tax year starts in the company's tax start month.
+    db
+      .selectFrom("fiscalYearSettings")
+      .select("taxStartMonth")
+      .where("companyId", "=", companyId)
+      .executeTakeFirst()
+      .catch((error) => {
+        logger.error("Failed to load the fiscal year settings", {
+          companyId,
+          error
+        });
+        return undefined;
       })
-    };
-  } catch (error) {
-    logger.error("Failed to load the accounting periods", {
-      companyId,
-      error
-    });
-    return { periods: [] };
-  }
+  ]);
+
+  return {
+    periods,
+    taxStartMonth: monthNumber(fiscalYear?.taxStartMonth)
+  };
 }
 
 type Permission = { view: string[] };
@@ -77,13 +94,14 @@ type ReportCardDefinition = {
   key: ProjectReportKey;
   name: string;
   description: string;
-  /** Labor distribution runs for one accounting period, the rest a range. */
-  input: "range" | "period";
+  /** Labor distribution runs for one accounting period, the R&D tax reports
+   *  for a tax year, the rest a range. */
+  input: "range" | "period" | "taxYear";
   permission: Permission;
 };
 
 export default function ProjectReportsRoute() {
-  const { periods } = useLoaderData<typeof loader>();
+  const { periods, taxStartMonth } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
 
@@ -134,12 +152,30 @@ export default function ProjectReportsRoute() {
     }
   ];
 
+  const rdTax: ReportCardDefinition[] = [
+    {
+      key: "rd-section-174a",
+      name: t`§174A R&E (domestic and foreign)`,
+      description: t`Research cost of each business component by tax year, split by the country where the work took place`,
+      input: "taxYear",
+      permission: { view: ["projects", "accounting"] }
+    },
+    {
+      key: "rd-form-6765-g",
+      name: t`Form 6765 Section G`,
+      description: t`Qualified research expenses of each business component, in descending order, with the aggregate row`,
+      input: "taxYear",
+      permission: { view: ["projects", "accounting"] }
+    }
+  ];
+
   const canSee = (report: ReportCardDefinition) =>
     report.permission.view.every((module) => permissions.can("view", module));
 
   const sections = [
     { name: t`Timekeeping`, reports: timekeeping.filter(canSee) },
-    { name: t`Audit and contracts`, reports: audit.filter(canSee) }
+    { name: t`Audit and contracts`, reports: audit.filter(canSee) },
+    { name: t`R&D tax`, reports: rdTax.filter(canSee) }
   ].filter((section) => section.reports.length > 0);
 
   return (
@@ -159,6 +195,12 @@ export default function ProjectReportsRoute() {
                     key={report.key}
                     report={report}
                     periods={periods}
+                  />
+                ) : report.input === "taxYear" ? (
+                  <TaxYearReportCard
+                    key={report.key}
+                    report={report}
+                    taxStartMonth={taxStartMonth}
                   />
                 ) : (
                   <RangeReportCard key={report.key} report={report} />
@@ -283,6 +325,49 @@ function PeriodReportCard({
           </SelectContent>
         </Select>
       )}
+    </ReportCard>
+  );
+}
+
+/** How many tax years the R&D tax cards offer, the current one included. */
+const TAX_YEARS_OFFERED = 6;
+
+/**
+ * A report for one tax year (R&D tax). It opens on the tax year that holds
+ * today; a tax year is named by the calendar year in which it starts.
+ */
+function TaxYearReportCard({
+  report,
+  taxStartMonth
+}: {
+  report: ReportCardDefinition;
+  taxStartMonth: number;
+}) {
+  const { t } = useLingui();
+  const currentTaxYear = taxYearOf(useCompanyToday(), taxStartMonth);
+  const [chosenYear, setChosenYear] = useState<string | null>(null);
+  const taxYear = chosenYear ?? String(currentTaxYear);
+  const years = Array.from({ length: TAX_YEARS_OFFERED }, (_, index) =>
+    String(currentTaxYear - index)
+  );
+
+  return (
+    <ReportCard
+      report={report}
+      href={path.to.api.projectReport(report.key, { taxYear })}
+    >
+      <Select value={taxYear} onValueChange={setChosenYear}>
+        <SelectTrigger size="sm" aria-label={t`Tax year`}>
+          <SelectValue placeholder={t`Choose a tax year`} />
+        </SelectTrigger>
+        <SelectContent>
+          {years.map((year) => (
+            <SelectItem key={year} value={year}>
+              {year}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </ReportCard>
   );
 }

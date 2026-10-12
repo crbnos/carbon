@@ -5,18 +5,27 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { CSV_CONTENT_TYPE, encodeCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
-import { chunkArray } from "@carbon/utils";
+import { chunkArray, section6765Rows, taxYearBounds } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   buildLaborDistribution,
+  buildSection174ARows,
+  buildSection6765Input,
   getCostByClin,
   getLaborDistributionRows,
   getLaborTransfers,
   getLateTimesheetEntries,
   getMissingTimesheetDays,
+  getRdComponents,
+  getRdEmployeeYear,
+  getRdLedgerRows,
   getTimesheetAuditRows,
   isProjectReportKey,
+  isRdTaxReportKey,
+  monthNumber,
   type ProjectReportKey,
+  type RdComponent,
+  type rdTaxReportKeys,
   reportChargeNumber
 } from "~/modules/projects";
 import { getDatabaseClient } from "~/services/database.server";
@@ -38,16 +47,18 @@ const REPORT_PERMISSIONS: Record<
   "labor-transfers": { view: "projects" },
   "timesheet-audit": { view: "projects" },
   "labor-distribution": { view: ["projects", "people"] },
-  "cost-by-clin": { view: "sales" }
+  "cost-by-clin": { view: "sales" },
+  "rd-section-174a": { view: ["projects", "accounting"] },
+  "rd-form-6765-g": { view: ["projects", "accounting"] }
 };
 
 type Csv = { fields: string[]; rows: Record<string, unknown>[] };
 
 /**
- * GET — one Government Contracting report as CSV. Every report but labor
- * distribution reads `from` and `to` (`YYYY-MM-DD`); labor distribution reads
- * `periodId`, an accounting period. The reads use the Kysely client, so the
- * permission check above them is the gate.
+ * GET — one Government Contracting report as CSV. Labor distribution reads
+ * `periodId`, an accounting period; the two R&D tax reports read `taxYear`
+ * (decision D9); the others read `from` and `to` (`YYYY-MM-DD`). The reads
+ * use the Kysely client, so the permission check above them is the gate.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const reportKey = params.reportKey ?? "";
@@ -55,7 +66,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("The report could not be found", { status: 404 });
   }
 
-  const { companyId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     ...REPORT_PERMISSIONS[reportKey],
     role: "employee"
   });
@@ -79,6 +90,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
       csv = laborDistributionCsv(rows);
       fileName = `labor-distribution-${rows.period.startDate}-${rows.period.endDate}.csv`;
+    } else if (isRdTaxReportKey(reportKey)) {
+      const taxYear = Number(searchParams.get("taxYear"));
+      if (!Number.isInteger(taxYear) || taxYear < 1900 || taxYear > 9999) {
+        throw new Response("Choose a tax year", { status: 400 });
+      }
+      const [settings, company] = await Promise.all([
+        db
+          .selectFrom("fiscalYearSettings")
+          .select("taxStartMonth")
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+        db
+          .selectFrom("company")
+          .select("taxId")
+          .where("id", "=", companyId)
+          .executeTakeFirst()
+      ]);
+      const range = {
+        companyId,
+        ...taxYearBounds(taxYear, monthNumber(settings?.taxStartMonth))
+      };
+      const [rows, employees, components] = await Promise.all([
+        getRdLedgerRows(db, range),
+        reportKey === "rd-form-6765-g"
+          ? getRdEmployeeYear(db, range)
+          : Promise.resolve([]),
+        getRdComponents(client, companyId)
+      ]);
+      if (components.error) throw components.error;
+      csv =
+        reportKey === "rd-section-174a"
+          ? section174ACsv(rows, components.data ?? [])
+          : section6765Csv(rows, employees, components.data ?? [], {
+              ein: company?.taxId ?? null
+            });
+      fileName = `${reportKey}-${taxYear}.csv`;
     } else {
       const from = searchParams.get("from") ?? "";
       const to = searchParams.get("to") ?? "";
@@ -132,7 +179,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 async function rangeReportCsv(
-  reportKey: Exclude<ProjectReportKey, "labor-distribution">,
+  reportKey: Exclude<
+    ProjectReportKey,
+    "labor-distribution" | (typeof rdTaxReportKeys)[number]
+  >,
   db: ReturnType<typeof getDatabaseClient>,
   range: { companyId: string; from: string; to: string }
 ): Promise<Csv> {
@@ -335,5 +385,103 @@ function laborDistributionCsv(
         Note: employee.total.note
       }
     ])
+  };
+}
+
+const SECTION_174A_FIELDS = [
+  "Business Component",
+  "Name",
+  "Domestic",
+  "Foreign",
+  "Unknown Country",
+  "Burden (for review)",
+  "Of Which Funded",
+  "Total"
+];
+
+/** One line per business component, then the totals line. */
+function section174ACsv(
+  rows: Awaited<ReturnType<typeof getRdLedgerRows>>,
+  components: RdComponent[]
+): Csv {
+  return {
+    fields: SECTION_174A_FIELDS,
+    rows: buildSection174ARows(rows, components).map((row) => ({
+      "Business Component": row.isTotal ? "Total" : row.readableId,
+      Name: row.isTotal ? null : row.name,
+      Domestic: row.domestic,
+      Foreign: row.foreign,
+      "Unknown Country": row.unknown,
+      "Burden (for review)": row.burden,
+      "Of Which Funded": row.funded,
+      Total: row.total
+    }))
+  };
+}
+
+const SECTION_6765_FIELDS = [
+  "49(a) EIN",
+  "49(b) Principal Business Activity Code",
+  "49(c) Business Component",
+  "49(d) Component Type",
+  "49(e) Software Type",
+  "50 Direct Research Wages",
+  "51 Direct Supervision Wages",
+  "52 Direct Support Wages",
+  "53 Total Wages",
+  "54 Supplies",
+  "55 Computer Rental",
+  "56 Contract Research (65%)",
+  "Total QRE"
+];
+
+/**
+ * Form 6765 Section G: one line per row of `section6765Rows` (descending
+ * QRE, then the aggregate row), then the notes. Column 53 is the sum of
+ * columns 50–52 (decision D8).
+ */
+function section6765Csv(
+  rows: Awaited<ReturnType<typeof getRdLedgerRows>>,
+  employees: Awaited<ReturnType<typeof getRdEmployeeYear>>,
+  components: RdComponent[],
+  company: { ein: string | null }
+): Csv {
+  const input = buildSection6765Input(rows, employees, components);
+  const note = (text: string) => ({ "49(a) EIN": text });
+  return {
+    fields: SECTION_6765_FIELDS,
+    rows: [
+      ...section6765Rows(input.components).map((row) => ({
+        "49(a) EIN": company.ein,
+        "49(b) Principal Business Activity Code": null,
+        "49(c) Business Component": row.name,
+        "49(d) Component Type": row.componentType,
+        "49(e) Software Type": row.softwareType,
+        "50 Direct Research Wages": row.research,
+        "51 Direct Supervision Wages": row.supervision,
+        "52 Direct Support Wages": row.support,
+        "53 Total Wages": row.wageTotal,
+        "54 Supplies": row.supplies,
+        "55 Computer Rental": row.computerRental,
+        "56 Contract Research (65%)": row.contractResearchQre,
+        "Total QRE": row.total
+      })),
+      note(`Section E line 38, officers' wage QREs: ${input.officerWages}`),
+      note("Column 55: Not tracked in Carbon"),
+      ...(input.estimatedEmployeeCount > 0
+        ? [
+            note(
+              `Employees with wages estimated from labor cost: ${input.estimatedEmployeeCount}`
+            )
+          ]
+        : []),
+      ...(input.unknownCountryHours > 0
+        ? [
+            note(
+              `Hours excluded for an unknown work country: ${input.unknownCountryHours}`
+            )
+          ]
+        : [])
+    ]
   };
 }
