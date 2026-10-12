@@ -47,7 +47,6 @@ import type {
 import {
   displayStateToParams,
   elementFilterStateFromParams,
-  getProjectChangeRequests,
   getProjectCostSummary,
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
@@ -56,7 +55,6 @@ import {
   getProjectViews,
   isBareElementsUrl,
   isProjectPlanLocked,
-  openChangeRequestStatuses,
   parseElementFilters,
   parseProjectDisplayState,
   projectPlanLockedMessage,
@@ -203,7 +201,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (value) => value !== null
   );
 
-  const [elements, costSummary, descriptions, commentCounts, changeRequests] =
+  const [elements, costSummary, descriptions, commentCounts] =
     await Promise.all([
       getProjectElements(client, projectId, companyId, queryFilters),
       getProjectCostSummary(client, projectId, companyId),
@@ -214,8 +212,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       // Only the Tree's cards show comment counts.
       layout === "tree"
         ? getProjectElementCommentCounts(client, projectId, companyId)
-        : Promise.resolve({ data: [], error: null }),
-      getProjectChangeRequests(client, projectId, companyId)
+        : Promise.resolve({ data: [], error: null })
     ]);
   if (descriptions.error) {
     logger.error("Failed to load element descriptions", {
@@ -229,13 +226,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       companyId,
       projectId,
       error: commentCounts.error
-    });
-  }
-  if (changeRequests.error) {
-    logger.error("Failed to load the project's change requests", {
-      companyId,
-      projectId,
-      error: changeRequests.error
     });
   }
 
@@ -317,16 +307,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     commentCounts: Object.fromEntries(
       (commentCounts.data ?? []).map((row) => [row.id, row.count])
     ) as Record<string, number>,
-    openChangeRequests: (changeRequests.data ?? [])
-      .filter((cr) =>
-        (openChangeRequestStatuses as readonly string[]).includes(cr.status)
-      )
-      .map((cr) => ({
-        id: cr.id,
-        readableId: cr.readableId,
-        title: cr.title,
-        status: cr.status
-      })),
     layout,
     type,
     views: viewOptions,
@@ -352,7 +332,6 @@ export default function ProjectElementsRoute() {
     verification,
     descriptions,
     commentCounts,
-    openChangeRequests,
     layout,
     type,
     views,
@@ -608,8 +587,6 @@ export default function ProjectElementsRoute() {
           grouping={layout === "table" ? grouping : undefined}
           onGroupingChange={layout === "table" ? setGrouping : undefined}
           projectId={projectId}
-          changeRequests={openChangeRequests}
-          activeChangeRequest={changeRequest}
           views={views}
           activeViewId={activeViewId}
           currentState={currentState}

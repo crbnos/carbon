@@ -5459,9 +5459,9 @@ msgstr "コード"
 msgid "Collapse"
 msgstr "折りたたむ"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "{0}を折りたたむ"
 
@@ -10078,9 +10078,9 @@ msgstr "予定 <0/>"
 msgid "Expand"
 msgstr "展開"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "展開 {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "新規変更通知アクション"
 msgid "New Change Notice Type"
 msgstr "新規変更通知タイプ"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "新しい変更要求"
 
@@ -16025,6 +16028,9 @@ msgstr "生産がまだ記録されていません。"
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "まだプロジェクト請求書がありません。夜間の請求実行では、請求期間ごとに下書きが1つ作成されます。"
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "プロジェクト台帳"
 
 msgid "Project owner"
 msgstr "プロジェクト責任者"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "プロジェクト計画"
@@ -21371,6 +21380,9 @@ msgstr "得意先とタイプを検索..."
 msgid "Search customers or types..."
 msgstr "得意先またはタイプを検索..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "従業員を検索..."
 
@@ -21412,6 +21424,9 @@ msgstr "部品を検索..."
 
 msgid "Search processes..."
 msgstr "プロセスを検索..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "レコードを検索…"
@@ -23532,6 +23547,9 @@ msgstr "会社を切り替える"
 msgid "Switch module"
 msgstr "モジュールを切り替える"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "パンモードに切り替え"
 
@@ -25516,6 +25534,9 @@ msgstr "逼迫"
 
 msgid "Tightened"
 msgstr "きつい検査"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "時間&材料"

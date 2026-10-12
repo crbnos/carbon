@@ -5459,9 +5459,9 @@ msgstr "Code"
 msgid "Collapse"
 msgstr "Collapse"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Collapse {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "Exp. <0/>"
 msgid "Expand"
 msgstr "Expand"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Expand {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "New Change Notice Action"
 msgid "New Change Notice Type"
 msgstr "New Change Notice Type"
 
+msgid "New change request"
+msgstr "New change request"
+
 msgid "New Change Request"
 msgstr "New Change Request"
 
@@ -16025,6 +16028,9 @@ msgstr "No production recorded yet."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "No project billing invoices yet. The nightly billing run drafts one per billing period."
+
+msgid "No project found"
+msgstr "No project found"
 
 msgid "No projects yet"
 msgstr "No projects yet"
@@ -18626,6 +18632,9 @@ msgstr "Project ledger"
 
 msgid "Project owner"
 msgstr "Project owner"
+
+msgid "Project pages"
+msgstr "Project pages"
 
 msgid "Project Plan"
 msgstr "Project Plan"
@@ -21371,6 +21380,9 @@ msgstr "Search customers and types..."
 msgid "Search customers or types..."
 msgstr "Search customers or types..."
 
+msgid "Search elements"
+msgstr "Search elements"
+
 msgid "Search employees..."
 msgstr "Search employees..."
 
@@ -21412,6 +21424,9 @@ msgstr "Search parts..."
 
 msgid "Search processes..."
 msgstr "Search processes..."
+
+msgid "Search projects"
+msgstr "Search projects"
 
 msgid "Search records…"
 msgstr "Search records…"
@@ -23532,6 +23547,9 @@ msgstr "Switch company"
 msgid "Switch module"
 msgstr "Switch module"
 
+msgid "Switch project"
+msgstr "Switch project"
+
 msgid "Switch to pan mode"
 msgstr "Switch to pan mode"
 
@@ -25516,6 +25534,9 @@ msgstr "tight"
 
 msgid "Tightened"
 msgstr "Tightened"
+
+msgid "Time"
+msgstr "Time"
 
 msgid "Time & materials"
 msgstr "Time & materials"

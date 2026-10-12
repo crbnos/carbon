@@ -5459,9 +5459,9 @@ msgstr "Code"
 msgid "Collapse"
 msgstr "Réduire"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Réduire {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "Exp. <0/>"
 msgid "Expand"
 msgstr "Développer"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Développer {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "Nouvelle action d'avis de modification"
 msgid "New Change Notice Type"
 msgstr "Nouveau type d'avis de modification"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "Nouvelle demande de modification"
 
@@ -16025,6 +16028,9 @@ msgstr "Aucune production enregistrée pour le moment."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Aucune facture de facturation de projet encore. L'exécution de facturation nocturne en brouille une par période de facturation."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "Grand livre de projet"
 
 msgid "Project owner"
 msgstr "Propriétaire du projet"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "Plan de projet"
@@ -21371,6 +21380,9 @@ msgstr "Rechercher les clients et les types..."
 msgid "Search customers or types..."
 msgstr "Rechercher des clients ou des types..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "Rechercher des employés..."
 
@@ -21412,6 +21424,9 @@ msgstr "Rechercher des pièces..."
 
 msgid "Search processes..."
 msgstr "Rechercher des processus..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "Rechercher des enregistrements…"
@@ -23532,6 +23547,9 @@ msgstr "Changer de société"
 msgid "Switch module"
 msgstr "Changer de module"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "Passer en mode panoramique"
 
@@ -25516,6 +25534,9 @@ msgstr "serré"
 
 msgid "Tightened"
 msgstr "Renforcé"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "Temps et matières"

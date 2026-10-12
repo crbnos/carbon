@@ -5459,9 +5459,9 @@ msgstr "코드"
 msgid "Collapse"
 msgstr "접기"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "축소 {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "만료 <0/>"
 msgid "Expand"
 msgstr "펼치기"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "{0} 펼치기"
 
@@ -14950,6 +14950,9 @@ msgstr "신규 변경 통지 조치"
 msgid "New Change Notice Type"
 msgstr "신규 변경 통지 유형"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "새 변경 요청"
 
@@ -16025,6 +16028,9 @@ msgstr "아직 기록된 생산이 없습니다."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "아직 프로젝트 청구 송장이 없습니다. 야간 청구 실행이 청구 기간당 하나를 초안으로 작성합니다."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "프로젝트 원장"
 
 msgid "Project owner"
 msgstr "프로젝트 책임자"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "프로젝트 계획"
@@ -21371,6 +21380,9 @@ msgstr "고객 및 유형 검색..."
 msgid "Search customers or types..."
 msgstr "고객 또는 유형 검색..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "직원 검색..."
 
@@ -21412,6 +21424,9 @@ msgstr "부품 검색..."
 
 msgid "Search processes..."
 msgstr "공정 검색..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "기록 검색…"
@@ -23532,6 +23547,9 @@ msgstr "회사 전환"
 msgid "Switch module"
 msgstr "모듈 전환"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "팬 모드로 전환"
 
@@ -25516,6 +25534,9 @@ msgstr "빠듯함"
 
 msgid "Tightened"
 msgstr "까다로운 검사"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "시간 및 자재"

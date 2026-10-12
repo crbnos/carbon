@@ -124,6 +124,27 @@ export async function getProject(
 }
 
 /**
+ * The projects the project workspace's switcher lists: id, identifier and
+ * name of the active Standard projects that are not templates, by
+ * identifier, at most 200.
+ * @mcp read
+ */
+export async function getProjectSwitcherOptions(
+  client: Client,
+  companyId: string
+) {
+  return client
+    .from("project")
+    .select("id, identifier, name")
+    .eq("companyId", companyId)
+    .eq("projectType", "Standard")
+    .eq("active", true)
+    .eq("isTemplate", false)
+    .order("identifier", { ascending: true })
+    .limit(200);
+}
+
+/**
  * Lists the active Standard projects of the company. A Service project
  * belongs to its service order and is listed in Service.
  * @mcp read

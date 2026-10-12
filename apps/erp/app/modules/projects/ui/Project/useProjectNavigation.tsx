@@ -2,13 +2,16 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { ShortcutInput } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import {
   LuCoins,
   LuFileText,
   LuFlag,
   LuGitPullRequestArrow,
   LuHistory,
+  LuLayoutDashboard,
   LuLink2,
   LuListTree,
   LuPackage,
@@ -121,4 +124,116 @@ export function useProjectNavigation() {
       shortcut: PROJECT_TAB_SHORTCUTS.details
     }
   ];
+}
+
+export type ProjectSidebarLink = {
+  name: string;
+  to: string;
+  icon: ReactNode;
+  shortcut?: ShortcutInput;
+  isActive?: (pathname: string) => boolean;
+  indent?: boolean;
+};
+
+/**
+ * The project sidebar's page links (Layer 2): Overview, Plan, Schedule,
+ * Costs with Stock, Pegging and Billing under it when they apply, and Time.
+ * Settings is returned on its own: the sidebar pins it to the bottom.
+ */
+export function useProjectSidebarLinks({
+  hasBillingLines
+}: {
+  hasBillingLines: boolean;
+}): { links: ProjectSidebarLink[]; settings: ProjectSidebarLink } {
+  const { t } = useLingui();
+  const { projectId } = useParams();
+  if (!projectId) throw new Error("projectId not found");
+  const routeData = useRouteData<{ project: Project }>(
+    path.to.project(projectId)
+  );
+  const project = routeData?.project;
+  const overview = path.to.project(projectId);
+
+  const links: ProjectSidebarLink[] = [
+    {
+      name: t`Overview`,
+      to: overview,
+      icon: <LuLayoutDashboard />,
+      isActive: (pathname) => pathname === overview
+    },
+    {
+      name: t`Plan`,
+      to: path.to.projectElements(projectId),
+      icon: <LuListTree />,
+      shortcut: PROJECT_TAB_SHORTCUTS.elements,
+      isActive: (pathname) =>
+        pathname.startsWith(path.to.projectElements(projectId)) ||
+        pathname.startsWith(`${overview}/element/`)
+    },
+    {
+      name: t`Schedule`,
+      to: path.to.projectMilestones(projectId),
+      icon: <LuFlag />,
+      shortcut: PROJECT_TAB_SHORTCUTS.milestones
+    },
+    {
+      name: t`Costs`,
+      to: path.to.projectCosts(projectId),
+      icon: <LuCoins />,
+      shortcut: PROJECT_TAB_SHORTCUTS.costs
+    },
+    // Under Costs, each only while it applies (Layer 5).
+    ...(project?.projectStock
+      ? [
+          {
+            name: t`Stock`,
+            to: path.to.projectStock(projectId),
+            icon: <LuPackage />,
+            shortcut: PROJECT_TAB_SHORTCUTS.stock,
+            indent: true
+          }
+        ]
+      : []),
+    ...(project?.planningGroupId
+      ? [
+          {
+            name: t`Pegging`,
+            to: path.to.projectPegging(projectId),
+            icon: <LuLink2 />,
+            shortcut: PROJECT_TAB_SHORTCUTS.pegging,
+            indent: true
+          }
+        ]
+      : []),
+    ...(hasBillingLines
+      ? [
+          {
+            name: t`Billing`,
+            to: path.to.projectBilling(projectId),
+            icon: <LuReceipt />,
+            shortcut: PROJECT_TAB_SHORTCUTS.billing,
+            indent: true
+          }
+        ]
+      : []),
+    {
+      name: t`Time`,
+      to: path.to.projectTime(projectId),
+      icon: <LuTimer />,
+      shortcut: PROJECT_TAB_SHORTCUTS.time
+    }
+  ];
+
+  return {
+    links,
+    settings: {
+      name: t`Settings`,
+      to: path.to.projectSettings(projectId),
+      icon: <LuSettings2 />,
+      shortcut: PROJECT_TAB_SHORTCUTS.settings,
+      isActive: (pathname) =>
+        pathname.startsWith(path.to.projectSettings(projectId)) ||
+        pathname.startsWith(path.to.projectDetails(projectId))
+    }
+  };
 }

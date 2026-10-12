@@ -83,6 +83,20 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 11: Build the project workspace shell and the project sidebar (Layer 2)
 
+- `$projectId.tsx` now renders `PanelProvider` → `ProjectHeader` → `ResizablePanels` with `explorer={<ProjectSidebar />}` and the content `<div className="bg-card h-full overflow-y-auto w-full"><RecordOutlet /></div>`, copied from `sales-return-order+/$id.tsx`. Every height subtracts `var(--content-inset)`.
+- Loader additions, in the one `Promise.all`: `getProjectElements`, `getProjectSwitcherOptions` (new service function), `getProjectChangeRequests`, a head count of `planningGroup`, and `getContractBillingLines`. It returns `treeElements`, `switcherOptions`, `openChangeRequests`, `activeChangeRequest`, `hasPlanningGroups`, `hasControlAccount` and `hasBillingLines`. With `?cr=` the tree uses `loadChangeRequestOverlay` + `overlayElementList`.
+- The Elements loader no longer reads the change requests; `ChangeRequestPicker` left `ElementsHeader`.
+- `ProjectSidebar`: the switcher, the change request picker with a Baselines icon button, the `DetailSidebar` links (Overview, Plan, Schedule, Costs, Stock and Pegging indented, Time), the element tree on a Plan page, and Settings pinned at the bottom.
+- Deviation: the switcher is a ghost `Button` with `LuChevronsUpDown` that opens a `Popover` + `Command` search, not the form `Combobox`. The form `Combobox` draws a bordered input; the sidebar needs a quiet title row like Flow and like `CompanySwitcher`. Choosing a project opens the same page of that project (an element page opens its Plan page).
+- `useProjectSidebarLinks` is a new export in `useProjectNavigation.tsx`. The header's `useProjectNavigation` stays until Task 12 removes it.
+- `NewChangeRequestModal` moved out of `ChangeRequestsTable`. `ChangeRequestPicker` takes `canCreate` and `className` and lists "New change request" and "All change requests" under the change requests.
+- The Baselines icon button turns active on the Baselines page. Settings is also active on `/details` until Task 14 redirects it.
+- `pnpm run generate:mcp` updated `tool-manifest.digest.json`.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed.
+- Shots: `11-workspace-plan.png`, `11-workspace-costs.png`, `11-workspace-element.png` (the element right panel still opens in the content pane, and the tree highlights its row), `11-cr-picker-open.png`.
+- OB2 shows Stock and Pegging under Costs. Billing does not show: OB2's contract lines are Fixed, and `getContractBillingLines` skips Fixed lines.
+- 7 questions (sidebar only; the header is Task 12): 1 yes (`flow-requirements-tree.jpg` anatomy), 2 yes in the sidebar (the old header still overlaps until Task 12), 3 n/a, 4 n/a, 5 n/a, 6 yes, 7 yes.
+
 ## Task 12: Rebuild the project header on RecordHeader
 
 ## Task 13: Add the project Overview page

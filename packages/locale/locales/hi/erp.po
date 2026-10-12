@@ -5459,9 +5459,9 @@ msgstr "कोड"
 msgid "Collapse"
 msgstr "संक्षिप्त करें"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "{0} को संक्षिप्त करें"
 
@@ -10078,9 +10078,9 @@ msgstr "अपेक्षित <0/>"
 msgid "Expand"
 msgstr "विस्तार करें"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "विस्तार करें {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "नई परिवर्तन सूचना कार्रवाई
 msgid "New Change Notice Type"
 msgstr "नई परिवर्तन सूचना प्रकार"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "नई परिवर्तन अनुरोध"
 
@@ -16025,6 +16028,9 @@ msgstr "अभी तक कोई उत्पादन दर्ज नही�
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "अभी तक कोई परियोजना चालान नहीं। रात्रिकालीन चालान रन प्रति चालान अवधि एक ड्राफ्ट करता है।"
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "प्रोजेक्ट खाता-बही"
 
 msgid "Project owner"
 msgstr "परियोजना स्वामी"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "प्रोजेक्ट प्लान"
@@ -21371,6 +21380,9 @@ msgstr "ग्राहकों और प्रकारों को खो�
 msgid "Search customers or types..."
 msgstr "ग्राहकों या प्रकारों को खोजें..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "कर्मचारियों को खोजें..."
 
@@ -21412,6 +21424,9 @@ msgstr "पार्ट्स को खोजें..."
 
 msgid "Search processes..."
 msgstr "प्रक्रियाओं को खोजें..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "रिकॉर्ड खोजें…"
@@ -23532,6 +23547,9 @@ msgstr "कंपनी स्विच करें"
 msgid "Switch module"
 msgstr "मॉड्यूल स्विच करें"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "पैन मोड में स्विच करें"
 
@@ -25516,6 +25534,9 @@ msgstr "तंग"
 
 msgid "Tightened"
 msgstr "कठोर"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "समय और सामग्री"

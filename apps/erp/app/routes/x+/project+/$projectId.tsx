@@ -10,17 +10,32 @@ import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
 import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useParams } from "react-router";
+import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import type { ProjectElementListItem } from "~/modules/projects";
 import {
+  getContractBillingLines,
   getProject,
   getProjectBorrows,
+  getProjectChangeRequests,
+  getProjectElements,
   getProjectLabels,
   getProjectMilestones,
-  getProjectStates
+  getProjectStates,
+  getProjectSwitcherOptions,
+  openChangeRequestStatuses
 } from "~/modules/projects";
-import { getProjectCapitalAssets } from "~/modules/projects/projects.server";
+import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
+import {
+  getProjectCapitalAssets,
+  loadChangeRequestOverlay,
+  overlayElementList
+} from "~/modules/projects/projects.server";
+import type { ProjectTreeElement } from "~/modules/projects/ui/Project/ProjectElementTree";
 import ProjectHeader from "~/modules/projects/ui/Project/ProjectHeader";
+import { ProjectSidebar } from "~/modules/projects/ui/Project/ProjectSidebar";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -49,20 +64,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
 
-  const [project, states, labels, milestones, overdueBorrows] =
-    await Promise.all([
-      getProject(client, companyId, projectId),
-      getProjectStates(client, projectId, companyId),
-      getProjectLabels(client, projectId, companyId),
-      getProjectMilestones(client, projectId, companyId),
-      // The Open borrows the project owes or has lent, past their payback
-      // date: the header's exception badge.
-      getProjectBorrows(client, companyId, {
-        projectId,
-        status: ["Open"],
-        dueBefore: today
-      })
-    ]);
+  const [
+    project,
+    states,
+    labels,
+    milestones,
+    overdueBorrows,
+    elements,
+    switcherOptions,
+    changeRequests,
+    planningGroups,
+    billingLines
+  ] = await Promise.all([
+    getProject(client, companyId, projectId),
+    getProjectStates(client, projectId, companyId),
+    getProjectLabels(client, projectId, companyId),
+    getProjectMilestones(client, projectId, companyId),
+    // The Open borrows the project owes or has lent, past their payback
+    // date: the header's exception badge.
+    getProjectBorrows(client, companyId, {
+      projectId,
+      status: ["Open"],
+      dueBefore: today
+    }),
+    // The sidebar: the element tree, the project switcher and the change
+    // request picker.
+    getProjectElements(client, projectId, companyId),
+    getProjectSwitcherOptions(client, companyId),
+    getProjectChangeRequests(client, projectId, companyId),
+    // Planning group fields show only to a company that has a group.
+    client
+      .from("planningGroup")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId),
+    // Billing shows under Costs only while a contract line bills the project.
+    getContractBillingLines(client, { companyId, projectId })
+  ]);
 
   if (project.error || project.data?.companyId !== companyId) {
     logger.error("Failed to load project", {
@@ -88,6 +125,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ).filter((asset) => asset.status === "Under Construction").length
       : 0;
 
+  for (const [what, result] of [
+    ["elements", elements],
+    ["switcher projects", switcherOptions],
+    ["change requests", changeRequests],
+    ["planning groups", planningGroups],
+    ["contract billing lines", billingLines]
+  ] as const) {
+    if (result.error) {
+      logger.error(`Failed to load the project's ${what}`, {
+        companyId,
+        projectId,
+        error: result.error
+      });
+    }
+  }
+
+  // `?cr=` shows the plan as the open change request would leave it, in the
+  // sidebar's tree as on the Plan page.
+  let elementRows: ProjectElementListItem[] = elements.data ?? [];
+  let activeChangeRequest: ChangeRequestOverlay["changeRequest"] | null = null;
+  const changeRequestId = new URL(request.url).searchParams.get("cr");
+  if (changeRequestId) {
+    const overlay = await loadChangeRequestOverlay(getDatabaseClient(), {
+      companyId,
+      projectId,
+      changeRequestId
+    });
+    if (overlay) {
+      activeChangeRequest = overlay.changeRequest;
+      elementRows = await overlayElementList(client, overlay, elementRows, {
+        companyId,
+        projectId
+      });
+    }
+  }
+  const treeElements: ProjectTreeElement[] = elementRows.map((element) => ({
+    id: element.id,
+    parentId: element.parentId,
+    sortOrder: element.sortOrder,
+    readableId: element.readableId,
+    name: element.name,
+    type: element.type
+  }));
+
   if (overdueBorrows.error) {
     logger.error("Failed to load the project's overdue borrows", {
       companyId,
@@ -102,20 +183,53 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     overdueBorrowCount: overdueBorrows.data?.length ?? 0,
     states: states.data ?? [],
     labels: labels.data ?? [],
-    milestones: milestones.data ?? []
+    milestones: milestones.data ?? [],
+    treeElements,
+    switcherOptions: switcherOptions.data ?? [],
+    openChangeRequests: (changeRequests.data ?? [])
+      .filter((cr) =>
+        (openChangeRequestStatuses as readonly string[]).includes(cr.status)
+      )
+      .map((cr) => ({
+        id: cr.id,
+        readableId: cr.readableId,
+        title: cr.title,
+        status: cr.status
+      })),
+    activeChangeRequest,
+    hasPlanningGroups: (planningGroups.count ?? 0) > 0,
+    hasControlAccount: (elements.data ?? []).some(
+      (element) => element.isControlAccount
+    ),
+    hasBillingLines:
+      project.data.costTreatment === "Contract" &&
+      (billingLines.data ?? []).length > 0
   };
 }
 
 export default function ProjectRoute() {
+  const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ProjectHeader key={projectId} />
-      <div className="flex-1 min-h-0 overflow-y-auto bg-card w-full">
-        <RecordOutlet />
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
+        <ProjectHeader key={projectId} />
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorerLabel={t`Project`}
+              explorer={<ProjectSidebar />}
+              content={
+                <div className="bg-card h-full overflow-y-auto w-full">
+                  <RecordOutlet />
+                </div>
+              }
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </PanelProvider>
   );
 }

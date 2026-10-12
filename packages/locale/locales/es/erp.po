@@ -5459,9 +5459,9 @@ msgstr "Código"
 msgid "Collapse"
 msgstr "Contraer"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Contraer {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "Exp. <0/>"
 msgid "Expand"
 msgstr "Expandir"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Expandir {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "Nueva Acción del Aviso de Cambio"
 msgid "New Change Notice Type"
 msgstr "Nuevo Tipo de Aviso de Cambio"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "Nueva solicitud de cambio"
 
@@ -16025,6 +16028,9 @@ msgstr "Sin producción registrada aún."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Aún no hay facturas de facturación del proyecto. La ejecución de facturación nocturna redacta una por período de facturación."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "Libro mayor de proyectos"
 
 msgid "Project owner"
 msgstr "Propietario del proyecto"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "Plan de Proyecto"
@@ -21371,6 +21380,9 @@ msgstr "Buscar clientes y tipos..."
 msgid "Search customers or types..."
 msgstr "Buscar clientes o tipos..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "Buscar empleados..."
 
@@ -21412,6 +21424,9 @@ msgstr "Buscar piezas..."
 
 msgid "Search processes..."
 msgstr "Buscar procesos..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "Buscar registros…"
@@ -23532,6 +23547,9 @@ msgstr "Cambiar empresa"
 msgid "Switch module"
 msgstr "Cambiar módulo"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "Cambiar a modo panorámico"
 
@@ -25516,6 +25534,9 @@ msgstr "ajustado"
 
 msgid "Tightened"
 msgstr "Rigurosa"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "Tiempo y materiales"

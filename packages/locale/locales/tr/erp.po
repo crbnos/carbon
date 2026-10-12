@@ -5459,9 +5459,9 @@ msgstr "Kod"
 msgid "Collapse"
 msgstr "Daralt"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "{0} öğesini daralt"
 
@@ -10078,9 +10078,9 @@ msgstr "Exp. <0/>"
 msgid "Expand"
 msgstr "Genişlet"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Genişlet {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "Yeni Değişiklik Bildirisi İşlemi"
 msgid "New Change Notice Type"
 msgstr "Yeni Değişiklik Bildirisi Türü"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "Yeni Değişiklik İsteği"
 
@@ -16025,6 +16028,9 @@ msgstr "Henüz kayıtlı üretim yok."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Henüz proje faturası yok. Gecelik faturalama çalışması, her faturalama dönemi için bir taslak oluşturur."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "Proje Defteri"
 
 msgid "Project owner"
 msgstr "Proje sahibi"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "Proje Planı"
@@ -21371,6 +21380,9 @@ msgstr "Müşterileri ve türleri ara..."
 msgid "Search customers or types..."
 msgstr "Müşterileri veya türleri arayın..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "Çalışanları ara..."
 
@@ -21412,6 +21424,9 @@ msgstr "Parça ara..."
 
 msgid "Search processes..."
 msgstr "Süreçleri ara..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "Kayıtları ara…"
@@ -23532,6 +23547,9 @@ msgstr "Şirketi değiştir"
 msgid "Switch module"
 msgstr "Modülü değiştir"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "Pan moduna geç"
 
@@ -25516,6 +25534,9 @@ msgstr "dar"
 
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "Zaman & Malzeme"

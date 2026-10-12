@@ -5459,9 +5459,9 @@ msgstr "Код"
 msgid "Collapse"
 msgstr "Свернуть"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Свернуть {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "Истечение <0/>"
 msgid "Expand"
 msgstr "Развернуть"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Развернуть {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "Новое действие извещения об изменении"
 msgid "New Change Notice Type"
 msgstr "Новый тип извещения об изменении"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "Новый запрос на изменение"
 
@@ -16025,6 +16028,9 @@ msgstr "Производство еще не записано."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Счетов-фактур проекта еще нет. Ночной запуск биллинга создает один на каждый период биллинга."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "Журнал проекта"
 
 msgid "Project owner"
 msgstr "Ответственный проекта"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "План проекта"
@@ -21371,6 +21380,9 @@ msgstr "Поиск покупателей и типов..."
 msgid "Search customers or types..."
 msgstr "Поиск покупателей или типов..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "Поиск сотрудников..."
 
@@ -21412,6 +21424,9 @@ msgstr "Поиск деталей..."
 
 msgid "Search processes..."
 msgstr "Поиск процессов..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "Поиск записей…"
@@ -23532,6 +23547,9 @@ msgstr "Переключить организацию"
 msgid "Switch module"
 msgstr "Переключить модуль"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "Переключиться в режим панорамы"
 
@@ -25516,6 +25534,9 @@ msgstr "плотно"
 
 msgid "Tightened"
 msgstr "Усиленный"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "Время и материалы"

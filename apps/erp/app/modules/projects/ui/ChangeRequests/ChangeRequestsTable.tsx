@@ -2,29 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { ValidatedForm } from "@carbon/form";
-import {
-  Button,
-  HStack,
-  ModalDrawer,
-  ModalDrawerBody,
-  ModalDrawerContent,
-  ModalDrawerFooter,
-  ModalDrawerHeader,
-  ModalDrawerProvider,
-  ModalDrawerTitle
-} from "@carbon/react";
-import { Plural, Trans, useLingui } from "@lingui/react/macro";
+import { Button } from "@carbon/react";
+import { Plural, Trans } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuGitPullRequestArrow, LuPlus } from "react-icons/lu";
 import { Link } from "react-router";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
-import { Input, Submit, TextArea } from "~/components/Form";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import { projectChangeRequestValidator } from "../../projects.models";
 import type { ProjectChangeRequestListItem } from "../../types";
 import ChangeRequestStatus from "./ChangeRequestStatus";
+import { NewChangeRequestModal } from "./NewChangeRequestModal";
 
 type ChangeRequestsTableProps = {
   projectId: string;
@@ -88,7 +76,7 @@ const ChangeRequestsTable = ({
       )}
 
       {isOpening && (
-        <NewChangeRequestForm
+        <NewChangeRequestModal
           projectId={projectId}
           onClose={() => setIsOpening(false)}
         />
@@ -136,63 +124,6 @@ function ChangeRequestRow({
         </span>
       </div>
     </Link>
-  );
-}
-
-/** Opens a change request; the new route goes to the Elements page with it. */
-function NewChangeRequestForm({
-  projectId,
-  onClose
-}: {
-  projectId: string;
-  onClose: () => void;
-}) {
-  const { t } = useLingui();
-
-  return (
-    <ModalDrawerProvider type="modal">
-      <ModalDrawer
-        open
-        onOpenChange={(open) => {
-          if (!open) onClose();
-        }}
-      >
-        <ModalDrawerContent>
-          <ValidatedForm
-            validator={projectChangeRequestValidator}
-            method="post"
-            action={path.to.newProjectChangeRequest(projectId)}
-            defaultValues={{ title: "", reason: "" }}
-            className="flex flex-col h-full"
-          >
-            <ModalDrawerHeader>
-              <ModalDrawerTitle>
-                <Trans>New Change Request</Trans>
-              </ModalDrawerTitle>
-            </ModalDrawerHeader>
-            <ModalDrawerBody>
-              <Input
-                name="title"
-                label={t`Title`}
-                placeholder={t`Lighter harness`}
-                autoFocus
-              />
-              <TextArea name="reason" label={t`Reason`} />
-            </ModalDrawerBody>
-            <ModalDrawerFooter>
-              <HStack>
-                <Submit>
-                  <Trans>Open</Trans>
-                </Submit>
-                <Button size="md" variant="solid" onClick={onClose}>
-                  <Trans>Cancel</Trans>
-                </Button>
-              </HStack>
-            </ModalDrawerFooter>
-          </ValidatedForm>
-        </ModalDrawerContent>
-      </ModalDrawer>
-    </ModalDrawerProvider>
   );
 }
 

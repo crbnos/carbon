@@ -5459,9 +5459,9 @@ msgstr "Code"
 msgid "Collapse"
 msgstr "Einklappen"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "Zusammenklappen {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "Gültig bis <0/>"
 msgid "Expand"
 msgstr "Erweitern"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "Erweitern {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "Neue Änderungsmitteilung-Aktion"
 msgid "New Change Notice Type"
 msgstr "Neuer Änderungsmitteilung-Typ"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "Neue Änderungsanfrage"
 
@@ -16025,6 +16028,9 @@ msgstr "Noch keine Produktion aufgezeichnet."
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Noch keine Projektabrechnungsrechnungen. Der nächtliche Abrechnungslauf erstellt eine pro Abrechnungsperiode."
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "Projektbuch"
 
 msgid "Project owner"
 msgstr "Projektverantwortlicher"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "Projektplan"
@@ -21371,6 +21380,9 @@ msgstr "Kunden und Typen durchsuchen..."
 msgid "Search customers or types..."
 msgstr "Kunden oder Typen durchsuchen..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "Mitarbeiter durchsuchen..."
 
@@ -21412,6 +21424,9 @@ msgstr "Teile durchsuchen..."
 
 msgid "Search processes..."
 msgstr "Prozesse durchsuchen..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "Datensätze durchsuchen…"
@@ -23532,6 +23547,9 @@ msgstr "Unternehmen wechseln"
 msgid "Switch module"
 msgstr "Modul wechseln"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "Zum Schwenkmodus wechseln"
 
@@ -25516,6 +25534,9 @@ msgstr "knapp"
 
 msgid "Tightened"
 msgstr "Verschärft"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "Zeit & Materialien"

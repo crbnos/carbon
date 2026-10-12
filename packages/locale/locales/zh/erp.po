@@ -5459,9 +5459,9 @@ msgstr "代码"
 msgid "Collapse"
 msgstr "折叠"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: row.readableId
-#. placeholder {0}: unit.name
 msgid "Collapse {0}"
 msgstr "折叠 {0}"
 
@@ -10078,9 +10078,9 @@ msgstr "预期<0/>"
 msgid "Expand"
 msgstr "展开"
 
+#. placeholder {0}: element.readableId
 #. placeholder {0}: group.name
 #. placeholder {0}: item.label
-#. placeholder {0}: row.readableId
 msgid "Expand {0}"
 msgstr "展开 {0}"
 
@@ -14950,6 +14950,9 @@ msgstr "新建变更通知操作"
 msgid "New Change Notice Type"
 msgstr "新建变更通知类型"
 
+msgid "New change request"
+msgstr ""
+
 msgid "New Change Request"
 msgstr "新更改请求"
 
@@ -16025,6 +16028,9 @@ msgstr "还没有生产记录。"
 
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "还没有项目计费发票。夜间计费运行会为每个计费期间起草一张。"
+
+msgid "No project found"
+msgstr ""
 
 msgid "No projects yet"
 msgstr ""
@@ -18626,6 +18632,9 @@ msgstr "项目总账"
 
 msgid "Project owner"
 msgstr "项目负责人"
+
+msgid "Project pages"
+msgstr ""
 
 msgid "Project Plan"
 msgstr "项目计划"
@@ -21371,6 +21380,9 @@ msgstr "搜索客户和类型..."
 msgid "Search customers or types..."
 msgstr "搜索客户或类型..."
 
+msgid "Search elements"
+msgstr ""
+
 msgid "Search employees..."
 msgstr "搜索员工..."
 
@@ -21412,6 +21424,9 @@ msgstr "搜索零件..."
 
 msgid "Search processes..."
 msgstr "搜索流程..."
+
+msgid "Search projects"
+msgstr ""
 
 msgid "Search records…"
 msgstr "搜索记录…"
@@ -23532,6 +23547,9 @@ msgstr "切换公司"
 msgid "Switch module"
 msgstr "切换模块"
 
+msgid "Switch project"
+msgstr ""
+
 msgid "Switch to pan mode"
 msgstr "切换到平移模式"
 
@@ -25516,6 +25534,9 @@ msgstr "紧张"
 
 msgid "Tightened"
 msgstr "加严检验"
+
+msgid "Time"
+msgstr ""
 
 msgid "Time & materials"
 msgstr "时间与材料"
