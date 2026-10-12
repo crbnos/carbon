@@ -87,22 +87,22 @@ export default function useAccountingSubmodules() {
             table: "accountingPeriod"
           },
           {
-            name: t`Revenue Recognition`,
-            to: path.to.revenueRecognitionRuns,
+            name: t`Depreciation`,
+            to: path.to.depreciationRuns,
             role: "employee",
-            icon: <LuCalendarClock />
+            icon: <LuClock />
           },
           {
-            name: t`Lease Runs`,
+            name: t`Leases`,
             to: path.to.leaseRuns,
             role: "employee",
             icon: <LuKeyRound />
           },
           {
-            name: t`Depreciation`,
-            to: path.to.depreciationRuns,
+            name: t`Revenue Recognition`,
+            to: path.to.revenueRecognitionRuns,
             role: "employee",
-            icon: <LuClock />
+            icon: <LuCalendarClock />
           }
         ]
       },

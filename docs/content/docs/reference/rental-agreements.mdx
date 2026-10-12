@@ -145,7 +145,7 @@ Posting a rental invoice books receivables and tax as usual. For a unit treated 
 | Early-return credit (on its credit memo) | Deferred Revenue for the part not yet recognized, Rental Income for any part that was |
 | Charge | Rental Income, immediately |
 
-Rent never lands on Rental Income directly. The deferred part is scheduled across the days of its period, and the monthly <Term>lease run</Term> (**Accounting → Lease Runs**) moves it to Rental Income as the days pass. A rental agreement's entries post in the lease run, not in the revenue recognition run.
+Rent never lands on Rental Income directly. The deferred part is scheduled across the days of its period, and the monthly <Term>lease run</Term> (**Accounting → Closing → Leases**) moves it to Rental Income as the days pass. A rental agreement's entries post in the lease run, not in the revenue recognition run.
 
 The same run **accrues** rent for days a unit was on rent in the month whose period has no posted invoice yet, the usual Arrears case: Dr Contract Assets, Cr Rental Income. The invoice clears the contract asset when it posts. The period-close task **"Post lease journals"** does not pass until those accruals exist.
 
@@ -374,7 +374,7 @@ Return to Inventory (post-asset-transfer `return`) refuses a unit on a live rent
 post-sales-invoice needs `accountDefault.deferredRevenueAccount`, `contractAssetAccount` and `rentalIncomeAccount`. Also "… account is invalid; expected an active CLASS leaf in this company group" when the mapped account is the wrong class, inactive, or a group.
 
 ### "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first"
-Voiding an invoice whose Deferral rows were already posted. For a rental invoice the run that posted them is a lease run (Accounting → Lease Runs): reverse it, then void.
+Voiding an invoice whose Deferral rows were already posted. For a rental invoice the run that posted them is a lease run (Accounting → Closing → Leases): reverse it, then void.
 
 ### "Set the Contract Assets and Rental Income account defaults before recognizing rental revenue"
 The lease run's accrual synthesis (`synthesizeRentalAccruals`) needs both defaults.

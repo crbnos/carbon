@@ -424,7 +424,7 @@ RLS: every new table through `packages/database/src/authz/manifest.ts`: `company
   - **Documents**: the lease's purchase invoices and journals.
 - **Modify / Terminate / Purchase** open modals that preview the journal before confirming.
 - **Purchase invoice**: the line type picker offers Lease (lease picker filtered to the supplier); a payment line shows "Payment 7 of 36 · LSE000004".
-- **Accounting → Lease Runs** list and run page (shared components with revenue recognition, run type as a prop); close wizard shows both previews.
+- **Accounting → Closing → Leases** list and run page (shared components with revenue recognition, run type as a prop); close wizard shows both previews.
 - **Settings → Accounting → Lease policy**: incremental borrowing rate, short-term election, reminder days. **Account defaults**: a Leases (lessee) group with the 7 accounts.
 - **Reports → Lease Liabilities**.
 - **Docs**: `docs/content/docs/reference/leases.mdx`; glossary terms Lease (lessee), Right-of-Use Asset, Lease Liability, Lease Run; `rental-agreements.mdx` and `accounting.mdx` updated for the lease run.
