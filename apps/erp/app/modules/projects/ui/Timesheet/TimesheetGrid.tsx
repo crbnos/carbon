@@ -356,7 +356,7 @@ export default function TimesheetGrid({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <HStack spacing={2}>
           <h2 className="text-base font-medium">
-            {employee ? employee.name : <Trans>My Timesheet</Trans>}
+            {employee ? employee.name : <Trans>My Time</Trans>}
           </h2>
           <HStack spacing={1}>
             <IconButton

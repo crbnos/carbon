@@ -653,7 +653,7 @@ function LinkLegend({
               strokeWidth="1.5"
             />
           </svg>
-          <Trans>Suspect</Trans>
+          <Trans>Needs review</Trans>
         </span>
       </PopoverContent>
     </Popover>

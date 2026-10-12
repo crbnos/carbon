@@ -1123,8 +1123,8 @@ msgstr "Deve essere compreso tra {minValue} e {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Le Mie Ore"
 
-msgid "My Timesheet"
-msgstr "Mio foglio presenze"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "Nome"

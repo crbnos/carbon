@@ -637,7 +637,7 @@ function PeriodCloseTaskRow({
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
       case "earned-value-closed":
-        return t`Writes the earned value snapshot of every project with work packages for the period: BCWS, BCWP and ACWP per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages.`;
+        return t`Writes the earned value snapshot of every project with work packages for the period: planned value, earned value and actual cost per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages.`;
       case "burden-computed":
         return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
       case "timesheets-complete":

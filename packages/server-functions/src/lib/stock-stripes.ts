@@ -144,7 +144,7 @@ export async function assertEntitiesInStripes(
   throw new InvalidInputError(
     first.stripe
       ? `${entity} is in the stock of project ${labelOf(first.stripe)}. Transfer it first.`
-      : `${entity} is in common stock, which this demand cannot draw.`
+      : `${entity} is in unassigned stock, which this demand cannot draw.`
   );
 }
 

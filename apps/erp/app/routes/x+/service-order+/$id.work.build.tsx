@@ -159,7 +159,7 @@ export async function action({
     });
     return {
       error: {
-        message: getErrorMessage(err, "The nodes could not be created")
+        message: getErrorMessage(err, "The elements could not be created")
       }
     };
   }

@@ -67,7 +67,7 @@ const ProjectStockTransferForm = ({
   );
 
   const ownerOptions = useMemo(
-    () => stockOwnerOptions(owners, t`Common stock`),
+    () => stockOwnerOptions(owners, t`Unassigned stock`),
     [owners, t]
   );
   // A borrow runs between two projects: common stock is not an owner.

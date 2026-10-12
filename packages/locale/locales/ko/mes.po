@@ -1123,8 +1123,8 @@ msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
 msgid "My Hours"
 msgstr "내 근무 시간"
 
-msgid "My Timesheet"
-msgstr "내 타임시트"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "이름"

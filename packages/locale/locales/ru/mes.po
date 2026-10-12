@@ -1123,8 +1123,8 @@ msgstr "Должно быть между {minValue} и {maxValue} {unitOfMeasure
 msgid "My Hours"
 msgstr "Мои часы"
 
-msgid "My Timesheet"
-msgstr "Мой табель"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "Имя"

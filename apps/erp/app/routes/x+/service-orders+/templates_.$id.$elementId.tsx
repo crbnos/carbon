@@ -78,7 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         request,
         error(
           template.error ?? node.error ?? planLines.error,
-          "Failed to load the node"
+          "Failed to load the element"
         )
       )
     );
@@ -120,7 +120,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     elementId,
     companyId
   });
-  if (node.error) return refuse(null, "The node is not part of this template");
+  if (node.error)
+    return refuse(null, "The element is not part of this template");
 
   const formData = await request.formData();
   formData.set("projectElementId", elementId);
@@ -146,7 +147,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementMaterial", lineId))) {
-        return refuse(null, "The line is not on this node");
+        return refuse(null, "The line is not on this element");
       }
       const result = lineId
         ? await upsertProjectElementMaterial(client, {
@@ -171,7 +172,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementLabor", lineId))) {
-        return refuse(null, "The line is not on this node");
+        return refuse(null, "The line is not on this element");
       }
       const result = lineId
         ? await upsertProjectElementLabor(client, {
@@ -196,7 +197,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (validation.error) return validationError(validation.error);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementCost", lineId))) {
-        return refuse(null, "The line is not on this node");
+        return refuse(null, "The line is not on this element");
       }
       const result = lineId
         ? await upsertProjectElementCost(client, {
@@ -228,7 +229,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             ? "projectElementLabor"
             : "projectElementCost";
       if (!(await ownsLine(table, lineId))) {
-        return refuse(null, "The line is not on this node");
+        return refuse(null, "The line is not on this element");
       }
       const remove =
         intent === "deleteMaterial"

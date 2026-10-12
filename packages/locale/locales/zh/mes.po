@@ -1123,8 +1123,8 @@ msgstr "必须在 {minValue} 到 {maxValue} {unitOfMeasureCode} 之间"
 msgid "My Hours"
 msgstr "我的工时"
 
-msgid "My Timesheet"
-msgstr "我的工时单"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "名称"

@@ -84,7 +84,7 @@ export default function useProjectsSubmodules() {
           isActive: isProjectsRoute
         },
         {
-          name: t`My Timesheet`,
+          name: t`My Time`,
           to: path.to.timesheet,
           icon: <LuTimer />,
           isActive: (pathname: string) => pathname.startsWith(path.to.timesheet)

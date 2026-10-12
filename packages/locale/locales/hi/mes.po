@@ -1123,8 +1123,8 @@ msgstr "{minValue} और {maxValue} के बीच होना चाहि�
 msgid "My Hours"
 msgstr "मेरे घंटे"
 
-msgid "My Timesheet"
-msgstr "मेरी टाइमशीट"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "नाम"

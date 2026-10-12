@@ -119,7 +119,7 @@ export default function WorkTree({
       nameRef.current?.focus();
     },
     onError: (data) =>
-      toast.error(data?.error?.message ?? t`Failed to add the node`)
+      toast.error(data?.error?.message ?? t`Failed to add the element`)
   });
 
   const typeLabels: Record<ServiceNodeType, string> = {
@@ -173,11 +173,11 @@ export default function WorkTree({
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             {isPlan ? (
-              <Trans>No nodes yet. Add the first node.</Trans>
+              <Trans>No elements yet. Add the first element.</Trans>
             ) : (
               <Trans>
                 No work yet. Build the tree from the unit, or add the first
-                node.
+                element.
               </Trans>
             )}
           </p>
@@ -186,7 +186,7 @@ export default function WorkTree({
             <Thead>
               <Tr>
                 <Th className="w-full">
-                  <Trans>Node</Trans>
+                  <Trans>Element</Trans>
                 </Th>
                 {isPlan ? (
                   <>
@@ -311,7 +311,7 @@ export default function WorkTree({
                             }}
                           >
                             <DropdownMenuIcon icon={<LuCornerDownRight />} />
-                            <Trans>Add Child Node</Trans>
+                            <Trans>Add Child Element</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             destructive
@@ -319,7 +319,7 @@ export default function WorkTree({
                             onClick={() => setDeleting(node)}
                           >
                             <DropdownMenuIcon icon={<LuTrash />} />
-                            <Trans>Delete Node</Trans>
+                            <Trans>Delete Element</Trans>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -356,7 +356,7 @@ export default function WorkTree({
                   value={type}
                   onValueChange={(value) => setType(value as ServiceNodeType)}
                 >
-                  <SelectTrigger aria-label={t`Node type`}>
+                  <SelectTrigger aria-label={t`Element type`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -371,7 +371,7 @@ export default function WorkTree({
               <Input
                 ref={nameRef}
                 value={name}
-                placeholder={t`Name the node`}
+                placeholder={t`Name the element`}
                 onChange={(event) => setName(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
@@ -387,7 +387,7 @@ export default function WorkTree({
                 isDisabled={!name.trim() || addFetcher.state !== "idle"}
                 onClick={addNode}
               >
-                <Trans>Add Node</Trans>
+                <Trans>Add Element</Trans>
               </Button>
             </div>
           </div>
@@ -399,7 +399,7 @@ export default function WorkTree({
           action={workAction}
           isOpen
           name={`${deleting.readableId} ${deleting.name}`}
-          text={t`Are you sure you want to delete ${deleting.readableId} and the nodes under it? This cannot be undone.`}
+          text={t`Are you sure you want to delete ${deleting.readableId} and the elements under it? This cannot be undone.`}
           fields={{ intent: "delete", elementId: deleting.id }}
           onCancel={() => setDeleting(null)}
           onSubmit={() => setDeleting(null)}

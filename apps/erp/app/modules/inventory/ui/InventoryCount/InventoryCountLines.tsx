@@ -307,13 +307,13 @@ const InventoryCountLines = ({
                 t`Project stock`}
             </span>
           ) : (
-            <span className="text-muted-foreground">{t`Common stock`}</span>
+            <span className="text-muted-foreground">{t`Unassigned stock`}</span>
           ),
         meta: {
           exportValue: (row) =>
             row.projectId
               ? (row.projectIdentifier ?? row.projectName ?? row.projectId)
-              : t`Common stock`,
+              : t`Unassigned stock`,
           icon: <LuFolderKanban />
         }
       },

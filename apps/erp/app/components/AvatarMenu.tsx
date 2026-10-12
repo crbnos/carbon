@@ -170,7 +170,7 @@ export function useAccountMenu() {
             id: "timesheet",
             group: 0,
             kind: "link",
-            label: <Trans>My Timesheet</Trans>,
+            label: <Trans>My Time</Trans>,
             icon: <LuTimer />,
             to: path.to.timesheet
           } satisfies AccountMenuItem

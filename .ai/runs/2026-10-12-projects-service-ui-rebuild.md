@@ -11,6 +11,15 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 2: Apply the terminology table and add the glossary entries
 
+- Applied the *Terminology* table; the plan's table now has an "Applied" column with each decision. Two additions: the planning group excess rule shows "Unassigned stock" and "Exception project" (the enum values stay), and the service invoice detail `By Node` shows "By Element".
+- `BuildFromPartDrawer` lost `vocabulary`; the service order's drawer now reads "Build from part" with the element wording.
+- 47 glossary entries in `docs/content/src/glossary/terms.ts`, each with one grounded definition and an `href` to a heading that exists (all 34 distinct hrefs checked). `element` now says "One item" instead of "One node". ACRN, SLIN and preproduction have thin sources, so their definitions say only what the rules state.
+- Not changed: code names (`COMMON_STOCK_OWNER`, `clearSuspect`, `ServiceWorkNode`), enum values, the "Build Tree" button, `.claude/rules/` and the docs pages (Tasks 41 and 42; `projects.mdx` still says "common stock").
+- Verify: the old-word grep on `apps/erp/app apps/mes/app` (`.tsx`, comments excluded) → 0; the service "node" grep in `t`/`<Trans>` → 0. `@carbon/content` test 17 passed; `docs` typecheck exit 0 (glossary agent). `pnpm run lingui:extract` ran.
+- Code gate: Biome clean (terms.ts is outside Biome's `files.includes`); `typecheck` erp, mes, server-functions exit 0; erp 2,261 and mes 73 tests passed.
+- Shots: `02-service-work.png` (the work tree says Element; the Add Element row), `02-plan-tree-terms.png` (Current plan, Work complete).
+- Screenshot check: the screens are unchanged except for the words, so the layout answers stay as Tasks 11–22 left them. The service work page still has 3 header actions (Put on Hold, Complete, Cancel); Tasks 30–32 rebuild it.
+
 ## Task 3: Give Empty a title and a description
 
 - `Empty` takes `title` and `description`. `description={null}` renders no line. The default text is the same.

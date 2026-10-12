@@ -66,7 +66,6 @@ export function BuildFromPartDrawer({
   defaultParentId,
   endpoint,
   initial,
-  vocabulary = "element",
   onClose
 }: {
   projectId: string;
@@ -82,14 +81,11 @@ export function BuildFromPartDrawer({
     itemId?: string | null;
     trackedEntityId?: string | null;
   };
-  /** A service order's tree has nodes, not elements. */
-  vocabulary?: "element" | "node";
   onClose: () => void;
 }) {
   const { t } = useLingui();
   const [items] = useItems();
   const buildPath = endpoint ?? path.to.projectElementsBuild(projectId);
-  const isNode = vocabulary === "node";
   const [source, setSource] = useState<BuildFromPartSource>(
     initial?.source ?? "Item"
   );
@@ -150,11 +146,7 @@ export function BuildFromPartDrawer({
   const submitFetcher = useAction<BuildFromPartResult>({
     onSuccess: (result) => {
       const count = result.count ?? 0;
-      toast.success(
-        isNode
-          ? t`Created ${count} nodes from the part`
-          : t`Created ${count} elements from the part`
-      );
+      toast.success(t`Created ${count} elements from the part`);
       onClose();
     }
   });
@@ -216,24 +208,13 @@ export function BuildFromPartDrawer({
       <DrawerContent size="lg">
         <DrawerHeader>
           <DrawerTitle>
-            {isNode ? (
-              <Trans>Build Tree</Trans>
-            ) : (
-              <Trans>Build from part</Trans>
-            )}
+            <Trans>Build from part</Trans>
           </DrawerTitle>
           <DrawerDescription>
-            {isNode ? (
-              <Trans>
-                Create System nodes from the unit's build history, the item's
-                bill of materials or a service template.
-              </Trans>
-            ) : (
-              <Trans>
-                Create System elements from a serial's build history, an item's
-                bill of materials or a template.
-              </Trans>
-            )}
+            <Trans>
+              Create System elements from a serial's build history, an item's
+              bill of materials or a template.
+            </Trans>
           </DrawerDescription>
         </DrawerHeader>
         <DrawerBody>
@@ -315,7 +296,7 @@ export function BuildFromPartDrawer({
                 onCheckedChange={setIncludeBought}
               />
             )}
-            <Field label={isNode ? t`Parent node` : t`Parent element`}>
+            <Field label={t`Parent element`}>
               <Combobox
                 asButton
                 value={parentId ?? ""}
@@ -340,30 +321,16 @@ export function BuildFromPartDrawer({
                 </div>
               ) : !data?.preview ? (
                 <p className="text-sm text-muted-foreground">
-                  {isNode ? (
-                    <Trans>Choose a source to see the nodes it creates.</Trans>
-                  ) : (
-                    <Trans>
-                      Choose a source to see the elements it creates.
-                    </Trans>
-                  )}
+                  <Trans>Choose a source to see the elements it creates.</Trans>
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
                   <p className="text-sm">
-                    {isNode ? (
-                      <Plural
-                        value={rows.length}
-                        one="# node will be created"
-                        other="# nodes will be created"
-                      />
-                    ) : (
-                      <Plural
-                        value={rows.length}
-                        one="# element will be created"
-                        other="# elements will be created"
-                      />
-                    )}
+                    <Plural
+                      value={rows.length}
+                      one="# element will be created"
+                      other="# elements will be created"
+                    />
                   </p>
                   {data.preview.skippedLines > 0 && (
                     <p className="text-xs text-amber-600 dark:text-amber-500">
@@ -419,11 +386,7 @@ export function BuildFromPartDrawer({
               })
             }
           >
-            {isNode ? (
-              <Trans>Create nodes</Trans>
-            ) : (
-              <Trans>Create elements</Trans>
-            )}
+            <Trans>Create elements</Trans>
           </Button>
         </DrawerFooter>
       </DrawerContent>

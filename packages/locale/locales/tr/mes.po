@@ -1123,8 +1123,8 @@ msgstr "Aralması gereken değer {minValue} ile {maxValue} arasındadır"
 msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
 
-msgid "My Timesheet"
-msgstr "Zaman Çizelgesim"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "Adı"

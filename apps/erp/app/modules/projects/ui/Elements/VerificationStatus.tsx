@@ -35,7 +35,7 @@ export function VerificationStatus({
   );
 }
 
-/** The amber triangle of an element with a suspect incoming trace link. */
+/** The amber triangle of an element with an incoming trace link that needs review. */
 export function SuspectBadge({ count = 1 }: { count?: number }) {
   const { t } = useLingui();
   return (
@@ -43,7 +43,7 @@ export function SuspectBadge({ count = 1 }: { count?: number }) {
       <TooltipTrigger asChild>
         <span className="inline-flex shrink-0">
           <LuTriangleAlert
-            aria-label={t`Suspect link`}
+            aria-label={t`Link needs review`}
             className="size-4 text-amber-500"
           />
         </span>

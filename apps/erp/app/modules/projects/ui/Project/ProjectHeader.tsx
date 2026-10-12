@@ -140,7 +140,7 @@ const ProjectHeader = () => {
         isDisabled={!can("Technically Complete") || isChanging}
         onClick={() => changeStatus("Technically Complete")}
       >
-        <Trans>Technically complete</Trans>
+        <Trans>Work complete</Trans>
       </Button>
     );
   } else if (status === "On Hold") {
@@ -183,7 +183,7 @@ const ProjectHeader = () => {
           onClick={() => changeStatus("Technically Complete")}
         >
           <DropdownMenuIcon icon={<LuCircleCheck />} />
-          <Trans>Technically complete</Trans>
+          <Trans>Work complete</Trans>
         </DropdownMenuItem>
       )}
       {status === "Technically Complete" && (

@@ -257,7 +257,7 @@ export default function VisitPage({
             {!selected && nodes.length > 0 && (
               <p className="text-sm text-muted-foreground">
                 <Trans>
-                  Choose a node to log time, issue a part or add an expense.
+                  Choose an element to log time, issue a part or add an expense.
                 </Trans>
               </p>
             )}

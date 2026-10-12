@@ -698,7 +698,7 @@ const InventoryTable = memo(
                 value={stockOwner ?? ALL_STOCK_OWNERS}
                 options={[
                   { value: ALL_STOCK_OWNERS, label: t`All stock owners` },
-                  { value: "common", label: t`Common stock` },
+                  { value: "common", label: t`Unassigned stock` },
                   ...stockOwners.map((project) => ({
                     value: project.id,
                     label: project.identifier

@@ -192,7 +192,7 @@ function LineModal({
   const owner =
     transfer.fromProject?.identifier ||
     transfer.fromProject?.name ||
-    t`common stock`;
+    t`unassigned stock`;
   const availableText = onHand
     ? t`${formatQuantity(available)} available in ${owner} here`
     : undefined;

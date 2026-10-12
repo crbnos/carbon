@@ -232,14 +232,14 @@ function EarnedValueTable({
         <span className={FIGURE_CELL} title={t`Budget at completion`}>
           <Trans>BAC</Trans>
         </span>
-        <span className={FIGURE_CELL} title={t`Planned value`}>
-          <Trans>BCWS</Trans>
+        <span className={FIGURE_CELL} title={t`BCWS`}>
+          <Trans>Planned value</Trans>
         </span>
-        <span className={FIGURE_CELL} title={t`Earned value`}>
-          <Trans>BCWP</Trans>
+        <span className={FIGURE_CELL} title={t`BCWP`}>
+          <Trans>Earned value</Trans>
         </span>
-        <span className={FIGURE_CELL} title={t`Actual cost`}>
-          <Trans>ACWP</Trans>
+        <span className={FIGURE_CELL} title={t`ACWP`}>
+          <Trans>Actual cost</Trans>
         </span>
         <span className={FIGURE_CELL} title={t`Cost variance`}>
           <Trans>CV</Trans>

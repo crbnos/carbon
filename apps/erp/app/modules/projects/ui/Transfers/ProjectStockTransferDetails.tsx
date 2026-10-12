@@ -80,7 +80,7 @@ export default function ProjectStockTransferDetails({
         });
       }
     }
-    return stockOwnerOptions(listed, t`Common stock`);
+    return stockOwnerOptions(listed, t`Unassigned stock`);
   }, [owners, transfer.fromProject, transfer.toProject, t]);
   const projectOptions = ownerOptions.filter((o) => o.value !== "common");
   const isPayback = transfer.type === "Payback";

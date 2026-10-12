@@ -278,7 +278,7 @@ const postProjectStockTransfer = defineServerFn({
             `Insufficient quantity in the ${
               fromProject
                 ? `stock of project ${fromProject.identifier || fromProject.name}`
-                : "common stock"
+                : "unassigned stock"
             } to transfer`
           );
         }

@@ -98,7 +98,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "delete") {
     const elementId = formData.get("elementId");
     if (typeof elementId !== "string" || !elementId) {
-      return failure("Choose a node to delete");
+      return failure("Choose an element to delete");
     }
     const node = await client
       .from("projectElement")
@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("projectId", order.data.projectId)
       .eq("companyId", companyId)
       .maybeSingle();
-    if (!node.data) return failure("The node is not part of this order");
+    if (!node.data) return failure("The element is not part of this order");
     const result = await deleteProjectElement(client, elementId, companyId);
     if (result.error) {
       throw redirect(
@@ -120,14 +120,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
     throw redirect(
       path.to.serviceOrderWork(id),
-      await flash(request, success("Node deleted"))
+      await flash(request, success("Element deleted"))
     );
   }
 
   if (intent !== "add") return failure("Unknown intent");
 
   const validation = await validator(serviceNodeValidator).validate(formData);
-  if (validation.error) return failure("Name the node");
+  if (validation.error) return failure("Name the element");
 
   try {
     const created = await insertProjectElement(getDatabaseClient(), {
@@ -146,7 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       error: err
     });
     return failure(
-      err instanceof Error ? err.message : "Failed to add the node"
+      err instanceof Error ? err.message : "Failed to add the element"
     );
   }
 }
@@ -190,7 +190,6 @@ export default function ServiceOrderWorkRoute() {
             itemId: order?.itemId ?? null,
             trackedEntityId: order?.trackedEntityId ?? null
           }}
-          vocabulary="node"
           onClose={() => setIsBuilding(false)}
         />
       )}

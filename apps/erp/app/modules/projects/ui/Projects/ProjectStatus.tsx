@@ -22,7 +22,7 @@ const ProjectStatus = ({ status }: ProjectStatusProps) => {
     Draft: t`Draft`,
     Released: t`Released`,
     "On Hold": t`On Hold`,
-    "Technically Complete": t`Technically Complete`,
+    "Technically Complete": t`Work Complete`,
     Closed: t`Closed`
   };
 

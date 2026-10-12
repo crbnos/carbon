@@ -139,7 +139,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       if (err instanceof ProjectChangeConflictError) {
         throw await refuse(
           null,
-          `${readableId} is approved but cannot apply: the live plan changed under ${err.conflicts.length} of its rows. Reopen it to fix them.`
+          `${readableId} is approved but cannot apply: the current plan changed under ${err.conflicts.length} of its rows. Reopen it to fix them.`
         );
       }
       logger.error("Failed to apply a change request", {
@@ -296,7 +296,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         const { dropped } = await reopenChangeRequest(db, scope);
         throw await done(
           dropped > 0
-            ? `${readableId} reopened. ${dropped} change(s) no longer fit the live plan and were removed.`
+            ? `${readableId} reopened. ${dropped} change(s) no longer fit the current plan and were removed.`
             : `${readableId} reopened`
         );
       } catch (err) {

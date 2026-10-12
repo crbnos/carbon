@@ -11,12 +11,12 @@ type StockOwnerProps = {
   project?: { id: string; identifier: string | null; name: string } | null;
 };
 
-/** A stock owner: the project's identifier, linked, or "Common stock". */
+/** A stock owner: the project's identifier, linked, or "Unassigned stock". */
 export function StockOwner({ project }: StockOwnerProps) {
   if (!project) {
     return (
       <span className="text-muted-foreground">
-        <Trans>Common stock</Trans>
+        <Trans>Unassigned stock</Trans>
       </span>
     );
   }

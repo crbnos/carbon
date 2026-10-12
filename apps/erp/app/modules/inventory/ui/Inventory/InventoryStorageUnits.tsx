@@ -648,7 +648,7 @@ const InventoryStorageUnits = ({
                       {owner.projectId ? (
                         (ownerLabels[owner.projectId] ?? t`Project stock`)
                       ) : (
-                        <Trans>Common stock</Trans>
+                        <Trans>Unassigned stock</Trans>
                       )}
                     </span>
                     {renderQuantity(

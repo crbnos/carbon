@@ -44,6 +44,7 @@ import {
 } from "../../projects.models";
 import type { PlanningGroupMember } from "../../types";
 import ProjectStatus from "../Projects/ProjectStatus";
+import { usePlanningGroupExcessRuleLabels } from "./usePlanningGroupLabels";
 
 type PlanningGroupFormProps = {
   initialValues: z.infer<typeof planningGroupValidator>;
@@ -65,6 +66,7 @@ const PlanningGroupForm = ({
   onClose
 }: PlanningGroupFormProps) => {
   const { t } = useLingui();
+  const excessRuleLabels = usePlanningGroupExcessRuleLabels();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
   const [excessRule, setExcessRule] = useState<string>(
@@ -129,7 +131,7 @@ const PlanningGroupForm = ({
                   label={t`Excess Rule`}
                   helperText={t`Where received stock goes when no member needs it`}
                   options={planningGroupExcessRules.map((rule) => ({
-                    label: rule,
+                    label: excessRuleLabels[rule],
                     value: rule
                   }))}
                   value={excessRule}

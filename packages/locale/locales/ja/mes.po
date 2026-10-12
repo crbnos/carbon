@@ -1123,8 +1123,8 @@ msgstr "{minValue} から {maxValue} {unitOfMeasureCode} の間である必要�
 msgid "My Hours"
 msgstr "勤務時間"
 
-msgid "My Timesheet"
-msgstr "マイタイムシート"
+msgid "My Time"
+msgstr ""
 
 msgid "Name"
 msgstr "名前"

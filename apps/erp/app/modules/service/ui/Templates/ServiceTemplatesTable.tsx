@@ -44,7 +44,7 @@ const ServiceTemplatesTable = memo(
         },
         {
           id: "nodes",
-          header: t`Nodes`,
+          header: t`Elements`,
           cell: ({ row }) => (
             <span className="tabular-nums">
               {formatQuantity(countOf(row.original.nodes))}

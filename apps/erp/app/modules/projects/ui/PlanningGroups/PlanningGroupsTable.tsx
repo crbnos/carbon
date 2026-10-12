@@ -32,6 +32,7 @@ import {
   planningGroupPriorityRules
 } from "../../projects.models";
 import type { PlanningGroup } from "../../types";
+import { usePlanningGroupExcessRuleLabels } from "./usePlanningGroupLabels";
 
 type PlanningGroupsTableProps = {
   data: PlanningGroup[];
@@ -45,6 +46,7 @@ function memberCount(group: PlanningGroup) {
 const PlanningGroupsTable = memo(
   ({ data, count }: PlanningGroupsTableProps) => {
     const { t } = useLingui();
+    const excessRuleLabels = usePlanningGroupExcessRuleLabels();
     const navigate = useNavigate();
     const permissions = usePermissions();
 
@@ -102,13 +104,15 @@ const PlanningGroupsTable = memo(
         {
           accessorKey: "excessRule",
           header: t`Excess Rule`,
-          cell: ({ row }) => <Enumerable value={row.original.excessRule} />,
+          cell: ({ row }) => (
+            <Enumerable value={excessRuleLabels[row.original.excessRule]} />
+          ),
           meta: {
             filter: {
               type: "static",
               options: planningGroupExcessRules.map((rule) => ({
                 value: rule,
-                label: <Enumerable value={rule} />
+                label: <Enumerable value={excessRuleLabels[rule]} />
               }))
             },
             icon: <LuPackageOpen />
@@ -140,7 +144,7 @@ const PlanningGroupsTable = memo(
           meta: { icon: <LuCheck /> }
         }
       ],
-      [t]
+      [t, excessRuleLabels]
     );
 
     const renderContextMenu = useCallback(

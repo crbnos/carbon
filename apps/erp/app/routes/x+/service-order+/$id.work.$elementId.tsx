@@ -37,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (order.error) {
     throw redirect(
       path.to.serviceOrderWork(id),
-      await flash(request, error(order.error, "Failed to load the node"))
+      await flash(request, error(order.error, "Failed to load the element"))
     );
   }
 
@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (node.error || !node.data) {
     throw redirect(
       path.to.serviceOrderWork(id),
-      await flash(request, error(node.error, "Failed to load the node"))
+      await flash(request, error(node.error, "Failed to load the element"))
     );
   }
 

@@ -894,7 +894,9 @@ export async function requireServiceOrderNode(
       .where("companyId", "=", args.companyId)
       .executeTakeFirst();
     if (!node) {
-      throw new ServiceOrderError("The node is not part of this service order");
+      throw new ServiceOrderError(
+        "The element is not part of this service order"
+      );
     }
   }
   return order;

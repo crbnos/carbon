@@ -653,7 +653,7 @@ function PlanningActionSentence({
       sentence = action.fromProjectId ? (
         <Trans>Transfer {amount} from another project</Trans>
       ) : (
-        <Trans>Transfer {amount} from common stock</Trans>
+        <Trans>Transfer {amount} from unassigned stock</Trans>
       );
       break;
     case "Borrow":

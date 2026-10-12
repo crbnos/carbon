@@ -234,7 +234,7 @@ export default function NodePeek({
                 </h3>
                 {charges.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    <Trans>Nothing has been charged to this node yet.</Trans>
+                    <Trans>Nothing has been charged to this element yet.</Trans>
                   </p>
                 ) : (
                   <Table>
@@ -600,7 +600,7 @@ function FixedPriceForm({
           <NumberField
             name="fixedPrice"
             label={t`Fixed Price`}
-            helperText={t`Bills this node and the work under it as one line. Leave it empty to bill each item.`}
+            helperText={t`Bills this element and the work under it as one line. Leave it empty to bill each item.`}
             minValue={0}
             isDisabled={isDisabled}
             formatOptions={INPUT_FORMAT.money(currencyCode, decimals)}

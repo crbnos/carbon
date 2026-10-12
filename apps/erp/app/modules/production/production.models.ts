@@ -456,7 +456,7 @@ export const salesOrderToJobValidator = baseJobValidator
   })
   .refine((data) => !data.receiveToProjectStock, {
     message:
-      "A job for a sales order line ships from common stock and cannot receive into project stock",
+      "A job for a sales order line ships from unassigned stock and cannot receive into project stock",
     path: ["receiveToProjectStock"]
   })
   .refine(

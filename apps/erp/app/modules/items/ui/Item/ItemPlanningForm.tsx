@@ -197,8 +197,8 @@ const ItemPlanningForm = ({
 
             <Boolean
               name="allowCommonSupplyForProjects"
-              label={t`Common stock for projects`}
-              description={t`Let projects with project stock use spare common stock of this item at this location`}
+              label={t`Unassigned stock for projects`}
+              description={t`Let projects with project stock use spare unassigned stock of this item at this location`}
             />
 
             <CustomFormFields table="itemPlanning" />

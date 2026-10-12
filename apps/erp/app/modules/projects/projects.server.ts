@@ -1508,7 +1508,7 @@ export class ProjectChangeConflictError extends Error {
   status = 409;
   constructor(public conflicts: ChangeRequestConflict[]) {
     super(
-      `The live plan changed under ${conflicts.length} row(s) of the change request`
+      `The current plan changed under ${conflicts.length} row(s) of the change request`
     );
   }
 }

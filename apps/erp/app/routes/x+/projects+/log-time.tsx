@@ -82,9 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: true, error: null, warning },
       await flash(
         request,
-        success(
-          `Time saved. Submit your week on My Timesheet to certify it.${note}`
-        )
+        success(`Time saved. Submit your week on My Time to certify it.${note}`)
       )
     );
   }

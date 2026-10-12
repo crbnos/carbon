@@ -585,7 +585,7 @@ const JobForm = ({
                         <Boolean
                           name="receiveToProjectStock"
                           label={t`Receive to project stock`}
-                          description={t`The job's output enters the project's stock instead of common stock`}
+                          description={t`The job's output enters the project's stock instead of unassigned stock`}
                           value={receiveToProjectStock && !consumeToProject}
                           onChange={(value) => {
                             setReceiveToProjectStock(value);

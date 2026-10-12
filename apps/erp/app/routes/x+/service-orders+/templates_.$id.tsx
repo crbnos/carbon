@@ -107,7 +107,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (intent === "delete") {
     const elementId = formData.get("elementId");
     if (typeof elementId !== "string" || !elementId) {
-      return failure("Choose a node to delete");
+      return failure("Choose an element to delete");
     }
     const node = await client
       .from("projectElement")
@@ -116,23 +116,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("projectId", id)
       .eq("companyId", companyId)
       .maybeSingle();
-    if (!node.data) return failure("The node is not part of this template");
+    if (!node.data) return failure("The element is not part of this template");
     const result = await deleteProjectElement(client, elementId, companyId);
     if (result.error) {
       throw redirect(
         path.to.serviceTemplate(id),
-        await flash(request, error(result.error, "Failed to delete the node"))
+        await flash(
+          request,
+          error(result.error, "Failed to delete the element")
+        )
       );
     }
     throw redirect(
       path.to.serviceTemplate(id),
-      await flash(request, success("Node deleted"))
+      await flash(request, success("Element deleted"))
     );
   }
 
   if (intent !== "add") return failure("Unknown intent");
   const validation = await validator(serviceNodeValidator).validate(formData);
-  if (validation.error) return failure("Name the node");
+  if (validation.error) return failure("Name the element");
 
   try {
     const created = await insertProjectElement(getDatabaseClient(), {
@@ -151,7 +154,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       error: err
     });
     return failure(
-      err instanceof Error ? err.message : "Failed to add the node"
+      err instanceof Error ? err.message : "Failed to add the element"
     );
   }
 }
@@ -187,9 +190,9 @@ export default function ServiceTemplateRoute() {
         </div>
         <p className="text-sm text-muted-foreground">
           <Trans>
-            A service order started from this template copies its nodes and
-            their plan lines. Open a node to plan its materials, labor and other
-            costs; the estimate prices them at sale prices.
+            A service order started from this template copies its elements and
+            their planned materials, labor and costs. Open an element to plan
+            them; the estimate prices them at sale prices.
           </Trans>
         </p>
         <WorkTree

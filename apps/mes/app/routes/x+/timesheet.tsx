@@ -348,7 +348,7 @@ export default function MESTimesheetPage() {
           <CardHeader>
             <HStack className="justify-between items-center flex-wrap gap-2">
               <CardTitle>
-                <Trans>My Timesheet</Trans>
+                <Trans>My Time</Trans>
               </CardTitle>
               <HStack className="gap-2">
                 <Button

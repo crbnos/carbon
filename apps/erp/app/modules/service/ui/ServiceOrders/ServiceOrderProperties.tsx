@@ -110,7 +110,7 @@ const ServiceOrderProperties = () => {
   };
   const invoiceDetailLabels: Record<ServiceInvoiceDetail, string> = {
     Itemized: t`Itemized`,
-    "By Node": t`By Node`
+    "By Node": t`By Element`
   };
 
   const contracts = routeData?.contracts ?? [];

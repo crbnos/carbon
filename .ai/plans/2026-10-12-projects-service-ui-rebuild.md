@@ -66,26 +66,27 @@ Layer 5 rules:
 
 The glossary (`docs/content/src/glossary/terms.ts`) is the source of truth. Task 2 applies this table.
 
-| Current UI text | New UI text | Reason |
-|---|---|---|
-| Common stock (and "common stock" in sentences) | Unassigned stock | Brad. It means stock that belongs to no project. "Common stock" is an equity account. |
-| Node, nodes (Service UI, `BuildFromPartDrawer` with `vocabulary="node"`) | Element, elements | One concept, one name. Projects already says Element. |
-| Live plan | Current plan | The baseline compare already says "Current plan". |
-| Technically complete / Technically Complete (status label) | Work complete | Plain. The enum value `Technically Complete` stays. |
-| Suspect, Suspect link | Needs review | Plain, and it says what to do. |
-| My Timesheet | My Time | Brad's sidebar wording (Layer 0). ERP and MES. |
-| BCWS, BCWP, ACWP (column headers) | Planned value, Earned value, Actual cost | The plain earned value names. The glossary entries carry the acronyms as aliases. |
-| Export ACWP | keep + glossary | ACWP is the name of the deliverable an auditor asks for. |
-| "plan lines" (2 strings) | "planned materials, labor and costs" | Plain. |
-| Payback Variance | keep + glossary | An accounting variance, like purchase price variance. |
-| Borrow, Payback | keep + glossary | Plain verbs. The glossary explains the stock rule. |
-| Charge Number | keep (entry exists) | The government contracting term. |
-| Soft, Hard, Manual (pegs) | keep + glossary | The pegging terms planners use. |
-| Billing Element | keep + glossary | The project billing term. |
-| Control account, Work package | keep + glossary | The earned value terms. |
-| CLIN, SLIN, ACRN, Burden, Dilution | keep + glossary | Real government contracting terms. |
-| As of | keep | Plain English. |
-| stripe, segment, planning segment, coverage reclass | no UI change | They appear in rules only, not in the UI. |
+| Current UI text | New UI text | Reason | Applied (Task 2, 2026-10-12) |
+|---|---|---|---|
+| Common stock (and "common stock" in sentences) | Unassigned stock | Brad. It means stock that belongs to no project. "Common stock" is an equity account. | Done: the transfer owner pickers and lines, `StockOwner`, the inventory owner filter, the storage unit and count rows, the job form, the planning action line, the item planning toggle ("Unassigned stock for projects"), the job validator message, 2 server-function refusals. The planning group excess rule enum `Common Stock` now shows the label "Unassigned stock" (`usePlanningGroupExcessRuleLabels`). Code names (`COMMON_STOCK_OWNER`, the enum value) stay. |
+| Node, nodes (Service UI, `BuildFromPartDrawer` with `vocabulary="node"`) | Element, elements | One concept, one name. Projects already says Element. | Done: the work tree (column, buttons, placeholder, delete text), the visit page, the templates list column, the element peek, the template and work route flashes and refusals, `requireServiceOrderNode`'s message. `vocabulary` is gone, so the service drawer title is "Build from part", like Projects. The invoice detail enum `By Node` shows "By Element". The "Build Tree" button on the work card stays. |
+| Live plan | Current plan | The baseline compare already says "Current plan". | Done: the change request picker, the review banner, 2 status flashes, the apply conflict message. |
+| Technically complete / Technically Complete (status label) | Work complete | Plain. The enum value `Technically Complete` stays. | Done: `ProjectStatus` label "Work Complete" (title case, like the other statuses), the header primary action and the ⋯ menu item "Work complete". |
+| Suspect, Suspect link | Needs review | Plain, and it says what to do. | Done: the Tree legend, the badge's label "Link needs review". The button "Mark reviewed" stays. |
+| My Timesheet | My Time | Brad's sidebar wording (Layer 0). ERP and MES. | Done: the Projects sidebar, the avatar menu, the ERP breadcrumb and grid title, the Log time flash, the MES nav rail and page title. |
+| BCWS, BCWP, ACWP (column headers) | Planned value, Earned value, Actual cost | The plain earned value names. The glossary entries carry the acronyms as aliases. | Done: the 3 headers; each keeps its acronym as the `title` tooltip. The close task text says "planned value, earned value and actual cost". BAC, CV, SV, CPI and SPI stay (not in this table). |
+| Export ACWP | keep + glossary | ACWP is the name of the deliverable an auditor asks for. | Kept. Glossary `actual-cost` (alias `acwp`). |
+| "plan lines" (2 strings) | "planned materials, labor and costs" | Plain. | Done: the Copy from helper text and the service template paragraph. |
+| Payback Variance | keep + glossary | An accounting variance, like purchase price variance. | Kept. Glossary `payback-variance`. |
+| Borrow, Payback | keep + glossary | Plain verbs. The glossary explains the stock rule. | Kept. Glossary `borrow-payback`. |
+| Charge Number | keep (entry exists) | The government contracting term. | Kept. |
+| Soft, Hard, Manual (pegs) | keep + glossary | The pegging terms planners use. | Kept. Glossary `peg` (aliases `soft-peg`, `hard-peg`, `manual-peg`). |
+| Billing Element | keep + glossary | The project billing term. | Kept. Glossary `billing-element`. |
+| Control account, Work package | keep + glossary | The earned value terms. | Kept. Glossary `control-account`, `work-package`. |
+| CLIN, SLIN, ACRN, Burden, Dilution | keep + glossary | Real government contracting terms. | Kept. Glossary entries added. |
+| As of | keep | Plain English. | Kept. |
+| stripe, segment, planning segment, coverage reclass | no UI change | They appear in rules only, not in the UI. | No change. |
+| Exception Project (planning group excess rule) | Exception project | Sentence case, like the other labels; the enum value stays. | Done, with the "Unassigned stock" label. |
 
 ## Removed
 
@@ -193,7 +194,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 ## Progress
 
 - [x] Task 1: Set up the screenshot scripts, the run log and the baseline shots
-- [ ] Task 2: Apply the terminology table and add the glossary entries
+- [x] Task 2: Apply the terminology table and add the glossary entries
 - [x] Task 3: Give `Empty` a title and a description
 - [x] Task 4: Add `ReadOnlyField` for read-only values
 - [x] Task 5: Add the grid helpers `EditableByRow` and `useStableEditableComponents`

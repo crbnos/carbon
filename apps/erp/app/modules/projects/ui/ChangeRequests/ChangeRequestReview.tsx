@@ -241,7 +241,7 @@ const ChangeRequestReview = ({
         <Alert variant="destructive">
           <LuTriangleAlert />
           <AlertTitle>
-            <Trans>The live plan changed under this change request</Trans>
+            <Trans>The current plan changed under this change request</Trans>
           </AlertTitle>
           <AlertDescription>
             <p>
@@ -265,7 +265,7 @@ const ChangeRequestReview = ({
                     <span className="font-medium">{conflict.elementLabel}</span>
                   )}{" "}
                   {conflict.missing ? (
-                    <Trans>no longer exists in the live plan</Trans>
+                    <Trans>no longer exists in the current plan</Trans>
                   ) : (
                     <Trans>changed live: {conflict.fields.join(", ")}</Trans>
                   )}

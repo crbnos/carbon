@@ -63,7 +63,7 @@ export function ChangeRequestPicker({
             className={cn("max-w-48 justify-start", className)}
           >
             <span className="truncate">
-              {active ? active.readableId : <Trans>Live plan</Trans>}
+              {active ? active.readableId : <Trans>Current plan</Trans>}
             </span>
           </Button>
         </DropdownMenuTrigger>
@@ -76,7 +76,7 @@ export function ChangeRequestPicker({
           >
             <DropdownMenuRadioItem value="base">
               <span className="flex min-w-0 flex-col">
-                <Trans>Live plan</Trans>
+                <Trans>Current plan</Trans>
                 <span className="text-xs text-muted-foreground">
                   <Trans>No change request</Trans>
                 </span>

@@ -97,7 +97,7 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
       <NavRailLink
         to={path.to.timesheet}
         icon={<LuTimer />}
-        label={t`My Timesheet`}
+        label={t`My Time`}
         isActive={pathname.includes("/timesheet")}
       />
     </>
