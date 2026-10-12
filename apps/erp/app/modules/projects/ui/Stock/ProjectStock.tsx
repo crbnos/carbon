@@ -9,8 +9,7 @@ import {
   LabelWithHelp,
   MenuIcon,
   MenuItem,
-  SplitButton,
-  Subheading
+  SplitButton
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -182,11 +181,11 @@ function Section({
   return (
     <section className="flex flex-col border-b border-border">
       <div className="flex h-12 items-center gap-2 px-4">
-        <Subheading as="h3" variant="light" className="min-w-0 flex-1">
+        <h3 className="min-w-0 flex-1 text-sm font-medium">
           <LabelWithHelp termId={termId} variant="inline">
             {title}
           </LabelWithHelp>
-        </Subheading>
+        </h3>
         {action}
       </div>
       {children}

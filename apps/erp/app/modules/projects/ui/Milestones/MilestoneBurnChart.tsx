@@ -2,7 +2,6 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Subheading } from "@carbon/react";
 import type { ChartConfig } from "@carbon/react/Chart";
 import {
   ChartContainer,
@@ -54,9 +53,9 @@ export function MilestoneBurnChart({
 
   return (
     <section className="flex flex-col gap-2">
-      <Subheading as="h3" variant="light">
+      <h3 className="text-sm font-medium">
         <Trans>Hours burn · {formatQuantity(plannedHours)} planned</Trans>
-      </Subheading>
+      </h3>
       <div>
         {series.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">

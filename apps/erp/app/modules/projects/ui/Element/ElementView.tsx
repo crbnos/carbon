@@ -11,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
   IconButton,
-  Subheading,
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -31,8 +30,9 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import { usePermissions, useUser } from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
+import { useResolved } from "~/hooks/useResolved";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import type { ProjectElementPage } from "../../projects.server";
@@ -513,33 +513,41 @@ function Section({
   );
 }
 
+/**
+ * Activity, as Linear does it: the comments, then the history feed under
+ * them with no heading of its own. The feed shows only while the audit log
+ * is on and the user may read it; otherwise its "not enabled" block would
+ * be a large empty gap.
+ */
 function ElementActivity({
   projectId,
   element,
   comments
 }: Pick<ProjectElementPage, "element" | "comments"> & { projectId: string }) {
   const { company } = useUser();
+  const { can } = usePermissions();
   const { isGated } = usePlanGate({ feature: "AUDIT_LOG" });
+  const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
+    path.to.authenticatedRoot
+  );
+  const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
+  const showHistory = auditLogEnabled && !isGated && can("view", "settings");
   return (
-    <div className="flex w-full flex-col gap-6">
+    <div className="flex w-full flex-col gap-4">
       <ElementComments
         projectId={projectId}
         elementId={element.id}
         comments={comments}
       />
-      <div className="flex flex-col gap-2">
-        <Subheading as="h3" variant="light">
-          <Trans>History</Trans>
-        </Subheading>
+      {showHistory && (
         <AuditLogFeed
           entityType="projectElement"
           entityId={element.id}
           companyId={company.id}
-          planRestricted={isGated}
           isActive
           refreshKey={element.updatedAt}
         />
-      </div>
+      )}
     </div>
   );
 }

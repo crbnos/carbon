@@ -4,7 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { LabelWithHelp, Subheading } from "@carbon/react";
+import { LabelWithHelp } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
@@ -92,9 +92,9 @@ export default function ProjectBillingRoute() {
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <section className="flex max-h-80 shrink-0 flex-col gap-1 border-b border-border p-4">
-        <Subheading as="h3" variant="light">
+        <h3 className="text-sm font-medium">
           <Trans>Contract lines</Trans>
-        </Subheading>
+        </h3>
         <ProjectBillingLines
           lines={lines}
           funding={funding}
@@ -102,11 +102,11 @@ export default function ProjectBillingRoute() {
         />
       </section>
       <div className="flex h-12 shrink-0 items-center px-4">
-        <Subheading as="h3" variant="light">
+        <h3 className="text-sm font-medium">
           <LabelWithHelp termId="billable-item" variant="inline">
             <Trans>Billable items</Trans>
           </LabelWithHelp>
-        </Subheading>
+        </h3>
       </div>
       <div className="min-h-0 flex-1">
         <ProjectBillableItemsTable

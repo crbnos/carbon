@@ -13,8 +13,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
-  Subheading
+  SelectValue
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -164,9 +163,9 @@ function EarnedValueTable({
   return (
     <div className="shrink-0 border-t border-border">
       <div className="flex h-12 items-center gap-2 border-b border-border bg-card px-4 text-sm">
-        <Subheading as="h3" variant="light" className="min-w-0 flex-1 truncate">
+        <h3 className="min-w-0 flex-1 truncate text-sm font-medium">
           <Trans>Earned value</Trans>
-        </Subheading>
+        </h3>
         {data.periodId && (
           <Button asChild variant="secondary" leftIcon={<LuDownload />}>
             <a

@@ -4,7 +4,7 @@
 
 import { Combobox, Select, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import { Copy, HStack, Subheading, toast, VStack } from "@carbon/react";
+import { Copy, HStack, toast, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare } from "react-icons/lu";
@@ -139,9 +139,9 @@ const ServiceOrderProperties = () => {
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">
-          <Subheading variant="light" as="h3">
+          <h3 className="text-sm font-medium">
             <Trans>Properties</Trans>
-          </Subheading>
+          </h3>
           <Copy
             text={id}
             label={t`Copy service order unique identifier`}

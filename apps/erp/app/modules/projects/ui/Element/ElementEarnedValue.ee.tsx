@@ -13,7 +13,6 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  Subheading,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -163,9 +162,9 @@ function EarnedValueForm({
 
   return (
     <div className="mt-4 flex flex-col gap-2">
-      <Subheading as="h3" variant="light">
+      <h2 className="text-sm font-medium">
         <Trans>Earned Value</Trans>
-      </Subheading>
+      </h2>
       <ValidatedForm
         key={element.id}
         method="post"

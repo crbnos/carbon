@@ -4,7 +4,6 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { Subheading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -158,9 +157,9 @@ export default function ProjectTimeRoute() {
     <div className="flex h-full min-h-0 w-full flex-col">
       <section className="flex shrink-0 flex-col border-b border-border">
         <div className="flex h-12 items-center px-4">
-          <Subheading as="h3" variant="light">
+          <h3 className="text-sm font-medium">
             <Trans>Time not posted yet</Trans>
-          </Subheading>
+          </h3>
         </div>
         {openTime.length === 0 ? (
           // One muted line, as on the Overview: the section sits above the
@@ -193,9 +192,9 @@ export default function ProjectTimeRoute() {
         )}
       </section>
       <div className="flex h-12 shrink-0 items-center px-4">
-        <Subheading as="h3" variant="light">
+        <h3 className="text-sm font-medium">
           <Trans>Costs posted</Trans>
-        </Subheading>
+        </h3>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">
         <ProjectLedgerTable data={ledger} count={count} elements={elements} />

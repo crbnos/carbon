@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { stopWorkEnd } from "@carbon/ee/project-control";
-import { cn, Progress, Subheading } from "@carbon/react";
+import { cn, Progress } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
@@ -286,7 +286,7 @@ function OverviewSection({
 }) {
   return (
     <section className="flex min-w-0 flex-col gap-2">
-      <Subheading as="h3">{title}</Subheading>
+      <h3 className="text-sm font-medium">{title}</h3>
       {children}
     </section>
   );

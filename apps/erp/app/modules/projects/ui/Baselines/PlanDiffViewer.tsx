@@ -9,7 +9,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Subheading,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -371,9 +370,9 @@ export function PlanDiffGroups({
                   if (changed.length === 0) return null;
                   return (
                     <div key={key} className="w-full">
-                      <Subheading variant="heavy" className="block pb-0.5">
+                      <h3 className="block pb-0.5 text-sm font-medium">
                         {lineTitles[key]}
-                      </Subheading>
+                      </h3>
                       <TreeChildren>
                         {changed.map(({ entry: line }) => {
                           const lineBody = entryBody(
