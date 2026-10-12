@@ -2109,6 +2109,9 @@ msgstr "Agregar en el nivel superior"
 msgid "Add Authenticator App"
 msgstr "Agregar aplicación de autenticación"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Agregar Registro de Calibración"
 
@@ -4074,6 +4077,9 @@ msgstr "Volver a solicitudes de cambio"
 
 msgid "Back to menu"
 msgstr "Volver al menú"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "Volver a trazabilidad"
@@ -10222,8 +10228,17 @@ msgstr "No se pudo canjear el código de autorización para obtener acceso. Vuel
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "No se pudo canjear el código de autorización por un token de acceso. Vuelve a intentar la conexión."
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "Excluido"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "Estado de Resultados Ejecutivo"
@@ -11125,6 +11140,9 @@ msgstr "Activarse en líneas de cotización, líneas de pedido de venta y línea
 
 msgid "First light, {name}."
 msgstr "Primera luz, {name}."
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "Nombre"
@@ -13484,6 +13502,9 @@ msgstr "Último ejercicio fiscal"
 msgid "Last Login"
 msgstr "Último Inicio de Sesión"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "Mes Pasado"
 
@@ -13880,6 +13901,9 @@ msgstr "Vista de lista"
 
 msgid "List View"
 msgstr "Vista de lista"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "No Coincide"
 
 msgid "Missing"
 msgstr "Faltante"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "Información Faltante"
@@ -17132,6 +17159,9 @@ msgstr "Órdenes Abiertas"
 
 msgid "Open payables by supplier and age"
 msgstr "Cuentas por pagar abiertas por proveedor y antigüedad"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "Proyecto Abierto"
@@ -21995,6 +22025,9 @@ msgstr "Enviar Invitación"
 msgid "Send Invites"
 msgstr "Enviar invitaciones"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "Enviar RFQ a Proveedores"
 
@@ -23416,9 +23449,6 @@ msgstr "Subdiario"
 
 msgid "Submit"
 msgstr "Enviar"
-
-msgid "Submit and post week"
-msgstr "Enviar y contabilizar semana"
 
 msgid "Submit anonymously"
 msgstr "Enviar anónimamente"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "Aprobación de hoja de tiempo"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

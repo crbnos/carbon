@@ -2109,6 +2109,9 @@ msgstr "トップレベルに追加"
 msgid "Add Authenticator App"
 msgstr "認証器アプリを追加"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "校正記録を追加"
 
@@ -4074,6 +4077,9 @@ msgstr "変更リクエストに戻す"
 
 msgid "Back to menu"
 msgstr "メニューに戻る"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "トレーサビリティに戻る"
@@ -10222,8 +10228,17 @@ msgstr "アクセス権を取得するための認可コードの交換に失敗
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "認可コードとアクセストークンの交換に失敗しました。もう一度接続してください。"
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "除外"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "経営幹部向けP&L"
@@ -11125,6 +11140,9 @@ msgstr "見積明細、受注明細、売上請求書明細で発火します。
 
 msgid "First light, {name}."
 msgstr "夜明け、{name}さん。"
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "名"
@@ -13484,6 +13502,9 @@ msgstr "前会計年度"
 msgid "Last Login"
 msgstr "最後のログイン"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "先月"
 
@@ -13880,6 +13901,9 @@ msgstr "リスト表示"
 
 msgid "List View"
 msgstr "一覧表示"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "不一致"
 
 msgid "Missing"
 msgstr "見つかりません"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "不足している情報"
@@ -17132,6 +17159,9 @@ msgstr "オープン注文"
 
 msgid "Open payables by supplier and age"
 msgstr "仕入先・日数別オープン買掛金"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "オープンプロジェクト"
@@ -21995,6 +22025,9 @@ msgstr "招待を送信"
 msgid "Send Invites"
 msgstr "招待を送信"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "仕入先に見積依頼を送信"
 
@@ -23416,9 +23449,6 @@ msgstr "補助元帳"
 
 msgid "Submit"
 msgstr "提出"
-
-msgid "Submit and post week"
-msgstr "週を提出して転記"
 
 msgid "Submit anonymously"
 msgstr "匿名で提出"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "タイムシート承認"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

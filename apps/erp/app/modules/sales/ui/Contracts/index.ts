@@ -14,6 +14,7 @@ import ContractInvoiceGrid from "./ContractInvoiceGrid";
 import ContractInvoices from "./ContractInvoices";
 import ContractLineBilling from "./ContractLineBilling";
 import ContractLineForm from "./ContractLineForm";
+import ContractLineSummary from "./ContractLineSummary";
 import ContractMoney from "./ContractMoney";
 import ContractProductsGrid from "./ContractProductsGrid";
 import ContractProject from "./ContractProject";
@@ -53,6 +54,7 @@ export {
   ContractInvoices,
   ContractLineBilling,
   ContractLineForm,
+  ContractLineSummary,
   ContractMoney,
   ContractProductsGrid,
   ContractProject,

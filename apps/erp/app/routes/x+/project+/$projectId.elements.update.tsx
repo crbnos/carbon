@@ -12,6 +12,7 @@ import {
   isPlanLayerField,
   projectElementFieldUpdateValidator,
   setProjectElementLabels,
+  updateProjectElementBilling,
   updateProjectElementField
 } from "~/modules/projects";
 import {
@@ -76,6 +77,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error: result.error
       });
       return { error: { message: "Failed to save the labels" } };
+    }
+    return { success: true };
+  }
+
+  // The billing flag is not a plan-layer field and has its own rules (one
+  // billing element per branch), so it writes live through its own update.
+  if (formData.get("field") === "isBilling") {
+    const ids = formData.getAll("ids").filter((id) => typeof id === "string");
+    if (ids.length === 0) {
+      return { error: { message: "Choose an element" } };
+    }
+    const value = formData.get("value");
+    const isBilling = value === "true" || value === "on";
+    if (isBilling && project.data.costTreatment !== "Contract") {
+      return {
+        error: {
+          message: "Only a Contract project has billing elements"
+        }
+      };
+    }
+    const result = await updateProjectElementBilling(client, {
+      ids: ids as string[],
+      isBilling,
+      companyId,
+      updatedBy: userId
+    });
+    if (result.error) {
+      logger.error("Failed to update the billing element", {
+        companyId,
+        projectId,
+        error: result.error
+      });
+      return {
+        error: {
+          message: result.error.message ?? "Failed to save the change"
+        }
+      };
     }
     return { success: true };
   }

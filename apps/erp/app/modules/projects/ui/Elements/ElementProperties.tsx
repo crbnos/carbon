@@ -75,7 +75,11 @@ import { StateIcon } from "../Project/StateIcon";
 
 // --- Saving one field ---------------------------------------------------------
 
-export type ElementUpdateField = ProjectElementEditableField | "labelIds";
+/** `labelIds` and `isBilling` have their own branches in the update route. */
+export type ElementUpdateField =
+  | ProjectElementEditableField
+  | "labelIds"
+  | "isBilling";
 
 /**
  * Saves one field of one element through the update route. The fetcher key

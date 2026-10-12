@@ -19,7 +19,10 @@ import {
 } from "~/modules/sales";
 import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractLineForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractLineForm,
+  ContractLineSummary
+} from "~/modules/sales/ui/Contracts";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -117,6 +120,13 @@ export default function ContractLineRoute() {
 
   const { contract } = routeData;
 
+  // Only a Draft's lines change; a locked line reads as text.
+  if (contract.status !== "Draft") {
+    return (
+      <ContractLineSummary line={line} currencyCode={contract.currencyCode} />
+    );
+  }
+
   return (
     <ContractLineForm
       key={`${line.id}-${line.updatedAt ?? ""}`}
@@ -146,7 +156,6 @@ export default function ContractLineRoute() {
         ...contractLineBillingFormValues(line)
       }}
       currencyCode={contract.currencyCode}
-      isLocked={contract.status !== "Draft"}
     />
   );
 }

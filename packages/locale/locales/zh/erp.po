@@ -2109,6 +2109,9 @@ msgstr "在顶级添加"
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "添加校准记录"
 
@@ -4074,6 +4077,9 @@ msgstr "返回变更请求"
 
 msgid "Back to menu"
 msgstr "返回菜单"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "返回可追溯性"
@@ -10222,8 +10228,17 @@ msgstr "用授权代码交换访问权限失败。请重新连接。"
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "用授权代码交换访问令牌失败。请重新连接。"
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "已排除"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "执行损益表"
@@ -11125,6 +11140,9 @@ msgstr "第一份发票"
 
 msgid "First light, {name}."
 msgstr "天明时刻，{name}。"
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "名字"
@@ -13484,6 +13502,9 @@ msgstr "上一个会计年度"
 msgid "Last Login"
 msgstr "最后登录"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "上个月"
 
@@ -13880,6 +13901,9 @@ msgstr "列表视图"
 
 msgid "List View"
 msgstr "列表视图"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "不匹配"
 
 msgid "Missing"
 msgstr "缺失"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "缺少信息"
@@ -17132,6 +17159,9 @@ msgstr "未结订单"
 
 msgid "Open payables by supplier and age"
 msgstr "按供应商和期限打开应付款项"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "未结项目"
@@ -21995,6 +22025,9 @@ msgstr "发送邀请"
 msgid "Send Invites"
 msgstr "发送邀请"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "向供应商发送询价单"
 
@@ -23416,9 +23449,6 @@ msgstr "子分类账"
 
 msgid "Submit"
 msgstr "提交"
-
-msgid "Submit and post week"
-msgstr "提交并过账周"
 
 msgid "Submit anonymously"
 msgstr "匿名提交"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "工时单审批"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

@@ -2109,6 +2109,9 @@ msgstr "Add at the top level"
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
 
+msgid "Add Back to Report"
+msgstr "Add Back to Report"
+
 msgid "Add Calibration Record"
 msgstr "Add Calibration Record"
 
@@ -4074,6 +4077,9 @@ msgstr "Back to change requests"
 
 msgid "Back to menu"
 msgstr "Back to menu"
+
+msgid "Back to Missing Time"
+msgstr "Back to Missing Time"
 
 msgid "Back to traceability"
 msgstr "Back to traceability"
@@ -10222,8 +10228,17 @@ msgstr "Exchanging the authorization code for access failed. Try connecting agai
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Exchanging the authorization code for an access token failed. Try connecting again."
 
+msgid "Exclude from Report"
+msgstr "Exclude from Report"
+
 msgid "Excluded"
 msgstr "Excluded"
+
+msgid "Excluded ({excludedCount})"
+msgstr "Excluded ({excludedCount})"
+
+msgid "Excluded from Missing Time"
+msgstr "Excluded from Missing Time"
 
 msgid "Executive P&L"
 msgstr "Executive P&L"
@@ -11125,6 +11140,9 @@ msgstr "First Invoice"
 
 msgid "First light, {name}."
 msgstr "First light, {name}."
+
+msgid "First Missing"
+msgstr "First Missing"
 
 msgid "First name"
 msgstr "First name"
@@ -13484,6 +13502,9 @@ msgstr "Last Fiscal Year"
 msgid "Last Login"
 msgstr "Last Login"
 
+msgid "Last Missing"
+msgstr "Last Missing"
+
 msgid "Last Month"
 msgstr "Last Month"
 
@@ -13880,6 +13901,9 @@ msgstr "List view"
 
 msgid "List View"
 msgstr "List View"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr "Listed on the Missing Time report for scheduled days with no time"
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "Mismatch"
 
 msgid "Missing"
 msgstr "Missing"
+
+msgid "Missing Days"
+msgstr "Missing Days"
 
 msgid "Missing Information"
 msgstr "Missing Information"
@@ -17132,6 +17159,9 @@ msgstr "Open Orders"
 
 msgid "Open payables by supplier and age"
 msgstr "Open payables by supplier and age"
+
+msgid "Open Person"
+msgstr "Open Person"
 
 msgid "Open Project"
 msgstr "Open Project"
@@ -21995,6 +22025,9 @@ msgstr "Send Invite"
 msgid "Send Invites"
 msgstr "Send Invites"
 
+msgid "Send Reminder"
+msgstr "Send Reminder"
+
 msgid "Send RFQ to Suppliers"
 msgstr "Send RFQ to Suppliers"
 
@@ -23416,9 +23449,6 @@ msgstr "Subledger"
 
 msgid "Submit"
 msgstr "Submit"
-
-msgid "Submit and post week"
-msgstr "Submit and post week"
 
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
@@ -25854,6 +25884,9 @@ msgstr "Timesheet Approval"
 
 msgid "Timesheet Audit"
 msgstr "Timesheet Audit"
+
+msgid "Timesheet required"
+msgstr "Timesheet required"
 
 msgid "Timezone"
 msgstr "Timezone"

@@ -1505,6 +1505,9 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+msgid "Post"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
 
@@ -1991,9 +1994,6 @@ msgstr "하위 조립체 {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
-
-msgid "Submit and post week"
-msgstr ""
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"

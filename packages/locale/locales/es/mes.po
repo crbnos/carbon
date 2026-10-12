@@ -1505,6 +1505,9 @@ msgstr "Por favor seleccione un artículo"
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM caducado"
 
+msgid "Post"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Presione ? en cualquier página para abrir la lista. Los atajos se ignoran mientras escribe en un campo."
 
@@ -1991,9 +1994,6 @@ msgstr "Subconjunto {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Subconjunto {0} · {1} — se muestra por separado"
-
-msgid "Submit and post week"
-msgstr ""
 
 msgid "Submit anonymously"
 msgstr "Enviar de forma anónima"

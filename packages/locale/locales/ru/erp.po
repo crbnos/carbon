@@ -2109,6 +2109,9 @@ msgstr "Добавить на верхний уровень"
 msgid "Add Authenticator App"
 msgstr "Добавить приложение-аутентификатор"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
 
@@ -4074,6 +4077,9 @@ msgstr "Обратно к запросам на изменение"
 
 msgid "Back to menu"
 msgstr "Вернуться в меню"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "Вернуться к прослеживаемости"
@@ -10222,8 +10228,17 @@ msgstr "Не удалось обменять код авторизации на 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Не удалось обменять код авторизации на токен доступа. Повторите попытку подключения."
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "Исключено"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "П&У для руководства"
@@ -11125,6 +11140,9 @@ msgstr "Срабатывает на строках предложения, ст�
 
 msgid "First light, {name}."
 msgstr "Первый свет, {name}."
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "Имя"
@@ -13484,6 +13502,9 @@ msgstr "Прошлый финансовый год"
 msgid "Last Login"
 msgstr "Последний вход"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "Прошлый месяц"
 
@@ -13880,6 +13901,9 @@ msgstr "Вид списка"
 
 msgid "List View"
 msgstr "Представление списка"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "Несовпадение"
 
 msgid "Missing"
 msgstr "Отсутствует"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "Отсутствует информация"
@@ -17132,6 +17159,9 @@ msgstr "Открытые заказы"
 
 msgid "Open payables by supplier and age"
 msgstr "Открытая кредиторская задолженность по поставщикам и срокам"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "Открытый проект"
@@ -21995,6 +22025,9 @@ msgstr "Отправить приглашение"
 msgid "Send Invites"
 msgstr "Отправить приглашения"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "Отправить РФП поставщикам"
 
@@ -23416,9 +23449,6 @@ msgstr "Вспомогательная книга"
 
 msgid "Submit"
 msgstr "Отправить"
-
-msgid "Submit and post week"
-msgstr "Отправить и провести неделю"
 
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "Утверждение табеля учета рабочего времени"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

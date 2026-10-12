@@ -9812,7 +9812,9 @@ export async function getContractLine(
 ) {
   return client
     .from("customerContractLine")
-    .select("*, item(name, readableIdWithRevision, type)")
+    .select(
+      "*, item(name, readableIdWithRevision, type), project:project!customerContractLine_project_fkey(identifier, name), projectElement:projectElement!customerContractLine_projectElement_fkey(readableId, name)"
+    )
     .eq("id", customerContractLineId)
     .eq("companyId", companyId)
     .single();

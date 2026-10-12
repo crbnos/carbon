@@ -2109,6 +2109,9 @@ msgstr "शीर्ष स्तर पर जोड़ें"
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "अंशांकन रिकॉर्ड जोड़ें"
 
@@ -4074,6 +4077,9 @@ msgstr "परिवर्तन अनुरोधों पर वापस"
 
 msgid "Back to menu"
 msgstr "मेनू में वापस जाएं"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
@@ -10222,8 +10228,17 @@ msgstr "पहुँच के लिए प्राधिकरण कोड �
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "प्राधिकरण कोड को एक्सेस टोकन से बदलना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "बहिष्कृत"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "कार्यकारी P&L"
@@ -11125,6 +11140,9 @@ msgstr "कोटेशन पंक्तियों, विक्रय आ�
 
 msgid "First light, {name}."
 msgstr "पहली रोशनी, {name}।"
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "पहला नाम"
@@ -13484,6 +13502,9 @@ msgstr "पिछला वित्तीय वर्ष"
 msgid "Last Login"
 msgstr "अंतिम लॉगिन"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "पिछला महीना"
 
@@ -13880,6 +13901,9 @@ msgstr "सूची दृश्य"
 
 msgid "List View"
 msgstr "सूची दृश्य"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "बेमेल"
 
 msgid "Missing"
 msgstr "नहीं मिला"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "लापता जानकारी"
@@ -17132,6 +17159,9 @@ msgstr "खुले आदेश"
 
 msgid "Open payables by supplier and age"
 msgstr "आपूर्तिकर्ता और आयु के अनुसार खुली देय राशि"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "खुली परियोजना"
@@ -21995,6 +22025,9 @@ msgstr "आमंत्रण भेजें"
 msgid "Send Invites"
 msgstr "आमंत्रण भेजें"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "आपूर्तिकर्ताओं को RFQ भेजें"
 
@@ -23416,9 +23449,6 @@ msgstr "सहायक बहीखाता"
 
 msgid "Submit"
 msgstr "सबमिट करें"
-
-msgid "Submit and post week"
-msgstr "सबमिट करें और सप्ताह पोस्ट करें"
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "टाइमशीट अनुमोदन"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

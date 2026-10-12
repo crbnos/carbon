@@ -305,6 +305,12 @@ Shots: `32-service-template.png`, `32-service-template-element.png`, `32-element
 
 ## Task 33: Show a locked contract line as read-only text
 
+Shots: `33-contract-line.png` (CON000001, Active, Fixed line, text only), `33-draft-tm-line.png` (CON000003, Draft, the Time & Materials line's form with OB2-1), `33-billing-element-property.png` (the new Billing element switch on an element), `33-billing-branch-refused.png` (OB2-2 refused under OB2-1).
+
+Billing Element picker: no element of the demo had `isBilling`, and nothing in the app set it — the picker read correctly (`isBilling` and a Contract project) but had nothing to offer. The element's Work properties now have a Billing element switch on a Contract project. With OB2-1 marked, the picker offered "OB2-1 Satellite bus", and a Draft T&M line saved (CON000003 "UI rebuild T&M check", ORBSEC Defense, Mission Operations Support → OB2-1). Task 29's grids then took rows: funding action P00001 / AA / $250,000.00, labor rate Systems Engineer $185.00 (`29-contract-line-billing.png`, `29-contract-line-grids.png`). OB2's Billing page shows the line (`29-project-billing.png`). Rate ceilings show for a Cost Plus line only, so they are not in the shots.
+
+1. Reference pattern: yes — `ReadOnlyFields`, the form's labels and groups. 2. No overlap: yes. 3. One toolbar row: yes. 4. One primary: yes (the header's). 5. No input box: yes, none on a locked line. 6. Secondary actions in menus: n/a. 7. Advanced fields hidden: the Revenue group is shown as text (nothing to fold on a read-only view).
+
 ## Task 34: Rebuild Projects → Reports as one list
 
 ## Task 35: Turn Indirect Rates into a runs list with a Rates drawer

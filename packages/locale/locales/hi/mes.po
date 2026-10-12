@@ -1505,6 +1505,9 @@ msgstr "कृपया एक आइटम चुनें"
 msgid "PM schedule lapsed"
 msgstr "PM शेड्यूल समाप्त"
 
+msgid "Post"
+msgstr ""
+
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
 
@@ -1991,9 +1994,6 @@ msgstr "सब-असेंबली {0} · {1}"
 #. placeholder {1}: subAssemblyTitle( playbackInfo.headerId )
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
-
-msgid "Submit and post week"
-msgstr ""
 
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"

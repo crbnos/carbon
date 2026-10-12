@@ -2109,6 +2109,9 @@ msgstr "최상위 레벨에 추가"
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "교정 기록 추가"
 
@@ -4074,6 +4077,9 @@ msgstr "변경 요청으로 돌아가기"
 
 msgid "Back to menu"
 msgstr "메뉴로 돌아가기"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "추적성으로 돌아가기"
@@ -10222,8 +10228,17 @@ msgstr "액세스 권한을 얻기 위한 인증 코드 교환에 실패했습�
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. 다시 연결해 보세요."
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "제외됨"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "경영진 손익계산"
@@ -11125,6 +11140,9 @@ msgstr "견적 라인, 수주 라인 및 매출 송장 라인에서 실행됩니
 
 msgid "First light, {name}."
 msgstr "{name}님, 새벽빛이군요."
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "이름"
@@ -13484,6 +13502,9 @@ msgstr "지난 회계연도"
 msgid "Last Login"
 msgstr "마지막 로그인"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "지난달"
 
@@ -13880,6 +13901,9 @@ msgstr "목록 보기"
 
 msgid "List View"
 msgstr "목록 보기"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "불일치"
 
 msgid "Missing"
 msgstr "누락"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "누락된 정보"
@@ -17132,6 +17159,9 @@ msgstr "미결 주문"
 
 msgid "Open payables by supplier and age"
 msgstr "공급업체 및 기간별 미결 매입채무"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "미결 프로젝트"
@@ -21995,6 +22025,9 @@ msgstr "초대 보내기"
 msgid "Send Invites"
 msgstr "초대 보내기"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "공급업체에 RFQ 전송"
 
@@ -23416,9 +23449,6 @@ msgstr "보조원장"
 
 msgid "Submit"
 msgstr "제출"
-
-msgid "Submit and post week"
-msgstr "제출 및 주간 기록"
 
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "시간표 승인"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

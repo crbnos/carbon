@@ -2109,6 +2109,9 @@ msgstr "Üst düzeye Ekle"
 msgid "Add Authenticator App"
 msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 
+msgid "Add Back to Report"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Kalibrasyon Kaydı Ekle"
 
@@ -4074,6 +4077,9 @@ msgstr "Değişiklik isteklerine geri dön"
 
 msgid "Back to menu"
 msgstr "Menüye geri dön"
+
+msgid "Back to Missing Time"
+msgstr ""
 
 msgid "Back to traceability"
 msgstr "İzlenebilirliğe geri dön"
@@ -10222,8 +10228,17 @@ msgstr "Yetkilendirme kodunun erişim için değiştirilmesi başarısız oldu. 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
 
+msgid "Exclude from Report"
+msgstr ""
+
 msgid "Excluded"
 msgstr "Hariç Tutulan"
+
+msgid "Excluded ({excludedCount})"
+msgstr ""
+
+msgid "Excluded from Missing Time"
+msgstr ""
 
 msgid "Executive P&L"
 msgstr "Yönetici P&L"
@@ -11125,6 +11140,9 @@ msgstr "Teklif satırları, satış siparişi satırları ve satış faturası s
 
 msgid "First light, {name}."
 msgstr "İlk ışık, {name}."
+
+msgid "First Missing"
+msgstr ""
 
 msgid "First name"
 msgstr "Adı"
@@ -13484,6 +13502,9 @@ msgstr "Son Mali Yıl"
 msgid "Last Login"
 msgstr "Son Giriş"
 
+msgid "Last Missing"
+msgstr ""
+
 msgid "Last Month"
 msgstr "Geçen Ay"
 
@@ -13880,6 +13901,9 @@ msgstr "Liste görünümü"
 
 msgid "List View"
 msgstr "Liste Görünümü"
+
+msgid "Listed on the Missing Time report for scheduled days with no time"
+msgstr ""
 
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
@@ -14717,6 +14741,9 @@ msgstr "Uyuşmazlık"
 
 msgid "Missing"
 msgstr "Eksik"
+
+msgid "Missing Days"
+msgstr ""
 
 msgid "Missing Information"
 msgstr "Eksik Bilgi"
@@ -17132,6 +17159,9 @@ msgstr "Açık Siparişler"
 
 msgid "Open payables by supplier and age"
 msgstr "Tedarikçi ve yaşa göre açık borçlar"
+
+msgid "Open Person"
+msgstr ""
 
 msgid "Open Project"
 msgstr "Açık Proje"
@@ -21995,6 +22025,9 @@ msgstr "Davet Gönder"
 msgid "Send Invites"
 msgstr "Davet Gönder"
 
+msgid "Send Reminder"
+msgstr ""
+
 msgid "Send RFQ to Suppliers"
 msgstr "Tedarikçilere RFQ Gönder"
 
@@ -23416,9 +23449,6 @@ msgstr "Yardımcı Defter"
 
 msgid "Submit"
 msgstr "Gönder"
-
-msgid "Submit and post week"
-msgstr "Haftayı gönder ve muhasebeleştir"
 
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
@@ -25853,6 +25883,9 @@ msgid "Timesheet Approval"
 msgstr "Zaman Saati Onayı"
 
 msgid "Timesheet Audit"
+msgstr ""
+
+msgid "Timesheet required"
 msgstr ""
 
 msgid "Timezone"

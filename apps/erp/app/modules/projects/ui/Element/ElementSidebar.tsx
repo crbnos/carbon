@@ -295,6 +295,15 @@ export function ElementSidebar({
             isDisabled={isDisabled}
           />
         )}
+        {costTreatment === "Contract" && element.type !== "Parameter" && (
+          <PropertySwitch
+            {...common}
+            field="isBilling"
+            label={t`Billing element`}
+            termId="billing-element"
+            value={element.isBilling}
+          />
+        )}
         {costTreatment === "Capitalize" && element.type !== "Parameter" && (
           <>
             <PropertySwitch

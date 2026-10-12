@@ -1276,6 +1276,115 @@ const SUSPECT_FIELD_COLUMNS =
  * field in `suspectLinkFields` makes the incoming trace links suspect.
  * @mcp update
  */
+/**
+ * A billing element bills its whole subtree, so a branch has at most one: an
+ * element and its ancestors cannot both be billing elements (projects spec,
+ * *Billing flag*). Refuses a Parameter too, which takes no charges. Reads the
+ * elements of the projects once.
+ */
+async function refuseBillingInBranch(
+  client: Client,
+  ids: string[],
+  companyId: string
+) {
+  const targets = await client
+    .from("projectElement")
+    .select("id, projectId, readableId, type")
+    .in("id", ids)
+    .eq("companyId", companyId);
+  if (targets.error) return { data: null, error: targets.error };
+  const parameter = targets.data.find((e) => e.type === "Parameter");
+  if (parameter) {
+    return refusal(
+      `${parameter.readableId} is a Parameter, which takes no charges`
+    );
+  }
+  const projectIds = [...new Set(targets.data.map((e) => e.projectId))];
+  const all = await client
+    .from("projectElement")
+    .select("id, parentId, isBilling, readableId")
+    .in("projectId", projectIds)
+    .eq("companyId", companyId);
+  if (all.error) return { data: null, error: all.error };
+
+  const byId = new Map(all.data.map((e) => [e.id, e]));
+  const billing = new Set(all.data.filter((e) => e.isBilling).map((e) => e.id));
+  for (const id of ids) billing.add(id);
+  const ancestors = (id: string) => {
+    const found: string[] = [];
+    const seen = new Set<string>([id]);
+    let current = byId.get(id)?.parentId ?? null;
+    while (current && !seen.has(current)) {
+      found.push(current);
+      seen.add(current);
+      current = byId.get(current)?.parentId ?? null;
+    }
+    return found;
+  };
+  for (const id of billing) {
+    const above = ancestors(id).find((ancestor) => billing.has(ancestor));
+    if (above) {
+      const label = (key: string) => byId.get(key)?.readableId ?? key;
+      return refusal(
+        `${label(id)} sits under the billing element ${label(above)}. A branch has one billing element`
+      );
+    }
+  }
+  return null;
+}
+
+/** An element a contract line bills stays a billing element. */
+async function refuseBilledElement(
+  client: Client,
+  ids: string[],
+  companyId: string
+) {
+  const lines = await client
+    .from("customerContractLine")
+    .select(
+      "id, element:projectElement!customerContractLine_projectElement_fkey(readableId)"
+    )
+    .in("projectElementId", ids)
+    .eq("companyId", companyId)
+    .limit(1);
+  if (lines.error) return { data: null, error: lines.error };
+  const line = lines.data[0];
+  if (!line) return null;
+  return refusal(
+    `A contract line bills ${line.element?.readableId ?? "this element"}. It stays a billing element`
+  );
+}
+
+/**
+ * Makes elements billing elements, or stops them being one: the element a
+ * Time & Materials or Cost Plus contract line bills, with its subtree. A
+ * branch has one billing element, and an element a contract line bills
+ * stays one.
+ */
+export async function updateProjectElementBilling(
+  client: Client,
+  args: {
+    ids: string[];
+    isBilling: boolean;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const refused = args.isBilling
+    ? await refuseBillingInBranch(client, args.ids, args.companyId)
+    : await refuseBilledElement(client, args.ids, args.companyId);
+  if (refused) return refused;
+  return client
+    .from("projectElement")
+    .update({
+      isBilling: args.isBilling,
+      updatedBy: args.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
+}
+
 export async function updateProjectElementField(
   client: Client,
   args: {
