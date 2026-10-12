@@ -24,7 +24,8 @@ const PERIODS = Array.from({ length: 12 }, (_, i) => i + 1);
 
 /**
  * The YTD rate of every pool and rate type, one column per period of the
- * fiscal year. An hours-base pool's rate is an amount per hour.
+ * fiscal year. An hours-base pool's rate is an amount per hour. The cells
+ * are narrow so the twelve periods fit the drawer without a sideways scroll.
  */
 const IndirectRatesGrid = ({
   pools,
@@ -79,18 +80,18 @@ const IndirectRatesGrid = ({
           <Table full>
             <Thead>
               <Tr>
-                <Th>
+                <Th className="px-4">
                   <LabelWithHelp termId="indirect-pool" variant="inline">
                     <Trans>Pool</Trans>
                   </LabelWithHelp>
                 </Th>
-                <Th>
+                <Th className="px-2">
                   <Trans>Rate Type</Trans>
                 </Th>
                 {PERIODS.map((periodNumber, i) => (
                   <Th
                     key={periodNumber}
-                    className="text-right"
+                    className="px-2 text-right"
                     title={t`Period ${periodNumber}`}
                   >
                     {periodLabels[i]}
@@ -107,7 +108,7 @@ const IndirectRatesGrid = ({
                       : percentFormatter.format(value);
                   return (
                     <Tr key={`${pool.id}:${rateType}`}>
-                      <Td>
+                      <Td className="px-4">
                         {typeIndex === 0 && (
                           <div className="flex min-w-0 flex-col">
                             <span className="whitespace-nowrap font-medium">
@@ -119,7 +120,7 @@ const IndirectRatesGrid = ({
                           </div>
                         )}
                       </Td>
-                      <Td>
+                      <Td className="px-2">
                         <LabelWithHelp
                           termId={rateTypeTerms[rateType]}
                           variant="inline"
@@ -134,7 +135,7 @@ const IndirectRatesGrid = ({
                         return (
                           <Td
                             key={periodNumber}
-                            className="whitespace-nowrap text-right tabular-nums"
+                            className="whitespace-nowrap px-2 text-right tabular-nums"
                           >
                             {value === undefined ? (
                               <span className="text-muted-foreground">–</span>
