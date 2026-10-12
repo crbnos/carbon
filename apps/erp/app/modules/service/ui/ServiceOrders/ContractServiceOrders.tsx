@@ -18,18 +18,16 @@ export type ContractServiceOrderRow = {
   status: ServiceOrderStatusType;
   serial: string | null;
   customerAssetId: string | null;
-  site: string | null;
-  createdAt: string;
-  completedAt: string | null;
+  /** The planned start of the order's next unfinished visit. */
+  scheduledAt: string | null;
   /** The order's posted cost, or null when it could not be read. */
   actual: number | null;
-  /** What has been billed, or null when the contract has no project. */
-  billed: number | null;
 };
 
 /**
- * The service orders a customer contract covers, one row each, with the cost
- * posted to each order and what has been billed (base currency).
+ * The service orders a customer contract covers, one row each: the order, its
+ * status, the customer asset, the next visit and the cost posted to it (base
+ * currency). The site, dates and billing live on the service order page.
  */
 export default function ContractServiceOrders({
   rows
@@ -39,10 +37,8 @@ export default function ContractServiceOrders({
   const { t } = useLingui();
   const formatMoney = useCurrencyFormatter();
 
-  const columns = useMemo<ColumnDef<ContractServiceOrderRow>[]>(() => {
-    const money = (value: number | null) =>
-      value === null ? "—" : formatMoney.format(value);
-    return [
+  const columns = useMemo<ColumnDef<ContractServiceOrderRow>[]>(
+    () => [
       {
         accessorKey: "serviceOrderId",
         size: 120,
@@ -63,8 +59,8 @@ export default function ContractServiceOrders({
       },
       {
         accessorKey: "serial",
-        size: 136,
-        header: t`Serial`,
+        size: 144,
+        header: t`Customer Asset`,
         cell: ({ row }) => {
           const serial = (
             <span className="whitespace-nowrap">
@@ -81,28 +77,12 @@ export default function ContractServiceOrders({
         }
       },
       {
-        accessorKey: "site",
+        accessorKey: "scheduledAt",
         size: 120,
-        header: t`Site`,
-        cell: ({ row }) => (
-          <span className="block truncate">{row.original.site ?? "—"}</span>
-        )
-      },
-      {
-        accessorKey: "createdAt",
-        size: 112,
-        header: t`Created`,
-        cell: ({ row }) => (
-          <DateTime value={row.original.createdAt} variant="date" />
-        )
-      },
-      {
-        accessorKey: "completedAt",
-        size: 112,
-        header: t`Completed`,
+        header: t`Scheduled`,
         cell: ({ row }) => (
           <DateTime
-            value={row.original.completedAt}
+            value={row.original.scheduledAt}
             variant="date"
             fallback="—"
           />
@@ -113,31 +93,20 @@ export default function ContractServiceOrders({
         size: 120,
         header: () => (
           <span className="block text-right">
-            <Trans>Actual Cost</Trans>
+            <Trans>Total Cost</Trans>
           </span>
         ),
         cell: ({ row }) => (
           <span className="block text-right tabular-nums">
-            {money(row.original.actual)}
-          </span>
-        )
-      },
-      {
-        accessorKey: "billed",
-        size: 112,
-        header: () => (
-          <span className="block text-right">
-            <Trans>Billed</Trans>
-          </span>
-        ),
-        cell: ({ row }) => (
-          <span className="block text-right tabular-nums">
-            {money(row.original.billed)}
+            {row.original.actual === null
+              ? "—"
+              : formatMoney.format(row.original.actual)}
           </span>
         )
       }
-    ];
-  }, [formatMoney, t]);
+    ],
+    [formatMoney, t]
+  );
 
   return (
     <div

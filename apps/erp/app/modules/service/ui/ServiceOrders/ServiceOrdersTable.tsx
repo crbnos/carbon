@@ -49,7 +49,9 @@ type ServiceOrdersTableProps = {
 };
 
 /** The planned start of the order's next visit that has not finished. */
-export function nextVisitStart(order: ServiceOrderListItem): string | null {
+export function nextVisitStart(order: {
+  visits?: { status: string; plannedStart: string | null }[] | null;
+}): string | null {
   const starts = (order.visits ?? [])
     .filter(
       (visit) =>

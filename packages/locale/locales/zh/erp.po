@@ -7390,6 +7390,9 @@ msgstr "客户账户"
 msgid "Customer and supplier pages"
 msgstr "客户和供应商页面"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "客户资产"
 
@@ -26105,6 +26108,9 @@ msgstr "资产的总资本化成本（购买价格加运费、安装和其他成
 
 msgid "Total Construction Cost:"
 msgstr "总建设成本："
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "总直接成本"

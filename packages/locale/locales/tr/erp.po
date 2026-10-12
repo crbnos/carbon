@@ -7390,6 +7390,9 @@ msgstr "Müşteri Hesapları"
 msgid "Customer and supplier pages"
 msgstr "Müşteri ve tedarikçi sayfaları"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Müşteri Varlıkları"
 
@@ -26105,6 +26108,9 @@ msgstr "Varlığın toplam kapitalize edilen maliyeti (satın alma fiyatı artı
 
 msgid "Total Construction Cost:"
 msgstr "Toplam İnşaat Maliyeti:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "Toplam Doğrudan Maliyet"

@@ -16,12 +16,13 @@ import {
 } from "~/modules/service";
 import type { ContractServiceOrderRow } from "~/modules/service/ui/ServiceOrders/ContractServiceOrders";
 import ContractServiceOrders from "~/modules/service/ui/ServiceOrders/ContractServiceOrders";
+import { nextVisitStart } from "~/modules/service/ui/ServiceOrders/ServiceOrdersTable";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "contract-service-orders");
 
-/** The service orders whose coverage contract is this contract, with the cost
- *  posted to each and what has been billed. Needs `service_view`; the
+/** The service orders whose coverage contract is this contract, with the next
+ *  visit and the cost posted to each. Needs `service_view`; the
  *  contract page itself needs `sales_view`. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -58,7 +59,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The contract's project rolls its orders up (one function call). A
   // contract with no project has no roll-up, so only the posted cost is read
   // (one ledger query for every order).
-  const costByOrder = new Map<string, { actual: number; billed: number }>();
+  const costByOrder = new Map<string, number>();
   const actualByProject: Record<string, number> = {};
   if (contractProjectId) {
     const costs = await getChildServiceProjectCosts(
@@ -74,10 +75,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       });
     }
     for (const row of costs.data ?? []) {
-      costByOrder.set(row.serviceOrderId, {
-        actual: Number(row.actual),
-        billed: Number(row.billed)
-      });
+      costByOrder.set(row.serviceOrderId, Number(row.actual));
     }
   } else if (list.length > 0) {
     const costs = await getServiceOrderCosts(
@@ -95,23 +93,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     Object.assign(actualByProject, costs.data ?? {});
   }
 
-  const rows: ContractServiceOrderRow[] = list.map((order) => {
-    const rollUp = costByOrder.get(order.id);
-    return {
-      id: order.id,
-      serviceOrderId: order.serviceOrderId,
-      status: order.status,
-      serial: order.trackedEntity?.readableId ?? null,
-      customerAssetId: order.customerAssetId,
-      site: order.customerLocation?.name ?? null,
-      createdAt: order.createdAt,
-      completedAt: order.completedAt,
-      actual: contractProjectId
-        ? (rollUp?.actual ?? null)
-        : (actualByProject[order.projectId] ?? 0),
-      billed: rollUp?.billed ?? null
-    };
-  });
+  const rows: ContractServiceOrderRow[] = list.map((order) => ({
+    id: order.id,
+    serviceOrderId: order.serviceOrderId,
+    status: order.status,
+    serial: order.trackedEntity?.readableId ?? null,
+    customerAssetId: order.customerAssetId,
+    scheduledAt: nextVisitStart(order),
+    actual: contractProjectId
+      ? (costByOrder.get(order.id) ?? null)
+      : (actualByProject[order.projectId] ?? 0)
+  }));
 
   return { rows };
 }

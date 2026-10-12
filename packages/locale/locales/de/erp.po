@@ -7390,6 +7390,9 @@ msgstr "Kundenkonten"
 msgid "Customer and supplier pages"
 msgstr "Kunden- und Lieferantenseiten"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Kundenvermögenswerte"
 
@@ -26105,6 +26108,9 @@ msgstr "Gesamtkapitalisierten Kosten des Vermögenswerts (Kaufpreis plus Fracht,
 
 msgid "Total Construction Cost:"
 msgstr "Gesamtbaukosten:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "Gesamte direkte Kosten"

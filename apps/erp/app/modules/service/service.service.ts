@@ -420,7 +420,7 @@ export async function getContractServiceOrders(
   return client
     .from("serviceOrder")
     .select(
-      "id, serviceOrderId, type, status, projectId, customerAssetId, createdAt, completedAt, trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(readableId), customerLocation:customerLocation!serviceOrder_customerLocationId_fkey(name)"
+      "id, serviceOrderId, type, status, projectId, customerAssetId, createdAt, completedAt, trackedEntity:trackedEntity!serviceOrder_trackedEntityId_fkey(readableId), customerLocation:customerLocation!serviceOrder_customerLocationId_fkey(name), visits:serviceVisit!serviceVisit_order_fkey(status, plannedStart)"
     )
     .eq("customerContractId", customerContractId)
     .eq("companyId", companyId)

@@ -7390,6 +7390,9 @@ msgstr "Cuentas de Cliente"
 msgid "Customer and supplier pages"
 msgstr "Páginas de cliente y proveedor"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Activos de cliente"
 
@@ -26105,6 +26108,9 @@ msgstr "Costo total capitalizado del activo (precio de compra más flete, instal
 
 msgid "Total Construction Cost:"
 msgstr "Costo Total de Construcción:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "Costo directo total"

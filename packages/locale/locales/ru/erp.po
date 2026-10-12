@@ -7390,6 +7390,9 @@ msgstr "Счета покупателя"
 msgid "Customer and supplier pages"
 msgstr "Страницы покупателя и поставщика"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Активы клиента"
 
@@ -26105,6 +26108,9 @@ msgstr "Общая капитализированная стоимость ак�
 
 msgid "Total Construction Cost:"
 msgstr "Общая стоимость строительства:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "Итоговая прямая себестоимость"

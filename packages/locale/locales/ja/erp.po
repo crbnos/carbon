@@ -7390,6 +7390,9 @@ msgstr "得意先アカウント"
 msgid "Customer and supplier pages"
 msgstr "得意先および仕入先ページ"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "顧客資産"
 
@@ -26105,6 +26108,9 @@ msgstr "資産の総資本化原価（購入価格、運賃、設置、および
 
 msgid "Total Construction Cost:"
 msgstr "合計建設原価："
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "総直接原価"

@@ -7390,6 +7390,9 @@ msgstr "고객 계정"
 msgid "Customer and supplier pages"
 msgstr "고객 및 공급업체 페이지"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "고객 자산"
 
@@ -26105,6 +26108,9 @@ msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 
 
 msgid "Total Construction Cost:"
 msgstr "총 구성 비용:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "총 직접 원가"

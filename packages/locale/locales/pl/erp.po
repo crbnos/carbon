@@ -7390,6 +7390,9 @@ msgstr "Konta Klientów"
 msgid "Customer and supplier pages"
 msgstr "Strony klienta i dostawcy"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "Zasoby klienta"
 
@@ -26105,6 +26108,9 @@ msgstr "Całkowity skapitalizowany koszt zasobu (cena nabycia plus fracht, insta
 
 msgid "Total Construction Cost:"
 msgstr "Suma kosztów budowy:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "Całkowity koszt bezpośredni"

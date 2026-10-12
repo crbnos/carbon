@@ -7390,6 +7390,9 @@ msgstr "ग्राहक खाते"
 msgid "Customer and supplier pages"
 msgstr "ग्राहक और आपूर्तिकर्ता पृष्ठ"
 
+msgid "Customer Asset"
+msgstr ""
+
 msgid "Customer Assets"
 msgstr "ग्राहक संपत्ति"
 
@@ -26105,6 +26108,9 @@ msgstr "संपत्ति की कुल पूंजीकृत ला�
 
 msgid "Total Construction Cost:"
 msgstr "कुल निर्माण लागत:"
+
+msgid "Total Cost"
+msgstr ""
 
 msgid "Total Direct Cost"
 msgstr "कुल सीधी लागत"
