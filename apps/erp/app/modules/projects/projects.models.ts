@@ -2728,30 +2728,6 @@ export function canonicalElementsParams(
   return next;
 }
 
-/** The properties the Display menu can show or hide. */
-export const elementDisplayProperties = [
-  "state",
-  "owner",
-  "priority",
-  "labels",
-  "dates",
-  "milestone",
-  "hours",
-  "budget",
-  "actual"
-] as const;
-
-/** How the Table layout groups its rows. */
-export const elementGroupings = [
-  "none",
-  "state",
-  "type",
-  "owner",
-  "milestone"
-] as const;
-
-export const timelineZooms = ["day", "week", "month"] as const;
-
 // --- Copying a project ---------------------------------------------------------
 
 /**

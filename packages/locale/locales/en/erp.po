@@ -376,7 +376,6 @@ msgstr "{0} rows"
 msgid "{0} scrapped"
 msgstr "{0} scrapped"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Copied {0}"
@@ -6867,9 +6865,6 @@ msgstr "Create System elements from a serial's build history, an item's bill of 
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Create System nodes from the unit's build history, the item's bill of materials or a service template."
-
-msgid "Create the first element"
-msgstr "Create the first element"
 
 msgid "Create transfer"
 msgstr "Create transfer"
@@ -15694,9 +15689,6 @@ msgstr "No element can take this link"
 msgid "No element found"
 msgstr "No element found"
 
-msgid "No elements"
-msgstr "No elements"
-
 msgid "No elements match."
 msgstr "No elements match."
 
@@ -15780,9 +15772,6 @@ msgstr "No gauges found."
 
 msgid "No grouped notifications"
 msgstr "No grouped notifications"
-
-msgid "No grouping"
-msgstr "No grouping"
 
 msgid "No groups assigned"
 msgstr "No groups assigned"
@@ -16887,10 +16876,6 @@ msgstr "Open"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Open ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Open {0}"
 
 msgid "Open a change notice"
 msgstr "Open a change notice"
@@ -19280,9 +19265,6 @@ msgstr "Quoting and sales orders"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Quoting, Orders, Configure-to-Order"
 
-msgid "R&D"
-msgstr "R&D"
-
 msgid "R&D tax"
 msgstr "R&D tax"
 
@@ -21535,10 +21517,6 @@ msgstr "Segments that drive customer pricing and terms"
 
 msgid "Select"
 msgstr "Select"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Select {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Select a .carbon.tar.gz backup"

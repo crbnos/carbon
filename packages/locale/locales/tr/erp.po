@@ -376,7 +376,6 @@ msgstr "{0} satır"
 msgid "{0} scrapped"
 msgstr "{0} hurdaya alındı"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Kopyalandı {0}"
@@ -6867,9 +6865,6 @@ msgstr "Bir seri numarasının yapı geçmişinden, bir öğenin Ürün ağacın
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Bir birimin yapı geçmişinden, öğenin Ürün ağacından veya bir Hizmet şablonundan Sistem düğümleri oluştur."
-
-msgid "Create the first element"
-msgstr "İlk öğeyi oluştur"
 
 msgid "Create transfer"
 msgstr "Transfer oluştur"
@@ -15694,9 +15689,6 @@ msgstr "Hiçbir öğe bu bağlantıyı alamaz"
 msgid "No element found"
 msgstr "Öğe bulunamadı"
 
-msgid "No elements"
-msgstr "Öğe yok"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "Ölçüm aleti bulunamadı."
 
 msgid "No grouped notifications"
 msgstr "Gruplanmış bildirim yok"
-
-msgid "No grouping"
-msgstr "Gruplandırma yok"
 
 msgid "No groups assigned"
 msgstr "Atanmış grup yok"
@@ -16887,10 +16876,6 @@ msgstr "Aç"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Açık ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Aç {0}"
 
 msgid "Open a change notice"
 msgstr "Bir değişiklik bildirisi aç"
@@ -19280,9 +19265,6 @@ msgstr "Teklifler ve satış siparişleri"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Teklifler, Siparişler, Sipariş Yapılandırması"
 
-msgid "R&D"
-msgstr "R&D"
-
 msgid "R&D tax"
 msgstr "R&D vergi"
 
@@ -21535,10 +21517,6 @@ msgstr "Müşteri fiyatlandırması ve koşullarını belirleyen segmentler"
 
 msgid "Select"
 msgstr "Seç"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Seçin {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Bir .carbon.tar.gz yedeklemesi seçin"

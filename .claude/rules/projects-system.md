@@ -520,12 +520,23 @@ and Requirement from the rows the page loads; there is no SQL function.
   `customFields` (`part`, `material`, `tool`, `consumable`; the row id is the item's
   `readableId`), at most 6 queries. `item` has no `customFields` column.
 
-## Layouts, views and the Reader PDF
+## The Plan page: layouts, filters and the Reader PDF
 
-Six layouts (`projectLayouts`): List, Board, Table, Tree (React Flow boxes + dagre),
-Timeline (own component, `timeline-geometry.ts`), Reader. The Reader PDF
-(`file+/project+/$id[.]pdf.tsx`, `ProjectReaderPDF` in `@carbon/documents`) reads the
-same filters (`parseElementFilters`) and outline (`buildReaderOutline`).
+Three layouts (`projectLayouts`): Table (the inline-edit grid, `ElementTable`), Tree
+(React Flow boxes + dagre) and Reader. A URL with no layout, a retired one (`list`,
+`board`, `timeline`) or the old `?type=` param redirects (`canonicalElementsParams`):
+the layout becomes `table`, `?type=X` becomes `filter=type:eq:X`, and every other param
+stays, `cr` included. The Reader PDF (`file+/project+/$id[.]pdf.tsx`, `ProjectReaderPDF`
+in `@carbon/documents`) reads the same filters (`parseElementFilters`) and outline
+(`buildReaderOutline`).
+
+One toolbar row (`ElementsHeader`): the layout `Tabs`, then Filter (Type, State, Owner,
+Milestone, Label; Type is single choice) and the **New Element** `SplitButton`, which
+posts a default name per type to `path.to.newProjectElement` under the open element.
+The page's only search is the project sidebar's "Search elements" box
+(`ProjectElementTree`): it filters the tree at once and writes `?search=` (debounced)
+on the Plan page. The Table edits Name, State, Owner and Target Date in place and has
+a hover row menu (Open, Add child, Move to…, Copy id, Delete).
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the
@@ -537,12 +548,11 @@ route skips its own reload when only `root` changes.
 `countTraceLinks` and `highlightTraceLinks` give the "N tests" and "N reqs" counts
 and their highlight. `elementTypeColors` (`ElementTypeIcon.tsx`) is the one colour map
 of the types, on every layout. `getProjectElementCommentCounts` reads the comment counts
-in one paged read. `ChangeRequestPicker` in the Elements header lists
+in one paged read. `ChangeRequestPicker` in the project sidebar lists
 `openChangeRequestStatuses` and sets `?cr=`.
 
-`projectView` (saved views; shared ones readable with `projects_view`) and
-`projectUserPreference` (one per user and project) hold layout, filters and display
-options. A URL without `layout` redirects to the named view, else the preference.
+`projectView` and `projectUserPreference` are no longer read or written (saved views
+and the per-user layout preference were removed on 2026-10-12); the tables stay.
 
 ## Templates, Build from part and part links
 

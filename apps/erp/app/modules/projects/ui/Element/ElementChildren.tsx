@@ -11,9 +11,9 @@ import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectState } from "../../types";
-import { QuickAddRow } from "../Elements/ElementList";
 import { StatePill } from "../Elements/ElementProperties";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import { QuickAddRow } from "./QuickAddRow";
 
 /**
  * The direct children of an element: a progress bar (completed ÷ all), one

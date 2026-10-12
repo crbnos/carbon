@@ -212,7 +212,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 18: Turn Milestones into the Schedule page
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
 - [x] Task 20: Give Plan one toolbar row and add rows in the grid
-- [ ] Task 21: Delete the List, Board and Timeline layouts
+- [x] Task 21: Delete the List, Board and Timeline layouts
 - [ ] Task 22: Restyle the Tree cards and fix the fit-view
 - [ ] Task 23: Rebuild the element panel and page (Layer 4)
 - [ ] Task 24: Put all plan lines in one grid
@@ -1617,3 +1617,6 @@ Run of 2026-10-12, Tasks 19–21 (the Plan page), with Brad's instruction of the
 - Task 20: the row menu is a hover-revealed ghost ⋯ column (Open, Add child, Move to…, Copy id, Delete), not the Table's `renderContextMenu`, whose pinned column showed a bordered button on every row and made rows 49 px. The List's bulk selection bar (state and priority for many rows) has no replacement.
 - Task 20: New Element in the Tree or Reader opens the new element's panel, since those layouts have no row to highlight.
 - Task 20: `TreeView` (shared) re-applies its filter after a tree reload and at mount; before, any reload of the tree data while a search was typed showed every node again. `EditableText`'s save type widened to `PostgrestSingleResponse<unknown>`, as `EditableList` and `EditableDate` already take.
+- Task 21: `MoveElementModal` moved to its own file (`ui/Elements/MoveElementModal.tsx`) as well as `QuickAddRow`, because the Table's row menu keeps Move to…. `elementFieldKey` stays as a private helper of `useElementField` rather than being deleted.
+- Task 21: the Verify grep `ElementList\b` also matches `overlayElementList` (a server function); with a leading `\b` the count is 0.
+- Tasks 19–21: the docs pages (`docs/content/docs/reference/projects.mdx`, `government-contracting.mdx`) still describe the List layout, Views and the old Elements tab; Task 42 updates them.

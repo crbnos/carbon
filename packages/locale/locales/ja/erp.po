@@ -376,7 +376,6 @@ msgstr "{0} 行"
 msgid "{0} scrapped"
 msgstr "{0}廃棄"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "{0}をコピーしました"
@@ -6867,9 +6865,6 @@ msgstr "シリアル番号のビルド履歴、品目の部品表、またはテ
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "ユニットのビルド履歴、品目の部品表、またはサービステンプレートからシステムノードを作成します。"
-
-msgid "Create the first element"
-msgstr "最初のエレメントを作成"
 
 msgid "Create transfer"
 msgstr "転送を作成"
@@ -15694,9 +15689,6 @@ msgstr "この明細を取得できる要素はありません"
 msgid "No element found"
 msgstr "要素が見つかりません"
 
-msgid "No elements"
-msgstr "要素なし"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "測定器が見つかりません。"
 
 msgid "No grouped notifications"
 msgstr "グループ化された通知がありません"
-
-msgid "No grouping"
-msgstr "グループ化なし"
 
 msgid "No groups assigned"
 msgstr "グループが割り当てられていません"
@@ -16887,10 +16876,6 @@ msgstr "開く"
 
 msgid "Open ({paymentCurrency})"
 msgstr "オープン({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "{0}を開く"
 
 msgid "Open a change notice"
 msgstr "変更通知を開く"
@@ -19280,9 +19265,6 @@ msgstr "見積と受注"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "見積、注文、構成注文"
 
-msgid "R&D"
-msgstr "R&D"
-
 msgid "R&D tax"
 msgstr "R&D税"
 
@@ -21535,10 +21517,6 @@ msgstr "得意先の価格設定と条件を決定するセグメント"
 
 msgid "Select"
 msgstr "選択"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "{0}を選択"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr ".carbon.tar.gz バックアップを選択"

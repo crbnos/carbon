@@ -376,7 +376,6 @@ msgstr "{0} wierszy"
 msgid "{0} scrapped"
 msgstr "{0} braki"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Konwertowanie…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Konwertuje jednostkę zakupu dostawcy na Twoją jednostkę zapasów na pozycji zamówienia zakupu, przyjęcia lub faktury — zakup w kartonach po 12 sztuk, zapasy w sztukach."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Skopiowano {0}"
@@ -6867,9 +6865,6 @@ msgstr "Utwórz elementy systemu z historii budowy seryjnej, listy materiałowej
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Utwórz węzły systemu z historii budowy jednostki, listy materiałowej artykułu lub szablonu serwisowego."
-
-msgid "Create the first element"
-msgstr "Utwórz pierwszy element"
 
 msgid "Create transfer"
 msgstr "Utwórz przesunięcie"
@@ -15694,9 +15689,6 @@ msgstr "Żaden element nie może przyjąć tego łącza"
 msgid "No element found"
 msgstr "Nie znaleziono elementu"
 
-msgid "No elements"
-msgstr "Brak elementów"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "Nie znaleziono przyrządów pomiarowych."
 
 msgid "No grouped notifications"
 msgstr "Brak zgrupowanych powiadomień"
-
-msgid "No grouping"
-msgstr "Brak grupowania"
 
 msgid "No groups assigned"
 msgstr "Brak przypisanych grup"
@@ -16887,10 +16876,6 @@ msgstr "Otwórz"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Otwarte ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Otwórz {0}"
 
 msgid "Open a change notice"
 msgstr "Otwórz zawiadomienie o zmianie"
@@ -19280,9 +19265,6 @@ msgstr "Wycena i zamówienia sprzedaży"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Oferty, Zamówienia, Konfiguracja na Zamówienie"
 
-msgid "R&D"
-msgstr "B+R"
-
 msgid "R&D tax"
 msgstr "Podatek B+R"
 
@@ -21535,10 +21517,6 @@ msgstr "Segmenty, które określają ceny i warunki dla klientów"
 
 msgid "Select"
 msgstr "Wybierz"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Wybierz {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Wybierz kopię zapasową .carbon.tar.gz"

@@ -52,9 +52,9 @@ import {
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
-import { MoveElementModal } from "./ElementList";
 import { sortStates } from "./ElementProperties";
 import { ElementTypeIcon, useElementTypeLabels } from "./ElementTypeIcon";
+import { MoveElementModal } from "./MoveElementModal";
 
 type ElementTableRow = {
   id: string;

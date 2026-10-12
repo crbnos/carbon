@@ -376,7 +376,6 @@ msgstr "{0} Zeilen"
 msgid "{0} scrapped"
 msgstr "{0} verschrottet"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Wird konvertiert …"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Wandelt die Einkaufseinheit eines Lieferanten in Ihre Bestandseinheit auf einer Bestellung, einem Wareneingang oder einer Rechnungsposition um – Einkauf in Kartons à 12, Bestand in Einzelstücken."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "{0} kopiert"
@@ -6867,9 +6865,6 @@ msgstr "Erstellen Sie System-Elemente aus der Fertigungshistorie einer Seriennum
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Erstellen Sie System-Knoten aus der Fertigungshistorie der Einheit, der Artikel-Stückliste oder einer Service-Vorlage."
-
-msgid "Create the first element"
-msgstr "Erstellen Sie das erste Element"
 
 msgid "Create transfer"
 msgstr "Umlagerung erstellen"
@@ -15694,9 +15689,6 @@ msgstr "Kein Element kann diesen Link annehmen"
 msgid "No element found"
 msgstr "Kein Element gefunden"
 
-msgid "No elements"
-msgstr "Keine Elemente"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "Keine Prüfmittel gefunden."
 
 msgid "No grouped notifications"
 msgstr "Keine gruppierten Benachrichtigungen"
-
-msgid "No grouping"
-msgstr "Keine Gruppierung"
 
 msgid "No groups assigned"
 msgstr "Keine Gruppen zugewiesen"
@@ -16887,10 +16876,6 @@ msgstr "Öffnen"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Offen ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Öffnen {0}"
 
 msgid "Open a change notice"
 msgstr "Öffnen Sie eine Änderungsmitteilung"
@@ -19280,9 +19265,6 @@ msgstr "Angebote und Kundenaufträge"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Angebote, Bestellungen, Konfigurieren nach Bestellung"
 
-msgid "R&D"
-msgstr "F&E"
-
 msgid "R&D tax"
 msgstr "F&E Steuer"
 
@@ -21535,10 +21517,6 @@ msgstr "Segmente, die Kundenpreise und -bedingungen bestimmen"
 
 msgid "Select"
 msgstr "Auswählen"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Wählen Sie {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Wählen Sie eine .carbon.tar.gz-Sicherung"

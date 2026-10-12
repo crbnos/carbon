@@ -161,6 +161,14 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 21: Delete the List, Board and Timeline layouts
 
+- Deleted `ElementList.tsx`, `ElementBoard.tsx`, `ElementTimeline.tsx`. `QuickAddRow` moved to `ui/Element/QuickAddRow.tsx` (the element's Children section uses it); `MoveElementModal` moved to `ui/Elements/MoveElementModal.tsx` (the Table's row menu uses it).
+- `ElementProperties.tsx` lost the `ElementProperties` row, `ActualPill`, `ElementPillData`, the display settings (`ElementDisplay`, `resolveElementDisplay`, `useElementDisplayLabels`) and the grouping labels; `elementFieldKey` is module-private (only `useElementField` reads it). The models lost `elementDisplayProperties`, `elementGroupings` and `timelineZooms`. `timeline-geometry.ts` and its test stay (Schedule).
+- Verify: `grep -rn "\bElementList\b\|\bElementBoard\b\|\bElementTimeline\b" apps/erp/app` → 0. The plan's pattern without the leading `\b` also matches `overlayElementList`, a server function that stays.
+- `.claude/rules/projects-system.md` → "The Plan page" section rewritten (3 layouts, the redirect, the toolbar, the sidebar search, no views). The docs pages are Task 42.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,255 passed, `pnpm --filter erp build` exit 0 with no "Server-only module" line.
+- Shots: `21-plan-tree.png`, `21-plan-reader.png`, `21-plan-element-panel.png` (the panel's Children quick-add still renders; the toolbar stays one row with the panel open).
+- Still open for Task 22: the Tree fits to a speck in the top-left corner (`21-plan-tree.png`).
+
 ## Task 22: Restyle the Tree cards and fix the fit-view
 
 ## Task 23: Rebuild the element panel and page (Layer 4)

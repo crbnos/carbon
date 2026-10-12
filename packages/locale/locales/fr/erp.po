@@ -376,7 +376,6 @@ msgstr "{0} lignes"
 msgid "{0} scrapped"
 msgstr "{0} rebuté"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Conversion en cours…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Convertit l'unité d'achat d'un fournisseur en votre unité d'inventaire sur une ligne de commande, reçu ou facture — acheter en cartons de 12, stocker en unités."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Copié {0}"
@@ -6867,9 +6865,6 @@ msgstr "Créer des éléments système à partir de l'historique de construction
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Créer des nœuds système à partir de l'historique de construction de l'unité, de la nomenclature de l'article ou d'un modèle de service."
-
-msgid "Create the first element"
-msgstr "Créer le premier élément"
 
 msgid "Create transfer"
 msgstr "Créer un transfert"
@@ -15694,9 +15689,6 @@ msgstr "Aucun élément ne peut accepter ce lien"
 msgid "No element found"
 msgstr "Aucun élément trouvé"
 
-msgid "No elements"
-msgstr "Aucun élément"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "Aucun instrument de mesure trouvé."
 
 msgid "No grouped notifications"
 msgstr "Aucune notification groupée"
-
-msgid "No grouping"
-msgstr "Aucun groupement"
 
 msgid "No groups assigned"
 msgstr "Aucun groupe assigné"
@@ -16887,10 +16876,6 @@ msgstr "Ouvrir"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Ouvert ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Ouvrir {0}"
 
 msgid "Open a change notice"
 msgstr "Ouvrir un avis de modification"
@@ -19280,9 +19265,6 @@ msgstr "Devis et commandes clients"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Devis, Commandes, Configuration à la commande"
 
-msgid "R&D"
-msgstr "R&D"
-
 msgid "R&D tax"
 msgstr "Impôt R&D"
 
@@ -21535,10 +21517,6 @@ msgstr "Segments qui déterminent la tarification et les conditions client"
 
 msgid "Select"
 msgstr "Sélectionner"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Sélectionner {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Sélectionnez une sauvegarde .carbon.tar.gz"

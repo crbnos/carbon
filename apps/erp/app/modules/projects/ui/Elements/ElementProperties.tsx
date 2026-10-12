@@ -51,8 +51,7 @@ import {
   LuFlag,
   LuMinus,
   LuTag,
-  LuUser,
-  LuWallet
+  LuUser
 } from "react-icons/lu";
 import { EmployeeAvatar } from "~/components";
 import {
@@ -72,8 +71,6 @@ import type {
   ProjectStateGroup
 } from "../../projects.models";
 import {
-  elementDisplayProperties,
-  elementGroupings,
   projectElementPriorities,
   projectStateGroups
 } from "../../projects.models";
@@ -84,71 +81,14 @@ import {
 } from "../ChangeRequests/useActiveChangeRequest";
 import { StateIcon } from "../Project/StateIcon";
 
-export { elementDisplayProperties, elementGroupings };
-
-// --- Display settings ---------------------------------------------------------
-
-export type ElementDisplayProperty = (typeof elementDisplayProperties)[number];
-export type ElementDisplay = Record<ElementDisplayProperty, boolean>;
-
-export const defaultElementDisplay: ElementDisplay = {
-  state: true,
-  owner: true,
-  priority: true,
-  labels: true,
-  dates: true,
-  milestone: true,
-  hours: false,
-  budget: false,
-  actual: false
-};
-
-/** The shown properties, with every property a view leaves out at its default. */
-export function resolveElementDisplay(
-  properties: Partial<ElementDisplay>
-): ElementDisplay {
-  return { ...defaultElementDisplay, ...properties };
-}
-
-export function useElementDisplayLabels(): Record<
-  ElementDisplayProperty,
-  string
-> {
-  const { t } = useLingui();
-  return {
-    state: t`State`,
-    owner: t`Owner`,
-    priority: t`Priority`,
-    labels: t`Labels`,
-    dates: t`Dates`,
-    milestone: t`Milestone`,
-    hours: t`Hours`,
-    budget: t`Budget`,
-    actual: t`Actual`
-  };
-}
-
-export type ElementGrouping = (typeof elementGroupings)[number];
-
-export function useElementGroupingLabels(): Record<ElementGrouping, string> {
-  const { t } = useLingui();
-  return {
-    none: t`No grouping`,
-    state: t`State`,
-    type: t`Type`,
-    owner: t`Owner`,
-    milestone: t`Milestone`
-  };
-}
-
 // --- Saving one field ---------------------------------------------------------
 
 export type ElementUpdateField = ProjectElementEditableField | "labelIds";
 
 /**
  * Saves one field of one element through the update route. The fetcher key
- * is `element:{id}:{field}`, so the List, Board and Table layouts and the
- * element page all read the same pending value.
+ * is `element:{id}:{field}`, so every pill of one field reads the same
+ * pending value.
  */
 export function useElementField(
   projectId: string,
@@ -192,7 +132,7 @@ export function useElementField(
   return { pending, submit, isSubmitting: fetcher.state !== "idle" };
 }
 
-export function elementFieldKey(elementId: string, field: ElementUpdateField) {
+function elementFieldKey(elementId: string, field: ElementUpdateField) {
   return `element:${elementId}:${field}`;
 }
 
@@ -986,119 +926,5 @@ export function NumberPill({
         </NumberField>
       </PopoverContent>
     </Popover>
-  );
-}
-
-/** The actual cost of an element and its subtree. Read only. */
-export function ActualPill({
-  amount,
-  variant = "pill"
-}: {
-  amount: number;
-  variant?: PillVariant;
-}) {
-  const { t } = useLingui();
-  const formatMoney = useCurrencyFormatter();
-  return (
-    <span
-      className={cn(
-        "inline-flex min-w-0 shrink-0 items-center gap-1 text-xs text-muted-foreground",
-        variant === "pill" ? "h-5 rounded border border-border px-1.5" : "h-8"
-      )}
-    >
-      <LuWallet className="size-3 shrink-0" />
-      <span className="sr-only">{t`Actual`}</span>
-      <span className="whitespace-nowrap tabular-nums">
-        {formatMoney.format(amount)}
-      </span>
-    </span>
-  );
-}
-
-// --- All pills of one element -------------------------------------------------
-
-export type ElementPillData = {
-  id: string;
-  stateId: string;
-  ownerId: string | null;
-  priority: ProjectElementPriority;
-  milestoneId: string | null;
-  startDate: string | null;
-  targetDate: string | null;
-  estimatedHours: number | null;
-  budget: number | null;
-  completedAt: string | null;
-  labels: { projectLabelId: string }[] | null;
-};
-
-export function ElementProperties({
-  projectId,
-  element,
-  display,
-  states,
-  labels,
-  milestones,
-  actual,
-  isDisabled,
-  className
-}: {
-  projectId: string;
-  element: ElementPillData;
-  display: ElementDisplay;
-  states: ProjectState[];
-  labels: ProjectLabel[];
-  milestones: ProjectMilestone[];
-  /** The subtree's actual cost; the pill shows only when it is given. */
-  actual?: number;
-  isDisabled?: boolean;
-  className?: string;
-}) {
-  const common = { projectId, elementId: element.id, isDisabled };
-  return (
-    <div className={cn("flex min-w-0 flex-wrap items-center gap-1", className)}>
-      {display.state && (
-        <StatePill {...common} stateId={element.stateId} states={states} />
-      )}
-      {display.priority && (
-        <PriorityPill {...common} priority={element.priority} />
-      )}
-      {display.labels && (
-        <LabelsPill
-          {...common}
-          labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
-          labels={labels}
-        />
-      )}
-      {display.dates && (
-        <>
-          <DatePill {...common} field="startDate" date={element.startDate} />
-          <DatePill
-            {...common}
-            field="targetDate"
-            date={element.targetDate}
-            isComplete={!!element.completedAt}
-          />
-        </>
-      )}
-      {display.milestone && (
-        <MilestonePill
-          {...common}
-          milestoneId={element.milestoneId}
-          milestones={milestones}
-        />
-      )}
-      {display.hours && (
-        <NumberPill
-          {...common}
-          field="estimatedHours"
-          number={element.estimatedHours}
-        />
-      )}
-      {display.budget && (
-        <NumberPill {...common} field="budget" number={element.budget} />
-      )}
-      {display.actual && actual !== undefined && <ActualPill amount={actual} />}
-      {display.owner && <OwnerPill {...common} ownerId={element.ownerId} />}
-    </div>
   );
 }

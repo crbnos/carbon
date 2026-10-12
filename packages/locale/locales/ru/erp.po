@@ -376,7 +376,6 @@ msgstr "{0} строк"
 msgid "{0} scrapped"
 msgstr "{0} брак"
 
-#. placeholder {0}: ids.length
 #. placeholder {0}: selected.length
 #. placeholder {0}: selectedRows.length
 msgid "{0} selected"
@@ -6187,7 +6186,6 @@ msgstr "Преобразование…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
-#. placeholder {0}: element.readableId
 #. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Скопировано {0}"
@@ -6867,9 +6865,6 @@ msgstr "Создать системные элементы из истории �
 
 msgid "Create System nodes from the unit's build history, the item's bill of materials or a service template."
 msgstr "Создать системные узлы из истории сборки единицы, спецификации номенклатуры или шаблона обслуживания."
-
-msgid "Create the first element"
-msgstr "Создать первый элемент"
 
 msgid "Create transfer"
 msgstr "Создать перемещение"
@@ -15694,9 +15689,6 @@ msgstr "Ни один элемент не может принять эту сс�
 msgid "No element found"
 msgstr "Элемент не найден"
 
-msgid "No elements"
-msgstr "Нет элементов"
-
 msgid "No elements match."
 msgstr ""
 
@@ -15780,9 +15772,6 @@ msgstr "Средства измерения не найдены."
 
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
-
-msgid "No grouping"
-msgstr "Нет группировки"
 
 msgid "No groups assigned"
 msgstr "Нет назначенных групп"
@@ -16887,10 +16876,6 @@ msgstr "Открыть"
 
 msgid "Open ({paymentCurrency})"
 msgstr "Открыто ({paymentCurrency})"
-
-#. placeholder {0}: element.readableId
-msgid "Open {0}"
-msgstr "Открыть {0}"
 
 msgid "Open a change notice"
 msgstr "Открыть Извещение об изменении"
@@ -19280,9 +19265,6 @@ msgstr "Коммерческие предложения и заказы поку
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Предложения, Заказы, Конфигурирование на заказ"
 
-msgid "R&D"
-msgstr "НИОКР"
-
 msgid "R&D tax"
 msgstr "Налог на НИОКР"
 
@@ -21535,10 +21517,6 @@ msgstr "Сегменты, которые определяют ценообраз
 
 msgid "Select"
 msgstr "Выбрать"
-
-#. placeholder {0}: element.readableId
-msgid "Select {0}"
-msgstr "Выбрать {0}"
 
 msgid "Select a .carbon.tar.gz backup"
 msgstr "Выберите резервную копию .carbon.tar.gz"
