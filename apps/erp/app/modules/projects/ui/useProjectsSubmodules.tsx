@@ -115,7 +115,6 @@ export default function useProjectsSubmodules() {
     },
     {
       name: t`Setup`,
-      collapsible: true,
       routes: [
         {
           name: t`Labor Categories`,

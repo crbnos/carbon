@@ -23,8 +23,6 @@ export type Authenticated<T = {}> = T & {
 export type AuthenticatedRouteGroup<T = {}> = T & {
   name: string;
   icon?: any;
-  /** Folds the group under its heading; it starts open only while one of its routes is active. */
-  collapsible?: boolean;
   routes: Authenticated<Route & T>[];
 };
 
@@ -104,8 +102,6 @@ export type Route<T = {}> = T & {
 export type RouteGroup<T = {}> = {
   name: string;
   icon?: any;
-  /** Folds the group under its heading; it starts open only while one of its routes is active. */
-  collapsible?: boolean;
   routes: (Route & T)[];
 };
 

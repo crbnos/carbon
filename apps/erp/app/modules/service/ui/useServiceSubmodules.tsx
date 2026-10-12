@@ -73,7 +73,6 @@ export default function useServiceSubmodules() {
     },
     {
       name: t`Setup`,
-      collapsible: true,
       routes: [
         {
           name: t`Customer Assets`,

@@ -4,9 +4,6 @@
 
 import {
   Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
   Count,
   cn,
   DropdownMenu,
@@ -92,14 +89,6 @@ const GroupedContentSidebar = ({
     sortOrder: number;
   } | null>(null);
 
-  // A collapsible group follows the page (open while one of its routes is
-  // active) until the user opens or closes it; then their choice sticks.
-  const [openedGroups, setOpenedGroups] = useState<Record<string, boolean>>({});
-  const isGroupOpen = (group: RouteGroup) =>
-    openedGroups[group.name] ?? group.routes.some((route) => isActive(route));
-  const setGroupOpen = (group: RouteGroup, open: boolean) =>
-    setOpenedGroups((prev) => ({ ...prev, [group.name]: open }));
-
   const toggleViews = (routeName: string) => {
     setExpandedViews((prev) => ({
       ...prev,
@@ -133,13 +122,7 @@ const GroupedContentSidebar = ({
     return (
       <div className="flex flex-col">
         {groups.map((group) => (
-          <SheetNavGroup
-            key={group.name}
-            title={group.name}
-            collapsible={group.collapsible}
-            open={group.collapsible ? isGroupOpen(group) : undefined}
-            onOpenChange={(open) => setGroupOpen(group, open)}
-          >
+          <SheetNavGroup key={group.name} title={group.name}>
             {group.routes.map((route) => {
               const views = [...(route.views ?? [])].sort(
                 (a, b) => a.sortOrder - b.sortOrder
@@ -248,28 +231,10 @@ const GroupedContentSidebar = ({
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"
             >
-              {group.collapsible ? (
-                <Collapsible
-                  open={isGroupOpen(group)}
-                  onOpenChange={(open) => setGroupOpen(group, open)}
-                  className="w-full space-y-0.5"
-                >
-                  <CollapsibleTrigger className="group/trigger flex w-full items-center justify-between rounded-md py-1 pl-4 pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                    <Subheading variant="light">{group.name}</Subheading>
-                    <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]/trigger:rotate-90" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-0.5">
-                    {group.routes.map(renderRoute)}
-                  </CollapsibleContent>
-                </Collapsible>
-              ) : (
-                <>
-                  <Subheading as="h4" variant="light" className="pl-4 py-1">
-                    {group.name}
-                  </Subheading>
-                  {group.routes.map(renderRoute)}
-                </>
-              )}
+              <Subheading as="h4" variant="light" className="pl-4 py-1">
+                {group.name}
+              </Subheading>
+              {group.routes.map(renderRoute)}
             </VStack>
           ))}
         </VStack>

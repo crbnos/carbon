@@ -3,9 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
   cn,
   dockMenuRowClassName,
   PrefetchLink,
@@ -14,7 +11,6 @@ import {
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { createContext, useContext } from "react";
-import { LuChevronRight } from "react-icons/lu";
 import { SheetRowContent } from "../Mobile/SheetRow";
 
 /**
@@ -107,47 +103,12 @@ export function SheetNavRow({
 /** Group overline in the switcher sheet. */
 export function SheetNavGroup({
   title,
-  children,
-  collapsible = false,
-  open,
-  onOpenChange
+  children
 }: {
   title?: ReactNode;
   children: ReactNode;
-  /** Folds the rows under the title, as the desktop sidebar does. */
-  collapsible?: boolean;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
 }) {
   const style = useContext(SheetNavStyleContext);
-  if (collapsible && title) {
-    return (
-      <Collapsible
-        open={open}
-        onOpenChange={onOpenChange}
-        className={cn(
-          "flex flex-col",
-          style === "menu"
-            ? "border-t border-border p-1.5 first:border-t-0"
-            : "pb-2"
-        )}
-      >
-        <CollapsibleTrigger className="group/trigger flex w-full items-center justify-between pr-3 text-left">
-          {style === "menu" ? (
-            <span className="px-3 pt-1.5 pb-1 text-xs text-muted-foreground">
-              {title}
-            </span>
-          ) : (
-            <SheetSectionLabel>{title}</SheetSectionLabel>
-          )}
-          <LuChevronRight className="size-4 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]/trigger:rotate-90" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className="flex flex-col">
-          {children}
-        </CollapsibleContent>
-      </Collapsible>
-    );
-  }
   if (style === "menu") {
     return (
       <div className="flex flex-col border-t border-border p-1.5 first:border-t-0">
