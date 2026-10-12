@@ -60,7 +60,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // The row must belong to the URL's lease.
   const current = await client
     .from("leasePayment")
-    .select("id, leaseId, paymentType, periodStart, periodEnd, dueDate, amount")
+    .select(
+      "id, leaseId, leaseLineId, paymentType, periodStart, periodEnd, dueDate, amount"
+    )
     .eq("id", paymentId)
     .eq("leaseId", id)
     .eq("companyId", companyId)
@@ -73,6 +75,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const merged: Record<string, string | number | null> = {
     id: row.id,
     leaseId: row.leaseId,
+    leaseLineId: row.leaseLineId,
     paymentType: row.paymentType,
     periodStart: row.periodStart,
     periodEnd: row.periodEnd,

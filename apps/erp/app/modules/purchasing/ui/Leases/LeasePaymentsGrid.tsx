@@ -27,12 +27,13 @@ import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import LeaseMoney from "./LeaseMoney";
 import LeasePaymentForm from "./LeasePaymentForm";
-import type { Lease, LeasePayment } from "./types";
+import type { Lease, LeaseLine, LeasePayment } from "./types";
 import { useLeasePaymentTypeLabel } from "./useLeaseLabels";
 
 type PaymentRow = {
   id: string;
   number: number;
+  asset: string;
   paymentType: string;
   periodStart: string;
   periodEnd: string;
@@ -43,14 +44,19 @@ type PaymentRow = {
 
 type LeasePaymentsGridProps = {
   lease: Lease;
+  lines: LeaseLine[];
   payments: LeasePayment[];
 };
 
-/** The lease's payment rows as a spreadsheet: each row's period, due date
+/** Every asset's payment rows as a spreadsheet: each row's period, due date
  *  and amount edit in place, one cell at a time, through the row's update
  *  route. A rent holiday or an irregular step is an edit here; Regenerate
  *  from Terms replaces every row. */
-const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
+const LeasePaymentsGrid = ({
+  lease,
+  lines,
+  payments
+}: LeasePaymentsGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const save = useCellSave();
@@ -66,11 +72,18 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
   const regenerate = useDisclosure();
   const [deleting, setDeleting] = useState<PaymentRow | null>(null);
 
+  const assetName = useMemo(
+    () => new Map(lines.map((line) => [line.id, line.description])),
+    [lines]
+  );
+  const hasSeveralAssets = lines.length > 1;
+
   const rows = useMemo<PaymentRow[]>(
     () =>
       payments.map((payment, index) => ({
         id: payment.id,
         number: index + 1,
+        asset: assetName.get(payment.leaseLineId) ?? "",
         paymentType: payment.paymentType,
         periodStart: payment.periodStart,
         periodEnd: payment.periodEnd,
@@ -78,7 +91,7 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
         amount: Number(payment.amount),
         status: payment.status
       })),
-    [payments]
+    [payments, assetName]
   );
   const total = rows.reduce((sum, row) => sum + row.amount, 0);
 
@@ -102,6 +115,19 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
           </span>
         )
       },
+      ...(hasSeveralAssets
+        ? [
+            {
+              accessorKey: "asset",
+              header: t`Asset`,
+              cell: ({ row }: { row: { original: PaymentRow } }) => (
+                <span className="block max-w-[200px] truncate">
+                  {row.original.asset}
+                </span>
+              )
+            } satisfies ColumnDef<PaymentRow>
+          ]
+        : []),
       {
         accessorKey: "paymentType",
         header: t`Type`,
@@ -143,7 +169,7 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
         )
       }
     ],
-    [t, currencyCode, paymentTypeLabel]
+    [t, currencyCode, paymentTypeLabel, hasSeveralAssets]
   );
 
   const editableComponents = useMemo(
@@ -209,13 +235,13 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
           <div className="flex w-full flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border px-6 py-16 text-center">
             <p className="text-sm text-muted-foreground">
               <Trans>
-                No payment rows yet. Enter the payment amount above, or add a
-                row.
+                No payment rows yet. Give each asset its payment on the Assets
+                step, or add a row.
               </Trans>
             </p>
             <Button
               leftIcon={<LuPlus />}
-              isDisabled={!canEdit}
+              isDisabled={!canEdit || lines.length === 0}
               onClick={addPayment.onOpen}
             >
               <Trans>Add Payment</Trans>
@@ -248,7 +274,7 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
               <Button
                 variant="secondary"
                 leftIcon={<LuPlus />}
-                isDisabled={!canEdit}
+                isDisabled={!canEdit || lines.length === 0}
                 onClick={addPayment.onOpen}
               >
                 <Trans>Add Payment</Trans>
@@ -264,16 +290,18 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
         )}
       </div>
 
-      {addPayment.isOpen && (
+      {addPayment.isOpen && lines[0] && (
         <LeasePaymentForm
           initialValues={{
             leaseId,
+            leaseLineId: lines[0].id,
             paymentType: "Rent",
             periodStart: lease.commencementDate ?? "",
             periodEnd: lease.commencementDate ?? "",
             dueDate: lease.commencementDate ?? "",
-            amount: Number(lease.paymentAmount ?? 0)
+            amount: Number(lines[0].paymentAmount ?? 0)
           }}
+          assets={lines}
           currencyCode={currencyCode}
           onClose={addPayment.onClose}
         />
@@ -293,7 +321,7 @@ const LeasePaymentsGrid = ({ lease, payments }: LeasePaymentsGridProps) => {
         <Confirm
           action={path.to.leasePaymentsRegenerate(leaseId)}
           title={t`Regenerate payments from the terms?`}
-          text={t`Every payment row is cut again from the payment terms. Rows you edited, added or deleted are replaced.`}
+          text={t`Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced.`}
           confirmText={t`Regenerate`}
           confirmVariant="destructive"
           onCancel={regenerate.onClose}

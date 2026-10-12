@@ -4,7 +4,6 @@
 
 import type { Json } from "@carbon/database";
 import {
-  Boolean,
   DatePicker,
   InputControlled,
   Select,
@@ -36,13 +35,14 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
-import { useCurrencyDecimals, usePermissions, useRouteData } from "~/hooks";
+import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import {
   leasePaymentFrequencies,
   leasePaymentTimings
 } from "../../purchasing.models";
+import LeaseMoney from "./LeaseMoney";
 import type { Lease, LeaseRouteData } from "./types";
 
 type Term =
@@ -57,17 +57,10 @@ type Term =
   | "endDate"
   | "noticeDate"
   | "invoiceFromDate"
-  | "paymentAmount"
   | "paymentFrequency"
   | "paymentTiming"
   | "annualEscalationPercent"
-  | "discountRate"
-  | "fairValue"
-  | "economicLifeMonths"
-  | "purchaseOptionAmount"
-  | "ownershipTransfers"
-  | "specializedAsset"
-  | "purchaseOptionReasonablyCertain";
+  | "discountRate";
 
 /** Each property is its own form so a field validates on its own; the save
  *  goes through the update route, which validates the terms as a whole. */
@@ -107,7 +100,6 @@ const LeaseProperties = () => {
   const lease = routeData?.lease;
   const permissions = usePermissions();
   const currencyCode = lease?.currencyCode ?? "";
-  const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {
@@ -154,8 +146,6 @@ const LeaseProperties = () => {
 
   const isDisabled =
     lease.status !== "Draft" || !permissions.can("update", "purchasing");
-  const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
-  const moneyStep = INPUT_STEP.money(currencyDecimals);
   const frequencyLabel = (value: string) =>
     value === "Monthly"
       ? t`Monthly`
@@ -358,24 +348,23 @@ const LeaseProperties = () => {
         <SectionHeading>
           <Trans>Payments</Trans>
         </SectionHeading>
-        <PropertyForm name="paymentAmount" value={lease.paymentAmount}>
-          <NumberControlled
-            name="paymentAmount"
-            label={t`Payment Amount`}
-            inline
-            isReadOnly={isDisabled}
-            value={lease.paymentAmount ?? 0}
-            minValue={0}
-            step={moneyStep}
-            formatOptions={moneyFormat}
-            onChange={(value) => {
-              onUpdate(
-                "paymentAmount",
-                String(Number.isNaN(value) ? 0 : value)
-              );
-            }}
-          />
-        </PropertyForm>
+        <VStack spacing={1}>
+          <span className="text-xs font-medium text-muted-foreground">
+            <Trans>Payment</Trans>
+          </span>
+          <span>
+            <LeaseMoney
+              value={lease.paymentAmount}
+              currencyCode={currencyCode}
+            />
+            {Number(lease.assetCount ?? 0) > 1 && (
+              <span className="text-muted-foreground">
+                {" "}
+                <Trans>for {lease.assetCount} assets</Trans>
+              </span>
+            )}
+          </span>
+        </VStack>
         <PropertyForm name="paymentFrequency" value={lease.paymentFrequency}>
           <Select
             name="paymentFrequency"
@@ -462,98 +451,12 @@ const LeaseProperties = () => {
             }}
           />
         </PropertyForm>
-        <PropertyForm name="fairValue" value={lease.fairValue}>
-          <NumberControlled
-            name="fairValue"
-            label={t`Fair Value`}
-            inline
-            isReadOnly={isDisabled}
-            value={lease.fairValue ?? 0}
-            minValue={0}
-            step={moneyStep}
-            formatOptions={moneyFormat}
-            onChange={(value) => {
-              // An emptied input commits NaN; no fair value is null, not 0.
-              onUpdate("fairValue", value > 0 ? String(value) : null);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm
-          name="economicLifeMonths"
-          value={lease.economicLifeMonths}
-        >
-          <NumberControlled
-            name="economicLifeMonths"
-            label={t`Economic Life (months)`}
-            inline
-            isReadOnly={isDisabled}
-            value={lease.economicLifeMonths ?? 0}
-            minValue={0}
-            onChange={(value) => {
-              onUpdate("economicLifeMonths", value > 0 ? String(value) : null);
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm
-          name="purchaseOptionAmount"
-          value={lease.purchaseOptionAmount}
-        >
-          <NumberControlled
-            name="purchaseOptionAmount"
-            label={t`Purchase Option`}
-            inline
-            isReadOnly={isDisabled}
-            value={lease.purchaseOptionAmount ?? 0}
-            minValue={0}
-            step={moneyStep}
-            formatOptions={moneyFormat}
-            onChange={(value) => {
-              onUpdate(
-                "purchaseOptionAmount",
-                value > 0 ? String(value) : null
-              );
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm
-          name="purchaseOptionReasonablyCertain"
-          value={lease.purchaseOptionReasonablyCertain}
-        >
-          <Boolean
-            name="purchaseOptionReasonablyCertain"
-            label={t`Purchase option reasonably certain`}
-            variant="small"
-            isDisabled={isDisabled || !lease.purchaseOptionAmount}
-            onChange={(value) => {
-              onUpdate("purchaseOptionReasonablyCertain", value ? "on" : "off");
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm
-          name="ownershipTransfers"
-          value={lease.ownershipTransfers}
-        >
-          <Boolean
-            name="ownershipTransfers"
-            label={t`Ownership transfers`}
-            variant="small"
-            isDisabled={isDisabled}
-            onChange={(value) => {
-              onUpdate("ownershipTransfers", value ? "on" : "off");
-            }}
-          />
-        </PropertyForm>
-        <PropertyForm name="specializedAsset" value={lease.specializedAsset}>
-          <Boolean
-            name="specializedAsset"
-            label={t`Specialized asset`}
-            variant="small"
-            isDisabled={isDisabled}
-            onChange={(value) => {
-              onUpdate("specializedAsset", value ? "on" : "off");
-            }}
-          />
-        </PropertyForm>
+        <p className="text-xs text-muted-foreground">
+          <Trans>
+            Each asset's fair value, economic life and purchase option are on
+            its row in the Assets card.
+          </Trans>
+        </p>
       </VStack>
 
       <VStack spacing={2}>

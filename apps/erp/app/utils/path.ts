@@ -1518,16 +1518,23 @@ export const path = {
     kanbans: `${x}/inventory/kanbans`,
     lease: (id: string) => generatePath(`${x}/lease/${id}`),
     leaseActivate: (id: string) => generatePath(`${x}/lease/${id}/activate`),
-    leaseClassification: (id: string) =>
-      generatePath(`${x}/lease/${id}/classification`),
     leaseDetails: (id: string) => generatePath(`${x}/lease/${id}/details`),
     leaseEvents: (id: string) => generatePath(`${x}/lease/${id}/events`),
     leaseInvoice: (id: string) => generatePath(`${x}/lease/${id}/invoice`),
     leaseLiabilities: `${x}/reports/lease-liabilities`,
+    leaseLineClassification: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/classification`),
+    leaseLineDelete: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/delete`),
+    leaseLinePurchase: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/purchase`),
+    leaseLinesNew: (id: string) => generatePath(`${x}/lease/${id}/lines/new`),
+    leaseLineTerminate: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/terminate`),
+    leaseLineUpdate: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/update`),
     leaseModify: (id: string) => generatePath(`${x}/lease/${id}/modify`),
     leaseNetInvestment: `${x}/reports/lease-net-investment`,
-    leasePayment: (id: string, paymentId: string) =>
-      generatePath(`${x}/lease/${id}/payments/${paymentId}`),
     leasePaymentDelete: (id: string, paymentId: string) =>
       generatePath(`${x}/lease/${id}/payments/${paymentId}/delete`),
     leasePaymentNew: (id: string) =>
@@ -1536,16 +1543,14 @@ export const path = {
       generatePath(`${x}/lease/${id}/payments/regenerate`),
     leasePaymentUpdate: (id: string, paymentId: string) =>
       generatePath(`${x}/lease/${id}/payments/${paymentId}/update`),
-    leasePurchase: (id: string) => generatePath(`${x}/lease/${id}/purchase`),
     leaseRuns: `${x}/accounting/lease-runs`,
     leaseSchedule: (id: string) => generatePath(`${x}/lease/${id}/schedule`),
     leaseSetup: (
       id: string,
-      step: "details" | "payments" | "accounting" | "review"
+      step: "details" | "assets" | "payments" | "accounting" | "review"
     ) => generatePath(`${x}/lease/${id}/setup/${step}`),
     leaseStatus: (id: string) => generatePath(`${x}/lease/${id}/status`),
     leases: `${x}/purchasing/leases`,
-    leaseTerminate: (id: string) => generatePath(`${x}/lease/${id}/terminate`),
     leaseUpdate: `${x}/lease/update`,
     legal: {
       privacyPolicy: "https://carbon.ms/privacy",

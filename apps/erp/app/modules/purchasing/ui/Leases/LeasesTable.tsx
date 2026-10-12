@@ -11,6 +11,7 @@ import {
   LuCalendar,
   LuCalendarClock,
   LuDollarSign,
+  LuHash,
   LuLandmark,
   LuPencil,
   LuScale,
@@ -110,21 +111,38 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         }
       },
       {
-        accessorKey: "lesseeClassification",
+        accessorKey: "classification",
         header: t`Classification`,
         cell: (item) => {
           const value = item.getValue<string | null>();
-          return value ? classificationLabel(value) : "—";
+          return value === "Mixed"
+            ? t`Varies by asset`
+            : value
+              ? classificationLabel(value)
+              : "—";
         },
         meta: {
           filter: {
             type: "static",
-            options: lesseeClassifications.map((value) => ({
-              value,
-              label: classificationLabel(value)
-            }))
+            options: [
+              ...lesseeClassifications.map((value) => ({
+                value,
+                label: classificationLabel(value)
+              })),
+              { value: "Mixed", label: t`Varies by asset` }
+            ]
           },
           icon: <LuScale />
+        }
+      },
+      {
+        accessorKey: "assetCount",
+        header: t`Assets`,
+        cell: (item) => (
+          <span className="tabular-nums">{item.getValue<number>() ?? 0}</span>
+        ),
+        meta: {
+          icon: <LuHash />
         }
       },
       {

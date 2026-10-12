@@ -30,14 +30,18 @@ import { useLeasePaymentTypeLabel } from "./useLeaseLabels";
 
 type LeasePaymentFormProps = {
   initialValues: z.infer<typeof leasePaymentValidator>;
+  /** The lease's assets: a row belongs to one of them. */
+  assets: { id: string; description: string }[];
   currencyCode: string;
   onClose: () => void;
 };
 
-/** Add or change one payment row of a Draft lease: a rent holiday, an
- *  irregular step, a payment the terms do not describe. */
+/** Add a payment row to one asset of a Draft lease: a rent holiday, an
+ *  irregular step, a payment the terms do not describe. A row's fields are
+ *  changed in the setup grid. */
 const LeasePaymentForm = ({
   initialValues,
+  assets,
   currencyCode,
   onClose
 }: LeasePaymentFormProps) => {
@@ -47,10 +51,7 @@ const LeasePaymentForm = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const paymentTypeLabel = useLeasePaymentTypeLabel();
 
-  const isEditing = !!initialValues.id;
-  const action = isEditing
-    ? path.to.leasePayment(initialValues.leaseId, initialValues.id!)
-    : path.to.leasePaymentNew(initialValues.leaseId);
+  const action = path.to.leasePaymentNew(initialValues.leaseId);
 
   return (
     <ModalDrawerProvider type="modal">
@@ -72,17 +73,21 @@ const LeasePaymentForm = ({
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>
-                {isEditing ? (
-                  <Trans>Edit Payment</Trans>
-                ) : (
-                  <Trans>Add Payment</Trans>
-                )}
+                <Trans>Add Payment</Trans>
               </ModalDrawerTitle>
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <Hidden name="id" />
               <Hidden name="leaseId" />
               <VStack spacing={4}>
+                <Select
+                  name="leaseLineId"
+                  label={t`Asset`}
+                  options={assets.map((asset) => ({
+                    value: asset.id,
+                    label: asset.description
+                  }))}
+                />
                 <Select
                   name="paymentType"
                   label={t`Type`}

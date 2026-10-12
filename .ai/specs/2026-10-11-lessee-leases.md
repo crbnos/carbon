@@ -494,3 +494,21 @@ RLS: every new table through `packages/database/src/authz/manifest.ts`: `company
 - 2026-10-11 (planning): lease runs post as a new source type `Lease Run`; the Draft index, Post and Reverse Run take the run type; Cancel voids inline; added `invoiceFromDate`, `rouAssetCost` and payment status `Skipped`; Q8 re-opened (Migration Clearing conflict).
 - 2026-10-11 (overlap with the projects branch): Operating Lease Expense moves from 6120 (taken by Warranty Expense there) to 6140; Lease lines refuse `projectId`; the run synthesizers take the run type in a merge-friendly signature.
 - 2026-10-11: Q8 resolved — the difference goes to retained earnings (research: ASC 250; NetSuite mid-life leases; D365 opening balance import).
+
+## Addendum (2026-10-11): several assets per lease
+
+The user asked for several assets on one lease. Research: `.ai/research/2026-10-11-lessee-lease-accounting.md` → Addendum. The design copies the rental agreement (header + lines) and follows ASC 842's unit of account: each asset is a separate lease component.
+
+| # | Decision | Per lease (`lease`) | Per asset (`leaseLine`) |
+|---|---|---|---|
+| A1 | Split | supplier, location, owner, commencement / end / notice / invoice-from dates, payment frequency, timing, annual escalation, discount rate, currency | description, serial number, location (defaults to the lease's), payment amount, fair value, economic life, ownership transfers, specialized asset, purchase option amount and "reasonably certain", status, classification (+ override and reason), initial liability, initial ROU asset, ROU cost, fixed asset (after a purchase) |
+| A2 | Term | All assets share the lease's term in v1. A master lease with a later delivery is a second lease. | — |
+| A3 | Payment rows, schedule, run rows | Summed for display | One set per asset: `leasePayment.leaseLineId`, `leaseScheduleLine.leaseLineId` |
+| A4 | Journals | One commencement (or opening balance) journal per lease, with lines per asset (`documentLineReference` = the asset line) | — |
+| A5 | Modify | Acts on the lease: new end date, rate, frequency, escalation, and a payment amount per asset; every active asset is remeasured from the effective date | — |
+| A5a | Events | — | One `leaseEvent` per asset (`leaseEvent.leaseLineId` NOT NULL). A Modify writes one event per active asset, all naming the same journal. |
+| A6 | Terminate, Purchase | — | Act on one asset. The asset's liability and ROU leave the books (25-13, full decrease for that component); the other assets do not change unless the user also modifies the lease. The lease ends when its last asset ends. |
+| A7 | Invoices | One Draft purchase invoice per lease and due date | One Lease line per asset payment row, described with the asset |
+| A8 | Lease status | Active while any asset is Active; Expired, Terminated or Purchased after the last asset ends, taking the last asset's end | `leaseLineStatus`: Active, Terminated, Purchased, Expired |
+
+Out of scope: a different commencement date per asset; allocating a lump-sum payment by standalone price (the user enters each asset's payment).

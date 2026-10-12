@@ -18,11 +18,17 @@ import type { ReactNode } from "react";
 import { DateTime, SupplierAvatar } from "~/components";
 import { LesseeClassificationBadge } from "./LeaseClassificationPreview";
 import LeaseMoney from "./LeaseMoney";
-import type { Lease, LeasePayment, LeaseScheduleLine } from "./types";
+import type {
+  Lease,
+  LeaseLine,
+  LeasePayment,
+  LeaseScheduleLine
+} from "./types";
 import { isScheduleLinePosted } from "./utils";
 
 type LeaseSummaryProps = {
   lease: Lease;
+  lines: LeaseLine[];
   payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
 };
@@ -36,31 +42,66 @@ function Fact({ label, children }: { label: ReactNode; children: ReactNode }) {
   );
 }
 
-/** The lease at a glance: its terms, its treatment, the liability and the
- *  net right-of-use asset as of the last posted lease run, and the next
+/** The lease at a glance: its terms, its treatment, its assets' liability
+ *  and net right-of-use asset as of the last posted lease run, and the next
  *  payment. */
-const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
+const LeaseSummary = ({
+  lease,
+  lines,
+  payments,
+  schedule
+}: LeaseSummaryProps) => {
   const { t } = useLingui();
   const { locale } = useLocale();
   const currencyCode = lease.currencyCode;
 
-  const postedLines: LeaseScheduleLine[] = [];
-  for (const line of schedule) {
-    if (!isScheduleLinePosted(line)) break;
-    postedLines.push(line);
-  }
-  const lastPosted = postedLines[postedLines.length - 1];
-  const hasBalances =
-    lease.status === "Active" && lease.lesseeClassification !== "Short-Term";
-  const liability = lastPosted
-    ? Number(lastPosted.closingLiability)
-    : Number(lease.initialLiability ?? 0);
-  const netRou = round(
-    Number(lease.rouAssetCost ?? 0) -
-      postedLines.reduce((sum, line) => sum + Number(line.rouAmortization), 0)
+  // Each active, capitalized asset's balances after its last posted month.
+  const recognized = lines.filter(
+    (line) =>
+      line.status === "Active" &&
+      line.lesseeClassification !== null &&
+      line.lesseeClassification !== "Short-Term"
   );
+  let liability = 0;
+  let netRou = 0;
+  let initialLiability = 0;
+  let lastPosted: string | null = null;
+  for (const line of recognized) {
+    const posted: LeaseScheduleLine[] = [];
+    for (const row of schedule) {
+      if (row.leaseLineId !== line.id) continue;
+      if (!isScheduleLinePosted(row)) break;
+      posted.push(row);
+    }
+    const last = posted[posted.length - 1];
+    if (last && (!lastPosted || last.periodDate > lastPosted)) {
+      lastPosted = last.periodDate;
+    }
+    initialLiability += Number(line.initialLiability ?? 0);
+    liability += last
+      ? Number(last.closingLiability)
+      : Number(line.initialLiability ?? 0);
+    netRou +=
+      Number(line.rouAssetCost ?? 0) -
+      posted.reduce((sum, row) => sum + Number(row.rouAmortization), 0);
+  }
+  liability = round(liability);
+  netRou = round(netRou);
+  const hasBalances = lease.status === "Active" && recognized.length > 0;
 
-  const nextPayment = payments.find((payment) => payment.status === "Pending");
+  // The next due date with a payment to bill, and every asset's payment on
+  // it.
+  const nextDueDate = payments.find(
+    (payment) => payment.status === "Pending"
+  )?.dueDate;
+  const nextPaymentAmount = round(
+    payments
+      .filter(
+        (payment) =>
+          payment.status === "Pending" && payment.dueDate === nextDueDate
+      )
+      .reduce((sum, payment) => sum + Number(payment.amount), 0)
+  );
   const frequency =
     lease.paymentFrequency === "Quarterly"
       ? t`per quarter`
@@ -96,6 +137,9 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
         <VStack spacing={4}>
           <div className="@container w-full">
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 @xl:grid-cols-4">
+              <Fact label={<Trans>Assets</Trans>}>
+                <span className="tabular-nums">{lines.length}</span>
+              </Fact>
               <Fact label={<Trans>Payment</Trans>}>
                 <LeaseMoney
                   value={lease.paymentAmount}
@@ -119,10 +163,10 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
                 </span>
               </Fact>
               <Fact label={<Trans>Treatment</Trans>}>
-                {lease.lesseeClassification ? (
-                  <LesseeClassificationBadge
-                    value={lease.lesseeClassification}
-                  />
+                {lease.classification === "Mixed" ? (
+                  <Trans>Varies by asset</Trans>
+                ) : lease.classification ? (
+                  <LesseeClassificationBadge value={lease.classification} />
                 ) : (
                   <span className="text-muted-foreground">
                     <Trans>Set at activation</Trans>
@@ -132,20 +176,6 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
               {lease.noticeDate && (
                 <Fact label={<Trans>Notice Date</Trans>}>
                   <DateTime value={lease.noticeDate} variant="date" />
-                </Fact>
-              )}
-              {Number(lease.purchaseOptionAmount ?? 0) > 0 && (
-                <Fact label={<Trans>Purchase Option</Trans>}>
-                  <LeaseMoney
-                    value={lease.purchaseOptionAmount}
-                    currencyCode={currencyCode}
-                  />
-                  {lease.purchaseOptionReasonablyCertain && (
-                    <span className="text-muted-foreground">
-                      {" "}
-                      <Trans>(reasonably certain)</Trans>
-                    </span>
-                  )}
                 </Fact>
               )}
             </div>
@@ -161,7 +191,7 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
                     <Trans>Initial Liability:</Trans>
                   </span>
                   <LeaseMoney
-                    value={lease.initialLiability}
+                    value={initialLiability}
                     currencyCode={currencyCode}
                   />
                 </HStack>
@@ -180,9 +210,8 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
                 <p className="text-xs text-muted-foreground w-full">
                   {lastPosted ? (
                     <Trans>
-                      As of{" "}
-                      <DateTime value={lastPosted.periodDate} variant="date" />,
-                      the last month a lease run posted.
+                      As of <DateTime value={lastPosted} variant="date" />, the
+                      last month a lease run posted.
                     </Trans>
                   ) : (
                     <Trans>At commencement. No lease run has posted yet.</Trans>
@@ -195,13 +224,13 @@ const LeaseSummary = ({ lease, payments, schedule }: LeaseSummaryProps) => {
               <span>
                 <Trans>Next Payment:</Trans>
               </span>
-              {nextPayment ? (
+              {nextDueDate ? (
                 <span className="flex items-center gap-2">
                   <LeaseMoney
-                    value={nextPayment.amount}
+                    value={nextPaymentAmount}
                     currencyCode={currencyCode}
                   />
-                  <DateTime value={nextPayment.dueDate} variant="date" />
+                  <DateTime value={nextDueDate} variant="date" />
                 </span>
               ) : (
                 <span>—</span>

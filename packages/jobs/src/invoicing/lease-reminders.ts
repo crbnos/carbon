@@ -60,7 +60,9 @@ export function dueLeaseReminders(
   return reminders;
 }
 
-/** Records the dates the owners were reminded of, so each is sent once. */
+/** Records the dates the owners were reminded of, so each is sent once. A
+ *  date that moved since the reminder was read is left unstamped, so the
+ *  new date is reminded too. */
 export async function stampLeaseReminders(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -71,65 +73,94 @@ export async function stampLeaseReminders(
     if (stamped.length === 0) continue;
     const column = kind === "notice" ? "noticeRemindedFor" : "endRemindedFor";
     const dateColumn = kind === "notice" ? "noticeDate" : "endDate";
-    // The reminded date is the lease's own date column, so one statement
-    // stamps every lease of this kind.
-    await db
-      .updateTable("lease")
-      .set((eb) => ({ [column]: eb.ref(dateColumn) }))
-      .where("companyId", "=", companyId)
-      .where(
-        "id",
-        "in",
-        stamped.map((r) => r.leaseId)
-      )
-      .execute();
+    const values = sql.join(
+      stamped.map((r) => sql`(${r.leaseId}, ${r.date}::date)`)
+    );
+    await sql`
+      UPDATE "lease" SET ${sql.ref(column)} = v.date
+      FROM (VALUES ${values}) AS v(id, date)
+      WHERE "lease"."id" = v.id
+        AND "lease"."companyId" = ${companyId}
+        AND "lease".${sql.ref(dateColumn)} = v.date
+    `.execute(db);
   }
 }
 
 /**
  * Expires every Active lease that has run its course: past its end date,
- * every lease run row posted and no payment left to bill. A lease with a
- * row still to post or a payment still Pending stays Active until both are
- * done, so its last month is never left behind.
+ * every lease run row posted, no payment left to bill, and no active asset
+ * whose right-of-use asset is still on the books (an asset the lessee will
+ * own amortizes over its useful life and ends with a Purchase). A lease with
+ * any of these stays Active, so its last month is never left behind. Its
+ * active assets expire with it.
  */
 export async function expireLeases(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   today: string
 ): Promise<number> {
-  const result = await db
-    .updateTable("lease")
-    .set({
-      status: "Expired",
-      closedAt: sql`now()`,
-      updatedBy: "system",
-      updatedAt: sql`now()`
-    })
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Active")
-    .where("endDate", "<", today)
-    .where((eb) =>
-      eb.not(
-        eb.or([
-          eb.exists(
-            eb
-              .selectFrom("revenueRecognitionSchedule as r")
-              .select("r.id")
-              .whereRef("r.leaseId", "=", "lease.id")
-              .whereRef("r.companyId", "=", "lease.companyId")
-              .where("r.status", "<>", "Posted")
-          ),
-          eb.exists(
-            eb
-              .selectFrom("leasePayment as p")
-              .select("p.id")
-              .whereRef("p.leaseId", "=", "lease.id")
-              .whereRef("p.companyId", "=", "lease.companyId")
-              .where("p.status", "=", "Pending")
-          )
-        ])
+  return db.transaction().execute(async (trx) => {
+    const expired = await trx
+      .updateTable("lease")
+      .set({
+        status: "Expired",
+        closedAt: sql`now()`,
+        updatedBy: "system",
+        updatedAt: sql`now()`
+      })
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Active")
+      .where("endDate", "<", today)
+      .where((eb) =>
+        eb.not(
+          eb.or([
+            eb.exists(
+              eb
+                .selectFrom("revenueRecognitionSchedule as r")
+                .select("r.id")
+                .whereRef("r.leaseId", "=", "lease.id")
+                .whereRef("r.companyId", "=", "lease.companyId")
+                .where("r.status", "<>", "Posted")
+            ),
+            eb.exists(
+              eb
+                .selectFrom("leasePayment as p")
+                .select("p.id")
+                .whereRef("p.leaseId", "=", "lease.id")
+                .whereRef("p.companyId", "=", "lease.companyId")
+                .where("p.status", "=", "Pending")
+            ),
+            sql<boolean>`EXISTS (
+              SELECT 1 FROM "leaseLine" l
+              CROSS JOIN LATERAL (
+                SELECT sl."closingRouAsset" FROM "leaseScheduleLine" sl
+                WHERE sl."leaseLineId" = l."id" AND sl."companyId" = l."companyId"
+                ORDER BY sl."periodDate" DESC LIMIT 1
+              ) last
+              WHERE l."leaseId" = "lease"."id" AND l."companyId" = "lease"."companyId"
+                AND l."status" = 'Active' AND last."closingRouAsset" > 0.005
+            )`
+          ])
+        )
       )
-    )
-    .executeTakeFirst();
-  return Number(result.numUpdatedRows);
+      .returning("id")
+      .execute();
+    if (expired.length === 0) return 0;
+    await trx
+      .updateTable("leaseLine")
+      .set({
+        status: "Expired",
+        updatedBy: "system",
+        updatedAt: sql`now()`
+      })
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Active")
+      .where(
+        "leaseId",
+        "in",
+        expired.map((row) => row.id)
+      )
+      .execute();
+    return expired.length;
+  });
 }

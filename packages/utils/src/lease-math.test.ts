@@ -9,7 +9,10 @@ import {
   buildLesseeSchedule,
   classifyLesseeLease,
   generateLeasePayments,
+  isTermWithinTwelveMonths,
   leaseMonthEnds,
+  leaseMonthsAt,
+  leaseTermMonths,
   paymentMonthIndex,
   presentValueOfPayments,
   remeasureLease
@@ -142,6 +145,45 @@ describe("paymentMonthIndex", () => {
   });
 });
 
+describe("lease months from the 31st", () => {
+  const terms = {
+    ...TERMS,
+    commencementDate: "2026-01-31",
+    endDate: "2027-01-30"
+  };
+
+  it("counts a month that starts on a clamped day", () => {
+    expect(addMonths("2026-01-31", 1)).toBe("2026-02-28");
+    expect(leaseMonthsAt("2026-01-31", "2026-02-27")).toBe(0);
+    expect(leaseMonthsAt("2026-01-31", "2026-02-28")).toBe(1);
+    expect(leaseMonthsAt("2026-01-31", "2026-03-31")).toBe(2);
+    expect(leaseTermMonths("2026-01-31", "2027-01-30")).toBe(12);
+  });
+
+  it("places every row one month apart, in arrears and in advance", () => {
+    const rows = generateLeasePayments(terms);
+    expect(rows).toHaveLength(12);
+    rows.forEach((row, i) => {
+      expect(paymentMonthIndex(row, terms.commencementDate, "Arrears")).toBe(
+        i + 1
+      );
+      expect(paymentMonthIndex(row, terms.commencementDate, "Advance")).toBe(i);
+    });
+  });
+});
+
+describe("isTermWithinTwelveMonths", () => {
+  it("is true through the day before the first anniversary", () => {
+    expect(isTermWithinTwelveMonths("2026-01-31", "2027-01-30")).toBe(true);
+    expect(isTermWithinTwelveMonths("2026-01-01", "2026-12-31")).toBe(true);
+  });
+
+  it("is false for 12 months and 15 days", () => {
+    expect(isTermWithinTwelveMonths("2026-01-01", "2027-01-15")).toBe(false);
+    expect(leaseTermMonths("2026-01-01", "2027-01-15")).toBe(12);
+  });
+});
+
 describe("presentValueOfPayments", () => {
   it("values the worked example at 328,710.16", () => {
     expect(
@@ -233,7 +275,8 @@ describe("classifyLesseeLease", () => {
     ownershipTransfers: false,
     purchaseOptionReasonablyCertain: false,
     specializedAsset: false,
-    shortTermExpedient: true
+    shortTermExpedient: true,
+    withinTwelveMonths: false
   };
 
   it("is Operating when no test passes or has its inputs", () => {
@@ -251,12 +294,19 @@ describe("classifyLesseeLease", () => {
 
   it("is Short-Term for 12 months or less with the election on", () => {
     expect(
-      classifyLesseeLease({ ...base, termMonths: 12 }, THRESHOLDS)
-        .classification
+      classifyLesseeLease(
+        { ...base, termMonths: 12, withinTwelveMonths: true },
+        THRESHOLDS
+      ).classification
     ).toBe("Short-Term");
     expect(
       classifyLesseeLease(
-        { ...base, termMonths: 12, shortTermExpedient: false },
+        {
+          ...base,
+          termMonths: 12,
+          withinTwelveMonths: true,
+          shortTermExpedient: false
+        },
         THRESHOLDS
       ).classification
     ).toBe("Operating");
@@ -265,7 +315,12 @@ describe("classifyLesseeLease", () => {
   it("is never Short-Term with a reasonably certain purchase option", () => {
     expect(
       classifyLesseeLease(
-        { ...base, termMonths: 12, purchaseOptionReasonablyCertain: true },
+        {
+          ...base,
+          termMonths: 12,
+          withinTwelveMonths: true,
+          purchaseOptionReasonablyCertain: true
+        },
         THRESHOLDS
       ).classification
     ).toBe("Finance");

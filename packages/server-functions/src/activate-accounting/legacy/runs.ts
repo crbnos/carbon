@@ -373,6 +373,25 @@ async function loadRecognitionRows(
         .where("id", "in", ids)
         .execute()
   );
+  const leaseAssets = await readByIds(
+    scheduled.map((row) => row.leaseScheduleLineId),
+    (ids) =>
+      trx
+        .selectFrom("leaseScheduleLine as scheduleLine")
+        .innerJoin("leaseLine as line", (join) =>
+          join
+            .onRef("line.id", "=", "scheduleLine.leaseLineId")
+            .onRef("line.companyId", "=", "scheduleLine.companyId")
+        )
+        .select([
+          "scheduleLine.id",
+          "scheduleLine.leaseLineId",
+          "line.locationId"
+        ])
+        .where("scheduleLine.companyId", "=", companyId)
+        .where("scheduleLine.id", "in", ids)
+        .execute()
+  );
   const accounts = await readByIds(
     scheduled.flatMap((row) => [row.debitAccountId, row.creditAccountId]),
     (ids) =>
@@ -415,7 +434,8 @@ async function loadRecognitionRows(
       invoiceLines: new Map(invoiceLines.map((row) => [row.id, row])),
       rentalLines: new Map(rentalLines.map((row) => [row.id, row])),
       contractLines: new Map(contractLines.map((row) => [row.id, row])),
-      leases: new Map(leases.map((row) => [row.id, row]))
+      leases: new Map(leases.map((row) => [row.id, row])),
+      leaseAssets: new Map(leaseAssets.map((row) => [row.id, row]))
     },
     classById
   };

@@ -15,6 +15,7 @@ import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getLease,
   getLeaseEvents,
+  getLeaseLines,
   getLeasePayments,
   getLeaseRelatedDocuments,
   getLeaseSchedule
@@ -64,21 +65,24 @@ export async function loader({
     throw redirect(path.to.leases);
   }
 
-  const [payments, schedule, events, related, settings] = await Promise.all([
-    getLeasePayments(client, id, companyId),
-    getLeaseSchedule(client, id, companyId),
-    getLeaseEvents(client, id, companyId),
-    getLeaseRelatedDocuments(client, id, companyId),
-    client
-      .from("companySettings")
-      .select(
-        "leaseMajorPartThresholdPercent, leaseSubstantiallyAllThresholdPercent, leaseShortTermExpedient, accountingCutoverDate"
-      )
-      .eq("id", companyId)
-      .maybeSingle()
-  ]);
+  const [lines, payments, schedule, events, related, settings] =
+    await Promise.all([
+      getLeaseLines(client, id, companyId),
+      getLeasePayments(client, id, companyId),
+      getLeaseSchedule(client, id, companyId),
+      getLeaseEvents(client, id, companyId),
+      getLeaseRelatedDocuments(client, id, companyId),
+      client
+        .from("companySettings")
+        .select(
+          "leaseMajorPartThresholdPercent, leaseSubstantiallyAllThresholdPercent, leaseShortTermExpedient, accountingCutoverDate"
+        )
+        .eq("id", companyId)
+        .maybeSingle()
+    ]);
 
   for (const [name, result] of [
+    ["assets", lines],
     ["payments", payments],
     ["schedule", schedule],
     ["events", events],
@@ -111,7 +115,7 @@ export async function loader({
   const fixedAssetIds = [
     ...new Set(
       [
-        lease.data.fixedAssetId,
+        ...(lines.data ?? []).map((line) => line.fixedAssetId),
         ...(events.data ?? []).map((e) => e.fixedAssetId)
       ].filter((assetId): assetId is string => Boolean(assetId))
     )
@@ -157,6 +161,7 @@ export async function loader({
 
   return {
     lease: lease.data,
+    lines: lines.data ?? [],
     payments: payments.data ?? [],
     schedule: schedule.data ?? [],
     events: events.data ?? [],
@@ -178,7 +183,7 @@ export async function loader({
 }
 
 export default function LeaseShellRoute() {
-  const { lease, payments, schedule, leasePolicy } =
+  const { lease, lines, payments, schedule, leasePolicy } =
     useLoaderData<typeof loader>();
   const { id } = useParams();
   const matches = useMatches();
@@ -195,6 +200,7 @@ export default function LeaseShellRoute() {
       <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <LeaseHeader
           lease={lease}
+          lines={lines}
           payments={payments}
           schedule={schedule}
           leasePolicy={leasePolicy}

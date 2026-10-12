@@ -11,7 +11,7 @@ import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getLease, leasePurchaseValidator } from "~/modules/purchasing";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -19,8 +19,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "purchasing"
   });
 
-  const { id } = params;
-  if (!id) throw new Error("Could not find id");
+  const { id, lineId } = params;
+  if (!id || !lineId) throw new Error("Could not find id");
 
   const formData = await request.formData();
   const validation = await validator(leasePurchaseValidator).validate(formData);
@@ -43,6 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .invoke("post-lease", {
       type: "purchase",
       leaseId: id,
+      leaseLineId: lineId,
       exerciseDate: validation.data.exerciseDate,
       purchasePrice: Number(validation.data.purchasePrice),
       fixedAssetClassId: validation.data.fixedAssetClassId,
@@ -52,7 +53,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (result.error) {
     throw redirect(
-      path.to.leaseDetails(id),
+      requestReferrer(request) ?? path.to.leaseDetails(id),
       await flash(
         request,
         error(

@@ -5,14 +5,16 @@
 import {
   addDays,
   classifyLesseeLease,
+  isTermWithinTwelveMonths,
   type LesseeClassificationResult,
+  leaseTermMonths,
   paymentMonthIndex,
   presentValueOfPayments,
-  round,
-  wholeMonthsInTerm
+  round
 } from "@carbon/utils";
 import type {
   Lease,
+  LeaseLine,
   LeasePayment,
   LeasePolicy,
   LeaseScheduleLine,
@@ -25,17 +27,35 @@ export function isScheduleLinePosted(line: LeaseScheduleLine): boolean {
   return (line.rows ?? []).every((row) => row.status === "Posted");
 }
 
+/** The lease months in order, each posted when every asset's line of that
+ *  month is. */
+function postedMonths(
+  schedule: LeaseScheduleLine[]
+): { periodDate: string; posted: boolean }[] {
+  const byDate = new Map<string, boolean>();
+  for (const line of schedule) {
+    byDate.set(
+      line.periodDate,
+      (byDate.get(line.periodDate) ?? true) && isScheduleLinePosted(line)
+    );
+  }
+  return [...byDate.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([periodDate, posted]) => ({ periodDate, posted }));
+}
+
 /** The first day of the first lease month not yet on the books: where a
- *  Modify can take effect. The commencement date when nothing has posted. */
+ *  Modify can take effect. The commencement date when nothing has posted.
+ *  Pass the schedule of the assets the change acts on. */
 export function firstOpenLeaseMonth(
   lease: Pick<Lease, "commencementDate">,
   schedule: LeaseScheduleLine[]
 ): string | null {
   if (!lease.commencementDate) return null;
   let start = lease.commencementDate;
-  for (const line of schedule) {
-    if (!isScheduleLinePosted(line)) break;
-    start = addDays(line.periodDate, 1);
+  for (const month of postedMonths(schedule)) {
+    if (!month.posted) break;
+    start = addDays(month.periodDate, 1);
   }
   return start;
 }
@@ -46,15 +66,15 @@ export function lastPostedLeaseMonthEnd(
   schedule: LeaseScheduleLine[]
 ): string | null {
   let end: string | null = null;
-  for (const line of schedule) {
-    if (!isScheduleLinePosted(line)) break;
-    end = line.periodDate;
+  for (const month of postedMonths(schedule)) {
+    if (!month.posted) break;
+    end = month.periodDate;
   }
   return end;
 }
 
 export type LeaseCarrying = {
-  /** The lease liability at the start of `startDate`. */
+  /** The asset's lease liability at the start of `startDate`. */
   liability: number;
   /** ROU amortization booked before `startDate`. */
   accumulated: number;
@@ -62,27 +82,54 @@ export type LeaseCarrying = {
   rouAsset: number;
 };
 
-/** The carrying amounts a lifecycle action works from, the same way
+/** One asset's carrying amounts for a lifecycle action, the same way
  *  `post-lease` computes them: the last schedule line before `startDate`
  *  gives the liability, and every line before it adds its amortization. */
 export function leaseCarryingAt(
-  lease: Pick<Lease, "initialLiability" | "rouAssetCost">,
+  line: Pick<LeaseLine, "id" | "initialLiability" | "rouAssetCost">,
   schedule: LeaseScheduleLine[],
   startDate: string
 ): LeaseCarrying {
-  const before = schedule.filter((line) => line.periodDate < startDate);
+  const before = schedule.filter(
+    (row) => row.leaseLineId === line.id && row.periodDate < startDate
+  );
   const last = before[before.length - 1];
   const liability = last
     ? Number(last.closingLiability)
-    : Number(lease.initialLiability ?? 0);
+    : Number(line.initialLiability ?? 0);
   const accumulated = round(
-    before.reduce((sum, line) => sum + Number(line.rouAmortization), 0)
+    before.reduce((sum, row) => sum + Number(row.rouAmortization), 0)
   );
   return {
     liability,
     accumulated,
-    rouAsset: round(Number(lease.rouAssetCost ?? 0) - accumulated)
+    rouAsset: round(Number(line.rouAssetCost ?? 0) - accumulated)
   };
+}
+
+/** What an asset's ending adds back to its carrying liability, as
+ *  `post-lease` does: a Pending Purchase Option row due on or before
+ *  `lastDay` was counted as paid by the schedule, and an ending removes it
+ *  unpaid. */
+export function endedPaymentsAddBack(
+  payments: Pick<
+    LeasePayment,
+    "leaseLineId" | "paymentType" | "status" | "dueDate" | "amount"
+  >[],
+  leaseLineId: string,
+  lastDay: string
+): number {
+  return round(
+    payments
+      .filter(
+        (payment) =>
+          payment.leaseLineId === leaseLineId &&
+          payment.status === "Pending" &&
+          payment.paymentType === "Purchase Option" &&
+          payment.dueDate <= lastDay
+      )
+      .reduce((sum, payment) => sum + Number(payment.amount), 0)
+  );
 }
 
 export type LesseeClassificationPreview = LesseeClassificationResult & {
@@ -93,42 +140,55 @@ export type LesseeClassificationPreview = LesseeClassificationResult & {
   isOverridden: boolean;
 };
 
-/** How activation would classify the lease, from its payment rows (the
+type PaymentPoint = Pick<
+  LeasePayment,
+  | "leaseLineId"
+  | "periodStart"
+  | "periodEnd"
+  | "dueDate"
+  | "paymentType"
+  | "amount"
+>;
+
+/** How activation would classify one asset, from its payment rows (the
  *  rows, not the terms, are what activation reads). Null when the dates or
  *  the rate cannot be read. */
 export function previewLesseeClassification(args: {
   lease: Lease;
-  payments: Pick<
-    LeasePayment,
-    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
-  >[];
+  line: LeaseLine;
+  payments: PaymentPoint[];
   policy: LeasePolicy;
 }): LesseeClassificationPreview | null {
-  const { lease, payments, policy } = args;
+  const { lease, line, policy } = args;
   if (!lease.commencementDate || !lease.endDate || !lease.paymentTiming) {
     return null;
   }
   try {
     const commencementDate = lease.commencementDate;
     const timing = lease.paymentTiming;
-    const termMonths = wholeMonthsInTerm(commencementDate, lease.endDate);
+    const termMonths = leaseTermMonths(commencementDate, lease.endDate);
     const pvPayments = presentValueOfPayments({
-      payments: payments.map((payment) => ({
-        monthIndex: paymentMonthIndex(payment, commencementDate, timing),
-        amount: Number(payment.amount)
-      })),
+      payments: args.payments
+        .filter((payment) => payment.leaseLineId === line.id)
+        .map((payment) => ({
+          monthIndex: paymentMonthIndex(payment, commencementDate, timing),
+          amount: Number(payment.amount)
+        })),
       annualRate: Number(lease.discountRate ?? 0)
     });
     const result = classifyLesseeLease(
       {
         termMonths,
+        withinTwelveMonths: isTermWithinTwelveMonths(
+          commencementDate,
+          lease.endDate
+        ),
         pvPayments,
-        fairValue: lease.fairValue ?? null,
-        economicLifeMonths: lease.economicLifeMonths ?? null,
-        ownershipTransfers: lease.ownershipTransfers ?? false,
-        purchaseOptionReasonablyCertain:
-          lease.purchaseOptionReasonablyCertain ?? false,
-        specializedAsset: lease.specializedAsset ?? false,
+        fairValue: line.fairValue ?? null,
+        economicLifeMonths: line.economicLifeMonths ?? null,
+        ownershipTransfers: line.ownershipTransfers,
+        purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain,
+        specializedAsset: line.specializedAsset,
         shortTermExpedient: policy.shortTermExpedient
       },
       {
@@ -140,8 +200,8 @@ export function previewLesseeClassification(args: {
       ...result,
       termMonths,
       pvPayments,
-      applied: lease.classificationOverride ?? result.classification,
-      isOverridden: !!lease.classificationOverride
+      applied: line.classificationOverride ?? result.classification,
+      isOverridden: !!line.classificationOverride
     };
   } catch {
     return null;
@@ -149,18 +209,30 @@ export function previewLesseeClassification(args: {
 }
 
 /** What stops a Draft from activating, as the `post-lease` activate refuses
- *  it (`activateBlocker`): no payment row, or a currency other than the
- *  company's base currency. The Review step lists them and the setup footer
- *  disables Activate. */
-export type LeaseActivationGap = "noPayments" | "foreignCurrency";
+ *  it (`activateBlocker`): no asset, an asset with no payment row, or a
+ *  currency other than the company's base currency. The Review step lists
+ *  them and the setup footer disables Activate. */
+export type LeaseActivationGap =
+  | "noAssets"
+  | "assetWithoutPayments"
+  | "foreignCurrency";
 
 export function leaseActivationGaps(args: {
   lease: Pick<Lease, "currencyCode">;
-  payments: unknown[];
+  lines: Pick<LeaseLine, "id">[];
+  payments: Pick<LeasePayment, "leaseLineId">[];
   baseCurrencyCode: string | null | undefined;
 }): LeaseActivationGap[] {
   const gaps: LeaseActivationGap[] = [];
-  if (args.payments.length === 0) gaps.push("noPayments");
+  if (args.lines.length === 0) gaps.push("noAssets");
+  if (
+    args.lines.some(
+      (line) =>
+        !args.payments.some((payment) => payment.leaseLineId === line.id)
+    )
+  ) {
+    gaps.push("assetWithoutPayments");
+  }
   if (
     args.baseCurrencyCode &&
     args.lease.currencyCode &&

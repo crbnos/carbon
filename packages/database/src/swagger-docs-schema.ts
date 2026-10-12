@@ -7698,6 +7698,339 @@ export default {
         tags: ["inventoryCount"]
       }
     },
+    "/leaseLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leaseLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.leaseLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.leaseLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseLine"]
+      }
+    },
     "/eventSystemTrigger": {
       get: {
         parameters: [
@@ -15277,9 +15610,6 @@ export default {
             $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.paymentAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.paymentFrequency"
           },
           {
@@ -15295,49 +15625,7 @@ export default {
             $ref: "#/parameters/rowFilter.lease.currencyCode"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.fairValue"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.economicLifeMonths"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.ownershipTransfers"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.specializedAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionReasonablyCertain"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.lesseeClassification"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationInputs"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverride"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverrideReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialLiability"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialRouAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.rouAssetCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.commencementJournalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.fixedAssetId"
           },
           {
             $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
@@ -15471,9 +15759,6 @@ export default {
             $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.paymentAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.paymentFrequency"
           },
           {
@@ -15489,49 +15774,7 @@ export default {
             $ref: "#/parameters/rowFilter.lease.currencyCode"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.fairValue"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.economicLifeMonths"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.ownershipTransfers"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.specializedAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionReasonablyCertain"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.lesseeClassification"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationInputs"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverride"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverrideReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialLiability"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialRouAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.rouAssetCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.commencementJournalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.fixedAssetId"
           },
           {
             $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
@@ -15619,9 +15862,6 @@ export default {
             $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.paymentAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.paymentFrequency"
           },
           {
@@ -15637,49 +15877,7 @@ export default {
             $ref: "#/parameters/rowFilter.lease.currencyCode"
           },
           {
-            $ref: "#/parameters/rowFilter.lease.fairValue"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.economicLifeMonths"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.ownershipTransfers"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.specializedAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.purchaseOptionReasonablyCertain"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.lesseeClassification"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationInputs"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverride"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.classificationOverrideReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialLiability"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.initialRouAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.rouAssetCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.lease.commencementJournalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.lease.fixedAssetId"
           },
           {
             $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
@@ -23743,6 +23941,9 @@ export default {
             $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -23859,6 +24060,9 @@ export default {
             $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -23927,6 +24131,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
           },
           {
             $ref: "#/parameters/body.leaseEvent"
@@ -47173,9 +47380,6 @@ export default {
             $ref: "#/parameters/rowFilter.leases.invoiceFromDate"
           },
           {
-            $ref: "#/parameters/rowFilter.leases.paymentAmount"
-          },
-          {
             $ref: "#/parameters/rowFilter.leases.paymentFrequency"
           },
           {
@@ -47191,49 +47395,7 @@ export default {
             $ref: "#/parameters/rowFilter.leases.currencyCode"
           },
           {
-            $ref: "#/parameters/rowFilter.leases.fairValue"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.economicLifeMonths"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.ownershipTransfers"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.specializedAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.purchaseOptionAmount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.purchaseOptionReasonablyCertain"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.lesseeClassification"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.classificationInputs"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.classificationOverride"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.classificationOverrideReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.initialLiability"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.initialRouAsset"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.rouAssetCost"
-          },
-          {
             $ref: "#/parameters/rowFilter.leases.commencementJournalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.leases.fixedAssetId"
           },
           {
             $ref: "#/parameters/rowFilter.leases.noticeRemindedFor"
@@ -47264,6 +47426,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.leases.supplierName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.assetCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.classification"
           },
           {
             $ref: "#/parameters/rowFilter.leases.nextDueDate"
@@ -49132,6 +49303,9 @@ export default {
             $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -49245,6 +49419,9 @@ export default {
             $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -49310,6 +49487,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
           },
           {
             $ref: "#/parameters/body.leaseScheduleLine"
@@ -66103,6 +66283,9 @@ export default {
             $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -66207,6 +66390,9 @@ export default {
             $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -66263,6 +66449,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
           },
           {
             $ref: "#/parameters/body.leasePayment"
@@ -119737,6 +119926,154 @@ export default {
       },
       type: "object"
     },
+    leaseLine: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "description",
+        "paymentAmount",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "sortOrder",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lsln'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        serialNumber: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        paymentAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        fairValue: {
+          format: "numeric",
+          type: "number"
+        },
+        economicLifeMonths: {
+          format: "integer",
+          type: "integer"
+        },
+        ownershipTransfers: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        specializedAsset: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        purchaseOptionAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        purchaseOptionReasonablyCertain: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        status: {
+          default: "Active",
+          enum: ["Active", "Terminated", "Purchased", "Expired"],
+          format: 'public."leaseLineStatus"',
+          type: "string"
+        },
+        lesseeClassification: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        classificationInputs: {
+          format: "jsonb"
+        },
+        classificationOverride: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        classificationOverrideReason: {
+          format: "text",
+          type: "string"
+        },
+        initialLiability: {
+          format: "numeric",
+          type: "number"
+        },
+        initialRouAsset: {
+          format: "numeric",
+          type: "number"
+        },
+        rouAssetCost: {
+          format: "numeric",
+          type: "number"
+        },
+        fixedAssetId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sortOrder: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     eventSystemTrigger: {
       properties: {
         tableName: {
@@ -123296,15 +123633,11 @@ export default {
         "commencementDate",
         "endDate",
         "invoiceFromDate",
-        "paymentAmount",
         "paymentFrequency",
         "paymentTiming",
         "annualEscalationPercent",
         "discountRate",
         "currencyCode",
-        "ownershipTransfers",
-        "specializedAsset",
-        "purchaseOptionReasonablyCertain",
         "createdBy",
         "createdAt"
       ],
@@ -123392,10 +123725,6 @@ export default {
           format: "date",
           type: "string"
         },
-        paymentAmount: {
-          format: "numeric",
-          type: "number"
-        },
         paymentFrequency: {
           default: "Monthly",
           enum: ["Monthly", "Quarterly", "Annual"],
@@ -123421,69 +123750,9 @@ export default {
           format: "text",
           type: "string"
         },
-        fairValue: {
-          format: "numeric",
-          type: "number"
-        },
-        economicLifeMonths: {
-          format: "integer",
-          type: "integer"
-        },
-        ownershipTransfers: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        specializedAsset: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        purchaseOptionAmount: {
-          format: "numeric",
-          type: "number"
-        },
-        purchaseOptionReasonablyCertain: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        lesseeClassification: {
-          enum: ["Operating", "Finance", "Short-Term"],
-          format: 'public."lesseeClassification"',
-          type: "string"
-        },
-        classificationInputs: {
-          format: "jsonb"
-        },
-        classificationOverride: {
-          enum: ["Operating", "Finance", "Short-Term"],
-          format: 'public."lesseeClassification"',
-          type: "string"
-        },
-        classificationOverrideReason: {
-          format: "text",
-          type: "string"
-        },
-        initialLiability: {
-          format: "numeric",
-          type: "number"
-        },
-        initialRouAsset: {
-          format: "numeric",
-          type: "number"
-        },
-        rouAssetCost: {
-          format: "numeric",
-          type: "number"
-        },
         commencementJournalId: {
           description:
             "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        fixedAssetId: {
           format: "text",
           type: "string"
         },
@@ -127766,6 +128035,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
           type: "string"
         }
       },
@@ -138881,10 +139154,6 @@ export default {
           format: "date",
           type: "string"
         },
-        paymentAmount: {
-          format: "numeric",
-          type: "number"
-        },
         paymentFrequency: {
           enum: ["Monthly", "Quarterly", "Annual"],
           format: 'public."leasePaymentFrequency"',
@@ -138907,66 +139176,9 @@ export default {
           format: "text",
           type: "string"
         },
-        fairValue: {
-          format: "numeric",
-          type: "number"
-        },
-        economicLifeMonths: {
-          format: "integer",
-          type: "integer"
-        },
-        ownershipTransfers: {
-          format: "boolean",
-          type: "boolean"
-        },
-        specializedAsset: {
-          format: "boolean",
-          type: "boolean"
-        },
-        purchaseOptionAmount: {
-          format: "numeric",
-          type: "number"
-        },
-        purchaseOptionReasonablyCertain: {
-          format: "boolean",
-          type: "boolean"
-        },
-        lesseeClassification: {
-          enum: ["Operating", "Finance", "Short-Term"],
-          format: 'public."lesseeClassification"',
-          type: "string"
-        },
-        classificationInputs: {
-          format: "jsonb"
-        },
-        classificationOverride: {
-          enum: ["Operating", "Finance", "Short-Term"],
-          format: 'public."lesseeClassification"',
-          type: "string"
-        },
-        classificationOverrideReason: {
-          format: "text",
-          type: "string"
-        },
-        initialLiability: {
-          format: "numeric",
-          type: "number"
-        },
-        initialRouAsset: {
-          format: "numeric",
-          type: "number"
-        },
-        rouAssetCost: {
-          format: "numeric",
-          type: "number"
-        },
         commencementJournalId: {
           description:
             "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        fixedAssetId: {
           format: "text",
           type: "string"
         },
@@ -139010,6 +139222,18 @@ export default {
           format: "jsonb"
         },
         supplierName: {
+          format: "text",
+          type: "string"
+        },
+        assetCount: {
+          format: "integer",
+          type: "integer"
+        },
+        paymentAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        classification: {
           format: "text",
           type: "string"
         },
@@ -139775,7 +139999,8 @@ export default {
         "rouAmortization",
         "closingRouAsset",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "leaseLineId"
       ],
       properties: {
         id: {
@@ -139859,6 +140084,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
           type: "string"
         }
       },
@@ -147393,7 +147622,8 @@ export default {
         "amount",
         "status",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "leaseLineId"
       ],
       properties: {
         id: {
@@ -147467,6 +147697,10 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
           type: "string"
         }
       },
@@ -169557,6 +169791,177 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.leaseLine": {
+      name: "leaseLine",
+      description: "leaseLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leaseLine"
+      }
+    },
+    "rowFilter.leaseLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.serialNumber": {
+      name: "serialNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.paymentAmount": {
+      name: "paymentAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.fairValue": {
+      name: "fairValue",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.economicLifeMonths": {
+      name: "economicLifeMonths",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.ownershipTransfers": {
+      name: "ownershipTransfers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.specializedAsset": {
+      name: "specializedAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.purchaseOptionAmount": {
+      name: "purchaseOptionAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.purchaseOptionReasonablyCertain": {
+      name: "purchaseOptionReasonablyCertain",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.lesseeClassification": {
+      name: "lesseeClassification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationInputs": {
+      name: "classificationInputs",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationOverride": {
+      name: "classificationOverride",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationOverrideReason": {
+      name: "classificationOverrideReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.initialLiability": {
+      name: "initialLiability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.initialRouAsset": {
+      name: "initialRouAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.rouAssetCost": {
+      name: "rouAssetCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.fixedAssetId": {
+      name: "fixedAssetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.eventSystemTrigger": {
       name: "eventSystemTrigger",
       description: "eventSystemTrigger",
@@ -173492,12 +173897,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.lease.paymentAmount": {
-      name: "paymentAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.lease.paymentFrequency": {
       name: "paymentFrequency",
       required: false,
@@ -173528,92 +173927,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.lease.fairValue": {
-      name: "fairValue",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.economicLifeMonths": {
-      name: "economicLifeMonths",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.ownershipTransfers": {
-      name: "ownershipTransfers",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.specializedAsset": {
-      name: "specializedAsset",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.purchaseOptionAmount": {
-      name: "purchaseOptionAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.purchaseOptionReasonablyCertain": {
-      name: "purchaseOptionReasonablyCertain",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.lesseeClassification": {
-      name: "lesseeClassification",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.classificationInputs": {
-      name: "classificationInputs",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.classificationOverride": {
-      name: "classificationOverride",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.classificationOverrideReason": {
-      name: "classificationOverrideReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.initialLiability": {
-      name: "initialLiability",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.initialRouAsset": {
-      name: "initialRouAsset",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.rouAssetCost": {
-      name: "rouAssetCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.lease.commencementJournalId": {
       name: "commencementJournalId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.lease.fixedAssetId": {
-      name: "fixedAssetId",
       required: false,
       in: "query",
       type: "string"
@@ -178557,6 +178872,12 @@ export default {
     },
     "rowFilter.leaseEvent.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.leaseLineId": {
+      name: "leaseLineId",
       required: false,
       in: "query",
       type: "string"
@@ -190896,12 +191217,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.leases.paymentAmount": {
-      name: "paymentAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.leases.paymentFrequency": {
       name: "paymentFrequency",
       required: false,
@@ -190932,92 +191247,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.leases.fairValue": {
-      name: "fairValue",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.economicLifeMonths": {
-      name: "economicLifeMonths",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.ownershipTransfers": {
-      name: "ownershipTransfers",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.specializedAsset": {
-      name: "specializedAsset",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.purchaseOptionAmount": {
-      name: "purchaseOptionAmount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.purchaseOptionReasonablyCertain": {
-      name: "purchaseOptionReasonablyCertain",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.lesseeClassification": {
-      name: "lesseeClassification",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.classificationInputs": {
-      name: "classificationInputs",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.classificationOverride": {
-      name: "classificationOverride",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.classificationOverrideReason": {
-      name: "classificationOverrideReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.initialLiability": {
-      name: "initialLiability",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.initialRouAsset": {
-      name: "initialRouAsset",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.rouAssetCost": {
-      name: "rouAssetCost",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.leases.commencementJournalId": {
       name: "commencementJournalId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.leases.fixedAssetId": {
-      name: "fixedAssetId",
       required: false,
       in: "query",
       type: "string"
@@ -191078,6 +191309,24 @@ export default {
     },
     "rowFilter.leases.supplierName": {
       name: "supplierName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.assetCount": {
+      name: "assetCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.paymentAmount": {
+      name: "paymentAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.classification": {
+      name: "classification",
       required: false,
       in: "query",
       type: "string"
@@ -191975,6 +192224,12 @@ export default {
     },
     "rowFilter.leaseScheduleLine.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.leaseLineId": {
+      name: "leaseLineId",
       required: false,
       in: "query",
       type: "string"
@@ -200473,6 +200728,12 @@ export default {
     },
     "rowFilter.leasePayment.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.leaseLineId": {
+      name: "leaseLineId",
       required: false,
       in: "query",
       type: "string"

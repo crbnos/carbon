@@ -28,24 +28,13 @@ type LeaseDetailsValues = z.infer<typeof leaseValidator>;
 
 /** The terms a later setup step owns. Posted as they are, so saving the
  *  details never resets them (an edited Draft) — and on create they carry the
- *  defaults a new lease starts with. The three switches post only when on: an
- *  unchecked checkbox posts nothing. */
+ *  defaults a new lease starts with. */
 const CARRIED_TERMS = [
   "currencyCode",
-  "paymentAmount",
   "paymentFrequency",
   "paymentTiming",
   "annualEscalationPercent",
-  "discountRate",
-  "fairValue",
-  "economicLifeMonths",
-  "purchaseOptionAmount"
-] as const;
-
-const CARRIED_SWITCHES = [
-  "ownershipTransfers",
-  "specializedAsset",
-  "purchaseOptionReasonablyCertain"
+  "discountRate"
 ] as const;
 
 type LeaseDetailsFormProps = {
@@ -55,9 +44,9 @@ type LeaseDetailsFormProps = {
   action: string;
 };
 
-/** Step 1 of setting up a lease: who it is with, what is leased, and when it
- *  runs. The payments and the accounting treatment are later steps; the
- *  owner and the custom fields are under More Details. */
+/** Step 1 of setting up a lease: who it is with, what the lease is called,
+ *  and when it runs. The assets, the payments and the accounting treatment
+ *  are later steps; the owner and the custom fields are under More Details. */
 const LeaseDetailsForm = ({ initialValues, action }: LeaseDetailsFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -81,11 +70,6 @@ const LeaseDetailsForm = ({ initialValues, action }: LeaseDetailsFormProps) => {
       {CARRIED_TERMS.map((term) => (
         <Hidden key={term} name={term} />
       ))}
-      {CARRIED_SWITCHES.map((term) =>
-        initialValues[term] ? (
-          <Hidden key={term} name={term} value="on" />
-        ) : null
-      )}
 
       <SetupBody>
         <SetupSection

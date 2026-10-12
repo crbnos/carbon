@@ -23,6 +23,7 @@ import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  leaseLineValidator,
   leaseModifyValidator,
   leasePaymentValidator,
   leaseValidator,
@@ -181,7 +182,6 @@ describe("leaseValidator", () => {
     supplierId: "supplier-1",
     commencementDate: "2027-01-01",
     endDate: "2029-12-31",
-    paymentAmount: "10000",
     paymentFrequency: "Monthly",
     paymentTiming: "Arrears",
     discountRate: "6",
@@ -208,6 +208,26 @@ describe("leaseValidator", () => {
   it("refuses invoicing that starts before commencement", () => {
     expect(parse({ invoiceFromDate: "2026-12-01" }).success).toBe(false);
   });
+});
+
+describe("leaseLineValidator", () => {
+  const parse = (overrides: Record<string, string>) =>
+    leaseLineValidator.safeParse({
+      leaseId: "lease-1",
+      description: "Forklift FL-12",
+      paymentAmount: "10000",
+      ...overrides
+    });
+
+  it("accepts an asset with only a description and a payment", () => {
+    const result = parse({});
+    expect(result.success).toBe(true);
+    expect(result.data?.ownershipTransfers).toBe(false);
+  });
+
+  it("needs a description", () => {
+    expect(parse({ description: " " }).success).toBe(false);
+  });
 
   it("needs an amount for a reasonably certain purchase option", () => {
     expect(parse({ purchaseOptionReasonablyCertain: "on" }).success).toBe(
@@ -227,6 +247,7 @@ describe("leasePaymentValidator", () => {
     expect(
       leasePaymentValidator.safeParse({
         leaseId: "lease-1",
+        leaseLineId: "line-1",
         periodStart: "2027-02-01",
         periodEnd: "2027-01-31",
         dueDate: "2027-01-31",
@@ -237,15 +258,26 @@ describe("leasePaymentValidator", () => {
 });
 
 describe("leaseModifyValidator", () => {
+  const terms = {
+    effectiveDate: "2028-01-01",
+    endDate: "2029-12-31",
+    discountRate: "7",
+    lines: [{ leaseLineId: "line-1", paymentAmount: "10000" }],
+    paymentFrequency: "Monthly"
+  };
+
+  it("takes a payment for each asset", () => {
+    const result = leaseModifyValidator.safeParse(terms);
+    expect(result.success).toBe(true);
+    expect(result.data?.lines).toEqual([
+      { leaseLineId: "line-1", paymentAmount: 10000 }
+    ]);
+  });
+
   it("refuses an end date before the effective date", () => {
     expect(
-      leaseModifyValidator.safeParse({
-        effectiveDate: "2028-01-01",
-        endDate: "2027-12-31",
-        discountRate: "7",
-        paymentAmount: "10000",
-        paymentFrequency: "Monthly"
-      }).success
+      leaseModifyValidator.safeParse({ ...terms, endDate: "2027-12-31" })
+        .success
     ).toBe(false);
   });
 });

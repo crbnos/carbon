@@ -33,21 +33,34 @@ import { leasePurchaseValidator } from "../../purchasing.models";
 import LeaseJournalPreview, {
   type LeaseJournalPreviewRow
 } from "./LeaseJournalPreview";
-import type { Lease, LeaseScheduleLine } from "./types";
-import { lastPostedLeaseMonthEnd, leaseCarryingAt } from "./utils";
+import type {
+  Lease,
+  LeaseLine,
+  LeasePayment,
+  LeaseScheduleLine
+} from "./types";
+import {
+  endedPaymentsAddBack,
+  lastPostedLeaseMonthEnd,
+  leaseCarryingAt
+} from "./utils";
 
 type LeasePurchaseModalProps = {
   lease: Lease;
+  line: LeaseLine;
+  payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
   onClose: () => void;
 };
 
-/** Exercise the purchase option: the right-of-use asset becomes a fixed
- *  asset at its net book value, adjusted by the price less the carrying
- *  liability. The price stays in the liability as a payment row the next
- *  invoice settles. */
+/** Exercise one asset's purchase option: its right-of-use asset becomes a
+ *  fixed asset at its net book value, adjusted by the price less the
+ *  carrying liability. The price stays in the liability as a payment row the
+ *  next invoice settles — or is the option row already invoiced. */
 const LeasePurchaseModal = ({
   lease,
+  line,
+  payments,
   schedule,
   onClose
 }: LeasePurchaseModalProps) => {
@@ -57,17 +70,31 @@ const LeasePurchaseModal = ({
   const currencyCode = lease.currencyCode ?? "";
   const decimals = useCurrencyDecimals(currencyCode);
 
+  const lineSchedule = schedule.filter((row) => row.leaseLineId === line.id);
   const [exerciseDate, setExerciseDate] = useState(
-    lastPostedLeaseMonthEnd(schedule) ?? ""
+    lastPostedLeaseMonthEnd(lineSchedule) ?? ""
   );
-  const [price, setPrice] = useState(Number(lease.purchaseOptionAmount ?? 0));
+  const [price, setPrice] = useState(Number(line.purchaseOptionAmount ?? 0));
   const commencementDay = lease.commencementDate?.slice(8) ?? "";
 
   const preview = (() => {
     if (!exerciseDate) return null;
-    const carrying = leaseCarryingAt(lease, schedule, addDays(exerciseDate, 1));
-    const rouAssetCost = Number(lease.rouAssetCost ?? 0);
-    const assetCost = round(carrying.rouAsset + price - carrying.liability);
+    const carrying = leaseCarryingAt(line, schedule, addDays(exerciseDate, 1));
+    // An option row already invoiced on or before the date is the price: its
+    // invoice settles the liability, so nothing more is payable.
+    const invoicedOption = payments.some(
+      (payment) =>
+        payment.leaseLineId === line.id &&
+        payment.paymentType === "Purchase Option" &&
+        payment.status === "Invoiced" &&
+        payment.dueDate <= exerciseDate
+    );
+    const payable = invoicedOption ? 0 : price;
+    const liability = round(
+      carrying.liability + endedPaymentsAddBack(payments, line.id, exerciseDate)
+    );
+    const rouAssetCost = Number(line.rouAssetCost ?? 0);
+    const assetCost = round(carrying.rouAsset + payable - liability);
     const rows: LeaseJournalPreviewRow[] = [
       { account: t`Fixed Asset`, debit: assetCost, credit: 0 },
       {
@@ -75,9 +102,9 @@ const LeasePurchaseModal = ({
         debit: carrying.accumulated,
         credit: 0
       },
-      { account: t`Lease Liability`, debit: carrying.liability, credit: 0 },
+      { account: t`Lease Liability`, debit: liability, credit: 0 },
       { account: t`Right-of-Use Asset`, debit: 0, credit: rouAssetCost },
-      { account: t`Lease Liability`, debit: 0, credit: price }
+      { account: t`Lease Liability`, debit: 0, credit: payable }
     ];
     return { assetCost, rows };
   })();
@@ -94,25 +121,26 @@ const LeasePurchaseModal = ({
         <ValidatedForm
           validator={leasePurchaseValidator}
           method="post"
-          action={path.to.leasePurchase(lease.id!)}
+          action={path.to.leaseLinePurchase(lease.id!, line.id)}
           fetcher={fetcher}
           defaultValues={{
             exerciseDate,
             purchasePrice: price,
             fixedAssetClassId: "",
-            name: lease.name ?? "",
+            name: line.description,
             notes: ""
           }}
           onSubmit={onClose}
         >
           <ModalHeader>
             <ModalTitle>
-              <Trans>Exercise Purchase Option</Trans>
+              <Trans>Exercise Purchase Option: {line.description}</Trans>
             </ModalTitle>
             <ModalDescription>
               <Trans>
                 The leased asset becomes a fixed asset that depreciates from the
-                exercise date. Payments due after it are removed.
+                exercise date. Its payments due after it are removed. The
+                lease's other assets do not change.
               </Trans>
             </ModalDescription>
           </ModalHeader>

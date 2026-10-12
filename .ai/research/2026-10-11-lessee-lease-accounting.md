@@ -447,3 +447,16 @@ The question: a lease started before the company enabled accounting in Carbon, a
 
 Sources: [PeaseBell — ASC 842 audit findings](https://www.peasebell.com/insights/asc-842-audit-findings/) · [CPA Exams Mastery — error corrections](https://cpaexamsmastery.com/far/4/18/3/) · [NetSuite — Creating a Lease Record Manually](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/subsect_1203074757.html) · [NetSuite — Posting Reference Subtab](https://docs.oracle.com/en/cloud/saas/netsuite/ns-online-help/subsect_1543971320.html) · [Dynamics community — Asset Leasing opening balance migration](https://community.dynamics.com/blogs/post/?postid=df76953f-bb2c-405a-ad21-cabcf82d742d)
 
+
+## Addendum (2026-10-11): several assets on one lease
+
+Sources: Deloitte DART 4.2, 8.3, 8.6, 13.4; PwC Viewpoint 2.5, 3.3, 5.5; ASU 2016-02 BC120–121; Nakisa Lease Administration user guide (lease components, activation groups, modifications, lease end); NetSuite lease record help; Oracle Fusion Assets leases; SAP RE-FX (thin: help pages render blank to a fetch).
+
+| Question | Finding | Products |
+|---|---|---|
+| Unit of account | Each right to use a separately usable asset is a separate lease component (842-10-15-28). Each component is classified at its own commencement (25-1, 55-22). | Nakisa: classification, schedule, fair value and useful life per activation group. NetSuite: one lease record = one asset. Oracle: one schedule per asset as an option. |
+| Payments | A lump sum is allocated to components by relative standalone price (15-33). | Nakisa: amount per unit per component. Oracle: split by asset count, or per asset. |
+| Early end of one asset | Ending one component while others continue is a modification of the whole contract (Deloitte 8.6.3.7); the ROU decreases in proportion and the difference is a gain or loss (25-13). | Nakisa: split the activation group, then early termination or buyout on that group only; the contract closes when all groups close. |
+| Purchase option | The option is to buy "the underlying asset", so it is tested per component. | Nakisa: purchase option per component, "likely to exercise" per activation group. |
+| Asset identity | Every product creates one record per leased object (NetSuite fixed asset, Nakisa unit, SAP object). No source shows a serial number field. | — |
+| Lessor invoices | Both layouts exist: one line per asset, or a lump sum the lessee allocates. | Oracle lessor grouping rules; master lease schedules state rent per item. |

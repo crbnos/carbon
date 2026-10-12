@@ -24,21 +24,24 @@ import type {
   Lease,
   LeaseEvent,
   LeaseFixedAssets,
-  LeaseJournal
+  LeaseJournal,
+  LeaseLine
 } from "./types";
 
 type LeaseEventsProps = {
   lease: Lease;
+  lines: LeaseLine[];
   events: LeaseEvent[];
   journals: LeaseJournal[];
   fixedAssets: LeaseFixedAssets;
 };
 
 /** The lease's history after activation: each Modify, Terminate and
- *  Purchase, what it did to the liability and the right-of-use asset, and
- *  the journal it posted. */
+ *  Purchase, what it did to each asset's liability and right-of-use asset,
+ *  and the journal it posted. */
 const LeaseEvents = ({
   lease,
+  lines,
   events,
   journals,
   fixedAssets
@@ -49,6 +52,7 @@ const LeaseEvents = ({
   const journalById = new Map(
     journals.map((journal) => [journal.id, journal.journalEntryId])
   );
+  const assetName = new Map(lines.map((line) => [line.id, line.description]));
 
   const eventLabel = (value: LeaseEvent["eventType"]) => {
     switch (value) {
@@ -77,8 +81,8 @@ const LeaseEvents = ({
         {events.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             <Trans>
-              No changes yet. Modify, Terminate and Purchase are in the header
-              once the lease is active.
+              No changes yet. Once the lease is active, Modify is in the header
+              and each asset's Terminate and Purchase are on the Assets card.
             </Trans>
           </p>
         ) : (
@@ -87,6 +91,9 @@ const LeaseEvents = ({
               <Tr>
                 <Th>
                   <Trans>Event</Trans>
+                </Th>
+                <Th>
+                  <Trans>Asset</Trans>
                 </Th>
                 <Th>
                   <Trans>Effective</Trans>
@@ -122,6 +129,7 @@ const LeaseEvents = ({
                 return (
                   <Tr key={event.id}>
                     <Td>{eventLabel(event.eventType)}</Td>
+                    <Td>{assetName.get(event.leaseLineId) ?? "—"}</Td>
                     <Td>
                       <DateTime value={event.effectiveDate} variant="date" />
                     </Td>

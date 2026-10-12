@@ -1038,9 +1038,6 @@ export const leaseValidator = z
     endDate: z.string().min(1, { message: "End date is required" }),
     noticeDate: zfd.text(z.string().optional()),
     invoiceFromDate: zfd.text(z.string().optional()),
-    paymentAmount: zfd.numeric(
-      z.number().min(0, { message: "Payment cannot be negative" })
-    ),
     paymentFrequency: z.enum(leasePaymentFrequencies, {
       error: "Payment frequency is required"
     }),
@@ -1053,26 +1050,7 @@ export const leaseValidator = z
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
-    currencyCode: z.string().min(1, { message: "Currency is required" }),
-    fairValue: zfd.numeric(
-      z.number().min(0, { message: "Fair value cannot be negative" }).optional()
-    ),
-    economicLifeMonths: zfd.numeric(
-      z
-        .number()
-        .int()
-        .min(1, { message: "Economic life must be at least one month" })
-        .optional()
-    ),
-    ownershipTransfers: zfd.checkbox(),
-    specializedAsset: zfd.checkbox(),
-    purchaseOptionAmount: zfd.numeric(
-      z
-        .number()
-        .min(0, { message: "Purchase option cannot be negative" })
-        .optional()
-    ),
-    purchaseOptionReasonablyCertain: zfd.checkbox()
+    currencyCode: z.string().min(1, { message: "Currency is required" })
   })
   .refine((data) => isOnOrAfter(data.endDate, data.commencementDate), {
     message: "End date must be on or after the commencement date",
@@ -1093,7 +1071,43 @@ export const leaseValidator = z
       message: "Invoicing cannot start before the commencement date",
       path: ["invoiceFromDate"]
     }
-  )
+  );
+
+/** One leased asset (a separate lease component): its payment and the
+ *  inputs its classification tests read. */
+export const leaseLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    leaseId: z.string().min(1, { message: "Lease is required" }),
+    description: z
+      .string()
+      .trim()
+      .min(1, { message: "Description is required" }),
+    serialNumber: zfd.text(z.string().optional()),
+    locationId: zfd.text(z.string().optional()),
+    paymentAmount: zfd.numeric(
+      z.number().min(0, { message: "Payment cannot be negative" }).default(0)
+    ),
+    fairValue: zfd.numeric(
+      z.number().min(0, { message: "Fair value cannot be negative" }).optional()
+    ),
+    economicLifeMonths: zfd.numeric(
+      z
+        .number()
+        .int()
+        .min(1, { message: "Economic life must be at least one month" })
+        .optional()
+    ),
+    ownershipTransfers: zfd.checkbox(),
+    specializedAsset: zfd.checkbox(),
+    purchaseOptionAmount: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Purchase option cannot be negative" })
+        .optional()
+    ),
+    purchaseOptionReasonablyCertain: zfd.checkbox()
+  })
   .refine(
     (data) =>
       !data.purchaseOptionReasonablyCertain ||
@@ -1108,6 +1122,7 @@ export const leasePaymentValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     leaseId: z.string().min(1, { message: "Lease is required" }),
+    leaseLineId: z.string().min(1, { message: "Asset is required" }),
     paymentType: z.enum(leasePaymentTypes).default("Rent"),
     periodStart: z.string().min(1, { message: "Period start is required" }),
     periodEnd: z.string().min(1, { message: "Period end is required" }),
@@ -1130,7 +1145,8 @@ export const leaseClassificationValidator = z.object({
 });
 
 /** Modify (remeasure) a lease from an effective date: the remaining
- *  payments are cut again from these terms. */
+ *  payments of every active asset are cut again from these terms, each at
+ *  its own payment amount. */
 export const leaseModifyValidator = z
   .object({
     effectiveDate: z.string().min(1, { message: "Effective date is required" }),
@@ -1138,8 +1154,13 @@ export const leaseModifyValidator = z
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
-    paymentAmount: zfd.numeric(
-      z.number().min(0, { message: "Payment cannot be negative" })
+    lines: zfd.repeatableOfType(
+      z.object({
+        leaseLineId: z.string().min(1),
+        paymentAmount: zfd.numeric(
+          z.number().min(0, { message: "Payment cannot be negative" })
+        )
+      })
     ),
     paymentFrequency: z.enum(leasePaymentFrequencies, {
       error: "Payment frequency is required"

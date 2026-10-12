@@ -11,6 +11,7 @@ import { path } from "~/utils/path";
 
 export const leaseSetupSteps = [
   "details",
+  "assets",
   "payments",
   "accounting",
   "review"
@@ -24,7 +25,7 @@ type LeaseSetupStepsProps = {
   leaseId?: string;
 };
 
-/** The four steps of setting up a lease. */
+/** The five steps of setting up a lease. */
 const LeaseSetupSteps = ({ current, leaseId }: LeaseSetupStepsProps) => {
   const { t } = useLingui();
   return (
@@ -34,6 +35,7 @@ const LeaseSetupSteps = ({ current, leaseId }: LeaseSetupStepsProps) => {
       label={t`Lease setup`}
       labels={{
         details: t`Details`,
+        assets: t`Assets`,
         payments: t`Payments`,
         accounting: t`Accounting`,
         review: t`Review`
@@ -43,23 +45,17 @@ const LeaseSetupSteps = ({ current, leaseId }: LeaseSetupStepsProps) => {
   );
 };
 
-/** The terms a setup step saves one at a time, as `update.tsx` names them. */
+/** The lease terms a setup step saves one at a time, as `update.tsx` names
+ *  them. An asset's own fields save through its line (`$id.$lineId.update`). */
 export type LeaseTerm =
-  | "paymentAmount"
   | "paymentFrequency"
   | "paymentTiming"
   | "annualEscalationPercent"
-  | "discountRate"
-  | "fairValue"
-  | "economicLifeMonths"
-  | "ownershipTransfers"
-  | "specializedAsset"
-  | "purchaseOptionAmount"
-  | "purchaseOptionReasonablyCertain";
+  | "discountRate";
 
 /** Saves one term of a Draft through the update route, which validates the
- *  terms as a whole and cuts the payment rows again when a payment term
- *  changes; a refusal toasts. */
+ *  terms as a whole and cuts every asset's payment rows again when a payment
+ *  term changes; a refusal toasts. */
 export function useLeaseTermSave(leaseId: string) {
   const fetcher = useFetcher<{ error: { message: string } | null }>();
   useEffect(() => {

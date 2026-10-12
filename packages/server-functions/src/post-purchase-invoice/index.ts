@@ -1259,16 +1259,23 @@ const postPurchaseInvoice = defineServerFn({
         fixedAssets.map((asset) => [asset.id, asset])
       );
 
-      // Lease lines: the lease's classification picks the account (spec
-      // §5) — a fixed payment of a capitalized lease debits the lease
-      // liability, of a short-term lease the operating lease expense; a
-      // variable charge (no payment row) debits the variable lease expense.
+      // Lease lines: the classification of the payment row's asset picks
+      // the account (spec §5) — a fixed payment of a capitalized asset debits
+      // the lease liability, of a short-term asset the operating lease
+      // expense; a variable charge (no payment row) debits the variable lease
+      // expense.
       const leaseLines = purchaseInvoiceLines.data.filter(
         (line) => line.invoiceLineType === "Lease"
       );
-      const leaseById = new Map<
+      const leaseById = new Map<string, { status: string }>();
+      const leasePaymentById = new Map<
         string,
-        { lesseeClassification: string | null; status: string }
+        {
+          leaseId: string;
+          amount: number;
+          description: string;
+          lesseeClassification: string | null;
+        }
       >();
       const leaseAccounts = new Map<
         string,
@@ -1284,12 +1291,41 @@ const postPurchaseInvoice = defineServerFn({
           leaseIds.length > 0
             ? await db
                 .selectFrom("lease")
-                .select(["id", "lesseeClassification", "status"])
+                .select(["id", "status"])
                 .where("id", "in", leaseIds)
                 .where("companyId", "=", companyId)
                 .execute()
             : [];
         for (const lease of leases) leaseById.set(lease.id, lease);
+        const paymentIds = leaseLines.flatMap((line) =>
+          line.leasePaymentId ? [line.leasePaymentId] : []
+        );
+        const payments =
+          paymentIds.length > 0
+            ? await db
+                .selectFrom("leasePayment as p")
+                .innerJoin("leaseLine as l", (join) =>
+                  join
+                    .onRef("l.id", "=", "p.leaseLineId")
+                    .onRef("l.companyId", "=", "p.companyId")
+                )
+                .select([
+                  "p.id",
+                  "p.leaseId",
+                  "p.amount",
+                  "l.description",
+                  "l.lesseeClassification"
+                ])
+                .where("p.id", "in", paymentIds)
+                .where("p.companyId", "=", companyId)
+                .execute()
+            : [];
+        for (const payment of payments) {
+          leasePaymentById.set(payment.id, {
+            ...payment,
+            amount: Number(payment.amount)
+          });
+        }
 
         const defaults = await db
           .selectFrom("accountDefault")
@@ -1449,9 +1485,14 @@ const postPurchaseInvoice = defineServerFn({
                 `Lease invoice line ${invoiceLine.id} has no lease selected`
               );
             }
-            if (!lease.lesseeClassification) {
+            if (lease.status === "Draft") {
               throw new InvalidInputError(
                 "Activate the lease before invoicing it"
+              );
+            }
+            if (lease.status === "Cancelled") {
+              throw new InvalidInputError(
+                "The lease is cancelled; remove its line from this invoice"
               );
             }
             if ((invoiceLine as { projectId?: string | null }).projectId) {
@@ -1459,11 +1500,42 @@ const postPurchaseInvoice = defineServerFn({
                 "A lease line cannot be charged to a project"
               );
             }
-            const role = !invoiceLine.leasePaymentId
+            const payment = invoiceLine.leasePaymentId
+              ? leasePaymentById.get(invoiceLine.leasePaymentId)
+              : undefined;
+            if (
+              invoiceLine.leasePaymentId &&
+              (!payment || payment.leaseId !== invoiceLine.leaseId)
+            ) {
+              throw new InvalidInputError(
+                `Lease invoice line ${invoiceLine.id} names a payment of another lease`
+              );
+            }
+            if (payment && !payment.lesseeClassification) {
+              throw new InvalidInputError(
+                "Activate the lease before invoicing it"
+              );
+            }
+            const role = !payment
               ? "variable"
-              : lease.lesseeClassification === "Short-Term"
+              : payment.lesseeClassification === "Short-Term"
                 ? "operating"
                 : "liability";
+            // A capitalized payment settles exactly what the schedule took
+            // out of the liability; another amount would leave the liability
+            // off. A different price is a Modify of the lease.
+            if (
+              payment &&
+              role === "liability" &&
+              round(
+                Number(invoiceLine.supplierUnitPrice ?? 0) *
+                  Number(invoiceLine.quantity ?? 0)
+              ) !== round(payment.amount)
+            ) {
+              throw new InvalidInputError(
+                `The ${payment.description} line must be ${payment.amount}, its payment's amount; modify the lease to change a payment`
+              );
+            }
             const account = leaseAccounts.get(role);
             if (!account) {
               throw new InvalidInputError(

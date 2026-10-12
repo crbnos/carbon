@@ -1122,12 +1122,17 @@ type CapitalizedClassification = Exclude<LesseeClassification, "Short-Term">;
 /** How many fiscal years the maturity analysis lists before "Thereafter". */
 export const LEASE_MATURITY_YEARS = 5;
 
+/** One leased asset (a lease component), with its lease's terms. */
 export type LeaseLiabilityLease = {
   /** `lease.id`. */
   id: string;
+  /** `leaseLine.id`: the schedule lines and payments are the asset's. */
+  leaseLineId: string;
   /** The readable lease number. */
   leaseId: string;
   name: string;
+  /** The leased asset's description. */
+  asset: string;
   supplierName: string | null;
   status: Database["public"]["Enums"]["leaseStatus"];
   classification: LesseeClassification | null;
@@ -1141,7 +1146,7 @@ export type LeaseLiabilityLease = {
 };
 
 export type LeaseLiabilityScheduleLine = {
-  leaseId: string;
+  leaseLineId: string;
   periodDate: string;
   principalAmount: number;
   closingLiability: number;
@@ -1149,15 +1154,17 @@ export type LeaseLiabilityScheduleLine = {
 };
 
 export type LeaseLiabilityPayment = {
-  leaseId: string;
+  leaseLineId: string;
   dueDate: string;
   amount: number;
 };
 
 export type LeaseLiabilityRow = {
   id: string;
+  leaseLineId: string;
   leaseId: string;
   name: string;
+  asset: string;
   supplierName: string | null;
   classification: CapitalizedClassification;
   /** Schedule months after `asOf`. */
@@ -1201,21 +1208,21 @@ export type LeaseLiabilitySummary = {
 
 const CAPITALIZED: CapitalizedClassification[] = ["Operating", "Finance"];
 
-function groupByLease<T extends { leaseId: string }>(rows: T[]) {
-  const byLease = new Map<string, T[]>();
+function groupByAsset<T extends { leaseLineId: string }>(rows: T[]) {
+  const byAsset = new Map<string, T[]>();
   for (const row of rows) {
-    const list = byLease.get(row.leaseId) ?? [];
+    const list = byAsset.get(row.leaseLineId) ?? [];
     list.push(row);
-    byLease.set(row.leaseId, list);
+    byAsset.set(row.leaseLineId, list);
   }
-  return byLease;
+  return byAsset;
 }
 
 /**
- * The lessee's lease balances as of `asOf` (spec §11). One row per
- * Operating or Finance lease that has commenced by `asOf` and still has
- * schedule months after it; a Terminated or Purchased lease drops out on its
- * end date.
+ * The lessee's lease balances as of `asOf` (spec §11). One row per leased
+ * asset classified Operating or Finance whose lease has commenced by `asOf`
+ * and that still has schedule months after it; a Terminated or Purchased
+ * asset drops out on its end date, when its schedule ends.
  *
  * The balance is the schedule's: the liability and the net ROU are the
  * closing figures of the last month dated on or before `asOf` (before the
@@ -1249,8 +1256,8 @@ export function summarizeLeaseLiabilities(
   const lastYear = fiscalYears[fiscalYears.length - 1] ?? firstYear;
   const twelveMonthsOut = asOfDate.add({ months: 12 }).toString();
 
-  const linesByLease = groupByLease(lines);
-  const paymentsByLease = groupByLease(payments);
+  const linesByAsset = groupByAsset(lines);
+  const paymentsByAsset = groupByAsset(payments);
 
   const rows: LeaseLiabilityRow[] = [];
   for (const lease of leases) {
@@ -1264,8 +1271,9 @@ export function summarizeLeaseLiabilities(
     const ended = lease.status === "Terminated" || lease.status === "Purchased";
     if (ended && lease.endDate <= asOf) continue;
 
-    const schedule = [...(linesByLease.get(lease.id) ?? [])].sort((a, b) =>
-      a.periodDate < b.periodDate ? -1 : a.periodDate > b.periodDate ? 1 : 0
+    const schedule = [...(linesByAsset.get(lease.leaseLineId) ?? [])].sort(
+      (a, b) =>
+        a.periodDate < b.periodDate ? -1 : a.periodDate > b.periodDate ? 1 : 0
     );
     const remaining = schedule.filter((line) => line.periodDate > asOf);
     if (remaining.length === 0) continue;
@@ -1287,7 +1295,7 @@ export function summarizeLeaseLiabilities(
     const maturity: Record<number, number> = {};
     let thereafter = 0;
     let undiscounted = 0;
-    for (const payment of paymentsByLease.get(lease.id) ?? []) {
+    for (const payment of paymentsByAsset.get(lease.leaseLineId) ?? []) {
       if (last && payment.dueDate <= last.periodDate) continue;
       const { fiscalYear } = fiscalYearAndPeriodFor(
         Number(payment.dueDate.slice(0, 4)),
@@ -1310,8 +1318,10 @@ export function summarizeLeaseLiabilities(
 
     rows.push({
       id: lease.id,
+      leaseLineId: lease.leaseLineId,
       leaseId: lease.leaseId,
       name: lease.name,
+      asset: lease.asset,
       supplierName: lease.supplierName,
       classification,
       remainingMonths: remaining.length,
@@ -1327,7 +1337,11 @@ export function summarizeLeaseLiabilities(
   }
 
   rows.sort((a, b) =>
-    a.leaseId < b.leaseId ? -1 : a.leaseId > b.leaseId ? 1 : 0
+    a.leaseId < b.leaseId
+      ? -1
+      : a.leaseId > b.leaseId
+        ? 1
+        : a.asset.localeCompare(b.asset)
   );
 
   const totals = CAPITALIZED.map((classification): LeaseLiabilityTotals => {
@@ -1370,13 +1384,15 @@ export function summarizeLeaseLiabilities(
 }
 
 export type LeaseCostScheduleRow = {
-  leaseId: string;
+  /** The asset (`leaseLine.id`) the row's schedule line belongs to. */
+  leaseLineId: string;
   type: Database["public"]["Enums"]["revenueScheduleType"];
   amount: number;
 };
 
 export type LeaseCostInvoiceLine = {
-  leaseId: string;
+  /** The asset of the line's payment row; null for a variable charge. */
+  leaseLineId: string | null;
   leasePaymentId: string | null;
   /** The line's amount in base currency, before tax. */
   amount: number;
@@ -1404,7 +1420,7 @@ export type LeaseCostSummary = {
  * Short-Term lease, else cash paid for an amount in the liability.
  */
 export function summarizeLeaseCosts(
-  classificationByLease: Map<string, LesseeClassification>,
+  classificationByAsset: Map<string, LesseeClassification>,
   scheduleRows: LeaseCostScheduleRow[],
   invoiceLines: LeaseCostInvoiceLine[]
 ): LeaseCostSummary {
@@ -1418,7 +1434,7 @@ export function summarizeLeaseCosts(
     cashPaidFinance: 0
   };
   for (const row of scheduleRows) {
-    const classification = classificationByLease.get(row.leaseId);
+    const classification = classificationByAsset.get(row.leaseLineId);
     if (classification === "Operating") {
       totals.operatingLeaseCost += row.amount;
     } else if (classification === "Finance") {
@@ -1427,11 +1443,11 @@ export function summarizeLeaseCosts(
     }
   }
   for (const line of invoiceLines) {
-    if (!line.leasePaymentId) {
+    if (!line.leasePaymentId || !line.leaseLineId) {
       totals.variableLeaseCost += line.amount;
       continue;
     }
-    const classification = classificationByLease.get(line.leaseId);
+    const classification = classificationByAsset.get(line.leaseLineId);
     if (classification === "Short-Term") {
       totals.shortTermLeaseCost += line.amount;
     } else if (classification === "Operating") {

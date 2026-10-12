@@ -19,11 +19,8 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
-  LuChevronDown,
-  LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
-  LuHandCoins,
   LuPanelLeft,
   LuPencilRuler,
   LuPlay,
@@ -33,28 +30,30 @@ import {
 import { Link } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, usePermissions } from "~/hooks";
+import { useCompanyToday, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   LeaseCommencementPreview,
   LesseeClassificationBadge
 } from "./LeaseClassificationPreview";
 import LeaseModifyModal from "./LeaseModifyModal";
-import LeasePurchaseModal from "./LeasePurchaseModal";
 import LeaseStatus from "./LeaseStatus";
-import LeaseTerminateModal from "./LeaseTerminateModal";
 import type { LeaseRouteData } from "./types";
+import { leaseActivationGaps } from "./utils";
 
 type LeaseHeaderProps = Pick<
   LeaseRouteData,
-  "lease" | "payments" | "schedule" | "leasePolicy"
+  "lease" | "lines" | "payments" | "schedule" | "leasePolicy"
 >;
 
 type PendingAction = "activate" | "invoice" | "cancel";
-type LifecycleAction = "modify" | "terminate" | "purchase";
 
+/** The lease's actions: Activate a Draft; Invoice Now, Modify and Cancel an
+ *  Active lease. Terminate and Purchase act on one asset, from the Assets
+ *  card. */
 const LeaseHeader = ({
   lease,
+  lines,
   payments,
   schedule,
   leasePolicy
@@ -63,11 +62,12 @@ const LeaseHeader = ({
   const permissions = usePermissions();
   const { toggleExplorer } = usePanels();
   const today = useCompanyToday();
+  const { company } = useUser();
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
-  const [lifecycle, setLifecycle] = useState<LifecycleAction | null>(null);
+  const modify = useDisclosure();
 
   const id = lease.id!;
   const readableId = lease.leaseId ?? "";
@@ -89,9 +89,13 @@ const LeaseHeader = ({
     (line.rows ?? []).some((row) => row.status === "Posted")
   );
   const canCancel = isActive && !hasInvoicedPayment && !hasPostedMonth;
-  const hasPurchaseOption =
-    Number(lease.purchaseOptionAmount ?? 0) > 0 &&
-    lease.lesseeClassification !== "Short-Term";
+  const isReady =
+    leaseActivationGaps({
+      lease,
+      lines,
+      payments,
+      baseCurrencyCode: company?.baseCurrencyCode
+    }).length === 0;
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -112,7 +116,7 @@ const LeaseHeader = ({
     activate: {
       action: path.to.leaseActivate(id),
       title: t`Activate ${readableId}`,
-      text: t`Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards.`,
+      text: t`Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards.`,
       confirmText: t`Activate`
     },
     invoice: {
@@ -124,7 +128,7 @@ const LeaseHeader = ({
     cancel: {
       action: path.to.leaseStatus(id),
       title: t`Cancel ${readableId}`,
-      text: t`Cancelling voids the commencement journal and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate it instead.`,
+      text: t`Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead.`,
       confirmText: t`Cancel Lease`,
       intent: "cancel",
       destructive: true
@@ -186,41 +190,20 @@ const LeaseHeader = ({
               </DropdownMenuContent>
             </DropdownMenu>
             <LeaseStatus status={status} />
-            {lease.lesseeClassification && (
-              <LesseeClassificationBadge value={lease.lesseeClassification} />
+            {lease.classification && lease.classification !== "Mixed" && (
+              <LesseeClassificationBadge value={lease.classification} />
             )}
           </HStack>
           <HStack>
             {isActive && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuPencilRuler />}
-                    rightIcon={<LuChevronDown />}
-                    isDisabled={!canUpdate}
-                  >
-                    <Trans>Change Lease</Trans>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setLifecycle("modify")}>
-                    <DropdownMenuIcon icon={<LuPencilRuler />} />
-                    <Trans>Modify</Trans>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setLifecycle("terminate")}>
-                    <DropdownMenuIcon icon={<LuCircleStop />} />
-                    <Trans>Terminate</Trans>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    disabled={!hasPurchaseOption}
-                    onClick={() => setLifecycle("purchase")}
-                  >
-                    <DropdownMenuIcon icon={<LuHandCoins />} />
-                    <Trans>Exercise Purchase Option</Trans>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <Button
+                variant="secondary"
+                leftIcon={<LuPencilRuler />}
+                isDisabled={!canUpdate}
+                onClick={modify.onOpen}
+              >
+                <Trans>Modify</Trans>
+              </Button>
             )}
             {isActive && (
               <Button
@@ -236,7 +219,7 @@ const LeaseHeader = ({
               <Button
                 variant="primary"
                 leftIcon={<LuPlay />}
-                isDisabled={!canUpdate || payments.length === 0}
+                isDisabled={!canUpdate || !isReady}
                 onClick={() => open("activate")}
               >
                 <Trans>Activate</Trans>
@@ -259,6 +242,7 @@ const LeaseHeader = ({
             action === "activate" ? (
               <LeaseCommencementPreview
                 lease={lease}
+                lines={lines}
                 payments={payments}
                 policy={leasePolicy}
               />
@@ -271,25 +255,12 @@ const LeaseHeader = ({
         </Confirm>
       )}
 
-      {lifecycle === "modify" && (
+      {modify.isOpen && (
         <LeaseModifyModal
           lease={lease}
+          lines={lines}
           schedule={schedule}
-          onClose={() => setLifecycle(null)}
-        />
-      )}
-      {lifecycle === "terminate" && (
-        <LeaseTerminateModal
-          lease={lease}
-          schedule={schedule}
-          onClose={() => setLifecycle(null)}
-        />
-      )}
-      {lifecycle === "purchase" && (
-        <LeasePurchaseModal
-          lease={lease}
-          schedule={schedule}
-          onClose={() => setLifecycle(null)}
+          onClose={modify.onClose}
         />
       )}
 

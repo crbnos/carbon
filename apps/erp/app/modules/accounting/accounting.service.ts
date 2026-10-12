@@ -8217,7 +8217,7 @@ export async function getLeaseLiabilities(
   const from = args.from ?? fiscalYearStart;
   const to = args.to ?? asOf;
 
-  const [leases, lines, payments, scheduleRows, invoiceLines] =
+  const [leases, assets, lines, payments, scheduleRows, invoiceLines] =
     await Promise.all([
       fetchAllFromTable<{
         id: string;
@@ -8225,18 +8225,33 @@ export async function getLeaseLiabilities(
         name: string;
         supplierName: string | null;
         status: Database["public"]["Enums"]["leaseStatus"];
-        lesseeClassification:
-          | Database["public"]["Enums"]["lesseeClassification"]
-          | null;
         commencementDate: string;
         endDate: string;
         discountRate: number;
+      }>(
+        client,
+        "leases",
+        "id, leaseId, name, supplierName, status, commencementDate, endDate, discountRate",
+        (query: any) =>
+          query
+            .eq("companyId", companyId)
+            .not("status", "in", '("Draft","Cancelled")')
+            .order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{
+        id: string;
+        leaseId: string;
+        description: string;
+        status: Database["public"]["Enums"]["leaseLineStatus"];
+        lesseeClassification:
+          | Database["public"]["Enums"]["lesseeClassification"]
+          | null;
         initialLiability: number | null;
         initialRouAsset: number | null;
       }>(
         client,
-        "leases",
-        "id, leaseId, name, supplierName, status, lesseeClassification, commencementDate, endDate, discountRate, initialLiability, initialRouAsset",
+        "leaseLine",
+        "id, leaseId, description, status, lesseeClassification, initialLiability, initialRouAsset",
         (query: any) =>
           query
             .eq("companyId", companyId)
@@ -8244,7 +8259,7 @@ export async function getLeaseLiabilities(
             .order("id", { ascending: true })
       ),
       fetchAllFromTable<{
-        leaseId: string;
+        leaseLineId: string;
         periodDate: string;
         principalAmount: number;
         closingLiability: number;
@@ -8252,25 +8267,30 @@ export async function getLeaseLiabilities(
       }>(
         client,
         "leaseScheduleLine",
-        "leaseId, periodDate, principalAmount, closingLiability, closingRouAsset",
-        (query: any) =>
-          query.eq("companyId", companyId).order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{ leaseId: string; dueDate: string; amount: number }>(
-        client,
-        "leasePayment",
-        "leaseId, dueDate, amount",
+        "leaseLineId, periodDate, principalAmount, closingLiability, closingRouAsset",
         (query: any) =>
           query.eq("companyId", companyId).order("id", { ascending: true })
       ),
       fetchAllFromTable<{
-        leaseId: string;
-        type: Database["public"]["Enums"]["revenueScheduleType"];
+        id: string;
+        leaseLineId: string;
+        dueDate: string;
         amount: number;
       }>(
         client,
+        "leasePayment",
+        "id, leaseLineId, dueDate, amount",
+        (query: any) =>
+          query.eq("companyId", companyId).order("id", { ascending: true })
+      ),
+      fetchAllFromTable<{
+        type: Database["public"]["Enums"]["revenueScheduleType"];
+        amount: number;
+        leaseScheduleLine: { leaseLineId: string } | null;
+      }>(
+        client,
         "revenueRecognitionSchedule",
-        "leaseId, type, amount",
+        "type, amount, leaseScheduleLine!revenueRecognitionSchedule_leaseScheduleLine_fkey(leaseLineId)",
         (query: any) =>
           query
             .eq("companyId", companyId)
@@ -8299,42 +8319,72 @@ export async function getLeaseLiabilities(
             .order("id", { ascending: true })
       )
     ]);
-  for (const result of [leases, lines, payments, scheduleRows, invoiceLines]) {
+  for (const result of [
+    leases,
+    assets,
+    lines,
+    payments,
+    scheduleRows,
+    invoiceLines
+  ]) {
     if (result.error) return { data: null, error: result.error };
   }
 
-  const leaseRows = leases.data ?? [];
+  // One entry per classified asset of a lease past Draft, with its lease's
+  // terms; a Cancelled lease's assets never were on the books.
+  const leaseById = new Map((leases.data ?? []).map((row) => [row.id, row]));
+  const assetRows = (assets.data ?? []).flatMap((asset) => {
+    const lease = leaseById.get(asset.leaseId);
+    return lease ? [{ asset, lease }] : [];
+  });
   const summary = summarizeLeaseLiabilities(
-    leaseRows.map((lease) => ({
+    assetRows.map(({ asset, lease }) => ({
       id: lease.id,
+      leaseLineId: asset.id,
       leaseId: lease.leaseId,
       name: lease.name,
+      asset: asset.description,
       supplierName: lease.supplierName,
-      status: lease.status,
-      classification: lease.lesseeClassification,
+      status: asset.status === "Active" ? lease.status : asset.status,
+      classification: asset.lesseeClassification,
       commencementDate: lease.commencementDate,
       endDate: lease.endDate,
       discountRate: lease.discountRate,
-      initialLiability: lease.initialLiability,
-      initialRouAsset: lease.initialRouAsset
+      initialLiability: asset.initialLiability,
+      initialRouAsset: asset.initialRouAsset
     })),
     lines.data ?? [],
     payments.data ?? [],
     { asOf, startMonth }
   );
 
-  const classificationByLease = new Map(
-    leaseRows.flatMap((lease) =>
-      lease.lesseeClassification
-        ? [[lease.id, lease.lesseeClassification] as const]
+  const classificationByAsset = new Map(
+    assetRows.flatMap(({ asset }) =>
+      asset.lesseeClassification
+        ? [[asset.id, asset.lesseeClassification] as const]
         : []
     )
   );
+  const assetOfPayment = new Map(
+    (payments.data ?? []).map((payment) => [payment.id, payment.leaseLineId])
+  );
   const costs = summarizeLeaseCosts(
-    classificationByLease,
-    scheduleRows.data ?? [],
+    classificationByAsset,
+    (scheduleRows.data ?? []).flatMap((row) =>
+      row.leaseScheduleLine
+        ? [
+            {
+              leaseLineId: row.leaseScheduleLine.leaseLineId,
+              type: row.type,
+              amount: row.amount
+            }
+          ]
+        : []
+    ),
     (invoiceLines.data ?? []).map((line) => ({
-      leaseId: line.leaseId,
+      leaseLineId: line.leasePaymentId
+        ? (assetOfPayment.get(line.leasePaymentId) ?? null)
+        : null,
       leasePaymentId: line.leasePaymentId,
       amount: line.extendedPrice ?? 0
     }))

@@ -26,38 +26,24 @@ const TERM_FIELDS = [
   "endDate",
   "noticeDate",
   "invoiceFromDate",
-  "paymentAmount",
   "paymentFrequency",
   "paymentTiming",
   "annualEscalationPercent",
   "discountRate",
-  "currencyCode",
-  "fairValue",
-  "economicLifeMonths",
-  "ownershipTransfers",
-  "specializedAsset",
-  "purchaseOptionAmount",
-  "purchaseOptionReasonablyCertain"
+  "currencyCode"
 ] as const;
 type TermField = (typeof TERM_FIELDS)[number];
 
-const BOOLEAN_FIELDS = new Set<TermField>([
-  "ownershipTransfers",
-  "specializedAsset",
-  "purchaseOptionReasonablyCertain"
-]);
-
-/** The terms the payment rows are cut from: a change cuts them again. */
+/** The terms every asset's payment rows are cut from: a change cuts them
+ *  again. An asset's own payment is saved through its line
+ *  (`$id.$lineId.update`). */
 const PAYMENT_TERM_FIELDS = new Set<TermField>([
   "commencementDate",
   "endDate",
   "invoiceFromDate",
-  "paymentAmount",
   "paymentFrequency",
   "paymentTiming",
-  "annualEscalationPercent",
-  "purchaseOptionAmount",
-  "purchaseOptionReasonablyCertain"
+  "annualEscalationPercent"
 ]);
 
 const isTermField = (field: string): field is TermField =>
@@ -67,7 +53,7 @@ const isTermField = (field: string): field is TermField =>
  * One term of a Draft lease, saved from its properties panel.
  *
  * The terms are validated as a whole (an end date on or after the
- * commencement, a reasonably certain purchase option needs an amount), so a
+ * commencement, invoicing from on or after it), so a
  * single field is never written on its own: the current terms are read, the
  * one field is swapped in, and the merged set runs through the same
  * validator and service the new lease form uses. When a payment term
@@ -121,23 +107,14 @@ export async function action({ request }: ActionFunctionArgs) {
     endDate: lease.endDate,
     noticeDate: lease.noticeDate,
     invoiceFromDate: lease.invoiceFromDate,
-    paymentAmount: lease.paymentAmount,
     paymentFrequency: lease.paymentFrequency,
     paymentTiming: lease.paymentTiming,
     annualEscalationPercent: lease.annualEscalationPercent,
     discountRate: lease.discountRate,
-    currencyCode: lease.currencyCode,
-    fairValue: lease.fairValue,
-    economicLifeMonths: lease.economicLifeMonths,
-    ownershipTransfers: lease.ownershipTransfers,
-    specializedAsset: lease.specializedAsset,
-    purchaseOptionAmount: lease.purchaseOptionAmount,
-    purchaseOptionReasonablyCertain: lease.purchaseOptionReasonablyCertain
+    currencyCode: lease.currencyCode
   };
 
-  terms[field] = BOOLEAN_FIELDS.has(field)
-    ? value === "on" || value === "true"
-    : value || null;
+  terms[field] = value || null;
   // A site and contact belong to one supplier.
   if (field === "supplierId" && value !== lease.supplierId) {
     terms.supplierLocationId = null;
@@ -157,9 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const merged = new FormData();
   for (const key of TERM_FIELDS) {
     const term = terms[key];
-    if (BOOLEAN_FIELDS.has(key)) {
-      if (term) merged.append(key, "on");
-    } else if (term !== null && term !== undefined && term !== "") {
+    if (term !== null && term !== undefined && term !== "") {
       merged.append(key, String(term));
     }
   }

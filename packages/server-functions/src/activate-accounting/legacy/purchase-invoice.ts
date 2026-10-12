@@ -289,19 +289,24 @@ export async function buildLegacyPurchaseInvoiceJournals(
   const assetById = new Map(assets.map((row) => [row.id, row]));
   const glAccountById = new Map(glAccounts.map((row) => [row.id, row]));
 
-  // Lease lines take the account their lease's classification picks, as at
-  // posting (post-purchase-invoice).
-  const leases = await readByIds(
-    lines.map((line) => line.leaseId),
+  // Lease lines take the account their payment row's asset classification
+  // picks, as at posting (post-purchase-invoice).
+  const leasePayments = await readByIds(
+    lines.map((line) => line.leasePaymentId),
     (ids) =>
       trx
-        .selectFrom("lease")
-        .select(["id", "lesseeClassification"])
-        .where("companyId", "=", companyId)
-        .where("id", "in", ids)
+        .selectFrom("leasePayment as p")
+        .innerJoin("leaseLine as l", (join) =>
+          join
+            .onRef("l.id", "=", "p.leaseLineId")
+            .onRef("l.companyId", "=", "p.companyId")
+        )
+        .select(["p.id", "l.lesseeClassification"])
+        .where("p.companyId", "=", companyId)
+        .where("p.id", "in", ids)
         .execute()
   );
-  const leaseById = new Map(leases.map((row) => [row.id, row]));
+  const leasePaymentById = new Map(leasePayments.map((row) => [row.id, row]));
   const leaseAccountRows = await readByIds(
     [
       defaults.leaseLiabilityAccount,
@@ -526,17 +531,20 @@ export async function buildLegacyPurchaseInvoiceJournals(
           break;
         }
         case "Lease": {
-          const lease = invoiceLine.leaseId
-            ? leaseById.get(invoiceLine.leaseId)
+          const payment = invoiceLine.leasePaymentId
+            ? leasePaymentById.get(invoiceLine.leasePaymentId)
             : undefined;
-          if (!lease?.lesseeClassification) {
+          if (
+            !invoiceLine.leaseId ||
+            (invoiceLine.leasePaymentId && !payment?.lesseeClassification)
+          ) {
             throw new InvalidInputError(
               `Purchase invoice ${invoice.invoiceId} has a lease line whose lease is not active.`
             );
           }
-          const accountId = !invoiceLine.leasePaymentId
+          const accountId = !payment
             ? defaults.variableLeaseExpenseAccount
-            : lease.lesseeClassification === "Short-Term"
+            : payment.lesseeClassification === "Short-Term"
               ? defaults.operatingLeaseExpenseAccount
               : defaults.leaseLiabilityAccount;
           const account = accountId ? leaseAccountById.get(accountId) : null;

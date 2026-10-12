@@ -31,20 +31,34 @@ import { leaseTerminateValidator } from "../../purchasing.models";
 import LeaseJournalPreview, {
   type LeaseJournalPreviewRow
 } from "./LeaseJournalPreview";
-import type { Lease, LeaseScheduleLine } from "./types";
-import { lastPostedLeaseMonthEnd, leaseCarryingAt } from "./utils";
+import type {
+  Lease,
+  LeaseLine,
+  LeasePayment,
+  LeaseScheduleLine
+} from "./types";
+import {
+  endedPaymentsAddBack,
+  lastPostedLeaseMonthEnd,
+  leaseCarryingAt
+} from "./utils";
 
 type LeaseTerminateModalProps = {
   lease: Lease;
+  line: LeaseLine;
+  payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
   onClose: () => void;
 };
 
-/** End an Active lease early: the liability and the right-of-use asset leave
- *  the books, and the difference is a gain or a loss. A penalty stays in the
- *  liability as a final payment row the next invoice settles. */
+/** End one asset of an Active lease early: its liability and right-of-use
+ *  asset leave the books, and the difference is a gain or a loss. A penalty
+ *  stays in the liability as a final payment row the next invoice settles.
+ *  The lease ends with its last asset. */
 const LeaseTerminateModal = ({
   lease,
+  line,
+  payments,
   schedule,
   onClose
 }: LeaseTerminateModalProps) => {
@@ -54,27 +68,32 @@ const LeaseTerminateModal = ({
   const currencyCode = lease.currencyCode ?? "";
   const decimals = useCurrencyDecimals(currencyCode);
 
+  const lineSchedule = schedule.filter((row) => row.leaseLineId === line.id);
   const [terminationDate, setTerminationDate] = useState(
-    lastPostedLeaseMonthEnd(schedule) ?? ""
+    lastPostedLeaseMonthEnd(lineSchedule) ?? ""
   );
   const [penalty, setPenalty] = useState(0);
 
-  const isShortTerm = lease.lesseeClassification === "Short-Term";
+  const isShortTerm = line.lesseeClassification === "Short-Term";
   const commencementDay = lease.commencementDate?.slice(8) ?? "";
 
   const journal: LeaseJournalPreviewRow[] = (() => {
     if (isShortTerm || !terminationDate) return [];
     const carrying = leaseCarryingAt(
-      lease,
+      line,
       schedule,
       addDays(terminationDate, 1)
     );
-    const rouAssetCost = Number(lease.rouAssetCost ?? 0);
-    const gainLoss = round(carrying.liability - penalty - carrying.rouAsset);
+    const liability = round(
+      carrying.liability +
+        endedPaymentsAddBack(payments, line.id, terminationDate)
+    );
+    const rouAssetCost = Number(line.rouAssetCost ?? 0);
+    const gainLoss = round(liability - penalty - carrying.rouAsset);
     return [
       {
         account: t`Lease Liability`,
-        debit: round(carrying.liability - penalty),
+        debit: round(liability - penalty),
         credit: 0
       },
       {
@@ -101,7 +120,7 @@ const LeaseTerminateModal = ({
         <ValidatedForm
           validator={leaseTerminateValidator}
           method="post"
-          action={path.to.leaseTerminate(lease.id!)}
+          action={path.to.leaseLineTerminate(lease.id!, line.id)}
           fetcher={fetcher}
           defaultValues={{
             terminationDate,
@@ -112,12 +131,13 @@ const LeaseTerminateModal = ({
         >
           <ModalHeader>
             <ModalTitle>
-              <Trans>Terminate {lease.leaseId}</Trans>
+              <Trans>Terminate {line.description}</Trans>
             </ModalTitle>
             <ModalDescription>
               <Trans>
-                Payments due after the termination date are removed. Invoiced
-                payments stay.
+                This asset's payments due after the termination date are
+                removed. Invoiced payments stay. The lease's other assets do not
+                change.
               </Trans>
             </ModalDescription>
           </ModalHeader>
@@ -143,7 +163,7 @@ const LeaseTerminateModal = ({
               {isShortTerm ? (
                 <p className="text-sm text-muted-foreground">
                   <Trans>
-                    A short-term lease has no schedule: only its payment rows
+                    A short-term asset has no schedule: only its payment rows
                     change, and no journal is posted.
                   </Trans>
                 </p>
@@ -170,7 +190,7 @@ const LeaseTerminateModal = ({
               variant="destructive"
               isDisabled={!permissions.can("update", "purchasing")}
             >
-              <Trans>Terminate Lease</Trans>
+              <Trans>Terminate Asset</Trans>
             </Submit>
           </ModalFooter>
         </ValidatedForm>

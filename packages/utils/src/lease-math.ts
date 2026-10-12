@@ -3,11 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { round } from "@carbon/database/precision";
-import {
-  classifyLessorLease,
-  type Timing,
-  wholeMonthsInTerm
-} from "./lessor-lease.ts";
+import { classifyLessorLease, type Timing } from "./lessor-lease.ts";
 import {
   addDays,
   daysBetweenInclusive,
@@ -121,16 +117,49 @@ export function generateLeasePayments(args: {
   return rows;
 }
 
+/** The lease months that have started by `date`, after the first: the
+ *  largest `m` with `addMonths(commencementDate, m) <= date`, 0 before the
+ *  commencement. Counted with `addMonths`, which clamps a day the month does
+ *  not have (a lease from the 31st has its next month start on Feb 28), so
+ *  every reader agrees with the rows `generateLeasePayments` cuts. */
+export function leaseMonthsAt(commencementDate: string, date: string): number {
+  if (date <= commencementDate) return 0;
+  const start = parseIsoDate(commencementDate);
+  const at = parseIsoDate(date);
+  let months =
+    (at.year - start.year) * MONTHS_PER_YEAR + (at.month - start.month);
+  while (months > 0 && addMonths(commencementDate, months) > date) months -= 1;
+  while (addMonths(commencementDate, months + 1) <= date) months += 1;
+  return months;
+}
+
 /** Whole months from commencement to the start of `date`. */
 function monthsBefore(commencementDate: string, date: string): number {
-  if (date <= commencementDate) return 0;
-  return wholeMonthsInTerm(commencementDate, addDays(date, -1));
+  return leaseMonthsAt(commencementDate, date);
 }
 
 /** Whole months from commencement to the end of `date`. */
 function monthsThrough(commencementDate: string, date: string): number {
   if (date < commencementDate) return 0;
-  return wholeMonthsInTerm(commencementDate, date);
+  return leaseMonthsAt(commencementDate, addDays(date, 1));
+}
+
+/** The whole lease months from `commencementDate` through `endDate`. */
+export function leaseTermMonths(
+  commencementDate: string,
+  endDate: string
+): number {
+  return monthsThrough(commencementDate, endDate);
+}
+
+/** The short-term test of ASC 842: a term of 12 months or less, measured on
+ *  the dates — the rounded-down whole months would let 12 months and 15
+ *  days pass. */
+export function isTermWithinTwelveMonths(
+  commencementDate: string,
+  endDate: string
+): boolean {
+  return endDate <= addDays(addMonths(commencementDate, MONTHS_PER_YEAR), -1);
 }
 
 /** The whole-month point `k` a payment row sits at (plan decision P4). */
@@ -190,6 +219,8 @@ export function classifyLesseeLease(
     purchaseOptionReasonablyCertain: boolean;
     specializedAsset: boolean;
     shortTermExpedient: boolean;
+    /** `isTermWithinTwelveMonths` of the term's dates. */
+    withinTwelveMonths: boolean;
   },
   thresholds: { majorPartPercent: number; substantiallyAllPercent: number }
 ): LesseeClassificationResult {
@@ -207,7 +238,7 @@ export function classifyLesseeLease(
   );
   const shortTerm =
     args.shortTermExpedient &&
-    args.termMonths <= MONTHS_PER_YEAR &&
+    args.withinTwelveMonths &&
     !args.purchaseOptionReasonablyCertain;
   return {
     classification: shortTerm

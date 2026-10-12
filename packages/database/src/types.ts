@@ -31060,11 +31060,6 @@ export type Database = {
           activatedAt: string | null
           annualEscalationPercent: number
           assignee: string | null
-          classificationInputs: Json | null
-          classificationOverride:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
-          classificationOverrideReason: string | null
           closedAt: string | null
           commencementDate: string
           commencementJournalId: string | null
@@ -31075,31 +31070,17 @@ export type Database = {
           customFields: Json | null
           description: string | null
           discountRate: number
-          economicLifeMonths: number | null
           endDate: string
           endRemindedFor: string | null
-          fairValue: number | null
-          fixedAssetId: string | null
           id: string
-          initialLiability: number | null
-          initialRouAsset: number | null
           invoiceFromDate: string
           leaseId: string
-          lesseeClassification:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
           locationId: string | null
           name: string
           noticeDate: string | null
           noticeRemindedFor: string | null
-          ownershipTransfers: boolean
-          paymentAmount: number
           paymentFrequency: Database["public"]["Enums"]["leasePaymentFrequency"]
           paymentTiming: Database["public"]["Enums"]["rentalBillingTiming"]
-          purchaseOptionAmount: number | null
-          purchaseOptionReasonablyCertain: boolean
-          rouAssetCost: number | null
-          specializedAsset: boolean
           status: Database["public"]["Enums"]["leaseStatus"]
           supplierContactId: string | null
           supplierId: string
@@ -31111,11 +31092,6 @@ export type Database = {
           activatedAt?: string | null
           annualEscalationPercent?: number
           assignee?: string | null
-          classificationInputs?: Json | null
-          classificationOverride?:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
-          classificationOverrideReason?: string | null
           closedAt?: string | null
           commencementDate: string
           commencementJournalId?: string | null
@@ -31126,31 +31102,17 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           discountRate: number
-          economicLifeMonths?: number | null
           endDate: string
           endRemindedFor?: string | null
-          fairValue?: number | null
-          fixedAssetId?: string | null
           id?: string
-          initialLiability?: number | null
-          initialRouAsset?: number | null
           invoiceFromDate: string
           leaseId: string
-          lesseeClassification?:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
           locationId?: string | null
           name: string
           noticeDate?: string | null
           noticeRemindedFor?: string | null
-          ownershipTransfers?: boolean
-          paymentAmount: number
           paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]
           paymentTiming?: Database["public"]["Enums"]["rentalBillingTiming"]
-          purchaseOptionAmount?: number | null
-          purchaseOptionReasonablyCertain?: boolean
-          rouAssetCost?: number | null
-          specializedAsset?: boolean
           status?: Database["public"]["Enums"]["leaseStatus"]
           supplierContactId?: string | null
           supplierId: string
@@ -31162,11 +31124,6 @@ export type Database = {
           activatedAt?: string | null
           annualEscalationPercent?: number
           assignee?: string | null
-          classificationInputs?: Json | null
-          classificationOverride?:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
-          classificationOverrideReason?: string | null
           closedAt?: string | null
           commencementDate?: string
           commencementJournalId?: string | null
@@ -31177,31 +31134,17 @@ export type Database = {
           customFields?: Json | null
           description?: string | null
           discountRate?: number
-          economicLifeMonths?: number | null
           endDate?: string
           endRemindedFor?: string | null
-          fairValue?: number | null
-          fixedAssetId?: string | null
           id?: string
-          initialLiability?: number | null
-          initialRouAsset?: number | null
           invoiceFromDate?: string
           leaseId?: string
-          lesseeClassification?:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
           locationId?: string | null
           name?: string
           noticeDate?: string | null
           noticeRemindedFor?: string | null
-          ownershipTransfers?: boolean
-          paymentAmount?: number
           paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]
           paymentTiming?: Database["public"]["Enums"]["rentalBillingTiming"]
-          purchaseOptionAmount?: number | null
-          purchaseOptionReasonablyCertain?: boolean
-          rouAssetCost?: number | null
-          specializedAsset?: boolean
           status?: Database["public"]["Enums"]["leaseStatus"]
           supplierContactId?: string | null
           supplierId?: string
@@ -31429,6 +31372,7 @@ export type Database = {
           id: string
           journalId: string | null
           leaseId: string
+          leaseLineId: string
           liabilityAfter: number
           liabilityBefore: number
           notes: string | null
@@ -31450,6 +31394,7 @@ export type Database = {
           id?: string
           journalId?: string | null
           leaseId: string
+          leaseLineId: string
           liabilityAfter: number
           liabilityBefore: number
           notes?: string | null
@@ -31471,6 +31416,7 @@ export type Database = {
           id?: string
           journalId?: string | null
           leaseId?: string
+          leaseLineId?: string
           liabilityAfter?: number
           liabilityBefore?: number
           notes?: string | null
@@ -31558,6 +31504,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "leaseEvent_leaseLine_fkey"
+            columns: ["leaseLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "leaseEvent_lease_fkey"
             columns: ["leaseId", "companyId"]
             isOneToOne: false
@@ -31608,6 +31561,242 @@ export type Database = {
           }
         ]
       }
+      leaseLine: {
+        Row: {
+          classificationInputs: Json | null
+          classificationOverride:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string
+          economicLifeMonths: number | null
+          fairValue: number | null
+          fixedAssetId: string | null
+          id: string
+          initialLiability: number | null
+          initialRouAsset: number | null
+          leaseId: string
+          lesseeClassification:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId: string | null
+          ownershipTransfers: boolean
+          paymentAmount: number
+          purchaseOptionAmount: number | null
+          purchaseOptionReasonablyCertain: boolean
+          rouAssetCost: number | null
+          serialNumber: string | null
+          sortOrder: number
+          specializedAsset: boolean
+          status: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          classificationInputs?: Json | null
+          classificationOverride?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description: string
+          economicLifeMonths?: number | null
+          fairValue?: number | null
+          fixedAssetId?: string | null
+          id?: string
+          initialLiability?: number | null
+          initialRouAsset?: number | null
+          leaseId: string
+          lesseeClassification?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId?: string | null
+          ownershipTransfers?: boolean
+          paymentAmount?: number
+          purchaseOptionAmount?: number | null
+          purchaseOptionReasonablyCertain?: boolean
+          rouAssetCost?: number | null
+          serialNumber?: string | null
+          sortOrder?: number
+          specializedAsset?: boolean
+          status?: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          classificationInputs?: Json | null
+          classificationOverride?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string
+          economicLifeMonths?: number | null
+          fairValue?: number | null
+          fixedAssetId?: string | null
+          id?: string
+          initialLiability?: number | null
+          initialRouAsset?: number | null
+          leaseId?: string
+          lesseeClassification?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId?: string | null
+          ownershipTransfers?: boolean
+          paymentAmount?: number
+          purchaseOptionAmount?: number | null
+          purchaseOptionReasonablyCertain?: boolean
+          rouAssetCost?: number | null
+          serialNumber?: string | null
+          sortOrder?: number
+          specializedAsset?: boolean
+          status?: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "leaseLine_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       leasePayment: {
         Row: {
           amount: number
@@ -31617,6 +31806,7 @@ export type Database = {
           dueDate: string
           id: string
           leaseId: string
+          leaseLineId: string
           paymentType: Database["public"]["Enums"]["leasePaymentType"]
           periodEnd: string
           periodStart: string
@@ -31634,6 +31824,7 @@ export type Database = {
           dueDate: string
           id?: string
           leaseId: string
+          leaseLineId: string
           paymentType?: Database["public"]["Enums"]["leasePaymentType"]
           periodEnd: string
           periodStart: string
@@ -31651,6 +31842,7 @@ export type Database = {
           dueDate?: string
           id?: string
           leaseId?: string
+          leaseLineId?: string
           paymentType?: Database["public"]["Enums"]["leasePaymentType"]
           periodEnd?: string
           periodStart?: string
@@ -31725,6 +31917,13 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "leasePayment_leaseLine_fkey"
+            columns: ["leaseLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "leasePayment_lease_fkey"
             columns: ["leaseId", "companyId"]
             isOneToOne: false
@@ -31787,6 +31986,7 @@ export type Database = {
           journalId: string | null
           leaseCost: number
           leaseId: string
+          leaseLineId: string
           openingLiability: number
           paymentAmount: number
           periodDate: string
@@ -31807,6 +32007,7 @@ export type Database = {
           journalId?: string | null
           leaseCost: number
           leaseId: string
+          leaseLineId: string
           openingLiability: number
           paymentAmount: number
           periodDate: string
@@ -31827,6 +32028,7 @@ export type Database = {
           journalId?: string | null
           leaseCost?: number
           leaseId?: string
+          leaseLineId?: string
           openingLiability?: number
           paymentAmount?: number
           periodDate?: string
@@ -31913,6 +32115,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "journalEntries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_leaseLine_fkey"
+            columns: ["leaseLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "leaseScheduleLine_lease_fkey"
@@ -79376,12 +79585,9 @@ export type Database = {
         Row: {
           activatedAt: string | null
           annualEscalationPercent: number | null
+          assetCount: number | null
           assignee: string | null
-          classificationInputs: Json | null
-          classificationOverride:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
-          classificationOverrideReason: string | null
+          classification: string | null
           closedAt: string | null
           commencementDate: string | null
           commencementJournalId: string | null
@@ -79393,25 +79599,16 @@ export type Database = {
           customFields: Json | null
           description: string | null
           discountRate: number | null
-          economicLifeMonths: number | null
           endDate: string | null
           endRemindedFor: string | null
-          fairValue: number | null
-          fixedAssetId: string | null
           id: string | null
-          initialLiability: number | null
-          initialRouAsset: number | null
           invoiceFromDate: string | null
           leaseId: string | null
-          lesseeClassification:
-            | Database["public"]["Enums"]["lesseeClassification"]
-            | null
           locationId: string | null
           name: string | null
           nextDueDate: string | null
           noticeDate: string | null
           noticeRemindedFor: string | null
-          ownershipTransfers: boolean | null
           paymentAmount: number | null
           paymentFrequency:
             | Database["public"]["Enums"]["leasePaymentFrequency"]
@@ -79419,10 +79616,6 @@ export type Database = {
           paymentTiming:
             | Database["public"]["Enums"]["rentalBillingTiming"]
             | null
-          purchaseOptionAmount: number | null
-          purchaseOptionReasonablyCertain: boolean | null
-          rouAssetCost: number | null
-          specializedAsset: boolean | null
           status: Database["public"]["Enums"]["leaseStatus"] | null
           supplierContactId: string | null
           supplierId: string | null
@@ -94263,6 +94456,7 @@ export type Database = {
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       leaseEventType: "Modification" | "Termination" | "Purchase"
+      leaseLineStatus: "Active" | "Terminated" | "Purchased" | "Expired"
       leasePaymentFrequency: "Monthly" | "Quarterly" | "Annual"
       leasePaymentStatus: "Pending" | "Invoiced" | "Skipped"
       leasePaymentType: "Rent" | "Purchase Option" | "Termination Penalty"
@@ -95800,6 +95994,7 @@ export const Constants = {
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
       leaseEventType: ["Modification", "Termination", "Purchase"],
+      leaseLineStatus: ["Active", "Terminated", "Purchased", "Expired"],
       leasePaymentFrequency: ["Monthly", "Quarterly", "Annual"],
       leasePaymentStatus: ["Pending", "Invoiced", "Skipped"],
       leasePaymentType: ["Rent", "Purchase Option", "Termination Penalty"],

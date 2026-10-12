@@ -42,6 +42,8 @@ export type RunJournalLine = {
   amount: number;
   documentType?: Enums["journalLineDocumentType"];
   documentId?: string;
+  /** The document's line: a lessee lease row's asset (`leaseLine`). */
+  documentLineReference?: string | null;
   dimensions: RunLineDimensions;
 };
 
@@ -397,6 +399,9 @@ export type RecognitionSources = {
   >;
   /** Lessee leases, by lease id. */
   leases?: Map<string, { supplierId: string; locationId: string | null }>;
+  /** Each lessee schedule line's asset and the asset's location, by
+   *  `leaseScheduleLine` id. */
+  leaseAssets?: Map<string, { leaseLineId: string; locationId: string | null }>;
 };
 
 export type RecognitionJournal = RunJournal & {
@@ -427,16 +432,24 @@ export function recognitionAccountWithoutClass(
 function recognitionSource(
   row: RecognitionScheduleRow,
   sources: RecognitionSources
-): Pick<RunJournalLine, "documentType" | "documentId" | "dimensions"> {
-  // A lessee lease's row references the lease, with its supplier.
+): Pick<
+  RunJournalLine,
+  "documentType" | "documentId" | "documentLineReference" | "dimensions"
+> {
+  // A lessee lease's row references the lease and its asset, with the
+  // supplier and the asset's location (else the lease's).
   const lease = row.leaseId ? sources.leases?.get(row.leaseId) : undefined;
   if (row.leaseId) {
+    const asset = row.leaseScheduleLineId
+      ? sources.leaseAssets?.get(row.leaseScheduleLineId)
+      : undefined;
     return {
       documentType: "Lease",
       documentId: row.leaseId,
+      documentLineReference: asset?.leaseLineId ?? null,
       dimensions: {
         Supplier: lease?.supplierId ?? null,
-        Location: lease?.locationId ?? null
+        Location: asset?.locationId ?? lease?.locationId ?? null
       }
     };
   }

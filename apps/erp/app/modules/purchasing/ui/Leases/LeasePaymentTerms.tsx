@@ -14,7 +14,7 @@ import {
 } from "react-icons/lu";
 import { NumberControlled } from "~/components/Form";
 import { SetupSection, TermForm } from "~/components/Setup";
-import { useCurrencyDecimals, usePermissions } from "~/hooks";
+import { usePermissions } from "~/hooks";
 import type {
   leasePaymentFrequencies,
   leasePaymentTimings
@@ -29,16 +29,14 @@ type LeasePaymentTermsProps = {
   lease: Lease;
 };
 
-/** What the lease pays and how often: the terms the payment rows are cut
- *  from. Every field saves on its own as it changes, and a change cuts the
- *  rows again. */
+/** How often the lease pays, and how the payments grow: the terms every
+ *  asset's payment rows are cut from, at the asset's own payment. Every field
+ *  saves on its own as it changes, and a change cuts the rows again. */
 const LeasePaymentTerms = ({ lease }: LeasePaymentTermsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
 
   const id = lease.id!;
-  const currencyCode = lease.currencyCode ?? "";
-  const currencyDecimals = useCurrencyDecimals(currencyCode);
   const { save } = useLeaseTermSave(id);
   const isDisabled =
     lease.status !== "Draft" || !permissions.can("update", "purchasing");
@@ -56,27 +54,12 @@ const LeasePaymentTerms = ({ lease }: LeasePaymentTermsProps) => {
       title={<Trans>Payment Terms</Trans>}
       description={
         <Trans>
-          The payment rows below are cut from these terms. Changing a term cuts
-          them again.
+          Each asset's payment rows below are cut from these terms at its own
+          payment. Changing a term cuts them again.
         </Trans>
       }
     >
       <div className="grid w-full grid-cols-1 gap-x-8 gap-y-6 md:grid-cols-2">
-        <TermForm name="paymentAmount" value={lease.paymentAmount}>
-          <NumberControlled
-            name="paymentAmount"
-            label={t`Payment Amount`}
-            helperText={t`What each period's payment is in the first year`}
-            isReadOnly={isDisabled}
-            value={lease.paymentAmount ?? 0}
-            minValue={0}
-            step={INPUT_STEP.money(currencyDecimals)}
-            formatOptions={INPUT_FORMAT.money(currencyCode, currencyDecimals)}
-            onChange={(value) =>
-              onChange("paymentAmount", String(Number.isNaN(value) ? 0 : value))
-            }
-          />
-        </TermForm>
         <TermForm
           name="annualEscalationPercent"
           value={lease.annualEscalationPercent}

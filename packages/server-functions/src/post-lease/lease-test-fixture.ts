@@ -3,8 +3,9 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // A live-database company with the lessee lease accounts mapped, an accounting
-// cutover of 2026-01-01, and one Draft lease with its payment rows: the spec's
-// worked example (36 months from 2027-01-01, 10,000 a month in arrears, 6 %).
+// cutover of 2026-01-01, and one Draft lease with its assets and their payment
+// rows. Each asset defaults to the spec's worked example (36 months from
+// 2027-01-01, 10,000 a month in arrears, 6 %).
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { generateLeasePayments } from "@carbon/utils";
@@ -15,13 +16,19 @@ import { ServerFnContext } from "../server-fn-context";
 
 const USER = "system";
 
-export type LeaseFixtureOptions = {
-  endDate?: string; // default 2029-12-31
-  timing?: "Advance" | "Arrears"; // default Arrears
+export type LeaseFixtureAsset = {
+  paymentAmount?: number; // default 10,000
   fairValue?: number | null;
   economicLifeMonths?: number | null;
   purchaseOptionAmount?: number | null;
   purchaseOptionReasonablyCertain?: boolean;
+};
+
+export type LeaseFixtureOptions = LeaseFixtureAsset & {
+  endDate?: string; // default 2029-12-31
+  timing?: "Advance" | "Arrears"; // default Arrears
+  /** The leased assets; default one, from the asset options above. */
+  assets?: LeaseFixtureAsset[];
 };
 
 export type LeaseFixtureAccount =
@@ -41,6 +48,8 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   ctx: ServerFnContext;
   companyId: string;
   leaseId: string;
+  /** The `leaseLine` ids, in the order of `assets`. */
+  lineIds: string[];
   supplierId: string;
   assetClassId: string;
   accounts: Record<LeaseFixtureAccount, string>;
@@ -59,6 +68,8 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   const locationId = `${prefix}-location`;
   const assetClassId = `${prefix}-class`;
   const leaseId = `${prefix}-lease`;
+  const assets = options.assets ?? [options];
+  const lineIds = assets.map((_, index) => `${prefix}-line-${index}`);
 
   const accountSpecs = {
     other: "Asset",
@@ -214,42 +225,57 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
         commencementDate: "2027-01-01",
         endDate,
         invoiceFromDate: "2027-01-01",
-        paymentAmount: 10000,
         paymentFrequency: "Monthly",
         paymentTiming: timing,
         discountRate: 6,
         currencyCode: "USD",
-        fairValue: options.fairValue ?? null,
-        economicLifeMonths: options.economicLifeMonths ?? null,
-        purchaseOptionAmount: options.purchaseOptionAmount ?? null,
-        purchaseOptionReasonablyCertain:
-          options.purchaseOptionReasonablyCertain ?? false,
         companyId,
         createdBy: USER
       })
       .execute();
-    const rows = generateLeasePayments({
-      commencementDate: "2027-01-01",
-      endDate,
-      paymentAmount: 10000,
-      frequency: "Monthly",
-      timing,
-      annualEscalationPercent: 0,
-      purchaseOptionAmount: options.purchaseOptionReasonablyCertain
-        ? (options.purchaseOptionAmount ?? 0)
-        : 0,
-      decimals: 2
-    });
     await trx
-      .insertInto("leasePayment")
+      .insertInto("leaseLine")
       .values(
-        rows.map((row) => ({
-          ...row,
+        assets.map((asset, index) => ({
+          id: lineIds[index],
           leaseId,
-          status: "Pending" as const,
+          description: `Forklift FL-${12 + index}`,
+          paymentAmount: asset.paymentAmount ?? 10000,
+          fairValue: asset.fairValue ?? null,
+          economicLifeMonths: asset.economicLifeMonths ?? null,
+          purchaseOptionAmount: asset.purchaseOptionAmount ?? null,
+          purchaseOptionReasonablyCertain:
+            asset.purchaseOptionReasonablyCertain ?? false,
+          sortOrder: index + 1,
           companyId,
           createdBy: USER
         }))
+      )
+      .execute();
+    await trx
+      .insertInto("leasePayment")
+      .values(
+        assets.flatMap((asset, index) =>
+          generateLeasePayments({
+            commencementDate: "2027-01-01",
+            endDate,
+            paymentAmount: asset.paymentAmount ?? 10000,
+            frequency: "Monthly",
+            timing,
+            annualEscalationPercent: 0,
+            purchaseOptionAmount: asset.purchaseOptionReasonablyCertain
+              ? (asset.purchaseOptionAmount ?? 0)
+              : 0,
+            decimals: 2
+          }).map((row) => ({
+            ...row,
+            leaseId,
+            leaseLineId: lineIds[index]!,
+            status: "Pending" as const,
+            companyId,
+            createdBy: USER
+          }))
+        )
       )
       .execute();
   });
@@ -261,6 +287,7 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
     ctx,
     companyId,
     leaseId,
+    lineIds,
     supplierId,
     assetClassId,
     accounts,

@@ -12,7 +12,8 @@ import {
 } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
-/** Setup step 2: the payment terms, and the payment rows cut from them. */
+/** Setup step 3: the payment terms, and each asset's payment rows cut from
+ *  them. */
 export default function LeaseSetupPaymentsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -25,6 +26,7 @@ export default function LeaseSetupPaymentsRoute() {
       <LeasePaymentTerms lease={routeData.lease} />
       <LeasePaymentsGrid
         lease={routeData.lease}
+        lines={routeData.lines}
         payments={routeData.payments}
       />
     </SetupBody>

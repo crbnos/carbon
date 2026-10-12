@@ -130,8 +130,10 @@ export default function LeaseLiabilitiesRoute() {
     }
     out.push({
       id: "total",
+      leaseLineId: "total",
       leaseId: t`Total`,
       name: "",
+      asset: "",
       supplierName: null,
       classification: null,
       // Months and rates do not add up; the summary below weights them.
@@ -197,6 +199,12 @@ export default function LeaseLiabilitiesRoute() {
         header: t`Name`,
         cell: ({ row }) => row.original.name,
         meta: { exportValue: (row: DisplayRow) => row.name }
+      },
+      {
+        accessorKey: "asset",
+        header: t`Asset`,
+        cell: ({ row }) => row.original.asset,
+        meta: { exportValue: (row: DisplayRow) => row.asset }
       },
       {
         accessorKey: "supplierName",

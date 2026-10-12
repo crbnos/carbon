@@ -100,8 +100,10 @@ export async function getSupplierApprovalContext(
 }
 
 /**
- * Cuts a Draft lease's payment rows again from its terms, replacing the rows
- * (and any edits to them) in one transaction. A row due before the lease's
+ * Cuts a Draft lease's payment rows again from its terms, one set per asset
+ * at the asset's payment amount, replacing the rows (and any edits to them)
+ * in one transaction. Pass `leaseLineId` to cut one asset's rows only. An
+ * asset with no payment amount has no rows. A row due before the lease's
  * `invoiceFromDate` was paid outside Carbon and is created `Skipped`, so the
  * daily job never invoices it. A purchase option row is added only when it
  * is reasonably certain (it is then part of the lease liability).
@@ -110,6 +112,7 @@ export async function regenerateLeasePayments(
   db: Kysely<KyselyDatabase>,
   args: {
     leaseId: string;
+    leaseLineId?: string;
     companyId: string;
     userId: string;
   }
@@ -121,12 +124,9 @@ export async function regenerateLeasePayments(
       .select([
         "status",
         "currencyCode",
-        "paymentAmount",
         "paymentFrequency",
         "paymentTiming",
         "annualEscalationPercent",
-        "purchaseOptionAmount",
-        "purchaseOptionReasonablyCertain",
         sql<string>`"commencementDate"::text`.as("commencementDate"),
         sql<string>`"endDate"::text`.as("endDate"),
         sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate")
@@ -142,6 +142,24 @@ export async function regenerateLeasePayments(
       );
     }
 
+    let linesQuery = trx
+      .selectFrom("leaseLine")
+      .select([
+        "id",
+        "paymentAmount",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain"
+      ])
+      .where("leaseId", "=", leaseId)
+      .where("companyId", "=", companyId);
+    if (args.leaseLineId) {
+      linesQuery = linesQuery.where("id", "=", args.leaseLineId);
+    }
+    const lines = await linesQuery.execute();
+    if (args.leaseLineId && lines.length === 0) {
+      throw new Error("Asset not found");
+    }
+
     const currency = await trx
       .selectFrom("currency")
       .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
@@ -149,24 +167,36 @@ export async function regenerateLeasePayments(
       .where("company.id", "=", companyId)
       .where("currency.code", "=", lease.currencyCode)
       .executeTakeFirst();
+    if (!currency) {
+      throw new Error(`Currency ${lease.currencyCode} is not set up`);
+    }
 
-    const rows = generateLeasePayments({
-      commencementDate: lease.commencementDate,
-      endDate: lease.endDate,
-      paymentAmount: Number(lease.paymentAmount),
-      frequency: lease.paymentFrequency,
-      timing: lease.paymentTiming,
-      annualEscalationPercent: Number(lease.annualEscalationPercent),
-      purchaseOptionAmount: lease.purchaseOptionReasonablyCertain
-        ? Number(lease.purchaseOptionAmount ?? 0)
-        : 0,
-      decimals: currency?.decimalPlaces ?? 2
-    });
+    const rows = lines.flatMap((line) =>
+      Number(line.paymentAmount) > 0
+        ? generateLeasePayments({
+            commencementDate: lease.commencementDate,
+            endDate: lease.endDate,
+            paymentAmount: Number(line.paymentAmount),
+            frequency: lease.paymentFrequency,
+            timing: lease.paymentTiming,
+            annualEscalationPercent: Number(lease.annualEscalationPercent),
+            purchaseOptionAmount: line.purchaseOptionReasonablyCertain
+              ? Number(line.purchaseOptionAmount ?? 0)
+              : 0,
+            decimals: currency.decimalPlaces
+          }).map((row) => ({ ...row, leaseLineId: line.id }))
+        : []
+    );
 
     await trx
       .deleteFrom("leasePayment")
       .where("leaseId", "=", leaseId)
       .where("companyId", "=", companyId)
+      .where(
+        "leaseLineId",
+        "in",
+        lines.length > 0 ? lines.map((line) => line.id) : [""]
+      )
       .execute();
     if (rows.length > 0) {
       await trx
@@ -360,5 +390,5 @@ export async function draftLeaseSetupPath(
   if (!hasPermission(claims?.permissions, "purchasing", "update", companyId)) {
     return null;
   }
-  return path.to.leaseSetup(id, "payments");
+  return path.to.leaseSetup(id, "assets");
 }

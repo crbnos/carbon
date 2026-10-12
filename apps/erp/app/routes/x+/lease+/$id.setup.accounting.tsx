@@ -9,7 +9,7 @@ import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import { LeaseAccounting } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
-/** Setup step 3: whether the lease is an operating or a finance lease. */
+/** Setup step 4: whether each asset is an operating or a finance lease. */
 export default function LeaseSetupAccountingRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -21,6 +21,7 @@ export default function LeaseSetupAccountingRoute() {
     <SetupBody>
       <LeaseAccounting
         lease={routeData.lease}
+        lines={routeData.lines}
         payments={routeData.payments}
         leasePolicy={routeData.leasePolicy}
       />

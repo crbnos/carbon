@@ -55,7 +55,7 @@ function useCurrentStep(): LeaseSetupStep {
       return step;
     }
   }
-  return "payments";
+  return "assets";
 }
 
 export default function LeaseSetupRoute() {
@@ -70,7 +70,7 @@ export default function LeaseSetupRoute() {
   const activate = useDisclosure();
 
   if (!routeData) return null;
-  const { lease, payments, leasePolicy } = routeData;
+  const { lease, lines, payments, leasePolicy } = routeData;
   const readableId = lease.leaseId ?? "";
 
   const index = leaseSetupSteps.indexOf(step);
@@ -85,6 +85,7 @@ export default function LeaseSetupRoute() {
   const isReady =
     leaseActivationGaps({
       lease,
+      lines,
       payments,
       baseCurrencyCode: company?.baseCurrencyCode
     }).length === 0;
@@ -103,6 +104,9 @@ export default function LeaseSetupRoute() {
         <SetupFooter
           summary={
             <span className="flex items-baseline gap-4">
+              <span className="text-muted-foreground">
+                {lines.length === 1 ? t`1 asset` : t`${lines.length} assets`}
+              </span>
               <span className="text-muted-foreground">
                 {payments.length === 1
                   ? t`1 payment`
@@ -150,15 +154,16 @@ export default function LeaseSetupRoute() {
                   </Button>
                 </>
               ) : next ? (
-                hasPayments || step !== "payments" ? (
+                (step === "assets" && lines.length === 0) ||
+                (step === "payments" && !hasPayments) ? (
+                  <Button isDisabled>
+                    <Trans>Next</Trans>
+                  </Button>
+                ) : (
                   <Button asChild>
                     <Link to={path.to.leaseSetup(id, next)}>
                       <Trans>Next</Trans>
                     </Link>
-                  </Button>
-                ) : (
-                  <Button isDisabled>
-                    <Trans>Next</Trans>
                   </Button>
                 )
               ) : null}
@@ -170,13 +175,14 @@ export default function LeaseSetupRoute() {
         <Confirm
           action={path.to.leaseActivate(id)}
           title={t`Activate ${readableId}`}
-          text={t`Activating classifies the lease, books the right-of-use asset and the lease liability, and writes the monthly schedule. The terms and payment rows are fixed afterwards.`}
+          text={t`Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards.`}
           confirmText={t`Activate`}
           onCancel={activate.onClose}
           onSubmit={activate.onClose}
           details={
             <LeaseCommencementPreview
               lease={lease}
+              lines={lines}
               payments={payments}
               policy={leasePolicy}
             />

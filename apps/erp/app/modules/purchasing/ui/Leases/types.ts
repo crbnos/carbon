@@ -5,6 +5,7 @@
 import type { Database } from "@carbon/database";
 import type {
   getLeaseEvents,
+  getLeaseLines,
   getLeasePayments,
   getLeaseRelatedDocuments,
   getLeaseSchedule
@@ -23,6 +24,14 @@ export type LeaseEventTypeType = Enums["leaseEventType"];
 export type Lease = Database["public"]["Views"]["leases"]["Row"];
 
 export type LeaseListItem = Lease;
+
+/** One leased asset: a separate lease component with its own payment,
+ *  classification and measurement. */
+export type LeaseLine = NonNullable<
+  Awaited<ReturnType<typeof getLeaseLines>>["data"]
+>[number];
+
+export type LeaseLineStatusType = Enums["leaseLineStatus"];
 
 export type LeasePayment = NonNullable<
   Awaited<ReturnType<typeof getLeasePayments>>["data"]
@@ -69,6 +78,7 @@ export type LeaseFixedAssets = Record<
  *  `useRouteData(path.to.lease(id))`. */
 export type LeaseRouteData = {
   lease: Lease;
+  lines: LeaseLine[];
   payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
   events: LeaseEvent[];

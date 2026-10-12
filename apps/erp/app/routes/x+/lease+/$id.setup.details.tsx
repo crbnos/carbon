@@ -29,7 +29,7 @@ const PAYMENT_DATES = [
   "invoiceFromDate"
 ] as const;
 
-/** Saves a Draft's details from setup step 1 and moves on to Payments. */
+/** Saves a Draft's details from setup step 1 and moves on to Assets. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -77,12 +77,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // New dates move every payment row; once the payments are set, cut them
-  // again (the Payments step cuts them the first time).
+  // New dates move every payment row of every asset: cut them again. A
+  // lease with no asset yet has none to cut.
   const datesChanged = PAYMENT_DATES.some(
     (field) => (current.data[field] ?? "") !== (data[field] ?? "")
   );
-  if (datesChanged && Number(current.data.paymentAmount ?? 0) > 0) {
+  if (datesChanged && Number(current.data.assetCount ?? 0) > 0) {
     try {
       await regenerateLeasePayments(getDatabaseClient(), {
         leaseId: id,
@@ -111,7 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  throw redirect(path.to.leaseSetup(id, "payments"));
+  throw redirect(path.to.leaseSetup(id, "assets"));
 }
 
 export default function LeaseSetupDetailsRoute() {
@@ -140,19 +140,11 @@ export default function LeaseSetupDetailsRoute() {
         endDate: lease.endDate ?? "",
         noticeDate: lease.noticeDate ?? undefined,
         invoiceFromDate: lease.invoiceFromDate ?? undefined,
-        paymentAmount: Number(lease.paymentAmount ?? 0),
         paymentFrequency: lease.paymentFrequency ?? "Monthly",
         paymentTiming: lease.paymentTiming ?? "Advance",
         annualEscalationPercent: Number(lease.annualEscalationPercent ?? 0),
         discountRate: Number(lease.discountRate ?? 0),
         currencyCode: lease.currencyCode ?? "",
-        fairValue: lease.fairValue ?? undefined,
-        economicLifeMonths: lease.economicLifeMonths ?? undefined,
-        ownershipTransfers: lease.ownershipTransfers ?? false,
-        specializedAsset: lease.specializedAsset ?? false,
-        purchaseOptionAmount: lease.purchaseOptionAmount ?? undefined,
-        purchaseOptionReasonablyCertain:
-          lease.purchaseOptionReasonablyCertain ?? false,
         ...getCustomFields(lease.customFields)
       }}
     />

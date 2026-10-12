@@ -6,7 +6,7 @@
 // the 'Lease' journal writer, the schedule writer and the commencement void —
 // shared by every `post-lease` action.
 
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   type AutomaticJournalStatus,
@@ -18,12 +18,15 @@ import { getNextSequence } from "@carbon/database/sequence";
 import {
   addMonths,
   buildJournalLineDimensionInserts,
+  classifyLesseeLease,
   datetime,
+  isTermWithinTwelveMonths,
   type LeasePaymentPoint,
   type LesseeScheduleLine,
   leaseMonthEnds,
+  leaseTermMonths,
   paymentMonthIndex,
-  wholeMonthsInTerm
+  presentValueOfPayments
 } from "@carbon/utils";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
@@ -42,6 +45,7 @@ export type Db = Kysely<KyselyDatabase>;
 export type Trx = Transaction<KyselyDatabase>;
 type Enums = Database["public"]["Enums"];
 
+/** The lease header: the term and the payment terms every asset shares. */
 export type LeaseRow = {
   id: string;
   leaseId: string;
@@ -52,23 +56,32 @@ export type LeaseRow = {
   commencementDate: string;
   endDate: string;
   invoiceFromDate: string;
-  paymentAmount: number;
   paymentFrequency: Enums["leasePaymentFrequency"];
   paymentTiming: Enums["rentalBillingTiming"];
   annualEscalationPercent: number;
   discountRate: number;
   currencyCode: string;
+  commencementJournalId: string | null;
+};
+
+/** One leased asset: a separate lease component (ASC 842-10-15-28), with its
+ *  own payment, classification inputs, classification and measurement. */
+export type LeaseLineRow = {
+  id: string;
+  description: string;
+  locationId: string | null;
+  paymentAmount: number;
   fairValue: number | null;
   economicLifeMonths: number | null;
   ownershipTransfers: boolean;
   specializedAsset: boolean;
   purchaseOptionAmount: number | null;
   purchaseOptionReasonablyCertain: boolean;
+  status: Enums["leaseLineStatus"];
   lesseeClassification: Enums["lesseeClassification"] | null;
   classificationOverride: Enums["lesseeClassification"] | null;
   initialLiability: number | null;
   rouAssetCost: number | null;
-  commencementJournalId: string | null;
 };
 
 const num = (value: unknown): number | null =>
@@ -77,8 +90,8 @@ const num = (value: unknown): number | null =>
 // Re-read under the caller's company and lock: the id comes from the payload,
 // and the permission check proves nothing about it. The lock serializes two
 // actions on one lease (a double-clicked Activate, a Modify racing a
-// Terminate). DATE columns are selected as text — the lease math works on
-// `YYYY-MM-DD` strings.
+// Terminate of one asset). DATE columns are selected as text — the lease
+// math works on `YYYY-MM-DD` strings.
 export async function lockLease(
   trx: Trx,
   companyId: string,
@@ -96,22 +109,11 @@ export async function lockLease(
       sql<string>`"commencementDate"::text`.as("commencementDate"),
       sql<string>`"endDate"::text`.as("endDate"),
       sql<string>`"invoiceFromDate"::text`.as("invoiceFromDate"),
-      "paymentAmount",
       "paymentFrequency",
       "paymentTiming",
       "annualEscalationPercent",
       "discountRate",
       "currencyCode",
-      "fairValue",
-      "economicLifeMonths",
-      "ownershipTransfers",
-      "specializedAsset",
-      "purchaseOptionAmount",
-      "purchaseOptionReasonablyCertain",
-      "lesseeClassification",
-      "classificationOverride",
-      "initialLiability",
-      "rouAssetCost",
       "commencementJournalId"
     ])
     .where("id", "=", id)
@@ -121,19 +123,63 @@ export async function lockLease(
   if (!lease) throw new NotFoundError("Lease not found");
   return {
     ...lease,
-    paymentAmount: Number(lease.paymentAmount),
     annualEscalationPercent: Number(lease.annualEscalationPercent),
-    discountRate: Number(lease.discountRate),
-    fairValue: num(lease.fairValue),
-    economicLifeMonths: num(lease.economicLifeMonths),
-    purchaseOptionAmount: num(lease.purchaseOptionAmount),
-    initialLiability: num(lease.initialLiability),
-    rouAssetCost: num(lease.rouAssetCost)
+    discountRate: Number(lease.discountRate)
   };
+}
+
+/** The lease's assets in their order. The lease row's lock covers them:
+ *  every writer of a line locks the lease first. */
+export async function readLines(
+  trx: Trx,
+  companyId: string,
+  leaseId: string
+): Promise<LeaseLineRow[]> {
+  const rows = await trx
+    .selectFrom("leaseLine")
+    .select([
+      "id",
+      "description",
+      "locationId",
+      "paymentAmount",
+      "fairValue",
+      "economicLifeMonths",
+      "ownershipTransfers",
+      "specializedAsset",
+      "purchaseOptionAmount",
+      "purchaseOptionReasonablyCertain",
+      "status",
+      "lesseeClassification",
+      "classificationOverride",
+      "initialLiability",
+      "rouAssetCost"
+    ])
+    .where("leaseId", "=", leaseId)
+    .where("companyId", "=", companyId)
+    .orderBy("sortOrder")
+    .orderBy("createdAt")
+    .execute();
+  return rows.map((row) => ({
+    ...row,
+    paymentAmount: Number(row.paymentAmount),
+    fairValue: num(row.fairValue),
+    economicLifeMonths: num(row.economicLifeMonths),
+    purchaseOptionAmount: num(row.purchaseOptionAmount),
+    initialLiability: num(row.initialLiability),
+    rouAssetCost: num(row.rouAssetCost)
+  }));
+}
+
+/** The one asset of the lease the payload names, or a 404. */
+export function findLine(lines: LeaseLineRow[], id: string): LeaseLineRow {
+  const line = lines.find((row) => row.id === id);
+  if (!line) throw new NotFoundError("Leased asset not found");
+  return line;
 }
 
 export type LeasePaymentRow = {
   id: string;
+  leaseLineId: string;
   paymentType: Enums["leasePaymentType"];
   periodStart: string;
   periodEnd: string;
@@ -151,6 +197,7 @@ export async function readPayments(
     .selectFrom("leasePayment")
     .select([
       "id",
+      "leaseLineId",
       "paymentType",
       sql<string>`"periodStart"::text`.as("periodStart"),
       sql<string>`"periodEnd"::text`.as("periodEnd"),
@@ -262,10 +309,20 @@ export async function loadLesseeAccounting(
   };
 }
 
-/** One 'Lease' journal from already-balanced lines: Provisional before the
- *  accounting cutover (no period), Posted after it in the period of its date
- *  (the next open period when that one is Locked or Closed). Every line
- *  carries the lease as its document, tagged with Supplier and Location. */
+/** One asset's balanced journal lines. */
+export type AssetLines = {
+  leaseLineId: string;
+  /** The asset's location, else the lease's: the Location dimension. */
+  locationId: string | null;
+  lines: PostingLine[];
+};
+
+/** One 'Lease' journal from each asset's balanced lines: Provisional before
+ *  the accounting cutover (no period), Posted after it in the period of its
+ *  date (the next open period when that one is Locked or Closed). Every line
+ *  carries the lease as its document and its asset line as the document
+ *  line, tagged with Supplier and the asset's Location. Null when no asset
+ *  has a line to post. */
 export async function postLesseeJournal(
   trx: Trx,
   args: {
@@ -274,11 +331,16 @@ export async function postLesseeJournal(
     userId: string;
     postingDate: string;
     description: string;
-    lines: PostingLine[];
-    lease: Pick<LeaseRow, "id" | "supplierId" | "locationId">;
+    assets: AssetLines[];
+    lease: Pick<LeaseRow, "id" | "supplierId">;
   }
-): Promise<string> {
+): Promise<string | null> {
   const { accounting, companyId, userId } = args;
+  const lines = args.assets.flatMap((asset) =>
+    asset.lines.map((line) => ({ ...line, asset }))
+  );
+  if (lines.length === 0) return null;
+
   const period =
     accounting.postingStatus === "Posted"
       ? await resolveAccountingPeriod(
@@ -299,10 +361,12 @@ export async function postLesseeJournal(
   });
 
   const journalLineReference = nanoid();
-  const journalLines = await trx
+  const journalLineIds = await allocateJournalLineIds(trx, lines.length);
+  await trx
     .insertInto("journalLine")
     .values(
-      args.lines.map((line) => ({
+      lines.map((line, index) => ({
+        id: journalLineIds[index],
         journalId,
         accountId: line.accountId,
         description: line.description,
@@ -310,21 +374,18 @@ export async function postLesseeJournal(
         quantity: 1,
         documentType: "Lease" as const,
         documentId: args.lease.id,
-        documentLineReference: null,
+        documentLineReference: line.asset.leaseLineId,
         journalLineReference,
         companyId
       }))
     )
-    .returning(["id"])
     .execute();
 
-  // Every line carries the same tags, so the order of the returned ids does
-  // not matter.
   const dimensionInserts = buildJournalLineDimensionInserts({
-    journalLineIds: journalLines.map((line) => line.id),
-    meta: journalLines.map(() => ({
+    journalLineIds: journalLineIds as string[],
+    meta: lines.map((line) => ({
       supplierId: args.lease.supplierId,
-      locationId: args.lease.locationId
+      locationId: line.asset.locationId
     })),
     dimensionMap: accounting.dimensionMap,
     companyId
@@ -339,35 +400,45 @@ export async function postLesseeJournal(
   return journalId;
 }
 
+/** One asset's schedule from the lease month that starts on `startDate`. */
+export type AssetSchedule = {
+  leaseLineId: string;
+  startDate: string;
+  lines: LesseeScheduleLine[];
+  classification: "Operating" | "Finance";
+};
+
 /**
- * Writes schedule lines from lease month `fromMonth` on, and two
- * `revenueRecognitionSchedule` rows per line (Interest and Amortization, each
- * on its own accounts — spec §3) that the lease run posts. A row with no
- * amount is not written. Rows dated before `postedBefore` are written Posted
- * with no journal: their entries are in an opening balance, as the enable's
- * step 5 does for rows before the cutover.
+ * Writes each asset's schedule lines, and two `revenueRecognitionSchedule`
+ * rows per line (Interest and Amortization, each on its own accounts — spec
+ * §3) that the lease run posts. A row with no amount is not written. Rows
+ * dated before `postedBefore` are written Posted with no journal: their
+ * entries are in an opening balance, as the enable's step 5 does for rows
+ * before the cutover.
  */
-export async function writeSchedule(
+export async function writeSchedules(
   trx: Trx,
   args: {
-    lease: Pick<LeaseRow, "id" | "commencementDate">;
-    lines: LesseeScheduleLine[];
-    fromMonth: number;
-    classification: "Operating" | "Finance";
+    leaseId: string;
+    schedules: AssetSchedule[];
     accounts: LesseeAccounts;
     companyId: string;
     userId: string;
     postedBefore?: string;
   }
 ): Promise<void> {
-  const { lease, lines, companyId, userId } = args;
+  const { leaseId, companyId, userId } = args;
+  const lines = args.schedules.flatMap((schedule) =>
+    schedule.lines.map((line, index) => ({ schedule, line, index }))
+  );
   if (lines.length === 0) return;
 
   const inserted = await trx
     .insertInto("leaseScheduleLine")
     .values(
-      lines.map((line) => ({
-        leaseId: lease.id,
+      lines.map(({ schedule, line }) => ({
+        leaseId,
+        leaseLineId: schedule.leaseLineId,
         periodDate: line.periodDate,
         openingLiability: line.openingLiability,
         paymentAmount: line.paymentAmount,
@@ -381,27 +452,36 @@ export async function writeSchedule(
         createdBy: userId
       }))
     )
-    .returning(["id", sql<string>`"periodDate"::text`.as("periodDate")])
+    .returning([
+      "id",
+      "leaseLineId",
+      sql<string>`"periodDate"::text`.as("periodDate")
+    ])
     .execute();
-  const idByDate = new Map(inserted.map((row) => [row.periodDate, row.id]));
+  const key = (leaseLineId: string, periodDate: string) =>
+    `${leaseLineId}|${periodDate}`;
+  const idByKey = new Map(
+    inserted.map((row) => [key(row.leaseLineId, row.periodDate), row.id])
+  );
 
-  const accounts = scheduleRowAccounts(args.classification, args.accounts);
-  const rows = lines.flatMap((line, index) => {
-    const leaseScheduleLineId = idByDate.get(line.periodDate);
+  const rows = lines.flatMap(({ schedule, line, index }) => {
+    const leaseScheduleLineId = idByKey.get(
+      key(schedule.leaseLineId, line.periodDate)
+    );
     if (!leaseScheduleLineId) {
       throw new Error(`Schedule line ${line.periodDate} was not written`);
     }
-    const periodStart = addMonths(
-      lease.commencementDate,
-      args.fromMonth + index
+    const accounts = scheduleRowAccounts(
+      schedule.classification,
+      args.accounts
     );
     const posted =
       args.postedBefore !== undefined && line.periodDate < args.postedBefore;
     const base = {
       status: posted ? ("Posted" as const) : ("Planned" as const),
-      leaseId: lease.id,
+      leaseId,
       leaseScheduleLineId,
-      periodStart,
+      periodStart: addMonths(schedule.startDate, index),
       periodEnd: line.periodDate,
       scheduledDate: line.periodDate,
       companyId,
@@ -427,12 +507,33 @@ export async function writeSchedule(
   }
 }
 
+/** Deletes the schedule lines of `leaseLineIds` dated on or after
+ *  `startDate`; their Planned run rows cascade with them. */
+export async function deleteSchedulesFrom(
+  trx: Trx,
+  args: { companyId: string; leaseLineIds: string[]; startDate: string }
+): Promise<void> {
+  if (args.leaseLineIds.length === 0) return;
+  await trx
+    .deleteFrom("leaseScheduleLine")
+    .where("leaseLineId", "in", args.leaseLineIds)
+    .where("companyId", "=", args.companyId)
+    .where("periodDate", ">=", args.startDate)
+    .execute();
+}
+
 /** The run holding a schedule row of the lease from `fromDate` on, or null.
  *  A row a run holds cannot be rewritten until the run is recalculated or
  *  deleted. */
 export async function heldByRun(
   trx: Trx,
-  args: { companyId: string; leaseId: string; fromDate?: string }
+  args: {
+    companyId: string;
+    leaseId: string;
+    fromDate?: string;
+    /** Only the rows of these assets; every asset when absent. */
+    leaseLineIds?: string[];
+  }
 ): Promise<string | null> {
   let query = trx
     .selectFrom("revenueRecognitionSchedule as s")
@@ -453,6 +554,17 @@ export async function heldByRun(
   if (args.fromDate) {
     query = query.where("s.scheduledDate", ">=", args.fromDate);
   }
+  if (args.leaseLineIds) {
+    const ids = args.leaseLineIds;
+    if (ids.length === 0) return null;
+    query = query.where("s.leaseScheduleLineId", "in", (eb) =>
+      eb
+        .selectFrom("leaseScheduleLine")
+        .select("id")
+        .where("leaseLineId", "in", ids)
+        .where("companyId", "=", args.companyId)
+    );
+  }
   const row = await query.executeTakeFirst();
   return row?.runId ?? null;
 }
@@ -464,7 +576,6 @@ export async function voidLeaseJournal(
   trx: Trx,
   args: {
     journalId: string;
-    description: string;
     postingStatus: AutomaticJournalStatus;
     companyId: string;
     userId: string;
@@ -474,7 +585,7 @@ export async function voidLeaseJournal(
   const { companyId, userId } = args;
   const original = await trx
     .selectFrom("journal")
-    .select(["id", "sourceType"])
+    .select(["id", "sourceType", "description"])
     .where("id", "=", args.journalId)
     .where("companyId", "=", companyId)
     .forShare()
@@ -504,7 +615,7 @@ export async function voidLeaseJournal(
     .values({
       journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
       accountingPeriodId: period?.id ?? null,
-      description: args.description,
+      description: `VOID ${original.description ?? "Lease"}`,
       postingDate: period?.postingDate ?? args.today,
       companyId,
       sourceType: "Lease",
@@ -590,20 +701,171 @@ export function paymentPoints(
 /** The lease months a schedule from `fromDate` to `endDate` covers, and
  *  their last days (the final one clamped to `endDate`). */
 export function scheduleSpan(fromDate: string, endDate: string) {
-  const whole = wholeMonthsInTerm(fromDate, endDate);
+  const whole = leaseTermMonths(fromDate, endDate);
   const months = scheduleMonths(whole, addMonths(fromDate, whole) <= endDate);
   const periodDates = leaseMonthEnds(fromDate, 0, months).map((date) =>
     date > endDate ? endDate : date
   );
-  return { termMonths: whole, months, periodDates };
+  return {
+    termMonths: whole,
+    withinTwelveMonths: isTermWithinTwelveMonths(fromDate, endDate),
+    months,
+    periodDates
+  };
 }
 
-/** Straight-line ROU amortization runs over the useful life when the lessee
- *  will own the asset, else over the lease term. */
-export function amortizationMonths(lease: LeaseRow, months: number): number {
-  return (lease.ownershipTransfers || lease.purchaseOptionReasonablyCertain) &&
-    lease.economicLifeMonths &&
-    lease.economicLifeMonths > months
-    ? lease.economicLifeMonths
+/** Straight-line ROU amortization runs over what is left of the useful life
+ *  when the lessee will own the asset, else over the `months` the schedule
+ *  covers. `elapsedMonths` are the lease months before the schedule starts
+ *  (0 at commencement). */
+export function amortizationMonths(
+  line: Pick<
+    LeaseLineRow,
+    | "ownershipTransfers"
+    | "purchaseOptionReasonablyCertain"
+    | "economicLifeMonths"
+  >,
+  months: number,
+  elapsedMonths = 0
+): number {
+  const remainingLife = (line.economicLifeMonths ?? 0) - elapsedMonths;
+  return (line.ownershipTransfers || line.purchaseOptionReasonablyCertain) &&
+    remainingLife > months
+    ? remainingLife
     : months;
+}
+
+type Thresholds = { majorPartPercent: number; substantiallyAllPercent: number };
+
+export type MeasuredAsset = {
+  line: LeaseLineRow;
+  liability: number;
+  classification: "Operating" | "Finance" | "Short-Term";
+  classificationInputs: Json;
+};
+
+/** One asset's liability (the PV of its payment rows) and classification
+ *  over the term from `fromDate` to `endDate`. An override wins. */
+export function measureAsset(args: {
+  line: LeaseLineRow;
+  payments: Pick<
+    LeasePaymentRow,
+    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
+  >[];
+  fromDate: string;
+  endDate: string;
+  lease: Pick<LeaseRow, "paymentTiming" | "discountRate">;
+  thresholds: Thresholds;
+  shortTermExpedient: boolean;
+}): MeasuredAsset {
+  const { line, lease, thresholds } = args;
+  const span = scheduleSpan(args.fromDate, args.endDate);
+  const liability = presentValueOfPayments({
+    payments: paymentPoints(args.payments, args.fromDate, lease.paymentTiming),
+    annualRate: lease.discountRate
+  });
+  const result = classifyLesseeLease(
+    {
+      termMonths: span.termMonths,
+      withinTwelveMonths: span.withinTwelveMonths,
+      pvPayments: liability,
+      fairValue: line.fairValue,
+      economicLifeMonths: line.economicLifeMonths,
+      ownershipTransfers: line.ownershipTransfers,
+      purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain,
+      specializedAsset: line.specializedAsset,
+      shortTermExpedient: args.shortTermExpedient
+    },
+    thresholds
+  );
+  return {
+    line,
+    liability,
+    classification: line.classificationOverride ?? result.classification,
+    classificationInputs: {
+      ...result,
+      termMonths: span.termMonths,
+      pvPayments: liability,
+      discountRate: lease.discountRate,
+      thresholds,
+      override: line.classificationOverride
+    } as unknown as Json
+  };
+}
+
+export async function readThresholds(
+  trx: Trx,
+  companyId: string
+): Promise<Thresholds & { shortTermExpedient: boolean }> {
+  const settings = await trx
+    .selectFrom("companySettings")
+    .select([
+      "leaseMajorPartThresholdPercent",
+      "leaseSubstantiallyAllThresholdPercent",
+      "leaseShortTermExpedient"
+    ])
+    .where("id", "=", companyId)
+    .executeTakeFirstOrThrow();
+  return {
+    majorPartPercent: Number(settings.leaseMajorPartThresholdPercent),
+    substantiallyAllPercent: Number(
+      settings.leaseSubstantiallyAllThresholdPercent
+    ),
+    shortTermExpedient: settings.leaseShortTermExpedient
+  };
+}
+
+/** Writes each asset's measurement in one statement. Columns left out of a
+ *  row keep their value. */
+export async function updateLineMeasurements(
+  trx: Trx,
+  args: {
+    companyId: string;
+    userId: string;
+    rows: {
+      id: string;
+      lesseeClassification: "Operating" | "Finance" | "Short-Term";
+      classificationInputs?: Json;
+      initialLiability?: number | null;
+      rouAssetCost?: number | null;
+      paymentAmount?: number;
+    }[];
+  }
+): Promise<void> {
+  if (args.rows.length === 0) return;
+  const values = sql.join(
+    args.rows.map(
+      (row) =>
+        sql`(${row.id}, ${row.lesseeClassification}, ${
+          row.classificationInputs === undefined
+            ? null
+            : JSON.stringify(row.classificationInputs)
+        }, ${row.classificationInputs !== undefined}, ${
+          row.initialLiability ?? null
+        }, ${row.initialLiability !== undefined}, ${row.rouAssetCost ?? null}, ${
+          row.rouAssetCost !== undefined
+        }, ${row.paymentAmount ?? null}, ${row.paymentAmount !== undefined})`
+    )
+  );
+  await sql`
+    UPDATE "leaseLine" AS l SET
+      "lesseeClassification" = v.classification::"lesseeClassification",
+      "classificationInputs" = CASE WHEN v."setInputs"::boolean
+        THEN v.inputs::jsonb ELSE l."classificationInputs" END,
+      "initialLiability" = CASE WHEN v."setInitial"::boolean
+        THEN v.initial::numeric ELSE l."initialLiability" END,
+      "initialRouAsset" = CASE WHEN v."setInitial"::boolean
+        THEN v.initial::numeric ELSE l."initialRouAsset" END,
+      "rouAssetCost" = CASE WHEN v."setCost"::boolean
+        THEN v.cost::numeric ELSE l."rouAssetCost" END,
+      "paymentAmount" = CASE WHEN v."setPayment"::boolean
+        THEN v.payment::numeric ELSE l."paymentAmount" END,
+      "updatedBy" = ${args.userId},
+      "updatedAt" = ${datetime.timestamp()}
+    FROM (VALUES ${values}) AS v(
+      id, classification, inputs, "setInputs", initial, "setInitial",
+      cost, "setCost", payment, "setPayment"
+    )
+    WHERE l."id" = v.id AND l."companyId" = ${args.companyId}
+  `.execute(trx);
 }

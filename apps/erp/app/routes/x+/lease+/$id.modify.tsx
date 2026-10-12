@@ -11,7 +11,7 @@ import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getLease, leaseModifyValidator } from "~/modules/purchasing";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,15 +48,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
       effectiveDate: terms.effectiveDate,
       endDate: terms.endDate,
       discountRate: Number(terms.discountRate),
-      paymentAmount: Number(terms.paymentAmount),
       paymentFrequency: terms.paymentFrequency,
       annualEscalationPercent: Number(terms.annualEscalationPercent),
+      lines: terms.lines.map((line) => ({
+        leaseLineId: line.leaseLineId,
+        paymentAmount: Number(line.paymentAmount)
+      })),
       notes: terms.notes ?? null
     });
 
   if (result.error) {
     throw redirect(
-      path.to.leaseDetails(id),
+      requestReferrer(request) ?? path.to.leaseDetails(id),
       await flash(
         request,
         error(

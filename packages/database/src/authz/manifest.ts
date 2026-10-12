@@ -902,6 +902,7 @@ export const manifest = {
   kanban: company("inventory"),
   lease: company("purchasing", { read: "purchasing_view" }),
   leaseEvent: company("purchasing", { read: "purchasing_view" }),
+  leaseLine: company("purchasing", { read: "purchasing_view" }),
   leasePayment: company("purchasing", { read: "purchasing_view" }),
   leaseScheduleLine: company("purchasing", { read: "purchasing_view" }),
   lessonCompletion: policies({

@@ -6,8 +6,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
-import { getErrorMessage, redirect } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -15,18 +14,14 @@ import { useLoaderData } from "react-router";
 import { SetupFrame } from "~/components/Setup";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { insertLease, leaseValidator } from "~/modules/purchasing";
-import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
 import {
   LeaseDetailsForm,
   LeaseSetupSteps
 } from "~/modules/purchasing/ui/Leases";
 import { getCompanySettings, getNextSequence } from "~/modules/settings";
-import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "lease-new");
 
 export const handle: Handle = {
   breadcrumb: msg`Leases`,
@@ -88,38 +83,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The payment rows are cut from the payment terms, which the Payments
-  // step sets; a lease created with them (the API) has its rows already.
-  if (data.paymentAmount > 0) {
-    try {
-      await regenerateLeasePayments(getDatabaseClient(), {
-        leaseId: lease.data.id,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      logger.error("lease payment rows were not cut", {
-        companyId,
-        leaseId: lease.data.id,
-        error: err
-      });
-      throw redirect(
-        path.to.leaseSetup(lease.data.id, "payments"),
-        await flash(
-          request,
-          error(
-            err,
-            getErrorMessage(
-              err,
-              "Lease created, but its payment rows could not be cut"
-            )
-          )
-        )
-      );
-    }
-  }
-
-  throw redirect(path.to.leaseSetup(lease.data.id, "payments"));
+  // The assets, and the payment rows cut for each, are the next step.
+  throw redirect(path.to.leaseSetup(lease.data.id, "assets"));
 }
 
 /** Step 1 of the lease setup: creating the Draft. Every later step edits the
@@ -140,16 +105,12 @@ export default function NewLeaseRoute() {
     assignee: userId,
     commencementDate: companyToday,
     endDate: "",
-    paymentAmount: 0,
     paymentFrequency: "Monthly" as const,
     paymentTiming: "Advance" as const,
     annualEscalationPercent: 0,
     discountRate: Number(defaultDiscountRate),
     // Leases are measured in the company's base currency in v1.
-    currencyCode: company?.baseCurrencyCode ?? "USD",
-    ownershipTransfers: false,
-    specializedAsset: false,
-    purchaseOptionReasonablyCertain: false
+    currencyCode: company?.baseCurrencyCode ?? "USD"
   };
 
   return (

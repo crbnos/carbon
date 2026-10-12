@@ -113,3 +113,34 @@ databaseTest("a Draft lease is never invoiced", async () => {
     await f.cleanup();
   }
 });
+
+databaseTest(
+  "a lease with two assets drafts one invoice per due date with a line per asset",
+  async () => {
+    const f = await leaseFixture({ assets: [{}, { paymentAmount: 5000 }] });
+    try {
+      await postLease(f.ctx, { type: "activate", leaseId: f.leaseId });
+      const result = await draft(f, "2027-01-31");
+      expect(result.invoices).toHaveLength(1);
+
+      const lines = await f.db
+        .selectFrom("purchaseInvoiceLine")
+        .select(["description", "supplierUnitPrice"])
+        .where("invoiceId", "=", result.invoices[0]!.invoiceId)
+        .orderBy("sortOrder")
+        .execute();
+      expect(lines).toEqual([
+        {
+          description: "Forklift FL-12 — 2027-01-01 to 2027-01-31",
+          supplierUnitPrice: 10000
+        },
+        {
+          description: "Forklift FL-13 — 2027-01-01 to 2027-01-31",
+          supplierUnitPrice: 5000
+        }
+      ]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

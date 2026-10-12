@@ -10,7 +10,7 @@ import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getLease } from "~/modules/purchasing";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -42,9 +42,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .system({ db: getDatabaseClient(), companyId, userId })
     .invoke("post-lease", { type: "activate", leaseId: id });
 
+  // A refusal goes back where Activate was pressed (the setup Review step):
+  // the lease page sends a Draft to its setup anyway.
   if (result.error) {
     throw redirect(
-      path.to.leaseDetails(id),
+      requestReferrer(request) ?? path.to.leaseSetup(id, "review"),
       await flash(
         request,
         error(

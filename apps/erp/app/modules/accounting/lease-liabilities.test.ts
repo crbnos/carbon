@@ -59,10 +59,13 @@ function buildLease(args: {
     amortizationMonths: args.months,
     periodDates: leaseMonthEnds(args.commencementDate, 0, args.months)
   });
+  const leaseLineId = `${args.id}-asset`;
   const lease: LeaseLiabilityLease = {
     id: args.id,
+    leaseLineId,
     leaseId: args.id.toUpperCase(),
     name: args.id,
+    asset: "Asset",
     supplierName: "Lessor",
     status: "Active",
     classification: args.classification,
@@ -73,11 +76,11 @@ function buildLease(args: {
     initialRouAsset: liability
   };
   const lines: LeaseLiabilityScheduleLine[] = schedule.map((line) => ({
-    leaseId: args.id,
+    leaseLineId,
     ...line
   }));
   const payments: LeaseLiabilityPayment[] = rows.map((row) => ({
-    leaseId: args.id,
+    leaseLineId,
     dueDate: row.dueDate,
     amount: row.amount
   }));
@@ -273,6 +276,34 @@ describe("summarizeLeaseLiabilities", () => {
   });
 });
 
+describe("summarizeLeaseLiabilities with several assets", () => {
+  it("gives each asset of a lease its own row", () => {
+    const first = buildLease({ ...forkliftArgs, classification: "Operating" });
+    const second = buildLease({
+      ...forkliftArgs,
+      classification: "Finance"
+    });
+    // The same lease, a second asset.
+    second.lease.leaseLineId = "lse-b-second";
+    second.lease.asset = "Second";
+    for (const line of second.lines) line.leaseLineId = "lse-b-second";
+    for (const payment of second.payments) {
+      payment.leaseLineId = "lse-b-second";
+    }
+
+    const result = summarize(first, second);
+    expect(result.rows.map((row) => [row.id, row.asset])).toEqual([
+      ["lse-b", "Asset"],
+      ["lse-b", "Second"]
+    ]);
+    expect(result.rows.map((row) => row.classification)).toEqual([
+      "Operating",
+      "Finance"
+    ]);
+    expect(result.rows[0]!.liability).toBe(result.rows[1]!.liability);
+  });
+});
+
 describe("summarizeLeaseCosts", () => {
   it("splits posted rows and Lease lines by classification", () => {
     const classification = new Map([
@@ -283,17 +314,17 @@ describe("summarizeLeaseCosts", () => {
     const costs = summarizeLeaseCosts(
       classification,
       [
-        { leaseId: "op", type: "Interest", amount: 1643.55 },
-        { leaseId: "op", type: "Amortization", amount: 8356.45 },
-        { leaseId: "fin", type: "Interest", amount: 1643.55 },
-        { leaseId: "fin", type: "Amortization", amount: 9130.84 }
+        { leaseLineId: "op", type: "Interest", amount: 1643.55 },
+        { leaseLineId: "op", type: "Amortization", amount: 8356.45 },
+        { leaseLineId: "fin", type: "Interest", amount: 1643.55 },
+        { leaseLineId: "fin", type: "Amortization", amount: 9130.84 }
       ],
       [
-        { leaseId: "op", leasePaymentId: "pay-1", amount: 10000 },
-        { leaseId: "fin", leasePaymentId: "pay-2", amount: 10000 },
-        { leaseId: "short", leasePaymentId: "pay-3", amount: 750 },
-        { leaseId: "op", leasePaymentId: null, amount: 120.5 },
-        { leaseId: "short", leasePaymentId: null, amount: 30 }
+        { leaseLineId: "op", leasePaymentId: "pay-1", amount: 10000 },
+        { leaseLineId: "fin", leasePaymentId: "pay-2", amount: 10000 },
+        { leaseLineId: "short", leasePaymentId: "pay-3", amount: 750 },
+        { leaseLineId: null, leasePaymentId: null, amount: 120.5 },
+        { leaseLineId: null, leasePaymentId: null, amount: 30 }
       ]
     );
     expect(costs).toEqual({

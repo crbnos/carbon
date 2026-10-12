@@ -18,6 +18,7 @@ import { useRouteData } from "~/hooks";
 import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.server";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import {
+  LeaseAssets,
   LeaseClassificationPreview,
   LeasePayments,
   LeaseSummary
@@ -38,9 +39,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return null;
 }
 
-/** The lease as a whole: its summary, how it will be accounted for while
- *  Draft (seen here only by a viewer; an editor works in the setup), and
- *  its payment rows. The terms are in the properties panel. */
+/** The lease as a whole: its summary, its assets, how they will be
+ *  accounted for while Draft (seen here only by a viewer; an editor works in
+ *  the setup), and the payment rows. The terms are in the properties panel. */
 export default function LeaseDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -48,11 +49,31 @@ export default function LeaseDetailsRoute() {
   const routeData = useRouteData<LeaseRouteData>(path.to.lease(id));
   if (!routeData) return null;
 
-  const { lease, payments, schedule, paymentInvoices, leasePolicy } = routeData;
+  const {
+    lease,
+    lines,
+    payments,
+    schedule,
+    paymentInvoices,
+    fixedAssets,
+    leasePolicy
+  } = routeData;
 
   return (
     <>
-      <LeaseSummary lease={lease} payments={payments} schedule={schedule} />
+      <LeaseSummary
+        lease={lease}
+        lines={lines}
+        payments={payments}
+        schedule={schedule}
+      />
+      <LeaseAssets
+        lease={lease}
+        lines={lines}
+        payments={payments}
+        schedule={schedule}
+        fixedAssets={fixedAssets}
+      />
       {lease.status === "Draft" && (
         <Card>
           <CardHeader>
@@ -61,14 +82,15 @@ export default function LeaseDetailsRoute() {
             </CardTitle>
             <CardDescription>
               <Trans>
-                Decided when the lease is activated, from the payment rows and
-                the classification inputs.
+                Decided for each asset when the lease is activated, from its
+                payment rows and its classification inputs.
               </Trans>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <LeaseClassificationPreview
               lease={lease}
+              lines={lines}
               payments={payments}
               policy={leasePolicy}
             />
@@ -77,6 +99,7 @@ export default function LeaseDetailsRoute() {
       )}
       <LeasePayments
         lease={lease}
+        lines={lines}
         payments={payments}
         paymentInvoices={paymentInvoices}
       />

@@ -16,7 +16,7 @@ import {
 } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
-/** Setup step 4: the lease at a glance, and anything that would stop
+/** Setup step 5: the lease at a glance, and anything that would stop
  *  Activate. Activate and Save as Draft are in the footer. */
 export default function LeaseSetupReviewRoute() {
   const { id } = useParams();
@@ -25,10 +25,11 @@ export default function LeaseSetupReviewRoute() {
   const routeData = useRouteData<LeaseRouteData>(path.to.lease(id));
   const { company } = useUser();
   if (!routeData) return null;
-  const { lease, payments, schedule, leasePolicy } = routeData;
+  const { lease, lines, payments, schedule, leasePolicy } = routeData;
 
   const gaps = leaseActivationGaps({
     lease,
+    lines,
     payments,
     baseCurrencyCode: company?.baseCurrencyCode
   });
@@ -39,14 +40,19 @@ export default function LeaseSetupReviewRoute() {
         title={<Trans>Review</Trans>}
         description={
           <Trans>
-            Activating fixes the terms and the payment rows, classifies the
-            lease and books it. After that, purchase invoices are drafted
+            Activating fixes the terms and the payment rows, classifies each
+            asset and books it. After that, purchase invoices are drafted
             automatically as payments come due.
           </Trans>
         }
       >
         <div className="w-full">
-          <LeaseSummary lease={lease} payments={payments} schedule={schedule} />
+          <LeaseSummary
+            lease={lease}
+            lines={lines}
+            payments={payments}
+            schedule={schedule}
+          />
         </div>
       </SetupSection>
 
@@ -59,12 +65,20 @@ export default function LeaseSetupReviewRoute() {
             </p>
           ) : (
             <ul className="flex flex-col gap-3 text-sm">
-              {gaps.includes("noPayments") && (
+              {gaps.includes("noAssets") && (
                 <Gap
-                  to={path.to.leaseSetup(id, "payments")}
+                  to={path.to.leaseSetup(id, "assets")}
                   icon={<LuTriangleAlert className="text-red-500" />}
                 >
-                  <Trans>Add at least one payment row.</Trans>
+                  <Trans>Add at least one asset.</Trans>
+                </Gap>
+              )}
+              {gaps.includes("assetWithoutPayments") && (
+                <Gap
+                  to={path.to.leaseSetup(id, "assets")}
+                  icon={<LuTriangleAlert className="text-red-500" />}
+                >
+                  <Trans>Give every asset a payment.</Trans>
                 </Gap>
               )}
               {gaps.includes("foreignCurrency") && (
@@ -83,6 +97,7 @@ export default function LeaseSetupReviewRoute() {
           {gaps.length === 0 && (
             <LeaseCommencementPreview
               lease={lease}
+              lines={lines}
               payments={payments}
               policy={leasePolicy}
             />

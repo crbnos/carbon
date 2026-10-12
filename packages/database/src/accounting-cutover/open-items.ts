@@ -1251,9 +1251,10 @@ async function getLeaseNetInvestmentItems(
 }
 
 /**
- * Lessee leases: per lease commenced before the cutover, the three balances
- * its journals carry at the cutover, read from the lease rows rather than the
- * journals (a lease commenced before the reset has none):
+ * Lessee leases: per leased asset of a lease commenced before the cutover,
+ * the three balances its journals carry at the cutover, read from the
+ * schedule rather than the journals (a lease commenced before the reset has
+ * none):
  *
  * - the lease liability: the closing liability of its last schedule line
  *   before the cutover (else its initial liability), plus any remeasurement
@@ -1263,8 +1264,8 @@ async function getLeaseNetInvestmentItems(
  * - the accumulated amortization: every schedule line's amortization before
  *   the cutover.
  *
- * A lease terminated or purchased before the cutover was derecognized and
- * has none. A short-term lease is never on the balance sheet.
+ * An asset terminated or purchased before the cutover was derecognized and
+ * has none. A short-term asset is never on the balance sheet.
  */
 async function getLeaseLiabilityItems(
   db: CutoverDb,
@@ -1272,41 +1273,57 @@ async function getLeaseLiabilityItems(
   cutoverDate: string,
   defaults: AccountDefaults
 ): Promise<DraftItem[]> {
-  const leases = await db
-    .selectFrom("lease")
-    .select(["id", "status", "initialLiability", "initialRouAsset"])
-    .where("companyId", "=", companyId)
-    .where("status", "in", ["Active", "Expired", "Terminated", "Purchased"])
-    .where("lesseeClassification", "in", ["Operating", "Finance"])
-    .where("initialLiability", "is not", null)
-    .where("commencementDate", "<", cutoverDate)
+  const assets = await db
+    .selectFrom("leaseLine as l")
+    .innerJoin("lease", (join) =>
+      join
+        .onRef("lease.id", "=", "l.leaseId")
+        .onRef("lease.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.leaseId",
+      "l.description",
+      "l.initialLiability",
+      "l.initialRouAsset"
+    ])
+    .where("l.companyId", "=", companyId)
+    .where("lease.status", "in", [
+      "Active",
+      "Expired",
+      "Terminated",
+      "Purchased"
+    ])
+    .where("l.lesseeClassification", "in", ["Operating", "Finance"])
+    .where("l.initialLiability", "is not", null)
+    .where("lease.commencementDate", "<", cutoverDate)
     .execute();
-  if (leases.length === 0) return [];
-  const leaseIds = leases.map((lease) => lease.id);
+  if (assets.length === 0) return [];
+  const assetIds = assets.map((asset) => asset.id);
 
   const [lastLines, amortization, events] = await Promise.all([
     db
       .selectFrom("leaseScheduleLine")
-      .distinctOn("leaseId")
-      .select(["leaseId", "periodDate", "closingLiability"])
+      .distinctOn("leaseLineId")
+      .select(["leaseLineId", "periodDate", "closingLiability"])
       .where("companyId", "=", companyId)
-      .where("leaseId", "in", leaseIds)
+      .where("leaseLineId", "in", assetIds)
       .where("periodDate", "<", cutoverDate)
-      .orderBy("leaseId")
+      .orderBy("leaseLineId")
       .orderBy("periodDate", "desc")
       .execute(),
     db
       .selectFrom("leaseScheduleLine")
-      .select(["leaseId", (eb) => eb.fn.sum("rouAmortization").as("total")])
+      .select(["leaseLineId", (eb) => eb.fn.sum("rouAmortization").as("total")])
       .where("companyId", "=", companyId)
-      .where("leaseId", "in", leaseIds)
+      .where("leaseLineId", "in", assetIds)
       .where("periodDate", "<", cutoverDate)
-      .groupBy("leaseId")
+      .groupBy("leaseLineId")
       .execute(),
     db
       .selectFrom("leaseEvent")
       .select([
-        "leaseId",
+        "leaseLineId",
         "eventType",
         "effectiveDate",
         "liabilityBefore",
@@ -1315,13 +1332,15 @@ async function getLeaseLiabilityItems(
         "rouAssetAfter"
       ])
       .where("companyId", "=", companyId)
-      .where("leaseId", "in", leaseIds)
+      .where("leaseLineId", "in", assetIds)
       .where("effectiveDate", "<", cutoverDate)
       .execute()
   ]);
-  const lastLineByLease = new Map(lastLines.map((row) => [row.leaseId, row]));
-  const amortizationByLease = new Map(
-    amortization.map((row) => [row.leaseId, Number(row.total ?? 0)])
+  const lastLineByAsset = new Map(
+    lastLines.map((row) => [row.leaseLineId, row])
+  );
+  const amortizationByAsset = new Map(
+    amortization.map((row) => [row.leaseLineId, Number(row.total ?? 0)])
   );
 
   const accounts = {
@@ -1335,19 +1354,19 @@ async function getLeaseLiabilityItems(
   };
 
   const items: DraftItem[] = [];
-  for (const lease of leases) {
-    const own = events.filter((event) => event.leaseId === lease.id);
+  for (const asset of assets) {
+    const own = events.filter((event) => event.leaseLineId === asset.id);
     // Derecognized before the cutover: its accounts were cleared then.
     if (own.some((event) => event.eventType !== "Modification")) continue;
     const remeasurements = own.filter(
       (event) => event.eventType === "Modification"
     );
 
-    const lastLine = lastLineByLease.get(lease.id);
+    const lastLine = lastLineByAsset.get(asset.id);
     const liability =
       (lastLine
         ? Number(lastLine.closingLiability)
-        : Number(lease.initialLiability ?? 0)) +
+        : Number(asset.initialLiability ?? 0)) +
       remeasurements
         .filter(
           (event) => !lastLine || event.effectiveDate > lastLine.periodDate
@@ -1358,13 +1377,13 @@ async function getLeaseLiabilityItems(
           0
         );
     const rouCost =
-      Number(lease.initialRouAsset ?? 0) +
+      Number(asset.initialRouAsset ?? 0) +
       remeasurements.reduce(
         (sum, event) =>
           sum + Number(event.rouAssetAfter) - Number(event.rouAssetBefore),
         0
       );
-    const accumulated = amortizationByLease.get(lease.id) ?? 0;
+    const accumulated = amortizationByAsset.get(asset.id) ?? 0;
 
     const lines = [
       {
@@ -1400,9 +1419,9 @@ async function getLeaseLiabilityItems(
         original: line.original,
         settled: 0,
         documentType: "Lease",
-        documentId: lease.id,
-        documentLineReference: null,
-        description: line.description
+        documentId: asset.leaseId,
+        documentLineReference: asset.id,
+        description: `${line.description} — ${asset.description}`
       });
     }
   }

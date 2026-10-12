@@ -1389,12 +1389,30 @@ export async function postRevenueRecognitionRun(
             .where("id", "in", leaseIds)
             .where("companyId", "=", companyId)
             .execute();
+    const leaseScheduleLineIds = rows
+      .map((row) => row.leaseScheduleLineId)
+      .filter((id): id is string => Boolean(id));
+    const leaseAssets =
+      leaseScheduleLineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("leaseScheduleLine as sl")
+            .innerJoin("leaseLine as l", (join) =>
+              join
+                .onRef("l.id", "=", "sl.leaseLineId")
+                .onRef("l.companyId", "=", "sl.companyId")
+            )
+            .select(["sl.id", "sl.leaseLineId", "l.locationId"])
+            .where("sl.id", "in", leaseScheduleLineIds)
+            .where("sl.companyId", "=", companyId)
+            .execute();
 
     const sources: RecognitionSources = {
       invoiceLines: invoiceLineById,
       rentalLines: rentalLineById,
       contractLines: contractLineById,
-      leases: new Map(leases.map((lease) => [lease.id, lease]))
+      leases: new Map(leases.map((lease) => [lease.id, lease])),
+      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset]))
     };
     // Throws when an account has no class.
     const { journals, runJournal } = buildRecognitionJournals({

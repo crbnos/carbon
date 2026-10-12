@@ -46,6 +46,7 @@ import {
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
+  leaseLineValidator,
   leasePaymentValidator,
   leaseValidator,
   purchaseOrderDeliveryValidator,
@@ -5315,23 +5316,17 @@ function leaseTerms(
     // A cleared DatePicker posts "", which a DATE column rejects.
     noticeDate: terms.noticeDate || null,
     invoiceFromDate: terms.invoiceFromDate || terms.commencementDate,
-    paymentAmount: terms.paymentAmount,
     paymentFrequency: terms.paymentFrequency,
     paymentTiming: terms.paymentTiming,
     annualEscalationPercent: terms.annualEscalationPercent,
     discountRate: terms.discountRate,
-    currencyCode: terms.currencyCode,
-    fairValue: terms.fairValue ?? null,
-    economicLifeMonths: terms.economicLifeMonths ?? null,
-    ownershipTransfers: terms.ownershipTransfers,
-    specializedAsset: terms.specializedAsset,
-    purchaseOptionAmount: terms.purchaseOptionAmount ?? null,
-    purchaseOptionReasonablyCertain: terms.purchaseOptionReasonablyCertain
+    currencyCode: terms.currencyCode
   };
 }
 
 /** `leaseId` (the readable LSE number) comes from the caller — the route
- *  draws it from the sequence. Payment rows are cut separately
+ *  draws it from the sequence. The leased assets are added with
+ *  `upsertLeaseLine`, and their payment rows are cut separately
  *  (`regenerateLeasePayments`, `purchasing.server.ts`). @mcp create */
 export async function insertLease(
   client: SupabaseClient<Database>,
@@ -5407,6 +5402,21 @@ export async function deleteLease(
     .eq("status", "Draft");
 }
 
+/** The lease's assets in their order. @mcp read */
+export async function getLeaseLines(
+  client: SupabaseClient<Database>,
+  leaseId: string,
+  companyId: string
+) {
+  return client
+    .from("leaseLine")
+    .select("*")
+    .eq("leaseId", leaseId)
+    .eq("companyId", companyId)
+    .order("sortOrder")
+    .order("createdAt");
+}
+
 /** @mcp read */
 export async function getLeasePayments(
   client: SupabaseClient<Database>,
@@ -5422,26 +5432,129 @@ export async function getLeasePayments(
     .order("paymentType");
 }
 
+/** The lease when it is a Draft, else why it cannot change. */
 async function requireDraftLease(
   client: SupabaseClient<Database>,
   leaseId: string,
-  companyId: string
+  companyId: string,
+  what = "A payment row"
 ) {
   const lease = await client
     .from("lease")
-    .select("status")
+    .select("status, invoiceFromDate")
     .eq("id", leaseId)
     .eq("companyId", companyId)
     .single();
-  if (lease.error) return lease.error.message;
+  if (lease.error) return { lease: null, refusal: lease.error.message };
   if (lease.data.status !== "Draft") {
-    return "A payment row changes only while the lease is Draft; modify an active lease instead";
+    return {
+      lease: null,
+      refusal: `${what} changes only while the lease is Draft; modify an active lease instead`
+    };
   }
-  return null;
+  return { lease: lease.data, refusal: null };
 }
 
-/** Add or change one payment row of a Draft lease (a rent holiday, an
- *  irregular step). @mcp update */
+/** The fields of a leased asset a caller may write — never its status, its
+ *  classification or anything activation owns. Also an MCP tool, so the
+ *  fields are picked rather than spread. */
+function leaseLineTerms(
+  line: Omit<z.infer<typeof leaseLineValidator>, "id" | "leaseId">
+) {
+  return {
+    description: line.description,
+    serialNumber: line.serialNumber || null,
+    locationId: line.locationId || null,
+    paymentAmount: line.paymentAmount,
+    fairValue: line.fairValue ?? null,
+    economicLifeMonths: line.economicLifeMonths ?? null,
+    ownershipTransfers: line.ownershipTransfers,
+    specializedAsset: line.specializedAsset,
+    purchaseOptionAmount: line.purchaseOptionAmount ?? null,
+    purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain
+  };
+}
+
+/** Add or change one asset of a Draft lease. Its payment rows are cut
+ *  separately (`regenerateLeasePayments`). @mcp update */
+export async function upsertLeaseLine(
+  client: SupabaseClient<Database>,
+  line: z.infer<typeof leaseLineValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    line.leaseId,
+    line.companyId,
+    "An asset"
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+
+  if (line.id) {
+    return client
+      .from("leaseLine")
+      .update({
+        ...leaseLineTerms(line),
+        updatedBy: line.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", line.id)
+      .eq("leaseId", line.leaseId)
+      .eq("companyId", line.companyId)
+      .select("id")
+      .single();
+  }
+
+  const last = await client
+    .from("leaseLine")
+    .select("sortOrder")
+    .eq("leaseId", line.leaseId)
+    .eq("companyId", line.companyId)
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (last.error) return last;
+  return client
+    .from("leaseLine")
+    .insert([
+      {
+        ...leaseLineTerms(line),
+        leaseId: line.leaseId,
+        sortOrder: (last.data?.sortOrder ?? 0) + 1,
+        companyId: line.companyId,
+        createdBy: line.userId
+      }
+    ])
+    .select("id")
+    .single();
+}
+
+/** Removes an asset, and its payment rows with it, from a Draft lease.
+ *  @mcp delete */
+export async function deleteLeaseLine(
+  client: SupabaseClient<Database>,
+  args: { leaseId: string; leaseLineId: string; companyId: string }
+) {
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId,
+    "An asset"
+  );
+  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  return client
+    .from("leaseLine")
+    .delete()
+    .eq("id", args.leaseLineId)
+    .eq("leaseId", args.leaseId)
+    .eq("companyId", args.companyId);
+}
+
+/** Add or change one payment row of a Draft lease's asset (a rent holiday,
+ *  an irregular step). A row due before the lease's invoice-from date was
+ *  paid outside Carbon and is Skipped. @mcp update */
 export async function upsertLeasePayment(
   client: SupabaseClient<Database>,
   payment: z.infer<typeof leasePaymentValidator> & {
@@ -5449,20 +5562,38 @@ export async function upsertLeasePayment(
     userId: string;
   }
 ) {
-  const refusal = await requireDraftLease(
+  const { lease, refusal } = await requireDraftLease(
     client,
     payment.leaseId,
     payment.companyId
   );
-  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
+  if (refusal || !lease) {
+    return leaseRefusal("LEASE_NOT_DRAFT", refusal ?? "Lease not found");
+  }
+  const line = await client
+    .from("leaseLine")
+    .select("id")
+    .eq("id", payment.leaseLineId)
+    .eq("leaseId", payment.leaseId)
+    .eq("companyId", payment.companyId)
+    .maybeSingle();
+  if (line.error) return line;
+  if (!line.data) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
 
   const row = {
     leaseId: payment.leaseId,
+    leaseLineId: payment.leaseLineId,
     paymentType: payment.paymentType,
     periodStart: payment.periodStart,
     periodEnd: payment.periodEnd,
     dueDate: payment.dueDate,
-    amount: payment.amount
+    amount: payment.amount,
+    status:
+      payment.dueDate < lease.invoiceFromDate
+        ? ("Skipped" as const)
+        : ("Pending" as const)
   };
   if (payment.id) {
     return client
@@ -5473,6 +5604,7 @@ export async function upsertLeasePayment(
         updatedAt: datetime.timestamp()
       })
       .eq("id", payment.id)
+      .eq("leaseId", payment.leaseId)
       .eq("companyId", payment.companyId)
       .select("id")
       .single();
@@ -5491,7 +5623,11 @@ export async function deleteLeasePayment(
   client: SupabaseClient<Database>,
   args: { leaseId: string; paymentId: string; companyId: string }
 ) {
-  const refusal = await requireDraftLease(client, args.leaseId, args.companyId);
+  const { refusal } = await requireDraftLease(
+    client,
+    args.leaseId,
+    args.companyId
+  );
   if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
   return client
     .from("leasePayment")

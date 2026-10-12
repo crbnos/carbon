@@ -59,7 +59,7 @@ const BILLABLE_STATUSES: Database["public"]["Enums"]["leaseStatus"][] = [
 /**
  * Drafts the purchase invoices of every lease with a Pending payment row due
  * on or before `asOf`: one Draft invoice per lease and due date, one Lease
- * line per row. Each lease is its own transaction, so one lease's failure
+ * line per row (a lease with several assets has a row per asset). Each lease is its own transaction, so one lease's failure
  * never rolls back another's invoice. The billed rows are stamped Invoiced
  * with their invoice line, which is what makes a second call for the same
  * day a no-op; deleting the Draft invoice or voiding a posted one returns
@@ -124,7 +124,6 @@ async function draftLeaseInvoices(
     .selectFrom("lease")
     .select([
       "id",
-      "name",
       "status",
       "supplierId",
       "supplierContactId",
@@ -139,22 +138,30 @@ async function draftLeaseInvoices(
   if (!BILLABLE_STATUSES.includes(lease.status)) return [];
 
   const rows = await trx
-    .selectFrom("leasePayment")
+    .selectFrom("leasePayment as p")
+    .innerJoin("leaseLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "p.leaseLineId")
+        .onRef("l.companyId", "=", "p.companyId")
+    )
     .select([
-      "id",
-      "paymentType",
-      "amount",
-      sql<string>`"periodStart"::text`.as("periodStart"),
-      sql<string>`"periodEnd"::text`.as("periodEnd"),
-      sql<string>`"dueDate"::text`.as("dueDate")
+      "p.id",
+      "p.paymentType",
+      "p.amount",
+      sql<string>`p."periodStart"::text`.as("periodStart"),
+      sql<string>`p."periodEnd"::text`.as("periodEnd"),
+      sql<string>`p."dueDate"::text`.as("dueDate"),
+      "l.description",
+      "l.locationId"
     ])
-    .where("leaseId", "=", leaseId)
-    .where("companyId", "=", companyId)
-    .where("status", "=", "Pending")
-    .where("dueDate", "<=", asOf)
-    .orderBy("dueDate")
-    .orderBy("paymentType")
-    .forUpdate()
+    .where("p.leaseId", "=", leaseId)
+    .where("p.companyId", "=", companyId)
+    .where("p.status", "=", "Pending")
+    .where("p.dueDate", "<=", asOf)
+    .orderBy("p.dueDate")
+    .orderBy("l.sortOrder")
+    .orderBy("p.paymentType")
+    .forUpdate("p")
     .execute();
   if (rows.length === 0) return [];
 
@@ -237,8 +244,8 @@ async function draftLeaseInvoices(
           invoiceLineType: "Lease" as const,
           leaseId,
           leasePaymentId: row.id,
-          locationId: lease.locationId,
-          description: leasePaymentDescription(lease.name, row),
+          locationId: row.locationId ?? lease.locationId,
+          description: leasePaymentDescription(row.description, row),
           quantity: 1,
           supplierUnitPrice: Number(row.amount),
           supplierShippingCost: 0,
@@ -283,17 +290,19 @@ async function draftLeaseInvoices(
 }
 
 /** "Forklift FL-12 — 2027-01-01 to 2027-01-31", or for a one-off payment
- *  "Forklift FL-12 — Purchase Option". */
+ *  "Forklift FL-12 — Purchase Option": the leased asset and what is paid. */
 export function leasePaymentDescription(
-  leaseName: string,
+  assetDescription: string,
   row: {
     paymentType: Database["public"]["Enums"]["leasePaymentType"];
     periodStart: string;
     periodEnd: string;
   }
 ): string {
-  if (row.paymentType !== "Rent") return `${leaseName} — ${row.paymentType}`;
-  return `${leaseName} — ${row.periodStart} to ${row.periodEnd}`;
+  if (row.paymentType !== "Rent") {
+    return `${assetDescription} — ${row.paymentType}`;
+  }
+  return `${assetDescription} — ${row.periodStart} to ${row.periodEnd}`;
 }
 
 export const createLeaseInvoicesInput = z.object({

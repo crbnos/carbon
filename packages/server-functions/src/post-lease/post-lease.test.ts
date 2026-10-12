@@ -27,8 +27,16 @@ async function lease(f: Fixture) {
     .executeTakeFirstOrThrow();
 }
 
-async function scheduleLines(f: Fixture) {
+async function asset(f: Fixture, index = 0) {
   return f.db
+    .selectFrom("leaseLine")
+    .selectAll()
+    .where("id", "=", f.lineIds[index]!)
+    .executeTakeFirstOrThrow();
+}
+
+async function scheduleLines(f: Fixture, index?: number) {
+  let query = f.db
     .selectFrom("leaseScheduleLine")
     .select([
       sql<string>`"periodDate"::text`.as("periodDate"),
@@ -37,9 +45,20 @@ async function scheduleLines(f: Fixture) {
       "closingLiability",
       "rouAmortization"
     ])
+    .where("leaseId", "=", f.leaseId);
+  if (index !== undefined) {
+    query = query.where("leaseLineId", "=", f.lineIds[index]!);
+  }
+  return query.orderBy("periodDate").execute();
+}
+
+async function event(f: Fixture, eventType: string) {
+  return f.db
+    .selectFrom("leaseEvent")
+    .selectAll()
     .where("leaseId", "=", f.leaseId)
-    .orderBy("periodDate")
-    .execute();
+    .where("eventType", "=", eventType as "Modification")
+    .executeTakeFirstOrThrow();
 }
 
 async function leaseJournals(f: Fixture) {
@@ -68,8 +87,8 @@ databaseTest(
         (await run(f, { type: "activate", leaseId: f.leaseId })).error
       ).toBeNull();
 
-      const row = await lease(f);
-      expect(row.status).toBe("Active");
+      expect((await lease(f)).status).toBe("Active");
+      const row = await asset(f);
       expect(row.lesseeClassification).toBe("Operating");
       expect(Number(row.initialLiability)).toBeCloseTo(328710.16, 2);
 
@@ -119,7 +138,7 @@ databaseTest(
       expect(
         (await run(f, { type: "activate", leaseId: f.leaseId })).error
       ).toBeNull();
-      expect((await lease(f)).lesseeClassification).toBe("Finance");
+      expect((await asset(f)).lesseeClassification).toBe("Finance");
       const lines = await scheduleLines(f);
       expect(Number(lines[0]!.rouAmortization)).toBeCloseTo(9130.84, 2);
     } finally {
@@ -136,9 +155,8 @@ databaseTest(
       expect(
         (await run(f, { type: "activate", leaseId: f.leaseId })).error
       ).toBeNull();
-      const row = await lease(f);
-      expect(row.lesseeClassification).toBe("Short-Term");
-      expect(row.commencementJournalId).toBeNull();
+      expect((await asset(f)).lesseeClassification).toBe("Short-Term");
+      expect((await lease(f)).commencementJournalId).toBeNull();
       expect(await leaseJournals(f)).toHaveLength(0);
       expect(await scheduleLines(f)).toHaveLength(0);
     } finally {
@@ -183,7 +201,6 @@ databaseTest(
         effectiveDate: "2028-01-01",
         endDate: "2030-12-31",
         discountRate: 7,
-        paymentAmount: 10000,
         paymentFrequency: "Monthly",
         annualEscalationPercent: 0
       });
@@ -202,7 +219,6 @@ databaseTest(
             effectiveDate: "2028-01-01",
             endDate: "2030-12-31",
             discountRate: 7,
-            paymentAmount: 10000,
             paymentFrequency: "Monthly",
             annualEscalationPercent: 0
           })
@@ -216,20 +232,16 @@ databaseTest(
       expect(Number(after[47]!.closingLiability)).toBe(0);
       expect((await lease(f)).endDate).toBe("2030-12-31");
 
-      const event = await f.db
-        .selectFrom("leaseEvent")
-        .select(["eventType", "liabilityBefore", "liabilityAfter", "journalId"])
-        .where("leaseId", "=", f.leaseId)
-        .executeTakeFirstOrThrow();
-      expect(event.eventType).toBe("Modification");
-      expect(Number(event.liabilityBefore)).toBeCloseTo(
+      const modification = await event(f, "Modification");
+      expect(modification.leaseLineId).toBe(f.lineIds[0]);
+      expect(Number(modification.liabilityBefore)).toBeCloseTo(
         Number(before[11]!.closingLiability),
         5
       );
-      expect(Number(event.liabilityAfter)).toBeGreaterThan(
-        Number(event.liabilityBefore)
+      expect(Number(modification.liabilityAfter)).toBeGreaterThan(
+        Number(modification.liabilityBefore)
       );
-      expect(event.journalId).not.toBeNull();
+      expect(modification.journalId).not.toBeNull();
     } finally {
       await f.cleanup();
     }
@@ -266,7 +278,6 @@ databaseTest(
         effectiveDate: "2028-01-01",
         endDate: "2030-12-31",
         discountRate: 7,
-        paymentAmount: 10000,
         paymentFrequency: "Monthly",
         annualEscalationPercent: 0
       });
@@ -293,12 +304,14 @@ databaseTest(
           await run(f, {
             type: "terminate",
             leaseId: f.leaseId,
+            leaseLineId: f.lineIds[0]!,
             terminationDate: "2028-12-31",
             penaltyAmount: 5000
           })
         ).error
       ).toBeNull();
       expect((await lease(f)).status).toBe("Terminated");
+      expect((await asset(f)).status).toBe("Terminated");
       expect(await scheduleLines(f)).toHaveLength(24);
       const payments = await f.db
         .selectFrom("leasePayment")
@@ -329,7 +342,7 @@ databaseTest(
     });
     try {
       await run(f, { type: "activate", leaseId: f.leaseId });
-      expect((await lease(f)).lesseeClassification).toBe("Finance");
+      expect((await asset(f)).lesseeClassification).toBe("Finance");
       await postScheduleThrough(f.db, {
         companyId: f.companyId,
         leaseId: f.leaseId,
@@ -340,6 +353,7 @@ databaseTest(
           await run(f, {
             type: "purchase",
             leaseId: f.leaseId,
+            leaseLineId: f.lineIds[0]!,
             exerciseDate: "2029-12-31",
             purchasePrice: 20000,
             fixedAssetClassId: f.assetClassId,
@@ -347,19 +361,28 @@ databaseTest(
           })
         ).error
       ).toBeNull();
-      const row = await lease(f);
+      expect((await lease(f)).status).toBe("Purchased");
+      const row = await asset(f);
       expect(row.status).toBe("Purchased");
-      const asset = await f.db
+      const fixedAsset = await f.db
         .selectFrom("fixedAsset")
         .select(["acquisitionCost", "status"])
         .where("id", "=", row.fixedAssetId!)
         .executeTakeFirstOrThrow();
-      expect(asset.status).toBe("Active");
-      // Net ROU after 36 of 84 months, plus the price, less the liability left.
-      expect(Number(asset.acquisitionCost)).toBeCloseTo(
-        345423.06 - (345423.06 / 84) * 36 + 20000,
+      expect(fixedAsset.status).toBe("Active");
+      // The schedule already paid the option out of the liability, so the
+      // price replaces it: the asset costs the net ROU after 36 of 84 months.
+      expect(Number(fixedAsset.acquisitionCost)).toBeCloseTo(
+        345423.06 - (345423.06 / 84) * 36,
         0
       );
+      const options = await f.db
+        .selectFrom("leasePayment")
+        .select(["amount"])
+        .where("leaseLineId", "=", f.lineIds[0]!)
+        .where("paymentType", "=", "Purchase Option")
+        .execute();
+      expect(options).toEqual([{ amount: 20000 }]);
     } finally {
       await f.cleanup();
     }
@@ -417,6 +440,19 @@ databaseTest(
         expect(row.journalId).toBeNull();
       }
 
+      // The payments due before the opening date are in its balance: they
+      // are not invoiced.
+      const payments = await f.db
+        .selectFrom("leasePayment")
+        .select([sql<string>`"dueDate"::text`.as("dueDate"), "status"])
+        .where("leaseId", "=", f.leaseId)
+        .execute();
+      for (const payment of payments) {
+        expect(payment.status).toBe(
+          payment.dueDate < "2027-07-01" ? "Skipped" : "Pending"
+        );
+      }
+
       const journal = await f.db
         .selectFrom("journal")
         .innerJoin("journalLine", "journalLine.journalId", "journal.id")
@@ -452,6 +488,219 @@ databaseTest(
         (await run(f, { type: "cancel", leaseId: f.leaseId })).error
       ).toBeNull();
       expect((await lease(f)).status).toBe("Cancelled");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a lease with two assets measures each, in one journal with lines per asset",
+  async () => {
+    const f = await leaseFixture({
+      assets: [{}, { paymentAmount: 5000, fairValue: 170000 }]
+    });
+    try {
+      expect(
+        (await run(f, { type: "activate", leaseId: f.leaseId })).error
+      ).toBeNull();
+      expect((await asset(f, 0)).lesseeClassification).toBe("Operating");
+      const second = await asset(f, 1);
+      expect(second.lesseeClassification).toBe("Finance");
+      expect(Number(second.initialLiability)).toBeCloseTo(164355.08, 2);
+
+      const journal = await f.db
+        .selectFrom("journalLine")
+        .select(["documentLineReference", "accountId", "amount"])
+        .where("companyId", "=", f.companyId)
+        .where("documentId", "=", f.leaseId)
+        .execute();
+      expect(journal).toHaveLength(4);
+      expect(
+        new Set(journal.map((line) => line.documentLineReference))
+      ).toEqual(new Set(f.lineIds));
+      expect(await scheduleLines(f, 0)).toHaveLength(36);
+      expect(await scheduleLines(f, 1)).toHaveLength(36);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "terminating one of two assets keeps the lease active until the last one ends",
+  async () => {
+    const f = await leaseFixture({ assets: [{}, {}] });
+    try {
+      await run(f, { type: "activate", leaseId: f.leaseId });
+      await postScheduleThrough(f.db, {
+        companyId: f.companyId,
+        leaseId: f.leaseId,
+        through: "2028-12-31"
+      });
+      const terminate = (index: number) =>
+        run(f, {
+          type: "terminate",
+          leaseId: f.leaseId,
+          leaseLineId: f.lineIds[index]!,
+          terminationDate: "2028-12-31",
+          penaltyAmount: 0
+        });
+
+      expect((await terminate(0)).error).toBeNull();
+      expect((await asset(f, 0)).status).toBe("Terminated");
+      expect((await lease(f)).status).toBe("Active");
+      expect(await scheduleLines(f, 0)).toHaveLength(24);
+      expect(await scheduleLines(f, 1)).toHaveLength(36);
+
+      // An ended asset cannot be ended again.
+      expect((await terminate(0)).error).not.toBeNull();
+
+      expect((await terminate(1)).error).toBeNull();
+      const row = await lease(f);
+      expect(row.status).toBe("Terminated");
+      expect(row.endDate).toBe("2028-12-31");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "terminating on the end date takes the unpaid purchase option out of the liability",
+  async () => {
+    const f = await leaseFixture({
+      purchaseOptionAmount: 20000,
+      purchaseOptionReasonablyCertain: true,
+      economicLifeMonths: 84
+    });
+    try {
+      await run(f, { type: "activate", leaseId: f.leaseId });
+      await postScheduleThrough(f.db, {
+        companyId: f.companyId,
+        leaseId: f.leaseId,
+        through: "2029-12-31"
+      });
+      expect(
+        (
+          await run(f, {
+            type: "terminate",
+            leaseId: f.leaseId,
+            leaseLineId: f.lineIds[0]!,
+            terminationDate: "2029-12-31",
+            penaltyAmount: 0
+          })
+        ).error
+      ).toBeNull();
+      // The schedule closes at 0 after paying the option; the option is now
+      // never paid, so the liability still holds it.
+      expect(
+        Number((await event(f, "Termination")).liabilityBefore)
+      ).toBeCloseTo(20000, 2);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a purchase option already invoiced is the price; no second option row is written",
+  async () => {
+    const f = await leaseFixture({
+      purchaseOptionAmount: 20000,
+      purchaseOptionReasonablyCertain: true,
+      economicLifeMonths: 84
+    });
+    try {
+      await run(f, { type: "activate", leaseId: f.leaseId });
+      await postScheduleThrough(f.db, {
+        companyId: f.companyId,
+        leaseId: f.leaseId,
+        through: "2029-12-31"
+      });
+      await f.db
+        .updateTable("leasePayment")
+        .set({ status: "Invoiced" })
+        .where("leaseLineId", "=", f.lineIds[0]!)
+        .where("paymentType", "=", "Purchase Option")
+        .execute();
+      const purchase = (purchasePrice: number) =>
+        run(f, {
+          type: "purchase",
+          leaseId: f.leaseId,
+          leaseLineId: f.lineIds[0]!,
+          exerciseDate: "2029-12-31",
+          purchasePrice,
+          fixedAssetClassId: f.assetClassId,
+          name: "Forklift FL-12"
+        });
+
+      expect(String((await purchase(25000)).error)).toContain(
+        "already invoiced"
+      );
+      expect((await purchase(20000)).error).toBeNull();
+      const row = await asset(f);
+      const fixedAsset = await f.db
+        .selectFrom("fixedAsset")
+        .select(["acquisitionCost"])
+        .where("id", "=", row.fixedAssetId!)
+        .executeTakeFirstOrThrow();
+      expect(Number(fixedAsset.acquisitionCost)).toBeCloseTo(
+        345423.06 - (345423.06 / 84) * 36,
+        0
+      );
+      const options = await f.db
+        .selectFrom("leasePayment")
+        .select(["status"])
+        .where("leaseLineId", "=", f.lineIds[0]!)
+        .where("paymentType", "=", "Purchase Option")
+        .execute();
+      expect(options).toEqual([{ status: "Invoiced" }]);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "cancelling after a modification voids every journal of the lease",
+  async () => {
+    const f = await leaseFixture();
+    try {
+      await run(f, { type: "activate", leaseId: f.leaseId });
+      expect(
+        (
+          await run(f, {
+            type: "modify",
+            leaseId: f.leaseId,
+            effectiveDate: "2027-01-01",
+            endDate: "2029-12-31",
+            discountRate: 7,
+            paymentFrequency: "Monthly",
+            annualEscalationPercent: 0,
+            lines: [{ leaseLineId: f.lineIds[0]!, paymentAmount: 11000 }]
+          })
+        ).error
+      ).toBeNull();
+      expect(Number((await asset(f)).paymentAmount)).toBe(11000);
+      expect(
+        (await run(f, { type: "cancel", leaseId: f.leaseId })).error
+      ).toBeNull();
+
+      const journal = await leaseJournals(f);
+      const voids = new Set(
+        journal
+          .filter((line) => line.description?.startsWith("VOID "))
+          .map((line) => line.description)
+      );
+      expect(voids).toEqual(
+        new Set([
+          "VOID Lease Commencement LSE-TEST",
+          "VOID Lease Modification LSE-TEST"
+        ])
+      );
+      const net = journal.reduce((sum, line) => sum + Number(line.amount), 0);
+      expect(net).toBeCloseTo(0, 5);
     } finally {
       await f.cleanup();
     }

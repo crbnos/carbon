@@ -38,6 +38,7 @@ async function insertLease(
   }
 ): Promise<string> {
   const leaseId = `${f.prefix}-${args.key}`;
+  const leaseLineId = `${leaseId}-line`;
   await f.db.transaction().execute(async (trx) => {
     await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
     await trx
@@ -49,16 +50,27 @@ async function insertLease(
         supplierId: f.supplierId,
         locationId: f.locationId,
         status: args.status,
-        lesseeClassification: "Operating",
         commencementDate: args.commencementDate,
         endDate: parseDate(args.commencementDate)
           .add({ years: 3 })
           .subtract({ days: 1 })
           .toString(),
         invoiceFromDate: args.commencementDate,
-        paymentAmount: 1000,
         discountRate: 6,
         currencyCode: "USD",
+        companyId: f.companyId,
+        createdBy: USER
+      })
+      .execute();
+    await trx
+      .insertInto("leaseLine")
+      .values({
+        id: leaseLineId,
+        leaseId,
+        description: args.key,
+        paymentAmount: 1000,
+        status: args.status,
+        lesseeClassification: "Operating",
         initialLiability: 30000,
         initialRouAsset: 30000,
         rouAssetCost: 30000,
@@ -71,6 +83,7 @@ async function insertLease(
       .values(
         args.lines.map((line) => ({
           leaseId,
+          leaseLineId,
           periodDate: line.periodDate,
           openingLiability: 0,
           paymentAmount: 1000,
@@ -90,6 +103,7 @@ async function insertLease(
         .insertInto("leaseEvent")
         .values({
           leaseId,
+          leaseLineId,
           eventType: event.eventType,
           effectiveDate: event.effectiveDate,
           liabilityBefore: 20000,

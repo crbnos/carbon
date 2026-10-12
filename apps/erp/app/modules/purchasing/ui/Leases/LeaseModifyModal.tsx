@@ -28,6 +28,7 @@ import { useState } from "react";
 import { useFetcher } from "react-router";
 import {
   DatePicker,
+  Hidden,
   Number as NumberField,
   Select,
   Submit,
@@ -42,20 +43,23 @@ import {
 import LeaseJournalPreview, {
   type LeaseJournalPreviewRow
 } from "./LeaseJournalPreview";
-import type { Lease, LeaseScheduleLine } from "./types";
+import type { Lease, LeaseLine, LeaseScheduleLine } from "./types";
 import { firstOpenLeaseMonth, leaseCarryingAt } from "./utils";
 
 type LeaseModifyModalProps = {
   lease: Lease;
+  lines: LeaseLine[];
   schedule: LeaseScheduleLine[];
   onClose: () => void;
 };
 
-/** Remeasure an Active lease from the first day of a lease month: the
- *  remaining payments are cut again from the new terms and re-discounted at
- *  the revised rate, and the right-of-use asset moves with the liability. */
+/** Remeasure every active asset of an Active lease from the first day of a
+ *  lease month: each asset's remaining payments are cut again from the new
+ *  terms at its own payment and re-discounted at the revised rate, and its
+ *  right-of-use asset moves with its liability. */
 const LeaseModifyModal = ({
   lease,
+  lines,
   schedule,
   onClose
 }: LeaseModifyModalProps) => {
@@ -65,72 +69,98 @@ const LeaseModifyModal = ({
   const currencyCode = lease.currencyCode ?? "";
   const decimals = useCurrencyDecimals(currencyCode);
 
-  const defaultEffectiveDate = firstOpenLeaseMonth(lease, schedule) ?? "";
+  const active = lines.filter((line) => line.status === "Active");
+  const activeIds = active.map((line) => line.id);
+  const defaultEffectiveDate =
+    firstOpenLeaseMonth(
+      lease,
+      schedule.filter((row) => activeIds.includes(row.leaseLineId))
+    ) ?? "";
   const [terms, setTerms] = useState({
     effectiveDate: defaultEffectiveDate,
     endDate: lease.endDate ?? "",
     discountRate: Number(lease.discountRate ?? 0),
-    paymentAmount: Number(lease.paymentAmount ?? 0),
     paymentFrequency: (lease.paymentFrequency ??
       "Monthly") as LeasePaymentFrequency,
     annualEscalationPercent: Number(lease.annualEscalationPercent ?? 0)
   });
+  const [paymentOf, setPaymentOf] = useState<Record<string, number>>(() =>
+    Object.fromEntries(
+      active.map((line) => [line.id, Number(line.paymentAmount)])
+    )
+  );
 
-  const isShortTerm = lease.lesseeClassification === "Short-Term";
   const commencementDay = lease.commencementDate?.slice(8) ?? "";
   const moneyFormat = INPUT_FORMAT.money(currencyCode, decimals);
   const moneyStep = INPUT_STEP.money(decimals);
+  const severalAssets = active.length > 1;
 
-  const preview = (() => {
-    if (isShortTerm || !terms.effectiveDate || !terms.endDate) return null;
-    if (!lease.paymentTiming) return null;
+  // Each capitalized asset's remeasurement; a short-term asset only has its
+  // payment rows cut again.
+  const remeasured = (() => {
+    if (!terms.effectiveDate || !terms.endDate || !lease.paymentTiming) {
+      return null;
+    }
     const timing = lease.paymentTiming;
     try {
-      const carrying = leaseCarryingAt(lease, schedule, terms.effectiveDate);
-      const rows = generateLeasePayments({
-        commencementDate: terms.effectiveDate,
-        endDate: terms.endDate,
-        paymentAmount: terms.paymentAmount,
-        frequency: terms.paymentFrequency,
-        timing,
-        annualEscalationPercent: terms.annualEscalationPercent,
-        purchaseOptionAmount: lease.purchaseOptionReasonablyCertain
-          ? Number(lease.purchaseOptionAmount ?? 0)
-          : 0,
-        decimals
-      });
-      const remeasured = remeasureLease({
-        carryingLiability: carrying.liability,
-        carryingRouAsset: carrying.rouAsset,
-        remainingPayments: rows.map((row) => ({
-          monthIndex: paymentMonthIndex(row, terms.effectiveDate, timing),
-          amount: row.amount
-        })),
-        annualRate: terms.discountRate
-      });
-      return { carrying, remeasured };
+      return active
+        .filter((line) => line.lesseeClassification !== "Short-Term")
+        .map((line) => {
+          const carrying = leaseCarryingAt(line, schedule, terms.effectiveDate);
+          const rows = generateLeasePayments({
+            commencementDate: terms.effectiveDate,
+            endDate: terms.endDate,
+            paymentAmount: paymentOf[line.id] ?? 0,
+            frequency: terms.paymentFrequency,
+            timing,
+            annualEscalationPercent: terms.annualEscalationPercent,
+            purchaseOptionAmount: line.purchaseOptionReasonablyCertain
+              ? Number(line.purchaseOptionAmount ?? 0)
+              : 0,
+            decimals
+          }).filter((row) => row.amount > 0);
+          return {
+            line,
+            result: remeasureLease({
+              carryingLiability: carrying.liability,
+              carryingRouAsset: carrying.rouAsset,
+              remainingPayments: rows.map((row) => ({
+                monthIndex: paymentMonthIndex(row, terms.effectiveDate, timing),
+                amount: row.amount
+              })),
+              annualRate: terms.discountRate
+            })
+          };
+        });
     } catch {
       return null;
     }
   })();
 
-  const journal: LeaseJournalPreviewRow[] = (() => {
-    if (!preview) return [];
-    const { adjustment, gain } = preview.remeasured;
-    const rouAsset = t`Right-of-Use Asset`;
-    const liability = t`Lease Liability`;
-    if (adjustment >= 0) {
+  const journal: LeaseJournalPreviewRow[] = (remeasured ?? []).flatMap(
+    ({ line, result }) => {
+      const { adjustment, gain } = result;
+      if (adjustment === 0 && gain === 0) return [];
+      const suffix = severalAssets ? ` — ${line.description}` : "";
+      const rouAsset = `${t`Right-of-Use Asset`}${suffix}`;
+      const liability = `${t`Lease Liability`}${suffix}`;
+      if (adjustment >= 0) {
+        return [
+          { account: rouAsset, debit: adjustment, credit: 0 },
+          { account: liability, debit: 0, credit: adjustment }
+        ];
+      }
       return [
-        { account: rouAsset, debit: adjustment, credit: 0 },
-        { account: liability, debit: 0, credit: adjustment }
+        { account: liability, debit: -adjustment, credit: 0 },
+        { account: rouAsset, debit: 0, credit: -(adjustment + gain) },
+        {
+          account: `${t`Gain on Lease Modification`}${suffix}`,
+          debit: 0,
+          credit: gain
+        }
       ];
     }
-    return [
-      { account: liability, debit: -adjustment, credit: 0 },
-      { account: rouAsset, debit: 0, credit: -(adjustment + gain) },
-      { account: t`Gain on Lease Modification`, debit: 0, credit: gain }
-    ];
-  })();
+  );
 
   return (
     <Modal
@@ -148,6 +178,10 @@ const LeaseModifyModal = ({
           fetcher={fetcher}
           defaultValues={{
             ...terms,
+            lines: active.map((line) => ({
+              leaseLineId: line.id,
+              paymentAmount: Number(line.paymentAmount)
+            })),
             notes: ""
           }}
           onSubmit={onClose}
@@ -158,9 +192,9 @@ const LeaseModifyModal = ({
             </ModalTitle>
             <ModalDescription>
               <Trans>
-                The remaining payments are cut again from these terms and
-                discounted at the revised rate. The right-of-use asset moves by
-                the same amount as the liability.
+                Each active asset's remaining payments are cut again from these
+                terms and discounted at the revised rate. Its right-of-use asset
+                moves by the same amount as its liability.
               </Trans>
             </ModalDescription>
           </ModalHeader>
@@ -169,7 +203,7 @@ const LeaseModifyModal = ({
               <DatePicker
                 name="effectiveDate"
                 label={t`Effective Date`}
-                helperText={t`The first day of a lease month (day ${commencementDay}), after the last posted lease run`}
+                helperText={t`The first day of a lease month (day ${commencementDay}) where a payment period starts, after the last posted lease run`}
                 onChange={(date) =>
                   setTerms((prev) => ({ ...prev, effectiveDate: date ?? "" }))
                 }
@@ -181,19 +215,31 @@ const LeaseModifyModal = ({
                   setTerms((prev) => ({ ...prev, endDate: date ?? "" }))
                 }
               />
-              <NumberField
-                name="paymentAmount"
-                label={t`Payment Amount`}
-                minValue={0}
-                step={moneyStep}
-                formatOptions={moneyFormat}
-                onChange={(value) =>
-                  setTerms((prev) => ({
-                    ...prev,
-                    paymentAmount: Number.isNaN(value) ? 0 : value
-                  }))
-                }
-              />
+              {active.map((line, index) => (
+                <div key={line.id} className="w-full">
+                  <Hidden
+                    name={`lines[${index}].leaseLineId`}
+                    value={line.id}
+                  />
+                  <NumberField
+                    name={`lines[${index}].paymentAmount`}
+                    label={
+                      severalAssets
+                        ? t`Payment — ${line.description}`
+                        : t`Payment Amount`
+                    }
+                    minValue={0}
+                    step={moneyStep}
+                    formatOptions={moneyFormat}
+                    onChange={(value) =>
+                      setPaymentOf((prev) => ({
+                        ...prev,
+                        [line.id]: Number.isNaN(value) ? 0 : value
+                      }))
+                    }
+                  />
+                </div>
+              ))}
               <Select
                 name="paymentFrequency"
                 label={t`Payment Frequency`}
@@ -243,14 +289,14 @@ const LeaseModifyModal = ({
                 }
               />
               <TextArea name="notes" label={t`Notes`} />
-              {isShortTerm ? (
+              {remeasured && remeasured.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   <Trans>
-                    A short-term lease has no schedule: only its payment rows
+                    A short-term asset has no schedule: only its payment rows
                     change, and no journal is posted.
                   </Trans>
                 </p>
-              ) : preview ? (
+              ) : journal.length > 0 ? (
                 <VStack spacing={2}>
                   <p className="text-sm text-muted-foreground">
                     <Trans>
