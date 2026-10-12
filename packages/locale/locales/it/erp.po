@@ -1888,6 +1888,9 @@ msgstr "Attività"
 msgid "Actual"
 msgstr "Effettivo"
 
+msgid "Actual {actualText} · Committed {committedText}"
+msgstr ""
+
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
 msgstr "Effettivo <0>{0}</0>"
@@ -5557,6 +5560,9 @@ msgstr "Assegna un utente campione per ogni area"
 msgid "Committed"
 msgstr "Impegnato"
 
+msgid "Committed {committedText}"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "Registrazione di un'entrata merci, spedizione o fattura: le quantità si muovono, i movimenti della prima nota colpiscono il libro mastro, e lo stato diventa Registrato."
 
@@ -8803,6 +8809,9 @@ msgstr "dovuto {0}"
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "Scadenza {0}"
+
+msgid "Due {due}"
+msgstr ""
 
 msgid "Due <0/>"
 msgstr "Scadenza <0/>"
@@ -16601,6 +16610,9 @@ msgstr "di"
 msgid "of {0}h"
 msgstr "di {0}h"
 
+msgid "of {budgetText}"
+msgstr ""
+
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "Del costo finanziato, dal 75% all'85%"
 
@@ -22859,6 +22871,9 @@ msgstr "Avvio in corso…"
 
 msgid "Starts"
 msgstr "Inizia"
+
+msgid "Starts {start}"
+msgstr ""
 
 msgid "State"
 msgstr "Stato"

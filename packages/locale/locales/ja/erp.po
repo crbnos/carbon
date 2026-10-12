@@ -1888,6 +1888,9 @@ msgstr "アクティビティ"
 msgid "Actual"
 msgstr "実際"
 
+msgid "Actual {actualText} · Committed {committedText}"
+msgstr ""
+
 #. placeholder {0}: duration(actual.total)
 msgid "Actual <0>{0}</0>"
 msgstr "実績 <0>{0}</0>"
@@ -5557,6 +5560,9 @@ msgstr "各エリアのチャンピオンユーザーをコミットする"
 msgid "Committed"
 msgstr "コミット済み"
 
+msgid "Committed {committedText}"
+msgstr ""
+
 msgid "Committing a receipt, shipment, or invoice: quantities move, journal entries hit the ledger, and status becomes Posted."
 msgstr "領収書、出荷、または請求書のコミット: 数量が移動し、仕訳帳エントリが元帳に記載され、ステータスが投稿されます。"
 
@@ -8803,6 +8809,9 @@ msgstr "納期 {0}"
 #. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "期限 {0}"
+
+msgid "Due {due}"
+msgstr ""
 
 msgid "Due <0/>"
 msgstr "予定日<0/>"
@@ -16601,6 +16610,9 @@ msgstr "の"
 msgid "of {0}h"
 msgstr "{0}h中"
 
+msgid "of {budgetText}"
+msgstr ""
+
 msgid "Of the funded cost, from 75% to 85%"
 msgstr "資金化されたコストの75％から85％"
 
@@ -22859,6 +22871,9 @@ msgstr "開始中…"
 
 msgid "Starts"
 msgstr "開始"
+
+msgid "Starts {start}"
+msgstr ""
 
 msgid "State"
 msgstr "状態"

@@ -3,13 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { stopWorkEnd } from "@carbon/ee/project-control";
-import {
-  BarProgress,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from "@carbon/react";
+import { cn, Progress, Subheading } from "@carbon/react";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import {
@@ -21,17 +15,14 @@ import {
 } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import {
-  CustomerAvatar,
-  EmployeeAvatar,
-  Empty,
-  ReadOnlyField,
-  ReadOnlyFields
-} from "~/components";
-import { Enumerable } from "~/components/Enumerable";
-import { useCurrencyFormatter, useDateFormatter, useRouteData } from "~/hooks";
+  useCurrencyFormatter,
+  useDateFormatter,
+  usePercentFormatter,
+  useRouteData
+} from "~/hooks";
+import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { Project } from "../../types";
-import ProjectStatus from "../Projects/ProjectStatus";
 
 type ProjectOverviewProps = {
   figures: { budget: number | null; committed: number; actual: number };
@@ -47,9 +38,12 @@ type ProjectOverviewProps = {
 };
 
 /**
- * The project's landing page (Layer 2): the facts, the budget, the next
- * milestone and what needs attention. Read-only: every value is text, and
- * every action is a link to the page that owns it.
+ * The project's landing page (Layer 2): one quiet line of facts, the budget,
+ * the next milestone and what needs attention. Read-only: every value is
+ * text, and every action is a link to the page that owns it. The status is
+ * in the header and the details are in Settings, so neither repeats here.
+ * An empty section is one muted line, not the `Empty` illustration: this is
+ * a summary, and a cabinet per quiet section is louder than the data.
  */
 export default function ProjectOverview({
   figures,
@@ -61,6 +55,9 @@ export default function ProjectOverview({
   if (!projectId) throw new Error("projectId not found");
   const { formatDate } = useDateFormatter();
   const money = useCurrencyFormatter();
+  const percent = usePercentFormatter();
+  const [people] = usePeople();
+  const [customers] = useCustomers();
   const routeData = useRouteData<{
     project: Project;
     overdueBorrowCount: number;
@@ -76,6 +73,22 @@ export default function ProjectOverview({
   const stopWorkEndDate = stopWorkDate
     ? formatDate(stopWorkEnd(stopWorkDate))
     : "";
+
+  // Owner · Customer · Start – Due · Cost treatment. A missing fact is left
+  // out, not shown as a dash.
+  const start = project.startDate ? formatDate(project.startDate) : null;
+  const due = project.endDate ? formatDate(project.endDate) : null;
+  const facts = [
+    project.ownerId
+      ? people.find((person) => person.id === project.ownerId)?.name
+      : null,
+    project.customerId
+      ? customers.find((customer) => customer.id === project.customerId)?.name
+      : null,
+    start && due ? `${start} – ${due}` : start ? t`Starts ${start}` : null,
+    !start && due ? t`Due ${due}` : null,
+    project.costTreatment
+  ].filter((fact): fact is string => Boolean(fact));
 
   const attention: ReactNode[] = [];
   if (stopWorkDate) {
@@ -138,154 +151,144 @@ export default function ProjectOverview({
   }
 
   const budget = figures.budget;
-  const isOverBudget = budget !== null && figures.actual > budget;
+  const hasBudget = budget !== null && budget > 0;
+  const isOverBudget = hasBudget && figures.actual > budget;
+  const actualText = money.format(figures.actual);
+  const budgetText = hasBudget ? money.format(budget) : "";
+  const committedText = money.format(figures.committed);
 
   return (
-    <div className="@container mx-auto flex w-full max-w-[64rem] flex-col gap-4 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Details</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ReadOnlyFields>
-            <ReadOnlyField label={t`Status`}>
-              <ProjectStatus status={project.status} />
-            </ReadOnlyField>
-            <ReadOnlyField label={t`Owner`}>
-              {project.ownerId ? (
-                <EmployeeAvatar employeeId={project.ownerId} size="xs" />
-              ) : null}
-            </ReadOnlyField>
-            <ReadOnlyField label={t`Customer`}>
-              {project.customerId ? (
-                <CustomerAvatar customerId={project.customerId} size="xs" />
-              ) : null}
-            </ReadOnlyField>
-            <ReadOnlyField label={t`Start`}>
-              {project.startDate ? formatDate(project.startDate) : null}
-            </ReadOnlyField>
-            <ReadOnlyField label={t`Due`}>
-              {project.endDate ? formatDate(project.endDate) : null}
-            </ReadOnlyField>
-            <ReadOnlyField label={t`Cost Treatment`} termId="cost-treatment">
-              <Enumerable value={project.costTreatment} />
-            </ReadOnlyField>
-          </ReadOnlyFields>
-        </CardContent>
-      </Card>
+    <div className="@container mx-auto flex w-full max-w-[64rem] flex-col gap-8 px-6 py-8">
+      {facts.length > 0 && (
+        <p className="text-sm text-muted-foreground text-pretty">
+          {facts.join(" · ")}
+        </p>
+      )}
 
-      <div className="grid gap-4 @3xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Budget</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {budget !== null && budget > 0 ? (
-              <BarProgress
-                progress={Math.min(figures.actual, budget)}
-                max={budget}
-                label={t`Actual of budget`}
-                value={`${money.format(figures.actual)} / ${money.format(budget)}`}
-                activeClassName={
-                  isOverBudget ? "bg-red-500" : "bg-muted-foreground"
-                }
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                <Trans>No budget set on the plan.</Trans>
-              </p>
-            )}
-            <div className="grid grid-cols-3 gap-4">
-              <ReadOnlyField label={t`Budget`}>
-                {budget !== null ? (
-                  <span className="tabular-nums">{money.format(budget)}</span>
-                ) : null}
-              </ReadOnlyField>
-              <ReadOnlyField label={t`Committed`}>
-                <span className="tabular-nums">
-                  {money.format(figures.committed)}
-                </span>
-              </ReadOnlyField>
-              <ReadOnlyField label={t`Actual`}>
-                <span
-                  className={
-                    isOverBudget ? "tabular-nums text-red-500" : "tabular-nums"
-                  }
-                >
-                  {money.format(figures.actual)}
-                </span>
-              </ReadOnlyField>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Next milestone</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {nextMilestone ? (
-              <Link
-                to={path.to.projectMilestones(projectId)}
-                className="-mx-2 flex flex-col gap-3 rounded-lg px-2 py-1 transition-colors hover:bg-accent/50"
-              >
-                <div className="flex min-w-0 items-baseline justify-between gap-2">
-                  <span className="truncate text-sm font-medium">
-                    {nextMilestone.name}
+      <div className="grid gap-8 @3xl:grid-cols-2">
+        <OverviewSection title={t`Budget`}>
+          <div className="flex flex-col gap-3 rounded-lg border border-border px-4 py-3">
+            {hasBudget ? (
+              <>
+                <div className="flex items-baseline justify-between gap-4 text-sm tabular-nums">
+                  <span className="min-w-0 truncate">
+                    <span className={cn(isOverBudget && "text-red-500")}>
+                      {actualText}
+                    </span>{" "}
+                    <span className="text-muted-foreground">
+                      <Trans>of {budgetText}</Trans>
+                    </span>
                   </span>
-                  <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
-                    {nextMilestone.startDate
-                      ? `${formatDate(nextMilestone.startDate)} – `
-                      : ""}
-                    {nextMilestone.endDate
-                      ? formatDate(nextMilestone.endDate)
-                      : ""}
+                  <span
+                    className={cn(
+                      "shrink-0 text-xs",
+                      isOverBudget ? "text-red-500" : "text-muted-foreground"
+                    )}
+                  >
+                    {percent.format(figures.actual / budget)}
                   </span>
                 </div>
-                <BarProgress
-                  progress={nextMilestone.completedCount}
-                  max={Math.max(nextMilestone.elementCount, 1)}
-                  label={t`Elements done`}
-                  value={`${nextMilestone.completedCount} / ${nextMilestone.elementCount}`}
-                  activeClassName="bg-muted-foreground"
+                <Progress
+                  value={Math.min((figures.actual / budget) * 100, 100)}
+                  aria-label={t`Actual of budget`}
+                  className="h-1.5 min-w-0"
+                  indicatorClassName={
+                    isOverBudget ? "bg-red-500" : "bg-foreground/70"
+                  }
                 />
-              </Link>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  <Trans>Committed {committedText}</Trans>
+                </p>
+              </>
             ) : (
-              <Empty
-                className="py-4"
-                title={t`No upcoming milestone`}
-                description={null}
-              />
+              <>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>No budget set on the plan.</Trans>
+                </p>
+                <p className="text-xs text-muted-foreground tabular-nums">
+                  <Trans>
+                    Actual {actualText} · Committed {committedText}
+                  </Trans>
+                </p>
+              </>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </OverviewSection>
+
+        <OverviewSection title={t`Next milestone`}>
+          {nextMilestone ? (
+            <Link
+              to={path.to.projectMilestones(projectId)}
+              className="flex flex-col gap-3 rounded-lg border border-border px-4 py-3 transition-colors hover:bg-accent/50"
+            >
+              <div className="flex min-w-0 items-baseline justify-between gap-4 text-sm">
+                <span className="truncate">{nextMilestone.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                  {nextMilestone.startDate
+                    ? `${formatDate(nextMilestone.startDate)} – `
+                    : ""}
+                  {nextMilestone.endDate
+                    ? formatDate(nextMilestone.endDate)
+                    : ""}
+                </span>
+              </div>
+              <Progress
+                value={
+                  nextMilestone.elementCount > 0
+                    ? (nextMilestone.completedCount /
+                        nextMilestone.elementCount) *
+                      100
+                    : 0
+                }
+                aria-label={t`Elements done`}
+                className="h-1.5 min-w-0"
+                indicatorClassName="bg-foreground/70"
+              />
+              <div className="flex items-baseline justify-between gap-4 text-xs text-muted-foreground tabular-nums">
+                <span>
+                  <Trans>Elements done</Trans>
+                </span>
+                <span>
+                  {nextMilestone.completedCount} / {nextMilestone.elementCount}
+                </span>
+              </div>
+            </Link>
+          ) : (
+            <p className="rounded-lg border border-border px-4 py-3 text-sm text-muted-foreground">
+              <Trans>No upcoming milestone</Trans>
+            </p>
+          )}
+        </OverviewSection>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Needs attention</Trans>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      <OverviewSection title={t`Needs attention`}>
+        <div className="rounded-lg border border-border p-1">
           {attention.length > 0 ? (
-            <div className="-mx-2 flex flex-col">{attention}</div>
+            attention
           ) : (
-            <Empty
-              className="py-4"
-              title={t`Nothing needs attention`}
-              description={null}
-            />
+            <p className="flex min-h-9 items-center px-3 text-sm text-muted-foreground">
+              <Trans>Nothing needs attention</Trans>
+            </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </OverviewSection>
     </div>
+  );
+}
+
+/** A small heading over its content: no card header bar, no divider. */
+function OverviewSection({
+  title,
+  children
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="flex min-w-0 flex-col gap-2">
+      <Subheading as="h3">{title}</Subheading>
+      {children}
+    </section>
   );
 }
 
@@ -301,7 +304,7 @@ function AttentionRow({
   return (
     <Link
       to={to}
-      className="flex min-h-9 items-center gap-3 rounded-lg px-2 text-sm transition-colors hover:bg-accent/50"
+      className="flex min-h-9 items-center gap-3 rounded-md px-3 text-sm transition-colors hover:bg-accent/50"
     >
       <span className="flex size-4 shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-4">
         {icon}

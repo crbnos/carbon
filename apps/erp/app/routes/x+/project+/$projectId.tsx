@@ -74,7 +74,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     switcherOptions,
     changeRequests,
     planningGroups,
-    billingLines
+    billingLines,
+    stockRows,
+    pegRows
   ] = await Promise.all([
     getProject(client, companyId, projectId),
     getProjectStates(client, projectId, companyId),
@@ -87,8 +89,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       status: ["Open"],
       dueBefore: today
     }),
-    // The sidebar: the element tree, the project switcher and the change
-    // request picker.
+    // The sidebar (the element tree, the change request picker) and the
+    // header's project switcher.
     getProjectElements(client, projectId, companyId),
     getProjectSwitcherOptions(client, companyId),
     getProjectChangeRequests(client, projectId, companyId),
@@ -98,7 +100,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId),
     // Billing shows under Costs only while a contract line bills the project.
-    getContractBillingLines(client, { companyId, projectId })
+    getContractBillingLines(client, { companyId, projectId }),
+    // Stock and Pegging show under Costs only once the project has project
+    // stock (an item ledger row of its own) or a current peg (Layer 5).
+    client
+      .from("itemLedger")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("projectId", projectId),
+    client
+      .from("projectPeg")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("projectId", projectId)
+      .is("supersededAt", null)
   ]);
 
   if (project.error || project.data?.companyId !== companyId) {
@@ -130,7 +145,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ["switcher projects", switcherOptions],
     ["change requests", changeRequests],
     ["planning groups", planningGroups],
-    ["contract billing lines", billingLines]
+    ["contract billing lines", billingLines],
+    ["stock", stockRows],
+    ["pegs", pegRows]
   ] as const) {
     if (result.error) {
       logger.error(`Failed to load the project's ${what}`, {
@@ -203,7 +220,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     hasBillingLines:
       project.data.costTreatment === "Contract" &&
-      (billingLines.data ?? []).length > 0
+      (billingLines.data ?? []).length > 0,
+    hasProjectStock: (stockRows.count ?? 0) > 0,
+    hasPegs: (pegRows.count ?? 0) > 0
   };
 }
 

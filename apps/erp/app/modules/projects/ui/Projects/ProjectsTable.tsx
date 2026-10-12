@@ -3,11 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  BarProgress,
   Checkbox,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
-  MenuItem
+  MenuItem,
+  Progress
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -161,12 +161,12 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
           const used = actual / budget;
           return (
             <div className="flex w-40 items-center gap-2">
-              <BarProgress
-                progress={Math.min(actual, budget)}
-                max={budget}
-                className="flex-1"
-                activeClassName={
-                  used > 1 ? "bg-red-500" : "bg-muted-foreground"
+              <Progress
+                value={Math.min(used * 100, 100)}
+                aria-label={t`Budget used`}
+                className="h-1.5 min-w-0 flex-1"
+                indicatorClassName={
+                  used > 1 ? "bg-red-500" : "bg-foreground/70"
                 }
               />
               <span

@@ -17,10 +17,8 @@ import {
   LuTimer
 } from "react-icons/lu";
 import { useParams } from "react-router";
-import { useRouteData } from "~/hooks";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
-import type { Project } from "../../types";
 
 export type ProjectSidebarLink = {
   name: string;
@@ -37,17 +35,19 @@ export type ProjectSidebarLink = {
  * Settings is returned on its own: the sidebar pins it to the bottom.
  */
 export function useProjectSidebarLinks({
-  hasBillingLines
+  hasBillingLines,
+  hasProjectStock,
+  hasPegs
 }: {
   hasBillingLines: boolean;
+  /** The project holds or has held stock of its own (an item ledger row). */
+  hasProjectStock: boolean;
+  /** The project has a current peg. */
+  hasPegs: boolean;
 }): { links: ProjectSidebarLink[]; settings: ProjectSidebarLink } {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
-  const routeData = useRouteData<{ project: Project }>(
-    path.to.project(projectId)
-  );
-  const project = routeData?.project;
   const overview = path.to.project(projectId);
 
   const links: ProjectSidebarLink[] = [
@@ -79,7 +79,7 @@ export function useProjectSidebarLinks({
       shortcut: PROJECT_TAB_SHORTCUTS.costs
     },
     // Under Costs, each only while it applies (Layer 5).
-    ...(project?.projectStock
+    ...(hasProjectStock
       ? [
           {
             name: t`Stock`,
@@ -90,7 +90,7 @@ export function useProjectSidebarLinks({
           }
         ]
       : []),
-    ...(project?.planningGroupId
+    ...(hasPegs
       ? [
           {
             name: t`Pegging`,
