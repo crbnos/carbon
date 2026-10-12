@@ -2,9 +2,20 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { LabelWithHelp, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { Hyperlink } from "~/components";
+import {
+  LabelWithHelp,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Tr
+} from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
+import { Link } from "react-router";
 import { useCurrencyFormatter, useUser } from "~/hooks";
 import { usePercentFormatter } from "~/hooks/usePercentFormatter";
 import { FundingBar } from "~/modules/sales/ui/Contracts";
@@ -15,10 +26,11 @@ import type { ContractBillingLine } from "../../types";
 type Position = { billed: number; unbilled: number; incurred: number };
 
 /**
- * A project's contract billing lines: the contract, the line, its billing
- * element, method and funding, and with `revenue` the percent complete and
- * the revenue recognized to date. A Right to Invoice line has no percent
- * complete.
+ * A project's contract billing lines: the contract and line, its billing
+ * element and funding, and with `revenue` the percent complete and the
+ * revenue recognized to date. A Right to Invoice line has no percent
+ * complete. The billing method and the rest of the terms are on the line's
+ * own page, which the line name opens.
  */
 export default function ProjectBillingLines({
   lines,
@@ -30,7 +42,6 @@ export default function ProjectBillingLines({
   /** Progress and revenue to date per line (`getProjectContractRevenue`). */
   revenue?: Record<string, ProjectContractRevenue>;
 }) {
-  const { t } = useLingui();
   const { company } = useUser();
   // Billing lines need the contract currency to be the base currency (P5).
   const currencyCode = company.baseCurrencyCode ?? "USD";
@@ -42,11 +53,6 @@ export default function ProjectBillingLines({
     return line.revenueMethod === "Percent Complete" && progress !== null
       ? formatPercent.format(progress)
       : "—";
-  };
-  const methodLabels: Record<ContractBillingLine["billingMethod"], string> = {
-    Fixed: t`Fixed`,
-    "Time & Materials": t`Time & Materials`,
-    "Cost Plus": t`Cost Plus`
   };
 
   if (lines.length === 0) {
@@ -62,12 +68,9 @@ export default function ProjectBillingLines({
 
   return (
     <div className="min-h-0 overflow-auto rounded-md border border-border">
-      <Table full>
+      <Table full className="table-fixed">
         <Thead>
           <Tr>
-            <Th>
-              <Trans>Contract</Trans>
-            </Th>
             <Th>
               <Trans>Line</Trans>
             </Th>
@@ -76,22 +79,17 @@ export default function ProjectBillingLines({
                 <Trans>Billing Element</Trans>
               </LabelWithHelp>
             </Th>
-            <Th>
-              <LabelWithHelp termId="billing-method" variant="inline">
-                <Trans>Method</Trans>
-              </LabelWithHelp>
-            </Th>
-            <Th className="min-w-40">
+            <Th className="w-40">
               <Trans>Funding</Trans>
             </Th>
             {revenue && (
-              <Th className="text-right">
-                <Trans>Percent Complete</Trans>
+              <Th className="w-28 whitespace-nowrap text-right">
+                <Trans>Complete</Trans>
               </Th>
             )}
             {revenue && (
-              <Th className="text-right">
-                <Trans>Revenue Recognized</Trans>
+              <Th className="w-32 whitespace-nowrap text-right">
+                <Trans>Recognized</Trans>
               </Th>
             )}
           </Tr>
@@ -99,26 +97,10 @@ export default function ProjectBillingLines({
         <Tbody>
           {lines.map((line) => (
             <Tr key={line.id}>
-              <Td className="whitespace-nowrap">
-                {line.contract ? (
-                  <Hyperlink to={path.to.contractDetails(line.contract.id)}>
-                    {line.contract.customerContractId}
-                  </Hyperlink>
-                ) : (
-                  "—"
-                )}
+              <Td className="max-w-0">
+                <LineName line={line} />
               </Td>
-              <Td>
-                <Hyperlink
-                  to={path.to.contractLineBilling(
-                    line.customerContractId,
-                    line.id
-                  )}
-                >
-                  {line.description || line.item?.name || line.id}
-                </Hyperlink>
-              </Td>
-              <Td>
+              <Td className="max-w-0">
                 {line.element ? (
                   <span className="flex min-w-0 items-center gap-2">
                     <span className="shrink-0 whitespace-nowrap font-medium">
@@ -129,9 +111,6 @@ export default function ProjectBillingLines({
                 ) : (
                   "—"
                 )}
-              </Td>
-              <Td className="whitespace-nowrap">
-                {methodLabels[line.billingMethod]}
               </Td>
               <Td>
                 <FundingBar
@@ -158,5 +137,29 @@ export default function ProjectBillingLines({
         </Tbody>
       </Table>
     </div>
+  );
+}
+
+/** The contract id, then the line's name on one line; a long name ends in an
+ *  ellipsis and shows whole in a tooltip. */
+function LineName({ line }: { line: ContractBillingLine }) {
+  const name = line.description || line.item?.name || line.id;
+  return (
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="shrink-0 whitespace-nowrap text-muted-foreground tabular-nums">
+        {line.contract?.customerContractId ?? "—"}
+      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Link
+            to={path.to.contractLineBilling(line.customerContractId, line.id)}
+            className="min-w-0 truncate font-medium hover:underline"
+          >
+            {name}
+          </Link>
+        </TooltipTrigger>
+        <TooltipContent>{name}</TooltipContent>
+      </Tooltip>
+    </span>
   );
 }
