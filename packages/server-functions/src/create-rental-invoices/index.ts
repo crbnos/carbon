@@ -322,6 +322,7 @@ async function draftAgreementInvoices(
       "c.description",
       "c.amount",
       "c.taxPercent",
+      "c.invoiceSeparately",
       "c.voidedSalesInvoiceId"
     ])
     .where("l.rentalAgreementId", "=", agreement.id)
@@ -385,6 +386,7 @@ async function draftAgreementInvoices(
   const lines: {
     values: LineValues;
     isAdjustment: boolean;
+    invoiceSeparately: boolean;
     voidedInvoiceReadableId: string | null;
   }[] = [
     ...billable.map((period) => ({
@@ -403,6 +405,7 @@ async function draftAgreementInvoices(
         serviceEndDate: period.periodEnd
       },
       isAdjustment: period.isAdjustment ?? false,
+      invoiceSeparately: false,
       voidedInvoiceReadableId: voidedReadableId(period.voidedSalesInvoiceId)
     })),
     ...charges.map((charge) => ({
@@ -418,6 +421,7 @@ async function draftAgreementInvoices(
         serviceEndDate: null
       },
       isAdjustment: false,
+      invoiceSeparately: charge.invoiceSeparately,
       voidedInvoiceReadableId: voidedReadableId(charge.voidedSalesInvoiceId)
     }))
   ];
@@ -428,6 +432,7 @@ async function draftAgreementInvoices(
       item: line.values,
       lineType: line.values.rentalLineType,
       isAdjustment: line.isAdjustment,
+      invoiceSeparately: line.invoiceSeparately,
       voidedInvoiceReadableId: line.voidedInvoiceReadableId
     }))
   );

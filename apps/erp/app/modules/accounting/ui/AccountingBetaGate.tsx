@@ -18,12 +18,14 @@ import { useSettings } from "~/hooks";
 import { path } from "~/utils/path";
 import { hasAccountingCutover } from "../accounting.utils";
 
+// Fixed assets stay open: the register (and the rental fleet built on it) is
+// usable before accounting is set up; posting a run or a disposal is what
+// waits for the cutover, and the server refuses those on its own.
 const gatedRoutes = [
   path.to.reports,
   path.to.intercompany,
   path.to.accountingJournals,
   path.to.accountingPeriods,
-  path.to.fixedAssets,
   path.to.depreciationRuns
 ];
 
@@ -55,7 +57,7 @@ export default function AccountingBetaGate() {
           <UpgradeOverlayDescription>
             <Trans>
               Set up accounting to use reports, journal entries, accounting
-              periods, fixed assets and more.
+              periods, depreciation runs and more.
             </Trans>
           </UpgradeOverlayDescription>
         </UpgradeOverlayContent>

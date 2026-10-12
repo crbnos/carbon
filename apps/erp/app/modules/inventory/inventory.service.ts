@@ -948,6 +948,8 @@ export async function getAvailableTrackedEntities(
     excludeLineside?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
+    /** Only lots in this bin; `id: null` is the unassigned bin. */
+    inStorageUnit?: { id: string | null };
   }
 ) {
   return client.rpc("get_available_tracked_entities", {
@@ -956,7 +958,9 @@ export async function getAvailableTrackedEntities(
     p_location_id: args.locationId,
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
-    p_exclude_line_id: args.excludeLineId ?? undefined
+    p_exclude_line_id: args.excludeLineId ?? undefined,
+    p_filter_storage_unit: args.inStorageUnit !== undefined,
+    p_storage_unit_id: args.inStorageUnit?.id ?? undefined
   });
 }
 

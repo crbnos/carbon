@@ -55318,6 +55318,7 @@ export type Database = {
           createdBy: string
           description: string
           id: string
+          invoiceSeparately: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId: string | null
           taxPercent: number
@@ -55334,6 +55335,7 @@ export type Database = {
           createdBy: string
           description: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -55350,6 +55352,7 @@ export type Database = {
           createdBy?: string
           description?: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId?: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -91400,9 +91403,11 @@ export type Database = {
           p_exclude_allocated?: boolean
           p_exclude_line_id?: string
           p_exclude_lineside?: boolean
+          p_filter_storage_unit?: boolean
           p_item_id: string
           p_location_id: string
           p_sort_method?: string
+          p_storage_unit_id?: string
         }
         Returns: {
           availableQuantity: number
@@ -93678,6 +93683,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      sync_advance_document_sequence: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
       sync_archive_other_procedures: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
@@ -94047,7 +94056,11 @@ export type Database = {
         | "Other Expense"
         | "Tax"
         | "Investments"
-      approvalDocumentType: "purchaseOrder" | "qualityDocument" | "supplier"
+      approvalDocumentType:
+        | "purchaseOrder"
+        | "qualityDocument"
+        | "supplier"
+        | "changeOrder"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
@@ -95547,7 +95560,12 @@ export const Constants = {
         "Tax",
         "Investments",
       ],
-      approvalDocumentType: ["purchaseOrder", "qualityDocument", "supplier"],
+      approvalDocumentType: [
+        "purchaseOrder",
+        "qualityDocument",
+        "supplier",
+        "changeOrder",
+      ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],

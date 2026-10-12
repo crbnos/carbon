@@ -289,6 +289,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
+## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
+
+**Context:** Sales order shipments booked every serial and batch against `shipmentLine.storageUnitId` (copied from the sales order line, which defaults to the item's default bin). A unit picked from any other bin drove the line's bin negative and left its real bin showing stock that had already shipped. The stock transfer picker had the matching gap: it listed every lot at the location, not the line's source bin, and an empty source (`fromStorageUnitId` null — the wizard's "No storage unit") meant "any bin".
+
+**Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
+
+**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`server-functions/src/lib/storage-units.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+
+**Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
+
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
 **Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
@@ -3516,3 +3526,23 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 **Rule:** After a migration drops or moves a column, grep every string select of the table and its views (`.select("…")`, `fetchAllFromTable` column lists, embeds) for the old name. Do not rely on typecheck for them.
 
 **Applies to:** any migration that drops, renames or moves a column.
+
+## A caller-supplied document number used to leave the counter behind
+
+**Context:** Documents take their number from `get_next_sequence` unless the caller supplies one: a custom ID typed into `SequenceOrCustomId`, or an MCP / API upsert (`upsertSalesOrder`, `upsertQuote`, `upsertPurchaseOrder`, `upsertJob`, …) whose create path requires the number.
+
+**Problem:** A supplied number never moved the `sequence` row. Once the counter reached a number an agent or a user had already used, every new document failed on the unique constraint ("Failed to insert sales order") until someone moved the counter by hand.
+
+**Rule:** The counter is kept ahead in the database, not in app code: the `sync_advance_document_sequence` after-interceptor moves `sequence.next` past any number saved in the sequence's format, on insert and on a number change. A new numbered table must be added to that interceptor's `CASE` and given the interceptor in `attachments.ts`; the `document-sequence-synced` conformance check fails CI for a new counter that is neither covered nor in its `EXEMPT_COUNTERS`. Never "fix" a collision by retrying `get_next_sequence`.
+
+**Applies to:** `packages/database/src/event-system/handlers/sync_advance_document_sequence.sql`, `util.document_sequence_pattern`, any table with a readable document number.
+
+## An entity in `audit.config.ts` records nothing until its tables have `events: true`
+
+**Context:** Change notice history (the `changeOrder` audit entity) was empty in the History drawer even with audit logging on (2026-10-08).
+
+**Problem:** `auditConfig.entities.changeOrder` listed its 4 tables, and `syncAuditSubscriptions` created AUDIT subscriptions for them. But `packages/database/src/event-system/attachments.ts` gave `changeOrder` only a statement broadcast and the 3 child tables no entry at all, so no async event trigger existed and nothing reached the event queue. Every check looked green: subscriptions present, sweeper succeeding, queue empty.
+
+**Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
+
+**Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.

@@ -5,7 +5,6 @@
 import {
   type ApprovalDocumentType,
   type ApprovalRule,
-  approvalDocumentTypeLabel,
   approvalDocumentTypesWithAmounts
 } from "@carbon/ee/approvals";
 import {
@@ -50,6 +49,14 @@ const ApprovalRuleCard = memo(
     const currencyFormatter = useCurrencyFormatter({ compact: true });
     const deleteDisclosure = useDisclosure();
 
+    const documentTypeLabels: Record<ApprovalDocumentType, string> = {
+      purchaseOrder: t`Purchase Order`,
+      qualityDocument: t`Quality Document`,
+      supplier: t`Supplier`,
+      changeOrder: t`Change Notice`
+    };
+    const documentTypeLabel = documentTypeLabels[documentType];
+
     const canEdit = permissions.can("update", "settings");
     const canDelete = permissions.can("update", "settings");
 
@@ -81,7 +88,7 @@ const ApprovalRuleCard = memo(
                       as="h3"
                       className="max-md:text-left max-md:min-w-0"
                     >
-                      {approvalDocumentTypeLabel[documentType]}
+                      {documentTypeLabel}
                       {approvalDocumentTypesWithAmounts.includes(
                         documentType
                       ) &&
@@ -153,11 +160,7 @@ const ApprovalRuleCard = memo(
         <ConfirmDelete
           action={path.to.deleteApprovalRule(rule.id)}
           isOpen={deleteDisclosure.isOpen}
-          name={
-            documentType === "purchaseOrder"
-              ? t`Purchase Order approval rule`
-              : t`Quality Document approval rule`
-          }
+          name={t`${documentTypeLabel} approval rule`}
           text={t`Are you sure you want to delete this approval rule? This cannot be undone.`}
           onCancel={deleteDisclosure.onClose}
           onSubmit={handleDeleteConfirm}
