@@ -22,7 +22,7 @@ A Carbon panel in Onshape's element right panel. Users push parts, assemblies an
 - OAuth: one Onshape app, scopes `OAuth2Read OAuth2Write`, two redirect URIs (`ONSHAPE_OAUTH_REDIRECT_URL` → `/api/integrations/onshape/oauth`, `ONSHAPE_V2_OAUTH_REDIRECT_URL` → `/api/integrations/onshape-v2/oauth`). Install routes call `beginOnshapeAuthorization`; callbacks call `completeOnshapeAuthorization` (`modules/settings/onshape-oauth.server.ts`); `getOnshapeOAuthConfig` picks the redirect per id and answers `not-configured` when a variable is missing. State is the cookie-bound one from `@carbon/auth/oauth-state.server`.
 - Connect opens a popup (`beginOAuthPopup`, `packages/ee/src/oauth-popup.ts`, opened inside the click). The callback renders `oauthPopupResponse`: it posts the outcome to the opener and closes, or lands on the integrations page with no opener. The drawer's Reconnect action POSTs to the install route and follows `{ redirectUrl }`.
 - `onshapeHealthcheck` (`hooks.server.ts`) builds the client (refreshing an expired token) and reads `/companies`; a revoked grant reads unhealthy.
-- Tokens live in Vault: `SECRET_KEYS["onshape-v2"]` (`integrations/secrets.ts`) names the access and refresh token. Migration `20261011050300_onshape-v2-integration.sql` seeds the `integration` row; `20261011050301_onshape-v2-vault-secrets.sql` moves any plaintext tokens already in `onshape-v2` metadata into Vault.
+- Tokens live in Vault: `SECRET_KEYS["onshape-v2"]` (`integrations/secrets.ts`) names the access and refresh token. Migration `20261012122200_onshape-v2-integration.sql` seeds the `integration` row; `20261012122201_onshape-v2-vault-secrets.sql` moves any plaintext tokens already in `onshape-v2` metadata into Vault.
 
 ## Integration metadata
 
