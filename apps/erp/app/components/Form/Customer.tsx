@@ -36,7 +36,11 @@ const Customer = (props: CustomerSelectProps) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const options = useMemo(() => {
-    const all = customers.map((c) => ({ value: c.id, label: c.name }));
+    const all = customers.map((c) => ({
+      value: c.id,
+      label: <CustomerAvatar customerId={c.id} />,
+      keywords: c.name
+    }));
     return props.exclude?.length
       ? all.filter((o) => !props.exclude!.includes(o.value))
       : all;

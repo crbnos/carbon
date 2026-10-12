@@ -14,7 +14,7 @@ import { PickerList } from "./PickerList";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString, withDistinctHelpers } from "./utils/react";
+import { optionLabelText, withDistinctHelpers } from "./utils/react";
 import { usePhoneOpenAutoFocus } from "./Viewport";
 
 export type CreatableComboboxProps = Omit<
@@ -28,6 +28,8 @@ export type CreatableComboboxProps = Omit<
     value: string;
     helper?: string;
     helperRight?: string;
+    /** Extra search text, matched but never rendered. */
+    keywords?: string;
   }[];
   selected?: string[];
   isClearable?: boolean;
@@ -93,21 +95,18 @@ const CreatableCombobox = forwardRef<HTMLButtonElement, CreatableComboboxProps>(
     );
     const selectedOptionText = useMemo(() => {
       if (!selectedOption) return undefined;
-      const labelText =
-        typeof selectedOption.label === "string"
-          ? selectedOption.label
-          : reactNodeToString(selectedOption.label);
-
-      return [labelText, selectedOption.helper].filter(Boolean).join(" - ");
+      return [optionLabelText(selectedOption), selectedOption.helper]
+        .filter(Boolean)
+        .join(" - ");
     }, [selectedOption]);
     // Real-text sizer instead of a ch estimate — see Combobox.tsx.
     const longestOptionText = useMemo(() => {
       return options.reduce((longest, option) => {
-        const labelText =
-          typeof option.label === "string"
-            ? option.label
-            : reactNodeToString(option.label);
-        const combined = [labelText, option.helper, option.helperRight]
+        const combined = [
+          optionLabelText(option),
+          option.helper,
+          option.helperRight
+        ]
           .filter(Boolean)
           .join(" ");
 
@@ -260,10 +259,9 @@ const filterCreatableComboboxOptions = (
 ) =>
   search
     ? options.filter((option) => {
-        const value =
-          typeof option.label === "string"
-            ? `${option.label} ${option.helper ?? ""}`
-            : reactNodeToString(option.label);
+        const value = [optionLabelText(option), option.helper, option.keywords]
+          .filter(Boolean)
+          .join(" ");
 
         return value.toLowerCase().includes(search.toLowerCase());
       })
