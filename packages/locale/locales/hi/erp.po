@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "कॉपी किया गया {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "घंटे"
 msgid "Hours"
 msgstr "घंटे"
 
-msgid "Hours Actual"
-msgstr "वास्तविक घंटे"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M अनुबंधों पर घंटे और राशि"
 
@@ -11837,9 +11835,6 @@ msgstr "घंटे की बर्न · {0} योजनाबद्ध"
 
 msgid "Hours estimate"
 msgstr "घंटे अनुमान"
-
-msgid "Hours Estimated"
-msgstr "अनुमानित घंटे"
 
 msgid "Hours not yet assigned"
 msgstr "अभी तक असाइन न किए गए घंटे"
@@ -13390,6 +13385,9 @@ msgstr "नवीनतम आदेश तारीख"
 msgid "Latitude"
 msgstr "अक्षांश"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "लीड टाइम"
 
@@ -14667,6 +14665,10 @@ msgstr "अधिक जानकारी"
 msgid "More options"
 msgstr "अधिक विकल्प"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "अधिक ओवरटाइम"
 
@@ -15010,6 +15012,9 @@ msgstr "नया आयाम"
 msgid "New element"
 msgstr "नया तत्व"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "नए तत्व का नाम"
 
@@ -15027,6 +15032,12 @@ msgstr "नया फील्ड"
 
 msgid "New Fixed Asset"
 msgstr "नई अचल संपत्ति"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "नया गेज"
@@ -15112,6 +15123,9 @@ msgstr "नई गैर-अनुरूपता प्रकार"
 msgid "New Owner"
 msgstr "नया स्वामी"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "नया पार्ट"
 
@@ -15177,6 +15191,9 @@ msgstr "नया रिकॉर्ड बनाया गया"
 
 msgid "New Rental Agreement"
 msgstr "नया किराये का समझौता"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "नया रिवीजन"
@@ -15255,6 +15272,15 @@ msgstr "नया आपूर्तिकर्ता भाग"
 
 msgid "New Supplier Return"
 msgstr "नया आपूर्तिकर्ता रिटर्न"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
@@ -15671,11 +15697,17 @@ msgstr "कोई तत्व नहीं मिला"
 msgid "No elements"
 msgstr "कोई तत्व नहीं"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "दिखाने के लिए कोई तत्व नहीं"
 
 msgid "No elements yet"
 msgstr "अभी कोई तत्व नहीं"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "कोई पात्र ऑपरेशन नहीं"
@@ -16887,9 +16919,6 @@ msgstr "ऑडिट लॉग खोलें"
 msgid "Open batch"
 msgstr "खुली बैच"
 
-msgid "Open Change Request"
-msgstr "खुला परिवर्तन अनुरोध"
-
 msgid "Open change requests"
 msgstr "खुले परिवर्तन अनुरोध"
 
@@ -18018,9 +18047,6 @@ msgstr "योजना"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "आइटम और स्थान के अनुसार मांग का अनुमान लगाकर आगे की योजना बनाएं, फिर इसे सीधे MRP और शेड्यूलिंग में डालें।"
-
-msgid "Plan locked"
-msgstr "योजना लॉक"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "कई प्रोजेक्ट को एक के रूप में योजना बनाएँ, सभी के लिए एक बार खरीद करें, और देखें कि प्रत्येक आदेश किस प्रोजेक्ट के लिए है।"

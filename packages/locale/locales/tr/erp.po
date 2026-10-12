@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Kopyalandı {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "saat"
 msgid "Hours"
 msgstr "Saatler"
 
-msgid "Hours Actual"
-msgstr "Fiili Saatler"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M sözleşmelerinde Saatler ve Tutarlar"
 
@@ -11837,9 +11835,6 @@ msgstr "Saatler kullanıldı · {0} planlanmış"
 
 msgid "Hours estimate"
 msgstr "Saatler tahmini"
-
-msgid "Hours Estimated"
-msgstr "Tahmini Saatler"
 
 msgid "Hours not yet assigned"
 msgstr "Henüz atanmayan saatler"
@@ -13390,6 +13385,9 @@ msgstr "Son Sipariş Tarihi"
 msgid "Latitude"
 msgstr "Enlem"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "tedarik süresi"
 
@@ -14667,6 +14665,10 @@ msgstr "Daha fazla bilgi"
 msgid "More options"
 msgstr "Daha fazla seçenek"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "Daha fazla fazla mesai"
 
@@ -15010,6 +15012,9 @@ msgstr "Yeni Boyut"
 msgid "New element"
 msgstr "Yeni öğe"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "Yeni öğe adı"
 
@@ -15027,6 +15032,12 @@ msgstr "Yeni Alan"
 
 msgid "New Fixed Asset"
 msgstr "Yeni sabit kıymet"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "Yeni ölçüm aleti"
@@ -15112,6 +15123,9 @@ msgstr "Yeni Uygunsuzluk Türü"
 msgid "New Owner"
 msgstr "Yeni Sahip"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "Yeni parça"
 
@@ -15177,6 +15191,9 @@ msgstr "Yeni kayıt oluşturuldu"
 
 msgid "New Rental Agreement"
 msgstr "Yeni Kira Sözleşmesi"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Yeni Revizyon"
@@ -15255,6 +15272,15 @@ msgstr "Yeni Tedarikçi Parçası"
 
 msgid "New Supplier Return"
 msgstr "Yeni Tedarikçi İadesi"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
@@ -15671,11 +15697,17 @@ msgstr "Öğe bulunamadı"
 msgid "No elements"
 msgstr "Öğe yok"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "Gösterilecek öğe yok"
 
 msgid "No elements yet"
 msgstr "Henüz öğe yok"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "Uygun operasyon yok"
@@ -16887,9 +16919,6 @@ msgstr "Açık Denetim günlüğü"
 msgid "Open batch"
 msgstr "Açık Parti"
 
-msgid "Open Change Request"
-msgstr "Açık Değişiklik İsteği"
-
 msgid "Open change requests"
 msgstr "Açık değişiklik istekleri"
 
@@ -18018,9 +18047,6 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Stok kartı ve lokasyon başına talep projeksiyonu yaparak önceden planlayın, sonra bunu doğrudan MRP ve planlama'ya besleyin."
-
-msgid "Plan locked"
-msgstr "Plan Kilitli"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Birkaç projeyi bir olarak planlayın, hepsi için bir kez satın alın ve her siparişin hangi proje için olduğunu görün."

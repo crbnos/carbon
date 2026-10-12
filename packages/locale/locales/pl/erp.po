@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "Konwertuje jednostkę zakupu dostawcy na Twoją jednostkę zapasów na pozycji zamówienia zakupu, przyjęcia lub faktury — zakup w kartonach po 12 sztuk, zapasy w sztukach."
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Skopiowano {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "godziny"
 msgid "Hours"
 msgstr "Godziny"
 
-msgid "Hours Actual"
-msgstr "Godziny rzeczywiste"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "Godziny i kwoty na kontraktach T&M"
 
@@ -11837,9 +11835,6 @@ msgstr "Spalanie godzin · {0} zaplanowanych"
 
 msgid "Hours estimate"
 msgstr "Szacunek godzin"
-
-msgid "Hours Estimated"
-msgstr "Szacunkowe godziny"
 
 msgid "Hours not yet assigned"
 msgstr "Godziny jeszcze nieprzydzielone"
@@ -13390,6 +13385,9 @@ msgstr "Ostatnia data zamówienia"
 msgid "Latitude"
 msgstr "Szerokość geograficzna"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "Czas realizacji"
 
@@ -14667,6 +14665,10 @@ msgstr "Więcej informacji"
 msgid "More options"
 msgstr "Więcej opcji"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "Więcej nadgodzin"
 
@@ -15010,6 +15012,9 @@ msgstr "Nowy Wymiar"
 msgid "New element"
 msgstr "Nowy element"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "Nazwa nowego elementu"
 
@@ -15027,6 +15032,12 @@ msgstr "Nowe pole"
 
 msgid "New Fixed Asset"
 msgstr "Nowy Środek Trwały"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "Nowy Przyrząd pomiarowy"
@@ -15112,6 +15123,9 @@ msgstr "Nowy typ niezgodności"
 msgid "New Owner"
 msgstr "Nowy Właściciel"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "Nowa Część"
 
@@ -15177,6 +15191,9 @@ msgstr "Nowy rekord utworzony"
 
 msgid "New Rental Agreement"
 msgstr "Nowa umowa wynajmu"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Nowa Rewizja"
@@ -15255,6 +15272,15 @@ msgstr "Nowa część dostawcy"
 
 msgid "New Supplier Return"
 msgstr "Nowy zwrot dostawcy"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Nowy Timecard"
@@ -15671,11 +15697,17 @@ msgstr "Nie znaleziono elementu"
 msgid "No elements"
 msgstr "Brak elementów"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "Brak elementów do wyświetlenia"
 
 msgid "No elements yet"
 msgstr "Brak elementów"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "Brak kwalifikujących się operacji"
@@ -16887,9 +16919,6 @@ msgstr "Otwórz dziennik audytu"
 msgid "Open batch"
 msgstr "Otwórz partię produkcyjną"
 
-msgid "Open Change Request"
-msgstr "Otwarte żądanie zmiany"
-
 msgid "Open change requests"
 msgstr "Otwarte żądania zmian"
 
@@ -18018,9 +18047,6 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planuj z wyprzedzeniem, projektując zapotrzebowanie dla każdego artykułu i lokalizacji, a następnie wprowadź je bezpośrednio do MRP i harmonogramu."
-
-msgid "Plan locked"
-msgstr "Plan zablokowany"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Zaplanuj wiele projektów razem, kup raz dla wszystkich i zobacz, dla którego projektu każde zamówienie jest."

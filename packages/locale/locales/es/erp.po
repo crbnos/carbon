@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "Convierte la unidad de compra del proveedor a tu unidad de existencias en una orden de compra, recepción o línea de factura — compra en cajas de 12, existencias en unidades."
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "Se copió {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "horas"
 msgid "Hours"
 msgstr "Horas"
 
-msgid "Hours Actual"
-msgstr "Horas reales"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "Horas y montos en contratos T&M"
 
@@ -11837,9 +11835,6 @@ msgstr "Consumo de horas · {0} planificado"
 
 msgid "Hours estimate"
 msgstr "Estimación de horas"
-
-msgid "Hours Estimated"
-msgstr "Horas estimadas"
 
 msgid "Hours not yet assigned"
 msgstr "Horas aún no asignadas"
@@ -13390,6 +13385,9 @@ msgstr "Última fecha de orden"
 msgid "Latitude"
 msgstr "Latitud"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "Plazo de entrega"
 
@@ -14667,6 +14665,10 @@ msgstr "Más información"
 msgid "More options"
 msgstr "Más opciones"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "Más horas extra"
 
@@ -15010,6 +15012,9 @@ msgstr "Nueva Dimensión"
 msgid "New element"
 msgstr "Nuevo elemento"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "Nuevo nombre de elemento"
 
@@ -15027,6 +15032,12 @@ msgstr "Nuevo Campo"
 
 msgid "New Fixed Asset"
 msgstr "Nuevo Activo Fijo"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "Nuevo instrumento de medición"
@@ -15112,6 +15123,9 @@ msgstr "Nuevo Tipo de No Conformidad"
 msgid "New Owner"
 msgstr "Nuevo Propietario"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "Pieza Nueva"
 
@@ -15177,6 +15191,9 @@ msgstr "Nuevo registro creado"
 
 msgid "New Rental Agreement"
 msgstr "Nuevo acuerdo de alquiler"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "Nueva Revisión"
@@ -15255,6 +15272,15 @@ msgstr "Nueva Parte de Proveedor"
 
 msgid "New Supplier Return"
 msgstr "Nueva devolución de proveedores"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "Nuevo Registro de Tiempo"
@@ -15671,11 +15697,17 @@ msgstr "Elemento no encontrado"
 msgid "No elements"
 msgstr "Sin elementos"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "Sin elementos para mostrar"
 
 msgid "No elements yet"
 msgstr "Sin elementos aún"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "Sin operaciones elegibles"
@@ -16887,9 +16919,6 @@ msgstr "Abrir Registro de Auditoría"
 msgid "Open batch"
 msgstr "Abrir lote"
 
-msgid "Open Change Request"
-msgstr "Solicitud de Cambio Abierta"
-
 msgid "Open change requests"
 msgstr "Solicitudes de cambio abiertas"
 
@@ -18018,9 +18047,6 @@ msgstr "Plan"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "Planifica adelante proyectando la demanda por artículo y ubicación, luego envíala directamente a MRP y programación."
-
-msgid "Plan locked"
-msgstr "Plan bloqueado"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "Planifique varios proyectos como uno, compre una sola vez para todos y vea para qué proyecto es cada pedido."

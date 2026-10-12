@@ -6,21 +6,28 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
   RecordOutlet,
   ResizablePanel,
-  ResizablePanelGroup
+  ResizablePanelGroup,
+  toast
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
-import { useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { useLoaderData, useLocation, useParams } from "react-router";
+import {
+  useLoaderData,
+  useLocation,
+  useNavigate,
+  useParams
+} from "react-router";
 import { EmployeeAvatar } from "~/components";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -39,7 +46,6 @@ import type {
 import {
   canonicalElementsParams,
   elementLayoutFromParams,
-  getProjectCostSummary,
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
@@ -47,8 +53,7 @@ import {
   parseElementFilters,
   projectElementTypes,
   projectPlanLockedMessage,
-  projectStateGroups,
-  rollUpCostSummary
+  projectStateGroups
 } from "~/modules/projects";
 import type { ChangeRequestOverlay } from "~/modules/projects/projects.server";
 import {
@@ -58,10 +63,12 @@ import {
   overlayLinkList
 } from "~/modules/projects/projects.server";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
+import {
+  useActiveChangeRequestId,
+  withChangeRequest
+} from "~/modules/projects/ui/ChangeRequests/useActiveChangeRequest";
 import { BuildFromPartDrawer } from "~/modules/projects/ui/Elements/BuildFromPartDrawer";
 import { ElementGraph } from "~/modules/projects/ui/Elements/ElementGraph";
-import { QuickAddRow } from "~/modules/projects/ui/Elements/ElementList";
-import { resolveElementDisplay } from "~/modules/projects/ui/Elements/ElementProperties";
 import { ElementReader } from "~/modules/projects/ui/Elements/ElementReader";
 import { ElementsHeader } from "~/modules/projects/ui/Elements/ElementsHeader";
 import { ElementTable } from "~/modules/projects/ui/Elements/ElementTable";
@@ -79,9 +86,6 @@ const logger = getLogger("erp", "project-elements");
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: XYFlowStyle }
 ];
-
-/** Every element property shows in the Table; there is no Display menu. */
-const display = resolveElementDisplay({});
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -134,19 +138,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (value) => value !== null
   );
 
-  const [elements, costSummary, descriptions, commentCounts] =
-    await Promise.all([
-      getProjectElements(client, projectId, companyId, queryFilters),
-      getProjectCostSummary(client, projectId, companyId),
-      // Only the Reader shows descriptions; the list query leaves them out.
-      layout === "reader"
-        ? getProjectElementDescriptions(client, projectId, companyId)
-        : Promise.resolve({ data: [], error: null }),
-      // Only the Tree's cards show comment counts.
-      layout === "tree"
-        ? getProjectElementCommentCounts(client, projectId, companyId)
-        : Promise.resolve({ data: [], error: null })
-    ]);
+  const [elements, descriptions, commentCounts] = await Promise.all([
+    getProjectElements(client, projectId, companyId, queryFilters),
+    // Only the Reader shows descriptions; the list query leaves them out.
+    layout === "reader"
+      ? getProjectElementDescriptions(client, projectId, companyId)
+      : Promise.resolve({ data: [], error: null }),
+    // Only the Tree's cards show comment counts.
+    layout === "tree"
+      ? getProjectElementCommentCounts(client, projectId, companyId)
+      : Promise.resolve({ data: [], error: null })
+  ]);
   if (descriptions.error) {
     logger.error("Failed to load element descriptions", {
       companyId,
@@ -189,14 +191,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  if (costSummary.error) {
-    logger.error("Failed to load project cost summary", {
-      companyId,
-      projectId,
-      error: costSummary.error
-    });
-  }
-
   // `?cr=` shows the plan as an open change request would leave it. Each row
   // carries its `changeOperation`, so the layouts can badge it.
   let elementRows: (ProjectElementListItem & {
@@ -230,7 +224,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     elements: elementRows,
     changeRequest,
-    costSummary: costSummary.data ?? [],
     links: linkRows,
     requirementStatus: verification.data?.requirementStatus ?? {},
     verification: verification.data?.verification ?? {},
@@ -241,7 +234,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (commentCounts.data ?? []).map((row) => [row.id, row.count])
     ) as Record<string, number>,
     layout,
-    type
+    type,
+    isFiltered: Object.values(elementFilters).some((value) => value !== null)
   };
 }
 
@@ -254,14 +248,14 @@ export default function ProjectElementsRoute() {
   const {
     elements,
     changeRequest,
-    costSummary,
     links,
     requirementStatus,
     verification,
     descriptions,
     commentCounts,
     layout,
-    type
+    type,
+    isFiltered
   } = useLoaderData<typeof loader>();
   const routeData = useRouteData<{
     project: Project;
@@ -271,27 +265,16 @@ export default function ProjectElementsRoute() {
   }>(path.to.project(projectId));
 
   const permissions = usePermissions();
+  const navigate = useNavigate();
   const { search } = useLocation();
   const [people] = usePeople();
   const typeLabels = useElementTypeLabels();
-
-  const [newType, setNewType] = useState<ProjectElementType>("Task");
-  const quickAddRef = useRef<HTMLInputElement>(null);
+  const changeRequestId = useActiveChangeRequestId();
 
   const states = routeData?.states ?? [];
   const labels = routeData?.labels ?? [];
   const milestones = routeData?.milestones ?? [];
   const isClosed = routeData?.project?.status === "Closed";
-
-  const { costByElement, actualByElement } = useMemo(() => {
-    const { byElement } = rollUpCostSummary(elements, costSummary);
-    return {
-      costByElement: byElement,
-      actualByElement: new Map(
-        [...byElement.entries()].map(([id, totals]) => [id, totals.actual])
-      )
-    };
-  }, [elements, costSummary]);
 
   const groupLabels: Record<ProjectStateGroup, string> = {
     Backlog: t`Backlog`,
@@ -386,12 +369,6 @@ export default function ProjectElementsRoute() {
     }
   ];
 
-  const focusQuickAdd = (next?: ProjectElementType) => {
-    if (next) setNewType(next);
-    // The input may mount in this render (an empty project shows it too).
-    requestAnimationFrame(() => quickAddRef.current?.focus());
-  };
-
   // After the lock milestone completes, the plan changes only through a
   // Draft change request: no create or delete in the live plan.
   const lockMilestone = milestones.find(
@@ -400,19 +377,53 @@ export default function ProjectElementsRoute() {
   const planLocked =
     isProjectPlanLocked({ lockMilestone }) && changeRequest?.status !== "Draft";
 
-  const layoutProps = {
-    projectId,
-    identifier: routeData?.project?.identifier ?? "",
-    elements,
-    states,
-    labels,
-    milestones,
-    display,
-    actualByElement,
-    canUpdate: permissions.can("update", "projects") && !isClosed,
-    canCreate:
-      permissions.can("create", "projects") && !isClosed && !planLocked,
-    canDelete: permissions.can("delete", "projects") && !isClosed && !planLocked
+  const canUpdate = permissions.can("update", "projects") && !isClosed;
+  const canCreate =
+    permissions.can("create", "projects") && !isClosed && !planLocked;
+  const canDelete =
+    permissions.can("delete", "projects") && !isClosed && !planLocked;
+
+  // New Element adds a row: a default name per type, under the element whose
+  // panel is open. The Table highlights the new row; the other layouts open
+  // its panel, since they have no row to show.
+  const newNames: Record<ProjectElementType, string> = {
+    Folder: t`New Folder`,
+    System: t`New System`,
+    Requirement: t`New Requirement`,
+    Function: t`New Function`,
+    Task: t`New Task`,
+    "Test Case": t`New Test Case`,
+    Parameter: t`New Parameter`
+  };
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const createFetcher = useAction<{
+    id?: string;
+    error?: { message: string };
+  }>({
+    onSuccess: (data) => {
+      if (!data.id) return;
+      if (layout === "table") setCreatedId(data.id);
+      else navigate(`${path.to.projectElement(projectId, data.id)}${search}`);
+    },
+    onError: (data) =>
+      toast.error(data.error?.message ?? t`Failed to create the element`)
+  });
+  const createElement = (
+    elementType: ProjectElementType = "Task",
+    parentId: string | undefined = elementId
+  ) => {
+    if (createFetcher.isPending) return;
+    const formData = new FormData();
+    formData.append("type", elementType);
+    formData.append("name", newNames[elementType]);
+    if (parentId) formData.append("parentId", parentId);
+    createFetcher.submit(formData, {
+      method: "post",
+      action: withChangeRequest(
+        path.to.newProjectElement(projectId),
+        changeRequestId
+      )
+    });
   };
 
   return (
@@ -429,50 +440,36 @@ export default function ProjectElementsRoute() {
           />
         )}
         <ElementsHeader
-          count={
-            layout === "tree" && type
-              ? elements.filter((element) => element.type === type).length
-              : elements.length
-          }
           layout={layout}
           filters={filters}
-          onNew={focusQuickAdd}
+          onNew={(elementType) => createElement(elementType)}
           onBuildFromPart={() => setBuildingFromPart(true)}
-          canCreate={layoutProps.canCreate}
+          canCreate={canCreate}
+          isCreating={createFetcher.isPending}
           exportHref={
             layout === "reader"
               ? `${path.to.file.projectReader(projectId)}${search}`
               : undefined
           }
-          planLock={
+          planLockMessage={
             planLocked && lockMilestone
-              ? {
-                  message: projectPlanLockedMessage(lockMilestone.name),
-                  changeRequestsHref: path.to.projectChangeRequests(projectId)
-                }
+              ? projectPlanLockedMessage(lockMilestone.name)
               : null
           }
         />
         <div className="min-h-0 flex-1">
           {layout === "table" ? (
-            <div className="flex h-full min-h-0 flex-col">
-              <div className="min-h-0 flex-1">
-                <ElementTable
-                  {...layoutProps}
-                  costByElement={costByElement}
-                  grouping="none"
-                />
-              </div>
-              {layoutProps.canCreate && (
-                <QuickAddRow
-                  projectId={projectId}
-                  identifier={layoutProps.identifier}
-                  type={newType}
-                  onTypeChange={setNewType}
-                  inputRef={quickAddRef}
-                />
-              )}
-            </div>
+            <ElementTable
+              projectId={projectId}
+              elements={elements}
+              states={states}
+              canUpdate={canUpdate}
+              canCreate={canCreate}
+              canDelete={canDelete}
+              isFiltered={isFiltered}
+              highlightId={createdId}
+              onNew={createElement}
+            />
           ) : layout === "tree" ? (
             <ElementGraph
               projectId={projectId}
@@ -482,7 +479,7 @@ export default function ProjectElementsRoute() {
               links={links}
               requirementStatus={requirementStatus}
               commentCounts={commentCounts}
-              canUpdate={layoutProps.canUpdate}
+              canUpdate={canUpdate}
             />
           ) : (
             <ElementReader

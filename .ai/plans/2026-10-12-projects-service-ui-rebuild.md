@@ -211,7 +211,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 17: Simplify the Time page
 - [ ] Task 18: Turn Milestones into the Schedule page
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
-- [ ] Task 20: Give Plan one toolbar row and add rows in the grid
+- [x] Task 20: Give Plan one toolbar row and add rows in the grid
 - [ ] Task 21: Delete the List, Board and Timeline layouts
 - [ ] Task 22: Restyle the Tree cards and fix the fit-view
 - [ ] Task 23: Rebuild the element panel and page (Layer 4)
@@ -1608,3 +1608,12 @@ Run of 2026-10-12, Tasks 19–21 (the Plan page), with Brad's instruction of the
 
 - Environment: the database was rebuilt. The demo company is "Carbon Development" (`db6d4ukm20gg2a6iv1vg`) with one user, `test@carbon.ms` (signed in by the dev bypass). OB2 is `prj_5vCwDZeAP2MHdjqYeYe7iP`, NSOPS `prj_Xn8Bq9qYwbQ6tsjQVHuD7h`. The record table above has the old ids.
 - Task 19: the Type filter writes `filter=type:eq:…` and is single choice (`isExclusive`), as the type chips were, because the Tree layout uses one type as a lens. The old `?type=` param still works: the loader redirects it into the Type filter so it shows as a chip (`canonicalElementsParams`), and `parseElementFilters` still reads it for the Reader PDF.
+- Task 20, Brad's decision (2026-10-12, after the first instruction): the Plan page has ONE search, the sidebar's "Search elements" box above the tree. The toolbar has no search. The sidebar box filters the tree at once and writes the page's `search` param (debounced 500 ms, Plan page only), so the Table, Tree and Reader filter on the server.
+- Task 20: the toolbar is the switch on the left, then Filter and New Element on the right (Brad's order). There is no ⋯ Display menu: with Group by and the shown properties gone it held only Export PDF, which is an icon button in the Reader instead. Table grouping is gone with it.
+- Task 20: `SplitButton` takes no separator, so Build from part is the last item of the type list with none.
+- Task 20: while the plan is locked, New Element is disabled with the lock message as its tooltip. A tooltip is not interactive, so it cannot link; the sidebar's change request picker opens a change request. The "Plan locked" text and the "Open Change Request" button are gone.
+- Task 20: the grid's columns are ID, Name, Type, State, Owner and Target Date (Brad). Priority, Milestone, Start Date, the hours and the cost columns left the grid; the Plan loader no longer reads `getProjectCostSummary`. Owner became editable.
+- Task 20: the text and date editors use `useStableEditableComponents`. The State and Owner list editors take their options when built, so they are rebuilt only when the options' content changes; a pick commits at once, so a rebuild loses nothing.
+- Task 20: the row menu is a hover-revealed ghost ⋯ column (Open, Add child, Move to…, Copy id, Delete), not the Table's `renderContextMenu`, whose pinned column showed a bordered button on every row and made rows 49 px. The List's bulk selection bar (state and priority for many rows) has no replacement.
+- Task 20: New Element in the Tree or Reader opens the new element's panel, since those layouts have no row to highlight.
+- Task 20: `TreeView` (shared) re-applies its filter after a tree reload and at mount; before, any reload of the tree data while a search was typed showed every node again. `EditableText`'s save type widened to `PostgrestSingleResponse<unknown>`, as `EditableList` and `EditableDate` already take.

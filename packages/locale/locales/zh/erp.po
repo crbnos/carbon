@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "已复制 {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "小时"
 msgid "Hours"
 msgstr "时数"
 
-msgid "Hours Actual"
-msgstr "实际小时数"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M 合同上的小时和金额"
 
@@ -11837,9 +11835,6 @@ msgstr "小时消耗 · {0} 已计划"
 
 msgid "Hours estimate"
 msgstr "小时估计"
-
-msgid "Hours Estimated"
-msgstr "估计小时数"
 
 msgid "Hours not yet assigned"
 msgstr "未分配的小时数"
@@ -13390,6 +13385,9 @@ msgstr "最晚订单日期"
 msgid "Latitude"
 msgstr "纬度"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "提前期"
 
@@ -14667,6 +14665,10 @@ msgstr "更多信息"
 msgid "More options"
 msgstr "更多选项"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "更多加班"
 
@@ -15010,6 +15012,9 @@ msgstr "新维度"
 msgid "New element"
 msgstr "新元素"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "新元素名称"
 
@@ -15027,6 +15032,12 @@ msgstr "新字段"
 
 msgid "New Fixed Asset"
 msgstr "新固定资产"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "新建量具"
@@ -15112,6 +15123,9 @@ msgstr "新建不合格类型"
 msgid "New Owner"
 msgstr "新建负责人"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "新零件"
 
@@ -15177,6 +15191,9 @@ msgstr "新记录已创建"
 
 msgid "New Rental Agreement"
 msgstr "新建租赁协议"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "新修订版"
@@ -15255,6 +15272,15 @@ msgstr "新供应商零件"
 
 msgid "New Supplier Return"
 msgstr "新建供应商退货"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "新时间卡"
@@ -15671,11 +15697,17 @@ msgstr "未找到元素"
 msgid "No elements"
 msgstr "没有元素"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "没有要显示的元素"
 
 msgid "No elements yet"
 msgstr "还没有元素"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "没有符合条件的操作"
@@ -16887,9 +16919,6 @@ msgstr "打开审计日志"
 msgid "Open batch"
 msgstr "未结生产批次"
 
-msgid "Open Change Request"
-msgstr "未结变更请求"
-
 msgid "Open change requests"
 msgstr "未结变更请求"
 
@@ -18018,9 +18047,6 @@ msgstr "计划"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "通过按物料和地点投影需求进行超前规划，然后将其直接送入MRP和排程。"
-
-msgid "Plan locked"
-msgstr "计划已锁定"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "将多个项目作为一个计划，为所有项目一次购买，并查看每个订单对应的项目。"

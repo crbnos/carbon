@@ -147,6 +147,18 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 20: Give Plan one toolbar row and add rows in the grid
 
+- Brad, 2026-10-12: "remove the Elements from the top bar here. we can keep the search, that should move left and the elements can go in filter". Then, the same day: he likes the sidebar's search, so the Plan page has ONE search, the sidebar's "Search elements" box.
+- Toolbar (`ElementsHeader`), one row: the Table / Tree / Reader `Tabs` on the left; Filter and the `SplitButton` "New Element" on the right. No title, no count, no type chips, no toolbar search, no Views, no layout dropdown, no Display popover. Filter chips show in a second row only while a filter is set. In the Reader, an Export PDF icon button sits left of Filter.
+- The sidebar search filters the tree at once and writes `?search=` 500 ms after the last key (on the Plan page only), so the Table, Tree and Reader filter on the server. It reads the param back after back/forward.
+- Fixed in `TreeView` (shared): a reload of the tree's data (`UPDATE_TREE`) and the first render dropped the active filter. The search reload exposed it. Pinned by `test/tree-view-filter.test.ts`.
+- Table: columns ID, Name, Type, State, Owner, Target Date. Name, State, Owner and Target Date edit in place (`useCellSave`). Empty cells show nothing. The row menu (Open, Add child, Move to…, Copy id, Delete) is a ghost ⋯ that shows on row hover or focus. The quick-add bar is gone.
+- New Element posts a default name per type ("New Task", …) and the open element as parent to `path.to.newProjectElement`. The Table highlights the new row; the Tree and Reader open its panel.
+- Empty project: one muted line "No elements yet. New element" (the link creates a Task). A filter or search with no match: "No elements match."
+- Checked in the browser: created NSOPS-1 with New Element, renamed it in the grid to "Ground segment link budget" (the database row changed), deleted it from the row menu (0 rows left).
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,255 passed.
+- Shots: `20-plan-toolbar.png`, `20-plan-filter-open.png` (Type first in the Filter popover), `20-plan-sidebar-search.png` ("mass": the tree and the Table both show OB2-5 and OB2-6), `20-plan-new-row.png`, `20-plan-renamed.png`, `20-plan-empty.png` (NSOPS), `20-plan-reader.png`.
+- 7 questions: 1 yes (`flow-requirements-tree.jpg`: switch, then the split primary; Flow puts the primary left, Brad put the switch left), 2 yes, 3 yes (chips row only while filtering), 4 yes (New Element), 5 yes (cells are borderless until focused), 6 yes (row menu ⋯, Filter popover; Export PDF is the Reader's one output button), 7 yes (cost and schedule columns left the grid; they are on Costs and Schedule).
+
 ## Task 21: Delete the List, Board and Timeline layouts
 
 ## Task 22: Restyle the Tree cards and fix the fit-view

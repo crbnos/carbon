@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "{0}をコピーしました"
 
@@ -11816,9 +11817,6 @@ msgstr "時間"
 msgid "Hours"
 msgstr "時間"
 
-msgid "Hours Actual"
-msgstr "実際時間"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M契約の時間と金額"
 
@@ -11837,9 +11835,6 @@ msgstr "時間バーン · {0} 計画済"
 
 msgid "Hours estimate"
 msgstr "時間推定"
-
-msgid "Hours Estimated"
-msgstr "推定時間"
 
 msgid "Hours not yet assigned"
 msgstr "未配置の時間"
@@ -13390,6 +13385,9 @@ msgstr "最新注文日付"
 msgid "Latitude"
 msgstr "緯度"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "リードタイム"
 
@@ -14667,6 +14665,10 @@ msgstr "詳細情報"
 msgid "More options"
 msgstr "その他のオプション"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "残業を増やす"
 
@@ -15010,6 +15012,9 @@ msgstr "新しいディメンション"
 msgid "New element"
 msgstr "新しい要素"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "新しい要素名"
 
@@ -15027,6 +15032,12 @@ msgstr "新しいフィールド"
 
 msgid "New Fixed Asset"
 msgstr "新しい固定資産"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "新規測定器"
@@ -15112,6 +15123,9 @@ msgstr "新しい不適合タイプ"
 msgid "New Owner"
 msgstr "新規責任者"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "新規部品"
 
@@ -15177,6 +15191,9 @@ msgstr "新しいレコードが作成されました"
 
 msgid "New Rental Agreement"
 msgstr "新規レンタル契約"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "新しいリビジョン"
@@ -15255,6 +15272,15 @@ msgstr "新規仕入先部品"
 
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "新しいタイムカード"
@@ -15671,11 +15697,17 @@ msgstr "要素が見つかりません"
 msgid "No elements"
 msgstr "要素なし"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "表示する要素がありません"
 
 msgid "No elements yet"
 msgstr "要素がまだありません"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "対象の工程がありません"
@@ -16887,9 +16919,6 @@ msgstr "監査ログを開く"
 msgid "Open batch"
 msgstr "バッチを開く"
 
-msgid "Open Change Request"
-msgstr "オープン変更要求"
-
 msgid "Open change requests"
 msgstr "オープン変更要求"
 
@@ -18018,9 +18047,6 @@ msgstr "計画"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "品目と拠点ごとの所要量を予測して先行計画を立て、MRP とスケジューリングに直接フィードします。"
-
-msgid "Plan locked"
-msgstr "計画ロック中"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "複数のプロジェクトを1つとして計画し、すべて一度に購入し、各注文がどのプロジェクト用かを確認します。"

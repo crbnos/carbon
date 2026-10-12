@@ -6188,6 +6188,7 @@ msgid "Converts a supplier's purchase unit to your inventory unit on a PO, recei
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
 #. placeholder {0}: element.readableId
+#. placeholder {0}: row.original.readableId
 msgid "Copied {0}"
 msgstr "복사됨 {0}"
 
@@ -11816,9 +11817,6 @@ msgstr "시간"
 msgid "Hours"
 msgstr "시간"
 
-msgid "Hours Actual"
-msgstr "실제 시간"
-
 msgid "Hours and amounts on T&M contracts"
 msgstr "T&M 계약의 시간 및 금액"
 
@@ -11837,9 +11835,6 @@ msgstr "시간 번다운 · {0} 계획됨"
 
 msgid "Hours estimate"
 msgstr "시간 추정"
-
-msgid "Hours Estimated"
-msgstr "추정 시간"
 
 msgid "Hours not yet assigned"
 msgstr "아직 배정되지 않은 시간"
@@ -13390,6 +13385,9 @@ msgstr "최종 주문 날짜"
 msgid "Latitude"
 msgstr "위도"
 
+msgid "Layout"
+msgstr ""
+
 msgid "Lead time"
 msgstr "리드타임"
 
@@ -14667,6 +14665,10 @@ msgstr "자세한 정보"
 msgid "More options"
 msgstr "추가 옵션"
 
+#. placeholder {0}: row.original.readableId
+msgid "More options for {0}"
+msgstr ""
+
 msgid "More overtime"
 msgstr "초과 근무 증가"
 
@@ -15010,6 +15012,9 @@ msgstr "신규 차원"
 msgid "New element"
 msgstr "새 요소"
 
+msgid "New Element"
+msgstr ""
+
 msgid "New element name"
 msgstr "새 요소 이름"
 
@@ -15027,6 +15032,12 @@ msgstr "신규 필드"
 
 msgid "New Fixed Asset"
 msgstr "신규 고정자산"
+
+msgid "New Folder"
+msgstr ""
+
+msgid "New Function"
+msgstr ""
 
 msgid "New Gauge"
 msgstr "신규 계측기"
@@ -15112,6 +15123,9 @@ msgstr "새 부적합 유형"
 msgid "New Owner"
 msgstr "신규 책임자"
 
+msgid "New Parameter"
+msgstr ""
+
 msgid "New Part"
 msgstr "신규 부품"
 
@@ -15177,6 +15191,9 @@ msgstr "새 레코드가 생성되었습니다"
 
 msgid "New Rental Agreement"
 msgstr "새 렌탈 계약"
+
+msgid "New Requirement"
+msgstr ""
 
 msgid "New Revision"
 msgstr "새 리비전"
@@ -15255,6 +15272,15 @@ msgstr "새 공급업체 부품"
 
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
+
+msgid "New System"
+msgstr ""
+
+msgid "New Task"
+msgstr ""
+
+msgid "New Test Case"
+msgstr ""
 
 msgid "New Timecard"
 msgstr "새 근무기록"
@@ -15671,11 +15697,17 @@ msgstr "요소를 찾을 수 없습니다"
 msgid "No elements"
 msgstr "요소 없음"
 
+msgid "No elements match."
+msgstr ""
+
 msgid "No elements to show"
 msgstr "표시할 요소가 없습니다"
 
 msgid "No elements yet"
 msgstr "아직 요소가 없습니다"
+
+msgid "No elements yet."
+msgstr ""
 
 msgid "No eligible operations"
 msgstr "적격 공정이 없습니다"
@@ -16887,9 +16919,6 @@ msgstr "감사 로그 열기"
 msgid "Open batch"
 msgstr "미결 배치"
 
-msgid "Open Change Request"
-msgstr "미결 변경 요청"
-
 msgid "Open change requests"
 msgstr "미결 변경 요청"
 
@@ -18018,9 +18047,6 @@ msgstr "계획"
 
 msgid "Plan ahead by projecting demand per item and location, then feed it straight into MRP and scheduling."
 msgstr "품목 및 사업장별 소요량을 예측하여 미리 계획하고, 이를 직접 MRP 및 일정에 입력하세요."
-
-msgid "Plan locked"
-msgstr "계획 잠금"
 
 msgid "Plan several projects as one, buy once for all of them, and see which project each order is for."
 msgstr "여러 프로젝트를 하나로 계획하고, 한 번에 구매하며, 각 주문이 어느 프로젝트용인지 확인하세요."
