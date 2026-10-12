@@ -225,14 +225,12 @@ export function ElementSidebar({
         </Property>
       )}
       {element.type !== "Parameter" && (
-        <div className="mt-4">
-          <ElementEarnedValue
-            projectId={projectId}
-            element={element}
-            elements={elements}
-            isDisabled={isDisabled}
-          />
-        </div>
+        <ElementEarnedValue
+          projectId={projectId}
+          element={element}
+          elements={elements}
+          isDisabled={isDisabled}
+        />
       )}
     </div>
   );

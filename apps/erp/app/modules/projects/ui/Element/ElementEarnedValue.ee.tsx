@@ -8,11 +8,18 @@ import {
   elementEarnedValueValidator
 } from "@carbon/ee/project-control";
 import { ValidatedForm } from "@carbon/form";
-import { Subheading, VStack } from "@carbon/react";
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Subheading,
+  VStack
+} from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuChartNoAxesCombined } from "react-icons/lu";
+import { LuChartNoAxesCombined, LuLock } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import {
   Boolean,
@@ -22,7 +29,13 @@ import {
   Select,
   Submit
 } from "~/components/Form";
-import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
+import {
+  UpgradeOverlayContent,
+  UpgradeOverlayDescription,
+  UpgradeOverlayIcon,
+  UpgradeOverlayTitle,
+  UpgradeOverlayUpgradeButton
+} from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import type { ProjectElementPage } from "../../projects.server";
@@ -55,28 +68,54 @@ function hasControlAccountAbove(elementId: string, elements: ListElement[]) {
 /**
  * The earned value fields of an element (Government Contracting 5c): a
  * control account with its manager, or a work package's technique. A company
- * without government contracting sees them behind the upgrade overlay.
+ * without government contracting sees one locked row: the sidebar shows on
+ * every element, so the full overlay stays on the Costs tab.
  */
 export default function ElementEarnedValue(props: ElementEarnedValueProps) {
   const { isGated } = usePlanGate({ feature: "GOVERNMENT_CONTRACTING" });
 
-  if (isGated) {
-    return (
-      <UpgradeOverlaySection
-        icon={
-          <LuChartNoAxesCombined className="size-6 text-muted-foreground" />
-        }
-        title={<Trans>Earned Value</Trans>}
-        description={
-          <Trans>Earned value: CPI, SPI and EAC per control account.</Trans>
-        }
-      >
-        <EarnedValueForm {...props} isDisabled />
-      </UpgradeOverlaySection>
-    );
-  }
+  if (isGated) return <EarnedValueLockedRow />;
 
   return <EarnedValueForm {...props} />;
+}
+
+/** A property row with a lock: the upgrade copy opens in a popover. */
+function EarnedValueLockedRow() {
+  return (
+    <div className="flex min-h-8 items-center gap-2">
+      <span className="w-[120px] shrink-0 text-xs text-muted-foreground">
+        <Trans>Earned value</Trans>
+      </span>
+      <div className="flex min-w-0 flex-1 items-center">
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" leftIcon={<LuLock />}>
+              <Trans>Upgrade</Trans>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent
+            align="start"
+            className="flex w-72 flex-col items-center gap-3 text-center"
+          >
+            <UpgradeOverlayIcon>
+              <LuChartNoAxesCombined className="size-6 text-muted-foreground" />
+            </UpgradeOverlayIcon>
+            <UpgradeOverlayContent>
+              <UpgradeOverlayTitle>
+                <Trans>Earned Value</Trans>
+              </UpgradeOverlayTitle>
+              <UpgradeOverlayDescription>
+                <Trans>
+                  Earned value: CPI, SPI and EAC per control account.
+                </Trans>
+              </UpgradeOverlayDescription>
+            </UpgradeOverlayContent>
+            <UpgradeOverlayUpgradeButton />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
 }
 
 function EarnedValueForm({
@@ -123,7 +162,7 @@ function EarnedValueForm({
     .map((e) => ({ value: e.id, label: `${e.readableId} ${e.name}` }));
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="mt-4 flex flex-col gap-2">
       <Subheading as="h3" variant="light">
         <Trans>Earned Value</Trans>
       </Subheading>
