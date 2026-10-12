@@ -292,3 +292,9 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 44: Run the final screenshot pass
 
+## Batch close (2026-10-12): header, menus, final build
+
+- Header (`da5a18a411`): no primary button; the status transitions open the ⋯ menu (next step first); the copy button and ⋯ menu at the right end (`RecordHeader` `toolsPlacement="end"`). Shot `header-no-primary.png`. NSOPS: Put on hold, then Resume, from the menu; it ends Released.
+- Menus: no stray scrollbar reproduced in 11 menus at DPR 1 and 2 (see the plan's execution notes). No code change.
+- `pnpm --filter erp build` exit 0 after the last commit.
+

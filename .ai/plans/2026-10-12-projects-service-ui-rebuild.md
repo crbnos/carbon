@@ -1651,3 +1651,9 @@ Brad's decision of 2026-10-12, the project header (overrides "at most one primar
 - The copy button and the ⋯ menu sit at the right end. The left side is the identifier, the name with its chevron (the switcher) and the status badge. `RecordHeader` has a new optional prop, `toolsPlacement` (`"title"` by default, `"end"`); no other header changes.
 - Shot: `header-no-primary.png` (OB2, menu open). Checked on NSOPS: Put on hold, then Resume, from the menu; it ends Released.
 
+Menu scrollbar check of 2026-10-12 (Brad: "this menu has scrollbars that shouldn't be there"; his screenshot did not reach the executor):
+
+- Checked, open at 1440 × 900, at device pixel ratio 1 and 2: the header ⋯ menu, the project switcher, the change request picker, the Filter popover and its 5 sub-lists (Type, State, Owner, Milestone, Label), the New Element split menu, the Plan row ⋯ menu (a middle row and the last row), and the Stock Transfer split menu. The Baselines button is a link, not a menu. For each, a script measured every element inside the open popper with `overflow` auto or scroll for `scrollHeight > clientHeight` or `scrollWidth > clientWidth`, with no tolerance. None overflows; the screenshots (`menus-*.png`, `menus-dpr2-*.png`) show no scrollbar.
+- One suspect was ruled out: the Filter sub-list's own `max-h-[300px] overflow-y-auto` container is not nested in a `CommandList` (`Filter.tsx` has none), so a long list (the Jobs Item filter) scrolls once, as it should. Removing it made the list run off the screen, so it stays.
+- No code changed. If Brad's menu still shows scrollbars, the executor needs his screenshot or the page it was on.
+
