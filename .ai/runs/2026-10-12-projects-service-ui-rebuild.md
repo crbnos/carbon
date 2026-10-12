@@ -58,6 +58,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 8: Fix the week views on a Sunday
 
+- Step 1: `select timezone from company` → `UTC` for "Carbon Development" (`db6d4ukm20gg2a6iv1vg`); its two locations are `America/Chicago`.
+- Step 2: `seedCompanyReferenceData` inserts the company with `timezone = defaultLocation.timezone` (`America/Chicago`). `defaultLocation` is a module import, so it is in scope.
+- Steps 3–4: `timesheetWeek(timeZone, offset, anchor?)` in `packages/utils/src/timekeeping.ts`, 7 tests: Sunday 2026-10-11 → week of 2026-10-05; Monday 2026-10-12 → 2026-10-12; offset -1 → 2026-09-28; offset +1; 7 days Monday first; the bounds at Chicago midnight; the week that ends daylight saving time; a non-finite offset.
+- Step 5: `getTimesheetWeekView` (ERP) and the MES timesheet loader call it; both outputs keep their shape.
+- Step 6: `formatDay` in the MES timecard calls `formatDate`.
+- Step 7: Settings → Company, in the browser: Timezone `America/Chicago`. The save also needs Address Line 1, City, Postal Code and Country, which the dev company did not have, so the form got the Headquarters address (123 Main Street, Austin, TX 78701, United States). The DB now reads `America/Chicago`.
+- Verify: `@carbon/utils` test 56 files, 726 passed; `typecheck` erp, mes, utils, database exit 0; `pnpm db:check:datasets -- --dataset satellite` ✓ (3.2 s, with `SUPABASE_DB_URL` on port 60663: the stack moved there after the reset).
+- Code gate: Biome clean (one warning on an existing `console.warn` in `bootstrap.ts`); erp 2,261 and mes 73 tests passed.
+- Shots: `08-my-time-week.png`: the week is Oct 12 – Oct 18, 2026 and holds today (Monday 2026-10-12). No MES dev server runs in this worktree, so the MES timesheet has no shot.
+
 ## Task 9: Shrink the Projects and Service sidebars (Layer 0)
 
 - Projects sidebar: `Manage` (Projects, My Timesheet, Approvals, Reports) and a collapsible `Setup` (Labor Categories, Planning Groups). Transfers and Billing left the sidebar; their URLs still work.

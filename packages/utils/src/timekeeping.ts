@@ -10,7 +10,12 @@
 
 import type { Database } from "@carbon/database";
 import { round } from "@carbon/database/precision";
-import { parseDate, startOfWeek } from "@internationalized/date";
+import {
+  type CalendarDate,
+  parseDate,
+  startOfWeek
+} from "@internationalized/date";
+import { datetime } from "./datetime";
 
 export type TimekeepingControls =
   Database["public"]["Enums"]["timekeepingControls"];
@@ -75,6 +80,50 @@ export function nextEntryStatus(args: {
 export function weekStartOf(date: string): string {
   // en-GB starts the week on Monday, as ISO 8601 does.
   return startOfWeek(parseDate(date), "en-GB").toString();
+}
+
+/** One timesheet week on a business calendar. */
+export type TimesheetWeek = {
+  /** Monday, `YYYY-MM-DD`. */
+  weekStart: string;
+  /** Sunday, `YYYY-MM-DD`. */
+  weekEnd: string;
+  /** The 7 days, Monday first, as `YYYY-MM-DD`. */
+  days: string[];
+  /** Today on the same calendar, `YYYY-MM-DD`. */
+  today: string;
+  /** The week's first instant (Monday 00:00 in `timeZone`), a UTC string. */
+  from: string;
+  /** The week's last instant (Sunday 23:59:59.999 in `timeZone`), a UTC string. */
+  to: string;
+};
+
+/**
+ * The timesheet week `offset` weeks from the week that holds today on the
+ * `timeZone` calendar (`anchor` replaces today in tests). The ERP and MES
+ * timesheets and the week certification read the same week, so a Sunday
+ * evening in the company's zone is still that week, whatever the server's
+ * zone or UTC says.
+ */
+export function timesheetWeek(
+  timeZone: string,
+  offset: number,
+  anchor?: CalendarDate
+): TimesheetWeek {
+  const today = anchor ?? datetime.today(timeZone);
+  const weeks = Number.isFinite(offset) ? offset : 0;
+  const { from, to } = datetime.weekBounds(timeZone, weeks, today);
+  const monday = datetime.businessDay(from, timeZone);
+  return {
+    weekStart: monday.toString(),
+    weekEnd: datetime.businessDay(to, timeZone).toString(),
+    days: Array.from({ length: 7 }, (_, index) =>
+      monday.add({ days: index }).toString()
+    ),
+    today: today.toString(),
+    from,
+    to
+  };
 }
 
 /**

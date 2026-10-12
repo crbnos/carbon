@@ -23,8 +23,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
-import { datetime } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
+import { datetime, timesheetWeek } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { customAlphabet } from "nanoid";
@@ -4586,12 +4585,9 @@ export async function getTimesheetWeekView(
   const { companyId, employeeId } = args;
   const offset = Number.isFinite(args.weekOffset) ? args.weekOffset : 0;
   const timeZone = await getCompanyTimeZone(client, companyId);
-  const { from, to } = datetime.weekBounds(timeZone, offset);
-  const weekStart = datetime.businessDay(from, timeZone).toString();
-  const weekEnd = datetime.businessDay(to, timeZone).toString();
-  const monday = parseDate(weekStart);
-  const days = Array.from({ length: 7 }, (_, index) =>
-    monday.add({ days: index }).toString()
+  const { weekStart, weekEnd, days, today, from, to } = timesheetWeek(
+    timeZone,
+    offset
   );
 
   const [entries, timecard, laborCategories, settings, job] = await Promise.all(
@@ -4681,7 +4677,7 @@ export async function getTimesheetWeekView(
     },
     settings: settings.data,
     isDcaa,
-    today: datetime.today(timeZone).toString(),
+    today,
     revisedEntryIds
   };
 }

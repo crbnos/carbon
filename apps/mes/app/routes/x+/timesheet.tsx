@@ -29,14 +29,13 @@ import {
   toast
 } from "@carbon/react";
 import {
-  datetime,
   formatDate,
   INPUT_FORMAT,
   INPUT_STEP,
   TIMESHEET_ENTRY_STATUS_COLOR_MAP,
+  timesheetWeek,
   weekStartOf
 } from "@carbon/utils";
-import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useRef, useState } from "react";
@@ -84,13 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // The week runs Monday to Sunday on the company calendar, as My Hours does.
   const timeZone = await getCompanyTimeZone(client, companyId);
-  const { from, to } = datetime.weekBounds(timeZone, weekOffset);
-  const weekStart = datetime.businessDay(from, timeZone).toString();
-  const weekEnd = datetime.businessDay(to, timeZone).toString();
-  const monday = parseDate(weekStart);
-  const days = Array.from({ length: 7 }, (_, index) =>
-    monday.add({ days: index }).toString()
-  );
+  const { weekStart, weekEnd, days } = timesheetWeek(timeZone, weekOffset);
 
   const [entries, chargeNumbers, laborCategories, employeeJob] =
     await Promise.all([

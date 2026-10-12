@@ -200,7 +200,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 5: Add the grid helpers `EditableByRow` and `useStableEditableComponents`
 - [x] Task 6: Add collapsible groups and counts to the sidebars
 - [x] Task 7: Add `useGovernmentContracting` and `UpgradeOverlayRow`
-- [ ] Task 8: Fix the week views on a Sunday
+- [x] Task 8: Fix the week views on a Sunday
 - [x] Task 9: Shrink the Projects and Service sidebars (Layer 0)
 - [x] Task 10: Simplify the projects list and the New Project drawer (Layer 1)
 - [x] Task 11: Build the project workspace shell and the project sidebar (Layer 2)
@@ -1629,4 +1629,7 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 22: `useNodesInitialized()` never turns true on this canvas (it has no `onNodesChange`), so step 3.1 uses `useNodesInitialized({ includeHiddenNodes: true })`, and every card node states its size.
 - Task 22: the Fit view, Find and Legend buttons moved off the canvas into the breadcrumb row; the panel covered the top-left cards.
 - Task 22: the verification status icon and the suspect badge left the card ("at most one chip"). The amber border still marks a link that needs review; the element panel and the Reader still show the verification.
+- Task 8: `timesheetWeek` also returns `from` and `to` (the week's first and last instants). The ERP loader filters the timecard rows on them, so without them it would call `datetime.weekBounds` a second time.
+- Task 8: Settings → Company refuses a save without an address, so setting the time zone in the browser also gave the dev company the Headquarters address (123 Main Street, Austin, TX 78701, US).
+- Task 8: the brief's database port (60387) is stale. After the reset the stack runs Postgres on 60663 (`.env.local`); with 60387 the dataset check skips with "no database connection".
 
