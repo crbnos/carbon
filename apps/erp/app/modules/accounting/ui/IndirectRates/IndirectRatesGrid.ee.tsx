@@ -2,21 +2,10 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import type { TermId } from "@carbon/content/glossary";
 import type { IndirectPool, IndirectRate } from "@carbon/ee/indirect-rates";
 import { indirectRateTypes } from "@carbon/ee/indirect-rates";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  Table,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr
-} from "@carbon/react";
+import { LabelWithHelp, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -73,97 +62,97 @@ const IndirectRatesGrid = ({
     [startMonth, locale]
   );
 
+  // The rate types the glossary explains.
+  const rateTypeTerms: Partial<Record<string, TermId>> = {
+    Provisional: "provisional-rate",
+    Final: "final-rate"
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <Trans>Rates</Trans>
-        </CardTitle>
-        <CardDescription>
-          <Trans>
-            The year-to-date rate of each pool. Actual rates come from the
-            period run.
-          </Trans>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {pools.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            <Trans>No pools yet. Add one under Indirect Pools.</Trans>
-          </p>
-        ) : (
-          <div className="w-full overflow-x-auto rounded-lg border border-border">
-            <Table full>
-              <Thead>
-                <Tr>
-                  <Th>
+    <>
+      {pools.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          <Trans>No pools yet. Add one under Indirect Pools.</Trans>
+        </p>
+      ) : (
+        <div className="w-full overflow-x-auto rounded-lg border border-border">
+          <Table full>
+            <Thead>
+              <Tr>
+                <Th>
+                  <LabelWithHelp termId="indirect-pool" variant="inline">
                     <Trans>Pool</Trans>
+                  </LabelWithHelp>
+                </Th>
+                <Th>
+                  <Trans>Rate Type</Trans>
+                </Th>
+                {PERIODS.map((periodNumber, i) => (
+                  <Th
+                    key={periodNumber}
+                    className="text-right"
+                    title={t`Period ${periodNumber}`}
+                  >
+                    {periodLabels[i]}
                   </Th>
-                  <Th>
-                    <Trans>Rate Type</Trans>
-                  </Th>
-                  {PERIODS.map((periodNumber, i) => (
-                    <Th
-                      key={periodNumber}
-                      className="text-right"
-                      title={t`Period ${periodNumber}`}
-                    >
-                      {periodLabels[i]}
-                    </Th>
-                  ))}
-                </Tr>
-              </Thead>
-              <Tbody>
-                {pools.flatMap((pool) =>
-                  indirectRateTypes.map((rateType, typeIndex) => {
-                    const format = (value: number) =>
-                      pool.baseType === "Direct Labor Hours"
-                        ? t`${perHourFormatter.format(value)}/h`
-                        : percentFormatter.format(value);
-                    return (
-                      <Tr key={`${pool.id}:${rateType}`}>
-                        <Td>
-                          {typeIndex === 0 && (
-                            <div className="flex min-w-0 flex-col">
-                              <span className="whitespace-nowrap font-medium">
-                                {pool.name}
-                              </span>
-                              <span className="whitespace-nowrap text-xs text-muted-foreground">
-                                {pool.baseType}
-                              </span>
-                            </div>
-                          )}
-                        </Td>
-                        <Td>
+                ))}
+              </Tr>
+            </Thead>
+            <Tbody>
+              {pools.flatMap((pool) =>
+                indirectRateTypes.map((rateType, typeIndex) => {
+                  const format = (value: number) =>
+                    pool.baseType === "Direct Labor Hours"
+                      ? t`${perHourFormatter.format(value)}/h`
+                      : percentFormatter.format(value);
+                  return (
+                    <Tr key={`${pool.id}:${rateType}`}>
+                      <Td>
+                        {typeIndex === 0 && (
+                          <div className="flex min-w-0 flex-col">
+                            <span className="whitespace-nowrap font-medium">
+                              {pool.name}
+                            </span>
+                            <span className="whitespace-nowrap text-xs text-muted-foreground">
+                              {pool.baseType}
+                            </span>
+                          </div>
+                        )}
+                      </Td>
+                      <Td>
+                        <LabelWithHelp
+                          termId={rateTypeTerms[rateType]}
+                          variant="inline"
+                        >
                           <Enumerable value={rateType} />
-                        </Td>
-                        {PERIODS.map((periodNumber) => {
-                          const value = rateByKey.get(
-                            `${pool.id}:${rateType}:${periodNumber}`
-                          );
-                          return (
-                            <Td
-                              key={periodNumber}
-                              className="whitespace-nowrap text-right tabular-nums"
-                            >
-                              {value === undefined ? (
-                                <span className="text-muted-foreground">–</span>
-                              ) : (
-                                format(value)
-                              )}
-                            </Td>
-                          );
-                        })}
-                      </Tr>
-                    );
-                  })
-                )}
-              </Tbody>
-            </Table>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                        </LabelWithHelp>
+                      </Td>
+                      {PERIODS.map((periodNumber) => {
+                        const value = rateByKey.get(
+                          `${pool.id}:${rateType}:${periodNumber}`
+                        );
+                        return (
+                          <Td
+                            key={periodNumber}
+                            className="whitespace-nowrap text-right tabular-nums"
+                          >
+                            {value === undefined ? (
+                              <span className="text-muted-foreground">–</span>
+                            ) : (
+                              format(value)
+                            )}
+                          </Td>
+                        );
+                      })}
+                    </Tr>
+                  );
+                })
+              )}
+            </Tbody>
+          </Table>
+        </div>
+      )}
+    </>
   );
 };
 

@@ -1462,6 +1462,9 @@ msgstr ""
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "एक जारी जॉब पर एक रूटिंग चरण, जॉब की अपनी ऑपरेशन की प्रति, एक स्थिति ले जाता है जो फ़्लोर को करने के लिए कार्य करता है।"
 
+msgid "A run starts when a period locks, or with Run Period. Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
+msgstr ""
+
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "बिक्री दस्तावेज़ जो ग्राहक को सेवा आइटमों के लिए एक समझौते के तहत बिल करता है: एकल शुल्क और आवर्ती शुल्क, पुष्टि से इसके समाप्त होने या रद्द होने तक एक निर्धारित शेड्यूल पर चालान किया गया।"
 
@@ -9150,9 +9153,6 @@ msgstr "प्रत्येक भौतिक इकाई को अपन�
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "प्रत्येक किराये की समझौते या अनुबंध के विक्रय प्रतिनिधि (या इसके निर्माता) को इसके चालानों का दैनिक सारांश मिलता है।"
 
-msgid "Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
-msgstr "प्रत्येक रन वास्तविक दरों की गणना करता है, परियोजनाओं पर बोझ डालता है और Cost Plus पंक्तियों पर बोझ बिल करता है।"
-
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
 
@@ -11445,9 +11445,9 @@ msgid "FY {year}"
 msgstr "वित्तीय वर्ष {year}"
 
 #. placeholder {0}: period.fiscalYear
-#. placeholder {0}: run.fiscalYear
+#. placeholder {0}: row.original.fiscalYear
 #. placeholder {1}: period.periodNumber
-#. placeholder {1}: run.periodNumber
+#. placeholder {1}: row.original.periodNumber
 msgid "FY{0} P{1}"
 msgstr "FY{0} P{1}"
 
@@ -16357,8 +16357,8 @@ msgstr "यहाँ कोई पंक्तियाँ नहीं है�
 msgid "No rules assigned"
 msgstr "कोई नियम असाइन नहीं किया गया"
 
-msgid "No runs yet. A run starts when a period locks, or with Run Period."
-msgstr "अभी तक कोई रन नहीं। जब कोई अवधि लॉक हो या रन अवधि के साथ कोई रन शुरू होता है।"
+msgid "No runs yet"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "इस विंडो में कोई शेड्यूल किया हुआ काम नहीं"
@@ -19553,6 +19553,9 @@ msgstr "एक एकल ग्राहक के लिए दरें"
 
 msgid "Rates for all customers of a type"
 msgstr "किसी प्रकार के सभी ग्राहकों के लिए दरें"
+
+msgid "Rates, FY{fiscalYear}"
+msgstr ""
 
 msgid "Ratio"
 msgstr "अनुपात"

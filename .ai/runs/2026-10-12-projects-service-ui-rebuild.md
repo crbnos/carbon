@@ -315,6 +315,12 @@ Billing Element picker: no element of the demo had `isBilling`, and nothing in t
 
 ## Task 35: Turn Indirect Rates into a runs list with a Rates drawer
 
+Shots: `35-indirect-rates.png` (no runs yet: the `Empty` state), `35-indirect-rates-menu.png`, `35-indirect-rates-drawer.png`. Checked: ⋯ → Statement opens the statement drawer.
+
+Step 3 stopped: a grid cell does not map to one rate entry. `set-rate` (`setIndirectRate`, `indirectRateRows`) writes the rate from `fromPeriod` to period 12, so a typed cell would overwrite every later month of that pool and rate type. The drawer's grid stays read-only, and Set Rate (the existing modal) sits in the drawer header. `SetIndirectRateModal` keeps its caller.
+
+1. Reference pattern: yes — the Revenue Recognition runs list. 2. No overlap: yes; the 12 months scroll sideways inside the drawer. 3. One toolbar row: yes (title, fiscal year, ⋯, Run Period). 4. One primary: yes (Run Period). 5. No input box in a table: yes. 6. Secondary actions in menus: yes (⋯: Rates, Run True-Up, Statement, ICE Export). 7. Advanced fields hidden: yes.
+
 ## Task 36: Move Burden Settings to Settings → Accounting and default the fiscal year
 
 ## Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory

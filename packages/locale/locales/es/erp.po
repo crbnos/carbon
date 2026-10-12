@@ -1462,6 +1462,9 @@ msgstr ""
 msgid "A routing step on a released job, the job's own copy of an operation, carrying a status the floor drives from Todo through Done."
 msgstr "Un paso de ruta de fabricación en una orden de trabajo liberada, la copia propia de la orden de una operación, llevando un estado que el piso impulsa de Por hacer a Hecho."
 
+msgid "A run starts when a period locks, or with Run Period. Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
+msgstr ""
+
 msgid "A sales document that bills a customer for Service items under an agreement: one-time fees and recurring charges, invoiced on a planned schedule from its confirmation until it ends or is cancelled."
 msgstr "Un documento de ventas que factura a un cliente por artículos de Servicio bajo un acuerdo: tarifas únicas y cargos recurrentes, facturados en un programa planificado desde su confirmación hasta que termine o se cancele."
 
@@ -9150,9 +9153,6 @@ msgstr "Cada unidad física obtiene su propia entidad rastreada y número único
 msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
 msgstr "El vendedor de cada acuerdo de alquiler o contrato (o su creador) recibe un resumen diario de sus facturas."
 
-msgid "Each run computes the Actual rates, burdens the projects and bills the burden on Cost Plus lines."
-msgstr "Cada ejecución calcula las tasas Reales, carga los proyectos y factura la carga en líneas Costo Más."
-
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Las operaciones externas de cada proveedor de cada orden de trabajo se colocan en una nueva orden de compra o en un borrador existente que elija."
 
@@ -11445,9 +11445,9 @@ msgid "FY {year}"
 msgstr "EF {year}"
 
 #. placeholder {0}: period.fiscalYear
-#. placeholder {0}: run.fiscalYear
+#. placeholder {0}: row.original.fiscalYear
 #. placeholder {1}: period.periodNumber
-#. placeholder {1}: run.periodNumber
+#. placeholder {1}: row.original.periodNumber
 msgid "FY{0} P{1}"
 msgstr "FY{0} P{1}"
 
@@ -16357,8 +16357,8 @@ msgstr "No hay filas aquí."
 msgid "No rules assigned"
 msgstr "Sin reglas asignadas"
 
-msgid "No runs yet. A run starts when a period locks, or with Run Period."
-msgstr "Aún no hay ejecuciones. Una ejecución comienza cuando un período se cierra o con Período de Ejecución."
+msgid "No runs yet"
+msgstr ""
 
 msgid "No scheduled work in this window"
 msgstr "Sin trabajo programado en esta ventana"
@@ -19553,6 +19553,9 @@ msgstr "Tasas para un cliente único"
 
 msgid "Rates for all customers of a type"
 msgstr "Tasas para todos los clientes de un tipo"
+
+msgid "Rates, FY{fiscalYear}"
+msgstr ""
 
 msgid "Ratio"
 msgstr "Relación"

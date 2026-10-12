@@ -23,14 +23,7 @@ import {
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import {
-  Button,
-  Heading,
-  HStack,
-  RecordOutlet,
-  ScrollArea,
-  VStack
-} from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
 import {
   datetime,
   fiscalYearAndPeriodFor,
@@ -38,22 +31,15 @@ import {
   redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuFileSpreadsheet, LuFileText, LuPlus } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useLoaderData } from "react-router";
-import { Select } from "~/components";
+import { data, useLoaderData } from "react-router";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getFiscalYearSettings } from "~/modules/accounting";
 import type { IndirectRateRunRow } from "~/modules/accounting/ui/IndirectRates";
 import {
-  BurdenSettingsForm,
   IndirectRateRuns,
-  IndirectRatesGrid,
-  IndirectRatesUpgradeOverlay,
-  SetIndirectRateModal
+  IndirectRatesUpgradeOverlay
 } from "~/modules/accounting/ui/IndirectRates";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -272,29 +258,16 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function IndirectRatesRoute() {
-  const {
-    fiscalYear,
-    currentFiscalYear,
-    startMonth,
-    pools,
-    rates,
-    runs,
-    lockedPeriods,
-    canTrueUp,
-    burdenSettings
-  } = useLoaderData<typeof loader>();
-  const { t } = useLingui();
+  const { fiscalYear, currentFiscalYear, runs, lockedPeriods, canTrueUp } =
+    useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "GOVERNMENT_CONTRACTING" });
   const permissions = usePermissions();
   const [, setParams] = useUrlParams();
-  const [settingRate, setSettingRate] = useState(false);
 
   if (isGated) {
     return <IndirectRatesUpgradeOverlay />;
   }
 
-  const canUpdate = permissions.can("update", "accounting");
-  const activePools = pools.filter((pool) => pool.active);
   const years = Array.from(
     new Set([
       currentFiscalYear + 1,
@@ -306,83 +279,18 @@ export default function IndirectRatesRoute() {
   ).sort((a, b) => b - a);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack spacing={4} className="w-full px-4 py-6">
-        <HStack className="w-full flex-wrap justify-between gap-2">
-          <HStack className="gap-3">
-            <Heading size="h3">
-              <Trans>Indirect Rates</Trans>
-            </Heading>
-            <Select
-              aria-label={t`Fiscal year`}
-              size="sm"
-              value={String(fiscalYear)}
-              options={years.map((year) => ({
-                label: t`FY${year}`,
-                value: String(year)
-              }))}
-              onChange={(value) => setParams({ fiscalYear: value })}
-            />
-          </HStack>
-          <HStack>
-            <Button asChild variant="secondary" leftIcon={<LuFileText />}>
-              <Link to={path.to.indirectRatesStatement(fiscalYear)}>
-                <Trans>Statement</Trans>
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="secondary"
-              leftIcon={<LuFileSpreadsheet />}
-            >
-              <Link to={path.to.indirectRatesIce(fiscalYear)}>
-                <Trans>ICE Export</Trans>
-              </Link>
-            </Button>
-            <Button
-              variant="primary"
-              leftIcon={<LuPlus />}
-              isDisabled={!canUpdate || activePools.length === 0}
-              onClick={() => setSettingRate(true)}
-            >
-              <Trans>Set Rate</Trans>
-            </Button>
-          </HStack>
-        </HStack>
-
-        <IndirectRatesGrid
-          pools={pools}
-          rates={rates}
-          startMonth={startMonth}
-        />
-
-        <IndirectRateRuns
-          runs={runs}
-          lockedPeriods={lockedPeriods}
-          fiscalYear={fiscalYear}
-          canTrueUp={canTrueUp}
-          action={path.to.indirectRates}
-          isDisabled={!canUpdate}
-        />
-
-        <BurdenSettingsForm
-          key={`${burdenSettings.burdenRateType}:${burdenSettings.postAppliedBurden}`}
-          initialValues={burdenSettings}
-          action={path.to.indirectRates}
-          isDisabled={!canUpdate}
-        />
-      </VStack>
-
-      {settingRate && (
-        <SetIndirectRateModal
-          pools={activePools}
-          fiscalYear={fiscalYear}
-          action={path.to.indirectRates}
-          onClose={() => setSettingRate(false)}
-        />
-      )}
-
+    <VStack spacing={0} className="h-full">
+      <IndirectRateRuns
+        runs={runs}
+        lockedPeriods={lockedPeriods}
+        fiscalYear={fiscalYear}
+        years={years}
+        onFiscalYearChange={(value) => setParams({ fiscalYear: value })}
+        canTrueUp={canTrueUp}
+        action={path.to.indirectRates}
+        isDisabled={!permissions.can("update", "accounting")}
+      />
       <RecordOutlet />
-    </ScrollArea>
+    </VStack>
   );
 }

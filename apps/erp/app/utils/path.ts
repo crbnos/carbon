@@ -1421,6 +1421,10 @@ export const path = {
       `${x}/accounting/indirect-rates/ice?${new URLSearchParams({
         fiscalYear: String(fiscalYear)
       })}`,
+    indirectRatesRates: (fiscalYear: number) =>
+      `${x}/accounting/indirect-rates/rates?${new URLSearchParams({
+        fiscalYear: String(fiscalYear)
+      })}`,
     indirectRatesStatement: (fiscalYear: number, periodNumber?: number) =>
       `${x}/accounting/indirect-rates/statement?${new URLSearchParams({
         fiscalYear: String(fiscalYear),
