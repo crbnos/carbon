@@ -7942,11 +7942,12 @@ msgstr "每个周期在其最后一天开具发票，在单位使用之后。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
-msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
-msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr ""
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr "每个租赁协议或合约的销售人员（或其创建者）每日获得其发票摘要。"
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
@@ -11741,6 +11742,7 @@ msgstr "最后一次推送 {when} 失败：{0}"
 
 msgid "Last push {when}:"
 msgstr "最后一次推送 {when}："
+
 msgid "Last pushed {lastPushed}."
 msgstr "最后推送：{lastPushed}。"
 

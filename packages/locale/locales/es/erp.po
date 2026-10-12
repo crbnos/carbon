@@ -7942,11 +7942,12 @@ msgstr "Cada período se factura el último día, después de que se usen las un
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Cada unidad física obtiene su propia entidad rastreada y número único — una entidad, una unidad."
 
-msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
-msgstr "El vendedor de cada acuerdo de alquiler o contrato (o su creador) recibe un resumen diario de sus facturas."
 #. placeholder {0}: replaced.join(", ")
 msgid "Each push replaces: {0}. Other edits stay."
 msgstr ""
+
+msgid "Each rental agreement's or contract's salesperson (or its creator) gets a daily summary of its invoices."
+msgstr "El vendedor de cada acuerdo de alquiler o contrato (o su creador) recibe un resumen diario de sus facturas."
 
 msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
 msgstr "Las operaciones externas de cada proveedor de cada orden de trabajo se colocan en una nueva orden de compra o en un borrador existente que elija."
@@ -11741,6 +11742,7 @@ msgstr "Último envío {when} falló: {0}"
 
 msgid "Last push {when}:"
 msgstr "Último envío {when}:"
+
 msgid "Last pushed {lastPushed}."
 msgstr "Último envío {lastPushed}."
 

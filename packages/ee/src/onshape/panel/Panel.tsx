@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import type { ComboboxOption } from "@carbon/react";
 import {
   Alert,
@@ -10,9 +11,11 @@ import {
   Button,
   Combobox,
   cn,
+  DisabledReason,
   HStack,
   IconButton,
   Input,
+  Loading,
   Modal,
   ModalBody,
   ModalContent,
@@ -25,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
   Skeleton,
-  Spinner,
   Status,
   Tabs,
   TabsContent,
@@ -620,15 +622,6 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
         </Alert>
       ) : null}
     </>
-  );
-}
-
-function PanelLoading({ children }: { children: ReactNode }) {
-  return (
-    <HStack spacing={2} className="w-full text-sm text-muted-foreground">
-      <Spinner size={12} />
-      <span>{children}</span>
-    </HStack>
   );
 }
 
@@ -1893,7 +1886,7 @@ export function OnshapePanel({
         ) : null}
 
         {session.status === "loading" ? (
-          <PanelLoading>Connecting to Carbon…</PanelLoading>
+          <Loading isLoading className="py-8" />
         ) : null}
 
         {session.status === "error" ? (
@@ -2439,19 +2432,8 @@ function PartsSection({
                 ) : null}
                 <PartStateBadge state={part.state} />
                 {canPush ? (
-                  <Button
-                    size="sm"
-                    variant={part.state === "linked" ? "ghost" : "secondary"}
-                    onClick={() => onPush([part.partId])}
-                    isDisabled={
-                      !!pushing ||
-                      locked ||
-                      !part.partNumber ||
-                      part.state === "released" ||
-                      (parts.status === "ready" && !!parts.refreshing)
-                    }
-                    isLoading={!!pushing && pushing.has(part.partId)}
-                    title={
+                  <DisabledReason
+                    reason={
                       !part.partNumber
                         ? "Set a part number in Onshape first"
                         : part.state === "released"
@@ -2459,8 +2441,22 @@ function PartsSection({
                           : undefined
                     }
                   >
-                    {part.state === "linked" ? "Re-push" : "Push"}
-                  </Button>
+                    <Button
+                      size="sm"
+                      variant={part.state === "linked" ? "ghost" : "secondary"}
+                      onClick={() => onPush([part.partId])}
+                      isDisabled={
+                        !!pushing ||
+                        locked ||
+                        !part.partNumber ||
+                        part.state === "released" ||
+                        (parts.status === "ready" && !!parts.refreshing)
+                      }
+                      isLoading={!!pushing && pushing.has(part.partId)}
+                    >
+                      {part.state === "linked" ? "Re-push" : "Push"}
+                    </Button>
+                  </DisabledReason>
                 ) : null}
               </HStack>
             </li>
@@ -2965,8 +2961,7 @@ function FieldsSection({
         </Button>
       )}
 
-      {/* Pinned like a review's push button; see ReviewActionBar. */}
-      <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
+      <PanelActionBar>
         <Button
           className="w-full"
           onClick={onSave}
@@ -2975,7 +2970,7 @@ function FieldsSection({
         >
           {dirty ? "Save" : "No changes"}
         </Button>
-      </div>
+      </PanelActionBar>
     </VStack>
   );
 }
@@ -3143,11 +3138,12 @@ function FieldRow({
 }
 
 /**
- * Source, arrow, Carbon field, control, icon: the same in every row. The
- * control column fits "Update on every push" whole.
+ * Source, arrow, Carbon field, control, icon: the same in every row. The three
+ * text columns share the width, so a narrow panel shortens all three rather
+ * than leaving the source picker a few letters wide.
  */
 const FIELD_ROW_GRID =
-  "grid w-full grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_200px_32px] items-center gap-x-2";
+  "grid w-full grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_minmax(0,1fr)_32px] items-center gap-x-2";
 
 /**
  * A field or property name in a narrow column: it wraps to two lines, and a
@@ -3173,16 +3169,15 @@ function FieldName({
   );
 }
 
-/** A fixed source, padded like a picker's text so the two line up. */
+/** A fixed source: text, where the other rows have a picker. */
 function SourceText({ children }: { children: string }) {
   return <FieldName emphasis>{children}</FieldName>;
 }
 
 /**
- * A source the user can change: a searchable list, drawn like the fixed rows'
- * text so every row reads the same. An option the field cannot take now (a
- * property another field holds) is left out, and each option's group shows
- * on its helper line.
+ * A source the user can change: a searchable list. An option the field cannot
+ * take now (a property another field holds) is left out, and each option's
+ * group shows on its helper line.
  */
 function SourceSelect({
   value,
@@ -3221,7 +3216,7 @@ function SourceSelect({
         placeholder={placeholder}
         disabled={disabled}
         aria-label={label}
-        className="h-7 min-w-0 gap-1 border-transparent bg-transparent px-1 font-medium shadow-none hover:bg-accent"
+        className="w-full min-w-0"
         onChange={onChange}
       />
     </div>
@@ -4049,13 +4044,22 @@ type ReviewSectionProps<R extends ReviewState> = {
 };
 
 /**
- * The push button, pinned to the bottom of the scrolling body.
+ * A section's one action (a review's push, the Fields save), pinned to the
+ * bottom of the scrolling body.
  *
  * `-bottom-4` cancels the body's `p-4`: sticky pins to the scrollport inset by
  * its padding, so `bottom-0` left a 16px strip below the bar where rows
- * scrolled past. It is the last child of every review, so nothing sits in
- * that padding at the end of the list.
+ * scrolled past. It is the last child of its section, so nothing sits in that
+ * padding at the end of the list.
  */
+function PanelActionBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
+      {children}
+    </div>
+  );
+}
+
 function ReviewActionBar({
   review,
   replanning,
@@ -4067,7 +4071,7 @@ function ReviewActionBar({
 }) {
   const count = applyCount(review);
   return (
-    <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
+    <PanelActionBar>
       <Button
         className="w-full"
         onClick={onApply}
@@ -4076,7 +4080,7 @@ function ReviewActionBar({
       >
         {count === 0 ? "Nothing to push" : `Push ${count} to Carbon`}
       </Button>
-    </div>
+    </PanelActionBar>
   );
 }
 
@@ -5156,11 +5160,11 @@ function ItemActionBadge({
 }
 
 /**
- * The whole panel before sign-in: the Carbon mark and the way in.
+ * The whole panel before sign-in: the login page's mark and the way in.
  *
  * The mark is served from the app's own origin, which the panel is framed
  * from, so the absolute path resolves without the panel bundling an asset of
- * its own.
+ * its own. A controlled environment shows the flag, as the login page does.
  */
 function PanelSignIn({
   onSignIn,
@@ -5172,12 +5176,12 @@ function PanelSignIn({
   return (
     <div className="flex w-full max-w-[220px] flex-col items-center gap-6">
       <img
-        src="/carbon-mark-light.svg"
+        src={CONTROLLED_ENVIRONMENT ? "/flag.png" : "/carbon-mark-light.svg"}
         alt="Carbon"
         className="w-24 dark:hidden"
       />
       <img
-        src="/carbon-mark-dark.svg"
+        src={CONTROLLED_ENVIRONMENT ? "/flag.png" : "/carbon-mark-dark.svg"}
         alt="Carbon"
         className="hidden w-24 dark:block"
       />
