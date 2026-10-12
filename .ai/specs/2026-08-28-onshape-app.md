@@ -1,263 +1,137 @@
-# Onshape: the Carbon panel (push-only element app)
+# Onshape panel: push CAD data into Carbon from inside Onshape
 
-- **Status:** Implemented on `feat/onshape-app` (PR #1591, pending review)
-- **Date:** 2026-08-28; amended 2026-09-13 (own integration, push defaults,
-  Draft on released methods, three-page panel); 2026-10-06 (release pushes
-  stage under their change notice)
-- **User docs:** `docs/content/docs/integrations/cad.mdx`
-- **Author:** Raul (with Claude)
+> Status: in-progress (built on `feat/onshape-app`, PR #1764 open)
+> Author: Raul Soonawala
+> Date: 2026-08-28; rewritten 2026-10-12 to match the build
 
-## Problem
+## TLDR
 
-Carbon's Onshape integration was pull-shaped: Carbon lists documents, pulls
-models, and a webhook attaches assets when Onshape releases. The people who
-decide when CAD data should land in Carbon work *in Onshape*, and they had no
-control surface there. Pulling also spends API quota guessing at what changed
-instead of acting once when a person says "this is ready".
+Carbon adds a panel to Onshape's element right panel. An engineer opens a Part Studio, an assembly or a drawing and sees which parts Carbon already has. The engineer then pushes parts, an assembly's BOM or a whole release into Carbon. Every push shows a review first and writes only when the engineer confirms it. The panel is its own integration, `onshape-v2`, beside the existing sync integrations. Carbon never pulls from Onshape on its own. Engineering detail: `.claude/rules/onshape-panel.md`. User docs: `docs/content/docs/integrations/cad.mdx`.
 
-## Goals
+## Overview diagram
 
-- A Carbon app inside Onshape's element right panel: users trigger everything
-  from Onshape; Carbon never pulls automatically.
-- Three pushes: **part**, **assembly** (BOM into make methods), **release**
-  (revisions + change notice).
-- Status first: the panel always shows what the current element already has in
-  Carbon before offering to push.
-- No item-page fork: the ERP item page gains exactly one self-contained card.
-- Frugal with Onshape API quota (private apps debit the app owner annually).
+```mermaid
+flowchart LR
+    P["Panel in Onshape iframe"] -->|"Sign in (popup)"| A["onshape+/auth: mint cps_ token"]
+    P -->|"Bearer token"| S["status / releases routes"]
+    P -->|"Push"| PL["plan-* route: read Onshape + Carbon"]:::new
+    PL --> R[("Redis: plan, 15 min")]
+    R --> RV["Review in panel: 3 selects per row"]:::new
+    RV -->|"Confirm"| AP["push-* route: write Carbon, no Onshape call"]:::new
+    AP --> C[("item, part, makeMethod, methodMaterial, changeOrder, externalIntegrationMapping")]
+    AP --> J["onshape-panel-sync job: export model or PDF"]
+    classDef new stroke-dasharray:4 3
+```
 
-## Architecture
+## Problem Statement
 
-### Its own integration: `onshape-v2` (2026-09-09)
+Carbon's Onshape integration on main pulls from inside Carbon. The BoM Explorer imports a BOM, and a release webhook attaches models and drawings to items that already exist. The engineers who decide when CAD data is ready work in Onshape. They have no view there of what Carbon holds, and no control over when data goes in. Pulling also spends API quota on reads that nobody asked for.
 
-The panel shared the `onshape` `companyIntegration` row with the pull-shaped
-integration, so two unrelated features shared one OAuth grant, one credential
-blob and one mapping namespace. They are now two integrations: `onshape`
-keeps the webhook sync, `onshape-v2` ("Onshape V2") is the panel. Separate
-grant, row and `externalIntegrationMapping` namespace; a company can run
-either, both, or neither. Ids in `packages/ee/src/onshape/lib/integration-id.ts`;
-reads that ask "is this in Carbon?" consider both namespaces, v2 first.
+## Proposed Solution
 
-Deployment requirements the split adds:
+| Capability | What it does |
+|---|---|
+| Status | Shows each part or BOM line as Linked, Conflict, Unlinked or Released, and each release as In Carbon, Partial or Not in Carbon. |
+| Push a part | Creates or updates the item, links it to the Onshape part, and exports the model and thumbnail. |
+| Push an assembly | Creates missing items and writes the BOM into each make method, sub-assemblies included. An Active method gets a Draft version. |
+| Push a release | Creates a revision of each released item at the released letter, writes the released BOM, and stages the new revisions on one Draft change notice. Released drawings attach as PDF. |
+| Fields | Maps Onshape properties to six item fields and to part custom fields, and sets the push defaults for new items. |
+| Item page | One card on the part page: the Onshape link, the fields a push replaces, Open in Onshape and Detach. |
 
-- `ONSHAPE_V2_OAUTH_REDIRECT_URL` = `<erp>/api/integrations/onshape-v2/oauth`,
-  registered as a second redirect URI on the same Onshape OAuth application
-  (alongside `ONSHAPE_OAUTH_REDIRECT_URL` = `<erp>/api/integrations/onshape/oauth`).
-  Install and callback for both ids share one handler
-  (`onshape-oauth.server.ts`).
-- Migration `20261011050300_onshape-v2-integration.sql` seeds the integration
-  row. `credentials` required, `baseUrl` optional.
-- The V2 integration form carries no settings; the panel's Settings page owns
-  them.
-- Onshape side, unchanged: extension of location Element right panel with the
-  action URL carrying `documentId, wv, wvId, elementId, partNumber, revision,
-  nodeId, occurrencePath, configuration, server`; users subscribed to the app.
+### Design Decisions
 
-### Panel and auth
-
-- `apps/erp/app/routes/onshape+/panel.tsx` is the only framable route
-  (`Content-Security-Policy: frame-ancestors https://*.onshape.com`), rendered
-  by `OnshapePanel` from `@carbon/ee` (`packages/ee/src/onshape/panel/`).
-- The `carbon` cookie is `SameSite=Lax` and never reaches a cross-site iframe.
-  The panel signs in through a same-origin popup (`onshape+/auth.tsx`) that
-  mints an opaque bearer token (`cps_…`, Redis `panel-session:<token>`, 12 h,
-  refresh in place) and hands it to the opener via postMessage. The token is
-  kept in sessionStorage and sent as `Authorization: Bearer`.
-- `requirePermissions` accepts that token as a third auth branch; permission
-  denials for panel tokens are 401/403 responses, never redirects.
-
-### API routes (`apps/erp/app/routes/api+/integrations.onshape.panel.*`)
-
-| Route | Verb | Does |
+| Decision | Choice | Rationale |
 |---|---|---|
-| `me` | GET | who the token belongs to |
-| `session` | DELETE | revoke the token |
-| `status` | GET | element kind + part statuses (Part Studio) or root identity + flattened BOM with per-line state (Assembly) |
-| `push-part` | POST | create/adopt/update items for selected parts, queue asset export |
-| `push-assembly` | POST | ensure BOM items, apply lines to Draft make methods (diff, not rebuild), queue assembly model export |
-| `releases` | GET | document releases (revisions grouped by releaseId) joined to Carbon items |
-| `push-release` | POST | revisions + BOMs + change notice + assets for one release |
+| Integration identity | Separate id `onshape-v2`, with its own grant, `companyIntegration` row and mapping namespace | A company can run the panel beside either sync connection. Disconnecting one never affects the other. |
+| Direction | Push only, started by a person in Onshape | The engineer decides when data is ready. No background reads spend quota. |
+| Write model | Two requests: PLAN stores a plan in Redis, APPLY writes it | The review shows exactly what the push writes. APPLY makes no Onshape call, and a double submit writes once. |
+| Panel credential | Opaque `cps_` token minted in a same-origin popup, held in Redis for 12 hours | The `SameSite=Lax` session cookie never reaches a cross-site iframe. The token holds identity only, never a Supabase token. |
+| Released methods | Never edited; the push writes into a Draft version | A push must not change what production uses. This matches a Version change in Carbon. |
+| Release revisions | New revisions are inactive on a Draft change notice | Carbon's change process decides when a revision becomes live. |
+| Field ownership | No field is locked. Each mapping is "Set at creation" or "Update on every push" | A linked item is a normal Carbon item. The mode decides what a later push overwrites. |
+| Property map location | The panel's Fields page | Onshape lists properties only from inside a document. |
+| Drawing record | The PDF document `<partNumber>-<revision>.pdf` on the model's item | No extra table. The Releases tab reads the drawing state back by file name. |
+| Item page footprint | One self-loading card, no Onshape fields on the form | Upstream changes to the item page stay free of merges. |
+| Write location | Route actions in `apps/erp` plus two server modules | Open: see Open Questions. Main's `sync` server function already writes items and BOMs for the BoM Explorer. |
 
-### Identity and mappings (`externalIntegrationMapping`, integration `onshape`)
+## Data Model Changes
 
-- Part item: externalId `documentId:elementId:partId`; assembly item:
-  `documentId:elementId:assembly`; release revision item:
-  `release:<releaseId>:<partNumber>`.
-- Onshape-origin BOM lines: entityType `methodMaterial` with
-  `metadata.makeMethodId` — a push replaces exactly those lines and leaves
-  manual lines alone.
-- Released (Active) methods are not edited and not refused (2026-09-13): the
-  push takes a Draft version (`ensureDraftMakeMethod`, reusing an existing
-  Draft, else copy + new version) and writes there; nothing live moves until a
-  person releases it. Mappings are re-derived onto the copy's new line ids by
-  natural key (`correlateCopiedLines`: component item, then `order`),
-  conservatively — an unpaired line is treated as manual and kept.
-- Onshape owns a linked item's identity (`readableId`, `revision`), thumbnail
-  and model. Since 2026-10-07 no other field is locked: a push writes a value
-  to an existing item only in "Update on every push" mode (see
-  `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`). The item page
-  shows one `ExternalSourceCard` (the fields a push replaces, Open in Onshape,
-  Detach).
+No new tables or columns.
 
-### Push release semantics
+- Migration `20261011050300_onshape-v2-integration.sql` inserts the `onshape-v2` row into `integration`.
+- Migration `20261011050301_onshape-v2-vault-secrets.sql` moves plaintext tokens in `onshape-v2` metadata into Vault. `SECRET_KEYS["onshape-v2"]` names the access and refresh token.
+- `companyIntegration.metadata` for `onshape-v2` holds `credentials` (type, expiry), `propertyMap`, `descriptionModes` and five `default*` push-default keys.
+- `externalIntegrationMapping` rows with integration `onshape-v2` record identity:
 
-- Releases are reconstructed from `GET /revisions/d/{did}` grouped by
-  releaseId (Onshape has no packages-by-document endpoint; one call).
-- Per released part/assembly: ensure a Carbon item at the released revision
-  letter — `createRevision` from the base item, or a fresh item when the part
-  number was never in Carbon.
-- Released assemblies apply their version-scoped BOM to the new revision's
-  Draft method. The revision copy's Onshape-origin lines are deduped through
-  the base method's mapping tuples, so manual lines survive into the new
-  revision. Children resolve to the same release's letter items first, then
-  any existing item (one bulk lookup — purchased hardware isn't re-minted).
-- What the push creates is staged under one **Draft** change notice, as
-  Carbon's own Revision / New Part affected items are: inactive, item and
-  Draft method stamped with the notice, affected rows with base item,
-  `newItemId`, draft + base methods. Releasing the notice in Carbon activates
-  them and supersedes the old revisions. Without a notice (API only) they are
-  created **active** and made the **default** via `updateDefaultRevision`.
-- Assets export at the released version per item; released drawings attach as
-  PDF via the panel-sync job's `drawing` branch (exact part-number match).
-- Idempotent on the release's part number + letter pairs; re-push re-applies
-  BOMs and assets (repair) without duplicating items or the change notice.
+| Entity | `externalId` |
+|---|---|
+| Part item | `documentId:elementId:partId[:configuration]` |
+| Assembly item | `documentId:elementId:assembly[:configuration]` |
+| Release revision item | `release:<releaseId>:<partNumber>` |
+| BOM line the push wrote | entityType `methodMaterial` |
+| Draft the push made | entityType `makeMethod`, with the source Active method in metadata |
 
-### Plan / apply (confirm step, 2026-08-30)
+## API / Service Changes
 
-Every push is PLAN then APPLY. PLAN reads Onshape + Carbon, writes nothing,
-and returns what would happen — per part: create / adopt / update / unchanged
-with the proposed field values; per assembly: items to create or reuse and,
-per make method, the lines added, the Onshape-origin lines replaced and the
-manual lines kept, with released methods flagged; per release: the revision
-each item gets, BOM children that will be minted, the change notice name and
-description, and whether new revisions become the default. The plan is stored
-in Redis (15 min, bound to the user and company, taken once with GETDEL) and
-APPLY consumes it with the user's edits and deselections — no Onshape read at
-apply. A completed push costs the same Onshape reads as before, spent at
-review time; a cancelled or expired review has spent them. A release plan
-skips the BOM read of an assembly whose method is already released in Carbon
-(the apply would refuse it anyway) and stores null for a BOM it could not
-read, which the apply leaves alone — an empty array is a genuinely empty BOM.
+All panel routes use `requireOnshapePanelPermissions` (bearer token, employees only, 401 or 403, no redirect).
 
-| Route | Verb | Does |
+| Route | Method | Permission | Does |
+|---|---|---|---|
+| `api+/integrations.onshape.panel.status` | GET | parts view | Reads the element and its Carbon state |
+| `api+/integrations.onshape.panel.releases` | GET | parts view | Lists the 20 newest releases and their state |
+| `api+/integrations.onshape.panel.plan-part` | POST | parts create, update | Plans 1 to 50 parts |
+| `api+/integrations.onshape.panel.plan-assembly` | POST | parts create, update, delete | Plans an assembly at depth `all` (up to 1500 part numbers) or `top` |
+| `api+/integrations.onshape.panel.plan-release` | POST | parts create, update, delete | Plans one release |
+| `api+/integrations.onshape.panel.push-{part,assembly,release}` | POST | as the plan | Applies a stored plan |
+| `api+/integrations.onshape.panel.fields` | GET, POST | settings update | Reads and saves the property map and push defaults |
+| `api+/integrations.onshape.panel.me` | GET | employee | Returns the user, company and `canEditFields` |
+| `api+/integrations.onshape.panel.session` | DELETE | employee | Signs the panel out |
+| `api+/integrations.onshape.detach` | POST | parts update (cookie) | Removes the item's `onshape-v2` link |
+| `api+/integrations.onshape-v2.install`, `.oauth` | GET, POST | settings update | Starts and completes the OAuth grant |
+
+- Server modules: `modules/settings/onshape-push.server.ts` (field writers, BOM line writes, change notice staging) and `modules/settings/onshape-draft-method.server.ts` (Draft versions).
+- Background job: `onshape-panel-sync` exports a model, thumbnail or drawing PDF for one item.
+- `@carbon/kv` gains `acquireLease` and `withLease`. The Onshape token refresh uses them, because Onshape rotates refresh tokens.
+
+## UI Changes
+
+- Panel routes: `onshape+/panel` (framable by `*.onshape.com` only), `onshape+/auth` (sign-in popup), `onshape+/_layout` (owns the scroll and follows Onshape's theme).
+- Panel pages: the push page (Parts, Assembly or Push), Releases and Fields.
+- Settings → Integrations: an Onshape V2 card. Connect opens a popup for both Onshape connections; Reconnect goes to Onshape's consent page and back.
+- Part page: `ExternalSourceCard` after the CAD model.
+
+## Acceptance Criteria
+
+- [x] A part push creates the item with its model and thumbnail; a second push of an unchanged part writes nothing.
+- [x] Push all writes every numbered part of a Part Studio, with mapped item fields and custom fields.
+- [x] An assembly push writes the BOM into the assembly's make method.
+- [ ] An assembly push takes over matching manual lines and keeps the others (untested).
+- [ ] An assembly push with an Active method writes into a Draft version and reuses it on the next push (untested).
+- [x] A release push creates revisions at the released letters under one Draft change notice; a second push creates nothing.
+- [x] A release with a drawing attaches the PDF and reads In Carbon once the PDF lands.
+- [x] A user without settings view gets status and a review (checked over the API).
+- [x] Fields saves the map and push defaults; a push applies them.
+- [ ] A person signs in from inside Onshape's iframe by hand once (automation cannot complete the popup).
+- [ ] The write path has tests that run without Onshape.
+
+## Risks
+
+| Risk | Severity | Mitigation |
 |---|---|---|
-| `plan-part` | POST | 1 Onshape read; `{ planId, expiresAt, plan: PartPlan }` |
-| `plan-assembly` | POST | 2 reads (BOM, metadata); `AssemblyPlan` (BOM tree stored server-side) |
-| `plan-release` | POST | 1 + N reads (revisions, each released assembly's BOM at version); `ReleasePlan` |
-| `push-part` | POST | `{ planId, selected, edits }` → results |
-| `push-assembly` | POST | `{ planId, edits, excluded }` → summary |
-| `push-release` | POST | `{ planId, edits, changeNotice, makeDefault }` → summary |
+| The write path (push routes, server modules, client) has no tests; 338 tests cover the pure modules only | High | Add module-boundary tests before the next live run. |
+| The push routes duplicate decisions that main's `sync` server function and the item page also make | High | Decide the write location (Open Questions). |
+| A private Onshape app bills the owner's yearly quota; a spent quota answers 402 | Medium | The panel names the cause. Dev mode caches stable reads. |
+| Onshape's panel is often under 768px wide, so Carbon inputs render at phone size | Low | Container-width styles in `@carbon/react`. |
 
-Editable at create only: name, description, replenishmentSystem,
-defaultMethodType, itemTrackingType, unitOfMeasureCode (the four the routes
-used to hardcode). Identity (readableId, revision) is Onshape's; adopt and
-update take only the three manufacturing edits. Item type stays
-Part. Pure module `packages/ee/src/onshape/panel/plan.ts` (builders, edit
-merging, the ERP's replenishment↔method interlock) is tested; the store and the
-bulk Carbon reads live under `packages/ee/src/onshape/lib/`.
+## Open Questions
 
-Deliberate behaviour changes with the split: assembly apply is flat per method
-(a Draft sub-assembly under a released parent is applied; it used to be
-skipped), a "create" whose part number appeared since the plan becomes
-adopt/reuse instead of a duplicate, parts never adopt a non-Part item sharing
-the number, the change notice `openDate` is the company's day (not UTC), and
-the panel patches its part list from the apply response instead of re-reading
-status.
+> HARD STOP: Do not proceed with implementation until these are answered.
 
-### Push defaults (2026-09-13)
+- [ ] Where do the writes live? Options: a thin panel over main's `sync` server function; landable slices of this branch; or this branch as is, with write-path tests first.
+- [ ] Which of the 19 open edge-case findings must be fixed before merge?
+- [ ] Can Onshape Government private apps host the panel, and from which domain?
 
-A push used to invent replenishment, method, tracking type and unit from
-constants. They are now company settings on the integration metadata
-(`defaultUnitOfMeasureCode`, `defaultReplenishmentSystem`,
-`defaultMethodTypeForMake`, `defaultMethodTypeForBuy`,
-`defaultItemTrackingType`), parsed by the pure, fail-soft
-`packages/ee/src/onshape/panel/preferences.ts` — a malformed row yields the
-documented defaults (Make / Make to Order / Pull from Inventory / Inventory /
-unit resolved from the company's list), because a plan must always build.
-`reconcilePushDefaults` keeps the replenishment↔method pair one the Part form
-would accept. Since 2026-10-07 a mapped property and the BOM rules come first
-(see `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`). Edited on the panel's
-Settings page (`panel.preferences` POST). Release behaviour is fixed, not a
-default: the review states the change notice it records.
+## Changelog
 
-### Three pages (2026-09-13)
-
-Parts/Assembly, Releases, Settings behind a pinned tab strip; pages that do
-not apply to the element are hidden. Assembly BOM has Structured (tree) and
-Flat (distinct part numbers, quantity multiplied through) views, both built
-client-side from status data (`bom-view.ts`). Settings = Connection (company
-and user the session belongs to), Push defaults, Custom fields, one pinned
-Save. Creating a custom field from the panel was removed; fields are created
-in Carbon and selected in the panel.
-
-### Custom fields (property map, 2026-08-31)
-
-> Superseded on 2026-10-07 by `.ai/specs/2026-10-07-onshape-standard-field-mapping.md`:
-> a mapping can also set item fields, every mapping has a mode ("Set at
-> creation" or "Update on every push"), and BOM rows and release pushes read
-> mapped values. The paragraph below records the first version.
-
-One explicit map per company on the integration metadata: Onshape property →
-Carbon `part` custom field, with per-mapping ownership (`owned` = written on
-every push and locked in the ERP, like name/description; `default` = filled at
-create, editable in the review, Carbon's afterwards). Configured from the
-panel's Settings page, which lists the live Onshape property schema (union
-across the element's parts) next to the company's part fields — only
-properties with a Carbon type to map onto (string/enum→Text, bool→Yes/No,
-int/double→Numeric, date→Date), unless already mapped — and saves the whole
-map. (Inline field creation was removed 2026-09-13.) Values are
-resolved at plan time (parts: one depth=2 metadata read, verified live;
-assembly: root only, from the read the plan already makes; releases and BOM
-children: none in v1) and written at apply into `part.customFields` (keyed by
-readableId — shared across revisions) as a read-merge-write of mapped keys
-only. List options sync add-only at apply. Coercion problems and unmapped
-valued properties are review lines, never writes.
-
-### Background work
-
-One Inngest job (`onshape-panel-sync`, event `carbon/onshape-panel-sync`)
-does the slow part per pushed element: translation export, poll, download,
-thumbnail, then `model-optimize` / `model-thumbnail`. `elementKind` is
-`partstudio | assembly | drawing`; `wvm` is `w | v`.
-
-### Quota
-
-- Private Onshape apps debit the **app owner's** annual quota; publicly listed
-  App Store apps are exempt — production ships as a public listing.
-- Dev: `ONSHAPE_DEV_CACHE=1` serves repeated GETs from a 10-minute Redis cache
-  behind an **allow-list of stable content reads** (`DEV_CACHEABLE_PATHS`) —
-  never polling endpoints. Live calls are counted in Redis
-  (`onshape:api-calls:<year>`).
-
-## Onshape API facts the code depends on
-
-- The indented BOM never returns the top-level assembly row; assembly identity
-  comes from element metadata ("Part number").
-- `partIds` on Part Studio translations is ignored — exports are whole-studio.
-- Unresolved action-URL placeholders arrive as literal `{$partNumber}` and are
-  treated as null.
-- Extensions render only for users **subscribed** to the app (private store
-  entry + "Get for free"); an OAuth grant alone is not enough.
-
-## Out of scope (deferred)
-
-- Custom fields (material / mass / bounding box — `getPartStudioMassProperties`
-  exists unused).
-- Configurations: not carried at all. Identity ignores them, both BOM reads
-  send no `configuration`, and nothing writes one to mapping metadata — the
-  release grouping parses `configuration` off a revision row and drops it.
-  A non-default configuration therefore resolves to the default BOM and
-  collapses onto the default item.
-- Drawings on part push (they ride with releases); drawing matching beyond
-  exact part number.
-- Item names for release-created items (part number until an element push
-  refines them).
-
-## Verification
-
-All milestones verified live against a real Onshape document (M1–M5, evidence
-in the feature log): part push + owned-field guard, assembly push with
-manual-line survival, release push (10 revisions, exact Rev-A tree, change
-notice, defaults cutover, idempotent re-push), panel UI for each. 17+ vitest
-tests on the pure panel modules (`messages`, `status`, `push-plan`, `bom`,
-`releases`).
+- 2026-08-28: Created.
+- 2026-10-12: Rewritten to match the build. The field-mapping spec (`2026-10-07-onshape-standard-field-mapping.md`) is folded in and deleted.

@@ -116,8 +116,9 @@ category.
   ### Connect Onshape V2
 
   Press **Connect** on **Onshape V2**. A popup opens on Onshape; approve access. The
-  popup closes on its own and the card switches to Installed. The V2 card holds the
-  push defaults; the property map is edited on the panel's **Fields** page.
+  popup closes on its own and the card switches to Installed. The card holds the
+  connection only; the property map and the push defaults are on the panel's
+  **Fields** page.
   </Step>
   <Step>
   ### Optionally connect Onshape
@@ -182,83 +183,87 @@ A company can connect to only one Onshape environment. Disconnect the current in
 
 Open a Part Studio, an assembly or a drawing and click the Carbon icon in the right
 panel. Press **Sign in to Carbon**: a popup on Carbon's own origin signs you in (or
-sends you through the normal login first) and closes itself. The session lasts 12
-hours and is held only in that browser tab.
+sends you through the normal login first) and closes itself. The session lasts up to
+12 hours and is held only in that browser tab.
 
-The panel is recorded against the Carbon **company you are signed in to** in the
-Carbon tab that the popup used. The strip at the top of the panel shows which
-company that is. To push into a different company, switch company in Carbon and
-press **Sign out** then **Sign in to Carbon** again in the panel.
+The panel works in the Carbon **company you are signed in to** in the Carbon tab the
+popup used; the top of the panel shows which. To push into a different company,
+switch company in Carbon, then press **Sign out** and **Sign in to Carbon** in the
+panel.
 
-The panel has up to three pages, chosen from the strip at the top: **Parts** or
-**Assembly**, **Releases** and **Fields**. Pages that do not apply to the current
-element are hidden — a drawing has no parts, so it shows Releases only. Fields is
-shown only to users with the **settings: update** permission in Carbon.
+The panel has three pages:
 
-### Parts / Assembly
+- **Parts**, **Assembly** or **Push**, after the element you have open. A drawing
+  has nothing to push here; its PDF comes in with a release.
+- **Releases**, for the whole document.
+- **Fields**, on a Part Studio or an assembly, for users with the
+  **settings: update** permission in Carbon.
 
-Status first: which parts of the current element are already in Carbon, which match
-an existing item by part number, and which are missing — before offering to push
-anything.
+Pushing works in a workspace or a version. In a microversion the panel shows status
+only.
 
-An assembly's bill of materials can be read two ways, the way Onshape's own BOM
-table can:
+### Status
 
-- **Structured**: the tree, collapsed to the top level, opened one sub-assembly at a
-  time.
-- **Flat**: one row per distinct part number with the quantity multiplied through its
-  parents — how many of each part the assembly takes. Sub-assemblies stay in this
-  list because each one becomes a Carbon item.
+Each part or BOM line shows its state before anything is pushed:
 
-Switching views costs no Onshape read; both are built from the same status data.
+| State | Meaning |
+| --- | --- |
+| **Linked** | A panel push linked this Onshape part to a Carbon item. |
+| **Conflict** | Carbon has an item with this part number that is not linked to this part. A push uses that item. |
+| **Unlinked** | Carbon has no item with this part number. A push creates one. |
+| **Released** | The part is released in Onshape. Push it from **Releases**; its Push button is off. |
+
+An assembly's bill of materials shows as a tree, collapsed to the top level, the way
+Onshape's structured BOM does.
 
 ### Review before anything is written
 
-Every push is two steps. Pressing **Push** shows a review of exactly what Carbon
-would do — nothing is written yet:
+Every push is two steps. Pressing **Push** shows a review of what Carbon would do;
+nothing is written yet:
 
-- items that will be **created**, with the values they will get. Buy/Make, default
-  method and tracking type are editable here; the item ID and revision come from
-  Onshape and are not. Each mapped value shows the Onshape property it came from
-  (see [Fields](#fields)); anything not mapped starts from the push defaults (below).
+- items that will be **created**, with the values they will get. Replenishment,
+  default method type and tracking type can be changed here; the item ID and
+  revision come from Onshape. Each mapped value shows the Onshape property it came
+  from (see [Fields](#fields)); anything not mapped starts from the push defaults.
 - items that will be **linked** to an existing Carbon item by part number, or
   **updated** because Onshape changed. The review lists the values the push replaces
   (fields set to *Update on every push*) and the Onshape values Carbon keeps (fields
-  set to *Set at creation*). Buy/Make, default method and tracking type stay
-  editable.
+  set to *Set at creation*).
 - for an assembly, each make method with the lines it gains, the lines a previous
-  push wrote that will be replaced, the lines you added by hand that the push takes
-  over, and the ones it keeps.
-- for a release, every revision that will be created and the release options
-  (below).
+  push wrote that change, the lines added by hand that the push takes over, and the
+  ones it keeps.
+- for a release, every revision it creates and the change notice it uses.
 
-Untick a part, or a BOM item that would be created, to leave it out. **Push to
-Carbon** applies the review as shown; **Cancel** writes nothing. A review is held
-for 15 minutes and then has to be opened again. A choice made in the review is
-written to Carbon only; Onshape keeps its values.
+Untick a part, or a BOM item that would be created, to leave it out. **Push _n_ to
+Carbon** applies the review as shown; **Cancel** writes nothing. A review is held for
+15 minutes; after that, **Review again**. A choice made in the review is written to
+Carbon only; Onshape keeps its values.
 
 ### Push a part
 
-Creates or updates the Carbon item for an Onshape part: part number becomes the item
-ID, plus name, description, revision, the 3D model and a thumbnail. Pushing again
-after a change updates the item; pushing an unchanged part does nothing. Parts need a
-part number set in Onshape first.
+Creates or updates the Carbon item for an Onshape part: the part number becomes the
+item ID, plus name, description, revision, the 3D model and a thumbnail. Pushing again
+after a change updates the item. Pushing an unchanged part writes only mapped values
+that differ, and exports nothing. Parts need a part number in Onshape first. **Push
+all** pushes every numbered part in the Part Studio, at most 50.
 
 After the push the item is a Carbon item like any other, and every field stays
-editable in Carbon. A later push replaces only the fields set to *Update on every
-push* on the [Fields](#fields) page. The item page shows an **Onshape card** with the
-link, the fields a push replaces, **Open in Onshape**, and **Detach**, which stops
-pushes from updating the item. The card shows links made by the panel
-(**Onshape V2**) only.
+editable. A later push replaces only the fields set to *Update on every push* on the
+[Fields](#fields) page. The item page shows an **Onshape card** with the link, the
+fields a push replaces, **Open in Onshape**, and **Detach**, which removes the link
+so pushes stop updating the item. The card shows links made by the panel only.
 
 ### Push an assembly
 
-Pushes the assembly and its whole bill of materials: every item in the BOM is
-created if missing, and the BOM lands on the assembly's make methods —
-sub-assemblies included. Pushes are a diff, not a rebuild: lines a previous push
-wrote are replaced. A line you added by hand in Carbon for a part Onshape's BOM also
-lists is taken over — its quantity follows Onshape, its operation and scrap stay —
-and a hand-added line for a part Onshape doesn't list is left alone.
+Pushes the assembly and its bill of materials: every item in the BOM is created if
+missing, and the BOM lands on the assembly's make methods, sub-assemblies included.
+A push changes only what Onshape changed: lines a previous push wrote are updated or
+removed. A line you added by hand for a part Onshape's BOM also lists is taken over;
+its quantity follows Onshape, and its operation and scrap stay. A hand-added line for
+a part Onshape doesn't list is left alone.
+
+An assembly with more than 1,500 distinct parts is refused as a whole; **Push this
+level only** pushes its top-level BOM, with each sub-assembly as one line.
 
 Items in the BOM that are not yet linked to an Onshape part are linked to theirs.
 Every item linked to its BOM row takes the values set to *Update on every push*. Only
@@ -279,51 +284,54 @@ without components, so the push writes no BOM for it. It says nothing about Buy 
 Make. The review warns when an item's Buy or Make and Onshape's BOM disagree: a Buy
 item that would get a BOM, or a Make item Onshape shows as one unit.
 
-**A released make method is never edited.** When an assembly's current method is
-Active, the push takes a new **Draft** version of it and writes there, the same way
-a Version change works in Carbon. Nothing live moves; the new version sits beside
-the Active one until someone releases it. Pushing again writes into the same Draft
-rather than creating another. The push result lists each new Draft version as
-*not yet live*.
+**A released make method is never edited.** When an assembly's method is Active and
+Onshape's BOM differs from it, the push takes a new **Draft** version and writes
+there, the same way a Version change works in Carbon. Nothing live moves until
+someone releases the Draft. Pushing again writes into the same Draft. The push result
+lists each new Draft as *not yet live*.
 
 ### Push a release
 
-The **Releases** page lists your document's Onshape releases. Pushing one:
+The **Releases** page lists the document's 20 newest Onshape releases, each marked
+**In Carbon**, **Partial** or **Not in Carbon**. Pushing one:
 
-- creates a Carbon **revision** of every released part and assembly, at the released
-  revision letter,
-- applies each released assembly's BOM (as of the released version) to the new
+- creates a Carbon **revision** of every released part and assembly at the released
+  revision letter, copied from the revision below it when Carbon has one,
+- writes each released assembly's BOM, as of the released version, to the new
   revision's method,
-- takes the mapped values of each released item at its released version: a new
-  revision copies its previous revision, then takes the values set to *Update on
-  every push*,
-- attaches models and thumbnails at the released version, and released drawings as
-  PDF.
+- takes each released item's mapped values at its released version,
+- attaches models and thumbnails at the released version, and each released drawing
+  as a PDF named `<part number>-<revision>.pdf` on its part.
 
-Everything the push creates goes on one draft **change notice**, named after the
-release. The new revisions and items stay inactive until you release that notice in
-Carbon, which activates them and supersedes each previous revision with its new one.
+The new revisions go on one draft **change notice**, named after the release. They
+stay inactive until you release that notice in Carbon, which activates them and
+supersedes each previous revision. Pushing the release again adds to the same notice
+while it is open, and creates nothing twice. BOM components the push has to create
+are not on the notice.
 
-Pushing the same release twice creates nothing twice.
+A release with only a drawing reads **In Carbon** once its PDF is attached. Release
+management needs an Onshape company account; without one the page says so.
 
 ### Fields
 
 The **Fields** page maps Onshape properties (Vendor, Project, Material, your
 company's custom properties) onto Carbon. A property can set an **item field** or a
 **custom field** on the part. The page lists the properties of the element you have
-open, but the mappings are the company's and apply to every push. It lives in the
-panel because Onshape only lists properties from inside a document.
+open, but the mappings belong to the company and apply to every push. It lives in
+the panel because Onshape lists properties only from inside a document.
 
-**Item fields** a property can set:
+The page starts with fixed rows: Part number and Revision always come from Onshape,
+and Name and Description each have a mode (below). Then come the item fields with
+their **push defaults**, the values a new item gets when no property sets them:
 
-| Item field | Values |
-| --- | --- |
-| Manufacturer Part Number | the property's text |
-| Replenishment | Buy, Make, Buy and Make |
-| Default Method Type | Make to Order, Pull from Inventory, Purchase to Order |
-| Sourcing | Specified, Drop Ship, Ship from Inventory (Buy and Make items only) |
-| Tracking Type | Inventory, Non-Inventory, Serial, Batch |
-| Unit of Measure | your company's units |
+| Item field | Values | Push default |
+| --- | --- | --- |
+| Replenishment | Buy, Make, Buy and Make | Make |
+| Default Method Type | Make to Order, Pull from Inventory, Purchase to Order | Make to Order (Make), Pull from Inventory (Buy) |
+| Tracking Type | Inventory, Non-Inventory, Serial, Batch | Inventory |
+| Unit of Measure | your company's units | EA, or your company's first unit |
+| Manufacturer Part Number | the property's text | none |
+| Sourcing | Specified, Drop Ship, Ship from Inventory (Buy and Make items only) | none |
 
 - A list field has a **translation**: each row turns an Onshape value into a Carbon
   value. The rows start with Carbon's own values, so an Onshape list with the same
@@ -331,49 +339,45 @@ panel because Onshape only lists properties from inside a document.
   rule. An Onshape value with no row is called out in the review and not written.
 - A Unit of Measure value that matches a unit's code or name needs no row.
 - Item fields are written the way the item page writes them. Changing Replenishment
-  also sets the method that goes with it, and changing Replenishment, method,
-  sourcing or tracking type also updates the item on Draft BOMs and open jobs.
+  also sets the method that goes with it. A change of Replenishment, method or
+  sourcing also updates the item's lines on Draft BOMs; a change of tracking type
+  also updates open jobs, receipts, shipments and transfers.
 
-**Custom fields:** create the field in Carbon first, then select it here. Text and
-enum properties map to Text fields, booleans to Yes/No, numbers to Numeric, dates to
-Date. Onshape's computed, user, file and category properties can't be mapped; the page
-names them under the list. A property with no Carbon field of its type says which part
-custom field type to add.
+**Custom fields:** create the field in Carbon first, then select it here. Text, list
+and object properties map to Text fields, booleans to Yes/No, numbers to Numeric,
+dates to Date. Onshape's computed, user, file and category properties can't be
+mapped; the page names them under the list. A property with no Carbon field of its
+type says which part custom field type to add.
 
 Each Carbon field takes one property. A field another property already sets stays in
 the list, greyed out, with that property's name.
 
 **When Onshape writes a field.** Each mapping, and the item's Name and Description,
-has one of two settings:
+has one of two modes:
 
 - **Set at creation** (the default): Onshape fills the field when a push creates the
-  item. After that, Carbon owns the field and later pushes don't change it. Items
-  already in Carbon don't get it.
+  item. After that, Carbon owns the field and later pushes don't change it.
 - **Update on every push**: every push replaces Carbon's value with Onshape's,
   including edits made in Carbon. An empty custom field property clears the Carbon
   field; an empty item field or description is never written.
 
 **Set up Buy or Make.** Onshape has no Buy/Make property. Create a list property in
 Onshape, for example *Make or buy*, with the options Buy, Make, and Buy and Make. Map
-it to Replenishment here. Set the value on the parts your company buys. Parts from
+it to Replenishment here and set the value on the parts your company buys. Parts from
 Onshape's Standard content library (fasteners and other hardware) come in as Buy when
 no property gives a value.
 
 - Carbon matches a list value by its display name in Onshape, or by its value when it
   has no display name.
-- An Onshape default is a value: every part that has no value of its own sends the
+- An Onshape default is a value: every part with no value of its own sends the
   default. With **Update on every push**, a default replaces Carbon's value on every
-  linked item nobody set in Onshape. Leave the default empty, and the push defaults
-  decide for new items.
+  linked item nobody set in Onshape. Leave the Onshape default empty to let the push
+  defaults decide for new items.
 - A property that applies only to parts has no value on assembly rows. Carbon writes
   nothing there.
 
-**Refresh** re-reads the properties and the field list. **Save mappings** needs the
-**settings: update** permission in Carbon.
-
-The values a created item starts with when no property sets them (unit of measure,
-replenishment, methods, tracking type) are the push defaults on the **Onshape V2**
-integration page in Carbon.
+**Refresh** re-reads the properties and the field list. **Save** saves the map and
+the push defaults together.
 
 ## Troubleshooting the panel
 
@@ -383,12 +387,13 @@ integration page in Carbon.
 | *Open this panel from Onshape* | The page was opened outside Onshape, so no Onshape `server` origin arrived with it. | Open the panel from the Onshape right panel; check the extension's action URL points at the ERP host. |
 | Panel is blank inside Onshape | The route is framed from an origin other than `*.onshape.com`, or the ERP host is unreachable from the browser. | Carbon only allows Onshape to frame it; check the ERP origin in the action URL. |
 | Sign-in popup shows *Open this page from the Carbon panel in Onshape* | The popup was opened directly, not from the panel. | Use the **Sign in to Carbon** button. |
-| *Carbon is not reachable* after sign-in | The panel token expired (12 h) or Redis is down. | **Sign in again**; check `REDIS_URL` on the server. |
+| The panel returns to **Sign in to Carbon** | The panel session ended: 12 hours, the controlled-environment session limit, or Sign out. | Sign in again. |
+| *Carbon is not reachable* | The panel's first request to Carbon failed: the ERP host is unreachable or answered with an error, shown under the title. | **Retry**, or **Sign in again**; check the ERP host and the server logs. |
 | *The yearly API limit for Carbon's Onshape app is used up* | Onshape answers every call with HTTP 402 once the yearly API limit of the account that owns the OAuth application is spent. | Raise the limit with Onshape. The owner sees its usage under **Company settings → Developer**. A publicly listed App Store application is exempt. |
-| Nothing connected, but Settings → Integrations shows Onshape installed | Only **Onshape** (pull) is connected. | Connect **Onshape V2**. |
-| Push review answers 503 | The plan store could not write to Redis. | Check `REDIS_URL`. |
-| Push review answers 410 | The 15-minute review expired, or it was already applied. | Open the review again. |
-| A part linked by the pull integration shows as in Carbon on the V2 panel | Expected: status reads links made by either integration. | Nothing to do; a push adopts the item by part number instead of duplicating it. |
+| *Onshape is not connected for this company* | Only **Onshape** (sync) is connected, or no Onshape integration is. | Connect **Onshape V2**. |
+| The review fails to open with a 503 | Carbon could not store the review in Redis. | Check `REDIS_URL`. |
+| *Review again* after **Push to Carbon** | The 15-minute review expired, or it was already applied. | Press **Review again**. |
+| A part shows **Conflict** | Carbon already has an item with that part number, made by hand, by an import or by the sync integration. | Push it: the panel links and updates that item instead of creating a duplicate. |
 | The push result says *New Draft version, not yet live* | The assembly's make method was released, so the push wrote to a Draft version. | Release the Draft in Carbon when ready. |
 | `invalid_scope` on Connect | The OAuth application lacks `OAuth2Write`. | Grant it in the developer portal. |
 
