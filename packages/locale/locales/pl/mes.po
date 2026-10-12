@@ -542,6 +542,15 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia utrzymania ruchu"
 
@@ -1272,6 +1281,9 @@ msgstr "Brak stanowisk roboczych"
 
 msgid "None"
 msgstr "Brak"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "Notatki"

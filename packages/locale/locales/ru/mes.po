@@ -542,6 +542,15 @@ msgstr "Описание"
 msgid "Details"
 msgstr "Детали"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Заявка на техобслуживание не найдена"
 
@@ -1272,6 +1281,9 @@ msgstr "Рабочие центры отсутствуют"
 
 msgid "None"
 msgstr "Нет"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "Примечания"

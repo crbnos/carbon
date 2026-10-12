@@ -200,9 +200,11 @@ Community code, no feature gate. The tags are columns
 `employeeJob.locationId` and the labor category's role; an explicit null is none. Both
 are part of the cell's key, so two entries on one day may differ only by location or
 role. A DCAA revision records both. `createTimesheetCorrection` copies both to the
-reversal and the replacement (unless the correction names new values). The ERP grid
-posts each row's own values (`""` for none); the MES grid sends none and takes the
-defaults. Add row on My Timesheet has a **More** toggle with **Work location** and
+reversal and the replacement (unless the correction names new values). Both grids
+group rows by those two fields too and post each row's own values (`""` for none),
+so a save edits the row's own entry. A new row starts at the defaults (the job
+location and the category's role): the ERP from Add row, the MES from the loader's
+`jobLocationId` and the category's `rdActivityRole`. Add row on My Timesheet has a **More** toggle with **Work location** and
 **Research role**.
 
 **Pure rules** (`@carbon/utils` `rd-tax.ts`, pinned by `rd-tax.test.ts`):
@@ -231,9 +233,6 @@ country.
 ## Known gaps
 
 - The browser verification of the plan (Task 35) is deferred, and so is 5d's (Task 16).
-- The MES timesheet groups its rows by charge number and category only. An MES cell
-  save takes the default location and role, so on a row that also has an ERP entry at
-  another location it adds an entry beside it.
 - The `customerContracts` view predates the 3 research columns; the contract page
   reads them from the table.
 - The report reads load each report in one query and stream the encoded CSV in pages;

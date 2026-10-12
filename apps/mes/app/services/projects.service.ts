@@ -19,6 +19,7 @@ import type { timesheetCellValidator } from "./models";
 type Client = SupabaseClient<Database>;
 
 type TimesheetEntryStatus = Database["public"]["Enums"]["timesheetEntryStatus"];
+export type RdActivityRole = Database["public"]["Enums"]["rdActivityRole"];
 
 export type ChargeNumber = {
   /** `projectId|` for the project itself, `projectId|elementId` for an element. */
@@ -124,14 +125,14 @@ export async function getLaborCategoriesList(
 ) {
   return client
     .from("laborCategory")
-    .select("id, name")
+    .select("id, name, rdActivityRole")
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
 }
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, entryDate, projectId, projectElementId, laborCategoryId, hours, status, project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 function timesheetWeekQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_ENTRY_COLUMNS);
@@ -165,27 +166,40 @@ export type TimesheetRow = {
   projectId: string;
   projectElementId: string | null;
   laborCategoryId: string;
+  /** R&D tax: part of the row's key, sent with every save of the row. */
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
   readableId: string;
   name: string;
   laborCategory: string;
+  workLocation: string;
   cells: Record<string, TimesheetCell>;
   total: number;
 };
 
-/** The grid key of a row: project, element and labor category. */
+/**
+ * The grid key of a row: project, element, labor category, work location and
+ * research role, as the cell key of `save-timesheet-entry`.
+ */
 export function timesheetRowKey(row: {
   projectId: string;
   projectElementId?: string | null;
   laborCategoryId: string;
+  workLocationId?: string | null;
+  rdActivityRole?: RdActivityRole | null;
 }) {
-  return [row.projectId, row.projectElementId ?? "", row.laborCategoryId].join(
-    "\u001f"
-  );
+  return [
+    row.projectId,
+    row.projectElementId ?? "",
+    row.laborCategoryId,
+    row.workLocationId ?? "",
+    row.rdActivityRole ?? ""
+  ].join("\u001f");
 }
 
 /**
- * Groups entries into rows: one per project, element and labor category,
- * one cell per date. A correction and its reversal add up in one cell; the
+ * Groups entries into rows: one per project, element, labor category, work
+ * location and research role, one cell per date. A correction and its reversal add up in one cell; the
  * cell takes the Draft status when there is one, because that is the entry a
  * user can edit.
  */
@@ -202,10 +216,13 @@ export function groupTimesheetRows(
         projectId: entry.projectId,
         projectElementId: entry.projectElementId,
         laborCategoryId: entry.laborCategoryId,
+        workLocationId: entry.workLocationId ?? null,
+        rdActivityRole: entry.rdActivityRole ?? null,
         readableId:
           entry.element?.readableId ?? entry.project?.identifier ?? "",
         name: entry.element?.name ?? entry.project?.name ?? "",
         laborCategory: entry.laborCategory?.name ?? "",
+        workLocation: entry.workLocation?.name ?? "",
         cells: {},
         total: 0
       };
@@ -248,7 +265,16 @@ export async function saveTimesheetEntry(
       projectId: input.projectId,
       projectElementId: input.projectElementId || null,
       laborCategoryId: input.laborCategoryId,
-      hours: input.hours
+      hours: input.hours,
+      // Left out takes the default (job location, category role); "" is none.
+      workLocationId:
+        input.workLocationId === undefined
+          ? undefined
+          : input.workLocationId || null,
+      rdActivityRole:
+        input.rdActivityRole === undefined
+          ? undefined
+          : input.rdActivityRole || null
     });
 }
 

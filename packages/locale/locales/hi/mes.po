@@ -542,6 +542,15 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
 
@@ -1272,6 +1281,9 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "नोट्स"

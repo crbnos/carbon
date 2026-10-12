@@ -542,6 +542,15 @@ msgstr "설명"
 msgid "Details"
 msgstr "상세 정보"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
 
@@ -1272,6 +1281,9 @@ msgstr "존재하는 작업장이 없습니다"
 
 msgid "None"
 msgstr "없음"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "메모"

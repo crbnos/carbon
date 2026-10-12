@@ -542,6 +542,15 @@ msgstr "Description"
 msgid "Details"
 msgstr "Détails"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "Intervention de maintenance non trouvée"
 
@@ -1272,6 +1281,9 @@ msgstr "Aucun poste de travail n'existe"
 
 msgid "None"
 msgstr "Aucun"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "Notes"

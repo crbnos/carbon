@@ -542,6 +542,15 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
+msgid "Direct Research"
+msgstr ""
+
+msgid "Direct Supervision"
+msgstr ""
+
+msgid "Direct Support"
+msgstr ""
+
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
 
@@ -1272,6 +1281,9 @@ msgstr "无工作中心"
 
 msgid "None"
 msgstr "无"
+
+msgid "Not Qualified"
+msgstr ""
 
 msgid "Notes"
 msgstr "备注"

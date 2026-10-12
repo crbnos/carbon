@@ -635,3 +635,62 @@ databaseTest(
     }
   }
 );
+
+databaseTest(
+  "R&D tax: two saves with the row's own location and role edit one entry",
+  async () => {
+    const f = await timesheetFixture("Standard");
+    const siteLocationId = `${f.prefix}-site-location`;
+    try {
+      // The defaults differ from the row's values: no job location, and a
+      // Direct Research category.
+      await f.db
+        .updateTable("laborCategory")
+        .set({ rdActivityRole: "Direct Research" })
+        .where("id", "=", f.laborCategoryId)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      await f.db
+        .insertInto("location")
+        .values({
+          id: siteLocationId,
+          name: "Site",
+          countryCode: "US",
+          addressLine1: "1 Main St",
+          city: "Springfield",
+          postalCode: "00000",
+          timezone: "America/New_York",
+          companyId: f.companyId,
+          createdBy: PROJECT_TEST_USER
+        })
+        .execute();
+
+      // The MES grid sends the row's location and role with every save.
+      const row = {
+        ...f.cell,
+        entryDate: day(-2),
+        workLocationId: siteLocationId,
+        rdActivityRole: "Direct Support" as const
+      };
+      const saved = await saveTimesheetEntry(f.ctx, { ...row, hours: 6 });
+      expect(saved.error).toBeNull();
+      const changed = await saveTimesheetEntry(f.ctx, { ...row, hours: 4 });
+      expect(changed.error).toBeNull();
+      expect(changed.data?.entryId).toEqual(saved.data?.entryId);
+
+      const entries = await f.db
+        .selectFrom("timesheetEntry")
+        .select(["hours", "workLocationId", "rdActivityRole"])
+        .where("companyId", "=", f.companyId)
+        .where("employeeId", "=", PROJECT_TEST_USER)
+        .where("entryDate", "=", day(-2))
+        .execute();
+      expect(entries).toHaveLength(1);
+      expect(Number(entries[0]!.hours)).toEqual(4);
+      expect(entries[0]!.workLocationId).toEqual(siteLocationId);
+      expect(entries[0]!.rdActivityRole).toEqual("Direct Support");
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

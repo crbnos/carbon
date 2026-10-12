@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -483,6 +484,8 @@ export const setClockOutValidator = z.object({
   clockOut: z.string().min(1, { message: "Clock out is required" })
 });
 
+type RdActivityRole = Database["public"]["Enums"]["rdActivityRole"];
+
 /** One cell of the MES timesheet. Zero hours deletes the Draft entry. */
 export const timesheetCellValidator = z.object({
   entryDate: z.string().min(1, { message: "Date is required" }),
@@ -494,5 +497,20 @@ export const timesheetCellValidator = z.object({
       .number()
       .min(0, { message: "Hours cannot be negative" })
       .max(24, { message: "A day has 24 hours" })
-  )
+  ),
+  // R&D tax: the row's work location and research role, part of the cell's
+  // key. A field that is not sent takes its default in save-timesheet-entry;
+  // an empty one is none.
+  workLocationId: z.string().optional(),
+  rdActivityRole: z
+    .union([
+      z.enum([
+        "Direct Research",
+        "Direct Supervision",
+        "Direct Support",
+        "Not Qualified"
+      ] satisfies [RdActivityRole, ...RdActivityRole[]]),
+      z.literal("")
+    ])
+    .optional()
 });

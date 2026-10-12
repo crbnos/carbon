@@ -8,6 +8,7 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
+  Badge,
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
@@ -52,7 +53,11 @@ import { Link, useLoaderData } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { timesheetCellValidator } from "~/services/models";
 import { timesheetBudgetWarning } from "~/services/project-budget.server";
-import type { ChargeNumber, TimesheetRow } from "~/services/projects.service";
+import type {
+  ChargeNumber,
+  RdActivityRole,
+  TimesheetRow
+} from "~/services/projects.service";
 import {
   getChargeNumbers,
   getLaborCategoriesList,
@@ -99,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       getLaborCategoriesList(client, companyId),
       client
         .from("employeeJob")
-        .select("laborCategoryId")
+        .select("laborCategoryId, locationId")
         .eq("id", userId)
         .eq("companyId", companyId)
         .maybeSingle()
@@ -132,7 +137,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     rows: groupTimesheetRows(entries.data ?? []),
     chargeNumbers: chargeNumbers.data ?? [],
     laborCategories: laborCategories.data ?? [],
-    defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null
+    defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
+    jobLocationId: employeeJob.data?.locationId ?? null
   };
 }
 
@@ -261,6 +267,8 @@ type LocalRow = {
   projectId: string;
   projectElementId: string | null;
   laborCategoryId: string;
+  workLocationId: string | null;
+  rdActivityRole: RdActivityRole | null;
 };
 
 export default function MESTimesheetPage() {
@@ -272,9 +280,19 @@ export default function MESTimesheetPage() {
     rows,
     chargeNumbers,
     laborCategories,
-    defaultLaborCategoryId
+    defaultLaborCategoryId,
+    jobLocationId
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
+  const roleLabels = useMemo<Record<RdActivityRole, string>>(
+    () => ({
+      "Direct Research": t`Direct Research`,
+      "Direct Supervision": t`Direct Supervision`,
+      "Direct Support": t`Direct Support`,
+      "Not Qualified": t`Not Qualified`
+    }),
+    [t]
+  );
   const { locale } = useLocale();
   const submitFetcher = useAction<typeof action>({
     onSuccess: (data) => {
@@ -303,6 +321,8 @@ export default function MESTimesheetPage() {
           laborCategory:
             laborCategories.find((c) => c.id === row.laborCategoryId)?.name ??
             "",
+          // A new row is at the job location, so its name is not shown.
+          workLocation: "",
           cells: {},
           total: 0
         };
@@ -418,8 +438,18 @@ export default function MESTimesheetPage() {
                         </span>
                         <span className="truncate font-medium">{row.name}</span>
                       </span>
-                      <span className="truncate text-sm text-muted-foreground">
-                        {row.laborCategory}
+                      <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
+                        <span className="truncate">
+                          {row.laborCategory}
+                          {row.workLocation &&
+                            row.workLocationId !== jobLocationId &&
+                            ` · ${row.workLocation}`}
+                        </span>
+                        {row.rdActivityRole && (
+                          <Badge variant="secondary" className="shrink-0">
+                            {roleLabels[row.rdActivityRole]}
+                          </Badge>
+                        )}
                       </span>
                     </div>
                     <span className="shrink-0 text-lg font-semibold tabular-nums">
@@ -462,6 +492,7 @@ export default function MESTimesheetPage() {
           chargeNumbers={chargeNumbers}
           laborCategories={laborCategories}
           defaultLaborCategoryId={defaultLaborCategoryId}
+          jobLocationId={jobLocationId}
           onAdd={(row) => {
             setAddedRows((previous) => [...previous, row]);
             setAddingRow(false);
@@ -537,6 +568,10 @@ function DayCell({
         projectId: row.projectId,
         projectElementId: row.projectElementId ?? "",
         laborCategoryId: row.laborCategoryId,
+        // The row's own location and role, so the save edits the row's
+        // entry. "" is none.
+        workLocationId: row.workLocationId ?? "",
+        rdActivityRole: row.rdActivityRole ?? "",
         hours: String(hours)
       },
       { method: "post" }
@@ -580,12 +615,18 @@ function AddRowSheet({
   chargeNumbers,
   laborCategories,
   defaultLaborCategoryId,
+  jobLocationId,
   onAdd,
   onClose
 }: {
   chargeNumbers: ChargeNumber[];
-  laborCategories: { id: string; name: string }[];
+  laborCategories: {
+    id: string;
+    name: string;
+    rdActivityRole: RdActivityRole | null;
+  }[];
   defaultLaborCategoryId: string | null;
+  jobLocationId: string | null;
   onAdd: (row: LocalRow) => void;
   onClose: () => void;
 }) {
@@ -693,10 +734,16 @@ function AddRowSheet({
               isDisabled={!selected || !laborCategoryId}
               onClick={() => {
                 if (!selected || !laborCategoryId) return;
+                // The defaults of save-timesheet-entry: the job location and
+                // the category's role.
                 onAdd({
                   projectId: selected.projectId,
                   projectElementId: selected.projectElementId,
-                  laborCategoryId
+                  laborCategoryId,
+                  workLocationId: jobLocationId,
+                  rdActivityRole:
+                    laborCategories.find((c) => c.id === laborCategoryId)
+                      ?.rdActivityRole ?? null
                 });
               }}
             >
