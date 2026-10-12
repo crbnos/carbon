@@ -133,7 +133,9 @@ const LeaseAssets = ({
                 <Tr key={line.id}>
                   <Td>
                     <div className="flex flex-col">
-                      <span className="font-medium">{line.description}</span>
+                      <span className="font-medium whitespace-nowrap">
+                        {line.description}
+                      </span>
                       {line.serialNumber && (
                         <span className="text-xs text-muted-foreground">
                           {line.serialNumber}

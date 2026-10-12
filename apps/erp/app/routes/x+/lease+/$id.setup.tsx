@@ -21,7 +21,8 @@ import {
   LeaseMoney,
   LeaseSetupSteps,
   leaseActivationGaps,
-  leaseSetupSteps
+  leaseSetupSteps,
+  useLeaseActivateText
 } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
@@ -68,6 +69,7 @@ export default function LeaseSetupRoute() {
   const permissions = usePermissions();
   const { company } = useUser();
   const activate = useDisclosure();
+  const activateText = useLeaseActivateText();
 
   if (!routeData) return null;
   const { lease, lines, payments, leasePolicy } = routeData;
@@ -93,8 +95,10 @@ export default function LeaseSetupRoute() {
 
   return (
     <SetupFrame
-      title={lease.name || lease.supplierName || readableId}
-      subtitle={[readableId, lease.supplierName].filter(Boolean).join(" · ")}
+      title={lease.name || readableId}
+      subtitle={[lease.name ? readableId : null, lease.supplierName]
+        .filter(Boolean)
+        .join(" · ")}
       step={step}
       steps={<LeaseSetupSteps current={step} leaseId={id} />}
     >
@@ -176,7 +180,7 @@ export default function LeaseSetupRoute() {
         <Confirm
           action={path.to.leaseActivate(id)}
           title={t`Activate ${readableId}`}
-          text={t`Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards.`}
+          text={activateText(lease)}
           confirmText={t`Activate`}
           onCancel={activate.onClose}
           onSubmit={activate.onClose}

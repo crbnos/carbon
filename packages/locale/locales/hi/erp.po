@@ -1726,6 +1726,9 @@ msgstr "सक्रियण शर्तों और भुगतान प�
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "सक्रिय करने से शर्तें और इकाइयाँ तय हो जाती हैं, प्रत्येक इकाई का वर्गीकरण किया जाता है और पहली बिलिंग अवधि काटी जाती है। उसके बाद, चालान स्वचालित रूप से बनाए जाते हैं क्योंकि अवधि देय होती है।"
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "सक्रिय करने से शर्तें तय हो जाती हैं। प्रत्येक अवधि देय होने पर अगली भुगतान पंक्ति बनाई जाती है।"
+
 msgid "Activation fee · we advise"
 msgstr "सक्रियण शुल्क · हम सलाह देते हैं"
 

@@ -21,4 +21,4 @@
 - [x] 5. post-lease: activate an open-ended lease as Short-Term, refused without the expedient (message names both fixes); Modify / Purchase refused; `prepare` with no end date.
 - [x] 6. create-lease-invoices: roll an open-ended lease's rows forward before drafting. Jobs: reminders and expiry with no end date.
 - [x] 7. UI: Details step (Duration, Location in the first section, no Name, Notes under More Details); the open-ended state on the Accounting and Review steps with both fixes linked; summary, header, assets card, properties.
-- [ ] 8. Tests, docs, translations, verification, browser test.
+- [x] 8. Tests, docs, translations, verification, browser test (both flows PASS; fixes from the run: Duration required, no repeated supplier name, open-ended Activate text and summary, settings link anchored to the lease card, stable payment order, asset name on one line).

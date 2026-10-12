@@ -37,7 +37,10 @@ import LeaseStatus, { LeasePaymentStatus } from "./LeaseStatus";
 import LeaseSummary from "./LeaseSummary";
 import LeasesTable from "./LeasesTable";
 import LeaseTerminateModal from "./LeaseTerminateModal";
-import { useLeasePaymentTypeLabel } from "./useLeaseLabels";
+import {
+  useLeaseActivateText,
+  useLeasePaymentTypeLabel
+} from "./useLeaseLabels";
 import { type LeaseActivationGap, leaseActivationGaps } from "./utils";
 
 export type * from "./types";
@@ -74,6 +77,7 @@ export {
   LeaseTerminateModal,
   LesseeClassificationBadge,
   OpenEndedExpedientNotice,
+  useLeaseActivateText,
   useLeasePaymentTypeLabel,
   useLeaseTermSave,
   useLesseeClassificationLabel

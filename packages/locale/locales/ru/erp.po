@@ -1726,6 +1726,9 @@ msgstr "При активации фиксируются условия и ст�
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Активация фиксирует условия и единицы, классифицирует каждую единицу и создает первые периоды выставления счетов. После этого счета-фактуры создаются автоматически по наступлении периодов."
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "Активация фиксирует условия. Следующая строка платежа создаётся по мере наступления каждого периода."
+
 msgid "Activation fee · we advise"
 msgstr "Плата за активацию · мы консультируем"
 

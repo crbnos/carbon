@@ -5434,7 +5434,8 @@ export async function getLeasePayments(
     .eq("leaseId", leaseId)
     .eq("companyId", companyId)
     .order("dueDate")
-    .order("paymentType");
+    .order("paymentType")
+    .order("leaseLineId");
 }
 
 /** The lease when it is a Draft, else why it cannot change. */

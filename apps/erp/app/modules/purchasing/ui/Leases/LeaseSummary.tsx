@@ -117,7 +117,7 @@ const LeaseSummary = ({
         <HStack className="justify-between items-start">
           <div className="flex flex-col gap-1 min-w-0">
             <CardTitle className="truncate">
-              {lease.name || lease.supplierName || lease.leaseId}
+              {lease.name || lease.leaseId}
             </CardTitle>
             {lease.description && (
               <CardDescription className="line-clamp-2">
@@ -163,11 +163,17 @@ const LeaseSummary = ({
                   )}
                 </span>
               </Fact>
-              <Fact label={<Trans>Discount Rate</Trans>}>
-                <span className="tabular-nums">
-                  {formatPercent(Number(lease.discountRate ?? 0) / 100, locale)}
-                </span>
-              </Fact>
+              {/* An open-ended lease is short-term: nothing is discounted. */}
+              {lease.endDate && (
+                <Fact label={<Trans>Discount Rate</Trans>}>
+                  <span className="tabular-nums">
+                    {formatPercent(
+                      Number(lease.discountRate ?? 0) / 100,
+                      locale
+                    )}
+                  </span>
+                </Fact>
+              )}
               <Fact label={<Trans>Treatment</Trans>}>
                 {lease.classification === "Mixed" ? (
                   <Trans>Varies by asset</Trans>

@@ -23,3 +23,16 @@ export function useLeasePaymentTypeLabel() {
     [t]
   );
 }
+
+/** What the Activate dialog says activating does. An open-ended lease is
+ *  short-term, so it books nothing and its rows are cut as periods come due. */
+export function useLeaseActivateText() {
+  const { t } = useLingui();
+  return useCallback(
+    (lease: { endDate: string | null }) =>
+      lease.endDate
+        ? t`Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards.`
+        : t`Activating fixes the terms. The next payment row is cut as each period comes due.`,
+    [t]
+  );
+}

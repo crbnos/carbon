@@ -39,6 +39,7 @@ import {
 import LeaseModifyModal from "./LeaseModifyModal";
 import LeaseStatus from "./LeaseStatus";
 import type { LeaseRouteData } from "./types";
+import { useLeaseActivateText } from "./useLeaseLabels";
 import { leaseActivationGaps } from "./utils";
 
 type LeaseHeaderProps = Pick<
@@ -68,6 +69,7 @@ const LeaseHeader = ({
   const deleteDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
   const modify = useDisclosure();
+  const activateText = useLeaseActivateText();
 
   const id = lease.id!;
   const readableId = lease.leaseId ?? "";
@@ -117,7 +119,7 @@ const LeaseHeader = ({
     activate: {
       action: path.to.leaseActivate(id),
       title: t`Activate ${readableId}`,
-      text: t`Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards.`,
+      text: activateText(lease),
       confirmText: t`Activate`
     },
     invoice: {

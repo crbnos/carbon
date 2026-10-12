@@ -530,7 +530,8 @@ export default function AccountingSettingsRoute() {
             leaseReminderDays: companySettings.leaseReminderDays
           }}
         >
-          <Card>
+          {/* Linked from a lease that needs the short-term expedient. */}
+          <Card id="lease-classification">
             <CardHeader>
               <CardTitle>
                 <Trans>Lease Classification</Trans>

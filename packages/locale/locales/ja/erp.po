@@ -1726,6 +1726,9 @@ msgstr "有効化すると、条件と支払明細を確定し、各資産を分
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "活性化により条件と個数が確定され、各個が分類され、最初の請求期間が開始されます。その後、期間が来るたびに請求書が自動的に作成されます。"
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "有効化すると条件が確定します。次の支払行は各期間の期日が来るたびに作成されます。"
+
 msgid "Activation fee · we advise"
 msgstr "アクティベーション料金 · アドバイス提供"
 

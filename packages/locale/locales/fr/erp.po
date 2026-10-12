@@ -1726,6 +1726,9 @@ msgstr "L'activation fixe les conditions et les lignes de paiement, classe chaqu
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "L'activation fixe les conditions et les unités, classe chaque unité et crée les premières périodes de facturation. Après cela, les factures sont créées automatiquement au fur et à mesure que les périodes arrivent à échéance."
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "L'activation fige les conditions. La ligne de paiement suivante est créée à l'échéance de chaque période."
+
 msgid "Activation fee · we advise"
 msgstr "Frais d'activation · nous conseillons"
 

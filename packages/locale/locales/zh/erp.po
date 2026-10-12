@@ -1726,6 +1726,9 @@ msgstr "激活固定条款和付款行，对每项资产进行分类并记录。
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "激活将确定条款和单位、对每件进行分类并切割第一个计费周期。之后，当周期到期时会自动生成发票。"
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "激活后条款即被固定。每个期间到期时会生成下一行付款。"
+
 msgid "Activation fee · we advise"
 msgstr "激活费 · 我们建议"
 

@@ -144,6 +144,7 @@ const LeaseDetailsForm = ({ initialValues, action }: LeaseDetailsFormProps) => {
               <Select
                 name="duration"
                 label={t`Duration`}
+                isOptional={false}
                 options={leaseDurations.map((value) => ({
                   value,
                   label: durationLabels[value]

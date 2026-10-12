@@ -1726,6 +1726,9 @@ msgstr "활성화하면 약관과 지불 라인을 고정하고, 각 자산을 �
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "활성화하면 약관과 단위를 고정하고 각 단위를 분류한 후 첫 청구 기간을 생성합니다. 그 후 기간이 만료되면 송장이 자동으로 생성됩니다."
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "활성화하면 조건이 확정됩니다. 다음 지불 행은 각 기간이 도래할 때 생성됩니다."
+
 msgid "Activation fee · we advise"
 msgstr "활성화 수수료 · 저희가 자문"
 

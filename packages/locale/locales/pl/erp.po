@@ -1726,6 +1726,9 @@ msgstr "Aktywacja ustala warunki i wiersze płatności, klasyfikuje każde aktyw
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Aktywowanie naprawia warunki i sztuki, klasyfikuje każdą sztukę i tworzy pierwsze okresy rozliczeniowe. Następnie faktury są tworzone automatycznie, gdy okresy przypadają."
 
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "Aktywacja ustala warunki. Kolejny wiersz płatności jest tworzony, gdy przypada termin każdego okresu."
+
 msgid "Activation fee · we advise"
 msgstr "Opłata aktywacyjna · doradzamy"
 

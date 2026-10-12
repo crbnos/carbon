@@ -132,7 +132,7 @@ export function OpenEndedExpedientNotice({ leaseId }: { leaseId: string }) {
             <Trans>
               Turn on{" "}
               <Link
-                to={path.to.accountingSettings}
+                to={`${path.to.accountingSettings}#lease-classification`}
                 className="font-medium underline"
               >
                 Short-Term Lease Expedient in Settings → Accounting
