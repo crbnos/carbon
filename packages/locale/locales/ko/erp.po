@@ -9270,6 +9270,9 @@ msgstr "담당자 편집"
 msgid "Edit Contractor"
 msgstr "외주 인력 편집"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "원가 센터 편집"
 
@@ -9357,6 +9360,9 @@ msgstr "분개장 항목 편집"
 msgid "Edit Kanban"
 msgstr "칸반 편집"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "노무 분류 편집"
 
@@ -9368,6 +9374,9 @@ msgstr "사업장 편집"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "유지보수 지시 편집"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "자재 편집"

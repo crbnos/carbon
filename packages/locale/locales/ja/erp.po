@@ -9270,6 +9270,9 @@ msgstr "担当者を編集"
 msgid "Edit Contractor"
 msgstr "外部作業者を編集"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "原価センターを編集"
 
@@ -9357,6 +9360,9 @@ msgstr "仕訳行を編集"
 msgid "Edit Kanban"
 msgstr "かんばんを編集"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "労務カテゴリ編集"
 
@@ -9368,6 +9374,9 @@ msgstr "ロケーションを編集"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "保全指示を編集"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "材料を編集"

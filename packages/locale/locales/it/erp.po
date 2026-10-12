@@ -9270,6 +9270,9 @@ msgstr "Modifica Contatto"
 msgid "Edit Contractor"
 msgstr "Modifica Collaboratore esterno"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "Modifica Centro di Costo"
 
@@ -9357,6 +9360,9 @@ msgstr "Modifica Riga di registrazione"
 msgid "Edit Kanban"
 msgstr "Modifica Kanban"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "Modifica Categoria Manodopera"
 
@@ -9368,6 +9374,9 @@ msgstr "Modifica Ubicazione"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "Modifica Intervento di manutenzione"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "Modifica Materiale"

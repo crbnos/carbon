@@ -9270,6 +9270,9 @@ msgstr "संपर्क संपादित करें"
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "लागत केंद्र संपादित करें"
 
@@ -9357,6 +9360,9 @@ msgstr "जर्नल प्रविष्टि संपादित कर
 msgid "Edit Kanban"
 msgstr "कानबान संपादित करें"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "संपादित करें श्रम श्रेणी"
 
@@ -9368,6 +9374,9 @@ msgstr "स्थान संपादित करें"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "रखरखाव कार्य संपादित करें"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "सामग्री संपादित करें"

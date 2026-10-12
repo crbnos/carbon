@@ -9270,6 +9270,9 @@ msgstr "编辑联系人"
 msgid "Edit Contractor"
 msgstr "编辑外协人员"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "编辑成本中心"
 
@@ -9357,6 +9360,9 @@ msgstr "编辑分录"
 msgid "Edit Kanban"
 msgstr "编辑看板"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "编辑人工类别"
 
@@ -9368,6 +9374,9 @@ msgstr "编辑位置"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "编辑维护工单"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "编辑原材料"

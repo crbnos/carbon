@@ -9270,6 +9270,9 @@ msgstr "İlgili Kişiyi Düzenle"
 msgid "Edit Contractor"
 msgstr "Taşeron Düzenle"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "Maliyet Merkezini Düzenle"
 
@@ -9357,6 +9360,9 @@ msgstr "Yevmiye Kaydını Düzenle"
 msgid "Edit Kanban"
 msgstr "Kanban Düzenle"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "İşçilik Kategorisini Düzenle"
 
@@ -9368,6 +9374,9 @@ msgstr "Konumu Düzenle"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "Bakım Emri Düzenle"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "Malzemeyi Düzenle"

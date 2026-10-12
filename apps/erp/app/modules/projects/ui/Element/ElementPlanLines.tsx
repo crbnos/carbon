@@ -29,6 +29,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuFactory,
+  LuPencil,
   LuPlus,
   LuShoppingCart,
   LuTrash,
@@ -38,15 +39,16 @@ import { Link, useFetcher } from "react-router";
 import { Table } from "~/components";
 import {
   EditableByRow,
-  EditableDate,
   EditableList,
   EditableNumber,
   EditableText,
   useStableEditableComponents
 } from "~/components/Editable";
 import {
+  Combobox,
   DatePicker,
   Hidden,
+  Input,
   Location,
   Number as NumberField,
   Select,
@@ -62,7 +64,6 @@ import {
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
-  useDateFormatter,
   usePermissions,
   useQuantityFormatter,
   useUser
@@ -75,6 +76,9 @@ import {
   createJobFromMaterialValidator,
   createPurchaseOrderLineFromMaterialValidator,
   NEW_PURCHASE_ORDER,
+  projectElementCostValidator,
+  projectElementLaborValidator,
+  projectElementMaterialValidator,
   remainingMaterialQuantity
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
@@ -215,11 +219,9 @@ export function ElementPlanLines({
   const save = useCellSave();
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
-  const { formatDate } = useDateFormatter();
   const { company } = useUser();
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);
-  const methodLabels = useMethodTypeLabels();
   const typeLabels = useMemo<Record<PlanLineType, string>>(
     () => ({ material: t`Material`, labor: t`Labor`, cost: t`Cost` }),
     [t]
@@ -251,6 +253,7 @@ export function ElementPlanLines({
   }, [addRequest]);
 
   const [deleting, setDeleting] = useState<PlanRow | null>(null);
+  const [editing, setEditing] = useState<PlanRow | null>(null);
   const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
   const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
 
@@ -360,27 +363,9 @@ export function ElementPlanLines({
           formatOptions: INPUT_FORMAT.quantity,
           step: INPUT_STEP.quantity
         }),
-        unitCost: EditableNumber<PlanRow>(
-          edit,
-          {
-            minValue: 0,
-            formatOptions: INPUT_FORMAT.rate(currency, decimals),
-            step: INPUT_STEP.rate
-          },
-          { clearable: true }
-        ),
         amount: EditableNumber<PlanRow>(edit, {
           formatOptions: INPUT_FORMAT.money(currency, decimals),
           step: INPUT_STEP.money(decimals)
-        }),
-        date: EditableDate<PlanRow>(edit, {
-          label: t`Date`,
-          clearable: true
-        }),
-        endDate: EditableDate<PlanRow>(edit, {
-          label: t`End`,
-          clearable: true,
-          bounds: (row) => ({ minValue: row.date ?? undefined })
         })
       };
     },
@@ -407,13 +392,9 @@ export function ElementPlanLines({
       laborCategory: EditableList<PlanRow>(
         edit,
         laborCategories.map((c) => ({ value: c.id, label: c.name }))
-      ),
-      method: EditableList<PlanRow>(
-        edit,
-        methodType.map((value) => ({ value, label: methodLabels[value] }))
       )
     };
-  }, [items, laborCategories, methodLabels]);
+  }, [items, laborCategories]);
 
   const editableComponents = useMemo(() => {
     const none = () => <span className="text-muted-foreground">—</span>;
@@ -427,16 +408,8 @@ export function ElementPlanLines({
               : stable.description,
         none
       ),
-      methodType: EditableByRow<PlanRow>(
-        (row) => (row.type === "material" ? lists.method : null),
-        none
-      ),
       quantity: EditableByRow<PlanRow>(
         (row) => (row.type === "cost" ? null : stable.quantity),
-        none
-      ),
-      unitCost: EditableByRow<PlanRow>(
-        (row) => (row.type === "material" ? stable.unitCost : null),
         none
       ),
       amount: EditableByRow<PlanRow>(
@@ -449,14 +422,6 @@ export function ElementPlanLines({
               {formatMoney.format(row.amount)}
             </span>
           )
-      ),
-      date: EditableByRow<PlanRow>(
-        (row) => (row.type === "cost" ? null : stable.date),
-        none
-      ),
-      endDate: EditableByRow<PlanRow>(
-        (row) => (row.type === "labor" ? stable.endDate : null),
-        none
       )
     };
   }, [lists, stable, formatMoney]);
@@ -490,53 +455,41 @@ export function ElementPlanLines({
           }
           if (type === "material") {
             const item = itemsById.get(line);
+            const material = row.original.material;
+            const purchaseOrder = material?.purchaseOrderLine?.purchaseOrder;
             return (
-              <span className="flex min-w-0 max-w-[260px] items-center gap-2">
+              <span className="flex min-w-0 items-center gap-2">
                 <span className="shrink-0 whitespace-nowrap">
                   {item?.readableIdWithRevision ??
-                    row.original.material?.item?.readableIdWithRevision}
+                    material?.item?.readableIdWithRevision}
                 </span>
-                <span className="truncate text-muted-foreground">
-                  {item?.name ?? row.original.material?.item?.name}
+                <span className="min-w-0 truncate text-muted-foreground">
+                  {item?.name ?? material?.item?.name}
                 </span>
+                {material?.job && (
+                  <Link
+                    to={path.to.job(material.job.id)}
+                    className="shrink-0 text-xs text-muted-foreground hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {material.job.jobId}
+                  </Link>
+                )}
+                {purchaseOrder && (
+                  <Link
+                    to={path.to.purchaseOrderDetails(purchaseOrder.id)}
+                    className="shrink-0 text-xs text-muted-foreground hover:underline"
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    {purchaseOrder.purchaseOrderId}
+                  </Link>
+                )}
               </span>
             );
           }
           return (
-            <span className="block max-w-[260px] truncate">
+            <span className="block truncate">
               {type === "labor" ? (categoriesById.get(line) ?? line) : line}
-            </span>
-          );
-        }
-      },
-      {
-        accessorKey: "methodType",
-        header: t`Method`,
-        cell: ({ row }) => {
-          const { methodType: method, material } = row.original;
-          if (!method) return dash;
-          const purchaseOrder = material?.purchaseOrderLine?.purchaseOrder;
-          return (
-            <span className="flex items-center gap-2 whitespace-nowrap">
-              {methodLabels[method]}
-              {material?.job && (
-                <Link
-                  to={path.to.job(material.job.id)}
-                  className="text-xs text-muted-foreground hover:underline"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  {material.job.jobId}
-                </Link>
-              )}
-              {purchaseOrder && (
-                <Link
-                  to={path.to.purchaseOrderDetails(purchaseOrder.id)}
-                  className="text-xs text-muted-foreground hover:underline"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  {purchaseOrder.purchaseOrderId}
-                </Link>
-              )}
             </span>
           );
         }
@@ -559,18 +512,6 @@ export function ElementPlanLines({
           )
       },
       {
-        accessorKey: "unitCost",
-        header: t`Unit Cost`,
-        cell: ({ row }) =>
-          row.original.unitCost === null ? (
-            dash
-          ) : (
-            <span className="tabular-nums">
-              {formatMoney.format(row.original.unitCost)}
-            </span>
-          )
-      },
-      {
         accessorKey: "amount",
         header: t`Amount`,
         cell: ({ row }) =>
@@ -581,42 +522,9 @@ export function ElementPlanLines({
               {formatMoney.format(row.original.amount)}
             </span>
           )
-      },
-      {
-        accessorKey: "date",
-        header: t`Date`,
-        cell: ({ row }) =>
-          row.original.date ? (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatDate(row.original.date)}
-            </span>
-          ) : (
-            dash
-          )
-      },
-      {
-        accessorKey: "endDate",
-        header: t`End`,
-        cell: ({ row }) =>
-          row.original.endDate ? (
-            <span className="whitespace-nowrap tabular-nums">
-              {formatDate(row.original.endDate)}
-            </span>
-          ) : (
-            dash
-          )
       }
     ],
-    [
-      t,
-      typeLabels,
-      itemsById,
-      categoriesById,
-      methodLabels,
-      formatQuantity,
-      formatMoney,
-      formatDate
-    ]
+    [t, typeLabels, itemsById, categoriesById, formatQuantity, formatMoney]
   );
 
   const renderMenu = useCallback(
@@ -632,6 +540,12 @@ export function ElementPlanLines({
         !material.purchaseOrderLineId;
       return (
         <>
+          {row.id !== null && (
+            <MenuItem disabled={isDisabled} onClick={() => setEditing(row)}>
+              <MenuIcon icon={<LuPencil />} />
+              <Trans>Edit</Trans>
+            </MenuItem>
+          )}
           {canMakeJob && material && (
             <MenuItem
               disabled={!canCreateJob}
@@ -730,6 +644,15 @@ export function ElementPlanLines({
         </SplitButton>
       )}
 
+      {editing && (
+        <PlanLineModal
+          row={editing}
+          elementId={elementId}
+          action={action}
+          laborCategories={laborCategories}
+          onClose={() => setEditing(null)}
+        />
+      )}
       {creatingJob && (
         <CreateJobModal
           projectId={projectId}
@@ -770,6 +693,186 @@ function useMethodTypeLabels(): Record<MethodType, string> {
       "Make to Order": t`Make to Order`
     }),
     [t]
+  );
+}
+
+/**
+ * The whole plan line, for the fields the grid leaves out: a material's
+ * method and unit cost and required date, a labor line's dates. It posts
+ * the same upsert intent as a grid cell, without `quiet`.
+ */
+function PlanLineModal({
+  row,
+  elementId,
+  action,
+  laborCategories,
+  onClose
+}: {
+  row: PlanRow;
+  elementId: string;
+  action: string;
+  laborCategories: { id: string; name: string }[];
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const [items] = useItems();
+  const { company } = useUser();
+  const currency = company.baseCurrencyCode;
+  const decimals = useCurrencyDecimals(currency);
+  const methodLabels = useMethodTypeLabels();
+  const fetcher = useAction<{ success?: boolean }>({
+    onSuccess: () => onClose()
+  });
+
+  const title =
+    row.type === "material"
+      ? t`Edit material`
+      : row.type === "labor"
+        ? t`Edit labor`
+        : t`Edit cost`;
+
+  const form = (() => {
+    switch (row.type) {
+      case "material":
+        return {
+          validator: projectElementMaterialValidator,
+          defaultValues: {
+            id: row.id ?? undefined,
+            projectElementId: elementId,
+            itemId: row.line,
+            methodType: row.methodType ?? "Pull from Inventory",
+            quantity: row.quantity ?? 1,
+            unitOfMeasureCode: row.unitOfMeasureCode ?? undefined,
+            unitCost: row.unitCost ?? undefined,
+            requiredDate: row.date ?? undefined
+          },
+          fields: (
+            <>
+              <Combobox
+                name="itemId"
+                label={t`Item`}
+                options={items.map((item) => ({
+                  value: item.id,
+                  label: item.readableIdWithRevision,
+                  helper: item.name
+                }))}
+              />
+              <Select
+                name="methodType"
+                label={t`Method`}
+                options={methodType.map((value) => ({
+                  value,
+                  label: methodLabels[value]
+                }))}
+              />
+              <NumberField
+                name="quantity"
+                label={t`Quantity`}
+                minValue={0}
+                formatOptions={INPUT_FORMAT.quantity}
+                step={INPUT_STEP.quantity}
+              />
+              <NumberField
+                name="unitCost"
+                label={t`Unit Cost`}
+                minValue={0}
+                formatOptions={INPUT_FORMAT.rate(currency, decimals)}
+                step={INPUT_STEP.rate}
+              />
+              <DatePicker name="requiredDate" label={t`Required Date`} />
+              <Hidden name="unitOfMeasureCode" />
+            </>
+          )
+        };
+      case "labor":
+        return {
+          validator: projectElementLaborValidator,
+          defaultValues: {
+            id: row.id ?? undefined,
+            projectElementId: elementId,
+            laborCategoryId: row.line,
+            hours: row.quantity ?? 1,
+            startDate: row.date ?? undefined,
+            endDate: row.endDate ?? undefined
+          },
+          fields: (
+            <>
+              <Select
+                name="laborCategoryId"
+                label={t`Labor Category`}
+                options={laborCategories.map((category) => ({
+                  value: category.id,
+                  label: category.name
+                }))}
+              />
+              <NumberField
+                name="hours"
+                label={t`Hours`}
+                minValue={0}
+                formatOptions={INPUT_FORMAT.quantity}
+                step={INPUT_STEP.quantity}
+              />
+              <DatePicker name="startDate" label={t`Start Date`} />
+              <DatePicker name="endDate" label={t`End Date`} />
+            </>
+          )
+        };
+      case "cost":
+        return {
+          validator: projectElementCostValidator,
+          defaultValues: {
+            id: row.id ?? undefined,
+            projectElementId: elementId,
+            description: row.line,
+            amount: row.amount ?? 0
+          },
+          fields: (
+            <>
+              <Input name="description" label={t`Description`} />
+              <NumberField
+                name="amount"
+                label={t`Amount`}
+                formatOptions={INPUT_FORMAT.money(currency, decimals)}
+                step={INPUT_STEP.money(decimals)}
+              />
+            </>
+          )
+        };
+    }
+  })();
+
+  return (
+    <Modal open onOpenChange={(open) => !open && onClose()}>
+      <ModalOverlay />
+      <ModalContent>
+        <ValidatedForm
+          // The three line shapes share one form element.
+          validator={form.validator as typeof projectElementMaterialValidator}
+          method="post"
+          action={action}
+          fetcher={fetcher}
+          defaultValues={form.defaultValues}
+        >
+          <ModalHeader>
+            <ModalTitle>{title}</ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <Hidden name="intent" value={INTENT[row.type]} />
+            <Hidden name="id" />
+            <Hidden name="projectElementId" />
+            <VStack spacing={4}>{form.fields}</VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Submit withBlocker={false}>
+              <Trans>Save</Trans>
+            </Submit>
+          </ModalFooter>
+        </ValidatedForm>
+      </ModalContent>
+    </Modal>
   );
 }
 

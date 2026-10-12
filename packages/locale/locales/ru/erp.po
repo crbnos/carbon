@@ -9270,6 +9270,9 @@ msgstr "Изменить контактное лицо"
 msgid "Edit Contractor"
 msgstr "Изменить подрядчика"
 
+msgid "Edit cost"
+msgstr ""
+
 msgid "Edit Cost Center"
 msgstr "Изменить центр затрат"
 
@@ -9357,6 +9360,9 @@ msgstr "Изменить проводку"
 msgid "Edit Kanban"
 msgstr "Изменить канбан"
 
+msgid "Edit labor"
+msgstr ""
+
 msgid "Edit Labor Category"
 msgstr "Изменить категорию трудозатрат"
 
@@ -9368,6 +9374,9 @@ msgstr "Изменить площадку"
 
 msgid "Edit Maintenance Dispatch"
 msgstr "Изменить заявку на техобслуживание"
+
+msgid "Edit material"
+msgstr ""
 
 msgid "Edit Material"
 msgstr "Изменить материал"
