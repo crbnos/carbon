@@ -107,13 +107,38 @@ export type OrderSizingParams = Pick<
   | "lotSize"
 >;
 
+/** Integer floor to a multiple (float-artifact-immune). */
+const floorToMultiple = (value: number, multiple: number): number =>
+  round(value / multiple, 0, RoundingMode.Down) * multiple;
+
+/**
+ * What ONE Demand-Based Reorder order holds: the smaller of the batch size
+ * and the maximum order quantity (0 = no rule), floored to the order multiple
+ * when there is one (a multiple larger than the cap is the cap). 0: one order
+ * of any size.
+ */
+function demandBasedPerOrder(
+  lotSize: number,
+  maximumOrderQuantity: number,
+  orderMultiple: number
+): number {
+  const limits = [lotSize, maximumOrderQuantity].filter((n) => n > 0);
+  if (limits.length === 0) return 0;
+  const limit = Math.min(...limits);
+  if (orderMultiple > 0) {
+    return Math.max(orderMultiple, floorToMultiple(limit, orderMultiple));
+  }
+  return limit;
+}
+
 /**
  * How ONE order of a reordering policy is sized — the same rules
  * `computePlanningOrders` applies, stated once so what happens after sizing
  * keeps them:
  * - `perOrder`: the quantity one order holds when a need takes several —
- *   the batch size (Demand-Based Reorder), the fixed reorder quantity, or the
- *   maximum order quantity (Maximum Quantity). 0: one order of any size.
+ *   the batch size or maximum order quantity (Demand-Based Reorder,
+ *   `demandBasedPerOrder`), the fixed reorder quantity, or the maximum order
+ *   quantity (Maximum Quantity). 0: one order of any size.
  * - `daily`: several orders in a week fall one per day (Fixed Reorder
  *   Quantity, Maximum Quantity), not spread across it (batches).
  * - `maximum`: the most one order may hold. 0: no limit.
@@ -142,11 +167,15 @@ export function orderSizingRules(
   const orderMultiple = Number(params.orderMultiple) || 0;
   switch (policyName) {
     case "Demand-Based Reorder": {
-      const limits = [lotSize, maximumOrderQuantity].filter((n) => n > 0);
+      const perOrder = demandBasedPerOrder(
+        lotSize,
+        maximumOrderQuantity,
+        orderMultiple
+      );
       return {
-        perOrder: lotSize,
+        perOrder,
         daily: false,
-        maximum: limits.length > 0 ? Math.min(...limits) : 0,
+        maximum: perOrder,
         minimum: minimumOrderQuantity,
         multiples: [orderMultiple]
       };
@@ -292,13 +321,8 @@ export function computePlanningOrders(
           demandAccumulationSafetyStock - endOfWindowProjection
         );
 
-        // Apply lot sizing rules
-        if (maximumOrderQuantity > 0) {
-          totalOrderQuantity = Math.min(
-            totalOrderQuantity,
-            maximumOrderQuantity
-          );
-        }
+        // Apply lot sizing rules to the need; the maximum order quantity
+        // caps each order below, never the need.
         totalOrderQuantity = Math.max(totalOrderQuantity, minimumOrderQuantity);
 
         if (orderMultiple > 0) {
@@ -309,7 +333,12 @@ export function computePlanningOrders(
         }
 
         // One order per batch, due dates spread across the period
-        for (const batch of lotSizeBatches(totalOrderQuantity, lotSize)) {
+        const perOrder = demandBasedPerOrder(
+          lotSize,
+          maximumOrderQuantity,
+          orderMultiple
+        );
+        for (const batch of lotSizeBatches(totalOrderQuantity, perOrder)) {
           const dueDate = parseDate(currentPeriod.startDate).add({
             days: batch.dayOffset
           });

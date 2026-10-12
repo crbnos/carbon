@@ -2163,7 +2163,7 @@ export async function getOpenProductionOrders(
   return client
     .from("openProductionOrders")
     .select(
-      "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate"
+      "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate, deadlineType"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
@@ -2182,7 +2182,7 @@ export async function getOpenPurchaseOrderLines(
   return client
     .from("openPurchaseOrderLines")
     .select(
-      "id, quantity:quantityToReceive, dueDate:promisedDate, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
+      "id, quantity:quantityToReceive, promisedDate, dueDate, orderDate, leadTime, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
