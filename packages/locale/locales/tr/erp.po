@@ -3898,6 +3898,9 @@ msgstr "{0}'den sonra kullanılabilir"
 msgid "Available hours"
 msgstr "Kullanılabilir saatler"
 
+msgid "Available on the {plan} plan"
+msgstr ""
+
 msgid "Available on the Business plan"
 msgstr "Business planında kullanılabilir"
 

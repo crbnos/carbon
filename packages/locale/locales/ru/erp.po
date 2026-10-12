@@ -3898,6 +3898,9 @@ msgstr "Доступно после {0}"
 msgid "Available hours"
 msgstr "Доступные часы"
 
+msgid "Available on the {plan} plan"
+msgstr ""
+
 msgid "Available on the Business plan"
 msgstr "Доступно в плане Business"
 

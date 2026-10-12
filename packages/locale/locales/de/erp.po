@@ -3898,6 +3898,9 @@ msgstr "Verfügbar nach {0}"
 msgid "Available hours"
 msgstr "Verfügbare Stunden"
 
+msgid "Available on the {plan} plan"
+msgstr ""
+
 msgid "Available on the Business plan"
 msgstr "Im Business-Plan verfügbar"
 

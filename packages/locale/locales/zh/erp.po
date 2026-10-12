@@ -3898,6 +3898,9 @@ msgstr "在{0}之后可用"
 msgid "Available hours"
 msgstr "可用小时数"
 
+msgid "Available on the {plan} plan"
+msgstr ""
+
 msgid "Available on the Business plan"
 msgstr "在商业计划中可用"
 

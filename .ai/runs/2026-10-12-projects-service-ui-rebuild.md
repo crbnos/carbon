@@ -43,6 +43,10 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 7: Add useGovernmentContracting and UpgradeOverlayRow
 
+- Added `useGovernmentContracting()` in `apps/erp/app/modules/projects/ui/useGovernmentContracting.ts`. It returns true when `timekeepingControls` is `DCAA` or `usePlanGate({ feature: "GOVERNMENT_CONTRACTING" })` is not gated.
+- Added `UpgradeOverlayRow({ title, plan, className })` to `UpgradeOverlay.tsx`, exported from the folder index. `UpgradeOverlayUpgradeButton` takes only `children` and `to`; the row passes neither.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed. No screen uses them yet, so no screenshot.
+
 ## Task 8: Fix the week views on a Sunday
 
 ## Task 9: Shrink the Projects and Service sidebars (Layer 0)

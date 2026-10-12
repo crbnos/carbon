@@ -198,7 +198,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 4: Add `ReadOnlyField` for read-only values
 - [x] Task 5: Add the grid helpers `EditableByRow` and `useStableEditableComponents`
 - [x] Task 6: Add collapsible groups and counts to the sidebars
-- [ ] Task 7: Add `useGovernmentContracting` and `UpgradeOverlayRow`
+- [x] Task 7: Add `useGovernmentContracting` and `UpgradeOverlayRow`
 - [ ] Task 8: Fix the week views on a Sunday
 - [ ] Task 9: Shrink the Projects and Service sidebars (Layer 0)
 - [ ] Task 10: Simplify the projects list and the New Project drawer (Layer 1)

@@ -3898,6 +3898,9 @@ msgstr "{0} 이후 가용"
 msgid "Available hours"
 msgstr "가용 시간"
 
+msgid "Available on the {plan} plan"
+msgstr ""
+
 msgid "Available on the Business plan"
 msgstr "Business 플랜에서 사용 가능"
 
