@@ -19,7 +19,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuExternalLink, LuUnlink } from "react-icons/lu";
 import { Confirm } from "~/components/Modals";
-import { useDateFormatter } from "~/hooks";
+import { useDateFormatter, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 
 type ExternalSourceMapping = {
@@ -49,6 +49,7 @@ export function ExternalSourceCard({
   canDetach: boolean;
 }) {
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const { t } = useLingui();
   const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
@@ -73,6 +74,7 @@ export function ExternalSourceCard({
     carbon
       .from("externalIntegrationMapping")
       .select("externalId, lastSyncedAt, metadata")
+      .eq("companyId", company.id)
       .eq("entityType", "item")
       .eq("entityId", itemId)
       .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
@@ -84,7 +86,7 @@ export function ExternalSourceCard({
     return () => {
       cancelled = true;
     };
-  }, [carbon, itemId, reload]);
+  }, [carbon, company.id, itemId, reload]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: the labels follow the locale, not the read
   useEffect(() => {
@@ -94,6 +96,7 @@ export function ExternalSourceCard({
       const integration = await carbon
         .from("companyIntegration")
         .select("metadata")
+        .eq("companyId", company.id)
         .eq("id", ONSHAPE_V2_INTEGRATION_ID)
         .maybeSingle();
       if (cancelled) return;
@@ -107,6 +110,7 @@ export function ExternalSourceCard({
         const fields = await carbon
           .from("customField")
           .select("id, name")
+          .eq("companyId", company.id)
           .in("id", targets.customFieldIds);
         for (const field of fields.data ?? []) {
           fieldNames.set(field.id, field.name);
@@ -127,7 +131,7 @@ export function ExternalSourceCard({
     return () => {
       cancelled = true;
     };
-  }, [carbon, mapping]);
+  }, [carbon, company.id, mapping]);
 
   if (!mapping) return null;
 
