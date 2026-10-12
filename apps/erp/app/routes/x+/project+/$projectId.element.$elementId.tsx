@@ -2,13 +2,18 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { elementEarnedValueValidator } from "@carbon/ee/project-control";
+import { updateElementEarnedValue } from "@carbon/ee/project-control.server";
+import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type {
   Project,
@@ -16,6 +21,7 @@ import type {
   ProjectMilestone,
   ProjectState
 } from "~/modules/projects";
+import { getProject } from "~/modules/projects";
 import { getProjectElementPageInChangeRequest } from "~/modules/projects/projects.server";
 import ChangeRequestBanner from "~/modules/projects/ui/ChangeRequests/ChangeRequestBanner";
 import { ElementView } from "~/modules/projects/ui/Element/ElementView";
@@ -64,6 +70,102 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return page.data;
 }
 
+/**
+ * Saves the earned value fields of the element (intent `earned-value`,
+ * Government Contracting 5c). Commercial: `requireFeature` is the upgrade
+ * redirect; `requireEntitlement` in the ee function is the lock. A refusal
+ * (no control account above, not chargeable) comes back as a field error.
+ */
+export async function action({ request, params }: ActionFunctionArgs) {
+  assertIsPost(request);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "projects"
+  });
+  const { projectId, elementId } = params;
+  if (!projectId) throw new Error("Could not find projectId");
+  if (!elementId) throw new Error("Could not find elementId");
+
+  const formData = await request.formData();
+  if (formData.get("intent") !== "earned-value") {
+    return data(
+      { success: false },
+      await flash(request, error(null, "Unknown action"))
+    );
+  }
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    feature: "GOVERNMENT_CONTRACTING",
+    redirectTo: path.to.projectElement(projectId, elementId)
+  });
+
+  const project = await getProject(client, companyId, projectId);
+  if (project.error || !project.data) {
+    logger.error("Failed to load project", {
+      companyId,
+      projectId,
+      error: project.error
+    });
+    return data(
+      { success: false },
+      await flash(request, error(project.error, "Failed to load the project"))
+    );
+  }
+  if (project.data.status === "Closed") {
+    return data(
+      { success: false },
+      await flash(request, error(null, "A Closed project cannot change"))
+    );
+  }
+
+  formData.set("elementId", elementId);
+  const validation = await validator(elementEarnedValueValidator).validate(
+    formData
+  );
+  if (validation.error) return validationError(validation.error);
+
+  try {
+    const result = await updateElementEarnedValue(client, {
+      ...validation.data,
+      companyId,
+      userId
+    });
+    if (result.error) {
+      logger.error("Failed to save the earned value fields", {
+        companyId,
+        projectId,
+        elementId,
+        error: result.error
+      });
+      return validationError({
+        fieldErrors: {
+          [validation.data.isControlAccount
+            ? "isControlAccount"
+            : "earnedValueTechnique"]:
+            result.error.message ?? "Failed to save the earned value fields"
+        }
+      });
+    }
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    logger.error("Earned value is not in the company's plan", {
+      companyId,
+      projectId
+    });
+    return data(
+      { success: false },
+      await flash(request, error(err, err.message))
+    );
+  }
+
+  return data(
+    { success: true },
+    await flash(request, success("Earned value saved"))
+  );
+}
+
 /** The element as a full page inside the project. */
 export default function ProjectElementRoute() {
   const { projectId } = useParams();
@@ -93,7 +195,6 @@ export default function ProjectElementRoute() {
           states={routeData?.states ?? []}
           labels={routeData?.labels ?? []}
           milestones={routeData?.milestones ?? []}
-          variant="page"
         />
       </div>
     </div>

@@ -3,8 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
-  HStack,
   Table as TableBase,
   Tbody,
   Td,
@@ -14,8 +12,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { LuPackageMinus, LuTimer } from "react-icons/lu";
 import { EmployeeAvatar } from "~/components";
 import {
   useCurrencyFormatter,
@@ -32,52 +28,16 @@ import type {
 } from "../../projects.server";
 import { TimesheetEntryStatus } from "./TimesheetEntryStatus";
 
-/** The Log time and Issue material buttons of the element page. */
-export function TimeAndMaterialsActions({
-  canLogTime,
-  canIssue,
-  onLogTime,
-  onIssue
-}: {
-  canLogTime: boolean;
-  canIssue: boolean;
-  onLogTime: () => void;
-  onIssue: () => void;
-}) {
-  return (
-    <>
-      <Button
-        variant="secondary"
-        leftIcon={<LuTimer />}
-        isDisabled={!canLogTime}
-        onClick={onLogTime}
-      >
-        <Trans>Log time</Trans>
-      </Button>
-      <Button
-        variant="secondary"
-        leftIcon={<LuPackageMinus />}
-        isDisabled={!canIssue}
-        onClick={onIssue}
-      >
-        <Trans>Issue material</Trans>
-      </Button>
-    </>
-  );
-}
-
 /**
  * The project ledger rows of an element and its descendants, and their
  * timesheet entries that are not Posted yet (Posted time is in the ledger).
  */
 export function ElementTimeAndMaterials({
   ledger,
-  openTime,
-  actions
+  openTime
 }: {
   ledger: ElementLedgerRow[];
   openTime: ElementOpenTimeRow[];
-  actions: ReactNode;
 }) {
   const { t } = useLingui();
   const formatMoney = useCurrencyFormatter();
@@ -98,17 +58,11 @@ export function ElementTimeAndMaterials({
 
   return (
     <VStack spacing={4} className="w-full">
-      <HStack spacing={2}>{actions}</HStack>
-
-      <div className="w-full">
-        <span className="mb-1 block text-xs font-medium text-muted-foreground">
-          <Trans>Costs posted</Trans>
-        </span>
-        {ledger.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-            <Trans>No costs posted yet</Trans>
-          </p>
-        ) : (
+      {ledger.length > 0 && (
+        <div className="w-full">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">
+            <Trans>Costs posted</Trans>
+          </span>
           <div className="w-full overflow-x-auto rounded-md border border-border">
             <TableBase full>
               <Thead>
@@ -163,18 +117,14 @@ export function ElementTimeAndMaterials({
               </Tbody>
             </TableBase>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      <div className="w-full">
-        <span className="mb-1 block text-xs font-medium text-muted-foreground">
-          <Trans>Time not posted yet</Trans>
-        </span>
-        {openTime.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-            <Trans>No open time</Trans>
-          </p>
-        ) : (
+      {openTime.length > 0 && (
+        <div className="w-full">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">
+            <Trans>Time not posted yet</Trans>
+          </span>
           <div className="w-full overflow-x-auto rounded-md border border-border">
             <TableBase full>
               <Thead>
@@ -215,8 +165,8 @@ export function ElementTimeAndMaterials({
               </Tbody>
             </TableBase>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </VStack>
   );
 }

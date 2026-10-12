@@ -101,6 +101,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
   if (!elementId) throw new Error("Could not find elementId");
 
+  const formData = await request.formData();
+  const quiet = formData.get("quiet") === "true";
   const refuse = async (err: unknown, message: string) => {
     if (err) {
       logger.error(message, {
@@ -110,10 +112,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error: err
       });
     }
-    return data({ success: false }, await flash(request, error(err, message)));
+    return quiet
+      ? data({ success: false, error: message }, { status: 400 })
+      : data({ success: false }, await flash(request, error(err, message)));
   };
   const done = async (message: string) =>
-    data({ success: true }, await flash(request, success(message)));
+    quiet
+      ? data({ success: true, error: null })
+      : data({ success: true }, await flash(request, success(message)));
+  const invalid = (validation: {
+    error: Parameters<typeof validationError>[0];
+  }) =>
+    quiet
+      ? data(
+          {
+            success: false,
+            error:
+              Object.values(validation.error.fieldErrors ?? {})[0] ??
+              "Invalid line"
+          },
+          { status: 400 }
+        )
+      : validationError(validation.error);
 
   const node = await getTemplateNode(client, {
     templateId: id,
@@ -123,7 +143,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (node.error)
     return refuse(null, "The element is not part of this template");
 
-  const formData = await request.formData();
   formData.set("projectElementId", elementId);
   const intent = formData.get("intent");
 
@@ -144,7 +163,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(
         projectElementMaterialValidator
       ).validate(formData);
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementMaterial", lineId))) {
         return refuse(null, "The line is not on this element");
@@ -169,7 +188,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(projectElementLaborValidator).validate(
         formData
       );
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementLabor", lineId))) {
         return refuse(null, "The line is not on this element");
@@ -194,7 +213,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(projectElementCostValidator).validate(
         formData
       );
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const { id: lineId, ...line } = validation.data;
       if (lineId && !(await ownsLine("projectElementCost", lineId))) {
         return refuse(null, "The line is not on this element");

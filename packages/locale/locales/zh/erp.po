@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed}/{0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}的{lines}行已完成"
@@ -2017,6 +2017,9 @@ msgstr "添加具有电子邮件地址的联系人以发送发票"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和税费"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "添加一个域"
 
@@ -2125,9 +2128,6 @@ msgstr "添加控制台操作员"
 msgid "Add Contractor"
 msgstr "添加外协人员"
 
-msgid "Add Cost"
-msgstr "添加成本"
-
 msgid "Add cost center"
 msgstr "添加成本中心"
 
@@ -2176,8 +2176,8 @@ msgstr "添加分录"
 msgid "Add Label"
 msgstr "添加标签"
 
-msgid "Add Labor"
-msgstr "添加人工"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "添加行"
@@ -2202,9 +2202,6 @@ msgstr "手动添加"
 
 msgid "Add match"
 msgstr "添加匹配"
-
-msgid "Add Material"
-msgstr "添加原材料"
 
 msgid "Add Member"
 msgstr "添加成员"
@@ -2260,6 +2257,9 @@ msgstr "添加路径"
 
 msgid "Add Permissions"
 msgstr "添加权限"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "添加前驱物料"
@@ -5308,6 +5308,9 @@ msgstr "检查点"
 msgid "Children"
 msgstr "子项"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "选择备份"
 
@@ -5319,6 +5322,9 @@ msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
 msgid "Choose a field"
 msgstr "选择字段"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
@@ -6288,6 +6294,10 @@ msgstr "转换中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "在采购单、收货或账单行中将供应商的采购单位转换为您的库存管理单位 — 按 12 个纸箱采购，按件库存。"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "成本"
 
 msgid "Costs posted"
 msgstr "已过账成本"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "无法分析裁剪区域"
@@ -8467,6 +8480,9 @@ msgstr "派生"
 msgid "Descending"
 msgstr "降序"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "描述"
 
@@ -9236,9 +9252,6 @@ msgstr "编辑联系人"
 msgid "Edit Contractor"
 msgstr "编辑外协人员"
 
-msgid "Edit Cost"
-msgstr "编辑成本"
-
 msgid "Edit Cost Center"
 msgstr "编辑成本中心"
 
@@ -9328,9 +9341,6 @@ msgstr "编辑看板"
 
 msgid "Edit Label"
 msgstr "编辑标签"
-
-msgid "Edit Labor"
-msgstr "编辑人工"
 
 msgid "Edit Labor Category"
 msgstr "编辑人工类别"
@@ -11722,6 +11732,9 @@ msgstr "早上好，{name}。"
 msgid "Google Places API key not configured"
 msgstr "Google Places API密钥未配置"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "政府提供的"
 
@@ -11790,6 +11803,9 @@ msgstr "引导式"
 
 msgid "Guided implementation"
 msgstr "引导式实施"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "处理循环和冲销凭证"
@@ -13821,6 +13837,9 @@ msgstr "已链接零件"
 msgid "Linked PO"
 msgstr "关联采购订单"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "未收到此协议的押金。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的累计折旧。"
 
-msgid "No description"
-msgstr "无描述"
-
 msgid "No differences."
 msgstr "没有区别。"
 
@@ -16094,9 +16110,6 @@ msgstr "没有未结报销单"
 
 msgid "No open sales order lines"
 msgstr "没有未结销售订单行"
-
-msgid "No open time"
-msgstr "没有未结的工时"
 
 msgid "No operations found."
 msgstr "未找到工序。"
@@ -16420,9 +16433,6 @@ msgstr "没有工具"
 msgid "No tools for this step"
 msgstr "此步骤没有工具"
 
-msgid "No trace links yet."
-msgstr "还没有追溯链接。"
-
 msgid "No trainings assigned"
 msgstr "未分配培训"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "没有欠任何东西"
-
-msgid "Nothing planned yet"
-msgstr "还没有计划"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "未安排任何事项——在下方添加工位。"
@@ -17057,9 +17064,6 @@ msgstr "未结应付账款"
 
 msgid "Open AR"
 msgstr "未结应收账款"
-
-msgid "Open as a page"
-msgstr "作为页面打开"
 
 msgid "Open Audit Log"
 msgstr "打开审计日志"
@@ -17429,9 +17433,6 @@ msgstr "其他成本"
 msgid "Other costs"
 msgstr "其他成本"
 
-msgid "Other Costs"
-msgstr "其他成本"
-
 msgid "Other Direct"
 msgstr "其他直接"
 
@@ -17786,9 +17787,6 @@ msgstr "通行密钥"
 
 msgid "Passkeys are disabled"
 msgstr "通行密钥已禁用"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "过去平均值：{pastHours} 小时和 {pastMaterial} 材料，涉及 {pastCount} 个要素"
 
 msgid "Past due"
 msgstr "逾期"
@@ -20062,10 +20060,6 @@ msgstr "从{1}中移除{0}"
 msgid "Remove {0} from batch"
 msgstr "从生产批次中移除 {0}"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "从计划中移除{0}？"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
@@ -20078,6 +20072,9 @@ msgstr "从此步骤中移除 {0}"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -24065,9 +24062,6 @@ msgstr "服务条款"
 msgid "Test"
 msgstr "测试"
 
-msgid "Test case"
-msgstr "测试用例"
-
 msgid "Test Case"
 msgstr "测试用例"
 
@@ -25389,9 +25383,6 @@ msgstr "此客户的费率"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
-
-msgid "This element"
-msgstr "此元素"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "此文件不再可用，或您没有权限下载它。"
@@ -27148,6 +27139,9 @@ msgstr "查看联系人"
 msgid "View Contained Issues"
 msgstr "查看已遏制的问题"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "查看计数"
 
@@ -28018,9 +28012,6 @@ msgstr "在制品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "含{0}应急储备"
-
-msgid "With children"
-msgstr "包含子项"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "没有拣货单的情况下,操作员从扫码选项卡中拣选原材料。"

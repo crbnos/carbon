@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{0}のうち{completed}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines}明細完了"
@@ -2017,6 +2017,9 @@ msgstr "請求書を送信するためにメールアドレス付きの担当者
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "数量、価格、配送、リードタイム、および税を上書きするカスタム価格設定行を追加します"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "ドメインを追加"
 
@@ -2125,9 +2128,6 @@ msgstr "コンソールオペレーターを追加"
 msgid "Add Contractor"
 msgstr "外部作業者を追加"
 
-msgid "Add Cost"
-msgstr "原価を追加"
-
 msgid "Add cost center"
 msgstr "原価センターを追加"
 
@@ -2176,8 +2176,8 @@ msgstr "仕訳行を追加"
 msgid "Add Label"
 msgstr "ラベルを追加"
 
-msgid "Add Labor"
-msgstr "労務を追加"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "行を追加"
@@ -2202,9 +2202,6 @@ msgstr "手動で追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
-
-msgid "Add Material"
-msgstr "材料を追加"
 
 msgid "Add Member"
 msgstr "メンバーを追加"
@@ -2260,6 +2257,9 @@ msgstr "パスを追加"
 
 msgid "Add Permissions"
 msgstr "権限を追加"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "前任品目を追加"
@@ -5308,6 +5308,9 @@ msgstr "チェックポイント"
 msgid "Children"
 msgstr "子要素"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "バックアップを選択"
 
@@ -5319,6 +5322,9 @@ msgstr "バッチ可能な工法を選択して、一緒に実行できる工程
 
 msgid "Choose a field"
 msgstr "フィールドを選択"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
@@ -6288,6 +6294,10 @@ msgstr "変換中…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "仕入先の購入単位をPO、入荷、または請求書上で在庫単位に変換します — 12個のカートン単位で仕入れ、個単位で在庫する。"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "原価"
 
 msgid "Costs posted"
 msgstr "転記済原価"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "トリミングされた領域を分析できませんでした"
@@ -8467,6 +8480,9 @@ msgstr "派生"
 msgid "Descending"
 msgstr "降順"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "説明"
 
@@ -9236,9 +9252,6 @@ msgstr "担当者を編集"
 msgid "Edit Contractor"
 msgstr "外部作業者を編集"
 
-msgid "Edit Cost"
-msgstr "原価編集"
-
 msgid "Edit Cost Center"
 msgstr "原価センターを編集"
 
@@ -9328,9 +9341,6 @@ msgstr "かんばんを編集"
 
 msgid "Edit Label"
 msgstr "ラベル編集"
-
-msgid "Edit Labor"
-msgstr "労務編集"
 
 msgid "Edit Labor Category"
 msgstr "労務カテゴリ編集"
@@ -11722,6 +11732,9 @@ msgstr "おはようございます、{name}さん。"
 msgid "Google Places API key not configured"
 msgstr "Google Places APIキーが設定されていません"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "政府支給"
 
@@ -11790,6 +11803,9 @@ msgstr "ガイド付き"
 
 msgid "Guided implementation"
 msgstr "ガイド付き実施"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "繰り返しおよび逆仕訳の処理"
@@ -13821,6 +13837,9 @@ msgstr "リンク済み部品"
 msgid "Linked PO"
 msgstr "リンク済みPO"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "この契約の前受金が受け取られていません。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "会計開始日前には減価償却は実行されません。会計開始日の前日時点での各資産の減価償却累計額を入力してください。"
 
-msgid "No description"
-msgstr "説明なし"
-
 msgid "No differences."
 msgstr "違いはありません。"
 
@@ -16094,9 +16110,6 @@ msgstr "オープンな払戻がありません"
 
 msgid "No open sales order lines"
 msgstr "オープン受注明細がありません"
-
-msgid "No open time"
-msgstr "オープン時間がありません"
 
 msgid "No operations found."
 msgstr "工程が見つかりません。"
@@ -16420,9 +16433,6 @@ msgstr "ツールがありません"
 msgid "No tools for this step"
 msgstr "このステップのツールがありません"
 
-msgid "No trace links yet."
-msgstr "まだトレースリンクがありません。"
-
 msgid "No trainings assigned"
 msgstr "割り当てられた教育訓練がありません"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "何も負っていません"
-
-msgid "Nothing planned yet"
-msgstr "まだ何も計画されていません"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "スケジュールがありません。以下にステーションを追加してください。"
@@ -17057,9 +17064,6 @@ msgstr "オープン買掛金"
 
 msgid "Open AR"
 msgstr "未払い売掛金"
-
-msgid "Open as a page"
-msgstr "ページとして開く"
 
 msgid "Open Audit Log"
 msgstr "監査ログを開く"
@@ -17429,9 +17433,6 @@ msgstr "その他のコスト"
 msgid "Other costs"
 msgstr "その他のコスト"
 
-msgid "Other Costs"
-msgstr "その他のコスト"
-
 msgid "Other Direct"
 msgstr "その他直接費"
 
@@ -17786,9 +17787,6 @@ msgstr "パスキー"
 
 msgid "Passkeys are disabled"
 msgstr "パスキーは無効です"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "過去の平均：{pastCount}個の要素にわたり、労務{pastHours}時間、材料{pastMaterial}"
 
 msgid "Past due"
 msgstr "期限切れ"
@@ -20062,10 +20060,6 @@ msgstr "{1}から {0} を除去"
 msgid "Remove {0} from batch"
 msgstr "バッチから {0} を除去"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "計画から{0}を除去しますか？"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}をこのバッチから除去しますか？その工程はスケジュールに戻り、独自に実行されます。"
@@ -20078,6 +20072,9 @@ msgstr "このステップから{0}を除去"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "{label}を除去"
@@ -24065,9 +24062,6 @@ msgstr "利用規約"
 msgid "Test"
 msgstr "テスト"
 
-msgid "Test case"
-msgstr "テストケース"
-
 msgid "Test Case"
 msgstr "テストケース"
 
@@ -25389,9 +25383,6 @@ msgstr "この得意先のレート"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
-
-msgid "This element"
-msgstr "この要素"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "このファイルは利用できなくなったか、ダウンロードする権限がありません。"
@@ -27148,6 +27139,9 @@ msgstr "担当者を表示"
 msgid "View Contained Issues"
 msgstr "含まれた問題を表示"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "カウントを表示"
 
@@ -28018,9 +28012,6 @@ msgstr "仕掛品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
-
-msgid "With children"
-msgstr "子供付き"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "ピッキングリストがない場合、作業者はスキャンタブから材料をピッキングします。"

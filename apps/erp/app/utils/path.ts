@@ -2084,15 +2084,13 @@ export const path = {
       generatePath(`${x}/project/${id}/costs/${elementId}`),
     projectDetails: (id: string) => generatePath(`${x}/project/${id}/details`),
     projectElement: (id: string, elementId: string) =>
-      generatePath(`${x}/project/${id}/elements/${elementId}`),
+      generatePath(`${x}/project/${id}/element/${elementId}`),
     projectElementComments: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/elements/${elementId}/comments`),
     projectElementCreateJob: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/elements/${elementId}/create-job`),
     projectElementCreatePurchaseOrderLine: (id: string, elementId: string) =>
       generatePath(`${x}/project/${id}/elements/${elementId}/create-po-line`),
-    projectElementFull: (id: string, elementId: string) =>
-      generatePath(`${x}/project/${id}/element/${elementId}`),
     projectElementLinks: (id: string) =>
       generatePath(`${x}/project/${id}/elements/links`),
     projectElementMove: (id: string) =>

@@ -8,8 +8,9 @@ import {
   Alert,
   AlertDescription,
   Button,
-  HStack,
-  IconButton,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
   Modal,
   ModalBody,
   ModalContent,
@@ -19,32 +20,33 @@ import {
   ModalOverlay,
   ModalTitle,
   Spinner,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  SplitButton,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuFactory,
-  LuPencil,
   LuPlus,
   LuShoppingCart,
   LuTrash,
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
+import { Table } from "~/components";
+import {
+  EditableByRow,
+  EditableDate,
+  EditableList,
+  EditableNumber,
+  EditableText,
+  useStableEditableComponents
+} from "~/components/Editable";
 import {
   DatePicker,
   Hidden,
-  Input,
-  Item,
   Location,
   Number as NumberField,
   Select,
@@ -52,6 +54,11 @@ import {
   Supplier
 } from "~/components/Form";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -62,14 +69,12 @@ import {
 } from "~/hooks";
 import { methodType } from "~/modules/shared/shared.models";
 import type { loader as createPurchaseOrderLineLoader } from "~/routes/x+/project+/$projectId.elements.$elementId.create-po-line";
+import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import {
   createJobFromMaterialValidator,
   createPurchaseOrderLineFromMaterialValidator,
   NEW_PURCHASE_ORDER,
-  projectElementCostValidator,
-  projectElementLaborValidator,
-  projectElementMaterialValidator,
   remainingMaterialQuantity
 } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
@@ -83,15 +88,38 @@ type MaterialLine = PlanLines["materials"][number];
 type LaborLine = PlanLines["labor"][number];
 type CostLine = PlanLines["costs"][number];
 
-type Editing =
-  | { kind: "material"; line: MaterialLine | null }
-  | { kind: "labor"; line: LaborLine | null }
-  | { kind: "cost"; line: CostLine | null };
+export type PlanLineType = "material" | "labor" | "cost";
+type MethodType = (typeof methodType)[number];
 
-type Deleting =
-  | { kind: "material"; id: string; name: string }
-  | { kind: "labor"; id: string; name: string }
-  | { kind: "cost"; id: string; name: string };
+/**
+ * One row of the plan grid. `line` is the item (material), the labor
+ * category (labor) or the description (cost); `quantity` is a material's
+ * quantity or a labor line's hours; `date` is a material's required date or
+ * a labor line's start. A row with no `id` is a draft: it saves once its
+ * line is set.
+ */
+type PlanRow = {
+  key: string;
+  id: string | null;
+  type: PlanLineType;
+  line: string;
+  methodType: MethodType | null;
+  quantity: number | null;
+  unitOfMeasureCode: string | null;
+  unitCost: number | null;
+  amount: number | null;
+  date: string | null;
+  endDate: string | null;
+  material?: MaterialLine;
+};
+
+const dash = <span className="text-muted-foreground">—</span>;
+
+const INTENT = {
+  material: "upsertMaterial",
+  labor: "upsertLabor",
+  cost: "upsertCost"
+} as const;
 
 const DELETE_INTENT = {
   material: "deleteMaterial",
@@ -99,9 +127,64 @@ const DELETE_INTENT = {
   cost: "deleteCost"
 } as const;
 
+/** A new line: one each of quantity and hours, pulled from inventory. */
+function draftRow(type: PlanLineType, key: string): PlanRow {
+  return {
+    key,
+    id: null,
+    type,
+    line: "",
+    methodType: type === "material" ? "Pull from Inventory" : null,
+    quantity: type === "cost" ? null : 1,
+    unitOfMeasureCode: null,
+    unitCost: null,
+    amount: type === "cost" ? 0 : null,
+    date: null,
+    endDate: null
+  };
+}
+
+/** The fields a row posts: the whole line, so a save never clears a column. */
+function rowFields(row: PlanRow): Record<string, string> {
+  const text = (value: string | number | null) =>
+    value === null || value === undefined ? "" : String(value);
+  const fields: Record<string, string> = {
+    intent: INTENT[row.type],
+    id: row.id ?? ""
+  };
+  switch (row.type) {
+    case "material":
+      return {
+        ...fields,
+        itemId: row.line,
+        methodType: row.methodType ?? "Pull from Inventory",
+        quantity: text(row.quantity),
+        unitOfMeasureCode: text(row.unitOfMeasureCode),
+        unitCost: text(row.unitCost),
+        requiredDate: text(row.date)
+      };
+    case "labor":
+      return {
+        ...fields,
+        laborCategoryId: row.line,
+        hours: text(row.quantity),
+        startDate: text(row.date),
+        endDate: text(row.endDate)
+      };
+    case "cost":
+      return {
+        ...fields,
+        description: row.line,
+        amount: text(row.amount)
+      };
+  }
+}
+
 /**
- * The plan of one element: materials, labor and other costs. Each list adds
- * and edits its lines in a modal and posts to the plan route.
+ * The plan of one element in ONE grid: materials, labor and other costs,
+ * with a Type column. Each cell saves on its own through the plan route
+ * (`quiet`), posting the whole line. "Add line" appends a draft row, which
+ * saves once its line (item, labor category or description) is set.
  */
 export function ElementPlanLines({
   projectId,
@@ -111,7 +194,8 @@ export function ElementPlanLines({
   defaultLocationId,
   isDisabled,
   action: actionOverride,
-  canSupply = true
+  canSupply = true,
+  addRequest
 }: {
   projectId: string;
   elementId: string;
@@ -124,16 +208,23 @@ export function ElementPlanLines({
   action?: string;
   /** Offers Create Job and Create PO Line on a material (not on a template). */
   canSupply?: boolean;
+  /** Each new value adds a draft material row ("Add plan line" in a menu). */
+  addRequest?: number;
 }) {
   const { t } = useLingui();
+  const save = useCellSave();
   const formatMoney = useCurrencyFormatter();
   const formatQuantity = useQuantityFormatter();
   const { formatDate } = useDateFormatter();
+  const { company } = useUser();
+  const currency = company.baseCurrencyCode;
+  const decimals = useCurrencyDecimals(currency);
   const methodLabels = useMethodTypeLabels();
-  const [editing, setEditing] = useState<Editing | null>(null);
-  const [deleting, setDeleting] = useState<Deleting | null>(null);
-  const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
-  const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
+  const typeLabels = useMemo<Record<PlanLineType, string>>(
+    () => ({ material: t`Material`, labor: t`Labor`, cost: t`Cost` }),
+    [t]
+  );
+  const [items] = useItems();
   const permissions = usePermissions();
   const canCreateJob = permissions.can("create", "production");
   const canCreatePurchaseOrderLine = permissions.can("create", "purchasing");
@@ -145,239 +236,500 @@ export function ElementPlanLines({
       changeRequestId
     );
 
-  const rowActions = (
-    onEdit: () => void,
-    onDelete: () => void,
-    extra?: ReactNode
-  ) => (
-    <Td className="w-16">
-      <HStack spacing={0} className="justify-end">
-        {extra}
-        <IconButton
-          aria-label={t`Edit`}
-          icon={<LuPencil />}
-          variant="ghost"
-          size="sm"
-          isDisabled={isDisabled}
-          onClick={onEdit}
-        />
-        <IconButton
-          aria-label={t`Delete`}
-          icon={<LuTrash />}
-          variant="ghost"
-          size="sm"
-          isDisabled={isDisabled}
-          onClick={onDelete}
-        />
-      </HStack>
-    </Td>
+  const [drafts, setDrafts] = useState<PlanRow[]>([]);
+  const draftCount = useRef(0);
+  const addDraft = useCallback((type: PlanLineType) => {
+    draftCount.current += 1;
+    setDrafts((previous) => [
+      ...previous,
+      draftRow(type, `draft-${draftCount.current}`)
+    ]);
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs once per request
+  useEffect(() => {
+    if (addRequest) addDraft("material");
+  }, [addRequest]);
+
+  const [deleting, setDeleting] = useState<PlanRow | null>(null);
+  const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
+  const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
+
+  const rows = useMemo<PlanRow[]>(
+    () => [
+      ...planLines.materials.map<PlanRow>((line) => ({
+        key: line.id,
+        id: line.id,
+        type: "material",
+        line: line.itemId,
+        methodType: line.methodType,
+        quantity: Number(line.quantity),
+        unitOfMeasureCode: line.unitOfMeasureCode ?? null,
+        unitCost: line.unitCost === null ? null : Number(line.unitCost),
+        amount:
+          line.unitCost === null
+            ? null
+            : Number(line.quantity) * Number(line.unitCost),
+        date: line.requiredDate ?? null,
+        endDate: null,
+        material: line
+      })),
+      ...planLines.labor.map<PlanRow>((line: LaborLine) => ({
+        key: line.id,
+        id: line.id,
+        type: "labor",
+        line: line.laborCategoryId,
+        methodType: null,
+        quantity: Number(line.hours),
+        unitOfMeasureCode: null,
+        unitCost: null,
+        amount: null,
+        date: line.startDate ?? null,
+        endDate: line.endDate ?? null
+      })),
+      ...planLines.costs.map<PlanRow>((line: CostLine) => ({
+        key: line.id,
+        id: line.id,
+        type: "cost",
+        line: line.description,
+        methodType: null,
+        quantity: null,
+        unitOfMeasureCode: null,
+        unitCost: null,
+        amount: Number(line.amount),
+        date: null,
+        endDate: null
+      })),
+      ...drafts
+    ],
+    [planLines, drafts]
   );
 
+  const itemsById = useMemo(
+    () => new Map(items.map((item) => [item.id, item])),
+    [items]
+  );
+  const categoriesById = useMemo(
+    () => new Map(laborCategories.map((c) => [c.id, c.name])),
+    [laborCategories]
+  );
+
+  // A cell edit posts the whole row with the change. A draft only keeps the
+  // change until its line is set; then it posts and leaves the drafts.
+  const onCellEdit = useCallback(
+    async (accessorKey: string, value: unknown, row: PlanRow) => {
+      const raw = value === null || value === undefined ? null : value;
+      const next: PlanRow = { ...row, [accessorKey]: raw };
+      if (accessorKey === "quantity" || accessorKey === "unitCost") {
+        next[accessorKey] = raw === null || raw === "" ? null : Number(raw);
+      }
+      if (accessorKey === "amount") {
+        next.amount = raw === null || raw === "" ? 0 : Number(raw);
+      }
+      if (accessorKey === "line" && row.type === "material") {
+        next.unitOfMeasureCode =
+          itemsById.get(String(raw))?.unitOfMeasureCode ?? null;
+      }
+      if (row.id === null) {
+        if (!next.line) {
+          setDrafts((previous) =>
+            previous.map((d) => (d.key === row.key ? next : d))
+          );
+          return { data: null, error: null } as Awaited<
+            ReturnType<typeof save>
+          >;
+        }
+        const result = await save(action, rowFields(next));
+        if (!result.error) {
+          setDrafts((previous) => previous.filter((d) => d.key !== row.key));
+        }
+        return result;
+      }
+      return save(action, rowFields(next));
+    },
+    [action, save, itemsById]
+  );
+
+  const stable = useStableEditableComponents(
+    (latest) => {
+      const edit = (key: string, value: unknown, row: PlanRow) =>
+        latest.current.onCellEdit(key, value, row);
+      return {
+        description: EditableText<PlanRow>(edit),
+        quantity: EditableNumber<PlanRow>(edit, {
+          minValue: 0,
+          formatOptions: INPUT_FORMAT.quantity,
+          step: INPUT_STEP.quantity
+        }),
+        unitCost: EditableNumber<PlanRow>(
+          edit,
+          {
+            minValue: 0,
+            formatOptions: INPUT_FORMAT.rate(currency, decimals),
+            step: INPUT_STEP.rate
+          },
+          { clearable: true }
+        ),
+        amount: EditableNumber<PlanRow>(edit, {
+          formatOptions: INPUT_FORMAT.money(currency, decimals),
+          step: INPUT_STEP.money(decimals)
+        }),
+        date: EditableDate<PlanRow>(edit, {
+          label: t`Date`,
+          clearable: true
+        }),
+        endDate: EditableDate<PlanRow>(edit, {
+          label: t`End`,
+          clearable: true,
+          bounds: (row) => ({ minValue: row.date ?? undefined })
+        })
+      };
+    },
+    { onCellEdit }
+  );
+
+  // A list editor takes its options when it is built: rebuilt only when the
+  // options change (a pick commits at once; nothing is typed).
+  const latestOnCellEdit = useRef(onCellEdit);
+  useEffect(() => {
+    latestOnCellEdit.current = onCellEdit;
+  });
+  const lists = useMemo(() => {
+    const edit = (key: string, value: string, row: PlanRow) =>
+      latestOnCellEdit.current(key, value, row);
+    return {
+      item: EditableList<PlanRow>(
+        edit,
+        items.map((item) => ({
+          value: item.id,
+          label: `${item.readableIdWithRevision} ${item.name}`
+        }))
+      ),
+      laborCategory: EditableList<PlanRow>(
+        edit,
+        laborCategories.map((c) => ({ value: c.id, label: c.name }))
+      ),
+      method: EditableList<PlanRow>(
+        edit,
+        methodType.map((value) => ({ value, label: methodLabels[value] }))
+      )
+    };
+  }, [items, laborCategories, methodLabels]);
+
+  const editableComponents = useMemo(() => {
+    const none = () => <span className="text-muted-foreground">—</span>;
+    return {
+      line: EditableByRow<PlanRow>(
+        (row) =>
+          row.type === "material"
+            ? lists.item
+            : row.type === "labor"
+              ? lists.laborCategory
+              : stable.description,
+        none
+      ),
+      methodType: EditableByRow<PlanRow>(
+        (row) => (row.type === "material" ? lists.method : null),
+        none
+      ),
+      quantity: EditableByRow<PlanRow>(
+        (row) => (row.type === "cost" ? null : stable.quantity),
+        none
+      ),
+      unitCost: EditableByRow<PlanRow>(
+        (row) => (row.type === "material" ? stable.unitCost : null),
+        none
+      ),
+      amount: EditableByRow<PlanRow>(
+        (row) => (row.type === "cost" ? stable.amount : null),
+        ({ row }) =>
+          row.amount === null ? (
+            <span className="text-muted-foreground">—</span>
+          ) : (
+            <span className="tabular-nums">
+              {formatMoney.format(row.amount)}
+            </span>
+          )
+      ),
+      date: EditableByRow<PlanRow>(
+        (row) => (row.type === "cost" ? null : stable.date),
+        none
+      ),
+      endDate: EditableByRow<PlanRow>(
+        (row) => (row.type === "labor" ? stable.endDate : null),
+        none
+      )
+    };
+  }, [lists, stable, formatMoney]);
+
+  const columns = useMemo<ColumnDef<PlanRow>[]>(
+    () => [
+      {
+        accessorKey: "type",
+        header: t`Type`,
+        cell: ({ row }) => (
+          <span className="text-muted-foreground">
+            {typeLabels[row.original.type]}
+          </span>
+        )
+      },
+      {
+        accessorKey: "line",
+        header: t`Line`,
+        cell: ({ row }) => {
+          const { type, line } = row.original;
+          if (!line) {
+            return (
+              <span className="text-muted-foreground">
+                {type === "material"
+                  ? t`Choose an item`
+                  : type === "labor"
+                    ? t`Choose a labor category`
+                    : t`Describe the cost`}
+              </span>
+            );
+          }
+          if (type === "material") {
+            const item = itemsById.get(line);
+            return (
+              <span className="flex min-w-0 max-w-[260px] items-center gap-2">
+                <span className="shrink-0 whitespace-nowrap">
+                  {item?.readableIdWithRevision ??
+                    row.original.material?.item?.readableIdWithRevision}
+                </span>
+                <span className="truncate text-muted-foreground">
+                  {item?.name ?? row.original.material?.item?.name}
+                </span>
+              </span>
+            );
+          }
+          return (
+            <span className="block max-w-[260px] truncate">
+              {type === "labor" ? (categoriesById.get(line) ?? line) : line}
+            </span>
+          );
+        }
+      },
+      {
+        accessorKey: "methodType",
+        header: t`Method`,
+        cell: ({ row }) => {
+          const { methodType: method, material } = row.original;
+          if (!method) return dash;
+          const purchaseOrder = material?.purchaseOrderLine?.purchaseOrder;
+          return (
+            <span className="flex items-center gap-2 whitespace-nowrap">
+              {methodLabels[method]}
+              {material?.job && (
+                <Link
+                  to={path.to.job(material.job.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {material.job.jobId}
+                </Link>
+              )}
+              {purchaseOrder && (
+                <Link
+                  to={path.to.purchaseOrderDetails(purchaseOrder.id)}
+                  className="text-xs text-muted-foreground hover:underline"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {purchaseOrder.purchaseOrderId}
+                </Link>
+              )}
+            </span>
+          );
+        }
+      },
+      {
+        accessorKey: "quantity",
+        header: t`Quantity`,
+        cell: ({ row }) =>
+          row.original.quantity === null ? (
+            dash
+          ) : (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatQuantity(row.original.quantity)}{" "}
+              <span className="text-muted-foreground">
+                {row.original.type === "labor"
+                  ? t`h`
+                  : (row.original.unitOfMeasureCode ?? "")}
+              </span>
+            </span>
+          )
+      },
+      {
+        accessorKey: "unitCost",
+        header: t`Unit Cost`,
+        cell: ({ row }) =>
+          row.original.unitCost === null ? (
+            dash
+          ) : (
+            <span className="tabular-nums">
+              {formatMoney.format(row.original.unitCost)}
+            </span>
+          )
+      },
+      {
+        accessorKey: "amount",
+        header: t`Amount`,
+        cell: ({ row }) =>
+          row.original.amount === null ? (
+            dash
+          ) : (
+            <span className="tabular-nums">
+              {formatMoney.format(row.original.amount)}
+            </span>
+          )
+      },
+      {
+        accessorKey: "date",
+        header: t`Date`,
+        cell: ({ row }) =>
+          row.original.date ? (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatDate(row.original.date)}
+            </span>
+          ) : (
+            dash
+          )
+      },
+      {
+        accessorKey: "endDate",
+        header: t`End`,
+        cell: ({ row }) =>
+          row.original.endDate ? (
+            <span className="whitespace-nowrap tabular-nums">
+              {formatDate(row.original.endDate)}
+            </span>
+          ) : (
+            dash
+          )
+      }
+    ],
+    [
+      t,
+      typeLabels,
+      itemsById,
+      categoriesById,
+      methodLabels,
+      formatQuantity,
+      formatMoney,
+      formatDate
+    ]
+  );
+
+  const renderMenu = useCallback(
+    (row: PlanRow) => {
+      const material = row.material;
+      const canMakeJob =
+        canSupply &&
+        material?.methodType === "Make to Order" &&
+        !material.jobId;
+      const canMakeLine =
+        canSupply &&
+        material?.methodType === "Purchase to Order" &&
+        !material.purchaseOrderLineId;
+      return (
+        <>
+          {canMakeJob && material && (
+            <MenuItem
+              disabled={!canCreateJob}
+              onClick={() => setCreatingJob(material)}
+            >
+              <MenuIcon icon={<LuFactory />} />
+              <Trans>Create Job</Trans>
+            </MenuItem>
+          )}
+          {canMakeLine && material && (
+            <MenuItem
+              disabled={!canCreatePurchaseOrderLine}
+              onClick={() => setCreatingLine(material)}
+            >
+              <MenuIcon icon={<LuShoppingCart />} />
+              <Trans>Create PO Line</Trans>
+            </MenuItem>
+          )}
+          <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
+            destructive
+            disabled={isDisabled}
+            onClick={() => {
+              if (row.id === null) {
+                setDrafts((previous) =>
+                  previous.filter((d) => d.key !== row.key)
+                );
+              } else {
+                setDeleting(row);
+              }
+            }}
+          >
+            <MenuIcon icon={<LuTrash />} />
+            <Trans>Delete</Trans>
+          </MenuItem>
+        </>
+      );
+    },
+    [canSupply, canCreateJob, canCreatePurchaseOrderLine, isDisabled]
+  );
+
+  const gridColumns = useMemo(
+    () => [...columns, rowMenuColumn(renderMenu, t`Actions`)],
+    [columns, renderMenu, t]
+  );
+
+  const deletingName =
+    deleting === null
+      ? ""
+      : deleting.type === "material"
+        ? (itemsById.get(deleting.line)?.readableIdWithRevision ?? t`Material`)
+        : deleting.type === "labor"
+          ? (categoriesById.get(deleting.line) ?? t`Labor`)
+          : deleting.line;
+
   return (
-    <VStack spacing={4}>
-      <PlanList
-        title={t`Materials`}
-        addLabel={t`Add Material`}
-        isDisabled={isDisabled}
-        onAdd={() => setEditing({ kind: "material", line: null })}
-        isEmpty={planLines.materials.length === 0}
-        head={
-          <>
-            <Th>
-              <Trans>Item</Trans>
-            </Th>
-            <Th>
-              <Trans>Method</Trans>
-            </Th>
-            <Th>
-              <Trans>Quantity</Trans>
-            </Th>
-            <Th>
-              <Trans>Unit Cost</Trans>
-            </Th>
-            <Th>
-              <Trans>Required</Trans>
-            </Th>
-            <Th />
-          </>
-        }
-      >
-        {planLines.materials.map((line) => (
-          <Tr key={line.id}>
-            <Td>
-              <div className="flex max-w-[220px] flex-col">
-                <span className="truncate">
-                  {line.item?.readableIdWithRevision}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">
-                  {line.item?.name}
-                </span>
-              </div>
-            </Td>
-            <Td className="whitespace-nowrap">
-              <div className="flex flex-col">
-                <span>{methodLabels[line.methodType]}</span>
-                {line.job && (
-                  <Link
-                    to={path.to.job(line.job.id)}
-                    className="text-xs text-muted-foreground hover:underline"
-                  >
-                    {line.job.jobId}
-                  </Link>
-                )}
-                {line.purchaseOrderLine?.purchaseOrder && (
-                  <Link
-                    to={path.to.purchaseOrderDetails(
-                      line.purchaseOrderLine.purchaseOrder.id
-                    )}
-                    className="text-xs text-muted-foreground hover:underline"
-                  >
-                    {line.purchaseOrderLine.purchaseOrder.purchaseOrderId}
-                  </Link>
-                )}
-              </div>
-            </Td>
-            <Td className="whitespace-nowrap tabular-nums">
-              {formatQuantity(Number(line.quantity))}{" "}
-              {line.unitOfMeasureCode ?? ""}
-            </Td>
-            <Td className="tabular-nums">
-              {line.unitCost === null
-                ? "—"
-                : formatMoney.format(Number(line.unitCost))}
-            </Td>
-            <Td className="whitespace-nowrap tabular-nums">
-              {line.requiredDate ? formatDate(line.requiredDate) : "—"}
-            </Td>
-            {rowActions(
-              () => setEditing({ kind: "material", line }),
-              () =>
-                setDeleting({
-                  kind: "material",
-                  id: line.id,
-                  name: line.item?.readableIdWithRevision ?? t`Material`
-                }),
-              !canSupply ? null : line.methodType === "Make to Order" &&
-                !line.jobId ? (
-                <IconButton
-                  aria-label={t`Create Job`}
-                  icon={<LuFactory />}
-                  variant="ghost"
-                  size="sm"
-                  isDisabled={!canCreateJob}
-                  onClick={() => setCreatingJob(line)}
-                />
-              ) : line.methodType === "Purchase to Order" &&
-                !line.purchaseOrderLineId ? (
-                <IconButton
-                  aria-label={t`Create PO Line`}
-                  icon={<LuShoppingCart />}
-                  variant="ghost"
-                  size="sm"
-                  isDisabled={!canCreatePurchaseOrderLine}
-                  onClick={() => setCreatingLine(line)}
-                />
-              ) : null
-            )}
-          </Tr>
-        ))}
-      </PlanList>
-
-      <PlanList
-        title={t`Labor`}
-        addLabel={t`Add Labor`}
-        isDisabled={isDisabled}
-        onAdd={() => setEditing({ kind: "labor", line: null })}
-        isEmpty={planLines.labor.length === 0}
-        head={
-          <>
-            <Th>
-              <Trans>Labor Category</Trans>
-            </Th>
-            <Th>
-              <Trans>Hours</Trans>
-            </Th>
-            <Th>
-              <Trans>Start</Trans>
-            </Th>
-            <Th>
-              <Trans>End</Trans>
-            </Th>
-            <Th />
-          </>
-        }
-      >
-        {planLines.labor.map((line) => (
-          <Tr key={line.id}>
-            <Td className="truncate">{line.laborCategory?.name}</Td>
-            <Td className="tabular-nums">
-              {formatQuantity(Number(line.hours))}
-            </Td>
-            <Td className="whitespace-nowrap tabular-nums">
-              {line.startDate ? formatDate(line.startDate) : "—"}
-            </Td>
-            <Td className="whitespace-nowrap tabular-nums">
-              {line.endDate ? formatDate(line.endDate) : "—"}
-            </Td>
-            {rowActions(
-              () => setEditing({ kind: "labor", line }),
-              () =>
-                setDeleting({
-                  kind: "labor",
-                  id: line.id,
-                  name: line.laborCategory?.name ?? t`Labor`
-                })
-            )}
-          </Tr>
-        ))}
-      </PlanList>
-
-      <PlanList
-        title={t`Other Costs`}
-        addLabel={t`Add Cost`}
-        isDisabled={isDisabled}
-        onAdd={() => setEditing({ kind: "cost", line: null })}
-        isEmpty={planLines.costs.length === 0}
-        head={
-          <>
-            <Th>
-              <Trans>Description</Trans>
-            </Th>
-            <Th>
-              <Trans>Amount</Trans>
-            </Th>
-            <Th />
-          </>
-        }
-      >
-        {planLines.costs.map((line) => (
-          <Tr key={line.id}>
-            <Td className="max-w-[280px] truncate">{line.description}</Td>
-            <Td className="tabular-nums">
-              {formatMoney.format(Number(line.amount))}
-            </Td>
-            {rowActions(
-              () => setEditing({ kind: "cost", line }),
-              () =>
-                setDeleting({
-                  kind: "cost",
-                  id: line.id,
-                  name: line.description
-                })
-            )}
-          </Tr>
-        ))}
-      </PlanList>
-
-      {editing && (
-        <PlanLineModal
-          action={action}
-          elementId={elementId}
-          editing={editing}
-          laborCategories={laborCategories}
-          onClose={() => setEditing(null)}
-        />
+    <div className="flex w-full flex-col gap-2">
+      {rows.length > 0 && (
+        <div
+          className="w-full overflow-hidden rounded-lg border border-border"
+          style={{ height: setupGridHeight(rows.length, 49) - 44 }}
+        >
+          <Table<PlanRow>
+            compact
+            columns={gridColumns}
+            data={rows}
+            count={rows.length}
+            editableComponents={editableComponents}
+            withInlineEditing={!isDisabled}
+            forceEditMode={!isDisabled}
+            withPagination={false}
+            withSearch={false}
+            withSimpleSorting={false}
+            withSidebarTrigger={false}
+            withColumnOrdering={false}
+            withCsvExport={false}
+            sort={null}
+          />
+        </div>
       )}
+      {!isDisabled && (
+        <SplitButton
+          variant="ghost"
+          size="sm"
+          leftIcon={<LuPlus />}
+          className="self-start"
+          onClick={() => addDraft("material")}
+          dropdownItems={(["material", "labor", "cost"] as const).map(
+            (type) => ({
+              label: typeLabels[type],
+              onClick: () => addDraft(type)
+            })
+          )}
+        >
+          <Trans>Add line</Trans>
+        </SplitButton>
+      )}
+
       {creatingJob && (
         <CreateJobModal
           projectId={projectId}
@@ -395,265 +747,29 @@ export function ElementPlanLines({
           onClose={() => setCreatingLine(null)}
         />
       )}
-      {deleting && (
+      {deleting && deleting.id && (
         <ConfirmDelete
           action={action}
-          name={deleting.name}
-          text={t`Remove ${deleting.name} from the plan?`}
-          fields={{ intent: DELETE_INTENT[deleting.kind], id: deleting.id }}
+          name={deletingName}
+          text={t`Remove ${deletingName} from the plan?`}
+          fields={{ intent: DELETE_INTENT[deleting.type], id: deleting.id }}
           onCancel={() => setDeleting(null)}
           onSubmit={() => setDeleting(null)}
         />
-      )}
-    </VStack>
-  );
-}
-
-function useMethodTypeLabels(): Record<(typeof methodType)[number], string> {
-  const { t } = useLingui();
-  return {
-    "Purchase to Order": t`Purchase to Order`,
-    "Pull from Inventory": t`Pull from Inventory`,
-    "Make to Order": t`Make to Order`
-  };
-}
-
-function PlanList({
-  title,
-  addLabel,
-  isDisabled,
-  isEmpty,
-  onAdd,
-  head,
-  children
-}: {
-  title: string;
-  addLabel: string;
-  isDisabled: boolean;
-  isEmpty: boolean;
-  onAdd: () => void;
-  head: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div className="w-full">
-      <HStack className="mb-1 w-full justify-between">
-        <span className="text-xs font-medium text-muted-foreground">
-          {title}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={<LuPlus />}
-          isDisabled={isDisabled}
-          onClick={onAdd}
-        >
-          {addLabel}
-        </Button>
-      </HStack>
-      {isEmpty ? (
-        <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-          <Trans>Nothing planned yet</Trans>
-        </p>
-      ) : (
-        <div className="w-full overflow-x-auto rounded-md border border-border">
-          <TableBase full>
-            <Thead>
-              <Tr>{head}</Tr>
-            </Thead>
-            <Tbody>{children}</Tbody>
-          </TableBase>
-        </div>
       )}
     </div>
   );
 }
 
-function PlanLineModal({
-  action,
-  elementId,
-  editing,
-  laborCategories,
-  onClose
-}: {
-  action: string;
-  elementId: string;
-  editing: Editing;
-  laborCategories: { id: string; name: string }[];
-  onClose: () => void;
-}) {
+function useMethodTypeLabels(): Record<MethodType, string> {
   const { t } = useLingui();
-  const { company } = useUser();
-  const currency = company.baseCurrencyCode;
-  const decimals = useCurrencyDecimals(currency);
-  const methodLabels = useMethodTypeLabels();
-  const fetcher = useAction<{ success?: boolean }>({
-    onSuccess: () => onClose()
-  });
-  const isNew = editing.line === null;
-
-  const title =
-    editing.kind === "material"
-      ? isNew
-        ? t`Add Material`
-        : t`Edit Material`
-      : editing.kind === "labor"
-        ? isNew
-          ? t`Add Labor`
-          : t`Edit Labor`
-        : isNew
-          ? t`Add Cost`
-          : t`Edit Cost`;
-
-  const body = (() => {
-    switch (editing.kind) {
-      case "material": {
-        const line = editing.line;
-        return (
-          <ValidatedForm
-            validator={projectElementMaterialValidator}
-            method="post"
-            action={action}
-            fetcher={fetcher}
-            defaultValues={{
-              id: line?.id,
-              projectElementId: elementId,
-              itemId: line?.itemId ?? "",
-              methodType: line?.methodType ?? "Pull from Inventory",
-              quantity: line ? Number(line.quantity) : 1,
-              unitCost:
-                line?.unitCost === null || line?.unitCost === undefined
-                  ? undefined
-                  : Number(line.unitCost),
-              requiredDate: line?.requiredDate ?? undefined
-            }}
-          >
-            <ModalBody>
-              <Hidden name="intent" value="upsertMaterial" />
-              <Hidden name="id" />
-              <Hidden name="projectElementId" />
-              <VStack spacing={4}>
-                <Item name="itemId" label={t`Item`} type="Item" />
-                <Select
-                  name="methodType"
-                  label={t`Method`}
-                  options={methodType.map((value) => ({
-                    value,
-                    label: methodLabels[value]
-                  }))}
-                />
-                <NumberField
-                  name="quantity"
-                  label={t`Quantity`}
-                  minValue={0}
-                  formatOptions={INPUT_FORMAT.quantity}
-                  step={INPUT_STEP.quantity}
-                />
-                <NumberField
-                  name="unitCost"
-                  label={t`Unit Cost`}
-                  minValue={0}
-                  formatOptions={INPUT_FORMAT.rate(currency, decimals)}
-                  step={INPUT_STEP.rate}
-                />
-                <DatePicker name="requiredDate" label={t`Required Date`} />
-              </VStack>
-            </ModalBody>
-            <PlanLineFooter onClose={onClose} />
-          </ValidatedForm>
-        );
-      }
-      case "labor": {
-        const line = editing.line;
-        return (
-          <ValidatedForm
-            validator={projectElementLaborValidator}
-            method="post"
-            action={action}
-            fetcher={fetcher}
-            defaultValues={{
-              id: line?.id,
-              projectElementId: elementId,
-              laborCategoryId: line?.laborCategoryId ?? "",
-              hours: line ? Number(line.hours) : 1,
-              startDate: line?.startDate ?? undefined,
-              endDate: line?.endDate ?? undefined
-            }}
-          >
-            <ModalBody>
-              <Hidden name="intent" value="upsertLabor" />
-              <Hidden name="id" />
-              <Hidden name="projectElementId" />
-              <VStack spacing={4}>
-                <Select
-                  name="laborCategoryId"
-                  label={t`Labor Category`}
-                  options={laborCategories.map((c) => ({
-                    value: c.id,
-                    label: c.name
-                  }))}
-                />
-                <NumberField
-                  name="hours"
-                  label={t`Hours`}
-                  minValue={0}
-                  formatOptions={INPUT_FORMAT.quantity}
-                  step={INPUT_STEP.quantity}
-                />
-                <DatePicker name="startDate" label={t`Start Date`} />
-                <DatePicker name="endDate" label={t`End Date`} />
-              </VStack>
-            </ModalBody>
-            <PlanLineFooter onClose={onClose} />
-          </ValidatedForm>
-        );
-      }
-      case "cost": {
-        const line = editing.line;
-        return (
-          <ValidatedForm
-            validator={projectElementCostValidator}
-            method="post"
-            action={action}
-            fetcher={fetcher}
-            defaultValues={{
-              id: line?.id,
-              projectElementId: elementId,
-              description: line?.description ?? "",
-              amount: line ? Number(line.amount) : 0
-            }}
-          >
-            <ModalBody>
-              <Hidden name="intent" value="upsertCost" />
-              <Hidden name="id" />
-              <Hidden name="projectElementId" />
-              <VStack spacing={4}>
-                <Input name="description" label={t`Description`} />
-                <NumberField
-                  name="amount"
-                  label={t`Amount`}
-                  formatOptions={INPUT_FORMAT.money(currency, decimals)}
-                  step={INPUT_STEP.money(decimals)}
-                />
-              </VStack>
-            </ModalBody>
-            <PlanLineFooter onClose={onClose} />
-          </ValidatedForm>
-        );
-      }
-    }
-  })();
-
-  return (
-    <Modal open onOpenChange={(open) => !open && onClose()}>
-      <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <ModalTitle>{title}</ModalTitle>
-        </ModalHeader>
-        {body}
-      </ModalContent>
-    </Modal>
+  return useMemo(
+    () => ({
+      "Purchase to Order": t`Purchase to Order`,
+      "Pull from Inventory": t`Pull from Inventory`,
+      "Make to Order": t`Make to Order`
+    }),
+    [t]
   );
 }
 
@@ -872,18 +988,5 @@ function CreatePurchaseOrderLineModal({
         )}
       </ModalContent>
     </Modal>
-  );
-}
-
-function PlanLineFooter({ onClose }: { onClose: () => void }) {
-  return (
-    <ModalFooter>
-      <Button variant="secondary" onClick={onClose}>
-        <Trans>Cancel</Trans>
-      </Button>
-      <Submit withBlocker={false}>
-        <Trans>Save</Trans>
-      </Submit>
-    </ModalFooter>
   );
 }

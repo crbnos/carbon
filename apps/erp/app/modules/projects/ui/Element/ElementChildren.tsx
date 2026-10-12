@@ -2,103 +2,98 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { BarProgress } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Trans } from "@lingui/react/macro";
 import type { RefObject } from "react";
-import { useState } from "react";
-import { Link } from "react-router";
+import { useMemo, useState } from "react";
+import { LuPlus } from "react-icons/lu";
 import { path } from "~/utils/path";
-import type { ProjectElementType } from "../../projects.models";
+import type {
+  ProjectElementType,
+  RequirementStatus
+} from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
-import type { ProjectState } from "../../types";
-import { StatePill } from "../Elements/ElementProperties";
-import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import type { ProjectLabel, ProjectState } from "../../types";
+import { ElementRow } from "../Elements/ElementList";
 import { QuickAddRow } from "./QuickAddRow";
 
 /**
- * The direct children of an element: a progress bar (completed ÷ all), one
- * row per child, and a quick-add row that adds a child under this element.
+ * The direct children of an element as the Plan list's rows, and an
+ * "+ Add child" row at the end that opens a one-line form.
  */
 export function ElementChildren({
   projectId,
-  identifier,
   parent,
   children,
   states,
+  labels,
+  requirementStatus,
   canUpdate,
   canCreate,
+  isAdding,
+  onAddingChange,
   quickAddRef
 }: {
   projectId: string;
-  identifier: string;
-  parent: { id: string; readableId: string; type: ProjectElementType };
+  parent: { id: string; type: ProjectElementType };
   children: ProjectElementListItem[];
   states: ProjectState[];
+  labels: ProjectLabel[];
+  requirementStatus: Record<string, RequirementStatus>;
   canUpdate: boolean;
   canCreate: boolean;
+  isAdding: boolean;
+  onAddingChange: (adding: boolean) => void;
   quickAddRef: RefObject<HTMLInputElement>;
 }) {
-  const { t } = useLingui();
   const [type, setType] = useState<ProjectElementType>("Task");
-  const completed = children.filter(
-    (child) => child.state?.group === "Completed"
-  ).length;
   // A Parameter's children must be Parameters.
   const newType = parent.type === "Parameter" ? "Parameter" : type;
+  const labelsById = useMemo(
+    () => new Map(labels.map((label) => [label.id, label])),
+    [labels]
+  );
+  const idChars = Math.max(0, ...children.map((c) => c.readableId.length));
 
   return (
-    <div className="flex w-full flex-col gap-2">
-      {children.length > 0 && (
-        <BarProgress
-          progress={completed}
-          max={children.length}
-          label={t`Completed`}
-          value={t`${completed} of ${children.length}`}
-        />
-      )}
-      {children.length > 0 ? (
-        <div className="overflow-hidden rounded-md border border-border">
-          {children.map((child) => (
-            <div
-              key={child.id}
-              className="flex h-10 items-center gap-2 border-b border-border/60 px-2 text-sm last:border-b-0 hover:bg-accent/40"
-            >
-              <Link
-                to={path.to.projectElement(projectId, child.id)}
-                className="flex min-w-0 flex-1 items-center gap-2 self-stretch"
-              >
-                <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
-                  {child.readableId}
-                </span>
-                <ElementTypeIcon type={child.type} />
-                <span className="truncate">{child.name}</span>
-              </Link>
-              <StatePill
-                projectId={projectId}
-                elementId={child.id}
-                stateId={child.stateId}
-                states={states}
-                isDisabled={!canUpdate}
-              />
-            </div>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-muted-foreground">
-          <Trans>No child elements</Trans>
-        </p>
-      )}
-      {canCreate && (
-        <QuickAddRow
+    <div className="-mx-3 flex flex-col">
+      {children.map((child) => (
+        <ElementRow
+          key={child.id}
           projectId={projectId}
-          identifier={identifier}
-          type={newType}
-          onTypeChange={parent.type === "Parameter" ? undefined : setType}
-          parent={{ id: parent.id, readableId: parent.readableId }}
-          inputRef={quickAddRef}
-          className="rounded-md border"
+          element={child}
+          states={states}
+          labelsById={labelsById}
+          requirementStatus={requirementStatus[child.id]}
+          href={path.to.projectElement(projectId, child.id)}
+          canUpdate={canUpdate}
+          idChars={idChars}
+          className="rounded-md px-3"
         />
-      )}
+      ))}
+      {canCreate &&
+        (isAdding ? (
+          <QuickAddRow
+            projectId={projectId}
+            type={newType}
+            onTypeChange={parent.type === "Parameter" ? undefined : setType}
+            parent={{ id: parent.id }}
+            inputRef={quickAddRef}
+            onCancel={() => onAddingChange(false)}
+            className="px-2"
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              onAddingChange(true);
+              requestAnimationFrame(() => quickAddRef.current?.focus());
+            }}
+            className="flex h-9 items-center gap-2 rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          >
+            <LuPlus className="size-3.5" />
+            <Trans>Add child</Trans>
+          </button>
+        ))}
     </div>
   );
 }

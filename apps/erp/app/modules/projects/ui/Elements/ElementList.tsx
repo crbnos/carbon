@@ -213,14 +213,14 @@ export function ElementList({
                   states={states}
                   labelsById={labelsById}
                   requirementStatus={requirementStatus[element.id]}
-                  href={`${path.to.projectElementFull(projectId, element.id)}${search}`}
+                  href={`${path.to.projectElement(projectId, element.id)}${search}`}
                   isHighlighted={element.id === highlightId}
                   canUpdate={canUpdate}
                   idChars={idChars}
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
-                      href={path.to.projectElementFull(projectId, element.id)}
+                      href={path.to.projectElement(projectId, element.id)}
                       canAddChild={canCreate && element.type !== "Parameter"}
                       canMove={canUpdate}
                       canDelete={canDelete}
@@ -286,6 +286,7 @@ type ElementRowProps = {
   /** The id's minimum width in characters: the longest id in the list, so
    *  the names line up while the cluster stays tight. */
   idChars?: number;
+  className?: string;
 };
 
 /**
@@ -305,7 +306,8 @@ export function ElementRow({
   isHighlighted,
   canUpdate,
   menu,
-  idChars
+  idChars,
+  className
 }: ElementRowProps) {
   const state = states.find((s) => s.id === element.stateId);
   const isComplete =
@@ -323,7 +325,8 @@ export function ElementRow({
       data-element-row={element.id}
       className={cn(
         "group/row relative flex h-9 items-center gap-3 px-4 transition-colors hover:bg-accent/50",
-        isHighlighted && "bg-accent/70"
+        isHighlighted && "bg-accent/70",
+        className
       )}
     >
       <div

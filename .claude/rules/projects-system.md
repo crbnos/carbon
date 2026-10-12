@@ -544,6 +544,21 @@ each through its picker (`StatePill` / `OwnerPill` / `DatePill`); labels are rea
 a click anywhere else opens the element's page. A hover row menu has Open, Add child,
 Move to…, Copy id and Delete.
 
+An element opens on its own page, `path.to.projectElement` → `/x/project/$id/element/$elementId`
+(`ElementView`), from the List, the Tree, the Reader, the sidebar tree, links and child rows.
+There is no element panel: the old `/elements/$elementId` URL only redirects to the page (its
+plan, job, purchase order line, comment and delete action routes stay under it), and the project
+layout hides the project sidebar on the page. The page is a breadcrumb row (back, the project,
+the ancestors) with one ⋯ menu (Log time, Issue material, Add child, Add link, Add plan line, Copy
+id, Delete), a main column of at most 800 px (title, description, then Children, Plan, Links,
+Time & materials and Activity, each only when it has something) and a 300 px properties column
+(`ElementSidebar`: the properties, the type's fields from `ElementTypeBlock`, work, costs with
+children, and the government contracting fields under `useGovernmentContracting`). The earned
+value form posts to the page route's action. All plan lines are ONE grid (`ElementPlanLines`)
+with a Type column; a cell posts the whole line with `quiet=true` to the plan route (the service
+template node route answers the same), and a draft row from "Add line" saves once its item, labor
+category or description is set.
+
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the
 boxes, left to right only, and the cards stack in their box at fixed offsets. The type

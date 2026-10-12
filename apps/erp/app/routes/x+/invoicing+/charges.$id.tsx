@@ -349,7 +349,7 @@ export default function ChargeDetailRoute() {
                             <Hyperlink
                               to={
                                 line.projectElementId
-                                  ? path.to.projectElementFull(
+                                  ? path.to.projectElement(
                                       line.projectId,
                                       line.projectElementId
                                     )

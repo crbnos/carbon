@@ -12,7 +12,7 @@ import {
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronDown, LuChevronRight, LuSearch } from "react-icons/lu";
-import { Link, useParams, useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { path } from "~/utils/path";
@@ -51,7 +51,6 @@ export function ProjectElementTree({
   className?: string;
 }) {
   const { t } = useLingui();
-  const { elementId: openElementId } = useParams();
   const location = useOptimisticLocation();
   const parentRef = useRef<HTMLDivElement>(null);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,16 +136,15 @@ export function ProjectElementTree({
         parentClassName="min-h-0 flex-1"
         renderNode={({ node, state }) => {
           const element = node.data;
-          const isOpen = element.id === openElementId;
           return (
             <div
               className={cn(
                 "group/node flex h-8 items-center rounded-md pr-2 text-sm",
-                isOpen ? "bg-accent" : "hover:bg-accent/60"
+                "hover:bg-accent/60"
               )}
             >
               {Array.from({ length: node.level }).map((_, index) => (
-                <LevelLine key={index} isSelected={isOpen} className="h-8" />
+                <LevelLine key={index} isSelected={false} className="h-8" />
               ))}
               <button
                 type="button"
@@ -170,16 +168,10 @@ export function ProjectElementTree({
               <Link
                 to={`${path.to.projectElement(projectId, element.id)}${search}`}
                 title={`${element.readableId} ${element.name}`}
-                aria-current={isOpen ? "page" : undefined}
                 className="flex min-w-0 flex-1 items-center gap-2"
               >
                 <ElementTypeIcon type={element.type} className="size-3.5" />
-                <span
-                  className={cn(
-                    "truncate",
-                    isOpen ? "text-foreground" : "text-foreground/80"
-                  )}
-                >
+                <span className="truncate text-foreground/80">
                   {element.name}
                 </span>
               </Link>

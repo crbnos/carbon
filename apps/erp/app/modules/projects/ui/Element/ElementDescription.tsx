@@ -6,7 +6,7 @@ import type { Json } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useImageUpload } from "~/hooks";
 import { useElementField } from "../Elements/ElementProperties";
 
@@ -31,6 +31,7 @@ export function ElementDescription({
   description: Json | null;
   isDisabled: boolean;
 }) {
+  const { t } = useLingui();
   const { submit } = useElementField(projectId, elementId, "description");
   const onUploadImage = useImageUpload("projects");
   const content = (description ?? null) as JSONContent | null;
@@ -42,11 +43,7 @@ export function ElementDescription({
   );
 
   if (isDisabled) {
-    return isEmptyDocument(content) ? (
-      <p className="text-sm text-muted-foreground">
-        <Trans>No description</Trans>
-      </p>
-    ) : (
+    return isEmptyDocument(content) ? null : (
       <div
         className="prose prose-sm dark:prose-invert max-w-none"
         dangerouslySetInnerHTML={{ __html: generateHTML(content ?? {}) }}
@@ -56,7 +53,8 @@ export function ElementDescription({
 
   return (
     <Editor
-      className="min-h-24 [&_.ProseMirror]:text-sm"
+      className="min-h-8 [&_.ProseMirror]:text-sm"
+      placeholder={t`Add a description…`}
       initialValue={content ?? {}}
       onUpload={onUploadImage}
       onChange={save}

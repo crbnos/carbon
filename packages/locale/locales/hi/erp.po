@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed} का {0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} में से {lines} पंक्तियाँ पूर्ण"
@@ -2017,6 +2017,9 @@ msgstr "चालान भेजने के लिए ईमेल के स
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "मात्रा, मूल्य, शिपिंग, लीड टाइम, और कर को ओवरराइड करने के लिए एक कस्टम मूल्य निर्धारण पंक्ति जोड़ें"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "एक डोमेन जोड़ें"
 
@@ -2125,9 +2128,6 @@ msgstr "कंसोल ऑपरेटर जोड़ें"
 msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
 
-msgid "Add Cost"
-msgstr "लागत जोड़ें"
-
 msgid "Add cost center"
 msgstr "लागत केंद्र जोड़ें"
 
@@ -2176,8 +2176,8 @@ msgstr "जर्नल प्रविष्टि जोड़ें"
 msgid "Add Label"
 msgstr "लेबल जोड़ें"
 
-msgid "Add Labor"
-msgstr "श्रम जोड़ें"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "लाइन जोड़ें"
@@ -2202,9 +2202,6 @@ msgstr "मैन्युअल रूप से जोड़ें"
 
 msgid "Add match"
 msgstr "मिलान जोड़ें"
-
-msgid "Add Material"
-msgstr "सामग्री जोड़ें"
 
 msgid "Add Member"
 msgstr "सदस्य जोड़ें"
@@ -2260,6 +2257,9 @@ msgstr "पथ जोड़ें"
 
 msgid "Add Permissions"
 msgstr "अनुमतियां जोड़ें"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "पूर्ववर्ती जोड़ें"
@@ -5308,6 +5308,9 @@ msgstr "चेकपॉइंट्स"
 msgid "Children"
 msgstr "संतानें"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "एक बैकअप चुनें"
 
@@ -5319,6 +5322,9 @@ msgstr "एक साथ चल सकने वाले ऑपरेशन द
 
 msgid "Choose a field"
 msgstr "एक फ़ील्ड चुनें"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
@@ -6288,6 +6294,10 @@ msgstr "परिवर्तित कर रहे हैं…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "एक आपूर्तिकर्ता की खरीद इकाई को PO, प्राप्ति, या बिल लाइन पर आपकी इन्वेंटरी इकाई में परिवर्तित करता है — 12 के कार्टन में खरीदें, व्यक्तिगत में स्टॉक करें।"
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "लागतें"
 
 msgid "Costs posted"
 msgstr "लागतें पोस्ट की गईं"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "क्रॉप किए गए क्षेत्र का विश्लेषण नहीं किया जा सका"
@@ -8467,6 +8480,9 @@ msgstr "व्युत्पन्न होता है"
 msgid "Descending"
 msgstr "अवरोही"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "विवरण"
 
@@ -9236,9 +9252,6 @@ msgstr "संपर्क संपादित करें"
 msgid "Edit Contractor"
 msgstr "ठेकेदार संपादित करें"
 
-msgid "Edit Cost"
-msgstr "संपादित करें लागत"
-
 msgid "Edit Cost Center"
 msgstr "लागत केंद्र संपादित करें"
 
@@ -9328,9 +9341,6 @@ msgstr "कानबान संपादित करें"
 
 msgid "Edit Label"
 msgstr "संपादित करें लेबल"
-
-msgid "Edit Labor"
-msgstr "संपादित करें श्रम"
 
 msgid "Edit Labor Category"
 msgstr "संपादित करें श्रम श्रेणी"
@@ -11722,6 +11732,9 @@ msgstr "सुबह की शुभकामनाएं, {name}।"
 msgid "Google Places API key not configured"
 msgstr "Google Places API कुंजी कॉन्फ़िगर नहीं की गई"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "सरकार द्वारा प्रदान किया गया"
 
@@ -11790,6 +11803,9 @@ msgstr "निर्देशित"
 
 msgid "Guided implementation"
 msgstr "निर्देशित कार्यान्वयन"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "आवर्ती और उलट जर्नल प्रविष्टियों को संभालें"
@@ -13821,6 +13837,9 @@ msgstr "लिंक किया गया पार्ट"
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "इस समझौते के लिए कोई जमा राश
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "संक्रमण से पहले कोई मूल्यह्रास चलाया नहीं जाता। संक्रमण से पहले के दिन तक प्रत्येक परिसंपत्ति का संचित मूल्यह्रास दर्ज करें।"
 
-msgid "No description"
-msgstr "कोई विवरण नहीं"
-
 msgid "No differences."
 msgstr "कोई अंतर नहीं।"
 
@@ -16094,9 +16110,6 @@ msgstr "कोई खुली प्रतिपूर्ति नहीं"
 
 msgid "No open sales order lines"
 msgstr "कोई खुली विक्रय आदेश पंक्ति नहीं"
-
-msgid "No open time"
-msgstr "कोई खुला समय नहीं"
 
 msgid "No operations found."
 msgstr "कोई ऑपरेशन नहीं मिला।"
@@ -16420,9 +16433,6 @@ msgstr "कोई उपकरण नहीं"
 msgid "No tools for this step"
 msgstr "इस चरण के लिए कोई टूल नहीं"
 
-msgid "No trace links yet."
-msgstr "अभी तक कोई ट्रेस लिंक नहीं।"
-
 msgid "No trainings assigned"
 msgstr "कोई प्रशिक्षण निर्धारित नहीं"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "कुछ भी बकाया नहीं"
-
-msgid "Nothing planned yet"
-msgstr "अभी तक कुछ भी योजनाबद्ध नहीं"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "कुछ भी शेड्यूल नहीं किया गया — नीचे एक स्टेशन जोड़ें।"
@@ -17057,9 +17064,6 @@ msgstr "खुले देय खाते"
 
 msgid "Open AR"
 msgstr "खुले प्राप्य खाते"
-
-msgid "Open as a page"
-msgstr "पृष्ठ के रूप में खुलें"
 
 msgid "Open Audit Log"
 msgstr "ऑडिट लॉग खोलें"
@@ -17429,9 +17433,6 @@ msgstr "अन्य लागत"
 msgid "Other costs"
 msgstr "अन्य लागतें"
 
-msgid "Other Costs"
-msgstr "अन्य लागतें"
-
 msgid "Other Direct"
 msgstr "अन्य प्रत्यक्ष"
 
@@ -17786,9 +17787,6 @@ msgstr "पासकीज़"
 
 msgid "Passkeys are disabled"
 msgstr "पासकीज़ अक्षम हैं"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "पिछला औसत: {pastHours} घंटे और {pastMaterial} सामग्री में {pastCount} तत्वों पर"
 
 msgid "Past due"
 msgstr "अतिदेय"
@@ -20062,10 +20060,6 @@ msgstr "{1} से {0} निकालें"
 msgid "Remove {0} from batch"
 msgstr "बैच से {0} निकालें"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "{0} को योजना से निकालें?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "इस बैच से {0} को निकालें? इसका ऑपरेशन अपने आप चलने के लिए शेड्यूल में वापस जाता है।"
@@ -20078,6 +20072,9 @@ msgstr "इस चरण से {0} को निकालें"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "क्या बैच {1} से {memberCount} में से {0} ऑपरेशन निकाले जाएँ?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"
@@ -24065,9 +24062,6 @@ msgstr "सेवा की शर्तें"
 msgid "Test"
 msgstr "परीक्षण"
 
-msgid "Test case"
-msgstr "परीक्षण मामला"
-
 msgid "Test Case"
 msgstr "परीक्षण मामला"
 
@@ -25389,9 +25383,6 @@ msgstr "इस ग्राहक की दर"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "यह डाउनलोड लिंक अमान्य है या इसके साथ छेड़छाड़ की गई है।"
-
-msgid "This element"
-msgstr "यह तत्व"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "यह फाइल अब उपलब्ध नहीं है, या आपके पास इसे डाउनलोड करने की अनुमति नहीं है।"
@@ -27148,6 +27139,9 @@ msgstr "संपर्क देखें"
 msgid "View Contained Issues"
 msgstr "नियंत्रित समस्याओं को देखें"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "गणना देखें"
 
@@ -28018,9 +28012,6 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "के साथ {0} आकस्मिकता"
-
-msgid "With children"
-msgstr "बच्चों के साथ"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"

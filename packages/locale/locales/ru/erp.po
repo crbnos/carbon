@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Рассмотрите возможность указания этой детали непосредственно на финального преемника."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed} из {0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} из {lines} строк завершено"
@@ -2017,6 +2017,9 @@ msgstr "Добавить контактное лицо с адресом эле�
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Добавить пользовательскую строку ценообразования для переопределения количества, цены, доставки, срока поставки и налога"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "Добавить домен"
 
@@ -2125,9 +2128,6 @@ msgstr "Добавить оператора консоли"
 msgid "Add Contractor"
 msgstr "Добавить подрядчика"
 
-msgid "Add Cost"
-msgstr "Добавить себестоимость"
-
 msgid "Add cost center"
 msgstr "Добавить центр затрат"
 
@@ -2176,8 +2176,8 @@ msgstr "Добавить проводку"
 msgid "Add Label"
 msgstr "Добавить метку"
 
-msgid "Add Labor"
-msgstr "Добавить труд"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Добавить строку"
@@ -2202,9 +2202,6 @@ msgstr "Добавить вручную"
 
 msgid "Add match"
 msgstr "Добавить совпадение"
-
-msgid "Add Material"
-msgstr "Добавить материал"
 
 msgid "Add Member"
 msgstr "Добавить члена"
@@ -2260,6 +2257,9 @@ msgstr "Добавить путь"
 
 msgid "Add Permissions"
 msgstr "Добавить права доступа"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "Добавить предшественника"
@@ -5308,6 +5308,9 @@ msgstr "Контрольные точки"
 msgid "Children"
 msgstr "Подчинённые"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "Выберите резервную копию"
 
@@ -5319,6 +5322,9 @@ msgstr "Выберите пакетируемый процесс, чтобы у�
 
 msgid "Choose a field"
 msgstr "Выберите поле"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Выберите деталь, которую заменяет {itemReadableId}. Правило сохраняется на этой детали с {itemReadableId} в качестве преемника."
@@ -6288,6 +6294,10 @@ msgstr "Преобразование…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Преобразует единицу покупки поставщика в единицу инвентаря в строке заказа на покупку, квитанции или счета — покупайте в картонах по 12 штук, запасайте в единицах."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "Затраты"
 
 msgid "Costs posted"
 msgstr "Затраты проведены"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Не удалось проанализировать обрезанный регион"
@@ -8467,6 +8480,9 @@ msgstr "Происходит из"
 msgid "Descending"
 msgstr "По убыванию"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "Описание"
 
@@ -9236,9 +9252,6 @@ msgstr "Изменить контактное лицо"
 msgid "Edit Contractor"
 msgstr "Изменить подрядчика"
 
-msgid "Edit Cost"
-msgstr "Изменить себестоимость"
-
 msgid "Edit Cost Center"
 msgstr "Изменить центр затрат"
 
@@ -9328,9 +9341,6 @@ msgstr "Изменить канбан"
 
 msgid "Edit Label"
 msgstr "Изменить метку"
-
-msgid "Edit Labor"
-msgstr "Изменить трудозатраты"
 
 msgid "Edit Labor Category"
 msgstr "Изменить категорию трудозатрат"
@@ -11722,6 +11732,9 @@ msgstr "Доброе утро, {name}."
 msgid "Google Places API key not configured"
 msgstr "API-ключ Google Places не настроен"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "Предоставленный государством"
 
@@ -11790,6 +11803,9 @@ msgstr "Управляемый"
 
 msgid "Guided implementation"
 msgstr "Управляемое внедрение"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "Обработка повторяющихся и сторнирующих операций"
@@ -13821,6 +13837,9 @@ msgstr "Связанная деталь"
 msgid "Linked PO"
 msgstr "Связанный ПО"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "Авансовый платеж не получен по этому со
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "До даты перехода не производится расчет амортизации. Введите накопленную амортизацию каждого актива на день перед датой перехода."
 
-msgid "No description"
-msgstr "Нет описания"
-
 msgid "No differences."
 msgstr "Нет различий."
 
@@ -16094,9 +16110,6 @@ msgstr "Нет открытых возмещений"
 
 msgid "No open sales order lines"
 msgstr "Нет открытых строк заказов покупателя"
-
-msgid "No open time"
-msgstr "Нет открытого времени"
 
 msgid "No operations found."
 msgstr "Операции не найдены."
@@ -16420,9 +16433,6 @@ msgstr "Нет инструментов"
 msgid "No tools for this step"
 msgstr "Нет инструментов для этого шага"
 
-msgid "No trace links yet."
-msgstr "Связей трассировки еще нет."
-
 msgid "No trainings assigned"
 msgstr "Обучение не назначено"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "Нечего платить"
-
-msgid "Nothing planned yet"
-msgstr "Ничего не запланировано"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Ничего не запланировано — добавьте рабочее место ниже."
@@ -17057,9 +17064,6 @@ msgstr "Открытые кредиторские задолженности"
 
 msgid "Open AR"
 msgstr "Открытая дебиторская задолженность"
-
-msgid "Open as a page"
-msgstr "Открыть как страницу"
 
 msgid "Open Audit Log"
 msgstr "Открыть журнал аудита"
@@ -17429,9 +17433,6 @@ msgstr "Прочая себестоимость"
 msgid "Other costs"
 msgstr "Прочие себестоимости"
 
-msgid "Other Costs"
-msgstr "Прочие себестоимости"
-
 msgid "Other Direct"
 msgstr "Прочее прямое"
 
@@ -17786,9 +17787,6 @@ msgstr "Ключи доступа"
 
 msgid "Passkeys are disabled"
 msgstr "Ключи доступа отключены"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "Среднее значение: {pastHours} ч и {pastMaterial} материалов за {pastCount} элементов"
 
 msgid "Past due"
 msgstr "Просрочено"
@@ -20062,10 +20060,6 @@ msgstr "Убрать {0} из {1}"
 msgid "Remove {0} from batch"
 msgstr "Убрать {0} из серии"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "Убрать {0} из плана?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Убрать {0} из этой серии? Его операция вернется в график для самостоятельного запуска."
@@ -20078,6 +20072,9 @@ msgstr "Убрать {0} из этого шага"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Убрать {0} из {memberCount} операций из {1}?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Убрать {label}"
@@ -24065,9 +24062,6 @@ msgstr "Условия обслуживания"
 msgid "Test"
 msgstr "Тест"
 
-msgid "Test case"
-msgstr "Тестовый случай"
-
 msgid "Test Case"
 msgstr "Тестовый случай"
 
@@ -25389,9 +25383,6 @@ msgstr "Ставка этого покупателя"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Эта ссылка для скачивания недействительна или была повреждена."
-
-msgid "This element"
-msgstr "Этот элемент"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Этот файл больше не доступен или у вас нет прав доступа для его скачивания."
@@ -27148,6 +27139,9 @@ msgstr "Просмотр контактного лица"
 msgid "View Contained Issues"
 msgstr "Просмотреть содержащиеся проблемы"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "Просмотр подсчета"
 
@@ -28018,9 +28012,6 @@ msgstr "Незавершенное производство"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "с {0} резервом"
-
-msgid "With children"
-msgstr "С детьми"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Без листа отбора операторы отбирают материал со вкладки Сканирование."

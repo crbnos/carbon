@@ -3,54 +3,39 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Copy,
-  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
-  HStack,
   IconButton,
   Subheading,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Th,
-  Thead,
-  Tr,
+  toast,
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import {
-  LuChevronDown,
+  LuArrowLeft,
   LuChevronRight,
+  LuCopy,
   LuCornerDownRight,
   LuEllipsis,
-  LuMaximize2,
-  LuTrash,
-  LuX
+  LuLink,
+  LuListPlus,
+  LuPackageMinus,
+  LuTimer,
+  LuTrash
 } from "react-icons/lu";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import {
-  useCurrencyFormatter,
-  usePermissions,
-  useQuantityFormatter,
-  useUser
-} from "~/hooks";
+import { usePermissions, useUser } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
-import type { CostTotals } from "../../projects.models";
-import { rollUpCostSummary } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type {
   Project,
@@ -75,10 +60,7 @@ import { ElementDescription } from "./ElementDescription";
 import { ElementLinks } from "./ElementLinks";
 import { ElementPlanLines } from "./ElementPlanLines";
 import { ElementSidebar } from "./ElementSidebar";
-import {
-  ElementTimeAndMaterials,
-  TimeAndMaterialsActions
-} from "./ElementTimeAndMaterials";
+import { ElementTimeAndMaterials } from "./ElementTimeAndMaterials";
 import { ElementTypeBlock, hasTypeBlock } from "./ElementTypeBlock";
 import { IssueMaterialModal } from "./IssueMaterialModal";
 import { LogTimeModal } from "./LogTimeModal";
@@ -89,18 +71,14 @@ type ElementViewProps = ProjectElementPage & {
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
-  /** `peek` sits beside the list with close and open-full buttons. */
-  variant: "peek" | "page";
 };
 
-const NO_COST: CostTotals = {
-  plan: 0,
-  committed: 0,
-  actual: 0,
-  unallowable: 0,
-  hours: 0
-};
-
+/**
+ * The element's own page, as a Linear issue: a breadcrumb row with the ⋯
+ * menu, then a readable main column (the title, the description, Children,
+ * Plan, Links, Time & materials, Activity — each only when it has something)
+ * beside the properties column.
+ */
 export function ElementView({
   projectId,
   project,
@@ -119,11 +97,9 @@ export function ElementView({
   requirementStatus,
   qualityDocuments,
   itemFields,
-  itemHistory,
   states,
   labels,
-  milestones,
-  variant
+  milestones
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -131,7 +107,9 @@ export function ElementView({
   const navigate = useNavigate();
   const changeRequestId = useActiveChangeRequestId();
   const childQuickAddRef = useRef<HTMLInputElement>(null);
-  const [childrenOpen, setChildrenOpen] = useState(true);
+  const [addingChild, setAddingChild] = useState(false);
+  const [addingLink, setAddingLink] = useState(false);
+  const [planAddRequest, setPlanAddRequest] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [loggingTime, setLoggingTime] = useState(false);
   const [issuing, setIssuing] = useState(false);
@@ -148,8 +126,10 @@ export function ElementView({
     canCharge &&
     permissions.can("update", "inventory") &&
     permissions.can("update", "projects");
-  // s / a / p / l open the sidebar's pills; t and i open Log time and Issue
-  // material. Never while typing or with a dialog open (useShortcutKeyMap).
+  const canAddChild = canCreate && element.type !== "Parameter";
+
+  // s / a / p / l open the properties' pills; t and i open Log time and
+  // Issue material. Never while typing or with a dialog open.
   const [pillRequest, setPillRequest] = usePillShortcutRequest();
   const openPill = (field: PillShortcutField) => (event: KeyboardEvent) => {
     event.preventDefault();
@@ -178,15 +158,6 @@ export function ElementView({
     }
   ]);
 
-  const chargeActions = (
-    <TimeAndMaterialsActions
-      canLogTime={canLogTime}
-      canIssue={canIssue}
-      onLogTime={() => setLoggingTime(true)}
-      onIssue={() => setIssuing(true)}
-    />
-  );
-
   const children = useMemo(
     () =>
       elements
@@ -195,209 +166,277 @@ export function ElementView({
     [elements, element.id]
   );
 
+  // The breadcrumb: the project, then every ancestor, top first.
+  const ancestors = useMemo(() => {
+    const byId = new Map(elements.map((e) => [e.id, e]));
+    const chain: { id: string; readableId: string; name: string }[] = [];
+    const seen = new Set<string>([element.id]);
+    let parentId = element.parent?.id ?? null;
+    while (parentId && !seen.has(parentId)) {
+      seen.add(parentId);
+      const parent = byId.get(parentId);
+      if (!parent) break;
+      chain.unshift(parent);
+      parentId = parent.parentId;
+    }
+    return chain;
+  }, [elements, element.id, element.parent?.id]);
+
   const elementLinkCount = links.filter(
     (link) =>
       link.fromElementId === element.id || link.toElementId === element.id
   ).length;
+  const planLineCount =
+    planLines.materials.length +
+    planLines.labor.length +
+    planLines.costs.length;
+  const showPlan = planLineCount > 0 || planAddRequest > 0;
+  const showLinks = elementLinkCount > 0 || addingLink;
+  const showChildren = children.length > 0 || addingChild;
+  const showTime = ledger.length > 0 || openTime.length > 0;
 
+  // The Plan page with the layout and filters the element came from.
   const query = searchParams.toString();
-  const listPath = `${path.to.projectElements(projectId)}${query ? `?${query}` : ""}`;
+  const planPath = `${path.to.projectElements(projectId)}${query ? `?${query}` : ""}`;
+  const goBack = () => {
+    // A page reached from inside the app goes back where it came from;
+    // a page opened from a link goes to the Plan.
+    const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+    if (index > 0) navigate(-1);
+    else navigate(planPath);
+  };
 
   const addChild = () => {
-    setChildrenOpen(true);
+    setAddingChild(true);
     requestAnimationFrame(() => childQuickAddRef.current?.focus());
   };
 
   return (
-    <div className="@container flex h-full min-h-0 w-full flex-col bg-card">
+    <div className="flex h-full min-h-0 w-full flex-col bg-card">
       <div className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border px-4">
-        <HStack spacing={2} className="min-w-0">
-          {element.parent && (
-            <Link
-              to={path.to.projectElement(projectId, element.parent.id)}
-              className="inline-flex h-6 min-w-0 items-center gap-1 rounded-md border border-border px-2 text-xs text-muted-foreground hover:bg-accent hover:text-foreground"
-            >
-              <span className="shrink-0 font-mono">
-                {element.parent.readableId}
-              </span>
-              <span className="truncate">{element.parent.name}</span>
-            </Link>
-          )}
-          {element.parent && (
-            <LuChevronRight className="size-3 shrink-0 text-muted-foreground" />
-          )}
-          <ElementTypeIcon type={element.type} />
-          <span className="whitespace-nowrap font-mono text-sm">
+        <nav
+          aria-label={t`Breadcrumb`}
+          className="flex min-w-0 items-center gap-1 text-sm"
+        >
+          <IconButton
+            aria-label={t`Back`}
+            icon={<LuArrowLeft />}
+            variant="ghost"
+            size="sm"
+            onClick={goBack}
+          />
+          <Link
+            to={planPath}
+            className="shrink-0 rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {project?.identifier ?? <Trans>Plan</Trans>}
+          </Link>
+          {ancestors.map((ancestor) => (
+            <Fragment key={ancestor.id}>
+              <LuChevronRight className="size-3 shrink-0 text-muted-foreground" />
+              <Link
+                to={`${path.to.projectElement(projectId, ancestor.id)}${query ? `?${query}` : ""}`}
+                title={ancestor.name}
+                className="min-w-0 max-w-48 truncate rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+              >
+                {ancestor.name}
+              </Link>
+            </Fragment>
+          ))}
+          <LuChevronRight className="size-3 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 truncate px-1.5 py-0.5">
             {element.readableId}
           </span>
-          <Copy text={element.readableId} label={t`Copy id`} variant="ghost" />
-        </HStack>
-        <HStack spacing={1} className="shrink-0">
-          {variant === "peek" && (
+        </nav>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`Open as a page`}
-              icon={<LuMaximize2 />}
+              aria-label={t`More options`}
+              icon={<LuEllipsis />}
               variant="ghost"
-              onClick={() =>
-                navigate(path.to.projectElementFull(projectId, element.id))
-              }
             />
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsis />}
-                variant="ghost"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                destructive
-                disabled={!canDelete}
-                onClick={() => setDeleting(true)}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                <Trans>Delete</Trans>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          {variant === "peek" && (
-            <IconButton
-              aria-label={t`Close`}
-              icon={<LuX />}
-              variant="ghost"
-              onClick={() => navigate(listPath)}
-            />
-          )}
-        </HStack>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52">
+            <DropdownMenuItem
+              disabled={!canLogTime}
+              onClick={() => setLoggingTime(true)}
+            >
+              <DropdownMenuIcon icon={<LuTimer />} />
+              <Trans>Log time</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!canIssue}
+              onClick={() => setIssuing(true)}
+            >
+              <DropdownMenuIcon icon={<LuPackageMinus />} />
+              <Trans>Issue material</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled={!canAddChild} onClick={addChild}>
+              <DropdownMenuIcon icon={<LuCornerDownRight />} />
+              <Trans>Add child</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!canUpdate}
+              onClick={() => setAddingLink(true)}
+            >
+              <DropdownMenuIcon icon={<LuLink />} />
+              <Trans>Add link</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={!canUpdate}
+              onClick={() => setPlanAddRequest((n) => n + 1)}
+            >
+              <DropdownMenuIcon icon={<LuListPlus />} />
+              <Trans>Add plan line</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => {
+                navigator.clipboard.writeText(element.readableId);
+                toast.success(t`Copied ${element.readableId}`);
+              }}
+            >
+              <DropdownMenuIcon icon={<LuCopy />} />
+              <Trans>Copy id</Trans>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              destructive
+              disabled={!canDelete}
+              onClick={() => setDeleting(true)}
+            >
+              <DropdownMenuIcon icon={<LuTrash />} />
+              <Trans>Delete</Trans>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto @min-[56rem]:flex-row @min-[56rem]:overflow-hidden">
-        <div className="flex min-w-0 flex-1 flex-col gap-6 px-6 py-5 @min-[56rem]:overflow-y-auto">
-          <ElementName
-            key={`${element.id}:${element.name}`}
-            projectId={projectId}
-            elementId={element.id}
-            name={element.name}
-            isDisabled={!canUpdate}
-          />
-          <ElementDescription
-            key={element.id}
-            projectId={projectId}
-            elementId={element.id}
-            description={element.description}
-            isDisabled={!canUpdate}
-          />
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              variant="secondary"
-              leftIcon={<LuCornerDownRight />}
-              isDisabled={!canCreate}
-              onClick={addChild}
-            >
-              <Trans>Add child</Trans>
-            </Button>
-            {chargeActions}
-          </div>
+      <div className="@container flex min-h-0 flex-1 overflow-y-auto @min-[56rem]:overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col @min-[56rem]:flex-row">
+          <main className="min-w-0 flex-1 @min-[56rem]:overflow-y-auto">
+            <div className="mx-auto flex w-full max-w-[800px] flex-col gap-8 px-8 py-8">
+              <div className="flex flex-col gap-2">
+                <span className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
+                  <ElementTypeIcon type={element.type} className="size-3.5" />
+                  {element.readableId}
+                </span>
+                <ElementName
+                  key={`${element.id}:${element.name}`}
+                  projectId={projectId}
+                  elementId={element.id}
+                  name={element.name}
+                  isDisabled={!canUpdate}
+                />
+                <ElementDescription
+                  key={element.id}
+                  projectId={projectId}
+                  elementId={element.id}
+                  description={element.description}
+                  isDisabled={!canUpdate}
+                />
+              </div>
 
-          {hasTypeBlock(element.type) && (
-            <Section
-              title={
-                element.type === "Requirement"
-                  ? t`Requirement`
-                  : element.type === "Test Case"
-                    ? t`Test case`
-                    : t`Parameter`
-              }
-            >
-              <ElementTypeBlock
-                key={element.id}
-                projectId={projectId}
-                element={element}
-                elements={elements}
-                verification={verification}
-                requirementStatus={requirementStatus}
-                qualityDocuments={qualityDocuments}
-                itemFields={itemFields}
-                isDisabled={!canUpdate}
-              />
-            </Section>
-          )}
-          <Section title={t`Trace links`} count={elementLinkCount}>
-            <ElementLinks
+              {(showChildren || canAddChild) && (
+                <Section
+                  title={showChildren ? t`Children` : undefined}
+                  count={children.length}
+                >
+                  <ElementChildren
+                    projectId={projectId}
+                    parent={element}
+                    children={children}
+                    states={states}
+                    labels={labels}
+                    requirementStatus={requirementStatus}
+                    canUpdate={canUpdate}
+                    canCreate={canAddChild}
+                    isAdding={addingChild}
+                    onAddingChange={setAddingChild}
+                    quickAddRef={childQuickAddRef}
+                  />
+                </Section>
+              )}
+
+              {showPlan && (
+                <Section title={t`Plan`} count={planLineCount}>
+                  <ElementPlanLines
+                    projectId={projectId}
+                    elementId={element.id}
+                    planLines={planLines}
+                    laborCategories={laborCategories}
+                    defaultLocationId={project?.locationId}
+                    isDisabled={!canUpdate}
+                    addRequest={planAddRequest}
+                  />
+                </Section>
+              )}
+
+              {showLinks && (
+                <Section title={t`Links`} count={elementLinkCount}>
+                  <ElementLinks
+                    projectId={projectId}
+                    element={element}
+                    elements={elements}
+                    links={links}
+                    isDisabled={!canUpdate}
+                    isAdding={addingLink}
+                    onAddingChange={setAddingLink}
+                  />
+                </Section>
+              )}
+
+              {showTime && (
+                <Section title={t`Time & materials`}>
+                  <ElementTimeAndMaterials
+                    ledger={ledger}
+                    openTime={openTime}
+                  />
+                </Section>
+              )}
+
+              <Section title={t`Activity`}>
+                <ElementActivity
+                  projectId={projectId}
+                  element={element}
+                  comments={comments}
+                />
+              </Section>
+            </div>
+          </main>
+          <PillShortcutProvider value={pillRequest}>
+            <ElementSidebar
               projectId={projectId}
               element={element}
               elements={elements}
-              links={links}
-              isDisabled={!canUpdate}
-            />
-          </Section>
-          <Section
-            title={t`Children`}
-            open={childrenOpen}
-            onOpenChange={setChildrenOpen}
-            count={children.length}
-          >
-            <ElementChildren
-              projectId={projectId}
-              identifier={project?.identifier ?? ""}
-              parent={element}
-              children={children}
-              states={states}
-              canUpdate={canUpdate}
-              canCreate={canCreate}
-              quickAddRef={childQuickAddRef}
-            />
-          </Section>
-          <Section title={t`Plan`}>
-            <ElementPlanLines
-              projectId={projectId}
-              elementId={element.id}
-              planLines={planLines}
-              laborCategories={laborCategories}
-              defaultLocationId={project?.locationId}
-              isDisabled={!canUpdate}
-            />
-          </Section>
-          <Section title={t`Time & materials`}>
-            <ElementTimeAndMaterials
-              ledger={ledger}
-              openTime={openTime}
-              actions={chargeActions}
-            />
-          </Section>
-          <Section title={t`Budget`}>
-            <ElementBudget
-              element={element}
-              elements={elements}
+              capitalAsset={capitalAsset}
+              costTreatment={project?.costTreatment ?? null}
+              costObjective={project?.costObjective ?? null}
               costSummary={costSummary}
-              itemHistory={itemHistory}
+              states={states}
+              labels={labels}
+              milestones={milestones}
+              isDisabled={!canUpdate}
+              typeBlock={
+                hasTypeBlock(element.type) ? (
+                  <ElementTypeBlock
+                    key={element.id}
+                    projectId={projectId}
+                    element={element}
+                    elements={elements}
+                    verification={verification}
+                    requirementStatus={requirementStatus}
+                    qualityDocuments={qualityDocuments}
+                    itemFields={itemFields}
+                    isDisabled={!canUpdate}
+                  />
+                ) : undefined
+              }
+              className="shrink-0 border-t border-border px-5 py-6 @min-[56rem]:w-[300px] @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
             />
-          </Section>
-          <Section title={t`Activity`}>
-            <ElementActivity
-              projectId={projectId}
-              element={element}
-              comments={comments}
-            />
-          </Section>
+          </PillShortcutProvider>
         </div>
-        <PillShortcutProvider value={pillRequest}>
-          <ElementSidebar
-            projectId={projectId}
-            element={element}
-            elements={elements}
-            capitalAsset={capitalAsset}
-            costTreatment={project?.costTreatment ?? null}
-            costObjective={project?.costObjective ?? null}
-            states={states}
-            labels={labels}
-            milestones={milestones}
-            isDisabled={!canUpdate}
-            className="shrink-0 border-t border-border px-4 py-5 @min-[56rem]:w-80 @min-[56rem]:overflow-y-auto @min-[56rem]:border-t-0 @min-[56rem]:border-l"
-          />
-        </PillShortcutProvider>
       </div>
 
       {loggingTime && (
@@ -433,7 +472,7 @@ export function ElementView({
   );
 }
 
-/** The name as an inline editable heading. It saves on blur and on Enter. */
+/** The name as a large inline editable title. It saves on blur and Enter. */
 function ElementName({
   projectId,
   elementId,
@@ -452,7 +491,7 @@ function ElementName({
       aria-label={t`Name`}
       defaultValue={name}
       disabled={isDisabled}
-      className="w-full rounded-md bg-transparent px-1 -mx-1 text-xl font-semibold tracking-tight outline-none hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:ring-1 focus-visible:ring-ring disabled:hover:bg-transparent"
+      className="-mx-1 w-full rounded-md bg-transparent px-1 text-2xl font-semibold tracking-tight outline-none hover:bg-accent/40 focus-visible:bg-accent/40 focus-visible:ring-1 focus-visible:ring-ring disabled:hover:bg-transparent"
       onBlur={(event) => {
         const next = event.target.value.trim();
         if (!next) {
@@ -472,171 +511,28 @@ function ElementName({
   );
 }
 
+/** A plain section: a small heading with a muted count, then its content. */
 function Section({
   title,
   count,
-  open,
-  onOpenChange,
   children
 }: {
-  title: string;
+  title?: string;
   count?: number;
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
   children: ReactNode;
 }) {
   return (
-    <Collapsible
-      defaultOpen={open === undefined ? true : undefined}
-      open={open}
-      onOpenChange={onOpenChange}
-      className="w-full"
-    >
-      <CollapsibleTrigger className="group/section mb-2 flex items-center gap-1 text-sm font-medium">
-        <LuChevronDown className="size-4 text-muted-foreground transition-transform group-data-[state=closed]/section:-rotate-90" />
-        {title}
-        {count !== undefined && count > 0 && (
-          <span className="text-xs text-muted-foreground tabular-nums">
-            {count}
-          </span>
-        )}
-      </CollapsibleTrigger>
-      <CollapsibleContent>{children}</CollapsibleContent>
-    </Collapsible>
-  );
-}
-
-/**
- * Plan, budget, committed, actual, remaining and estimate at completion, for
- * the element alone and with its children. The estimate is the plan, or the
- * committed and actual cost when they already exceed it.
- */
-function ElementBudget({
-  element,
-  elements,
-  costSummary,
-  itemHistory
-}: Pick<
-  ProjectElementPage,
-  "element" | "elements" | "costSummary" | "itemHistory"
->) {
-  const { t } = useLingui();
-  const formatMoney = useCurrencyFormatter();
-  const formatQuantity = useQuantityFormatter();
-
-  const { own, subtree, subtreeBudget } = useMemo(() => {
-    const { byElement } = rollUpCostSummary(elements, costSummary);
-    const ownRow = costSummary.find((r) => r.projectElementId === element.id);
-    const ownTotals: CostTotals = ownRow
-      ? {
-          plan:
-            Number(ownRow.planMaterial) +
-            Number(ownRow.planLabor) +
-            Number(ownRow.planOther),
-          committed: Number(ownRow.committed),
-          actual: Number(ownRow.actual),
-          unallowable: Number(ownRow.actualUnallowable),
-          hours: Number(ownRow.actualHours)
-        }
-      : NO_COST;
-
-    const childrenOf = new Map<string, string[]>();
-    for (const e of elements) {
-      if (!e.parentId) continue;
-      childrenOf.set(e.parentId, [...(childrenOf.get(e.parentId) ?? []), e.id]);
-    }
-    const budgets = new Map(elements.map((e) => [e.id, e.budget]));
-    let total: number | null = null;
-    const stack = [element.id];
-    const seen = new Set<string>();
-    while (stack.length > 0) {
-      const id = stack.pop()!;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const budget = budgets.get(id);
-      if (budget !== null && budget !== undefined) {
-        total = (total ?? 0) + Number(budget);
-      }
-      stack.push(...(childrenOf.get(id) ?? []));
-    }
-
-    return {
-      own: ownTotals,
-      subtree: byElement.get(element.id) ?? NO_COST,
-      subtreeBudget: total
-    };
-  }, [elements, costSummary, element.id]);
-
-  const ownBudget = element.budget === null ? null : Number(element.budget);
-  const money = (value: number | null) =>
-    value === null ? (
-      <span className="text-muted-foreground">—</span>
-    ) : (
-      <span className={cn("tabular-nums", value < 0 && "text-red-500")}>
-        {formatMoney.format(value)}
-      </span>
-    );
-  const remaining = (totals: CostTotals, budget: number | null) =>
-    (budget ?? totals.plan) - totals.committed - totals.actual;
-  const estimate = (totals: CostTotals) =>
-    Math.max(totals.plan, totals.committed + totals.actual);
-
-  const rows: { label: string; own: number | null; subtree: number | null }[] =
-    [
-      { label: t`Plan`, own: own.plan, subtree: subtree.plan },
-      { label: t`Budget`, own: ownBudget, subtree: subtreeBudget },
-      { label: t`Committed`, own: own.committed, subtree: subtree.committed },
-      { label: t`Actual`, own: own.actual, subtree: subtree.actual },
-      {
-        label: t`Remaining`,
-        own: remaining(own, ownBudget),
-        subtree: remaining(subtree, subtreeBudget)
-      },
-      {
-        label: t`Estimate at completion`,
-        own: estimate(own),
-        subtree: estimate(subtree)
-      }
-    ];
-
-  const pastCount = itemHistory?.elementCount ?? 0;
-  const pastHours = formatQuantity(Number(itemHistory?.averageHours ?? 0));
-  const pastMaterial = formatMoney.format(
-    Number(itemHistory?.averageMaterialCost ?? 0)
-  );
-
-  return (
-    <div className="flex w-full flex-col gap-2">
-      {element.itemId && pastCount > 0 && (
-        <p className="text-sm text-muted-foreground">
-          {t`Past average: ${pastHours} h and ${pastMaterial} in materials over ${pastCount} elements`}
-        </p>
+    <section className="flex w-full flex-col gap-2">
+      {title && (
+        <h2 className="flex items-center gap-1.5 text-sm font-medium">
+          {title}
+          {count !== undefined && count > 0 && (
+            <span className="text-muted-foreground tabular-nums">{count}</span>
+          )}
+        </h2>
       )}
-      <div className="w-full overflow-x-auto rounded-md border border-border">
-        <TableBase full>
-          <Thead>
-            <Tr>
-              <Th />
-              <Th>
-                <Trans>This element</Trans>
-              </Th>
-              <Th>
-                <Trans>With children</Trans>
-              </Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {rows.map((row) => (
-              <Tr key={row.label}>
-                <Td className="text-muted-foreground">{row.label}</Td>
-                <Td>{money(row.own)}</Td>
-                <Td>{money(row.subtree)}</Td>
-              </Tr>
-            ))}
-          </Tbody>
-        </TableBase>
-      </div>
-    </div>
+      {children}
+    </section>
   );
 }
 

@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{0}의 {completed}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines} 라인 완료"
@@ -2017,6 +2017,9 @@ msgstr "송장을 보낼 이메일이 있는 담당자를 추가하세요"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "수량, 가격, 배송, 리드타임 및 세금을 재정의하기 위한 사용자 정의 가격 책정 라인 추가"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "도메인 추가"
 
@@ -2125,9 +2128,6 @@ msgstr "콘솔 작업자 추가"
 msgid "Add Contractor"
 msgstr "외주 인력 추가"
 
-msgid "Add Cost"
-msgstr "원가 추가"
-
 msgid "Add cost center"
 msgstr "원가 센터 추가"
 
@@ -2176,8 +2176,8 @@ msgstr "분개 추가"
 msgid "Add Label"
 msgstr "레이블 추가"
 
-msgid "Add Labor"
-msgstr "노무 추가"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "라인 추가"
@@ -2202,9 +2202,6 @@ msgstr "수동으로 추가"
 
 msgid "Add match"
 msgstr "일치 추가"
-
-msgid "Add Material"
-msgstr "자재 추가"
 
 msgid "Add Member"
 msgstr "구성원 추가"
@@ -2260,6 +2257,9 @@ msgstr "경로 추가"
 
 msgid "Add Permissions"
 msgstr "권한 추가"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "선행 품목 추가"
@@ -5308,6 +5308,9 @@ msgstr "체크포인트"
 msgid "Children"
 msgstr "하위 항목"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "백업 선택"
 
@@ -5319,6 +5322,9 @@ msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정�
 
 msgid "Choose a field"
 msgstr "필드 선택"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
@@ -6288,6 +6294,10 @@ msgstr "변환 중…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "공급업체의 구매 단위를 발주서, 입고, 송장 라인에서 귀사의 재고 단위로 전환합니다 — 12개 상자 단위로 구매하고 개별 단위로 재고에 보관합니다."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "원가"
 
 msgid "Costs posted"
 msgstr "기록된 원가"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "잘라낸 영역을 분석할 수 없습니다"
@@ -8467,6 +8480,9 @@ msgstr "유도함"
 msgid "Descending"
 msgstr "내림차순"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "설명"
 
@@ -9236,9 +9252,6 @@ msgstr "담당자 편집"
 msgid "Edit Contractor"
 msgstr "외주 인력 편집"
 
-msgid "Edit Cost"
-msgstr "원가 편집"
-
 msgid "Edit Cost Center"
 msgstr "원가 센터 편집"
 
@@ -9328,9 +9341,6 @@ msgstr "칸반 편집"
 
 msgid "Edit Label"
 msgstr "레이블 편집"
-
-msgid "Edit Labor"
-msgstr "노무 편집"
 
 msgid "Edit Labor Category"
 msgstr "노무 분류 편집"
@@ -11722,6 +11732,9 @@ msgstr "{name}님, 좋은 아침입니다."
 msgid "Google Places API key not configured"
 msgstr "Google Places API 키가 설정되지 않았습니다"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "정부 제공"
 
@@ -11790,6 +11803,9 @@ msgstr "가이드형"
 
 msgid "Guided implementation"
 msgstr "안내된 실행"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "반복 및 역분개 전표 처리"
@@ -13821,6 +13837,9 @@ msgstr "연결된 부품"
 msgid "Linked PO"
 msgstr "연결된 구매주문"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "이 계약에 대해 보증금이 수령되지 않았습니다."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "전환 이전에는 감가상각이 실행되지 않습니다. 전환 이전 날 기준으로 각 자산의 감가상각누계액을 입력하세요."
 
-msgid "No description"
-msgstr "설명 없음"
-
 msgid "No differences."
 msgstr "차이점이 없습니다."
 
@@ -16094,9 +16110,6 @@ msgstr "미결 환급금 없음"
 
 msgid "No open sales order lines"
 msgstr "미결 수주 라인이 없습니다."
-
-msgid "No open time"
-msgstr "미결 시간 없음"
 
 msgid "No operations found."
 msgstr "공정을 찾을 수 없습니다."
@@ -16420,9 +16433,6 @@ msgstr "도구 없음"
 msgid "No tools for this step"
 msgstr "이 단계에 도구 없음"
 
-msgid "No trace links yet."
-msgstr "아직 추적 링크가 없습니다."
-
 msgid "No trainings assigned"
 msgstr "할당된 교육 없음"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "빚진 것 없음"
-
-msgid "Nothing planned yet"
-msgstr "아직 계획된 것이 없습니다."
 
 msgid "Nothing scheduled — add a station below."
 msgstr "일정이 없습니다 — 아래에서 스테이션을 추가하세요."
@@ -17057,9 +17064,6 @@ msgstr "미결 매입채무"
 
 msgid "Open AR"
 msgstr "미결 매출채권"
-
-msgid "Open as a page"
-msgstr "페이지로 열기"
 
 msgid "Open Audit Log"
 msgstr "감사 로그 열기"
@@ -17429,9 +17433,6 @@ msgstr "기타 원가"
 msgid "Other costs"
 msgstr "기타 원가"
 
-msgid "Other Costs"
-msgstr "기타 원가"
-
 msgid "Other Direct"
 msgstr "기타 직접비"
 
@@ -17786,9 +17787,6 @@ msgstr "패스키"
 
 msgid "Passkeys are disabled"
 msgstr "패스키가 비활성화되었습니다"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "과거 평균: {pastCount}개 요소에서 {pastHours}시간 및 자재 {pastMaterial}"
 
 msgid "Past due"
 msgstr "기한 초과"
@@ -20062,10 +20060,6 @@ msgstr "{0}을(를) {1}에서 제거"
 msgid "Remove {0} from batch"
 msgstr "배치에서 {0} 제거"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "{0}을(를) 계획에서 제거하시겠습니까?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일정으로 돌아가 자체적으로 실행됩니다."
@@ -20078,6 +20072,9 @@ msgstr "{0}을(를) 이 단계에서 제거"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}에서 {memberCount}개 공정 중 {0}개를 제거하시겠습니까?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "제거 {label}"
@@ -24065,9 +24062,6 @@ msgstr "이용약관"
 msgid "Test"
 msgstr "테스트"
 
-msgid "Test case"
-msgstr "테스트 케이스"
-
 msgid "Test Case"
 msgstr "테스트 케이스"
 
@@ -25389,9 +25383,6 @@ msgstr "이 고객의 요금"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
-
-msgid "This element"
-msgstr "이 요소"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "이 파일은 더 이상 사용할 수 없거나 다운로드할 권한이 없습니다."
@@ -27148,6 +27139,9 @@ msgstr "담당자 보기"
 msgid "View Contained Issues"
 msgstr "포함된 이슈 보기"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "조회수"
 
@@ -28018,9 +28012,6 @@ msgstr "재공품"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "{0} 예비비 포함"
-
-msgid "With children"
-msgstr "하위 항목 포함"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "피킹 리스트가 없으면 작업자는 스캔 탭에서 자재를 피킹합니다."

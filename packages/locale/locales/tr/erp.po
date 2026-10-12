@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Bu parçayı doğrudan nihai ardıla yönlendirmeyi düşünün."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed}/{0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines}/{lines} satır tamamlandı"
@@ -2017,6 +2017,9 @@ msgstr "Fatura göndermek için e-posta adresine sahip bir ilgili kişi ekleyin"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Miktarı, fiyatı, nakliyeyi, tedarik süresini ve vergiyi geçersiz kılmak için özel bir fiyatlandırma satırı ekleyin"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "Alan adı ekle"
 
@@ -2125,9 +2128,6 @@ msgstr "Konsol operatörü ekle"
 msgid "Add Contractor"
 msgstr "Taşeron Ekle"
 
-msgid "Add Cost"
-msgstr "Maliyet Ekle"
-
 msgid "Add cost center"
 msgstr "Maliyet Merkezi Ekle"
 
@@ -2176,8 +2176,8 @@ msgstr "Yevmiye Kaydı Ekle"
 msgid "Add Label"
 msgstr "Etiket Ekle"
 
-msgid "Add Labor"
-msgstr "İşçilik Ekle"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Satır Ekle"
@@ -2202,9 +2202,6 @@ msgstr "Manuel olarak ekle"
 
 msgid "Add match"
 msgstr "Eşleştirme ekle"
-
-msgid "Add Material"
-msgstr "Malzeme Ekle"
 
 msgid "Add Member"
 msgstr "Üye Ekle"
@@ -2260,6 +2257,9 @@ msgstr "Yol ekle"
 
 msgid "Add Permissions"
 msgstr "İzin Ekle"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "Öncülü Ekle"
@@ -5308,6 +5308,9 @@ msgstr "Kontrol Noktaları"
 msgid "Children"
 msgstr "Alt öğeler"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "Yedek seçin"
 
@@ -5319,6 +5322,9 @@ msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebili
 
 msgid "Choose a field"
 msgstr "Bir alan seç"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
@@ -6288,6 +6294,10 @@ msgstr "Dönüştürülüyor…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Bir tedarikçinin satın alma birimini bir PO, makbuz veya fatura satırında envanter biriminize dönüştürür — 12'lik kutularda satın alın, birimlerde stok yapın."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "Maliyetler"
 
 msgid "Costs posted"
 msgstr "Muhasebeleştirilen Maliyetler"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Kırpılmış bölge analiz edilemedi"
@@ -8467,6 +8480,9 @@ msgstr "Türetir"
 msgid "Descending"
 msgstr "Azalan"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "Açıklama"
 
@@ -9236,9 +9252,6 @@ msgstr "İlgili Kişiyi Düzenle"
 msgid "Edit Contractor"
 msgstr "Taşeron Düzenle"
 
-msgid "Edit Cost"
-msgstr "Maliyeti Düzenle"
-
 msgid "Edit Cost Center"
 msgstr "Maliyet Merkezini Düzenle"
 
@@ -9328,9 +9341,6 @@ msgstr "Kanban Düzenle"
 
 msgid "Edit Label"
 msgstr "Etiketi Düzenle"
-
-msgid "Edit Labor"
-msgstr "İşçiliği Düzenle"
 
 msgid "Edit Labor Category"
 msgstr "İşçilik Kategorisini Düzenle"
@@ -11722,6 +11732,9 @@ msgstr "Günaydın, {name}."
 msgid "Google Places API key not configured"
 msgstr "Google Yerler API anahtarı yapılandırılmamış"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "Hükümet tarafından sağlanan"
 
@@ -11790,6 +11803,9 @@ msgstr "Rehberli"
 
 msgid "Guided implementation"
 msgstr "Rehberli uygulama"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "Tekrarlanan ve tersine çevirme muhasebe fişi girişlerini yönetin."
@@ -13821,6 +13837,9 @@ msgstr "Bağlantılı parça"
 msgid "Linked PO"
 msgstr "Bağlantılı Sipariş"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "Bu anlaşma için depozito alınmamıştır."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Kesme tarihinden önce amortisman çalışması yapılmaz. Her varlığın kesme tarihinden bir gün önceki birikmiş amortismanını girin."
 
-msgid "No description"
-msgstr "Açıklama yok"
-
 msgid "No differences."
 msgstr "Farklılık yok."
 
@@ -16094,9 +16110,6 @@ msgstr "Açık Gider Talebileri Yok"
 
 msgid "No open sales order lines"
 msgstr "Açık satış sipariş satırı yok"
-
-msgid "No open time"
-msgstr "Açık zaman yok"
 
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
@@ -16420,9 +16433,6 @@ msgstr "Araç yok"
 msgid "No tools for this step"
 msgstr "Bu adım için araç yok"
 
-msgid "No trace links yet."
-msgstr "Henüz iz bağlantısı yok."
-
 msgid "No trainings assigned"
 msgstr "Atanan eğitim yok"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "Ödenmesi gereken bir şey yok"
-
-msgid "Nothing planned yet"
-msgstr "Henüz hiçbir şey planlanmadı"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Hiçbir şey zamanlanmadı — aşağıya bir istasyon ekleyin."
@@ -17057,9 +17064,6 @@ msgstr "Açık Borç hesapları"
 
 msgid "Open AR"
 msgstr "Açık Alacak hesapları"
-
-msgid "Open as a page"
-msgstr "Sayfa olarak aç"
 
 msgid "Open Audit Log"
 msgstr "Açık Denetim günlüğü"
@@ -17429,9 +17433,6 @@ msgstr "Diğer maliyet"
 msgid "Other costs"
 msgstr "Diğer maliyetler"
 
-msgid "Other Costs"
-msgstr "Diğer Maliyetler"
-
 msgid "Other Direct"
 msgstr "Diğer Doğrudan"
 
@@ -17786,9 +17787,6 @@ msgstr "Geçiş Anahtarları"
 
 msgid "Passkeys are disabled"
 msgstr "Geçiş Anahtarları Devre Dışı Bırakılmış"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "Geçmiş ortalama: {pastHours} s ve {pastMaterial} malzemelerde {pastCount} öğe üzerinde"
 
 msgid "Past due"
 msgstr "Vadesi geçmiş"
@@ -20062,10 +20060,6 @@ msgstr "Kaldır {0} şuradan: {1}"
 msgid "Remove {0} from batch"
 msgstr "{0}'i partiden kaldır"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "Planından {0} kaldırılsın mı?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0} bu partiyi kaldırmak istiyor musunuz? Operasyonu çizelgeye geri döner ve kendi başına çalışacak."
@@ -20078,6 +20072,9 @@ msgstr "Bu adımdan {0}'ı kaldır"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "{label}'i Kaldır"
@@ -24065,9 +24062,6 @@ msgstr "Hizmet Şartları"
 msgid "Test"
 msgstr "Test"
 
-msgid "Test case"
-msgstr "Test durumu"
-
 msgid "Test Case"
 msgstr "Test Durumu"
 
@@ -25389,9 +25383,6 @@ msgstr "Bu müşteri'nin oranı"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Bu indirme bağlantısı geçersiz veya değiştirilmiş."
-
-msgid "This element"
-msgstr "Bu element"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Bu dosya artık kullanılamıyor veya bunu İndirmek için İzniniz yok."
@@ -27148,6 +27139,9 @@ msgstr "İlgili kişiyi görüntüle"
 msgid "View Contained Issues"
 msgstr "Kontrol Altına Alınan Sorunları Görüntüle"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "Sayımı Görüntüle"
 
@@ -28018,9 +28012,6 @@ msgstr "Yarı Mamul"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "ile {0} acil durum"
-
-msgid "With children"
-msgstr "Çocuklar ile"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Toplama listesi olmadan, operatörler Tara sekmesinden malzemeyi toplarlar."

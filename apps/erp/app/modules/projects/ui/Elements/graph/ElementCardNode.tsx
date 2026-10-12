@@ -29,7 +29,6 @@ export type ElementCardData = {
   commentCount: number;
   linkCount: { kind: "tests" | "reqs"; count: number } | null;
   isSuspect: boolean;
-  isOpen: boolean;
   isDimmed: boolean;
   isHighlighted: boolean;
   hasChildren: boolean;
@@ -58,7 +57,6 @@ function ElementCardNodeImpl({ id, data }: NodeProps<ElementCardGraphNode>) {
       className={cn(
         "group relative flex flex-col gap-1 rounded-lg border bg-card px-3 py-2 text-sm shadow-xs transition-[opacity,background-color,border-color] hover:bg-accent/40",
         data.isSuspect ? "border-amber-500" : "border-border",
-        data.isOpen && "border-primary ring-1 ring-primary/40",
         data.isDimmed && "opacity-40"
       )}
       style={{ width: CARD_WIDTH, height: CARD_HEIGHT }}

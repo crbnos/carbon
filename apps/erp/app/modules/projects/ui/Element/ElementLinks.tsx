@@ -71,13 +71,18 @@ export function ElementLinks({
   element,
   elements,
   links,
-  isDisabled
+  isDisabled,
+  isAdding,
+  onAddingChange
 }: {
   projectId: string;
   element: { id: string; type: ListElement["type"] };
   elements: ListElement[];
   links: ProjectElementLink[];
   isDisabled: boolean;
+  /** The Add link popover's open state, so a menu can open it. */
+  isAdding?: boolean;
+  onAddingChange?: (open: boolean) => void;
 }) {
   const { t } = useLingui();
   const labels = useLinkTypeLabels();
@@ -149,83 +154,79 @@ export function ElementLinks({
 
   return (
     <div className="flex w-full flex-col gap-3">
-      {groups.length === 0 ? (
-        <p className="text-sm text-muted-foreground">
-          <Trans>No trace links yet.</Trans>
-        </p>
-      ) : (
-        groups.map((group) => (
-          <div key={group.key} className="flex flex-col gap-1">
-            <span className="text-xs text-muted-foreground">{group.label}</span>
-            <div className="flex flex-col rounded-lg border border-border">
-              {group.rows.map(({ link, other }) => (
-                <div
-                  key={link.id}
-                  className="flex h-10 items-center gap-2 border-b border-border/60 px-3 text-sm last:border-b-0"
+      {groups.map((group) => (
+        <div key={group.key} className="flex flex-col gap-1">
+          <span className="text-xs text-muted-foreground">{group.label}</span>
+          <div className="flex flex-col rounded-lg border border-border">
+            {group.rows.map(({ link, other }) => (
+              <div
+                key={link.id}
+                className="flex h-10 items-center gap-2 border-b border-border/60 px-3 text-sm last:border-b-0"
+              >
+                <ElementTypeIcon type={other.type} />
+                <Link
+                  to={path.to.projectElement(projectId, other.id)}
+                  className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
                 >
-                  <ElementTypeIcon type={other.type} />
-                  <Link
-                    to={path.to.projectElement(projectId, other.id)}
-                    className="flex min-w-0 flex-1 items-center gap-2 hover:underline"
-                  >
-                    <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
-                      {other.readableId}
-                    </span>
-                    <span className="truncate">{other.name}</span>
-                  </Link>
-                  {other.state && (
-                    <StateIcon
-                      group={other.state.group}
-                      color={other.state.color}
-                    />
-                  )}
-                  {link.suspectSince && (
-                    <>
-                      <SuspectBadge />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        leftIcon={<LuCheck />}
-                        isDisabled={isDisabled || fetcher.state !== "idle"}
-                        onClick={() => submit("clearSuspect", link.id)}
-                      >
-                        <Trans>Mark reviewed</Trans>
-                      </Button>
-                    </>
-                  )}
-                  {link.linkType === "feeds" ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex size-6 shrink-0 items-center justify-center text-muted-foreground">
-                          <LuLink className="size-3.5" />
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <Trans>The formula writes this link</Trans>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <IconButton
-                      aria-label={t`Delete link`}
-                      icon={<LuTrash />}
-                      variant="ghost"
+                  <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
+                    {other.readableId}
+                  </span>
+                  <span className="truncate">{other.name}</span>
+                </Link>
+                {other.state && (
+                  <StateIcon
+                    group={other.state.group}
+                    color={other.state.color}
+                  />
+                )}
+                {link.suspectSince && (
+                  <>
+                    <SuspectBadge />
+                    <Button
+                      variant="secondary"
                       size="sm"
+                      leftIcon={<LuCheck />}
                       isDisabled={isDisabled || fetcher.state !== "idle"}
-                      onClick={() => submit("delete", link.id)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
+                      onClick={() => submit("clearSuspect", link.id)}
+                    >
+                      <Trans>Mark reviewed</Trans>
+                    </Button>
+                  </>
+                )}
+                {link.linkType === "feeds" ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex size-6 shrink-0 items-center justify-center text-muted-foreground">
+                        <LuLink className="size-3.5" />
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <Trans>The formula writes this link</Trans>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <IconButton
+                    aria-label={t`Delete link`}
+                    icon={<LuTrash />}
+                    variant="ghost"
+                    size="sm"
+                    isDisabled={isDisabled || fetcher.state !== "idle"}
+                    onClick={() => submit("delete", link.id)}
+                  />
+                )}
+              </div>
+            ))}
           </div>
-        ))
-      )}
+        </div>
+      ))}
       <AddLink
         projectId={projectId}
         element={element}
         elements={elements}
         links={links}
         isDisabled={isDisabled}
+        open={isAdding}
+        onOpenChange={onAddingChange}
       />
     </div>
   );
@@ -240,18 +241,27 @@ function AddLink({
   element,
   elements,
   links,
-  isDisabled
+  isDisabled,
+  open: openProp,
+  onOpenChange
 }: {
   projectId: string;
   element: { id: string; type: ListElement["type"] };
   elements: ListElement[];
   links: ProjectElementLink[];
   isDisabled: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const { t } = useLingui();
   const labels = useLinkTypeLabels();
   const changeRequestId = useActiveChangeRequestId();
-  const [open, setOpen] = useState(false);
+  const [openState, setOpenState] = useState(false);
+  const open = openProp ?? openState;
+  const setOpen = (next: boolean) => {
+    setOpenState(next);
+    onOpenChange?.(next);
+  };
   const [choice, setChoice] = useState("");
   const [otherId, setOtherId] = useState("");
   const fetcher = useAction<{
@@ -326,7 +336,8 @@ function AddLink({
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="secondary"
+          variant="ghost"
+          size="sm"
           leftIcon={<LuPlus />}
           isDisabled={isDisabled || typeOptions.length === 0}
           className="self-start"

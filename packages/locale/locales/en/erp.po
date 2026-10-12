@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Consider pointing this part directly at the final successor."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed} of {0}"
+msgid "{completed} of {0} done"
+msgstr "{completed} of {0} done"
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} of {lines} lines complete"
@@ -2017,6 +2017,9 @@ msgstr "Add a contact with an email to send invoices"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 
+msgid "Add a description…"
+msgstr "Add a description…"
+
 msgid "Add a domain"
 msgstr "Add a domain"
 
@@ -2125,9 +2128,6 @@ msgstr "Add Console Operator"
 msgid "Add Contractor"
 msgstr "Add Contractor"
 
-msgid "Add Cost"
-msgstr "Add Cost"
-
 msgid "Add cost center"
 msgstr "Add cost center"
 
@@ -2176,8 +2176,8 @@ msgstr "Add Journal Entry"
 msgid "Add Label"
 msgstr "Add Label"
 
-msgid "Add Labor"
-msgstr "Add Labor"
+msgid "Add line"
+msgstr "Add line"
 
 msgid "Add Line"
 msgstr "Add Line"
@@ -2202,9 +2202,6 @@ msgstr "Add manually"
 
 msgid "Add match"
 msgstr "Add match"
-
-msgid "Add Material"
-msgstr "Add Material"
 
 msgid "Add Member"
 msgstr "Add Member"
@@ -2260,6 +2257,9 @@ msgstr "Add path"
 
 msgid "Add Permissions"
 msgstr "Add Permissions"
+
+msgid "Add plan line"
+msgstr "Add plan line"
 
 msgid "Add Predecessor"
 msgstr "Add Predecessor"
@@ -5308,6 +5308,9 @@ msgstr "Checkpoints"
 msgid "Children"
 msgstr "Children"
 
+msgid "Children done"
+msgstr "Children done"
+
 msgid "Choose a backup"
 msgstr "Choose a backup"
 
@@ -5319,6 +5322,9 @@ msgstr "Choose a batchable process to see the operations that can run together."
 
 msgid "Choose a field"
 msgstr "Choose a field"
+
+msgid "Choose a labor category"
+msgstr "Choose a labor category"
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
@@ -6288,6 +6294,10 @@ msgstr "Converting…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr "Copied {0}"
+
 msgid "Copied {readableId}"
 msgstr "Copied {readableId}"
 
@@ -6714,6 +6724,9 @@ msgstr "Costs"
 
 msgid "Costs posted"
 msgstr "Costs posted"
+
+msgid "Costs, with children"
+msgstr "Costs, with children"
 
 msgid "Could not analyze cropped region"
 msgstr "Could not analyze cropped region"
@@ -8467,6 +8480,9 @@ msgstr "Derives"
 msgid "Descending"
 msgstr "Descending"
 
+msgid "Describe the cost"
+msgstr "Describe the cost"
+
 msgid "Description"
 msgstr "Description"
 
@@ -9236,9 +9252,6 @@ msgstr "Edit Contact"
 msgid "Edit Contractor"
 msgstr "Edit Contractor"
 
-msgid "Edit Cost"
-msgstr "Edit Cost"
-
 msgid "Edit Cost Center"
 msgstr "Edit Cost Center"
 
@@ -9328,9 +9341,6 @@ msgstr "Edit Kanban"
 
 msgid "Edit Label"
 msgstr "Edit Label"
-
-msgid "Edit Labor"
-msgstr "Edit Labor"
 
 msgid "Edit Labor Category"
 msgstr "Edit Labor Category"
@@ -11722,6 +11732,9 @@ msgstr "Good morning, {name}."
 msgid "Google Places API key not configured"
 msgstr "Google Places API key not configured"
 
+msgid "Government contracting"
+msgstr "Government contracting"
+
 msgid "Government-furnished"
 msgstr "Government-furnished"
 
@@ -11790,6 +11803,9 @@ msgstr "Guided"
 
 msgid "Guided implementation"
 msgstr "Guided implementation"
+
+msgid "h"
+msgstr "h"
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "Handle recurring and reversing journal entries"
@@ -13821,6 +13837,9 @@ msgstr "Linked part"
 msgid "Linked PO"
 msgstr "Linked PO"
 
+msgid "Links"
+msgstr "Links"
+
 msgid "List"
 msgstr "List"
 
@@ -15801,9 +15820,6 @@ msgstr "No deposit has been received for this agreement."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 
-msgid "No description"
-msgstr "No description"
-
 msgid "No differences."
 msgstr "No differences."
 
@@ -16094,9 +16110,6 @@ msgstr "No open reimbursements"
 
 msgid "No open sales order lines"
 msgstr "No open sales order lines"
-
-msgid "No open time"
-msgstr "No open time"
 
 msgid "No operations found."
 msgstr "No operations found."
@@ -16420,9 +16433,6 @@ msgstr "No tools"
 msgid "No tools for this step"
 msgstr "No tools for this step"
 
-msgid "No trace links yet."
-msgstr "No trace links yet."
-
 msgid "No trainings assigned"
 msgstr "No trainings assigned"
 
@@ -16687,9 +16697,6 @@ msgstr "Nothing needs attention"
 
 msgid "Nothing owed"
 msgstr "Nothing owed"
-
-msgid "Nothing planned yet"
-msgstr "Nothing planned yet"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nothing scheduled — add a station below."
@@ -17057,9 +17064,6 @@ msgstr "Open AP"
 
 msgid "Open AR"
 msgstr "Open AR"
-
-msgid "Open as a page"
-msgstr "Open as a page"
 
 msgid "Open Audit Log"
 msgstr "Open Audit Log"
@@ -17429,9 +17433,6 @@ msgstr "Other cost"
 msgid "Other costs"
 msgstr "Other costs"
 
-msgid "Other Costs"
-msgstr "Other Costs"
-
 msgid "Other Direct"
 msgstr "Other Direct"
 
@@ -17786,9 +17787,6 @@ msgstr "Passkeys"
 
 msgid "Passkeys are disabled"
 msgstr "Passkeys are disabled"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
 
 msgid "Past due"
 msgstr "Past due"
@@ -20062,10 +20060,6 @@ msgstr "Remove {0} from {1}"
 msgid "Remove {0} from batch"
 msgstr "Remove {0} from batch"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "Remove {0} from the plan?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -20078,6 +20072,9 @@ msgstr "Remove {0} from this step"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Remove {0} of {memberCount} operations from {1}?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr "Remove {deletingName} from the plan?"
 
 msgid "Remove {label}"
 msgstr "Remove {label}"
@@ -24065,9 +24062,6 @@ msgstr "Terms of Service"
 msgid "Test"
 msgstr "Test"
 
-msgid "Test case"
-msgstr "Test case"
-
 msgid "Test Case"
 msgstr "Test Case"
 
@@ -25389,9 +25383,6 @@ msgstr "This customer's rate"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "This download link is invalid or has been tampered with."
-
-msgid "This element"
-msgstr "This element"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "This file is no longer available, or you don't have permission to download it."
@@ -27148,6 +27139,9 @@ msgstr "View Contact"
 msgid "View Contained Issues"
 msgstr "View Contained Issues"
 
+msgid "View costs"
+msgstr "View costs"
+
 msgid "View Count"
 msgstr "View Count"
 
@@ -28018,9 +28012,6 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
-
-msgid "With children"
-msgstr "With children"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Without a picking list, operators pick material from the Scan tab."

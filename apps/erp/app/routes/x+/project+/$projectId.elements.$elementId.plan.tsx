@@ -42,7 +42,10 @@ const intents = [
 ] as const;
 type Intent = (typeof intents)[number];
 
-/** Creates, updates and deletes the plan lines of an element. */
+/**
+ * Creates, updates and deletes the plan lines of an element. A grid cell
+ * posts `quiet` and gets `{ error }` back instead of a flash.
+ */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -53,10 +56,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!projectId) throw new Error("Could not find projectId");
   if (!elementId) throw new Error("Could not find elementId");
 
+  const formData = await request.formData();
+  const quiet = formData.get("quiet") === "true";
   const refuse = async (err: unknown, message: string) =>
-    data({ success: false }, await flash(request, error(err, message)));
+    quiet
+      ? data({ success: false, error: message }, { status: 400 })
+      : data({ success: false }, await flash(request, error(err, message)));
   const done = async (message: string) =>
-    data({ success: true }, await flash(request, success(message)));
+    quiet
+      ? data({ success: true, error: null })
+      : data({ success: true }, await flash(request, success(message)));
+  const invalid = (validation: {
+    error: Parameters<typeof validationError>[0];
+  }) =>
+    quiet
+      ? data(
+          {
+            success: false,
+            error:
+              Object.values(validation.error.fieldErrors ?? {})[0] ??
+              "Invalid line"
+          },
+          { status: 400 }
+        )
+      : validationError(validation.error);
 
   const project = await getProject(client, companyId, projectId);
   if (project.error || !project.data) {
@@ -71,7 +94,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return refuse(null, "A Closed project cannot change");
   }
 
-  const formData = await request.formData();
   const intent = formData.get("intent") as Intent | null;
   formData.set("projectElementId", elementId);
   const id = formData.get("id");
@@ -83,7 +105,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     client,
     projectId,
     companyId,
-    changeRequestId
+    changeRequestId,
+    withFlash: !quiet
   });
   if (locked) return locked;
   const inChangeRequest = async (
@@ -126,7 +149,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(
         projectElementMaterialValidator
       ).validate(formData);
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const staged = await inChangeRequest(
         "projectElementMaterial",
         validation.data,
@@ -155,7 +178,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(projectElementLaborValidator).validate(
         formData
       );
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const staged = await inChangeRequest(
         "projectElementLabor",
         validation.data,
@@ -183,7 +206,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const validation = await validator(projectElementCostValidator).validate(
         formData
       );
-      if (validation.error) return validationError(validation.error);
+      if (validation.error) return invalid(validation);
       const staged = await inChangeRequest(
         "projectElementCost",
         validation.data,

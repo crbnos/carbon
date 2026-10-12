@@ -350,7 +350,7 @@ const JobHeader = () => {
                   <Link
                     to={
                       projectCharge.element
-                        ? path.to.projectElementFull(
+                        ? path.to.projectElement(
                             projectCharge.project.id,
                             projectCharge.element.id
                           )

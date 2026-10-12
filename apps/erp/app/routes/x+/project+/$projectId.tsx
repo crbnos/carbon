@@ -12,7 +12,7 @@ import { datetime, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { useParams } from "react-router";
+import { useLocation, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import type { ProjectElementListItem } from "~/modules/projects";
 import {
@@ -230,6 +230,11 @@ export default function ProjectRoute() {
   const { t } = useLingui();
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
+  // An element opens on its own full-width page: no project sidebar there.
+  const { pathname } = useLocation();
+  const isElementPage = pathname.startsWith(
+    `${path.to.project(projectId)}/element/`
+  );
 
   return (
     <PanelProvider>
@@ -239,7 +244,7 @@ export default function ProjectRoute() {
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorerLabel={t`Project`}
-              explorer={<ProjectSidebar />}
+              explorer={isElementPage ? undefined : <ProjectSidebar />}
               content={
                 <div className="bg-card h-full overflow-y-auto w-full">
                   <RecordOutlet />

@@ -7,12 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
-import {
-  RecordOutlet,
-  ResizablePanel,
-  ResizablePanelGroup,
-  toast
-} from "@carbon/react";
+import { toast } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
@@ -241,7 +236,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export default function ProjectElementsRoute() {
   const { t } = useLingui();
-  const { projectId, elementId } = useParams();
+  const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
   const [buildingFromPart, setBuildingFromPart] = useState(false);
 
@@ -403,8 +398,7 @@ export default function ProjectElementsRoute() {
     onSuccess: (data) => {
       if (!data.id) return;
       if (layout === "list") setCreatedId(data.id);
-      else
-        navigate(`${path.to.projectElementFull(projectId, data.id)}${search}`);
+      else navigate(`${path.to.projectElement(projectId, data.id)}${search}`);
     },
     onError: (data) =>
       toast.error(data.error?.message ?? t`Failed to create the element`)
@@ -430,81 +424,74 @@ export default function ProjectElementsRoute() {
   };
 
   return (
-    <ResizablePanelGroup direction="horizontal" className="h-full">
-      <ResizablePanel
-        defaultSize={50}
-        minSize={30}
-        className="flex h-full min-w-0 flex-col bg-card"
-      >
-        {changeRequest && (
-          <ChangeRequestBanner
+    <div className="flex h-full min-w-0 flex-col bg-card">
+      {changeRequest && (
+        <ChangeRequestBanner
+          projectId={projectId}
+          changeRequest={changeRequest}
+        />
+      )}
+      <ElementsHeader
+        layout={layout}
+        filters={filters}
+        onNew={(elementType) => createElement(elementType)}
+        onBuildFromPart={() => setBuildingFromPart(true)}
+        canCreate={canCreate}
+        isCreating={createFetcher.isPending}
+        exportHref={
+          layout === "reader"
+            ? `${path.to.file.projectReader(projectId)}${search}`
+            : undefined
+        }
+        planLockMessage={
+          planLocked && lockMilestone
+            ? projectPlanLockedMessage(lockMilestone.name)
+            : null
+        }
+      />
+      <div className="min-h-0 flex-1">
+        {layout === "list" ? (
+          <ElementList
             projectId={projectId}
-            changeRequest={changeRequest}
+            elements={elements}
+            states={states}
+            labels={labels}
+            requirementStatus={requirementStatus}
+            canUpdate={canUpdate}
+            canCreate={canCreate}
+            canDelete={canDelete}
+            isFiltered={isFiltered}
+            highlightId={createdId}
+            onNew={createElement}
+          />
+        ) : layout === "tree" ? (
+          <ElementGraph
+            projectId={projectId}
+            projectName={routeData?.project?.name ?? ""}
+            elements={elements}
+            type={type}
+            links={links}
+            commentCounts={commentCounts}
+            canUpdate={canUpdate}
+          />
+        ) : (
+          <ElementReader
+            projectId={projectId}
+            elements={elements}
+            descriptions={descriptions}
+            verification={verification}
+            requirementStatus={requirementStatus}
           />
         )}
-        <ElementsHeader
-          layout={layout}
-          filters={filters}
-          onNew={(elementType) => createElement(elementType)}
-          onBuildFromPart={() => setBuildingFromPart(true)}
-          canCreate={canCreate}
-          isCreating={createFetcher.isPending}
-          exportHref={
-            layout === "reader"
-              ? `${path.to.file.projectReader(projectId)}${search}`
-              : undefined
-          }
-          planLockMessage={
-            planLocked && lockMilestone
-              ? projectPlanLockedMessage(lockMilestone.name)
-              : null
-          }
-        />
-        <div className="min-h-0 flex-1">
-          {layout === "list" ? (
-            <ElementList
-              projectId={projectId}
-              elements={elements}
-              states={states}
-              labels={labels}
-              requirementStatus={requirementStatus}
-              canUpdate={canUpdate}
-              canCreate={canCreate}
-              canDelete={canDelete}
-              isFiltered={isFiltered}
-              highlightId={createdId}
-              onNew={createElement}
-            />
-          ) : layout === "tree" ? (
-            <ElementGraph
-              projectId={projectId}
-              projectName={routeData?.project?.name ?? ""}
-              elements={elements}
-              type={type}
-              links={links}
-              commentCounts={commentCounts}
-              canUpdate={canUpdate}
-            />
-          ) : (
-            <ElementReader
-              projectId={projectId}
-              elements={elements}
-              descriptions={descriptions}
-              verification={verification}
-              requirementStatus={requirementStatus}
-            />
-          )}
-        </div>
-      </ResizablePanel>
-      <RecordOutlet />
+      </div>
       {buildingFromPart && (
         <BuildFromPartDrawer
           projectId={projectId}
           elements={elements}
-          defaultParentId={elementId ?? null}
+          defaultParentId={null}
           onClose={() => setBuildingFromPart(false)}
         />
       )}
-    </ResizablePanelGroup>
+    </div>
   );
 }

@@ -38,7 +38,7 @@ import {
 } from "@xyflow/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuInfo, LuMaximize, LuSearch } from "react-icons/lu";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { useStore } from "zustand";
 import { path } from "~/utils/path";
 import type {
@@ -134,7 +134,6 @@ function ElementGraphCanvas({
   const { t } = useLingui();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { elementId: openElementId } = useParams();
   const { setCenter, setViewport } = useReactFlow();
   const labels = useLinkTypeLabels();
   const store = getProjectGraphStore(projectId);
@@ -262,7 +261,6 @@ function ElementGraphCanvas({
                   ? { kind: "reqs", count: count?.reqs ?? 0 }
                   : null,
             isSuspect: suspect.has(element.id),
-            isOpen: element.id === openElementId,
             isDimmed: !!lit && !lit.elementIds.has(element.id),
             isHighlighted: highlight?.elementId === element.id,
             hasChildren: card.descendantCount > 0,
@@ -338,7 +336,6 @@ function ElementGraphCanvas({
     toggleCollapsed,
     toggleHighlight,
     commentCounts,
-    openElementId,
     labels
   ]);
 

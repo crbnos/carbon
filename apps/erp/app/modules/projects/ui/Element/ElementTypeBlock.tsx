@@ -81,11 +81,11 @@ export function ElementTypeBlock(props: ElementTypeBlockProps) {
   }
 }
 
-/** One row: a 140 px label column and the value. */
+/** One row: a 96 px label column and the value, as the properties column. */
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-h-8 items-center gap-2">
-      <span className="w-[140px] shrink-0 text-xs text-muted-foreground">
+      <span className="w-24 shrink-0 text-xs text-muted-foreground">
         {label}
       </span>
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
@@ -96,11 +96,7 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function Block({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex w-full flex-col gap-1 rounded-lg border border-border px-4 py-3 text-sm">
-      {children}
-    </div>
-  );
+  return <div className="flex w-full flex-col gap-1 text-sm">{children}</div>;
 }
 
 /** An enum or reference field as a button combobox. */

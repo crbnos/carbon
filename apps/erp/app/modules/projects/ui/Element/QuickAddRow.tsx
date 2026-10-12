@@ -18,7 +18,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RefObject } from "react";
 import { useState } from "react";
-import { LuCornerDownRight, LuX } from "react-icons/lu";
 import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
 import { projectElementTypes } from "../../projects.models";
@@ -33,28 +32,27 @@ import {
 
 /**
  * A one-line form that creates an element: type, name, Enter. The element
- * page's Children section uses it to add a child.
+ * page's Children section uses it to add a child; Escape on an empty name
+ * calls `onCancel`.
  */
 export function QuickAddRow({
   projectId,
-  identifier,
   type,
   onTypeChange,
   parent,
-  onClearParent,
   stateId,
   inputRef,
+  onCancel,
   className
 }: {
   projectId: string;
-  identifier: string;
   type: ProjectElementType;
   onTypeChange?: (type: ProjectElementType) => void;
-  parent?: { id: string; readableId: string } | null;
-  onClearParent?: () => void;
+  parent?: { id: string } | null;
   /** The state of the new element; empty takes the default Unstarted state. */
   stateId?: string;
   inputRef?: RefObject<HTMLInputElement>;
+  onCancel?: () => void;
   className?: string;
 }) {
   const { t } = useLingui();
@@ -86,10 +84,7 @@ export function QuickAddRow({
 
   return (
     <form
-      className={cn(
-        "flex h-11 shrink-0 items-center gap-2 border-t border-border bg-card px-2",
-        className
-      )}
+      className={cn("flex h-9 shrink-0 items-center gap-2", className)}
       onSubmit={(event) => {
         event.preventDefault();
         submit();
@@ -114,38 +109,22 @@ export function QuickAddRow({
           ))}
         </DropdownMenuContent>
       </DropdownMenu>
-      <span className="shrink-0 font-mono text-xs text-muted-foreground">
-        {identifier}-
-      </span>
-      {parent && (
-        <span className="inline-flex h-5 shrink-0 items-center gap-1 rounded border border-border px-1.5 text-xs text-muted-foreground">
-          <LuCornerDownRight className="size-3" />
-          <span className="font-mono">{parent.readableId}</span>
-          {onClearParent && (
-            <button
-              type="button"
-              aria-label={t`Add at the top level`}
-              onClick={onClearParent}
-              className="rounded hover:text-foreground"
-            >
-              <LuX className="size-3" />
-            </button>
-          )}
-        </span>
-      )}
       <Input
         ref={inputRef}
         size="sm"
         value={name}
         onChange={(event) => setName(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !name) onCancel?.();
+        }}
         placeholder={t`Name the new element, then press Enter`}
         aria-label={t`New element name`}
-        className="h-8 min-w-0 flex-1 border-none bg-transparent shadow-none focus-visible:ring-0"
+        className="h-8 min-w-0 flex-1 border-none bg-transparent px-0 shadow-none focus-visible:ring-0"
         disabled={fetcher.isPending}
       />
       <Button
         type="submit"
-        variant="secondary"
+        variant="ghost"
         size="sm"
         isLoading={fetcher.isPending}
         isDisabled={!name.trim() || fetcher.isPending}

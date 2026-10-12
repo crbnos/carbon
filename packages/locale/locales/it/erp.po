@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Considera di indirizzare direttamente questa parte al successore finale."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed} di {0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} di {lines} righe completate"
@@ -2017,6 +2017,9 @@ msgstr "Aggiungi un contatto con un'email per inviare fatture"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Aggiungi una riga di prezzo personalizzata per forzare quantità, prezzo, spedizione, lead time e imposta"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "Aggiungi un dominio"
 
@@ -2125,9 +2128,6 @@ msgstr "Aggiungi Operatore console"
 msgid "Add Contractor"
 msgstr "Aggiungi un collaboratore esterno"
 
-msgid "Add Cost"
-msgstr "Aggiungi costo"
-
 msgid "Add cost center"
 msgstr "Aggiungi centro di costo"
 
@@ -2176,8 +2176,8 @@ msgstr "Aggiungi Riga di registrazione"
 msgid "Add Label"
 msgstr "Aggiungi etichetta"
 
-msgid "Add Labor"
-msgstr "Aggiungi manodopera"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Aggiungi Riga"
@@ -2202,9 +2202,6 @@ msgstr "Aggiungi manualmente"
 
 msgid "Add match"
 msgstr "Aggiungi corrispondenza"
-
-msgid "Add Material"
-msgstr "Aggiungi materiale"
 
 msgid "Add Member"
 msgstr "Aggiungi membro"
@@ -2260,6 +2257,9 @@ msgstr "Aggiungi percorso"
 
 msgid "Add Permissions"
 msgstr "Aggiungi Autorizzazioni"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "Aggiungi Predecessore"
@@ -5308,6 +5308,9 @@ msgstr "Checkpoint"
 msgid "Children"
 msgstr "Figli"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "Scegli un backup"
 
@@ -5319,6 +5322,9 @@ msgstr "Scegli un processo raggruppabile per vedere le operazioni che possono es
 
 msgid "Choose a field"
 msgstr "Scegli un campo"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Scegli un componente che {itemReadableId} sostituisce. La regola è salvata su quel componente con {itemReadableId} come suo successore."
@@ -6288,6 +6294,10 @@ msgstr "Conversione in corso…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte l'unità di acquisto di un fornitore nella tua unità di inventario su una linea di ordine, ricevuta o fattura — acquista in scatole di 12, stoccaggio in unità singole."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "Costi"
 
 msgid "Costs posted"
 msgstr "Costi registrati"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Impossibile analizzare la regione ritagliata"
@@ -8467,6 +8480,9 @@ msgstr "Deriva"
 msgid "Descending"
 msgstr "Decrescente"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "Descrizione"
 
@@ -9236,9 +9252,6 @@ msgstr "Modifica Contatto"
 msgid "Edit Contractor"
 msgstr "Modifica Collaboratore esterno"
 
-msgid "Edit Cost"
-msgstr "Modifica Costo"
-
 msgid "Edit Cost Center"
 msgstr "Modifica Centro di Costo"
 
@@ -9328,9 +9341,6 @@ msgstr "Modifica Kanban"
 
 msgid "Edit Label"
 msgstr "Modifica Etichetta"
-
-msgid "Edit Labor"
-msgstr "Modifica Manodopera"
 
 msgid "Edit Labor Category"
 msgstr "Modifica Categoria Manodopera"
@@ -11722,6 +11732,9 @@ msgstr "Buongiorno, {name}."
 msgid "Google Places API key not configured"
 msgstr "Chiave API di Google Places non configurata"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "Fornito dal governo"
 
@@ -11790,6 +11803,9 @@ msgstr "Guidato"
 
 msgid "Guided implementation"
 msgstr "Implementazione guidata"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gestisci registrazioni di prima nota ricorrenti e di storno"
@@ -13821,6 +13837,9 @@ msgstr "Componente collegato"
 msgid "Linked PO"
 msgstr "PO collegato"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "Nessun deposito è stato ricevuto per questo accordo."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Non viene eseguito nessun ammortamento prima della transizione contabile. Inserisci il fondo ammortamento di ogni asset al giorno precedente la transizione contabile."
 
-msgid "No description"
-msgstr "Nessuna descrizione"
-
 msgid "No differences."
 msgstr "Nessuna differenza."
 
@@ -16094,9 +16110,6 @@ msgstr "Nessun rimborso aperto"
 
 msgid "No open sales order lines"
 msgstr "Nessuna riga di ordine di vendita aperta"
-
-msgid "No open time"
-msgstr "Nessun orario aperto"
 
 msgid "No operations found."
 msgstr "Nessuna operazione trovata."
@@ -16420,9 +16433,6 @@ msgstr "Nessuno strumento"
 msgid "No tools for this step"
 msgstr "Nessuno strumento per questo passaggio"
 
-msgid "No trace links yet."
-msgstr "Nessun collegamento di traccia per ora."
-
 msgid "No trainings assigned"
 msgstr "Nessuna formazione assegnata"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "Nulla dovuto"
-
-msgid "Nothing planned yet"
-msgstr "Nulla di previsto per ora"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Niente programmato — aggiungi una stazione di seguito."
@@ -17057,9 +17064,6 @@ msgstr "Debiti verso fornitori aperti"
 
 msgid "Open AR"
 msgstr "Crediti verso clienti aperti"
-
-msgid "Open as a page"
-msgstr "Apri come pagina"
 
 msgid "Open Audit Log"
 msgstr "Apri Registro di Audit"
@@ -17429,9 +17433,6 @@ msgstr "Altro costo"
 msgid "Other costs"
 msgstr "Altri costi"
 
-msgid "Other Costs"
-msgstr "Altri costi"
-
 msgid "Other Direct"
 msgstr "Altro diretto"
 
@@ -17786,9 +17787,6 @@ msgstr "Passkey"
 
 msgid "Passkeys are disabled"
 msgstr "Le passkey sono disabilitate"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "Media precedente: {pastHours} h e {pastMaterial} in materiali su {pastCount} elementi"
 
 msgid "Past due"
 msgstr "Scaduto"
@@ -20062,10 +20060,6 @@ msgstr "Rimuovi {0} da {1}"
 msgid "Remove {0} from batch"
 msgstr "Rimuovi {0} dal lotto di produzione"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "Rimuovi {0} dal piano?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Rimuovere {0} da questo lotto di produzione? La sua operazione ritorna al programma per essere eseguita autonomamente."
@@ -20078,6 +20072,9 @@ msgstr "Rimuovi {0} da questo passo"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Rimuovi {0} su {memberCount} operazioni da {1}?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Rimuovi {label}"
@@ -24065,9 +24062,6 @@ msgstr "Termini di Servizio"
 msgid "Test"
 msgstr "Prova"
 
-msgid "Test case"
-msgstr "Caso di test"
-
 msgid "Test Case"
 msgstr "Caso di test"
 
@@ -25389,9 +25383,6 @@ msgstr "La tariffa di questo cliente"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Questo link di scaricamento non è valido o è stato manomesso."
-
-msgid "This element"
-msgstr "Questo elemento"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Questo file non è più disponibile, oppure non hai l'autorizzazione per scaricarlo."
@@ -27148,6 +27139,9 @@ msgstr "Visualizza Contatto"
 msgid "View Contained Issues"
 msgstr "Visualizza problemi contenuti"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "Visualizza Conteggio"
 
@@ -28018,9 +28012,6 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "con contingenza {0}"
-
-msgid "With children"
-msgstr "Con figli"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Senza una lista di prelievo, gli operatori prelevano il materiale dalla scheda Scansione."

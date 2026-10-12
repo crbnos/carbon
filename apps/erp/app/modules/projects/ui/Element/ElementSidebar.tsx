@@ -2,20 +2,25 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Button, Copy, cn, Subheading, Switch } from "@carbon/react";
+import { Button, Copy, cn, Progress, Switch } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LuBuilding2 } from "react-icons/lu";
 import { Link } from "react-router";
-import { usePermissions } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { path } from "~/utils/path";
 import type {
+  CostTotals,
   ProjectCostObjective,
   ProjectCostTreatment
 } from "../../projects.models";
-import { rdComponentTypes, rdSoftwareTypes } from "../../projects.models";
+import {
+  rdComponentTypes,
+  rdSoftwareTypes,
+  rollUpCostSummary
+} from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
@@ -29,14 +34,12 @@ import {
   StatePill,
   useElementField
 } from "../Elements/ElementProperties";
-import {
-  ElementTypeIcon,
-  useElementTypeLabels
-} from "../Elements/ElementTypeIcon";
+import { useElementTypeLabels } from "../Elements/ElementTypeIcon";
 import {
   useRdComponentTypeLabels,
   useRdSoftwareTypeLabels
 } from "../RdTax/useRdTaxLabels";
+import { useGovernmentContracting } from "../useGovernmentContracting";
 import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
@@ -45,11 +48,11 @@ type Element = ProjectElementPage["element"];
 type ListElement = ProjectElementPage["elements"][number];
 type CapitalAsset = ProjectElementPage["capitalAsset"];
 
-/** One property row: a 120 px label column and the value's ghost editor. */
+/** One property row: a 96 px label column and the value's ghost editor. */
 function Property({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="flex min-h-8 items-center gap-2">
-      <span className="w-[120px] shrink-0 text-xs text-muted-foreground">
+      <span className="w-24 shrink-0 text-xs text-muted-foreground">
         {label}
       </span>
       <div className="flex min-w-0 flex-1 items-center">{children}</div>
@@ -57,6 +60,33 @@ function Property({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+/** A group of property rows under a small heading. */
+function Group({ title, children }: { title?: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-0.5">
+      {title && (
+        <h3 className="mb-1 text-xs font-medium text-muted-foreground">
+          {title}
+        </h3>
+      )}
+      {children}
+    </section>
+  );
+}
+
+const NO_COST: CostTotals = {
+  plan: 0,
+  committed: 0,
+  actual: 0,
+  unallowable: 0,
+  hours: 0
+};
+
+/**
+ * The element page's right column: the element's properties, each saving on
+ * its own, then the fields that apply to its type, its costs, and the
+ * government contracting fields (Layer 5).
+ */
 export function ElementSidebar({
   projectId,
   element,
@@ -64,9 +94,11 @@ export function ElementSidebar({
   capitalAsset,
   costTreatment,
   costObjective,
+  costSummary,
   states,
   labels,
   milestones,
+  typeBlock,
   isDisabled,
   className
 }: {
@@ -76,14 +108,19 @@ export function ElementSidebar({
   capitalAsset: CapitalAsset;
   costTreatment: ProjectCostTreatment | null;
   costObjective: ProjectCostObjective | null;
+  costSummary: ProjectElementPage["costSummary"];
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
+  /** The Requirement, Test Case or Parameter fields, when the type has them. */
+  typeBlock?: ReactNode;
   isDisabled: boolean;
   className?: string;
 }) {
   const { t } = useLingui();
   const typeLabels = useElementTypeLabels();
+  const formatMoney = useCurrencyFormatter();
+  const isGovernment = useGovernmentContracting();
   const common = {
     projectId,
     elementId: element.id,
@@ -91,158 +128,235 @@ export function ElementSidebar({
     variant: "ghost" as const
   };
 
+  const children = elements.filter((e) => e.parentId === element.id);
+  const completed = children.filter(
+    (child) => child.state?.group === "Completed"
+  ).length;
+
+  // The element with its children: plan, actual and what is left of the
+  // budget (or of the plan when no budget is set).
+  const costs = useMemo(() => {
+    const { byElement } = rollUpCostSummary(elements, costSummary);
+    const totals = byElement.get(element.id) ?? NO_COST;
+    const childrenOf = new Map<string, string[]>();
+    for (const e of elements) {
+      if (!e.parentId) continue;
+      childrenOf.set(e.parentId, [...(childrenOf.get(e.parentId) ?? []), e.id]);
+    }
+    const budgets = new Map(elements.map((e) => [e.id, e.budget]));
+    let budget: number | null = null;
+    const stack = [element.id];
+    const seen = new Set<string>();
+    while (stack.length > 0) {
+      const id = stack.pop()!;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const value = budgets.get(id);
+      if (value !== null && value !== undefined) {
+        budget = (budget ?? 0) + Number(value);
+      }
+      stack.push(...(childrenOf.get(id) ?? []));
+    }
+    return {
+      ...totals,
+      remaining: (budget ?? totals.plan) - totals.committed - totals.actual
+    };
+  }, [elements, costSummary, element.id]);
+  const hasCosts =
+    costs.plan !== 0 || costs.committed !== 0 || costs.actual !== 0;
+  const money = (value: number) => (
+    <span
+      className={cn("px-2 text-sm tabular-nums", value < 0 && "text-red-500")}
+    >
+      {formatMoney.format(value)}
+    </span>
+  );
+
   return (
-    <div className={cn("flex flex-col gap-1 text-sm", className)}>
-      <Subheading as="h3" variant="light" className="mb-2">
-        <Trans>Properties</Trans>
-      </Subheading>
-      <Property label={t`Type`}>
-        <span className="inline-flex h-8 items-center gap-2 px-2">
-          <ElementTypeIcon type={element.type} />
-          {typeLabels[element.type]}
-        </span>
-      </Property>
-      <Property label={t`State`}>
-        <StatePill {...common} stateId={element.stateId} states={states} />
-      </Property>
-      <Property label={t`Owner`}>
-        <OwnerPill {...common} ownerId={element.ownerId} />
-      </Property>
-      <Property label={t`Priority`}>
-        <PriorityPill {...common} priority={element.priority} />
-      </Property>
-      <Property label={t`Labels`}>
-        <LabelsPill
-          {...common}
-          labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
-          labels={labels}
-        />
-      </Property>
-      <Property label={t`Start date`}>
-        <DatePill {...common} field="startDate" date={element.startDate} />
-      </Property>
-      <Property label={t`Target date`}>
-        <DatePill
-          {...common}
-          field="targetDate"
-          date={element.targetDate}
-          isComplete={!!element.completedAt}
-        />
-      </Property>
-      <Property label={t`Milestone`}>
-        <MilestonePill
-          {...common}
-          milestoneId={element.milestoneId}
-          milestones={milestones}
-        />
-      </Property>
-      <Property label={t`Charge number`}>
-        <span className="inline-flex h-8 items-center gap-1 px-2">
-          <span className="whitespace-nowrap font-mono text-sm">
-            {element.readableId}
-          </span>
-          <Copy
-            text={element.readableId}
-            label={t`Copy charge number`}
-            variant="ghost"
+    <div className={cn("flex flex-col gap-6 text-sm", className)}>
+      <Group>
+        <Property label={t`State`}>
+          <StatePill {...common} stateId={element.stateId} states={states} />
+        </Property>
+        <Property label={t`Owner`}>
+          <OwnerPill {...common} ownerId={element.ownerId} />
+        </Property>
+        <Property label={t`Priority`}>
+          <PriorityPill {...common} priority={element.priority} />
+        </Property>
+        <Property label={t`Milestone`}>
+          <MilestonePill
+            {...common}
+            milestoneId={element.milestoneId}
+            milestones={milestones}
           />
-        </span>
-      </Property>
-      <Property label={t`Chargeable`}>
-        <ChargeableSwitch
-          projectId={projectId}
-          elementId={element.id}
-          isChargeable={element.isChargeable}
-          isDisabled={isDisabled || element.type === "Parameter"}
-        />
-      </Property>
-      {/* Government contracting: an element's allowability, its
-          preproduction cost and, on an Indirect project, its leave time. */}
-      {element.type !== "Parameter" && (
-        <>
-          <Property label={t`Unallowable`}>
-            <FlagSwitch
+        </Property>
+        <Property label={t`Start date`}>
+          <DatePill {...common} field="startDate" date={element.startDate} />
+        </Property>
+        <Property label={t`Target date`}>
+          <DatePill
+            {...common}
+            field="targetDate"
+            date={element.targetDate}
+            isComplete={!!element.completedAt}
+          />
+        </Property>
+        <Property label={t`Labels`}>
+          <LabelsPill
+            {...common}
+            labelIds={(element.labels ?? []).map((l) => l.projectLabelId)}
+            labels={labels}
+          />
+        </Property>
+        {children.length > 0 && (
+          <Property label={t`Children`}>
+            <div className="flex min-w-0 flex-1 items-center gap-2 px-2">
+              <span className="shrink-0 whitespace-nowrap text-sm tabular-nums">
+                {t`${completed} of ${children.length} done`}
+              </span>
+              <Progress
+                value={(completed / children.length) * 100}
+                aria-label={t`Children done`}
+                className="h-1.5 min-w-0"
+                indicatorClassName="bg-foreground/70"
+              />
+            </div>
+          </Property>
+        )}
+      </Group>
+
+      {typeBlock && <Group title={typeLabels[element.type]}>{typeBlock}</Group>}
+
+      <Group title={t`Work`}>
+        <Property label={t`Chargeable`}>
+          <ChargeableSwitch
+            projectId={projectId}
+            elementId={element.id}
+            isChargeable={element.isChargeable}
+            isDisabled={isDisabled || element.type === "Parameter"}
+          />
+        </Property>
+        <Property label={t`Budget`}>
+          <NumberPill {...common} field="budget" number={element.budget} />
+        </Property>
+        <Property label={t`Hours estimate`}>
+          <NumberPill
+            {...common}
+            field="estimatedHours"
+            number={element.estimatedHours}
+          />
+        </Property>
+        {element.type !== "Parameter" && (
+          <Property label={t`Linked part`}>
+            <PartLink
               projectId={projectId}
-              elementId={element.id}
-              field="isUnallowable"
-              label={t`Unallowable`}
-              value={element.isUnallowable}
+              element={element}
               isDisabled={isDisabled}
             />
           </Property>
-          <Property label={t`Preproduction`}>
-            <FlagSwitch
-              projectId={projectId}
-              elementId={element.id}
-              field="isPreproduction"
-              label={t`Preproduction`}
-              value={element.isPreproduction}
-              isDisabled={isDisabled}
-            />
-          </Property>
-          {costObjective === "Indirect" && (
-            <Property label={t`Leave`}>
-              <FlagSwitch
+        )}
+        {costTreatment === "Capitalize" && element.type !== "Parameter" && (
+          <>
+            <Property label={t`Final asset`}>
+              <FinalAssetSwitch
                 projectId={projectId}
                 elementId={element.id}
-                field="isLeave"
-                label={t`Leave`}
-                value={element.isLeave}
+                isFinalAsset={element.isFinalAsset}
                 isDisabled={isDisabled}
               />
             </Property>
-          )}
-          <BusinessComponentFields
-            projectId={projectId}
-            element={element}
-            isDisabled={isDisabled}
-          />
-        </>
+            {element.isFinalAsset && (
+              <Property label={t`Asset`}>
+                <CapitalAssetLink projectId={projectId} asset={capitalAsset} />
+              </Property>
+            )}
+          </>
+        )}
+      </Group>
+
+      {hasCosts && (
+        <Group title={t`Costs, with children`}>
+          <Property label={t`Plan`}>{money(costs.plan)}</Property>
+          <Property label={t`Committed`}>{money(costs.committed)}</Property>
+          <Property label={t`Actual`}>{money(costs.actual)}</Property>
+          <Property label={t`Remaining`}>{money(costs.remaining)}</Property>
+          <Link
+            to={path.to.projectCostsElement(projectId, element.id)}
+            className="mt-1 self-start px-2 text-xs text-muted-foreground hover:text-foreground hover:underline"
+          >
+            <Trans>View costs</Trans>
+          </Link>
+        </Group>
       )}
-      <Property label={t`Budget`}>
-        <NumberPill {...common} field="budget" number={element.budget} />
-      </Property>
-      <Property label={t`Hours estimate`}>
-        <NumberPill
-          {...common}
-          field="estimatedHours"
-          number={element.estimatedHours}
-        />
-      </Property>
-      {costTreatment === "Capitalize" && element.type !== "Parameter" && (
-        <>
-          <Property label={t`Final asset`}>
-            <FinalAssetSwitch
+
+      {element.type !== "Parameter" &&
+        (isGovernment ? (
+          <Group title={t`Government contracting`}>
+            <Property label={t`Charge number`}>
+              <span className="inline-flex h-8 items-center gap-1 px-2">
+                <span className="whitespace-nowrap text-sm tabular-nums">
+                  {element.readableId}
+                </span>
+                <Copy
+                  text={element.readableId}
+                  label={t`Copy charge number`}
+                  variant="ghost"
+                />
+              </span>
+            </Property>
+            <Property label={t`Unallowable`}>
+              <FlagSwitch
+                projectId={projectId}
+                elementId={element.id}
+                field="isUnallowable"
+                label={t`Unallowable`}
+                value={element.isUnallowable}
+                isDisabled={isDisabled}
+              />
+            </Property>
+            <Property label={t`Preproduction`}>
+              <FlagSwitch
+                projectId={projectId}
+                elementId={element.id}
+                field="isPreproduction"
+                label={t`Preproduction`}
+                value={element.isPreproduction}
+                isDisabled={isDisabled}
+              />
+            </Property>
+            {costObjective === "Indirect" && (
+              <Property label={t`Leave`}>
+                <FlagSwitch
+                  projectId={projectId}
+                  elementId={element.id}
+                  field="isLeave"
+                  label={t`Leave`}
+                  value={element.isLeave}
+                  isDisabled={isDisabled}
+                />
+              </Property>
+            )}
+            <BusinessComponentFields
               projectId={projectId}
-              elementId={element.id}
-              isFinalAsset={element.isFinalAsset}
+              element={element}
               isDisabled={isDisabled}
             />
-          </Property>
-          {element.isFinalAsset && (
-            <Property label={t`Asset`}>
-              <CapitalAssetLink projectId={projectId} asset={capitalAsset} />
-            </Property>
-          )}
-        </>
-      )}
-      {element.type !== "Parameter" && (
-        <Property label={t`Linked part`}>
-          <PartLink
+            <ElementEarnedValue
+              projectId={projectId}
+              element={element}
+              elements={elements}
+              isDisabled={isDisabled}
+            />
+          </Group>
+        ) : (
+          <ElementEarnedValue
             projectId={projectId}
             element={element}
+            elements={elements}
             isDisabled={isDisabled}
           />
-        </Property>
-      )}
-      {element.type !== "Parameter" && (
-        <ElementEarnedValue
-          projectId={projectId}
-          element={element}
-          elements={elements}
-          isDisabled={isDisabled}
-        />
-      )}
+        ))}
     </div>
   );
 }

@@ -482,8 +482,8 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor final."
 
 #. placeholder {0}: children.length
-msgid "{completed} of {0}"
-msgstr "{completed} de {0}"
+msgid "{completed} of {0} done"
+msgstr ""
 
 msgid "{completedLines} of {lines} lines complete"
 msgstr "{completedLines} de {lines} linhas completas"
@@ -2017,6 +2017,9 @@ msgstr "Adicionar um contato com e-mail para enviar faturas"
 msgid "Add a custom pricing row to override quantity, price, shipping, lead time, and tax"
 msgstr "Adicionar uma linha de precificação personalizada para substituir quantidade, preço, envio, lead time e imposto"
 
+msgid "Add a description…"
+msgstr ""
+
 msgid "Add a domain"
 msgstr "Adicionar um domínio"
 
@@ -2125,9 +2128,6 @@ msgstr "Adicionar operador de console"
 msgid "Add Contractor"
 msgstr "Adicionar Terceirizado"
 
-msgid "Add Cost"
-msgstr "Adicionar custo"
-
 msgid "Add cost center"
 msgstr "Adicionar centro de custo"
 
@@ -2176,8 +2176,8 @@ msgstr "Adicionar Lançamento"
 msgid "Add Label"
 msgstr "Adicionar rótulo"
 
-msgid "Add Labor"
-msgstr "Adicionar mão de obra"
+msgid "Add line"
+msgstr ""
 
 msgid "Add Line"
 msgstr "Adicionar Linha"
@@ -2202,9 +2202,6 @@ msgstr "Adicionar manualmente"
 
 msgid "Add match"
 msgstr "Adicionar correspondência"
-
-msgid "Add Material"
-msgstr "Adicionar material"
 
 msgid "Add Member"
 msgstr "Adicionar membro"
@@ -2260,6 +2257,9 @@ msgstr "Adicionar caminho"
 
 msgid "Add Permissions"
 msgstr "Adicionar Permissões"
+
+msgid "Add plan line"
+msgstr ""
 
 msgid "Add Predecessor"
 msgstr "Adicionar Antecessor"
@@ -5308,6 +5308,9 @@ msgstr "Pontos de Verificação"
 msgid "Children"
 msgstr "Filhos"
 
+msgid "Children done"
+msgstr ""
+
 msgid "Choose a backup"
 msgstr "Escolher um backup"
 
@@ -5319,6 +5322,9 @@ msgstr "Escolha um processo em lote para ver as operações que podem ser execut
 
 msgid "Choose a field"
 msgstr "Escolher um campo"
+
+msgid "Choose a labor category"
+msgstr ""
 
 msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 msgstr "Escolha uma peça que {itemReadableId} substitui. A regra é salva nessa peça com {itemReadableId} como seu sucessor."
@@ -6288,6 +6294,10 @@ msgstr "Convertendo…"
 msgid "Converts a supplier's purchase unit to your inventory unit on a PO, receipt, or bill line — buy in cartons of 12, stock in eaches."
 msgstr "Converte a unidade de compra de um fornecedor para sua unidade de inventário em uma linha de pedido, recebimento ou fatura — compre em caixas de 12, estoque em unidades."
 
+#. placeholder {0}: element.readableId
+msgid "Copied {0}"
+msgstr ""
+
 msgid "Copied {readableId}"
 msgstr ""
 
@@ -6714,6 +6724,9 @@ msgstr "Custos"
 
 msgid "Costs posted"
 msgstr "Custos contabilizados"
+
+msgid "Costs, with children"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Não foi possível analisar a região recortada"
@@ -8467,6 +8480,9 @@ msgstr "Deriva"
 msgid "Descending"
 msgstr "Descendente"
 
+msgid "Describe the cost"
+msgstr ""
+
 msgid "Description"
 msgstr "Descrição"
 
@@ -9236,9 +9252,6 @@ msgstr "Editar Contacto"
 msgid "Edit Contractor"
 msgstr "Editar Terceirizado"
 
-msgid "Edit Cost"
-msgstr "Editar Custo"
-
 msgid "Edit Cost Center"
 msgstr "Editar Centro de Custo"
 
@@ -9328,9 +9341,6 @@ msgstr "Editar Kanban"
 
 msgid "Edit Label"
 msgstr "Editar Rótulo"
-
-msgid "Edit Labor"
-msgstr "Editar Mão de obra"
 
 msgid "Edit Labor Category"
 msgstr "Editar Categoria de Mão de obra"
@@ -11722,6 +11732,9 @@ msgstr "Bom dia, {name}."
 msgid "Google Places API key not configured"
 msgstr "Chave da API do Google Places não configurada"
 
+msgid "Government contracting"
+msgstr ""
+
 msgid "Government-furnished"
 msgstr "Fornecido pelo Governo"
 
@@ -11790,6 +11803,9 @@ msgstr "Orientado"
 
 msgid "Guided implementation"
 msgstr "Implementação guiada"
+
+msgid "h"
+msgstr ""
 
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gerenciar lançamentos diários recorrentes e de reversão"
@@ -13821,6 +13837,9 @@ msgstr "Peça vinculada"
 msgid "Linked PO"
 msgstr "PO Vinculada"
 
+msgid "Links"
+msgstr ""
+
 msgid "List"
 msgstr ""
 
@@ -15801,9 +15820,6 @@ msgstr "Nenhum depósito foi recebido para este acordo."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Nenhuma execução de depreciação ocorre antes do corte. Insira a depreciação acumulada de cada ativo a partir do dia anterior ao corte."
 
-msgid "No description"
-msgstr "Sem descrição"
-
 msgid "No differences."
 msgstr "Nenhuma diferença."
 
@@ -16094,9 +16110,6 @@ msgstr "Nenhum reembolso em aberto"
 
 msgid "No open sales order lines"
 msgstr "Nenhuma linha de pedido de venda aberta"
-
-msgid "No open time"
-msgstr "Sem tempo aberto"
 
 msgid "No operations found."
 msgstr "Nenhuma operação encontrada."
@@ -16420,9 +16433,6 @@ msgstr "Nenhuma ferramenta"
 msgid "No tools for this step"
 msgstr "Nenhuma ferramenta para esta etapa"
 
-msgid "No trace links yet."
-msgstr "Ainda sem links de rastreamento."
-
 msgid "No trainings assigned"
 msgstr "Sem treinamentos atribuídos"
 
@@ -16687,9 +16697,6 @@ msgstr ""
 
 msgid "Nothing owed"
 msgstr "Nada devido"
-
-msgid "Nothing planned yet"
-msgstr "Nada planejado ainda"
 
 msgid "Nothing scheduled — add a station below."
 msgstr "Nada agendado — adicione uma estação abaixo."
@@ -17057,9 +17064,6 @@ msgstr "Contas a pagar abertas"
 
 msgid "Open AR"
 msgstr "Contas a receber abertas"
-
-msgid "Open as a page"
-msgstr "Abrir como página"
 
 msgid "Open Audit Log"
 msgstr "Abrir log de auditoria"
@@ -17429,9 +17433,6 @@ msgstr "Outro custo"
 msgid "Other costs"
 msgstr "Outros custos"
 
-msgid "Other Costs"
-msgstr "Outros Custos"
-
 msgid "Other Direct"
 msgstr "Outro Direto"
 
@@ -17786,9 +17787,6 @@ msgstr "Chaves de Acesso"
 
 msgid "Passkeys are disabled"
 msgstr "As chaves de acesso estão desabilitadas"
-
-msgid "Past average: {pastHours} h and {pastMaterial} in materials over {pastCount} elements"
-msgstr "Média anterior: {pastHours} h e {pastMaterial} em materiais ao longo de {pastCount} elementos"
 
 msgid "Past due"
 msgstr "Vencido"
@@ -20062,10 +20060,6 @@ msgstr "Remover {0} de {1}"
 msgid "Remove {0} from batch"
 msgstr "Remover {0} do lote de produção"
 
-#. placeholder {0}: deleting.name
-msgid "Remove {0} from the plan?"
-msgstr "Remover {0} do plano?"
-
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Remover {0} do lote de produção? Sua operação volta à programação para ser executada independentemente."
@@ -20078,6 +20072,9 @@ msgstr "Remover {0} desta etapa"
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
 msgstr "Remover {0} de {memberCount} operações de {1}?"
+
+msgid "Remove {deletingName} from the plan?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Remover {label}"
@@ -24065,9 +24062,6 @@ msgstr "Termos de Serviço"
 msgid "Test"
 msgstr "Teste"
 
-msgid "Test case"
-msgstr "Caso de teste"
-
 msgid "Test Case"
 msgstr "Caso de teste"
 
@@ -25389,9 +25383,6 @@ msgstr "A taxa deste cliente"
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este link de download é inválido ou foi adulterado."
-
-msgid "This element"
-msgstr "Este elemento"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Este arquivo não está mais disponível, ou você não tem permissão para baixá-lo."
@@ -27148,6 +27139,9 @@ msgstr "Ver Contacto"
 msgid "View Contained Issues"
 msgstr "Ver Problemas Contidos"
 
+msgid "View costs"
+msgstr ""
+
 msgid "View Count"
 msgstr "Ver Contagem"
 
@@ -28018,9 +28012,6 @@ msgstr "Produto em processo"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "com {0} contingência"
-
-msgid "With children"
-msgstr "Com filhos"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Sem uma lista de separação, operadores separam material da aba Escanear."
