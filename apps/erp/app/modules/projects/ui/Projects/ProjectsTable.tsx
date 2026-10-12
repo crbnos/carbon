@@ -3,12 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
+  BarProgress,
   Checkbox,
   MENU_ITEM_SHORTCUTS,
   MenuIcon,
-  MenuItem,
-  useDisclosure
+  MenuItem
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -18,8 +17,8 @@ import {
   LuCalendar,
   LuChartPie,
   LuCheck,
-  LuCirclePlus,
   LuFolderKanban,
+  LuGauge,
   LuHandCoins,
   LuPencil,
   LuReceipt,
@@ -28,18 +27,19 @@ import {
   LuWallet
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import { EmployeeAvatar, Empty, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import {
   useCurrencyFormatter,
   useDateFormatter,
-  usePermissions
+  usePercentFormatter,
+  usePermissions,
+  useUrlParams
 } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { projectCostTreatments, projectStatuses } from "../../projects.models";
 import type { ProjectListItem } from "../../types";
-import ProjectForm from "./ProjectForm";
 import ProjectStatus from "./ProjectStatus";
 
 export type ProjectsTableRow = ProjectListItem & {
@@ -57,10 +57,12 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const newProjectDisclosure = useDisclosure();
   const { formatDate } = useDateFormatter();
   const currencyFormatter = useCurrencyFormatter();
+  const percentFormatter = usePercentFormatter();
   const [people] = usePeople();
+  const [params] = useUrlParams();
+  const isFiltered = params.has("filter") || params.has("search");
 
   const columns = useMemo<ColumnDef<ProjectsTableRow>[]>(() => {
     return [
@@ -68,7 +70,7 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         accessorKey: "identifier",
         header: t`Identifier`,
         cell: ({ row }) => (
-          <Hyperlink to={path.to.projectElements(row.original.id)}>
+          <Hyperlink to={path.to.project(row.original.id)}>
             <span className="whitespace-nowrap">{row.original.identifier}</span>
           </Hyperlink>
         ),
@@ -140,6 +142,52 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         }
       },
       {
+        accessorKey: "endDate",
+        header: t`Due`,
+        cell: (item) => formatDate(item.getValue<string>()),
+        meta: {
+          icon: <LuCalendar />
+        }
+      },
+      {
+        // Actual cost against budget: the one figure a manager scans for.
+        id: "budgetUsed",
+        header: t`Budget used`,
+        cell: ({ row }) => {
+          const { actual, budget } = row.original;
+          if (!budget) {
+            return <span className="text-muted-foreground">—</span>;
+          }
+          const used = actual / budget;
+          return (
+            <div className="flex w-40 items-center gap-2">
+              <BarProgress
+                progress={Math.min(actual, budget)}
+                max={budget}
+                className="flex-1"
+                activeClassName={
+                  used > 1 ? "bg-red-500" : "bg-muted-foreground"
+                }
+              />
+              <span
+                className={
+                  used > 1
+                    ? "w-11 shrink-0 text-right text-xs tabular-nums text-red-500"
+                    : "w-11 shrink-0 text-right text-xs tabular-nums text-muted-foreground"
+                }
+              >
+                {percentFormatter.format(used)}
+              </span>
+            </div>
+          );
+        },
+        meta: {
+          icon: <LuGauge />,
+          exportValue: (row: ProjectsTableRow) =>
+            row.budget ? row.actual / row.budget : null
+        }
+      },
+      {
         id: "budget",
         header: t`Budget`,
         cell: ({ row }) => (
@@ -187,14 +235,6 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         }
       },
       {
-        accessorKey: "endDate",
-        header: t`End Date`,
-        cell: (item) => formatDate(item.getValue<string>()),
-        meta: {
-          icon: <LuCalendar />
-        }
-      },
-      {
         accessorKey: "active",
         header: t`Active`,
         cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
@@ -203,14 +243,14 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
         }
       }
     ];
-  }, [currencyFormatter, formatDate, people, t]);
+  }, [currencyFormatter, formatDate, people, percentFormatter, t]);
 
   const renderContextMenu = useCallback(
     (row: ProjectsTableRow) => (
       <>
         <MenuItem
           onClick={() => {
-            navigate(path.to.projectElements(row.id));
+            navigate(path.to.project(row.id));
           }}
         >
           <MenuIcon icon={<LuFolderKanban />} />
@@ -232,36 +272,34 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
   );
 
   return (
-    <>
-      <Table<ProjectsTableRow>
-        data={data}
-        columns={columns}
-        count={count}
-        defaultColumnPinning={{
-          left: ["identifier"]
-        }}
-        primaryAction={
-          permissions.can("create", "projects") && (
-            <Button
-              leftIcon={<LuCirclePlus />}
-              onClick={newProjectDisclosure.onOpen}
-            >
-              <Trans>New Project</Trans>
-            </Button>
-          )
-        }
-        renderContextMenu={renderContextMenu}
-        title={t`Projects`}
-        table="project"
-        withSavedView
-      />
-      {newProjectDisclosure.isOpen && (
-        <ProjectForm
-          initialValues={{ name: "", costTreatment: "Statistical" }}
-          onClose={newProjectDisclosure.onClose}
-        />
-      )}
-    </>
+    <Table<ProjectsTableRow>
+      data={data}
+      columns={columns}
+      count={count}
+      defaultColumnPinning={{
+        left: ["identifier"]
+      }}
+      // The list shows what a manager scans; the rest stays one click away
+      // in the columns menu, and in every filter and the CSV export.
+      defaultColumnVisibility={{
+        costTreatment: false,
+        budget: false,
+        actual: false,
+        committed: false,
+        startDate: false,
+        active: false
+      }}
+      primaryAction={
+        permissions.can("create", "projects") && (
+          <New label={t`Project`} to={path.to.newProject} />
+        )
+      }
+      emptyState={isFiltered ? undefined : <Empty title={t`No projects yet`} />}
+      renderContextMenu={renderContextMenu}
+      title={t`Projects`}
+      table="project"
+      withSavedView
+    />
   );
 });
 

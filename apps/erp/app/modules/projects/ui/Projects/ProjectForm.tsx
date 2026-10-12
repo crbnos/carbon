@@ -11,6 +11,10 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  cn,
   HStack,
   ModalDrawer,
   ModalDrawerBody,
@@ -22,7 +26,9 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { LuChevronRight } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
@@ -53,6 +59,7 @@ import {
   getCipFixedAssetClasses,
   getPlanningGroupsList
 } from "../../projects.service";
+import { useGovernmentContracting } from "../useGovernmentContracting";
 
 type ProjectFormValues = z.infer<typeof projectValidator>;
 
@@ -89,6 +96,7 @@ const ProjectForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
+  const isGovernmentContracting = useGovernmentContracting();
 
   const isEditing = initialValues.id !== undefined;
   const canSave = isEditing
@@ -142,64 +150,111 @@ const ProjectForm = ({
     value: priority
   }));
 
+  const nameAndIdentifier = (
+    <>
+      <InputControlled
+        name="name"
+        label={t`Name`}
+        value={name}
+        onChange={setName}
+        autoFocus={!isEditing}
+      />
+      <InputControlled
+        name="identifier"
+        label={t`Identifier`}
+        value={shownIdentifier}
+        isUppercase
+        isReadOnly={isEditing}
+        helperText={
+          isEditing
+            ? t`Element ids start with the identifier, so it cannot change`
+            : t`2 to 6 capital letters or digits, such as SNS`
+        }
+        onChange={(value) => {
+          setIdentifierEdited(true);
+          setIdentifier(value.toUpperCase());
+        }}
+      />
+    </>
+  );
+  const costTreatmentField = (
+    <SelectControlled
+      name="costTreatment"
+      label={t`Cost Treatment`}
+      options={treatmentOptions}
+      value={costTreatment}
+      onChange={(option) => setCostTreatment(option?.value ?? "")}
+    />
+  );
+  const cipClassField = (
+    <Select
+      name="fixedAssetClassId"
+      label={t`CIP Class`}
+      helperText={t`Each final asset is built in this Construction in Progress class`}
+      options={cipClasses.map((assetClass) => ({
+        label: assetClass.name,
+        value: assetClass.id
+      }))}
+    />
+  );
+  const costObjectiveField = (
+    <SelectControlled
+      name="costObjective"
+      label={t`Cost Objective`}
+      isOptional
+      helperText={t`Where the project's cost lands for government contract reporting`}
+      options={costObjectiveOptions}
+      value={costObjective}
+      onChange={(option) => setCostObjective(option?.value ?? "")}
+    />
+  );
+
+  // A new project asks only what it needs to exist. Every other field is on
+  // the project's settings page. Cost Objective shows only to a company that
+  // does government contracting; for any other company it still posts the
+  // default (Direct for a Contract project), as the visible field did.
+  const createFields = (
+    <>
+      <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
+        {nameAndIdentifier}
+        {costTreatmentField}
+        {costTreatment === "Capitalize" && cipClassField}
+        {isGovernmentContracting ? (
+          costObjectiveField
+        ) : (
+          <Hidden name="costObjective" value={costObjective} />
+        )}
+        <Customer name="customerId" label={t`Customer`} />
+        <Employee name="ownerId" label={t`Owner`} />
+      </div>
+      {copyFrom && copyFrom.options.length > 0 && (
+        <FormSection
+          title={t`Start from a copy`}
+          defaultOpen={Boolean(copyFrom.defaultValue)}
+        >
+          <Select
+            name="copyFromProjectId"
+            label={t`Copy from`}
+            isOptional
+            helperText={t`Copies the states, labels, milestones, elements, links and plan lines`}
+            options={copyFrom.options}
+          />
+        </FormSection>
+      )}
+    </>
+  );
+
   const fields = (
     <>
       <Hidden name="id" />
       <div className="grid w-full grid-cols-1 gap-x-8 gap-y-4 @xl:grid-cols-2">
-        {!isEditing && copyFrom && copyFrom.options.length > 0 && (
-          <div className="@xl:col-span-2">
-            <Select
-              name="copyFromProjectId"
-              label={t`Copy from`}
-              isOptional
-              helperText={t`Copies the states, labels, milestones, elements, links and plan lines`}
-              options={copyFrom.options}
-            />
-          </div>
-        )}
-        <InputControlled
-          name="name"
-          label={t`Name`}
-          value={name}
-          onChange={setName}
-          autoFocus={!isEditing}
-        />
-        <InputControlled
-          name="identifier"
-          label={t`Identifier`}
-          value={shownIdentifier}
-          isUppercase
-          isReadOnly={isEditing}
-          helperText={
-            isEditing
-              ? t`Element ids start with the identifier, so it cannot change`
-              : t`2 to 6 capital letters or digits, such as SNS`
-          }
-          onChange={(value) => {
-            setIdentifierEdited(true);
-            setIdentifier(value.toUpperCase());
-          }}
-        />
+        {nameAndIdentifier}
         <div className="@xl:col-span-2">
           <TextArea name="description" label={t`Description`} />
         </div>
-        <SelectControlled
-          name="costTreatment"
-          label={t`Cost Treatment`}
-          options={treatmentOptions}
-          value={costTreatment}
-          onChange={(option) => setCostTreatment(option?.value ?? "")}
-        />
+        {costTreatmentField}
         {costTreatment === "Capitalize" ? (
-          <Select
-            name="fixedAssetClassId"
-            label={t`CIP Class`}
-            helperText={t`Each final asset is built in this Construction in Progress class`}
-            options={cipClasses.map((assetClass) => ({
-              label: assetClass.name,
-              value: assetClass.id
-            }))}
-          />
+          cipClassField
         ) : (
           <Account
             name="costAccountId"
@@ -207,15 +262,7 @@ const ProjectForm = ({
             helperText={t`Leave empty to use the account default`}
           />
         )}
-        <SelectControlled
-          name="costObjective"
-          label={t`Cost Objective`}
-          isOptional
-          helperText={t`Where the project's cost lands for government contract reporting`}
-          options={costObjectiveOptions}
-          value={costObjective}
-          onChange={(option) => setCostObjective(option?.value ?? "")}
-        />
+        {costObjectiveField}
         <Customer name="customerId" label={t`Customer`} />
         <Employee name="ownerId" label={t`Owner`} />
         <Location name="locationId" label={t`Location`} />
@@ -343,7 +390,7 @@ const ProjectForm = ({
             </ModalDrawerHeader>
             <ModalDrawerBody>
               <VStack spacing={4} className="@container">
-                {fields}
+                {createFields}
               </VStack>
             </ModalDrawerBody>
             <ModalDrawerFooter>
@@ -366,6 +413,39 @@ const ProjectForm = ({
 };
 
 export default ProjectForm;
+
+/**
+ * A folded group of form fields. A closed section only hides its fields: they
+ * stay mounted, so the form still posts their values (D14). An unmounted field
+ * would post nothing and the action would clear its column.
+ */
+function FormSection({
+  title,
+  defaultOpen = false,
+  children
+}: {
+  title: ReactNode;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen} className="w-full">
+      <CollapsibleTrigger className="flex w-full items-center gap-1.5 py-1 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
+        <LuChevronRight
+          className={cn(
+            "size-4 shrink-0 transition-transform duration-150",
+            open && "rotate-90"
+          )}
+        />
+        {title}
+      </CollapsibleTrigger>
+      <CollapsibleContent forceMount className={cn("pt-3", !open && "hidden")}>
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 /** The company's active planning groups, read once when needed. */
 function usePlanningGroups(enabled: boolean) {

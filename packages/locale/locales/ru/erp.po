@@ -4428,6 +4428,9 @@ msgstr "Бюджет при завершении"
 msgid "Budget Control"
 msgstr "Контроль бюджета"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Страховой запас, который политика на основе спроса удерживает для поглощения скачков потребления в течение периода накопления."
 
@@ -16023,6 +16026,9 @@ msgstr "Производство еще не записано."
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Счетов-фактур проекта еще нет. Ночной запуск биллинга создает один на каждый период биллинга."
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Нет покупок в этом периоде"
 
@@ -22766,6 +22772,9 @@ msgstr "Начать истечение в конце процесса"
 
 msgid "Start expiration on process start"
 msgstr "Начать истечение срока действия при запуске процесса"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "Начните отсюда"

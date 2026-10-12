@@ -4428,6 +4428,9 @@ msgstr "पूर्ण होने पर बजट"
 msgid "Budget Control"
 msgstr "बजट नियंत्रण"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "बफर स्टॉक जिसे मांग-आधारित नीति संचय अवधि के भीतर खपत स्पाइक्स को अवशोषित करने के लिए वापस रखती है।"
 
@@ -16023,6 +16026,9 @@ msgstr "अभी तक कोई उत्पादन दर्ज नही�
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "अभी तक कोई परियोजना चालान नहीं। रात्रिकालीन चालान रन प्रति चालान अवधि एक ड्राफ्ट करता है।"
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
 
@@ -22766,6 +22772,9 @@ msgstr "प्रक्रिया समाप्त होने पर स�
 
 msgid "Start expiration on process start"
 msgstr "प्रक्रिया शुरुआत पर समाप्ति शुरू करें"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "यहाँ शुरू करें"

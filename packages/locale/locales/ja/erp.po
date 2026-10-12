@@ -4428,6 +4428,9 @@ msgstr "完成時の予算"
 msgid "Budget Control"
 msgstr "予算管理"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "蓄積期間内で消費スパイクを吸収するために需要ベースのポリシーが保有するバッファストック。"
 
@@ -16023,6 +16026,9 @@ msgstr "生産がまだ記録されていません。"
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "まだプロジェクト請求書がありません。夜間の請求実行では、請求期間ごとに下書きが1つ作成されます。"
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "この期間に購入がありません"
 
@@ -22766,6 +22772,9 @@ msgstr "プロセス終了時に有効期限を開始"
 
 msgid "Start expiration on process start"
 msgstr "プロセス開始時に有効期限を開始"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "ここから始める"

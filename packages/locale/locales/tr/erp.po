@@ -4428,6 +4428,9 @@ msgstr "Tamamlanmadaki bütçe"
 msgid "Budget Control"
 msgstr "Bütçe Kontrolü"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Talep tabanlı politikanın birikme dönemi içinde tüketim artışlarını absorbe etmek için tuttuğu tampon stok."
 
@@ -16023,6 +16026,9 @@ msgstr "Henüz kayıtlı üretim yok."
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Henüz proje faturası yok. Gecelik faturalama çalışması, her faturalama dönemi için bir taslak oluşturur."
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Bu dönemde satın alma yok"
 
@@ -22766,6 +22772,9 @@ msgstr "Süre bitişinde son kullanma tarihi başlar"
 
 msgid "Start expiration on process start"
 msgstr "Süre bitişi süreç başlangıcında başlar"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "Buradan Başla"

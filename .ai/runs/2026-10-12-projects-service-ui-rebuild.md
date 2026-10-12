@@ -67,6 +67,20 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 10: Simplify the projects list and the New Project drawer (Layer 1)
 
+- Projects list columns: Identifier (pinned, links to `path.to.project`), Name, Status, Owner, Due (`endDate`), Budget used. Treatment, Budget, Actual, Committed, Start Date and Active are hidden by `defaultColumnVisibility`; their filters and CSV export stay.
+- Budget used: a neutral `BarProgress` of actual / budget and the percent from `usePercentFormatter`. Over budget turns the bar and the percent red. A project with no budget shows `—`.
+- The primary action was a `Button` that opened `ProjectForm` from the table (no copy-from options). It is now `New label="Project" to={path.to.newProject}`, so it renders "Add Project" with the N key, as Jobs does. The in-table drawer is gone.
+- Deviation: `/x/projects/new` is a sibling of the list route, so the drawer opens over an empty page (plan Open point 3). Before, a click opened the drawer over the list.
+- `emptyState` is `Empty title="No projects yet"` only when no `filter` or `search` param is set.
+- New Project drawer (create mode): Name, Identifier, Cost Treatment, CIP Class (Capitalize only), Cost Objective (only when `useGovernmentContracting()`), Customer, Owner. "Start from a copy" is a collapsed section with Copy from, kept mounted, open when `?copyFrom=` is set.
+- When Cost Objective is hidden, a `Hidden` field still posts its default (Direct for a Contract project), so a created project gets the same cost objective as before.
+- Edit mode is unchanged (Task 14 rebuilds it).
+- In this dev stack `usePlanGate` is never gated (not Cloud, not Community), so `useGovernmentContracting()` is true and Cost Objective shows.
+- Created test project URC "UI Rebuild Check" (`prj_M5jo99bAWiZXcgCzpFnLfy`, Draft) from the drawer. It opened. The ERP has no project delete route, so it stays in the demo data.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed, `pnpm --filter erp build` exit 0 with no "Server-only module" line.
+- Shots: `10-projects-list.png`, `10-new-project.png`, `10-new-project-copy-open.png`.
+- 7 questions: 1 yes (Jobs list), 2 yes, 3 yes, 4 yes (Add Project), 5 n/a, 6 yes (row menu), 7 yes (copy-from collapsed, the rest moved to Settings).
+
 ## Task 11: Build the project workspace shell and the project sidebar (Layer 2)
 
 ## Task 12: Rebuild the project header on RecordHeader

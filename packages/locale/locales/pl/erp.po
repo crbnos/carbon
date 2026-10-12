@@ -4428,6 +4428,9 @@ msgstr "Budżet na zakończenie"
 msgid "Budget Control"
 msgstr "Kontrola budżetu"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "Zapas buforowy utrzymywany przez politykę opartą na zapotrzebowaniu, aby pochłonąć skoki zużycia w ramach okresu akumulacji."
 
@@ -16023,6 +16026,9 @@ msgstr "Brak zarejestrowanej produkcji."
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "Brak faktur rozliczeniowych projektu jeszcze. Nocne uruchomienie rozliczeń tworzy jedną na okres rozliczeniowy."
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "Brak zakupów w tym okresie"
 
@@ -22766,6 +22772,9 @@ msgstr "Rozpocznij wygaśnięcie na koniec procesu"
 
 msgid "Start expiration on process start"
 msgstr "Rozpocznij wygaśnięcie na starcie procesu"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "Zacznij tutaj"

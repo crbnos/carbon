@@ -201,7 +201,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 7: Add `useGovernmentContracting` and `UpgradeOverlayRow`
 - [ ] Task 8: Fix the week views on a Sunday
 - [x] Task 9: Shrink the Projects and Service sidebars (Layer 0)
-- [ ] Task 10: Simplify the projects list and the New Project drawer (Layer 1)
+- [x] Task 10: Simplify the projects list and the New Project drawer (Layer 1)
 - [ ] Task 11: Build the project workspace shell and the project sidebar (Layer 2)
 - [ ] Task 12: Rebuild the project header on `RecordHeader`
 - [ ] Task 13: Add the project Overview page

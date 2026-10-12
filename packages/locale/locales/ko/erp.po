@@ -4428,6 +4428,9 @@ msgstr "완료 시 예산"
 msgid "Budget Control"
 msgstr "예산 통제"
 
+msgid "Budget used"
+msgstr ""
+
 msgid "Buffer stock the demand-based policy holds back to absorb consumption spikes within the accumulation period."
 msgstr "누적 기간 내에 소모 스파이크를 흡수하기 위해 수요 기반 정책이 유지하는 안전 재고입니다."
 
@@ -16023,6 +16026,9 @@ msgstr "아직 기록된 생산이 없습니다."
 msgid "No project billing invoices yet. The nightly billing run drafts one per billing period."
 msgstr "아직 프로젝트 청구 송장이 없습니다. 야간 청구 실행이 청구 기간당 하나를 초안으로 작성합니다."
 
+msgid "No projects yet"
+msgstr ""
+
 msgid "No purchases in this period"
 msgstr "이 기간에 구매가 없습니다"
 
@@ -22766,6 +22772,9 @@ msgstr "공정 종료 시 유효기한 시작"
 
 msgid "Start expiration on process start"
 msgstr "공정 시작 시 유효기한 시작"
+
+msgid "Start from a copy"
+msgstr ""
 
 msgid "Start Here"
 msgstr "여기서 시작하기"
