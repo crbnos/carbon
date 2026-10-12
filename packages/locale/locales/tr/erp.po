@@ -3403,9 +3403,6 @@ msgstr "Varlık Edinme Maliyeti"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Varlık Edinme Maliyeti (varsayılan)"
 
-msgid "Asset actions"
-msgstr "Varlık işlemleri"
-
 msgid "asset class"
 msgstr "varlık sınıfı"
 
@@ -4898,9 +4895,6 @@ msgstr "Kapanış"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Kapatma, sözleşmeyi bitirir. Her birim iade edilmeli veya satılmalı ve her faturalandırma dönemi faturalandırılmalıdır."
-
-msgid "Closing Liability"
-msgstr "Kapanış Yükümlülüğü"
 
 msgid "Closure blocked"
 msgstr "Kapanış engellendi"
@@ -14047,8 +14041,8 @@ msgstr "Değişiklik kaydedilmedi"
 msgid "No changes yet."
 msgstr "Henüz değişiklik yok."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Henüz değişiklik yok. Kiralama etkinleştirildikten sonra, Düzenle başlıkta ve her varlığın Sonlandır ve Satın Al Varlıklar kartında yer alır."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Henüz değişiklik yok. Kiralama aktif olduktan sonra, Değiştir başlık kısmında ve Sonlandır ile Satın Al her varlığın sayfasında yer alır."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Herhangi bir ücret yok. Kilometre, hasar, teslimat veya temizlik ücretleri sonraki faturaya dahil edilir."
@@ -15275,9 +15269,6 @@ msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortism
 
 msgid "Opening balances as of"
 msgstr "Açılış bakiyesi"
-
-msgid "Opening Liability"
-msgstr "Açılış Yükümlülüğü"
 
 msgid "Opening Value"
 msgstr "Açılış değeri"
@@ -16569,9 +16560,6 @@ msgstr "Fiyatlandırma İzleme"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Banka işlemleri için birincil nakit hesabı"
-
-msgid "Principal"
-msgstr "Anapara"
 
 msgid "Principal Collected"
 msgstr "Toplanan Anapara"
@@ -18744,6 +18732,9 @@ msgstr "Daha fazla araç eklemeden büyüme için yer"
 
 msgid "ROU Amortization"
 msgstr "KHV Amortismanı"
+
+msgid "ROU Asset"
+msgstr "Kullanım Hakkı Varlığı"
 
 msgid "Rounding Account"
 msgstr "Yuvarlama hesabı"

@@ -3403,9 +3403,6 @@ msgstr "Cena nabycia środków trwałych"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Cena nabycia środków trwałych (domyślna)"
 
-msgid "Asset actions"
-msgstr "Akcje dotyczące aktywa"
-
 msgid "asset class"
 msgstr "klasa środków trwałych"
 
@@ -4898,9 +4895,6 @@ msgstr "Zamknięcie"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Zamknięcie kończy umowę. Każda jednostka musi być zwrócona lub sprzedana, a każdy okres rozliczeniowy musi być zafakturowany."
-
-msgid "Closing Liability"
-msgstr "Zobowiązanie zamykające"
 
 msgid "Closure blocked"
 msgstr "Zamknięcie zablokowane"
@@ -14047,8 +14041,8 @@ msgstr "Brak zarejestrowanych zmian"
 msgid "No changes yet."
 msgstr "Brak zmian."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Jeszcze brak zmian. Po aktywacji leasingu Modyfikuj znajduje się w nagłówku, a Zakończ i Kup dla każdego aktywa znajdują się na karcie Aktywa."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Brak zmian. Gdy leasing będzie aktywny, Modyfikuj znajduje się w nagłówku, a Zakończ i Kup znajdują się na stronie każdego zasobu."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Brak opłat. Opłaty za przebieg, uszkodzenie, dostawę lub czyszczenie pojawią się na następnej fakturze."
@@ -15275,9 +15269,6 @@ msgstr "Saldo otwarcia amortyzacji już zaksięgowanej przed dodaniem tego zasob
 
 msgid "Opening balances as of"
 msgstr "Salda otwarcia na dzień"
-
-msgid "Opening Liability"
-msgstr "Zobowiązanie na otwarcie"
 
 msgid "Opening Value"
 msgstr "Wartość Otwarcia"
@@ -16569,9 +16560,6 @@ msgstr "Śledzenie ustalania cen"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Główne konto gotówki dla transakcji bankowych"
-
-msgid "Principal"
-msgstr "Suma główna"
 
 msgid "Principal Collected"
 msgstr "Zebrana główna kwota"
@@ -18744,6 +18732,9 @@ msgstr "Miejsce do wzrostu bez dodawania kolejnych narzędzi"
 
 msgid "ROU Amortization"
 msgstr "Amortyzacja prawa do użytkowania"
+
+msgid "ROU Asset"
+msgstr "Prawo do Użytkowania"
 
 msgid "Rounding Account"
 msgstr "Konto zaokrąglające"

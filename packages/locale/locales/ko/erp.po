@@ -3403,9 +3403,6 @@ msgstr "자산 취득원가"
 msgid "Asset Acquisition Cost (default)"
 msgstr "자산 취득원가(기본값)"
 
-msgid "Asset actions"
-msgstr "자산 작업"
-
 msgid "asset class"
 msgstr "자산 클래스"
 
@@ -4898,9 +4895,6 @@ msgstr "마감"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "마감하면 계약이 종료됩니다. 모든 개를 반납하거나 판매해야 하고 모든 청구 기간을 송장 발행해야 합니다."
-
-msgid "Closing Liability"
-msgstr "종료 채무"
 
 msgid "Closure blocked"
 msgstr "마감 차단됨"
@@ -14047,8 +14041,8 @@ msgstr "기록된 변경 사항이 없습니다"
 msgid "No changes yet."
 msgstr "아직 변경사항이 없습니다."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "아직 변경 사항이 없습니다. 리스가 활성화되면, 수정은 헤더에 있고 각 자산의 종료 및 구매는 자산 카드에 있습니다."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "변경 사항이 없습니다. 리스가 활성화되면 수정은 헤더에 있고 종료와 구매는 각 자산 페이지에 있습니다."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "요금이 없습니다. 주행 거리, 손상, 배송 또는 청소 요금은 다음 송장에 포함됩니다."
@@ -15275,9 +15269,6 @@ msgstr "이 자산이 Carbon에 등록되기 전에 이미 계상된 감가상�
 
 msgid "Opening balances as of"
 msgstr "다음 기준 개시 잔액:"
-
-msgid "Opening Liability"
-msgstr "기초 부채"
 
 msgid "Opening Value"
 msgstr "개시 가액"
@@ -16569,9 +16560,6 @@ msgstr "가격 책정 추적"
 
 msgid "Primary cash account for bank transactions"
 msgstr "은행 거래를 위한 기본 현금 계정"
-
-msgid "Principal"
-msgstr "원금"
 
 msgid "Principal Collected"
 msgstr "수집된 원금"
@@ -18744,6 +18732,9 @@ msgstr "추가 도구 없이도 성장할 수 있는 여유"
 
 msgid "ROU Amortization"
 msgstr "ROU 상각"
+
+msgid "ROU Asset"
+msgstr "사용권 자산"
 
 msgid "Rounding Account"
 msgstr "반올림 계정"

@@ -5415,7 +5415,7 @@ export async function getLeaseLines(
 ) {
   return client
     .from("leaseLine")
-    .select("*")
+    .select("*, fixedAsset(item(thumbnailPath))")
     .eq("leaseId", leaseId)
     .eq("companyId", companyId)
     .order("sortOrder")

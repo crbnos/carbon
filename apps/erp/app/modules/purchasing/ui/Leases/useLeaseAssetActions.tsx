@@ -22,8 +22,8 @@ export type LeaseAssetActionState = {
 };
 
 /** What can happen to one asset of an Active lease, and the modal for it.
- *  Shared by the explorer row and the asset's page, as the rental
- *  agreement's units share `useRentalLineActions`. */
+ *  Used by the asset's page; the rental agreement's units have the same
+ *  hook in `useRentalLineActions`. */
 export function useLeaseAssetActions({
   lease,
   payments,

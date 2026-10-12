@@ -312,7 +312,7 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    **post-asset-transfer** below.
 5. Exercise a lessee lease's purchase option for one leased asset:
    `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
-   lease page → the asset's ⋮ in the explorer, or its page → **Exercise Purchase Option**,
+   lease page → the asset in the explorer → its page → **Exercise Purchase Option**,
    `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
    Short-Term asset, an asset with no `purchaseOptionAmount`, and a
    Construction in Progress class ("Choose an in-service fixed asset class").

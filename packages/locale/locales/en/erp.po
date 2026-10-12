@@ -3403,9 +3403,6 @@ msgstr "Asset Acquisition Cost"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Asset Acquisition Cost (default)"
 
-msgid "Asset actions"
-msgstr "Asset actions"
-
 msgid "asset class"
 msgstr "asset class"
 
@@ -4898,9 +4895,6 @@ msgstr "Closing"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
-
-msgid "Closing Liability"
-msgstr "Closing Liability"
 
 msgid "Closure blocked"
 msgstr "Closure blocked"
@@ -14047,8 +14041,8 @@ msgstr "No changes recorded"
 msgid "No changes yet."
 msgstr "No changes yet."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
@@ -15275,9 +15269,6 @@ msgstr "Opening balance of depreciation already booked before this asset was add
 
 msgid "Opening balances as of"
 msgstr "Opening balances as of"
-
-msgid "Opening Liability"
-msgstr "Opening Liability"
 
 msgid "Opening Value"
 msgstr "Opening Value"
@@ -16569,9 +16560,6 @@ msgstr "Pricing Trace"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Primary cash account for bank transactions"
-
-msgid "Principal"
-msgstr "Principal"
 
 msgid "Principal Collected"
 msgstr "Principal Collected"
@@ -18744,6 +18732,9 @@ msgstr "Room to grow without bolting on more tools"
 
 msgid "ROU Amortization"
 msgstr "ROU Amortization"
+
+msgid "ROU Asset"
+msgstr "ROU Asset"
 
 msgid "Rounding Account"
 msgstr "Rounding Account"

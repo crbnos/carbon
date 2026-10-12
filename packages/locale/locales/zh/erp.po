@@ -3403,9 +3403,6 @@ msgstr "资产购置成本"
 msgid "Asset Acquisition Cost (default)"
 msgstr "资产购置成本（默认）"
 
-msgid "Asset actions"
-msgstr "资产操作"
-
 msgid "asset class"
 msgstr "资产类别"
 
@@ -4898,9 +4895,6 @@ msgstr "结余"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "关闭将完成协议。每个件都必须已返回或已售出，每个计费期间都必须已开票。"
-
-msgid "Closing Liability"
-msgstr "期末负债"
 
 msgid "Closure blocked"
 msgstr "关闭被阻止"
@@ -14047,8 +14041,8 @@ msgstr "未记录任何更改"
 msgid "No changes yet."
 msgstr "还没有变更。"
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "暂无更改。租赁激活后，修改在标题中，每项资产的终止和购买选项在资产卡上。"
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "暂无更改。租赁启用后，修改在页眉中，终止和购买在每个资产的页面上。"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
@@ -15275,9 +15269,6 @@ msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（
 
 msgid "Opening balances as of"
 msgstr "期初余额截至"
-
-msgid "Opening Liability"
-msgstr "期初负债"
 
 msgid "Opening Value"
 msgstr "期初价值"
@@ -16569,9 +16560,6 @@ msgstr "定价追踪"
 
 msgid "Primary cash account for bank transactions"
 msgstr "银行交易的主要现金账户"
-
-msgid "Principal"
-msgstr "本金"
 
 msgid "Principal Collected"
 msgstr "已收本金"
@@ -18744,6 +18732,9 @@ msgstr "无需添加更多工具即可扩展"
 
 msgid "ROU Amortization"
 msgstr "ROU 摊销"
+
+msgid "ROU Asset"
+msgstr "使用权资产"
 
 msgid "Rounding Account"
 msgstr "舍入账户"

@@ -3403,9 +3403,6 @@ msgstr "Стоимость приобретения основного сред�
 msgid "Asset Acquisition Cost (default)"
 msgstr "Стоимость приобретения основного средства (по умолчанию)"
 
-msgid "Asset actions"
-msgstr "Действия с активом"
-
 msgid "asset class"
 msgstr "класс основных средств"
 
@@ -4898,9 +4895,6 @@ msgstr "Закрытие"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Закрытие завершает договор. Каждая единица должна быть возвращена или продана и по каждому периоду выставлен счет."
-
-msgid "Closing Liability"
-msgstr "Конечное обязательство"
 
 msgid "Closure blocked"
 msgstr "Закрытие заблокировано"
@@ -14047,8 +14041,8 @@ msgstr "Изменений не записано"
 msgid "No changes yet."
 msgstr "Пока нет изменений."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Нет изменений. Как только аренда станет активной, кнопка Изменить будет в заголовке, а Прекратить и Купить каждого актива будут на карточке активов."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Изменений еще нет. Когда аренда активна, кнопка \"Изменить\" находится в заголовке, а кнопки \"Завершить\" и \"Приобрести\" находятся на странице каждого актива."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Нет начислений. Плата за пробег, повреждения, доставку или уборку будет перенесена на следующий счет-фактуру."
@@ -15275,9 +15269,6 @@ msgstr "Начальный остаток амортизации, уже учт�
 
 msgid "Opening balances as of"
 msgstr "Открывающие остатки на"
-
-msgid "Opening Liability"
-msgstr "Открывающееся обязательство"
 
 msgid "Opening Value"
 msgstr "Открывающая стоимость"
@@ -16569,9 +16560,6 @@ msgstr "Трассировка ценообразования"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Основной счет денежных средств для банковских операций"
-
-msgid "Principal"
-msgstr "Основная сумма"
 
 msgid "Principal Collected"
 msgstr "Собрана основная сумма"
@@ -18744,6 +18732,9 @@ msgstr "Место для роста без добавления новых ин
 
 msgid "ROU Amortization"
 msgstr "Амортизация активов прав пользования"
+
+msgid "ROU Asset"
+msgstr "Актив прав пользования"
 
 msgid "Rounding Account"
 msgstr "Счет округления"

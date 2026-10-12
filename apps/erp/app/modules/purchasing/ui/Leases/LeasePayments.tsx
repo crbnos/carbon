@@ -8,7 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  HStack,
   Table,
   Tbody,
   Td,
@@ -52,6 +51,10 @@ const LeasePayments = ({
 
   const assetName = new Map(lines.map((line) => [line.id, line.description]));
   const severalAssets = lines.length > 1;
+  // Most leases only pay rent; the Type column is for the odd purchase
+  // option or termination penalty among them.
+  const severalTypes =
+    new Set(payments.map((payment) => payment.paymentType)).size > 1;
   const total = payments.reduce(
     (sum, payment) => sum + Number(payment.amount),
     0
@@ -79,97 +82,101 @@ const LeasePayments = ({
           <Table>
             <Thead>
               <Tr>
-                <Th className="text-right">#</Th>
+                <Th>
+                  <Trans>Due</Trans>
+                </Th>
                 {severalAssets && (
                   <Th>
                     <Trans>Asset</Trans>
                   </Th>
                 )}
-                <Th>
-                  <Trans>Type</Trans>
-                </Th>
+                {severalTypes && (
+                  <Th>
+                    <Trans>Type</Trans>
+                  </Th>
+                )}
                 <Th>
                   <Trans>Period</Trans>
-                </Th>
-                <Th>
-                  <Trans>Due</Trans>
                 </Th>
                 <Th className="text-right">
                   <Trans>Amount</Trans>
                 </Th>
                 <Th>
-                  <Trans>Status</Trans>
+                  <Trans>Invoice</Trans>
                 </Th>
                 <Th>
-                  <Trans>Invoice</Trans>
+                  <Trans>Status</Trans>
                 </Th>
               </Tr>
             </Thead>
             <Tbody>
-              {payments.map((payment, index) => {
+              {payments.map((payment) => {
                 const invoice = payment.purchaseInvoiceLineId
                   ? paymentInvoices[payment.purchaseInvoiceLineId]
                   : undefined;
                 return (
                   <Tr key={payment.id}>
-                    <Td className="text-right tabular-nums text-muted-foreground">
-                      {index + 1}
-                    </Td>
-                    {severalAssets && (
-                      <Td>{assetName.get(payment.leaseLineId) ?? "—"}</Td>
-                    )}
-                    <Td>{paymentTypeLabel(payment.paymentType)}</Td>
-                    <Td>
-                      <span className="whitespace-nowrap">
-                        <DateTime value={payment.periodStart} variant="date" />
-                        {" – "}
-                        <DateTime value={payment.periodEnd} variant="date" />
-                      </span>
-                    </Td>
-                    <Td>
+                    <Td className="whitespace-nowrap">
                       <DateTime value={payment.dueDate} variant="date" />
                     </Td>
-                    <Td className="text-right">
+                    {severalAssets && (
+                      <Td className="whitespace-nowrap">
+                        {assetName.get(payment.leaseLineId) ?? "—"}
+                      </Td>
+                    )}
+                    {severalTypes && (
+                      <Td className="whitespace-nowrap">
+                        {paymentTypeLabel(payment.paymentType)}
+                      </Td>
+                    )}
+                    <Td className="whitespace-nowrap text-muted-foreground">
+                      <DateTime value={payment.periodStart} variant="date" />
+                      {" – "}
+                      <DateTime value={payment.periodEnd} variant="date" />
+                    </Td>
+                    <Td className="text-right whitespace-nowrap">
                       <LeaseMoney
                         value={payment.amount}
                         currencyCode={currencyCode}
                       />
                     </Td>
-                    <Td>
-                      <LeasePaymentStatus status={payment.status} />
+                    <Td className="whitespace-nowrap">
+                      {invoice ? (
+                        <Hyperlink
+                          to={path.to.purchaseInvoiceDetails(invoice.id)}
+                        >
+                          {invoice.invoiceId ?? t`Invoice`}
+                        </Hyperlink>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </Td>
                     <Td>
-                      {invoice ? (
-                        <HStack spacing={2}>
-                          <Hyperlink
-                            to={path.to.purchaseInvoiceDetails(invoice.id)}
-                          >
-                            {invoice.invoiceId ?? t`Invoice`}
-                          </Hyperlink>
-                          <PurchaseInvoicingStatus
-                            status={
-                              invoice.status as Parameters<
-                                typeof PurchaseInvoicingStatus
-                              >[0]["status"]
-                            }
-                          />
-                        </HStack>
+                      {/* Once invoiced, the invoice's own status says more
+                          than "Invoiced": Draft, Submitted, Paid. */}
+                      {invoice?.status ? (
+                        <PurchaseInvoicingStatus
+                          status={
+                            invoice.status as Parameters<
+                              typeof PurchaseInvoicingStatus
+                            >[0]["status"]
+                          }
+                        />
                       ) : (
-                        "—"
+                        <LeasePaymentStatus status={payment.status} />
                       )}
                     </Td>
                   </Tr>
                 );
               })}
               <Tr>
-                <Td />
-                {severalAssets && <Td />}
                 <Td className="font-medium">
                   <Trans>Total</Trans>
                 </Td>
+                {severalAssets && <Td />}
+                {severalTypes && <Td />}
                 <Td />
-                <Td />
-                <Td className="text-right font-medium">
+                <Td className="text-right font-medium whitespace-nowrap">
                   <LeaseMoney value={total} currencyCode={currencyCode} />
                 </Td>
                 <Td />

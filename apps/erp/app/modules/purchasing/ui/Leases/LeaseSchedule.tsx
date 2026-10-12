@@ -8,7 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Status,
   Table,
   Tbody,
   Td,
@@ -58,128 +57,118 @@ const LeaseSchedule = ({
     lines.length > 0 &&
     lines.every((line) => line.lesseeClassification === "Short-Term");
 
-  const renderTable = (rows: LeaseScheduleLine[]) => (
-    <Table>
-      <Thead>
-        <Tr>
-          <Th>
-            <Trans>Month Ending</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Opening Liability</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Payment</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Interest</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Principal</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Closing Liability</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Lease Cost</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>ROU Amortization</Trans>
-          </Th>
-          <Th className="text-right">
-            <Trans>Net ROU Asset</Trans>
-          </Th>
-          <Th>
-            <Trans>Status</Trans>
-          </Th>
-        </Tr>
-      </Thead>
-      <Tbody>
-        {rows.map((line) => {
-          const posted = isScheduleLinePosted(line);
-          const journalId =
-            line.journalId ??
-            line.rows?.find((row) => row.journalId)?.journalId ??
-            null;
-          const journalEntryId = journalId ? journalById.get(journalId) : null;
-          return (
-            <Tr key={line.id}>
-              <Td>
-                <DateTime value={line.periodDate} variant="date" />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.openingLiability}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.paymentAmount}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.interestAmount}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.principalAmount}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.closingLiability}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.leaseCost}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.rouAmortization}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td className="text-right">
-                <LeaseMoney
-                  value={line.closingRouAsset}
-                  currencyCode={currencyCode}
-                />
-              </Td>
-              <Td>
-                {posted ? (
-                  journalId ? (
-                    <Hyperlink to={path.to.journalEntryDetails(journalId)}>
-                      <Status color="green">
-                        {journalEntryId ?? <Trans>Posted</Trans>}
-                      </Status>
-                    </Hyperlink>
-                  ) : (
-                    <Status color="green">
-                      <Trans>Posted</Trans>
-                    </Status>
-                  )
-                ) : (
-                  <Status color="gray">
-                    <Trans>Planned</Trans>
-                  </Status>
+  // Principal is the payment less the interest, and a finance asset's lease
+  // cost is its interest plus amortization, so only an operating asset — whose
+  // straight-line cost is its own figure — shows a Lease Cost column.
+  const renderTable = (line: LeaseLine, rows: LeaseScheduleLine[]) => {
+    const isOperating = line.lesseeClassification === "Operating";
+    return (
+      <Table>
+        <Thead>
+          <Tr>
+            <Th className="whitespace-nowrap">
+              <Trans>Month Ending</Trans>
+            </Th>
+            <Th className="text-right whitespace-nowrap">
+              <Trans>Payment</Trans>
+            </Th>
+            <Th className="text-right whitespace-nowrap">
+              <Trans>Interest</Trans>
+            </Th>
+            <Th className="text-right whitespace-nowrap">
+              <Trans>Liability</Trans>
+            </Th>
+            {isOperating && (
+              <Th className="text-right whitespace-nowrap">
+                <Trans>Lease Cost</Trans>
+              </Th>
+            )}
+            <Th className="text-right whitespace-nowrap">
+              <Trans>ROU Amortization</Trans>
+            </Th>
+            <Th className="text-right whitespace-nowrap">
+              <Trans>ROU Asset</Trans>
+            </Th>
+            <Th className="whitespace-nowrap">
+              <Trans>Status</Trans>
+            </Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {rows.map((row) => {
+            const posted = isScheduleLinePosted(row);
+            const journalId =
+              row.journalId ??
+              row.rows?.find((run) => run.journalId)?.journalId ??
+              null;
+            const journalEntryId = journalId
+              ? journalById.get(journalId)
+              : null;
+            return (
+              <Tr key={row.id}>
+                <Td className="whitespace-nowrap">
+                  <DateTime value={row.periodDate} variant="date" />
+                </Td>
+                <Td className="text-right whitespace-nowrap">
+                  <LeaseMoney
+                    value={row.paymentAmount}
+                    currencyCode={currencyCode}
+                  />
+                </Td>
+                <Td className="text-right whitespace-nowrap">
+                  <LeaseMoney
+                    value={row.interestAmount}
+                    currencyCode={currencyCode}
+                  />
+                </Td>
+                <Td className="text-right whitespace-nowrap">
+                  <LeaseMoney
+                    value={row.closingLiability}
+                    currencyCode={currencyCode}
+                  />
+                </Td>
+                {isOperating && (
+                  <Td className="text-right whitespace-nowrap">
+                    <LeaseMoney
+                      value={row.leaseCost}
+                      currencyCode={currencyCode}
+                    />
+                  </Td>
                 )}
-              </Td>
-            </Tr>
-          );
-        })}
-      </Tbody>
-    </Table>
-  );
+                <Td className="text-right whitespace-nowrap">
+                  <LeaseMoney
+                    value={row.rouAmortization}
+                    currencyCode={currencyCode}
+                  />
+                </Td>
+                <Td className="text-right whitespace-nowrap">
+                  <LeaseMoney
+                    value={row.closingRouAsset}
+                    currencyCode={currencyCode}
+                  />
+                </Td>
+                <Td className="whitespace-nowrap">
+                  {journalId ? (
+                    <Hyperlink to={path.to.journalEntryDetails(journalId)}>
+                      <span title={journalEntryId ?? undefined}>
+                        <Trans>Posted</Trans>
+                      </span>
+                    </Hyperlink>
+                  ) : posted ? (
+                    <Trans>Posted</Trans>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      <Trans>Planned</Trans>
+                    </span>
+                  )}
+                </Td>
+              </Tr>
+            );
+          })}
+        </Tbody>
+      </Table>
+    );
+  };
 
   return (
     <Card>
@@ -218,7 +207,7 @@ const LeaseSchedule = ({
                     {group.line.description}
                   </h4>
                 )}
-                {renderTable(group.rows)}
+                {renderTable(group.line, group.rows)}
               </div>
             ))}
           </div>

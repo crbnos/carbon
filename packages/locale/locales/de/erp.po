@@ -3403,9 +3403,6 @@ msgstr "Vermögensanschaffungskosten"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Vermögensanschaffungskosten (Standard)"
 
-msgid "Asset actions"
-msgstr "Anlagenaktionen"
-
 msgid "asset class"
 msgstr "anlagenklasse"
 
@@ -4898,9 +4895,6 @@ msgstr "Schlussbilanz"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Das Abschließen beendet den Vertrag. Jede Einheit muss zurückgegeben oder verkauft und jede Abrechnungsperiode abgerechnet werden."
-
-msgid "Closing Liability"
-msgstr "Endverbindlichkeit"
 
 msgid "Closure blocked"
 msgstr "Abschluss blockiert"
@@ -14047,8 +14041,8 @@ msgstr "Keine Änderungen aufgezeichnet"
 msgid "No changes yet."
 msgstr "Noch keine Änderungen."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Noch keine Änderungen. Sobald das Leasing aktiv ist, ist Ändern in der Kopfzeile und die Optionen Beendigung und Kauf für jede Anlage auf der Anlagenkarte."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Keine Änderungen vorhanden. Sobald der Mietvertrag aktiv ist, befindet sich Ändern im Header und Beenden und Kaufen auf der Seite jedes Vermögenswerts."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Keine Gebühren. Kilometer-, Schaden-, Liefer- und Reinigungsgebühren werden der nächsten Rechnung hinzugefügt."
@@ -15275,9 +15269,6 @@ msgstr "Eröffnungssaldo der bereits vor dem Hinzufügen dieses Vermögenswerts 
 
 msgid "Opening balances as of"
 msgstr "Eröffnungssalden zum"
-
-msgid "Opening Liability"
-msgstr "Anfängliche Verbindlichkeit"
 
 msgid "Opening Value"
 msgstr "Eröffnungswert"
@@ -16569,9 +16560,6 @@ msgstr "Preisfindungs-Rückverfolgung"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Primäres Kassenkonto für Banktransaktionen"
-
-msgid "Principal"
-msgstr "Kapital"
 
 msgid "Principal Collected"
 msgstr "Kapital eingezogen"
@@ -18744,6 +18732,9 @@ msgstr "Platz zum Wachsen ohne zusätzliche Tools"
 
 msgid "ROU Amortization"
 msgstr "Amortisation des Nutzungsrechts"
+
+msgid "ROU Asset"
+msgstr "Nutzungsrecht-Vermögenswert"
 
 msgid "Rounding Account"
 msgstr "Rundungskonto"

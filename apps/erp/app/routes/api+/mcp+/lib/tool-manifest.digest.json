@@ -875,7 +875,7 @@
     {"name":"purchasing_getDefaultAttachmentsForPO","classification":"READ","paramCount":2,"schema":"17cccb0ea3ef","response":"4a42c6b9da80","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLease","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"088b0a26be2c","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLeaseEvents","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"d33db68815b5","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
-    {"name":"purchasing_getLeaseLines","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"a6125309c7f7","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
+    {"name":"purchasing_getLeaseLines","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"c67039919353","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLeasePayments","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"73152bc44605","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLeaseRelatedDocuments","classification":"READ","paramCount":1,"schema":"9fb51372ff53","response":"c999fc505e07","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getLeases","classification":"READ","paramCount":3,"schema":"c61cae75d189","response":"2492d3f8f118","injectAuth":"companyId","permission":"purchasing:view","paginates":true,"defaults":"always"},

@@ -3403,9 +3403,6 @@ msgstr "परिसंपत्ति अधिग्रहण लागत"
 msgid "Asset Acquisition Cost (default)"
 msgstr "परिसंपत्ति अधिग्रहण लागत (डिफ़ॉल्ट)"
 
-msgid "Asset actions"
-msgstr "संपत्ति क्रियाएँ"
-
 msgid "asset class"
 msgstr "परिसंपत्ति वर्ग"
 
@@ -4898,9 +4895,6 @@ msgstr "समापन"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "बंद करना समझौते को समाप्त करता है। हर इकाई को वापस किया या बेचा जाना चाहिए और हर बिलिंग अवधि को चालान किया गया होना चाहिए।"
-
-msgid "Closing Liability"
-msgstr "समापन देयता"
 
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
@@ -14047,8 +14041,8 @@ msgstr "कोई परिवर्तन दर्ज नहीं किय�
 msgid "No changes yet."
 msgstr "अभी तक कोई परिवर्तन नहीं।"
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "अभी तक कोई परिवर्तन नहीं। एक बार पट्टा सक्रिय होने के बाद, संशोधन हेडर में है और प्रत्येक संपत्ति के समाप्ति और खरीद संपत्ति कार्ड पर हैं।"
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "अभी कोई परिवर्तन नहीं है। एक बार लीज सक्रिय हो जाए, तो संशोधन शीर्षलेख में है और समाप्त तथा खरीद प्रत्येक संपत्ति पृष्ठ पर हैं।"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "कोई शुल्क नहीं। माइलेज, क्षति, डिलीवरी या सफाई शुल्क अगले चालान में शामिल होंगे।"
@@ -15275,9 +15269,6 @@ msgstr "इस संपत्ति को Carbon में जोड़े ज
 
 msgid "Opening balances as of"
 msgstr "के अनुसार प्रारंभिक शेष राशि"
-
-msgid "Opening Liability"
-msgstr "प्रारंभिक देयता"
 
 msgid "Opening Value"
 msgstr "प्रारंभिक मूल्य"
@@ -16569,9 +16560,6 @@ msgstr "मूल्य निर्धारण ट्रेस"
 
 msgid "Primary cash account for bank transactions"
 msgstr "बैंक लेनदेन के लिए प्राथमिक नकद खाता"
-
-msgid "Principal"
-msgstr "मूल राशि"
 
 msgid "Principal Collected"
 msgstr "एकत्रित मूलधन"
@@ -18744,6 +18732,9 @@ msgstr "बिना अतिरिक्त उपकरण जोड़े �
 
 msgid "ROU Amortization"
 msgstr "ROU परिशोधन"
+
+msgid "ROU Asset"
+msgstr "उपयोग के अधिकार की संपत्ति"
 
 msgid "Rounding Account"
 msgstr "राउंडिंग खाता"

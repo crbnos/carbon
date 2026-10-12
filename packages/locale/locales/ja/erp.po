@@ -3403,9 +3403,6 @@ msgstr "資産取得原価"
 msgid "Asset Acquisition Cost (default)"
 msgstr "資産取得原価（デフォルト）"
 
-msgid "Asset actions"
-msgstr "資産の操作"
-
 msgid "asset class"
 msgstr "資産クラス"
 
@@ -4898,9 +4895,6 @@ msgstr "終了残高"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "クローズにより契約が完了します。すべてのユニットは返却または売却され、すべての請求期間は請求済でなければなりません。"
-
-msgid "Closing Liability"
-msgstr "期末負債"
 
 msgid "Closure blocked"
 msgstr "完了がブロックされています"
@@ -14047,8 +14041,8 @@ msgstr "変更が記録されていません"
 msgid "No changes yet."
 msgstr "まだ変更がありません。"
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "まだ変更がありません。リースが有効になると、変更はヘッダーにあり、各資産の終了と購入は資産カードにあります。"
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "変更がまだありません。リースが有効になると、「修正」はヘッダーに、「終了」と「購入」は各資産のページにあります。"
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "請求がありません。走行距離、損傷、配送、クリーニング料金は次の請求書に含まれます。"
@@ -15275,9 +15269,6 @@ msgstr "このアセットがCarbonに追加される前に既に予約されて
 
 msgid "Opening balances as of"
 msgstr "～の期首残高"
-
-msgid "Opening Liability"
-msgstr "初期負債"
 
 msgid "Opening Value"
 msgstr "期首価額"
@@ -16569,9 +16560,6 @@ msgstr "価格設定トレース"
 
 msgid "Primary cash account for bank transactions"
 msgstr "銀行取引の主要な現金勘定"
-
-msgid "Principal"
-msgstr "元本"
 
 msgid "Principal Collected"
 msgstr "元本回収済み"
@@ -18744,6 +18732,9 @@ msgstr "さらに多くのツールを追加することなく成長する余地
 
 msgid "ROU Amortization"
 msgstr "ROU償却"
+
+msgid "ROU Asset"
+msgstr "使用権資産"
 
 msgid "Rounding Account"
 msgstr "丸めアカウント"

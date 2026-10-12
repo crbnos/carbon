@@ -3403,9 +3403,6 @@ msgstr "Custo de aquisição do ativo"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Custo de aquisição do ativo (padrão)"
 
-msgid "Asset actions"
-msgstr "Ações do ativo"
-
 msgid "asset class"
 msgstr "classe de ativo"
 
@@ -4898,9 +4895,6 @@ msgstr "Encerramento"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Fechar finaliza o contrato. Todas as unidades devem ser devolvidas ou vendidas e todos os períodos de faturamento devem ser faturados."
-
-msgid "Closing Liability"
-msgstr "Obrigação de Fechamento"
 
 msgid "Closure blocked"
 msgstr "Encerramento bloqueado"
@@ -14047,8 +14041,8 @@ msgstr "Nenhuma alteração registrada"
 msgid "No changes yet."
 msgstr "Nenhuma mudança ainda."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Nenhuma alteração ainda. Depois que o arrendamento estiver ativo, Modificar estará no cabeçalho e Terminar e Comprar de cada ativo estão no cartão de Ativos."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Sem alterações ainda. Assim que o arrendamento estiver ativo, Modificar está no cabeçalho e Encerrar e Comprar estão na página de cada ativo."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Sem cobranças. Cobranças de quilometragem, dano, entrega ou limpeza serão incluídas na próxima fatura."
@@ -15275,9 +15269,6 @@ msgstr "Saldo de abertura da depreciação já contabilizada antes de este ativo
 
 msgid "Opening balances as of"
 msgstr "Saldos de abertura em"
-
-msgid "Opening Liability"
-msgstr "Passivo de abertura"
 
 msgid "Opening Value"
 msgstr "Valor de abertura"
@@ -16569,9 +16560,6 @@ msgstr "Rastreamento de precificação"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Conta caixa primária para transações bancárias"
-
-msgid "Principal"
-msgstr "Principal"
 
 msgid "Principal Collected"
 msgstr "Principal Coletado"
@@ -18744,6 +18732,9 @@ msgstr "Espaço para crescer sem adicionar mais ferramentas"
 
 msgid "ROU Amortization"
 msgstr "Amortização de ROU"
+
+msgid "ROU Asset"
+msgstr "Ativo de Direito de Uso"
 
 msgid "Rounding Account"
 msgstr "Conta de arredondamento"

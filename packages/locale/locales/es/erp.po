@@ -3403,9 +3403,6 @@ msgstr "Costo de adquisición de activos"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Costo de adquisición de activos (predeterminado)"
 
-msgid "Asset actions"
-msgstr "Acciones de activos"
-
 msgid "asset class"
 msgstr "clase de activo"
 
@@ -4898,9 +4895,6 @@ msgstr "Cierre"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "Cerrar finaliza el acuerdo. Todas las unidades deben ser devueltas o vendidas y todos los períodos de facturación deben estar facturados."
-
-msgid "Closing Liability"
-msgstr "Pasivo de Cierre"
 
 msgid "Closure blocked"
 msgstr "Cierre bloqueado"
@@ -14047,8 +14041,8 @@ msgstr "Sin cambios registrados"
 msgid "No changes yet."
 msgstr "Sin cambios aún."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Sin cambios aún. Una vez que el arrendamiento esté activo, Modificar está en el encabezado y Finalizar y Comprar de cada activo están en la tarjeta de activos."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Sin cambios aún. Una vez que el arrendamiento es activo, Modificar se encuentra en el encabezado y Terminar y Comprar se encuentran en la página de cada activo."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Sin cargos. Los cargos por kilometraje, daños, entrega o limpieza se incluyen en la siguiente factura."
@@ -15275,9 +15269,6 @@ msgstr "Saldo de apertura de la depreciación ya contabilizada antes de que este
 
 msgid "Opening balances as of"
 msgstr "Saldos de apertura al"
-
-msgid "Opening Liability"
-msgstr "Pasivo inicial"
 
 msgid "Opening Value"
 msgstr "Valor de apertura"
@@ -16569,9 +16560,6 @@ msgstr "Traza de fijación de precios"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Cuenta de efectivo principal para transacciones bancarias"
-
-msgid "Principal"
-msgstr "Principal"
 
 msgid "Principal Collected"
 msgstr "Principal cobrado"
@@ -18744,6 +18732,9 @@ msgstr "Espacio para crecer sin añadir más herramientas"
 
 msgid "ROU Amortization"
 msgstr "Amortización ROU"
+
+msgid "ROU Asset"
+msgstr "Activo por Derecho de Uso"
 
 msgid "Rounding Account"
 msgstr "Cuenta de redondeo"

@@ -13,7 +13,8 @@ import {
   Td,
   Th,
   Thead,
-  Tr
+  Tr,
+  VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DateTime, Hyperlink } from "~/components";
@@ -53,6 +54,7 @@ const LeaseEvents = ({
     journals.map((journal) => [journal.id, journal.journalEntryId])
   );
   const assetName = new Map(lines.map((line) => [line.id, line.description]));
+  const severalAssets = lines.length > 1;
 
   const eventLabel = (value: LeaseEvent["eventType"]) => {
     switch (value) {
@@ -82,7 +84,7 @@ const LeaseEvents = ({
           <p className="text-sm text-muted-foreground">
             <Trans>
               No changes yet. Once the lease is active, Modify is in the header
-              and each asset's Terminate and Purchase are on the Assets card.
+              and Terminate and Purchase are on each asset's page.
             </Trans>
           </p>
         ) : (
@@ -92,9 +94,11 @@ const LeaseEvents = ({
                 <Th>
                   <Trans>Event</Trans>
                 </Th>
-                <Th>
-                  <Trans>Asset</Trans>
-                </Th>
+                {severalAssets && (
+                  <Th>
+                    <Trans>Asset</Trans>
+                  </Th>
+                )}
                 <Th>
                   <Trans>Effective</Trans>
                 </Th>
@@ -102,22 +106,13 @@ const LeaseEvents = ({
                   <Trans>Liability</Trans>
                 </Th>
                 <Th className="text-right">
-                  <Trans>Right-of-Use Asset</Trans>
+                  <Trans>ROU Asset</Trans>
                 </Th>
                 <Th className="text-right">
                   <Trans>Gain (Loss)</Trans>
                 </Th>
                 <Th>
-                  <Trans>Classification</Trans>
-                </Th>
-                <Th>
                   <Trans>Journal</Trans>
-                </Th>
-                <Th>
-                  <Trans>Fixed Asset</Trans>
-                </Th>
-                <Th>
-                  <Trans>Notes</Trans>
                 </Th>
               </Tr>
             </Thead>
@@ -126,11 +121,45 @@ const LeaseEvents = ({
                 const asset = event.fixedAssetId
                   ? fixedAssets[event.fixedAssetId]
                   : undefined;
+                // The event's detail sits under its name: a classification
+                // change, the fixed asset a purchase made, and the notes.
+                const classificationChange =
+                  event.classificationBefore !== event.classificationAfter
+                    ? `${classificationLabel(event.classificationBefore)} → ${classificationLabel(event.classificationAfter)}`
+                    : null;
                 return (
                   <Tr key={event.id}>
-                    <Td>{eventLabel(event.eventType)}</Td>
-                    <Td>{assetName.get(event.leaseLineId) ?? "—"}</Td>
                     <Td>
+                      <VStack spacing={0}>
+                        <span className="whitespace-nowrap">
+                          {eventLabel(event.eventType)}
+                        </span>
+                        {classificationChange && (
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {classificationChange}
+                          </span>
+                        )}
+                        {event.fixedAssetId && (
+                          <Hyperlink
+                            className="text-xs"
+                            to={path.to.fixedAssetDetails(event.fixedAssetId)}
+                          >
+                            {asset?.fixedAssetId ?? asset?.name ?? t`Asset`}
+                          </Hyperlink>
+                        )}
+                        {event.notes && (
+                          <span className="text-xs text-muted-foreground line-clamp-2">
+                            {event.notes}
+                          </span>
+                        )}
+                      </VStack>
+                    </Td>
+                    {severalAssets && (
+                      <Td className="whitespace-nowrap">
+                        {assetName.get(event.leaseLineId) ?? "—"}
+                      </Td>
+                    )}
+                    <Td className="whitespace-nowrap">
                       <DateTime value={event.effectiveDate} variant="date" />
                     </Td>
                     <Td className="text-right whitespace-nowrap">
@@ -155,18 +184,13 @@ const LeaseEvents = ({
                         currencyCode={currencyCode}
                       />
                     </Td>
-                    <Td className="text-right">
+                    <Td className="text-right whitespace-nowrap">
                       <LeaseMoney
                         value={event.gainLoss}
                         currencyCode={currencyCode}
                       />
                     </Td>
                     <Td className="whitespace-nowrap">
-                      {event.classificationBefore === event.classificationAfter
-                        ? classificationLabel(event.classificationAfter)
-                        : `${classificationLabel(event.classificationBefore)} → ${classificationLabel(event.classificationAfter)}`}
-                    </Td>
-                    <Td>
                       {event.journalId ? (
                         <Hyperlink
                           to={path.to.journalEntryDetails(event.journalId)}
@@ -174,22 +198,8 @@ const LeaseEvents = ({
                           {journalById.get(event.journalId) ?? t`Journal`}
                         </Hyperlink>
                       ) : (
-                        "—"
+                        <span className="text-muted-foreground">—</span>
                       )}
-                    </Td>
-                    <Td>
-                      {event.fixedAssetId ? (
-                        <Hyperlink
-                          to={path.to.fixedAssetDetails(event.fixedAssetId)}
-                        >
-                          {asset?.fixedAssetId ?? asset?.name ?? t`Asset`}
-                        </Hyperlink>
-                      ) : (
-                        "—"
-                      )}
-                    </Td>
-                    <Td>
-                      <span className="line-clamp-2">{event.notes ?? ""}</span>
                     </Td>
                   </Tr>
                 );

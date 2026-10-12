@@ -3403,9 +3403,6 @@ msgstr "Costo di acquisizione dell'asset"
 msgid "Asset Acquisition Cost (default)"
 msgstr "Costo di acquisizione dell'asset (predefinito)"
 
-msgid "Asset actions"
-msgstr "Azioni del bene"
-
 msgid "asset class"
 msgstr "classe di cespiti"
 
@@ -4898,9 +4895,6 @@ msgstr "Chiusura"
 
 msgid "Closing finishes the agreement. Every unit must be returned or sold and every billing period invoiced."
 msgstr "La chiusura completa l'accordo. Ogni unità deve essere restituita o venduta e ogni periodo di fatturazione fatturato."
-
-msgid "Closing Liability"
-msgstr "Passività di chiusura"
 
 msgid "Closure blocked"
 msgstr "Chiusura bloccata"
@@ -14047,8 +14041,8 @@ msgstr "Nessuna modifica registrata"
 msgid "No changes yet."
 msgstr "Nessuna modifica ancora."
 
-msgid "No changes yet. Once the lease is active, Modify is in the header and each asset's Terminate and Purchase are on the Assets card."
-msgstr "Nessun cambiamento ancora. Una volta che la locazione è attiva, Modifica è nell'intestazione e Termina e Acquista di ogni bene sono sulla scheda Beni."
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "Nessuna modifica al momento. Una volta che il contratto di leasing è attivo, Modifica si trova nell'intestazione e Termina e Acquista si trovano sulla pagina di ogni asset."
 
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "Nessun addebito. Gli addebiti per chilometraggio, danni, consegna o pulizia verranno addebitati sulla fattura successiva."
@@ -15275,9 +15269,6 @@ msgstr "Saldo di apertura dell'ammortamento già contabilizzato prima dell'aggiu
 
 msgid "Opening balances as of"
 msgstr "Saldi di apertura al"
-
-msgid "Opening Liability"
-msgstr "Passività iniziale"
 
 msgid "Opening Value"
 msgstr "Valore di apertura"
@@ -16569,9 +16560,6 @@ msgstr "Traccia della determinazione dei prezzi"
 
 msgid "Primary cash account for bank transactions"
 msgstr "Conto cassa primario per le transazioni bancarie"
-
-msgid "Principal"
-msgstr "Capitale"
 
 msgid "Principal Collected"
 msgstr "Capitale raccolto"
@@ -18744,6 +18732,9 @@ msgstr "Spazio per crescere senza aggiungere altri strumenti"
 
 msgid "ROU Amortization"
 msgstr "Ammortamento del diritto d'uso"
+
+msgid "ROU Asset"
+msgstr "Bene Diritto d'Uso"
 
 msgid "Rounding Account"
 msgstr "Conto di arrotondamento"
