@@ -48,6 +48,7 @@ import {
   onboardingFormClassName
 } from "./OnboardingCard";
 import PeriodSelector from "./PeriodSelector";
+import { ReadOnlyField, ReadOnlyFields } from "./ReadOnlyField";
 import RealtimeDataProvider from "./RealtimeDataProvider";
 import { RevisionSuffix } from "./RevisionSuffix";
 import SearchFilter from "./SearchFilter";
@@ -100,6 +101,8 @@ export {
   OperationTypeIcon,
   PeriodSelector,
   PrintButton,
+  ReadOnlyField,
+  ReadOnlyFields,
   RealtimeDataProvider,
   RevisionSuffix,
   SearchFilter,

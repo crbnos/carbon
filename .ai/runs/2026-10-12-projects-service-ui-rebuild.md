@@ -19,6 +19,11 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 4: Add ReadOnlyField for read-only values
 
+- Added `ReadOnlyField` and `ReadOnlyFields` in `apps/erp/app/components/ReadOnlyField.tsx`, exported from `~/components`.
+- `ReadOnlyField` uses `LabelWithHelp variant="inline"` when `termId` is set. It renders a muted `—` for an empty value.
+- The license-header fixer walks tracked files only (`git ls-files --cached`). Run `git add -N <file>` before the fixer on a new file.
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed. No screen uses the component yet, so no screenshot.
+
 ## Task 5: Add the grid helpers EditableByRow and useStableEditableComponents
 
 ## Task 6: Add collapsible groups and counts to the sidebars
