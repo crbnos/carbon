@@ -266,6 +266,8 @@ Shots: `25-my-time.png`, `25-my-time-last-week.png`, `25-my-time-edited.png` (2 
 
 ## Task 26: Rebuild MES My Time as a touch grid
 
+Unverified in the browser: this worktree runs no MES dev server (the brief says not to start one). Checked by `pnpm exec turbo run typecheck --filter=mes` (pass), `pnpm --filter mes test` (6 files, 73 tests pass) and `pnpm --filter mes build` (exit 0, no "Server-only module referenced by client").
+
 ## Task 27: Rebuild Approvals with Time and Billing tabs
 
 ## Task 28: Edit labor category rates in a grid

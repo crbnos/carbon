@@ -149,6 +149,9 @@ msgstr "Ekle ve Çıkış Yap"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Doğrulayıcı Uygulaması Ekle"
 
@@ -347,6 +350,9 @@ msgstr "Özellik"
 
 msgid "Characteristics"
 msgstr "Özellikler"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "Sohbet"
@@ -658,6 +664,9 @@ msgstr "Operasyonları Sonlandır"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Her iş emrinin değerini girin veya ilk satırdan tüm iş emirlerini bir kez doldurun. Boş satırlar atlanır."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Sonraki"
 msgid "Next step"
 msgstr "Sonraki adım"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "Hayır"
 
@@ -1264,8 +1276,8 @@ msgstr "Stok yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "Bu hafta zaman yok. Çalıştığınız her İş emri veya Görev için bir satır ekleyin."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
@@ -1507,6 +1519,9 @@ msgstr "Önleyici"
 
 msgid "Previous step"
 msgstr "Önceki adım"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "Yazdır"
@@ -1974,6 +1989,9 @@ msgstr "Alt derleme {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
 
@@ -2058,6 +2076,9 @@ msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böyl
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"

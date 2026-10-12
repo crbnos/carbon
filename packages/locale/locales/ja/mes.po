@@ -149,6 +149,9 @@ msgstr "追加して払出"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "認証アプリを追加"
 
@@ -347,6 +350,9 @@ msgstr "特性"
 
 msgid "Characteristics"
 msgstr "特性"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "チャット"
@@ -658,6 +664,9 @@ msgstr "工程を終了"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "次へ"
 msgid "Next step"
 msgstr "次のステップ"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "いいえ"
 
@@ -1264,8 +1276,8 @@ msgstr "在庫なし"
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "今週は時間がありません。作業した製造指図またはタスクごとに行を追加してください。"
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
@@ -1507,6 +1519,9 @@ msgstr "予防保全"
 
 msgid "Previous step"
 msgstr "前のステップ"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "印刷"
@@ -1974,6 +1989,9 @@ msgstr "サブアセンブリ {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "サブアセンブリ {0} · {1} — 単独で表示"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "匿名で提出"
 
@@ -2058,6 +2076,9 @@ msgstr "この部品は在庫からスクラップされます。その要求事
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "サムネイル"

@@ -149,6 +149,9 @@ msgstr "Add & Issue"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "Add a row for each job or task you worked on."
+
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
 
@@ -347,6 +350,9 @@ msgstr "Characteristic"
 
 msgid "Characteristics"
 msgstr "Characteristics"
+
+msgid "Charge Number"
+msgstr "Charge Number"
 
 msgid "Chat"
 msgstr "Chat"
@@ -658,6 +664,9 @@ msgstr "End Operations"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
+
+msgid "Enter hours from 0 to 24"
+msgstr "Enter hours from 0 to 24"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Next"
 msgid "Next step"
 msgstr "Next step"
 
+msgid "Next week"
+msgstr "Next week"
+
 msgid "No"
 msgstr "No"
 
@@ -1264,8 +1276,8 @@ msgstr "No stock"
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "No time this week. Add a row for each job or task you worked on."
+msgid "No time this week"
+msgstr "No time this week"
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
@@ -1507,6 +1519,9 @@ msgstr "Preventive"
 
 msgid "Previous step"
 msgstr "Previous step"
+
+msgid "Previous week"
+msgstr "Previous week"
 
 msgid "Print"
 msgstr "Print"
@@ -1974,6 +1989,9 @@ msgstr "Sub-Assembly {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-Assembly {0} · {1} — shown on its own"
 
+msgid "Submit and post week"
+msgstr "Submit and post week"
+
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
 
@@ -2058,6 +2076,9 @@ msgstr "This part will be scrapped from stock. Its requirement stays open so you
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
+
+msgid "This week"
+msgstr "This week"
 
 msgid "Thumbnail"
 msgstr "Thumbnail"

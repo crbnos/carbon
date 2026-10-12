@@ -149,6 +149,9 @@ msgstr "Dodaj i wydaj"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpośrednio."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Dodaj aplikację uwierzytelniającą"
 
@@ -347,6 +350,9 @@ msgstr "Cecha"
 
 msgid "Characteristics"
 msgstr "Cechy"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "Czat"
@@ -658,6 +664,9 @@ msgstr "Zakończ operacje"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Wpisz wartość każdego zlecenia produkcyjnego lub wypełnij wszystkie zlecenia jednocześnie z pierwszego wiersza. Puste wiersze są pomijane."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Następny"
 msgid "Next step"
 msgstr "Następny krok"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "Nie"
 
@@ -1264,8 +1276,8 @@ msgstr "Brak zapasu"
 msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "Brak czasu w tym tygodniu. Dodaj wiersz dla każdego zlecenia produkcyjnego lub zadania, nad którym pracowałeś."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
@@ -1507,6 +1519,9 @@ msgstr "Zapobiegawcze"
 
 msgid "Previous step"
 msgstr "Poprzedni krok"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "Drukuj"
@@ -1974,6 +1989,9 @@ msgstr "Podzestawienie {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
 
@@ -2058,6 +2076,9 @@ msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozos
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Miniatura"

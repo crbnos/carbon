@@ -149,6 +149,9 @@ msgstr "Добавить и выдать"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Добавить приложение аутентификатора"
 
@@ -347,6 +350,9 @@ msgstr "Характеристика"
 
 msgid "Characteristics"
 msgstr "Характеристики"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "Чат"
@@ -658,6 +664,9 @@ msgstr "Завершить операции"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Введите значение для каждого производственного заказа или заполните все производственные заказы одновременно из первой строки. Пустые строки пропускаются."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Далее"
 msgid "Next step"
 msgstr "Следующий шаг"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "Нет"
 
@@ -1264,8 +1276,8 @@ msgstr "Нет запасов"
 msgid "No time entries for this week"
 msgstr "Нет записей учёта времени за эту неделю"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "Нет времени на этой неделе. Добавьте строку для каждого производственного заказа или задачи, которые вы выполняли."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "На складе нет записей о наличии этого товара. Вы все равно можете его подобрать — количество в наличии станет отрицательным до тех пор, пока инвентаризация не будет согласована."
@@ -1507,6 +1519,9 @@ msgstr "Предупреждающее"
 
 msgid "Previous step"
 msgstr "Предыдущий шаг"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "Печать"
@@ -1974,6 +1989,9 @@ msgstr "Под-узел {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Под-узел {0} · {1} — показывается отдельно"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Отправить анонимно"
 
@@ -2058,6 +2076,9 @@ msgstr "Эта часть будет списана со склада. Её тр
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Эта единица будет окончательно списана, и будет создан новый серийный номер замены."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Миниатюра"

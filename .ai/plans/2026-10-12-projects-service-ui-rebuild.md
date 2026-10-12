@@ -218,7 +218,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [ ] Task 23: Rebuild the element panel and page (Layer 4)
 - [ ] Task 24: Put all plan lines in one grid
 - [x] Task 25: Rebuild ERP My Time as a grid
-- [ ] Task 26: Rebuild MES My Time as a touch grid
+- [x] Task 26: Rebuild MES My Time as a touch grid
 - [ ] Task 27: Rebuild Approvals with Time and Billing tabs
 - [ ] Task 28: Edit labor category rates in a grid
 - [ ] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
@@ -1712,3 +1712,4 @@ Run of 2026-10-12, Part B (Tasks 25–29):
 - Task 25: DCAA reasons: the cell's save returns a promise that the change modal settles; Cancel settles it with an error, so the cell reverts. Not verifiable here (DCAA is off in the dev company).
 - Task 25: Correct for a posted cell is in the row menu, one item per posted day ("Correct Mon 12"); the menu column shows only while a row has a posted cell. A cell's status shows as its icon beside the hours unless Draft; the R&D research role is muted text after the labor category, not a badge.
 - Task 25: the manager page (`projects+/timesheets.$employeeId.tsx`) uses the same component; the dev company has one employee, whose own id redirects to My Time, so it is unverified in the browser.
+- Task 26: the MES week is one header row (title, previous, the range, This week, next, then Add row and Submit week at `size="lg"`) and one `<table>` with a sticky header, a sticky Charge Number column and a sticky footer of day totals and the week total. A day cell is a borderless `<input inputMode="decimal">` (`min-h-12`, inset focus ring, saves on blur and Enter, Escape reverts), copied from `InspectionMeasurementMatrix`'s touch cells, keeping `DayCell`'s save and revert (the typed text is local state; a refused save drops it, so the stored hours show again). Out-of-range text (not a number, below 0 or above 24) toasts and reverts. The row and totals cards are gone; an empty week shows one quiet line, like the ERP empty state. The submit button now reads as in the ERP ("Submit and post week" when approval is off): the loader reads `timesheetApprovalRequired`, which the action already read. Not verified in a browser (no MES server here).

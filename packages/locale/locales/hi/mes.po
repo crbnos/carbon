@@ -149,6 +149,9 @@ msgstr "जोड़ें और जारी करें"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
@@ -347,6 +350,9 @@ msgstr "विशेषता"
 
 msgid "Characteristics"
 msgstr "विशेषताएं"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "चैट"
@@ -658,6 +664,9 @@ msgstr "ऑपरेशन समाप्त करें"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "अगला"
 msgid "Next step"
 msgstr "अगला चरण"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "नहीं"
 
@@ -1264,8 +1276,8 @@ msgstr "कोई स्टॉक नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "इस सप्ताह कोई समय नहीं। प्रत्येक जॉब या कार्य के लिए जिस पर आपने काम किया, एक पंक्ति जोड़ें।"
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
@@ -1507,6 +1519,9 @@ msgstr "निवारक"
 
 msgid "Previous step"
 msgstr "पिछला चरण"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "प्रिंट करें"
@@ -1974,6 +1989,9 @@ msgstr "सब-असेंबली {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "सब-असेंबली {0} · {1} — स्वयं पर दिखाया गया"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
 
@@ -2058,6 +2076,9 @@ msgstr "यह हिस्सा स्टॉक से स्क्रैप �
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "थंबनेल"

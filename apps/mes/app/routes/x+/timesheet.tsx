@@ -8,7 +8,6 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
-  Badge,
   BottomSheet,
   BottomSheetBody,
   BottomSheetContent,
@@ -16,29 +15,22 @@ import {
   BottomSheetHeader,
   BottomSheetTitle,
   Button,
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
   cn,
-  HStack,
   Input,
-  NumberField,
-  NumberInput,
   Status,
   toast
 } from "@carbon/react";
 import {
+  equals,
   formatDate,
   INPUT_FORMAT,
-  INPUT_STEP,
   TIMESHEET_ENTRY_STATUS_COLOR_MAP,
   timesheetWeek,
   weekStartOf
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -85,7 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const timeZone = await getCompanyTimeZone(client, companyId);
   const { weekStart, weekEnd, days } = timesheetWeek(timeZone, weekOffset);
 
-  const [entries, chargeNumbers, laborCategories, employeeJob] =
+  const [entries, chargeNumbers, laborCategories, employeeJob, approval] =
     await Promise.all([
       getTimesheetWeek(client, {
         companyId,
@@ -100,7 +92,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .select("laborCategoryId, locationId")
         .eq("id", userId)
         .eq("companyId", companyId)
-        .maybeSingle()
+        .maybeSingle(),
+      getTimesheetApprovalRequired(client, companyId)
     ]);
 
   if (entries.error) {
@@ -131,7 +124,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     chargeNumbers: chargeNumbers.data ?? [],
     laborCategories: laborCategories.data ?? [],
     defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
-    jobLocationId: employeeJob.data?.locationId ?? null
+    jobLocationId: employeeJob.data?.locationId ?? null,
+    // The submit button says what submitting does, as in the ERP.
+    approvalRequired: approval.data?.timesheetApprovalRequired ?? true
   };
 }
 
@@ -274,7 +269,8 @@ export default function MESTimesheetPage() {
     chargeNumbers,
     laborCategories,
     defaultLaborCategoryId,
-    jobLocationId
+    jobLocationId,
+    approvalRequired
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const roleLabels = useMemo<Record<RdActivityRole, string>>(
@@ -333,152 +329,159 @@ export default function MESTimesheetPage() {
 
   const dayLabel = (day: string) =>
     formatDate(day, { weekday: "short", day: "numeric" }, locale);
+  const weekTotal = dayTotals.reduce((sum, hours) => sum + hours, 0);
 
   return (
-    <div className="flex flex-col h-full w-full overflow-y-auto p-4 md:p-6">
-      <div className="max-w-[60rem] mx-auto w-full flex flex-col gap-4">
-        <Card className="overflow-hidden">
-          <CardHeader>
-            <HStack className="justify-between items-center flex-wrap gap-2">
-              <CardTitle>
-                <Trans>My Time</Trans>
-              </CardTitle>
-              <HStack className="gap-2">
-                <Button
-                  size="lg"
-                  variant="secondary"
-                  leftIcon={<LuPlus />}
-                  onClick={() => setAddingRow(true)}
-                >
-                  <Trans>Add row</Trans>
-                </Button>
-                <submitFetcher.Form method="post">
-                  <input type="hidden" name="intent" value="submit" />
-                  <input type="hidden" name="from" value={weekStart} />
-                  <input type="hidden" name="to" value={weekEnd} />
-                  <Button
-                    size="lg"
-                    type="submit"
-                    leftIcon={<LuSend />}
-                    isDisabled={!hasDraft || isSubmitting}
-                    isLoading={isSubmitting}
-                  >
-                    <Trans>Submit week</Trans>
-                  </Button>
-                </submitFetcher.Form>
-              </HStack>
-            </HStack>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                leftIcon={<LuChevronLeft />}
-              >
-                <Link to={`${path.to.timesheet}?week=${weekOffset - 1}`}>
-                  <Trans>Prev</Trans>
-                </Link>
-              </Button>
-              <span className="text-sm text-muted-foreground tabular-nums">
-                {formatDate(weekStart, { dateStyle: "medium" }, locale)} —{" "}
-                {formatDate(weekEnd, { dateStyle: "medium" }, locale)}
-              </span>
-              <Button
-                size="lg"
-                variant="outline"
-                asChild
-                rightIcon={<LuChevronRight />}
-              >
-                <Link to={`${path.to.timesheet}?week=${weekOffset + 1}`}>
-                  <Trans>Next</Trans>
-                </Link>
-              </Button>
-            </HStack>
-          </CardContent>
-        </Card>
+    <div className="flex h-full w-full flex-col gap-4 overflow-hidden p-4 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <h1 className="text-xl font-semibold">
+            <Trans>My Time</Trans>
+          </h1>
+          <Button
+            size="lg"
+            variant="ghost"
+            asChild
+            aria-label={t`Previous week`}
+          >
+            <Link to={`${path.to.timesheet}?week=${weekOffset - 1}`}>
+              <LuChevronLeft />
+            </Link>
+          </Button>
+          <span className="whitespace-nowrap text-base tabular-nums">
+            {formatDate(weekStart, { dateStyle: "medium" }, locale)} –{" "}
+            {formatDate(weekEnd, { dateStyle: "medium" }, locale)}
+          </span>
+          <Button size="lg" variant="ghost" asChild aria-label={t`Next week`}>
+            <Link to={`${path.to.timesheet}?week=${weekOffset + 1}`}>
+              <LuChevronRight />
+            </Link>
+          </Button>
+          {weekOffset !== 0 && (
+            <Button size="lg" variant="ghost" asChild>
+              <Link to={path.to.timesheet}>
+                <Trans>This week</Trans>
+              </Link>
+            </Button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="lg"
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            onClick={() => setAddingRow(true)}
+          >
+            <Trans>Add row</Trans>
+          </Button>
+          <submitFetcher.Form method="post">
+            <input type="hidden" name="intent" value="submit" />
+            <input type="hidden" name="from" value={weekStart} />
+            <input type="hidden" name="to" value={weekEnd} />
+            <Button
+              size="lg"
+              type="submit"
+              leftIcon={<LuSend />}
+              isDisabled={!hasDraft || isSubmitting}
+              isLoading={isSubmitting}
+            >
+              {approvalRequired ? (
+                <Trans>Submit week</Trans>
+              ) : (
+                <Trans>Submit and post week</Trans>
+              )}
+            </Button>
+          </submitFetcher.Form>
+        </div>
+      </div>
 
-        {gridRows.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center gap-3 py-10 text-center">
-              <LuTimer className="size-8 text-muted-foreground" />
-              <p className="text-base text-muted-foreground">
-                <Trans>
-                  No time this week. Add a row for each job or task you worked
-                  on.
-                </Trans>
-              </p>
-              <Button
-                size="lg"
-                leftIcon={<LuPlus />}
-                onClick={() => setAddingRow(true)}
-              >
-                <Trans>Add row</Trans>
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <>
-            {gridRows.map((row) => (
-              <Card key={row.key}>
-                <CardContent className="flex flex-col gap-3 pt-4">
-                  <div className="flex items-start justify-between gap-3">
+      {gridRows.length === 0 ? (
+        <div className="flex flex-col items-center gap-3 py-16 text-center">
+          <LuTimer className="size-8 text-muted-foreground" />
+          <p className="text-base font-medium">
+            <Trans>No time this week</Trans>
+          </p>
+          <p className="text-sm text-muted-foreground">
+            <Trans>Add a row for each job or task you worked on.</Trans>
+          </p>
+        </div>
+      ) : (
+        <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border bg-card max-md:scroll-fade-x">
+          <table className="w-full border-separate border-spacing-0 text-sm">
+            <thead className="sticky top-0 z-20">
+              <tr>
+                <th className="sticky left-0 z-30 min-w-[220px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground max-md:w-[150px] max-md:min-w-[150px] max-md:max-w-[150px]">
+                  <Trans>Charge Number</Trans>
+                </th>
+                {days.map((day) => (
+                  <th
+                    key={day}
+                    className="min-w-[88px] border-b border-r border-border bg-card px-2 py-2 text-center font-medium"
+                  >
+                    {dayLabel(day)}
+                  </th>
+                ))}
+                <th className="min-w-[88px] border-b border-border bg-card px-3 py-2 text-right font-medium">
+                  <Trans>Total</Trans>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {gridRows.map((row) => (
+                <tr key={row.key}>
+                  <td className="sticky left-0 z-10 border-b border-r border-border bg-card px-3 py-2 align-middle max-md:max-w-[150px] max-md:px-2">
                     <div className="flex min-w-0 flex-col">
                       <span className="flex min-w-0 items-center gap-2 text-base">
-                        <span className="shrink-0 whitespace-nowrap font-mono text-sm text-muted-foreground">
+                        <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground tabular-nums">
                           {row.readableId}
                         </span>
                         <span className="truncate font-medium">{row.name}</span>
                       </span>
-                      <span className="flex min-w-0 items-center gap-2 text-sm text-muted-foreground">
-                        <span className="truncate">
-                          {row.laborCategory}
-                          {row.workLocation &&
-                            row.workLocationId !== jobLocationId &&
-                            ` · ${row.workLocation}`}
-                        </span>
-                        {row.rdActivityRole && (
-                          <Badge variant="secondary" className="shrink-0">
-                            {roleLabels[row.rdActivityRole]}
-                          </Badge>
-                        )}
+                      <span className="truncate text-sm text-muted-foreground">
+                        {row.laborCategory}
+                        {row.workLocation &&
+                          row.workLocationId !== jobLocationId &&
+                          ` · ${row.workLocation}`}
+                        {row.rdActivityRole &&
+                          ` · ${roleLabels[row.rdActivityRole]}`}
                       </span>
                     </div>
-                    <span className="shrink-0 text-lg font-semibold tabular-nums">
-                      {formatHours(row.total, locale)}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-                    {days.map((day) => (
-                      <DayCell
-                        key={day}
-                        row={row}
-                        day={day}
-                        label={dayLabel(day)}
-                      />
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            <Card>
-              <CardContent className="grid grid-cols-4 gap-2 pt-4 sm:grid-cols-7">
+                  </td>
+                  {days.map((day) => (
+                    <td
+                      key={day}
+                      className="border-b border-r border-border p-0"
+                    >
+                      <DayCell row={row} day={day} label={dayLabel(day)} />
+                    </td>
+                  ))}
+                  <td className="border-b border-border px-3 text-right text-base font-semibold tabular-nums">
+                    {formatHours(row.total, locale)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot className="sticky bottom-0 z-20">
+              <tr>
+                <td className="sticky left-0 z-30 border-r border-border bg-muted px-3 py-3 font-medium">
+                  <Trans>Total</Trans>
+                </td>
                 {days.map((day, index) => (
-                  <div key={day} className="flex flex-col items-center">
-                    <span className="text-xs text-muted-foreground">
-                      {dayLabel(day)}
-                    </span>
-                    <span className="text-base font-semibold tabular-nums">
-                      {formatHours(dayTotals[index] ?? 0, locale)}
-                    </span>
-                  </div>
+                  <td
+                    key={day}
+                    className="border-r border-border bg-muted px-2 py-3 text-center text-base font-semibold tabular-nums"
+                  >
+                    {formatHours(dayTotals[index] ?? 0, locale)}
+                  </td>
                 ))}
-              </CardContent>
-            </Card>
-          </>
-        )}
-      </div>
+                <td className="bg-muted px-3 py-3 text-right text-base font-semibold tabular-nums">
+                  {formatHours(weekTotal, locale)}
+                </td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
 
       {addingRow && (
         <AddRowSheet
@@ -501,7 +504,19 @@ function formatHours(hours: number, locale: string) {
   return new Intl.NumberFormat(locale, INPUT_FORMAT.quantity).format(hours);
 }
 
-/** One day of a row: a large input, or the locked hours with their status. */
+/** Hours as typed: blank is 0; anything else must be a number. */
+function parseHours(text: string) {
+  const trimmed = text.trim().replace(",", ".");
+  if (trimmed === "") return 0;
+  const hours = Number(trimmed);
+  return Number.isFinite(hours) ? hours : null;
+}
+
+/**
+ * One day of a row: a borderless touch cell that saves on blur and on
+ * Enter, or the locked hours with their status. A refused save puts the
+ * stored hours back.
+ */
 function DayCell({
   row,
   day,
@@ -515,18 +530,19 @@ function DayCell({
   const { locale } = useLocale();
   const cell = row.cells[day];
   const serverHours = cell?.hours;
-  const latest = useRef<number | undefined>(serverHours);
-  // A refused save remounts the input with the stored hours.
-  const [resets, setResets] = useState(0);
+  const shownHours =
+    serverHours === undefined ? "" : formatHours(serverHours, locale);
+  // The user's typing; the stored hours show while it is null.
+  const [draft, setDraft] = useState<string | null>(null);
   const fetcher = useAction<typeof action>({
     onSuccess: (data) => {
+      setDraft(null);
       // A budget overrun never refuses the hours; it only warns.
       if (data.message) toast.warning(data.message);
     },
     onError: (data) => {
       toast.error(data.message ?? t`Failed to save the hours`);
-      latest.current = serverHours;
-      setResets((count) => count + 1);
+      setDraft(null);
     }
   });
 
@@ -535,25 +551,30 @@ function DayCell({
 
   if (isLocked) {
     return (
-      <div className="flex flex-col items-center gap-1">
-        <span className="text-xs text-muted-foreground">{label}</span>
-        <div className="flex h-12 w-full items-center justify-center gap-1.5 rounded-lg border border-border bg-muted/40 tabular-nums">
-          <Status
-            color={TIMESHEET_ENTRY_STATUS_COLOR_MAP[cell.status] ?? "gray"}
-            iconOnly
-          >
-            {cell.status}
-          </Status>
-          {formatHours(cell.hours, locale)}
-        </div>
+      <div className="flex h-full min-h-12 w-full items-center justify-center gap-1.5 bg-muted/40 text-base tabular-nums">
+        <Status
+          color={TIMESHEET_ENTRY_STATUS_COLOR_MAP[cell.status] ?? "gray"}
+          iconOnly
+        >
+          {cell.status}
+        </Status>
+        {formatHours(cell.hours, locale)}
       </div>
     );
   }
 
   const commit = () => {
-    const next = latest.current;
-    const hours = next === undefined || !Number.isFinite(next) ? 0 : next;
-    if (hours === (serverHours ?? 0)) return;
+    if (draft === null) return;
+    const hours = parseHours(draft);
+    if (hours === null || hours < 0 || hours > 24) {
+      toast.error(t`Enter hours from 0 to 24`);
+      setDraft(null);
+      return;
+    }
+    if (equals(hours, serverHours ?? 0)) {
+      setDraft(null);
+      return;
+    }
     fetcher.submit(
       {
         intent: "cell",
@@ -572,35 +593,26 @@ function DayCell({
   };
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span
-        className={cn(
-          "text-xs text-muted-foreground",
-          cell?.status === "Rejected" && "text-red-500"
-        )}
-      >
-        {label}
-      </span>
-      <NumberField
-        key={`${serverHours ?? ""}:${resets}`}
-        aria-label={t`Hours on ${label}`}
-        defaultValue={serverHours}
-        minValue={0}
-        maxValue={24}
-        step={INPUT_STEP.quantity}
-        formatOptions={INPUT_FORMAT.quantity}
-        onChange={(value) => {
-          latest.current = Number.isNaN(value) ? undefined : value;
-        }}
-      >
-        <NumberInput
-          size="lg"
-          className="text-center text-lg tabular-nums"
-          inputMode="decimal"
-          onBlur={commit}
-        />
-      </NumberField>
-    </div>
+    <input
+      type="text"
+      inputMode="decimal"
+      aria-label={t`Hours on ${label}`}
+      value={draft ?? shownHours}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={(event) => event.currentTarget.select()}
+      onBlur={commit}
+      onKeyDown={(event) => {
+        if (event.key === "Enter") event.currentTarget.blur();
+        if (event.key === "Escape") {
+          setDraft(null);
+          event.currentTarget.blur();
+        }
+      }}
+      className={cn(
+        "block h-full min-h-12 w-full min-w-[88px] bg-transparent text-center text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring",
+        cell?.status === "Rejected" && "text-red-500"
+      )}
+    />
   );
 }
 

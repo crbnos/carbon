@@ -149,6 +149,9 @@ msgstr "Adicionar e Emitir"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Adicionar aplicativo autenticador"
 
@@ -347,6 +350,9 @@ msgstr "Característica"
 
 msgid "Characteristics"
 msgstr "Características"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "Chat"
@@ -658,6 +664,9 @@ msgstr "Encerrar Operações"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Insira o valor de cada ordem de produção ou preencha todas as ordens de produção de uma vez a partir da primeira linha. Linhas vazias são ignoradas."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Próximo"
 msgid "Next step"
 msgstr "Próxima etapa"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "Não"
 
@@ -1264,8 +1276,8 @@ msgstr "Sem stock"
 msgid "No time entries for this week"
 msgstr "Nenhum registro de horas nesta semana"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "Sem horas esta semana. Adicione uma linha para cada ordem de produção ou tarefa em que você trabalhou."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Nenhum estoque de armazém está registrado para este item. Você ainda pode coletá-lo — o estoque disponível ficará negativo até que a contagem seja reconciliada."
@@ -1507,6 +1519,9 @@ msgstr "Preventiva"
 
 msgid "Previous step"
 msgstr "Etapa anterior"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "Imprimir"
@@ -1974,6 +1989,9 @@ msgstr "Sub-montagem {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Sub-montagem {0} · {1} — mostrada separadamente"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Enviar anonimamente"
 
@@ -2058,6 +2076,9 @@ msgstr "Esta peça será descartada do estoque. Seu requisito permanece aberto p
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Esta unidade será permanentemente descartada e um novo número de série de substituição será criado."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Miniatura"

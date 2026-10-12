@@ -149,6 +149,9 @@ msgstr "추가 및 출고"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
@@ -347,6 +350,9 @@ msgstr "특성"
 
 msgid "Characteristics"
 msgstr "특성"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "채팅"
@@ -658,6 +664,9 @@ msgstr "공정작업 종료"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "다음"
 msgid "Next step"
 msgstr "다음 단계"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "아니요"
 
@@ -1264,8 +1276,8 @@ msgstr "재고 없음"
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "이번 주 기록이 없습니다. 작업한 각 작업 지시 또는 작업에 대해 행을 추가하세요."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
@@ -1507,6 +1519,9 @@ msgstr "예방"
 
 msgid "Previous step"
 msgstr "이전 단계"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "인쇄"
@@ -1974,6 +1989,9 @@ msgstr "하위 조립체 {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
@@ -2058,6 +2076,9 @@ msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "썸네일"

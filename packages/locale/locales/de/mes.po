@@ -149,6 +149,9 @@ msgstr "Hinzufügen & Ausgeben"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Einen Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
 
+msgid "Add a row for each job or task you worked on."
+msgstr ""
+
 msgid "Add Authenticator App"
 msgstr "Authentifizierungs-App hinzufügen"
 
@@ -347,6 +350,9 @@ msgstr "Merkmal"
 
 msgid "Characteristics"
 msgstr "Merkmale"
+
+msgid "Charge Number"
+msgstr ""
 
 msgid "Chat"
 msgstr "Chat"
@@ -658,6 +664,9 @@ msgstr "Arbeitsgänge beenden"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Geben Sie den Wert jedes Fertigungsauftrags ein oder füllen Sie alle Fertigungsaufträge auf einmal aus der ersten Zeile. Leere Zeilen werden übersprungen."
+
+msgid "Enter hours from 0 to 24"
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -1147,6 +1156,9 @@ msgstr "Weiter"
 msgid "Next step"
 msgstr "Nächster Schritt"
 
+msgid "Next week"
+msgstr ""
+
 msgid "No"
 msgstr "Nein"
 
@@ -1264,8 +1276,8 @@ msgstr "Kein Bestand"
 msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
 
-msgid "No time this week. Add a row for each job or task you worked on."
-msgstr "Diese Woche keine Zeit. Fügen Sie eine Zeile für jeden Fertigungsauftrag oder jede Aufgabe hinzu, an der Sie gearbeitet haben."
+msgid "No time this week"
+msgstr ""
 
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Kein Lagerbestand für diesen Artikel ist erfasst. Sie können ihn trotzdem kommissionieren — der verfügbare Bestand wird negativ, bis die Inventur abgestimmt ist."
@@ -1507,6 +1519,9 @@ msgstr "Vorbeugend"
 
 msgid "Previous step"
 msgstr "Vorheriger Schritt"
+
+msgid "Previous week"
+msgstr ""
 
 msgid "Print"
 msgstr "Drucken"
@@ -1974,6 +1989,9 @@ msgstr "Untergruppe {0} · {1}"
 msgid "Sub-Assembly {0} · {1} — shown on its own"
 msgstr "Untergruppe {0} · {1} — isoliert angezeigt"
 
+msgid "Submit and post week"
+msgstr ""
+
 msgid "Submit anonymously"
 msgstr "Anonym einreichen"
 
@@ -2058,6 +2076,9 @@ msgstr "Dieses Teil wird als Ausschuss aus dem Bestand verbucht. Seine Anforderu
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Seriennummer erstellt."
+
+msgid "This week"
+msgstr ""
 
 msgid "Thumbnail"
 msgstr "Vorschaubild"
