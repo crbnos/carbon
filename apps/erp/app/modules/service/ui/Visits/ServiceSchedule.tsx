@@ -25,7 +25,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
 import { Link } from "react-router";
-import { DateTime, EmployeeAvatar } from "~/components";
+import { DateTime, EmployeeAvatar, Empty } from "~/components";
 import { useDateFormatter, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -187,9 +187,14 @@ export default function ServiceSchedule({
       </div>
 
       {groups.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          <Trans>No visits are planned in these days.</Trans>
-        </p>
+        <Empty
+          title={<Trans>No visits planned</Trans>}
+          description={
+            <Trans>
+              Visits planned in these days, for these filters, show here.
+            </Trans>
+          }
+        />
       ) : (
         groups.map((group) => (
           <Card key={group.day}>

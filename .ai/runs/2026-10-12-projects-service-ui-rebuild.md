@@ -287,6 +287,10 @@ Unverified in the browser. The demo has only Fixed lines. A Draft test contract 
 
 ## Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 
+Shots: `30-my-visits.png`, `30-customer-assets.png` (ORBSEC Defense, no assets), `30-contract-service-orders.png`, `30-build-from-part.png`.
+
+1. Reference pattern: yes — the title sits top-left like Schedule; the contract tab is a `Table compact`. 2. No overlap: yes; the contract's 8 columns scroll sideways inside the table with the Properties panel open (775 px pane). 3. One toolbar row: yes. 4. One primary: yes. 5. No input box in a table: yes. 6. Secondary actions in menus: yes. 7. Advanced fields hidden: n/a.
+
 ## Task 31: Open New Service Order in a drawer
 
 ## Task 32: Give service templates a standard record page

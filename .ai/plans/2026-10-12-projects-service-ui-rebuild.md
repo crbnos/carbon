@@ -222,7 +222,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 27: Rebuild Approvals with Time and Billing tabs
 - [x] Task 28: Edit labor category rates in a grid
 - [x] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
-- [ ] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
+- [x] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 - [ ] Task 31: Open New Service Order in a drawer
 - [ ] Task 32: Give service templates a standard record page
 - [ ] Task 33: Show a locked contract line as read-only text
@@ -1725,3 +1725,9 @@ Run of 2026-10-12, Part B (Tasks 25–29):
 - Task 29: `ContractLineBilling` has one primary action, Generate Billable Items; Line Details and Edit Funding moved into a ⋯ menu (the Funding card lost its Edit button). The Funding Actions card shows when `useGovernmentContracting()` is true, DCAA owns the totals, or the line has actions (Layer 5); on this dev stack the plan gate always passes, so it always shows. "Review Items" now opens Approvals → Billing directly.
 - Task 29: `termId`s: `acrn` (ACRN header), `funding-action` (card title), `rate-ceiling` (Ceiling header), `bill-rate` (Bill Rate header).
 - Task 29: the line form's Billing Element picker showed "No option found" for OB2 after choosing the project, while creating a Time & Materials line on a new Draft contract. Not investigated (outside this task); a T&M line could not be created in the UI here.
+
+Run of 2026-10-12, Part C (Tasks 30–38):
+
+- Task 30: Brad's standing rule ("empty sections hidden, or one muted line") outranks step 3 for sections inside a card. `Empty` replaces the empty state where the list is the whole page or tab: My Visits, the Schedule, a customer's Assets tab and the contract's Service Orders tab. The in-card lines (the visit list card, Last orders, No photos, the work tree card, the element peek's charges, History by Component, Installed Components, the billable items card) were already one muted line and stay.
+- Task 30: My Visits keeps its 576 px list column, now left-aligned under the title instead of centred, as on the Schedule page.
+- Task 30: the contract's Service Orders tab is a read-only `Table compact` with the title "Service Orders" in a bordered box (the card description is gone). With the Properties panel open the 8 columns scroll sideways inside the table.

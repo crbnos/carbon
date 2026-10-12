@@ -15,6 +15,7 @@ import {
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
+  HStack,
   Spinner,
   Switch,
   toast,
@@ -371,23 +372,25 @@ export function BuildFromPartDrawer({
           </VStack>
         </DrawerBody>
         <DrawerFooter>
-          <Button variant="secondary" onClick={onClose}>
-            <Trans>Cancel</Trans>
-          </Button>
-          <Button
-            isLoading={submitFetcher.state !== "idle"}
-            isDisabled={
-              rows.length === 0 || isLoading || submitFetcher.state !== "idle"
-            }
-            onClick={() =>
-              submitFetcher.submit(params, {
-                method: "post",
-                action: buildPath
-              })
-            }
-          >
-            <Trans>Create elements</Trans>
-          </Button>
+          <HStack>
+            <Button
+              isLoading={submitFetcher.state !== "idle"}
+              isDisabled={
+                rows.length === 0 || isLoading || submitFetcher.state !== "idle"
+              }
+              onClick={() =>
+                submitFetcher.submit(params, {
+                  method: "post",
+                  action: buildPath
+                })
+              }
+            >
+              <Trans>Create elements</Trans>
+            </Button>
+            <Button size="md" variant="solid" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+          </HStack>
         </DrawerFooter>
       </DrawerContent>
     </Drawer>

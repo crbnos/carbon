@@ -15681,6 +15681,9 @@ msgstr "Henüz onay gereklilikleri yok."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Henüz arşivlenmiş günlük yok. {0} günden eski günlükler otomatik olarak arşivlenecek ve buradan indirilmeye hazır olacaktır."
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "Bu dönem için amortisman yapılacak varlık yok."
 
@@ -16348,8 +16351,8 @@ msgstr "Henüz hiçbir seri numarası seçilmemiştir."
 msgid "No service order has fitted a part to this unit."
 msgstr "Hiçbir hizmet emri bu ünitesine bir parça takmamıştır."
 
-msgid "No service order names this contract."
-msgstr "Hiçbir hizmet emri bu sözleşmeyi adlandırmamıştır."
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "Henüz hizmet şablonu yok"
@@ -16486,8 +16489,8 @@ msgstr "Kullanılabilir değişken yok"
 msgid "No versions available"
 msgstr "Kullanılabilir sürüm yok"
 
-msgid "No visits are planned in these days."
-msgstr "Bu günlerde ziyaret planlanmamıştır."
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Henüz ziyaret yok. Bir teknisyeni göndermek için ziyaret planlayın."
@@ -22142,6 +22145,9 @@ msgstr "Hizmet Siparişleri"
 msgid "Service Orders"
 msgstr "Hizmet Siparişleri"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "Hizmet Dönemi"
 
@@ -25016,9 +25022,6 @@ msgstr "Seri numara kendi maliyet katmanını alır ve yeni birim maliyetinde st
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Satış fiyatı, bir hizmet emrindeki zamanı, tahminini ve faturasını fiyatlandıran hizmet stok kartı."
 
-msgid "The service orders this contract covers."
-msgstr "Bu sözleşmenin kapsadığı hizmet emirleri."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Bu sözleşmenin faturalandırdığı hizmetler: bir kerelik ücretler ve tekrarlayan ücretler. Değiştirmek için bir hücreyi tıklayın."
 
@@ -25392,9 +25395,6 @@ msgstr "Bu muhasebe ortağının ödenmemiş bir borcu yok — ödeme hesap üze
 
 msgid "This customer has no active contract"
 msgstr "Bu müşterinin aktif sözleşmesi yok"
-
-msgid "This customer has no registered assets yet."
-msgstr "Bu müşterinin henüz kaydedilmiş varlığı yok."
 
 msgid "This customer type's rate"
 msgstr "Bu müşteri türü'nün oranı"
@@ -26530,6 +26530,9 @@ msgstr "Ölçü birimleri"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Bir işlemde kurtarılamaz olarak raporlanan birimler, bir nedenle — yeniden işlem için bir alternatif."
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "Bilinmeyen"
 
@@ -27365,6 +27368,9 @@ msgstr "Kullanıcının herkese açık profilinde görünür"
 
 msgid "Visits"
 msgstr "Ziyaretler"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "Hükümsüz kıl"
@@ -28270,9 +28276,6 @@ msgstr "Siz yönetirsiniz; biz sağlayalım ki her şey düzgün yapılsın. Sis
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "{0} satırı PDF'den çıkarıldı ancak hiçbir envanter öğesine eşlenmedi."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "Önümüzdeki 7 gün içinde planlanmış ziyaretiniz yok."
-
 msgid "You haven't created any contacts yet."
 msgstr "Henüz hiç ilgili kişi oluşturmadınız."
 
@@ -28413,6 +28416,9 @@ msgstr "Takımınız, yapı ve erişim."
 
 msgid "Your vendor list"
 msgstr "Satıcı listeniz"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "kendiniz"

@@ -15681,6 +15681,9 @@ msgstr "承認要求事項はまだありません。"
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "アーカイブ済のログはまだありません。{0}日以上前のログは自動的にアーカイブ済になり、ここからダウンロード可能になります。"
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "この期間に減価償却する資産がありません。"
 
@@ -16348,8 +16351,8 @@ msgstr "シリアル番号がまだ選択されていません。"
 msgid "No service order has fitted a part to this unit."
 msgstr "サービスオーダーがこのユニットに部品を装着していません。"
 
-msgid "No service order names this contract."
-msgstr "このコントラクトに名前が付けられたサービスオーダーがありません。"
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "まだサービステンプレートがありません"
@@ -16486,8 +16489,8 @@ msgstr "利用可能な変数がありません"
 msgid "No versions available"
 msgstr "利用可能なバージョンがありません"
 
-msgid "No visits are planned in these days."
-msgstr "これらの日に計画されたビジットがありません。"
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "まだビジットがありません。1つスケジュール設定して技術者を送ってください。"
@@ -22142,6 +22145,9 @@ msgstr "サービス注文"
 msgid "Service Orders"
 msgstr "サービス注文"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "サービス期間"
 
@@ -25016,9 +25022,6 @@ msgstr "シリアルは独自の原価レイヤーを取得し、新しい単位
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "サービス注文の時間の価格、見積、請求書を決定するサービス品目。"
 
-msgid "The service orders this contract covers."
-msgstr "このコントラクトがカバーするサービス注文。"
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "このコントラクトが請求する外注サービス：1回限りの料金と定期的な料金。セルをクリックして変更してください。"
 
@@ -25392,9 +25395,6 @@ msgstr "この取引先には未払い金がありません。支払いは掛け
 
 msgid "This customer has no active contract"
 msgstr "このお客様には有効なコントラクトがありません"
-
-msgid "This customer has no registered assets yet."
-msgstr "このお客様には登録済の資産がまだありません。"
 
 msgid "This customer type's rate"
 msgstr "この得意先タイプのレート"
@@ -26530,6 +26530,9 @@ msgstr "測定単位"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "工程で回復不可能として報告された単位数（理由付き）。手直しの代替案です。"
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "不明"
 
@@ -27365,6 +27368,9 @@ msgstr "ユーザーの公開プロフィールに表示されます"
 
 msgid "Visits"
 msgstr "訪問"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "取消"
@@ -28270,9 +28276,6 @@ msgstr "あなたが主導し、私たちはそれが正しく完了すること
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "あなたは、PDFから抽出された{0}行を持っていますが、これらはインベントリアイテムにマップされていません。"
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "次の7日間の訪問予定がありません。"
-
 msgid "You haven't created any contacts yet."
 msgstr "まだ担当者を作成していません。"
 
@@ -28413,6 +28416,9 @@ msgstr "あなたのチーム、構造、およびアクセス。"
 
 msgid "Your vendor list"
 msgstr "あなたのベンダーリスト"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "自分自身"

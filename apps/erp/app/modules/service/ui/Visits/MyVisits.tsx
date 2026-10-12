@@ -12,7 +12,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { LuChevronRight, LuMapPin } from "react-icons/lu";
 import { Link } from "react-router";
-import { DateTime } from "~/components";
+import { DateTime, Empty } from "~/components";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 import { formatSiteAddress, mapUrl } from "../../service.models";
@@ -58,16 +58,22 @@ export default function MyVisits({
         : formatDate(day, { weekday: "long", month: "long", day: "numeric" });
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-xl flex-col gap-6 p-4">
+    <div className="flex h-full w-full flex-col gap-4 overflow-y-auto p-4">
+      <div className="flex items-center max-md:hidden">
         <Heading size="h3">
           <Trans>My Visits</Trans>
         </Heading>
-
+      </div>
+      <div className="flex w-full max-w-xl flex-col gap-6">
         {days.length === 0 ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            <Trans>You have no visits planned in the next 7 days.</Trans>
-          </p>
+          <Empty
+            title={<Trans>No visits planned</Trans>}
+            description={
+              <Trans>
+                Your visits for today and the next 7 days show here.
+              </Trans>
+            }
+          />
         ) : (
           days.map(([day, list]) => (
             <section key={day} className="flex flex-col gap-2">

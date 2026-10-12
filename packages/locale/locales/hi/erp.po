@@ -15681,6 +15681,9 @@ msgstr "अभी तक कोई अनुमोदन आवश्यकत�
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "अभी तक कोई संग्रहीत लॉग नहीं हैं। {0} दिनों से पुराने लॉग स्वचालित रूप से संग्रहीत किए जाएंगे और यहां डाउनलोड के लिए उपलब्ध होंगे।"
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "इस अवधि के लिए मूल्यह्रास के लिए कोई संपत्ति नहीं है।"
 
@@ -16348,8 +16351,8 @@ msgstr "अभी तक कोई सीरियल नंबर चयनि�
 msgid "No service order has fitted a part to this unit."
 msgstr "किसी सेवा आदेश ने इस इकाई के लिए कोई पार्ट फिट नहीं किया है।"
 
-msgid "No service order names this contract."
-msgstr "कोई सेवा आदेश इस अनुबंध का नाम नहीं देता है।"
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "अभी तक कोई सेवा टेम्पलेट नहीं"
@@ -16486,8 +16489,8 @@ msgstr "कोई चर उपलब्ध नहीं"
 msgid "No versions available"
 msgstr "कोई संस्करण उपलब्ध नहीं है"
 
-msgid "No visits are planned in these days."
-msgstr "इन दिनों में कोई दौरा योजनाबद्ध नहीं है।"
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "अभी तक कोई दौरा नहीं। एक तकनीशियन भेजने के लिए एक शेड्यूल करें।"
@@ -22142,6 +22145,9 @@ msgstr "सेवा आदेश"
 msgid "Service Orders"
 msgstr "सेवा आदेश"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "सेवा अवधि"
 
@@ -25016,9 +25022,6 @@ msgstr "सीरीज को अपनी स्वयं की लागत 
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "सेवा आइटम जिसकी बिक्री मूल्य एक सेवा आदेश पर समय को मूल्य देता है, इसके अनुमान पर और इसके चालान पर।"
 
-msgid "The service orders this contract covers."
-msgstr "सेवा आदेश जो यह अनुबंध कवर करते हैं।"
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "सेवाएँ जो यह अनुबंध बिल करता है: एकबारी शुल्क और आवर्ती प्रभार। इसे बदलने के लिए एक सेल पर क्लिक करें।"
 
@@ -25392,9 +25395,6 @@ msgstr "यह प्रतिपक्ष के पास कुछ भी ब
 
 msgid "This customer has no active contract"
 msgstr "इस ग्राहक के पास कोई सक्रिय अनुबंध नहीं है"
-
-msgid "This customer has no registered assets yet."
-msgstr "इस ग्राहक के पास अभी तक कोई पंजीकृत संपत्ति नहीं है।"
 
 msgid "This customer type's rate"
 msgstr "इस ग्राहक प्रकार की दर"
@@ -26530,6 +26530,9 @@ msgstr "माप की इकाइयाँ"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "एक ऑपरेशन पर अपूरणीय के रूप में रिपोर्ट की गई इकाइयाँ, एक कारण के साथ — पुनः कार्य का विकल्प।"
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "अज्ञात"
 
@@ -27365,6 +27368,9 @@ msgstr "उपयोगकर्ता की सार्वजनिक प्
 
 msgid "Visits"
 msgstr "यात्राएं"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "अमान्य करें"
@@ -28273,9 +28279,6 @@ msgstr "आप इसे चलाते हैं; हम सुनिश्च
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "आपके पास {0} लाइनें हैं जो PDF से निकाली गई हैं और किसी भी इन्वेंटरी आइटम से मैप नहीं की गई हैं।"
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "आपके पास अगले 7 दिनों में कोई यात्रा नियोजित नहीं है।"
-
 msgid "You haven't created any contacts yet."
 msgstr "आपने अभी तक कोई संपर्क नहीं बनाया है।"
 
@@ -28416,6 +28419,9 @@ msgstr "आपकी टीम, संरचना, और पहुंच।"
 
 msgid "Your vendor list"
 msgstr "आपकी विक्रेता सूची"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "अपने आप"

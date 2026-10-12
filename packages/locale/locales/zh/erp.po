@@ -15681,6 +15681,9 @@ msgstr "暂无审批要求。"
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "暂无已归档日志。超过{0}天的日志将自动归档，并可在此下载。"
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "本期没有要折旧的资产。"
 
@@ -16348,8 +16351,8 @@ msgstr "尚未选择序列号。"
 msgid "No service order has fitted a part to this unit."
 msgstr "没有服务单为该单位配备零件。"
 
-msgid "No service order names this contract."
-msgstr "没有服务单命名该合同。"
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "还没有服务模板"
@@ -16486,8 +16489,8 @@ msgstr "没有可用的变量"
 msgid "No versions available"
 msgstr "没有可用的版本"
 
-msgid "No visits are planned in these days."
-msgstr "这些天没有安排访问。"
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "还没有访问。安排一个以派遣技术人员。"
@@ -22142,6 +22145,9 @@ msgstr "服务订单"
 msgid "Service Orders"
 msgstr "服务订单"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "服务期间"
 
@@ -25016,9 +25022,6 @@ msgstr "序列号获得自己的成本层，并以其新单位成本离开库存
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "其销售价格在服务订单、其估算和发票上为时间定价的服务物料。"
 
-msgid "The service orders this contract covers."
-msgstr "此合同涵盖的服务订单。"
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "此合同计费的服务：一次性费用和循环费用。单击单元格进行更改。"
 
@@ -25392,9 +25395,6 @@ msgstr "该交易对手没有未结余额——该付款将记录为应收账款
 
 msgid "This customer has no active contract"
 msgstr "此客户没有启用合同"
-
-msgid "This customer has no registered assets yet."
-msgstr "此客户还没有已登记资产。"
 
 msgid "This customer type's rate"
 msgstr "此客户类型的费率"
@@ -26530,6 +26530,9 @@ msgstr "计量单位"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "在操作中报告为无法恢复的单位,带有原因 — 返工的替代方案。"
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "未知"
 
@@ -27365,6 +27368,9 @@ msgstr "在用户的公开资料中可见"
 
 msgid "Visits"
 msgstr "访问"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "作废"
@@ -28273,9 +28279,6 @@ msgstr "您来驾驶；我们确保做得正确。专家的目光关注您的设
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "您有从 PDF 中提取的 {0} 行未映射到任何库存物料。"
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "您在接下来的7天内没有计划的访问。"
-
 msgid "You haven't created any contacts yet."
 msgstr "你还没有创建任何联系人。"
 
@@ -28416,6 +28419,9 @@ msgstr "您的班组、结构和访问权限。"
 
 msgid "Your vendor list"
 msgstr "您的供应商列表"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "你自己"

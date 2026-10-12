@@ -15681,6 +15681,9 @@ msgstr "Noch keine Genehmigungsanforderungen."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Noch keine archivierten Protokolle vorhanden. Protokolle, die älter als {0} Tage sind, werden automatisch archiviert und sind hier zum Herunterladen verfügbar."
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "Keine Vermögenswerte zum Abschreiben für diesen Zeitraum."
 
@@ -16348,8 +16351,8 @@ msgstr "Noch keine Seriennummern ausgewählt."
 msgid "No service order has fitted a part to this unit."
 msgstr "Kein Serviceauftrag hat einen Teil an dieser Einheit angebracht."
 
-msgid "No service order names this contract."
-msgstr "Kein Serviceauftrag benennt diesen Vertrag."
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "Noch keine Servicevorlagen"
@@ -16486,8 +16489,8 @@ msgstr "Keine Variablen verfügbar"
 msgid "No versions available"
 msgstr "Keine Versionen verfügbar"
 
-msgid "No visits are planned in these days."
-msgstr "In diesen Tagen sind keine Besuche geplant."
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Noch keine Besuche. Planen Sie einen, um einen Techniker zu senden."
@@ -22142,6 +22145,9 @@ msgstr "Dienstleistungsaufträge"
 msgid "Service Orders"
 msgstr "Dienstleistungsaufträge"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "Leistungsperiode"
 
@@ -25016,9 +25022,6 @@ msgstr "Die Serie erhält ihre eigene Kostenebene und verlässt den Bestand zu i
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Der Dienstleistungsartikel, dessen Verkaufspreis die Zeit auf einem Serviceauftrag, auf seiner Schätzung und auf seiner Rechnung bepreist."
 
-msgid "The service orders this contract covers."
-msgstr "Die Serviceaufträge, die dieser Vertrag abdeckt."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Die Dienstleistungen, die dieser Vertrag abrechnet: Einmalige Gebühren und wiederkehrende Gebühren. Klicken Sie auf eine Zelle, um sie zu ändern."
 
@@ -25392,9 +25395,6 @@ msgstr "Dieser Geschäftspartner hat keine ausstehenden Forderungen — die Zahl
 
 msgid "This customer has no active contract"
 msgstr "Dieser Kunde hat keinen aktiven Vertrag"
-
-msgid "This customer has no registered assets yet."
-msgstr "Dieser Kunde hat noch keine registrierten Vermögenswerte."
 
 msgid "This customer type's rate"
 msgstr "Der Mietpreis dieses Kundentyps"
@@ -26530,6 +26530,9 @@ msgstr "Maßeinheiten"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Einheiten, die bei einer Operation mit einem Grund als nicht behebbar gemeldet werden — die Alternative zu Nacharbeiten."
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "Unbekannt"
 
@@ -27365,6 +27368,9 @@ msgstr "Sichtbar im öffentlichen Profil eines Benutzers"
 
 msgid "Visits"
 msgstr "Besuche"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "Stornieren"
@@ -28270,9 +28276,6 @@ msgstr "Sie treiben es voran; wir stellen sicher, dass es richtig gemacht wird. 
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "Sie haben {0} Zeilen aus einer PDF-Datei, die keinem Bestandsartikel zugeordnet sind."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "Sie haben in den nächsten 7 Tagen keine Besuche geplant."
-
 msgid "You haven't created any contacts yet."
 msgstr "Du hast noch keine Kontakte erstellt."
 
@@ -28413,6 +28416,9 @@ msgstr "Ihr Team, Struktur und Zugriff."
 
 msgid "Your vendor list"
 msgstr "Ihre Lieferantenliste"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "dir selbst"

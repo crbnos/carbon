@@ -15681,6 +15681,9 @@ msgstr "No approval requirements yet."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 
+msgid "No assets"
+msgstr "No assets"
+
 msgid "No assets to depreciate for this period."
 msgstr "No assets to depreciate for this period."
 
@@ -16348,8 +16351,8 @@ msgstr "No serial numbers selected yet."
 msgid "No service order has fitted a part to this unit."
 msgstr "No service order has fitted a part to this unit."
 
-msgid "No service order names this contract."
-msgstr "No service order names this contract."
+msgid "No service orders"
+msgstr "No service orders"
 
 msgid "No service templates yet"
 msgstr "No service templates yet"
@@ -16486,8 +16489,8 @@ msgstr "No variables available"
 msgid "No versions available"
 msgstr "No versions available"
 
-msgid "No visits are planned in these days."
-msgstr "No visits are planned in these days."
+msgid "No visits planned"
+msgstr "No visits planned"
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "No visits yet. Schedule one to send a technician."
@@ -22142,6 +22145,9 @@ msgstr "Service orders"
 msgid "Service Orders"
 msgstr "Service Orders"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr "Service orders that name this contract for coverage show here."
+
 msgid "Service Period"
 msgstr "Service Period"
 
@@ -25016,9 +25022,6 @@ msgstr "The serial gets its own cost layer and leaves stock at its new unit cost
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 
-msgid "The service orders this contract covers."
-msgstr "The service orders this contract covers."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 
@@ -25392,9 +25395,6 @@ msgstr "This counterparty has nothing outstanding — the payment will be record
 
 msgid "This customer has no active contract"
 msgstr "This customer has no active contract"
-
-msgid "This customer has no registered assets yet."
-msgstr "This customer has no registered assets yet."
 
 msgid "This customer type's rate"
 msgstr "This customer type's rate"
@@ -26530,6 +26530,9 @@ msgstr "Units of measure"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 
+msgid "Units this customer owns show here once registered."
+msgstr "Units this customer owns show here once registered."
+
 msgid "Unknown"
 msgstr "Unknown"
 
@@ -27365,6 +27368,9 @@ msgstr "Visible on a user's public profile"
 
 msgid "Visits"
 msgstr "Visits"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr "Visits planned in these days, for these filters, show here."
 
 msgid "Void"
 msgstr "Void"
@@ -28273,9 +28279,6 @@ msgstr "You drive it; we make sure it's done right. Expert eyes on your setup, d
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "You have no visits planned in the next 7 days."
-
 msgid "You haven't created any contacts yet."
 msgstr "You haven't created any contacts yet."
 
@@ -28416,6 +28419,9 @@ msgstr "Your team, structure, and access."
 
 msgid "Your vendor list"
 msgstr "Your vendor list"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr "Your visits for today and the next 7 days show here."
 
 msgid "yourself"
 msgstr "yourself"

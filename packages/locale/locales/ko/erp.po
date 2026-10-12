@@ -15681,6 +15681,9 @@ msgstr "아직 승인 요구사항이 없습니다."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "아직 보관된 로그가 없습니다. {0}일 이상 된 로그는 자동으로 보관되어 여기에서 다운로드 가능합니다."
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "이 기간에 감가상각할 자산이 없습니다."
 
@@ -16348,8 +16351,8 @@ msgstr "아직 선택된 시리얼 번호가 없습니다."
 msgid "No service order has fitted a part to this unit."
 msgstr "이 개에 부품을 장착한 서비스 주문이 없습니다."
 
-msgid "No service order names this contract."
-msgstr "이 계약을 지정한 서비스 주문이 없습니다."
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "아직 서비스 템플릿이 없습니다."
@@ -16486,8 +16489,8 @@ msgstr "사용 가능한 변수가 없습니다."
 msgid "No versions available"
 msgstr "가용한 버전이 없습니다"
 
-msgid "No visits are planned in these days."
-msgstr "이 일에 예정된 방문이 없습니다."
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "아직 방문이 없습니다. 기술자를 보내기 위해 하나를 예약하세요."
@@ -22142,6 +22145,9 @@ msgstr "서비스 오더"
 msgid "Service Orders"
 msgstr "서비스 오더"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "서비스 기간"
 
@@ -25016,9 +25022,6 @@ msgstr "시리얼은 자신의 원가 계층을 얻고 새로운 개 당 원가�
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "서비스 주문, 견적 및 송장에서 시간 가격을 정하는 판매 가격의 서비스 품목입니다."
 
-msgid "The service orders this contract covers."
-msgstr "이 계약이 커버하는 서비스 주문입니다."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "이 계약이 청구하는 서비스: 일회성 수수료 및 반복 요금입니다. 셀을 클릭하여 변경하세요."
 
@@ -25392,9 +25395,6 @@ msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 �
 
 msgid "This customer has no active contract"
 msgstr "이 고객에게는 활성 계약이 없습니다."
-
-msgid "This customer has no registered assets yet."
-msgstr "이 고객에게는 아직 등록된 자산이 없습니다."
 
 msgid "This customer type's rate"
 msgstr "이 고객 유형의 요금"
@@ -26530,6 +26530,9 @@ msgstr "측정 단위"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으로, 재작업의 대안입니다."
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "알 수 없음"
 
@@ -27365,6 +27368,9 @@ msgstr "사용자의 공개 프로필에 표시됩니다"
 
 msgid "Visits"
 msgstr "방문"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "무효 처리"
@@ -28270,9 +28276,6 @@ msgstr "당신이 주도합니다; 우리는 올바르게 완료되도록 보장
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "PDF에서 추출된 라인 중 {0}개가 재고 품목에 매핑되지 않았습니다."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "다음 7일 동안 계획된 방문이 없습니다."
-
 msgid "You haven't created any contacts yet."
 msgstr "아직 담당자를 생성하지 않았습니다."
 
@@ -28413,6 +28416,9 @@ msgstr "팀 구성, 조직, 권한."
 
 msgid "Your vendor list"
 msgstr "공급업체 목록"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "본인"

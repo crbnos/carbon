@@ -15681,6 +15681,9 @@ msgstr "Нет требований утверждения ещё."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Нет архивированных журналов. Журналы старше {0} дней будут автоматически архивированы и доступны для скачивания здесь."
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "Нет активов для амортизации за этот период."
 
@@ -16348,8 +16351,8 @@ msgstr "Серийные номера ещё не выбраны."
 msgid "No service order has fitted a part to this unit."
 msgstr "Ни один заказ на обслуживание не установил деталь на этот агрегат."
 
-msgid "No service order names this contract."
-msgstr "Ни один заказ на обслуживание не указывает этот контракт."
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "Нет шаблонов обслуживания"
@@ -16486,8 +16489,8 @@ msgstr "Нет доступных переменных"
 msgid "No versions available"
 msgstr "Нет доступных версий"
 
-msgid "No visits are planned in these days."
-msgstr "На эти дни не запланировано посещений."
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Посещений еще нет. Запланируйте одно, чтобы отправить техника."
@@ -22142,6 +22145,9 @@ msgstr "Заказы на обслуживание"
 msgid "Service Orders"
 msgstr "Заказы на обслуживание"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "Период обслуживания"
 
@@ -25016,9 +25022,6 @@ msgstr "Серийный номер получает свой собственн
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Номенклатура услуги, цена продажи которой определяет время по заказу на услугу, на его смете и в его счете-фактуре."
 
-msgid "The service orders this contract covers."
-msgstr "Заказы на услугу, которые охватывает этот контракт."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Услуги, которые выставляет этот контракт: разовые платежи и повторяющиеся сборы. Нажмите на ячейку, чтобы изменить её."
 
@@ -25392,9 +25395,6 @@ msgstr "Эта контрагент не имеет задолженности �
 
 msgid "This customer has no active contract"
 msgstr "У этого покупателя нет активного контракта"
-
-msgid "This customer has no registered assets yet."
-msgstr "У этого покупателя нет зарегистрированных активов."
 
 msgid "This customer type's rate"
 msgstr "Ставка этого типа покупателя"
@@ -26530,6 +26530,9 @@ msgstr "Единицы измерения"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Единицы, объявленные неремонтируемыми на операции с указанием причины — альтернатива доработке"
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "Неизвестно"
 
@@ -27365,6 +27368,9 @@ msgstr "Видно в общедоступном профиле пользова
 
 msgid "Visits"
 msgstr "Посещения"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "Аннулировать"
@@ -28270,9 +28276,6 @@ msgstr "Вы его ведете; мы следим за тем, чтобы эт
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "У вас есть {0} строк, извлеченных из PDF, которые не сопоставлены ни с одним товаром в инвентаре."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "У вас нет запланированных визитов на следующие 7 дней."
-
 msgid "You haven't created any contacts yet."
 msgstr "Вы еще не создали контактных лиц."
 
@@ -28413,6 +28416,9 @@ msgstr "Ваша команда, структура и доступ."
 
 msgid "Your vendor list"
 msgstr "Ваш список поставщиков"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "себя"

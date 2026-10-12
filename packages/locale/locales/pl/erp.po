@@ -15681,6 +15681,9 @@ msgstr "Brak wymagań zatwierdzenia na razie."
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "Nie ma jeszcze zarchiwizowanych dzienników. Dzienniki starsze niż {0} dni będą automatycznie zarchiwizowane i dostępne do pobrania tutaj."
 
+msgid "No assets"
+msgstr ""
+
 msgid "No assets to depreciate for this period."
 msgstr "Brak aktywów do amortyzacji w tym okresie."
 
@@ -16348,8 +16351,8 @@ msgstr "Żadne numery seryjne nie zostały jeszcze zaznaczone."
 msgid "No service order has fitted a part to this unit."
 msgstr "Żadne zamówienie serwisowe nie zmontowało części w tej jednostce."
 
-msgid "No service order names this contract."
-msgstr "Żadne zamówienie serwisowe nie wskazuje tej umowy."
+msgid "No service orders"
+msgstr ""
 
 msgid "No service templates yet"
 msgstr "Brak szablonów usług jeszcze"
@@ -16486,8 +16489,8 @@ msgstr "Brak dostępnych zmiennych"
 msgid "No versions available"
 msgstr "Brak dostępnych wersji"
 
-msgid "No visits are planned in these days."
-msgstr "Żadne wizyty nie są zaplanowane w te dni."
+msgid "No visits planned"
+msgstr ""
 
 msgid "No visits yet. Schedule one to send a technician."
 msgstr "Brak wizyt jeszcze. Zaplanuj jedną, aby wysłać technika."
@@ -22142,6 +22145,9 @@ msgstr "Zamówienia serwisu"
 msgid "Service Orders"
 msgstr "Zamówienia serwisu"
 
+msgid "Service orders that name this contract for coverage show here."
+msgstr ""
+
 msgid "Service Period"
 msgstr "Okres świadczenia"
 
@@ -25016,9 +25022,6 @@ msgstr "Numer seryjny otrzymuje własną warstwę kosztów i opuszcza zapas przy
 msgid "The service item whose sale price prices time on a service order, on its estimate and on its invoice."
 msgstr "Artykuł usługi, którego cena sprzedaży stanowi cenę czasu na zamówieniu usługi, na jego szacunku i na jego fakturze."
 
-msgid "The service orders this contract covers."
-msgstr "Zamówienia usług, które obejmuje ta umowa."
-
 msgid "The services this contract bills: one-time fees and recurring charges. Click a cell to change it."
 msgstr "Usługi rozliczane w ramach tej umowy: opłaty jednorazowe i opłaty cykliczne. Kliknij komórkę, aby ją zmienić."
 
@@ -25392,9 +25395,6 @@ msgstr "Ta strona nie ma żadnych zaległości — płatność zostanie zarejest
 
 msgid "This customer has no active contract"
 msgstr "Ten klient nie ma aktywnej umowy"
-
-msgid "This customer has no registered assets yet."
-msgstr "Ten klient jeszcze nie ma zarejestrowanych zasobów."
 
 msgid "This customer type's rate"
 msgstr "Stawka tego typu klienta"
@@ -26530,6 +26530,9 @@ msgstr "Jednostki miary"
 msgid "Units reported as unrecoverable at an operation, with a reason — the alternative to rework."
 msgstr "Sztuki zgłoszone jako nie do odzyskania na operacji, z podaniem przyczyny — alternatywa dla poprawki."
 
+msgid "Units this customer owns show here once registered."
+msgstr ""
+
 msgid "Unknown"
 msgstr "Nieznany"
 
@@ -27365,6 +27368,9 @@ msgstr "Widoczne w publicznym profilu użytkownika"
 
 msgid "Visits"
 msgstr "Wizyty"
+
+msgid "Visits planned in these days, for these filters, show here."
+msgstr ""
 
 msgid "Void"
 msgstr "Unieważnij"
@@ -28270,9 +28276,6 @@ msgstr "Prowadzisz ty; my zapewniamy jakość. Eksperci czuwają nad Twoją konf
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
 msgstr "Masz {0} linii wyodrębnionych z pliku PDF, które nie są mapowane na żadne pozycje inwentarza."
 
-msgid "You have no visits planned in the next 7 days."
-msgstr "Nie masz zaplanowanych wizyt w ciągu następnych 7 dni."
-
 msgid "You haven't created any contacts yet."
 msgstr "Nie utworzyłeś jeszcze żadnych kontaktów."
 
@@ -28413,6 +28416,9 @@ msgstr "Twój zespół, struktura i dostęp."
 
 msgid "Your vendor list"
 msgstr "Twoja lista dostawców"
+
+msgid "Your visits for today and the next 7 days show here."
+msgstr ""
 
 msgid "yourself"
 msgstr "siebie"

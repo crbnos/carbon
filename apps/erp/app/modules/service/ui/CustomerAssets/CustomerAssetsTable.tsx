@@ -17,7 +17,7 @@ import {
   LuStar
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { CustomerAvatar, Hyperlink, New, Table } from "~/components";
+import { CustomerAvatar, Empty, Hyperlink, New, Table } from "~/components";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomers } from "~/stores";
 import { path } from "~/utils/path";
@@ -227,9 +227,14 @@ const CustomerAssetsTable = memo(
         withSavedView={!customerId}
         emptyState={
           customerId ? (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              <Trans>This customer has no registered assets yet.</Trans>
-            </p>
+            <Empty
+              title={<Trans>No assets</Trans>}
+              description={
+                <Trans>
+                  Units this customer owns show here once registered.
+                </Trans>
+              }
+            />
           ) : undefined
         }
       />
