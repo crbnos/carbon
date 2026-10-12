@@ -224,7 +224,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 29: Edit contract labor rates, funding actions and rate ceilings in grids
 - [x] Task 30: Fix My Visits, the Build from part drawer and the Service empty states
 - [x] Task 31: Open New Service Order in a drawer
-- [ ] Task 32: Give service templates a standard record page
+- [x] Task 32: Give service templates a standard record page
 - [ ] Task 33: Show a locked contract line as read-only text
 - [x] Task 34: Rebuild Projects → Reports as one list (Brad asked for accounting-style report pages instead: the list links to `/x/projects/reports/<key>`, one full-width page per report with its table, inputs and Download CSV)
 - [ ] Task 35: Turn Indirect Rates into a runs list with a Rates drawer
@@ -1734,3 +1734,5 @@ Run of 2026-10-12, Part C (Tasks 30–38):
 - Task 31: `FormSection` (the folded, still-mounted section of the New Project drawer) is now exported from `ProjectForm.tsx` and reused, rather than copied. The drawer opens over an empty page, as New Project does (Open point 3): `service-orders+/new.tsx` is a sibling of the list route, not its child.
 - Task 31: the unit's customer, item and warranty now show as one muted line under the Unit field, not in a second column. The order of the single column is Type, the subject (Unit and Contact, or Item and Serial), Service Location, Problem, then More. The refurbishment description lost its second sentence (the cost moving into the serial's cost).
 - Task 31: created SVC000004 (Draft Field Visit, SAT-1000-S013) to check the drawer.
+- Task 32: the template header has no ⋯ menu. Step 2 asks for Delete, but no route deletes a template (nor renames one), and a menu item with no endpoint would be a dead control. The header is the identifier, the name in muted text and the copy button at the right end (`toolsPlacement="end"`), as the project header.
+- Task 32, Brad's full-page rule: a template element is a full page, not a drawer over the tree (step 4 kept the drawer). The route moved from `templates_.$id.$elementId.tsx` to `templates_.$id_.$elementId.tsx` (same URL, no longer nested), so the template route lost its `RecordOutlet`. The page copies the project element page: one header row (back, template › element id, Copy, ⋯ with Add plan line and Delete), then a centred 800 px column with the type icon and id, the name, and the Plan section (always shown, since the plan is all a template element holds). Delete posts the template route's existing `intent=delete`. The breadcrumb is Service Templates › the template › the element. The name is read-only: neither template route renames an element.

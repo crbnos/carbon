@@ -1534,9 +1534,6 @@ msgstr "Vergi kuralları defter amortismanından farklı bir yöntem gerektirdi�
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Bir hizmet, satın alınan veya gerçekleştirilen faturalaştırılabilir bir etkinliktir — hiçbir zaman gönderilmez, alınmaz veya depolanmaz"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Tek bir sahip altında, grup kapsamlı yapılandırmayı — hesap planı, para birimleri ve boyutlar — paylaşan, böylece aynı muhasebe kurulumunun gruptaki her şirketi kapsadığı şirketler kümesi."
 
@@ -24444,6 +24441,9 @@ msgstr "Sabah saatleri, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Sekiz disiplin kalite yöntemi, uygunsuzluk iş akışının görevleriyle modellenmiş olup sabit kodlanmamıştır."
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Bu maliyet merkezi için sorumlu çalışan — satın alma siparişi onayları açık olduğunda, ona karşı kaydedilen harcamaların onaylayanı olur."

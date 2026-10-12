@@ -299,6 +299,10 @@ Shots: `31-new-service-order.png`, `31-new-service-order-more.png` (unit chosen,
 
 ## Task 32: Give service templates a standard record page
 
+Shots: `32-service-template.png`, `32-service-template-element.png`, `32-element-delete.png`. Checked: added an element from the quick-add row, opened its page, ⋯ → Delete → Delete; it returned to the template and the row was gone.
+
+1. Reference pattern: yes — `RecordHeader` (identifier, muted name, copy at the end), and the element page of a project for the element. 2. No overlap: yes; the plan grid fits the 800 px column. 3. One toolbar row: yes. 4. One primary: yes (none). 5. No input box in the table: yes. 6. Secondary actions in menus: yes (⋯: Add plan line, Delete). 7. Advanced fields hidden: n/a.
+
 ## Task 33: Show a locked contract line as read-only text
 
 ## Task 34: Rebuild Projects → Reports as one list

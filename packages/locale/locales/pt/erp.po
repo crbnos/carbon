@@ -1534,9 +1534,6 @@ msgstr "Um cronograma separado para fins de declaração de impostos quando as r
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Um serviço é uma atividade faturável que é comprada ou realizada — nunca é enviada, recebida ou armazenada"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Um conjunto de empresas sob um mesmo proprietário que compartilham configuração com escopo de grupo — o plano de contas, moedas e dimensões — para que a mesma configuração contábil se estenda por todas as empresas do grupo."
 
@@ -24444,6 +24441,9 @@ msgstr "As primeiras horas, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "O método de qualidade das oito disciplinas, modelado com as tarefas do fluxo de trabalho de não conformidade em vez de codificado."
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "O funcionário responsável por este centro de custo — quando as aprovações de pedidos de compra estão ativadas, é o aprovador para despesas registradas contra ele."

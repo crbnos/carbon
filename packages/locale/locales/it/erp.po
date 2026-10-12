@@ -1534,9 +1534,6 @@ msgstr "Un programma separato per la rendicontazione fiscale quando le norme fis
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Un servizio è un'attività fatturabile che viene acquistata o eseguita — non viene mai spedita, ricevuta o stoccata"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Un insieme di aziende di un proprietario che condividono una configurazione a livello di gruppo — il piano dei conti, le valute e le dimensioni — in modo che la stessa configurazione contabile si estenda a tutte le aziende del gruppo."
 
@@ -24444,6 +24441,9 @@ msgstr "Le prime ore, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Il metodo della qualità a otto discipline, modellato con le attività del flusso di lavoro della non conformità piuttosto che hard-coded."
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Il dipendente responsabile di questo centro di costo — quando le approvazioni degli ordini di acquisto sono attivate, è l'approvatore della spesa registrata contro di esso."

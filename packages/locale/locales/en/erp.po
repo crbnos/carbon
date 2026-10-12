@@ -1534,9 +1534,6 @@ msgstr "A separate schedule for tax reporting when tax rules require a method di
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 
@@ -24444,6 +24441,9 @@ msgstr "The early hours, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."

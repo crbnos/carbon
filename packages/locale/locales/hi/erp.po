@@ -1534,9 +1534,6 @@ msgstr "कर रिपोर्टिंग के लिए एक अलग 
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "एक सेवा एक बिलयोग्य गतिविधि है जो खरीदी या प्रदर्शन की जाती है — इसे कभी भेजा नहीं जाता, प्राप्त नहीं किया जाता, या स्टॉक नहीं किया जाता"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "एक मालिक के तहत कंपनियों का एक समूह जो समूह-scoped कॉन्फ़िगरेशन साझा करते हैं — खातों का चार्ट, मुद्राएं, और आयाम — ताकि समान लेखांकन सेटअप समूह में प्रत्येक कंपनी को span करता है।"
 
@@ -24444,6 +24441,9 @@ msgstr "सुबह के शुरुआती घंटे, {name}।"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "आठ-अनुशासन गुणवत्ता विधि, गैर-अनुरूपता वर्कफ़्लो के कार्यों के साथ मॉडल किया गया, हार्ड-कोडेड नहीं।"
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "वह कर्मचारी जो इस लागत केंद्र के लिए जिम्मेदार है — जब क्रय आदेश अनुमोदन चालू होते हैं, तो वे इसके विरुद्ध पोस्ट किए गए खर्च के लिए अनुमोदक होते हैं।"

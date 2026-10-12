@@ -1534,9 +1534,6 @@ msgstr "Отдельный график для налоговой отчетно
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "Услуга — это платная деятельность, которая покупается или выполняется — она никогда не отправляется, не принимается и не хранится на складе"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "Набор организаций под одним владельцем, которые используют конфигурацию уровня группы — план счетов, валюты и измерения — так чтобы одна и та же установка бухгалтерии охватывала каждую организацию в группе."
 
@@ -24444,6 +24441,9 @@ msgstr "Ранние часы, {name}."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Метод качества восьми дисциплин, моделируемый с помощью задач рабочего процесса несоответствия, а не жестко закодированный."
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "Сотрудник, ответственный за этот центр затрат — когда утверждения заказов поставщику включены, они являются утверждающим лицом для расходов, проведенных по нему."

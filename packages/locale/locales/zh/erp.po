@@ -1534,9 +1534,6 @@ msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "服务是一种可计费活动，可以购买或执行——它从不被运送、接收或存储"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "一组由单一所有者拥有的公司，共享组范围的配置——会计科目表、货币和维度——使得相同的会计设置适用于组中的每家公司。"
 
@@ -24444,6 +24441,9 @@ msgstr "早晨时刻，{name}。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而非硬编码。"
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "对此成本中心负责的员工 — 当启用采购订单审批时，他们是针对其发生的支出的批准人。"

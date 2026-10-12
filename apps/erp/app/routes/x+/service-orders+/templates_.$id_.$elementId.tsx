@@ -8,15 +8,35 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import {
-  Drawer,
-  DrawerBody,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle
+  Copy,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  IconButton
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
+import {
+  LuArrowLeft,
+  LuChevronRight,
+  LuEllipsisVertical,
+  LuListPlus,
+  LuTrash
+} from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useLoaderData, useNavigate, useParams } from "react-router";
+import {
+  data,
+  Link,
+  useLoaderData,
+  useNavigate,
+  useParams
+} from "react-router";
+import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import {
   deleteProjectElementCost,
@@ -34,7 +54,29 @@ import {
 import { ElementPlanLines } from "~/modules/projects/ui/Element/ElementPlanLines";
 import { ElementTypeIcon } from "~/modules/projects/ui/Elements/ElementTypeIcon";
 import { getServiceTemplate } from "~/modules/service";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  breadcrumb: (
+    params: { id?: string },
+    data?: {
+      template?: { identifier: string | null; name: string };
+      node?: { readableId: string };
+    }
+  ) => [
+    { breadcrumb: msg`Service Templates`, to: path.to.serviceTemplates },
+    ...(data?.template && params.id
+      ? [
+          {
+            breadcrumb: data.template.identifier ?? data.template.name,
+            to: path.to.serviceTemplate(params.id)
+          }
+        ]
+      : []),
+    ...(data?.node ? [{ breadcrumb: data.node.readableId }] : [])
+  ]
+};
 
 const logger = getLogger("erp", "service-template-node");
 
@@ -85,6 +127,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
+    template: {
+      identifier: template.data.identifier,
+      name: template.data.name
+    },
     node: node.data,
     planLines: planLines.data,
     laborCategories: laborCategories.data ?? []
@@ -266,42 +312,132 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 }
 
-/** A template node in a drawer over the tree: its plan lines. */
+/**
+ * A template element on its own page: the back arrow and the template's
+ * breadcrumb, the element's name, and its planned materials, labor and
+ * costs in one grid. Delete is in the ⋯ menu.
+ */
 export default function ServiceTemplateNodeRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const { node, planLines, laborCategories } = useLoaderData<typeof loader>();
+  const { template, node, planLines, laborCategories } =
+    useLoaderData<typeof loader>();
+  const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
+  const canUpdate = permissions.can("update", "service");
+  const [addRequest, setAddRequest] = useState(0);
+  const [deleting, setDeleting] = useState(false);
+  const templatePath = path.to.serviceTemplate(id);
+  const lineCount =
+    planLines.materials.length +
+    planLines.labor.length +
+    planLines.costs.length;
 
   return (
-    <Drawer
-      open
-      onOpenChange={(open) => !open && navigate(path.to.serviceTemplate(id))}
-    >
-      <DrawerContent size="lg">
-        <DrawerHeader>
-          <DrawerTitle className="flex min-w-0 items-center gap-2">
-            <ElementTypeIcon type={node.type} />
-            <span className="shrink-0 whitespace-nowrap font-mono text-sm text-muted-foreground">
+    <div className="flex h-full min-h-0 w-full flex-col bg-card">
+      <div className="flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+        <nav
+          aria-label={t`Breadcrumb`}
+          className="flex min-w-0 items-center gap-1 text-sm"
+        >
+          <IconButton
+            aria-label={t`Back`}
+            icon={<LuArrowLeft />}
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(templatePath)}
+          />
+          <Link
+            to={templatePath}
+            className="min-w-0 max-w-48 truncate rounded-md px-1.5 py-0.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+          >
+            {template.identifier ?? template.name}
+          </Link>
+          <LuChevronRight className="size-3 shrink-0 text-muted-foreground" />
+          <span className="min-w-0 truncate px-1.5 py-0.5">
+            {node.readableId}
+          </span>
+        </nav>
+        <div className="flex shrink-0 items-center gap-2">
+          <Copy text={node.readableId} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`More options`}
+                icon={<LuEllipsisVertical />}
+                variant="secondary"
+                size="sm"
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuItem
+                disabled={!canUpdate}
+                onClick={() => setAddRequest((n) => n + 1)}
+              >
+                <DropdownMenuIcon icon={<LuListPlus />} />
+                <Trans>Add plan line</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                destructive
+                disabled={!canUpdate}
+                onClick={() => setDeleting(true)}
+              >
+                <DropdownMenuIcon icon={<LuTrash />} />
+                <Trans>Delete</Trans>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <div className="mx-auto flex w-full max-w-[800px] flex-col gap-8 px-8 py-8">
+          <div className="flex flex-col gap-2">
+            <span className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
+              <ElementTypeIcon type={node.type} className="size-3.5" />
               {node.readableId}
             </span>
-            <span className="truncate">{node.name}</span>
-          </DrawerTitle>
-        </DrawerHeader>
-        <DrawerBody>
-          <ElementPlanLines
-            key={node.id}
-            projectId={id}
-            elementId={node.id}
-            planLines={planLines}
-            laborCategories={laborCategories}
-            isDisabled={!permissions.can("update", "service")}
-            action={path.to.serviceTemplateNode(id, node.id)}
-            canSupply={false}
-          />
-        </DrawerBody>
-      </DrawerContent>
-    </Drawer>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {node.name}
+            </h1>
+          </div>
+
+          <section className="flex w-full flex-col gap-2">
+            <h2 className="flex items-center gap-1.5 text-sm font-medium">
+              <Trans>Plan</Trans>
+              {lineCount > 0 && (
+                <span className="text-muted-foreground tabular-nums">
+                  {lineCount}
+                </span>
+              )}
+            </h2>
+            <ElementPlanLines
+              key={node.id}
+              projectId={id}
+              elementId={node.id}
+              planLines={planLines}
+              laborCategories={laborCategories}
+              isDisabled={!canUpdate}
+              action={path.to.serviceTemplateNode(id, node.id)}
+              canSupply={false}
+              addRequest={addRequest}
+            />
+          </section>
+        </div>
+      </div>
+
+      {deleting && (
+        <ConfirmDelete
+          action={templatePath}
+          name={node.name}
+          text={t`The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs.`}
+          fields={{ intent: "delete", elementId: node.id }}
+          onCancel={() => setDeleting(false)}
+          onSubmit={() => setDeleting(false)}
+        />
+      )}
+    </div>
   );
 }

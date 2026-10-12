@@ -7,14 +7,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { Button, Heading, RecordOutlet } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { LuChevronLeft } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { RecordHeader } from "~/components/Layout/RecordHeader";
 import { usePermissions } from "~/hooks";
 import { deleteProjectElement } from "~/modules/projects";
 import { insertProjectElement } from "~/modules/projects/projects.server";
@@ -35,7 +33,7 @@ const logger = getLogger("erp", "service-template");
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Service Templates`, to: path.to.serviceTemplates },
-    (data) => data?.template?.name
+    (data) => data?.template?.identifier ?? data?.template?.name
   )
 };
 
@@ -166,47 +164,43 @@ export default function ServiceTemplateRoute() {
   const totals = useMemo(() => new Map(), []);
 
   return (
-    <div className="flex h-full w-full flex-col overflow-y-auto">
-      <div className="flex w-full flex-col gap-4 p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="ghost"
-            leftIcon={<LuChevronLeft />}
-            className="-ml-2"
-            asChild
-          >
-            <Link to={path.to.serviceTemplates}>
-              <Trans>Service Templates</Trans>
-            </Link>
-          </Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Heading size="h3">{template.name}</Heading>
-          {template.identifier && (
-            <span className="whitespace-nowrap font-mono text-sm text-muted-foreground">
-              {template.identifier}
+    <div className="flex h-full w-full flex-col overflow-hidden">
+      <RecordHeader
+        title={
+          <span className="flex min-w-0 items-center gap-2">
+            {template.identifier && (
+              <span className="shrink-0 whitespace-nowrap">
+                {template.identifier}
+              </span>
+            )}
+            <span
+              className={
+                template.identifier
+                  ? "min-w-0 truncate font-normal text-muted-foreground"
+                  : "min-w-0 truncate"
+              }
+            >
+              {template.name}
             </span>
-          )}
+          </span>
+        }
+        copyValue={template.identifier ?? undefined}
+        toolsPlacement="end"
+      />
+      <div className="min-h-0 flex-1 overflow-y-auto bg-card">
+        <div className="flex w-full flex-col gap-4 p-4">
+          <WorkTree
+            nodes={nodes}
+            totals={totals}
+            isDisabled={!permissions.can("update", "service")}
+            action={path.to.serviceTemplate(template.id)}
+            nodeHref={(nodeId) =>
+              path.to.serviceTemplateNode(template.id, nodeId)
+            }
+            planTotals={planTotals}
+          />
         </div>
-        <p className="text-sm text-muted-foreground">
-          <Trans>
-            A service order started from this template copies its elements and
-            their planned materials, labor and costs. Open an element to plan
-            them; the estimate prices them at sale prices.
-          </Trans>
-        </p>
-        <WorkTree
-          nodes={nodes}
-          totals={totals}
-          isDisabled={!permissions.can("update", "service")}
-          action={path.to.serviceTemplate(template.id)}
-          nodeHref={(nodeId) =>
-            path.to.serviceTemplateNode(template.id, nodeId)
-          }
-          planTotals={planTotals}
-        />
       </div>
-      <RecordOutlet />
     </div>
   );
 }

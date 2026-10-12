@@ -1534,9 +1534,6 @@ msgstr "税務報告のための別のスケジュール。税務ルールが帳
 msgid "A service is a billable activity that is bought or performed — it is never shipped, received, or stocked"
 msgstr "サービスは、購入または実行される請求可能なアクティビティです。配送、受取、または在庫されることはありません"
 
-msgid "A service order started from this template copies its elements and their planned materials, labor and costs. Open an element to plan them; the estimate prices them at sale prices."
-msgstr ""
-
 msgid "A set of companies under one owner that share group-scoped configuration — the chart of accounts, currencies, and dimensions — so the same accounting setup spans every company in the group."
 msgstr "1つのオーナーの下で、グループ規模の構成（勘定科目表、通貨、ディメンション）を共有する複数の会社のセット。同じ会計設定がグループ内のすべての会社に適用されます。"
 
@@ -24444,6 +24441,9 @@ msgstr "早朝の時間、{name}。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "8つの規律品質法。ハードコーディングではなく、不適合ワークフローのタスクでモデル化されています。"
+
+msgid "The element and its planned materials, labor and costs leave the template. Service orders already started from it keep theirs."
+msgstr ""
 
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "この原価センターの責任者である従業員 — 発注書承認がオンの場合、彼らはそれに対して転記された支出の承認者です。"
