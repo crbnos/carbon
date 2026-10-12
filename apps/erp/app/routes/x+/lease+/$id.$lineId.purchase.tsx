@@ -65,7 +65,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.leaseEvents(id),
+    path.to.leaseLine(id, lineId),
     await flash(request, success("Purchase option exercised"))
   );
 }

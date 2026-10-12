@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import LeaseAccounting from "./LeaseAccounting";
-import LeaseAssets from "./LeaseAssets";
+import LeaseAssetSummary from "./LeaseAssetSummary";
 import LeaseAssetsGrid from "./LeaseAssetsGrid";
 import {
   LeaseClassificationOverrideModal,
@@ -48,7 +48,7 @@ export type { LeaseActivationGap, LeaseSetupStep, LeaseTerm };
 
 export {
   LeaseAccounting,
-  LeaseAssets,
+  LeaseAssetSummary,
   LeaseAssetsGrid,
   leaseActivationGaps,
   LeaseClassificationOverrideModal,

@@ -18,8 +18,8 @@ import { useRouteData } from "~/hooks";
 import { draftLeaseSetupPath } from "~/modules/purchasing/purchasing.server";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import {
-  LeaseAssets,
   LeaseClassificationPreview,
+  LeaseEvents,
   LeasePayments,
   LeaseSummary
 } from "~/modules/purchasing/ui/Leases";
@@ -39,9 +39,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return null;
 }
 
-/** The lease as a whole: its summary, its assets, how they will be
- *  accounted for while Draft (seen here only by a viewer; an editor works in
- *  the setup), and the payment rows. The terms are in the properties panel. */
+/** The lease as a whole: its summary, how its assets will be accounted for
+ *  while Draft (seen here only by a viewer; an editor works in the setup),
+ *  every payment row and every event. The terms are in the properties panel;
+ *  an asset's own page is `$lineId.details`, opened from the explorer. */
 export default function LeaseDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -54,6 +55,8 @@ export default function LeaseDetailsRoute() {
     lines,
     payments,
     schedule,
+    events,
+    journals,
     paymentInvoices,
     fixedAssets,
     leasePolicy
@@ -66,13 +69,6 @@ export default function LeaseDetailsRoute() {
         lines={lines}
         payments={payments}
         schedule={schedule}
-      />
-      <LeaseAssets
-        lease={lease}
-        lines={lines}
-        payments={payments}
-        schedule={schedule}
-        fixedAssets={fixedAssets}
       />
       {lease.status === "Draft" && (
         <Card>
@@ -103,6 +99,15 @@ export default function LeaseDetailsRoute() {
         payments={payments}
         paymentInvoices={paymentInvoices}
       />
+      {lease.status !== "Draft" && (
+        <LeaseEvents
+          lease={lease}
+          lines={lines}
+          events={events}
+          journals={journals}
+          fixedAssets={fixedAssets}
+        />
+      )}
     </>
   );
 }

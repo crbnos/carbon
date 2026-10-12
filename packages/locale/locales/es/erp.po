@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# línea} other {# líneas}}"
 msgid "{load} in queue"
 msgstr "{load} en cola"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (del arrendamiento)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB límite"
 
@@ -8060,9 +8063,6 @@ msgstr "Cada activo se contabiliza por su cuenta, en su propio pago. Haga clic e
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "Cada activo se contabiliza por su cuenta. Sus filas de pago se cortan de las condiciones de pago del arrendamiento."
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "Cada activo se contabiliza por su cuenta. Finalice o compre uno aquí; los demás no cambian."
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "El valor razonable, la vida económica y la opción de compra de cada activo están en su fila en la tarjeta de activos."
 
@@ -11158,6 +11158,9 @@ msgstr "Heredado del grupo padre."
 
 msgid "inherits {inheritedName}"
 msgstr "hereda {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "Pasivo inicial"
 
 msgid "Initial Liability:"
 msgstr "Pasivo inicial:"
@@ -14704,9 +14707,6 @@ msgstr "Días no laborales que la programación y la capacidad respetan"
 
 msgid "None"
 msgstr "Ninguno"
-
-msgid "None yet"
-msgstr "Ninguno aún"
 
 msgid "Normal"
 msgstr "Normal"

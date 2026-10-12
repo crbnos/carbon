@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
 msgid "{load} in queue"
 msgstr "큐에 {load}개 대기 중"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (리스의 사업장)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -8060,9 +8063,6 @@ msgstr "각 자산은 그 자신의 지불에서 독립적으로 회계 처리�
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "각 자산은 독립적으로 회계 처리됩니다. 그 지불 라인은 리스의 지불 약관에서 계산됩니다."
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "각 자산은 독립적으로 회계 처리됩니다. 여기서 하나를 종료하거나 구매하세요; 다른 것은 변경되지 않습니다."
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "각 자산의 공정 가치, 경제 수명 및 구매 선택권은 자산 카드의 해당 라인에 있습니다."
 
@@ -11158,6 +11158,9 @@ msgstr "상위 그룹에서 상속됨."
 
 msgid "inherits {inheritedName}"
 msgstr "상속: {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "초기 부채"
 
 msgid "Initial Liability:"
 msgstr "초기 부채:"
@@ -14704,9 +14707,6 @@ msgstr "일정 및 용량 계산에 반영되는 비근무일"
 
 msgid "None"
 msgstr "없음"
-
-msgid "None yet"
-msgstr "아직 없음"
 
 msgid "Normal"
 msgstr "일반"

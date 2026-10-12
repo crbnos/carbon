@@ -19,6 +19,9 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
+  LuBookOpen,
+  LuChevronDown,
+  LuCirclePlus,
   LuCreditCard,
   LuEllipsisVertical,
   LuPanelLeft,
@@ -30,7 +33,13 @@ import {
 import { Link } from "react-router";
 import { usePanels } from "~/components/Layout";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, usePermissions, useUser } from "~/hooks";
+import {
+  useCompanyToday,
+  useDateFormatter,
+  usePermissions,
+  useUser
+} from "~/hooks";
+import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { path } from "~/utils/path";
 import {
   LeaseCommencementPreview,
@@ -44,26 +53,36 @@ import { leaseActivationGaps } from "./utils";
 
 type LeaseHeaderProps = Pick<
   LeaseRouteData,
-  "lease" | "lines" | "payments" | "schedule" | "leasePolicy"
+  | "lease"
+  | "lines"
+  | "payments"
+  | "schedule"
+  | "leasePolicy"
+  | "purchaseInvoices"
+  | "journals"
 >;
 
 type PendingAction = "activate" | "invoice" | "cancel";
 
 /** The lease's actions: Activate a Draft; Invoice Now, Modify and Cancel an
- *  Active lease. Terminate and Purchase act on one asset, from the Assets
- *  card. */
+ *  Active lease. Terminate and Purchase act on one asset, from its explorer
+ *  row or its page. The purchase invoices and journals that name the lease
+ *  are listed here, as a rental agreement lists its shipments. */
 const LeaseHeader = ({
   lease,
   lines,
   payments,
   schedule,
-  leasePolicy
+  leasePolicy,
+  purchaseInvoices,
+  journals
 }: LeaseHeaderProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { toggleExplorer } = usePanels();
   const today = useCompanyToday();
   const { company } = useUser();
+  const { formatDate } = useDateFormatter();
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
@@ -208,16 +227,84 @@ const LeaseHeader = ({
                 <Trans>Modify</Trans>
               </Button>
             )}
-            {isActive && (
-              <Button
-                variant={hasDuePayment ? "primary" : "secondary"}
-                leftIcon={<LuCreditCard />}
-                isDisabled={!canInvoice || !hasDuePayment}
-                onClick={() => open("invoice")}
-              >
-                <Trans>Invoice Now</Trans>
-              </Button>
+            {journals.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    leftIcon={<LuBookOpen />}
+                    rightIcon={<LuChevronDown />}
+                  >
+                    <Trans>Journals</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {journals.map((journal) => (
+                    <DropdownMenuItem key={journal.id} asChild>
+                      <Link to={path.to.journalEntryDetails(journal.id)}>
+                        <DropdownMenuIcon icon={<LuBookOpen />} />
+                        <HStack spacing={8}>
+                          <span>{journal.journalEntryId}</span>
+                          <span className="text-muted-foreground">
+                            {formatDate(journal.postingDate)}
+                          </span>
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
+            {isActive &&
+              (purchaseInvoices.length === 0 ? (
+                <Button
+                  variant={hasDuePayment ? "primary" : "secondary"}
+                  leftIcon={<LuCreditCard />}
+                  isDisabled={!canInvoice || !hasDuePayment}
+                  onClick={() => open("invoice")}
+                >
+                  <Trans>Invoice Now</Trans>
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant={hasDuePayment ? "primary" : "secondary"}
+                      leftIcon={<LuCreditCard />}
+                      rightIcon={<LuChevronDown />}
+                    >
+                      <Trans>Purchase Invoices</Trans>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem
+                      disabled={!canInvoice || !hasDuePayment}
+                      onClick={() => open("invoice")}
+                    >
+                      <DropdownMenuIcon icon={<LuCirclePlus />} />
+                      <Trans>Invoice Now</Trans>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    {purchaseInvoices.map((invoice) => (
+                      <DropdownMenuItem key={invoice.id} asChild>
+                        <Link to={path.to.purchaseInvoiceDetails(invoice.id)}>
+                          <DropdownMenuIcon icon={<LuCreditCard />} />
+                          <HStack spacing={8}>
+                            <span>{invoice.invoiceId}</span>
+                            <PurchaseInvoicingStatus
+                              status={
+                                invoice.status as Parameters<
+                                  typeof PurchaseInvoicingStatus
+                                >[0]["status"]
+                              }
+                            />
+                          </HStack>
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ))}
             {isDraft && (
               <Button
                 variant="primary"

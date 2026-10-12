@@ -183,8 +183,15 @@ export async function loader({
 }
 
 export default function LeaseShellRoute() {
-  const { lease, lines, payments, schedule, leasePolicy } =
-    useLoaderData<typeof loader>();
+  const {
+    lease,
+    lines,
+    payments,
+    schedule,
+    leasePolicy,
+    purchaseInvoices,
+    journals
+  } = useLoaderData<typeof loader>();
   const { id } = useParams();
   const matches = useMatches();
   if (!id) throw new Error("Could not find id");
@@ -204,6 +211,8 @@ export default function LeaseShellRoute() {
           payments={payments}
           schedule={schedule}
           leasePolicy={leasePolicy}
+          purchaseInvoices={purchaseInvoices}
+          journals={journals}
         />
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">

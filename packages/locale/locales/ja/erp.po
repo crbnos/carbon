@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 msgid "{load} in queue"
 msgstr "キューに{load}件"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName}（リースの拠点）"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -8060,9 +8063,6 @@ msgstr "各資産はその支払で個別に計上されます。セルをクリ
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "各資産はそれぞれ個別に計上されます。支払明細はリースの支払条件から切り出されます。"
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "各資産はそれぞれ個別に計上されます。ここで1つを終了または購入します。その他のものは変わりません。"
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "各資産の公正価値、経済耐用年数、および購入オプションは、資産カード内のその行にあります。"
 
@@ -11158,6 +11158,9 @@ msgstr "親グループから継承。"
 
 msgid "inherits {inheritedName}"
 msgstr "継承 {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "初期リース債務"
 
 msgid "Initial Liability:"
 msgstr "初期リース債務："
@@ -14704,9 +14707,6 @@ msgstr "スケジューリングと容量計画が考慮する非稼働日"
 
 msgid "None"
 msgstr "なし"
-
-msgid "None yet"
-msgstr "まだなし"
 
 msgid "Normal"
 msgstr "通常"

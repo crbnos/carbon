@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"
 msgid "{load} in queue"
 msgstr "{load} in Warteschlange"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (des Leasings)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB-Limit"
 
@@ -8060,9 +8063,6 @@ msgstr "Jede Anlage wird separat verbucht, zu ihrer eigenen Zahlung. Klicken Sie
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "Jede Anlage wird separat verbucht. Seine Zahlungspositionen werden aus den Leasingzahlungsbedingungen erzeugt."
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "Jede Anlage wird separat verbucht. Beenden Sie hier eine oder kaufen Sie eine; die anderen ändern sich nicht."
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "Der beizulegende Zeitwert, die Nutzungsdauer und die Kaufoption jeder Anlage befinden sich in ihrer Zeile in der Anlagenkarte."
 
@@ -11158,6 +11158,9 @@ msgstr "Geerbt aus der übergeordneten Gruppe."
 
 msgid "inherits {inheritedName}"
 msgstr "erbt {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "Anfängliche Verbindlichkeit"
 
 msgid "Initial Liability:"
 msgstr "Anfängliche Verbindlichkeit:"
@@ -14704,9 +14707,6 @@ msgstr "Arbeitsfreie Tage, die Planung und Kapazität berücksichtigen"
 
 msgid "None"
 msgstr "Keine"
-
-msgid "None yet"
-msgstr "Noch keine"
 
 msgid "Normal"
 msgstr "Normal"

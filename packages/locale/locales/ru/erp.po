@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# строка} other {# строк}}"
 msgid "{load} in queue"
 msgstr "{load} в очереди"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (площадка аренды)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -8060,9 +8063,6 @@ msgstr "Каждый актив учитывается отдельно по с�
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "Каждый актив учитывается отдельно. Его строки платежей рассчитываются из условий оплаты аренды."
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "Каждый актив учитывается отдельно. Прекратите или купите один здесь; остальные не изменяются."
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "Справедливая стоимость, экономическая жизнь и вариант покупки каждого актива находятся в его строке на карточке активов."
 
@@ -11158,6 +11158,9 @@ msgstr "Унаследовано от родительской группы."
 
 msgid "inherits {inheritedName}"
 msgstr "от {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "Первоначальное обязательство"
 
 msgid "Initial Liability:"
 msgstr "Первоначальное обязательство:"
@@ -14704,9 +14707,6 @@ msgstr "Нерабочие дни, которые учитываются при 
 
 msgid "None"
 msgstr "Нет"
-
-msgid "None yet"
-msgstr "Еще ничего нет"
 
 msgid "Normal"
 msgstr "Обычный"

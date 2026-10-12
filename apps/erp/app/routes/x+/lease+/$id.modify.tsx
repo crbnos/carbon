@@ -71,7 +71,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.leaseEvents(id),
+    path.to.leaseDetails(id),
     await flash(request, success("Lease modified"))
   );
 }

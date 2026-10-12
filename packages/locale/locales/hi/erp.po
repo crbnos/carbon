@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
 msgid "{load} in queue"
 msgstr "{load} कतार में"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (पट्टे का)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -8060,9 +8063,6 @@ msgstr "प्रत्येक संपत्ति को अपने ह�
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "प्रत्येक संपत्ति को अपने आप खाता दिया जाता है। इसकी भुगतान पंक्तियाँ पट्टे की भुगतान शर्तों से काट दी जाती हैं।"
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "प्रत्येक संपत्ति को अपने आप खाता दिया जाता है। यहाँ एक को समाप्त या खरीदें; दूसरे नहीं बदलते हैं।"
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "प्रत्येक संपत्ति का उचित मूल्य, आर्थिक जीवन और खरीद विकल्प संपत्ति कार्ड में इसकी पंक्ति पर हैं।"
 
@@ -11158,6 +11158,9 @@ msgstr "मूल समूह से विरासत में मिला�
 
 msgid "inherits {inheritedName}"
 msgstr "{inheritedName} से विरासत"
+
+msgid "Initial Liability"
+msgstr "प्रारंभिक देयता"
 
 msgid "Initial Liability:"
 msgstr "प्रारंभिक देयता:"
@@ -14704,9 +14707,6 @@ msgstr "गैर-कार्य दिन जिन्हें शेड्�
 
 msgid "None"
 msgstr "कोई नहीं"
-
-msgid "None yet"
-msgstr "अभी तक कोई नहीं"
 
 msgid "Normal"
 msgstr "सामान्य"

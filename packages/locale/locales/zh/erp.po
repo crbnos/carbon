@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 msgid "{load} in queue"
 msgstr "{load} 在队列中"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName}（该租赁的地点）"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -8060,9 +8063,6 @@ msgstr "每项资产独立核算，在其付款处。点击单元格可更改。
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "每项资产独立核算。其付款行从租赁的付款条件中生成。"
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "每项资产独立核算。在此处终止或购买其中一项；其他资产不变。"
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "每项资产的公允价值、经济寿命和购买选项在资产卡中的其行。"
 
@@ -11158,6 +11158,9 @@ msgstr "从父组继承。"
 
 msgid "inherits {inheritedName}"
 msgstr "继承自 {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "初始负债"
 
 msgid "Initial Liability:"
 msgstr "初始负债："
@@ -14704,9 +14707,6 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 
 msgid "None"
 msgstr "无"
-
-msgid "None yet"
-msgstr "暂无"
 
 msgid "Normal"
 msgstr "正常"

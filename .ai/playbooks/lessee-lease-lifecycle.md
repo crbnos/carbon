@@ -27,7 +27,7 @@ Route: /x/purchasing/leases → /x/lease/new → /x/lease/<id>/details
 ### 6. Review (step 5) — footer Back / Save as Draft / Activate. Activate opens a dialog with a leg per asset; requestSubmit its form → /x/lease/<id>/details, Active, one Posted journal with lines per asset.
 ### 7. Invoice Now — header button; dialog "Invoice" (requestSubmit). One Draft purchase invoice per due date, one Lease line per asset, described with the asset.
 ### 8. Lease run — /x/accounting/lease-runs → "New Run" → period end → create → "Post". Every run journal line carries the asset in `documentLineReference`.
-### 9. Terminate one asset — lease page → Assets card → the asset's ⋮ → "Terminate". Date on the last day of a payment period. That asset becomes Terminated; the other stays Active, and so does the lease.
+### 9. Terminate one asset — lease page → the asset's row in the explorer (left) → its ⋮ → "Terminate", or open the asset's page (/x/lease/<id>/<lineId>/details) → "Terminate". Date on the last day of a payment period. That asset becomes Terminated; the other stays Active, and so does the lease.
 ### 10. Post / Void an invoice — open it (/x/purchase-invoice/<id>), "Post" → dialog "Post Invoice". Void: "More options" → "Void" → dialog "Void Invoice"; the payment row returns to Pending.
 
 ## Steps — an open-ended lease

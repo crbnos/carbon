@@ -497,6 +497,9 @@ msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
 msgid "{load} in queue"
 msgstr "{load} kuyruğunda"
 
+msgid "{locationName} (the lease's)"
+msgstr "{locationName} (kiralamanın)"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -8060,9 +8063,6 @@ msgstr "Her varlık kendi ödeme oranında bağımsız olarak muhasebeleştirili
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "Her varlık bağımsız olarak muhasebeleştirilir. Ödeme satırları, kiralama ödeme koşullarından kesilir."
 
-msgid "Each asset is accounted for on its own. Terminate or purchase one here; the others do not change."
-msgstr "Her varlık bağımsız olarak muhasebeleştirilir. Burada birini sonlandırın veya satın alın; diğerleri değişmez."
-
 msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
 msgstr "Her varlığın gerçeğe uygun değeri, ekonomik ömrü ve satın alma seçeneği Varlıklar kartındaki satırında yer alır."
 
@@ -11158,6 +11158,9 @@ msgstr "Ana gruptan devralınan."
 
 msgid "inherits {inheritedName}"
 msgstr "devralınan {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "İlk Yükümlülük"
 
 msgid "Initial Liability:"
 msgstr "İlk Yükümlülük:"
@@ -14704,9 +14707,6 @@ msgstr "Planlama ve kapasite tarafından dikkate alınan çalışılmayan günle
 
 msgid "None"
 msgstr "Yok"
-
-msgid "None yet"
-msgstr "Henüz yok"
 
 msgid "Normal"
 msgstr "Normal"

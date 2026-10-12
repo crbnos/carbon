@@ -1519,9 +1519,10 @@ export const path = {
     lease: (id: string) => generatePath(`${x}/lease/${id}`),
     leaseActivate: (id: string) => generatePath(`${x}/lease/${id}/activate`),
     leaseDetails: (id: string) => generatePath(`${x}/lease/${id}/details`),
-    leaseEvents: (id: string) => generatePath(`${x}/lease/${id}/events`),
     leaseInvoice: (id: string) => generatePath(`${x}/lease/${id}/invoice`),
     leaseLiabilities: `${x}/reports/lease-liabilities`,
+    leaseLine: (id: string, lineId: string) =>
+      generatePath(`${x}/lease/${id}/${lineId}/details`),
     leaseLineClassification: (id: string, lineId: string) =>
       generatePath(`${x}/lease/${id}/${lineId}/classification`),
     leaseLineDelete: (id: string, lineId: string) =>
@@ -1544,7 +1545,6 @@ export const path = {
     leasePaymentUpdate: (id: string, paymentId: string) =>
       generatePath(`${x}/lease/${id}/payments/${paymentId}/update`),
     leaseRuns: `${x}/accounting/lease-runs`,
-    leaseSchedule: (id: string) => generatePath(`${x}/lease/${id}/schedule`),
     leaseSetup: (
       id: string,
       step: "details" | "assets" | "payments" | "accounting" | "review"
