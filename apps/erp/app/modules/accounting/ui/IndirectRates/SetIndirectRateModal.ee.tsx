@@ -91,6 +91,7 @@ const SetIndirectRateModal = ({
               <SelectControlled
                 name="indirectPoolId"
                 label={t`Pool`}
+                termId="indirect-pool"
                 options={pools.map((pool) => ({
                   label: pool.name,
                   value: pool.id

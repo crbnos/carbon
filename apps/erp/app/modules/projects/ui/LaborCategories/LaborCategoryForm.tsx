@@ -127,6 +127,7 @@ const LaborCategoryForm = ({
                       <Select
                         name="rdActivityRole"
                         label={t`Research role`}
+                        termId="research-role"
                         isOptional
                         helperText={t`Default role for time in this category`}
                         options={rdActivityRoles.map((value) => ({

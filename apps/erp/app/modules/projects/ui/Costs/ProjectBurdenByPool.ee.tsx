@@ -33,7 +33,9 @@ export default function ProjectBurdenByPool({
     <div className="shrink-0 border-t border-border">
       <div className="flex h-12 items-center border-b border-border bg-card px-4">
         <h3 className="text-sm font-medium">
-          <Trans>Burden by pool</Trans>
+          <LabelWithHelp termId="burden" variant="inline">
+            <Trans>Burden by pool</Trans>
+          </LabelWithHelp>
         </h3>
       </div>
       <div className="flex h-10 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
@@ -46,7 +48,9 @@ export default function ProjectBurdenByPool({
           <Trans>Allowable</Trans>
         </span>
         <span className={FIGURE_CELL}>
-          <Trans>Unallowable</Trans>
+          <LabelWithHelp termId="allowability" variant="inline">
+            <Trans>Unallowable</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL}>
           <Trans>Total</Trans>

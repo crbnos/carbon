@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   IconButton,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -183,7 +184,9 @@ export default function BillableItemsTable({
                     <Trans>Item</Trans>
                   </Th>
                   <Th>
-                    <Trans>Coverage</Trans>
+                    <LabelWithHelp termId="coverage" variant="inline">
+                      <Trans>Coverage</Trans>
+                    </LabelWithHelp>
                   </Th>
                   <Th className="text-right">
                     <Trans>Quantity</Trans>

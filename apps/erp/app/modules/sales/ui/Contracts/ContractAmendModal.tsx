@@ -1040,6 +1040,7 @@ const BillingTermsModal = ({
                 <Select
                   name="billingMethod"
                   label={t`Billing Method`}
+                  termId="billing-method"
                   options={contractBillingMethods.map((value) => ({
                     value,
                     label: billingLabels[value]
@@ -1062,6 +1063,7 @@ const BillingTermsModal = ({
                 <SelectControlled
                   name="revenueMethod"
                   label={t`Revenue Method`}
+                  termId="revenue-method"
                   value={revenueMethod}
                   options={contractRevenueMethodsByBillingMethod[
                     billingMethod

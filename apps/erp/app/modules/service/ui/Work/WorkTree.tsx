@@ -19,6 +19,7 @@ import {
   HStack,
   IconButton,
   Input,
+  LabelWithHelp,
   Select,
   SelectContent,
   SelectItem,
@@ -186,7 +187,9 @@ export default function WorkTree({
             <Thead>
               <Tr>
                 <Th className="w-full">
-                  <Trans>Element</Trans>
+                  <LabelWithHelp termId="element" variant="inline">
+                    <Trans>Element</Trans>
+                  </LabelWithHelp>
                 </Th>
                 {isPlan ? (
                   <>
@@ -200,7 +203,9 @@ export default function WorkTree({
                 ) : (
                   <>
                     <Th>
-                      <Trans>Coverage</Trans>
+                      <LabelWithHelp termId="coverage" variant="inline">
+                        <Trans>Coverage</Trans>
+                      </LabelWithHelp>
                     </Th>
                     <Th className="text-right">
                       <Trans>Hours</Trans>

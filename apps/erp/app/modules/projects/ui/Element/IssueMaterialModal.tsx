@@ -348,7 +348,7 @@ export function IssueMaterialModal({
                   <Hidden name="projectElementId" />
                 </>
               ) : (
-                <ChargeNumber label={t`Charge Number`} />
+                <ChargeNumber label={t`Charge Number`} termId="charge-number" />
               )}
               <Select
                 name="direction"

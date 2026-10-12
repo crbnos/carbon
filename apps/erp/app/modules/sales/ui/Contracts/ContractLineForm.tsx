@@ -243,6 +243,7 @@ const ContractLineForm = ({
                   <Select
                     name="billingMethod"
                     label={t`Billing Method`}
+                    termId="billing-method"
                     options={contractBillingMethods.map((value) => ({
                       value,
                       label: billingMethodLabels[value]
@@ -294,6 +295,7 @@ const ContractLineForm = ({
                   <Input
                     name="lineItemNumber"
                     label={t`CLIN / SLIN`}
+                    termId="clin"
                     helperText={t`4 digits for a CLIN; 2 letters or digits more for a SubCLIN`}
                     onChange={(event) => setLineItemNumber(event.target.value)}
                   />
@@ -430,6 +432,7 @@ const ContractLineForm = ({
                     <SelectControlled
                       name="revenueMethod"
                       label={t`Revenue Method`}
+                      termId="revenue-method"
                       value={revenueMethod}
                       options={revenueMethods.map((value) => ({
                         value,

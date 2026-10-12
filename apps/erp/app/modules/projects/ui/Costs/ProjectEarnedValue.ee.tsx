@@ -237,10 +237,14 @@ function EarnedValueTable({
           <Trans>SV</Trans>
         </span>
         <span className={FIGURE_CELL} title={t`Cost performance index`}>
-          <Trans>CPI</Trans>
+          <LabelWithHelp termId="cpi" variant="inline">
+            <Trans>CPI</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL} title={t`Schedule performance index`}>
-          <Trans>SPI</Trans>
+          <LabelWithHelp termId="spi" variant="inline">
+            <Trans>SPI</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL} title={t`Estimate at completion`}>
           <Trans>EAC</Trans>

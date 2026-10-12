@@ -389,6 +389,7 @@ const ProjectForm = ({
             <Select
               name="lockPlanAfterMilestoneId"
               label={t`Lock Plan After Milestone`}
+              termId="milestone"
               isOptional
               helperText={t`When this milestone completes, the plan changes only through a change request`}
               options={milestones ?? []}

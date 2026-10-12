@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -266,7 +267,9 @@ function ContractLineBillableItems({
     <Card>
       <CardHeader>
         <CardTitle>
-          <Trans>Billable Items</Trans>
+          <LabelWithHelp termId="billable-item" variant="inline">
+            <Trans>Billable Items</Trans>
+          </LabelWithHelp>
         </CardTitle>
         <CardDescription>
           <Trans>

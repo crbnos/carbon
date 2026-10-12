@@ -800,6 +800,7 @@ function PlanLineModal({
               <Select
                 name="laborCategoryId"
                 label={t`Labor Category`}
+                termId="labor-category"
                 options={laborCategories.map((category) => ({
                   value: category.id,
                   label: category.name

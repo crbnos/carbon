@@ -6,8 +6,9 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { LabelWithHelp } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -118,7 +119,11 @@ export default function ContractBillingBackupRoute() {
       },
       {
         id: "element",
-        header: t`Element`,
+        header: () => (
+          <LabelWithHelp termId="element" variant="inline">
+            <Trans>Element</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.element ? (
             <span className="flex min-w-0 items-center gap-2">
@@ -131,6 +136,7 @@ export default function ContractBillingBackupRoute() {
             "—"
           ),
         meta: {
+          filterHeader: t`Element`,
           exportValue: (row) =>
             row.element ? `${row.element.readableId} ${row.element.name}` : null
         }
@@ -155,12 +161,17 @@ export default function ContractBillingBackupRoute() {
       },
       {
         id: "pool",
-        header: t`Pool`,
+        header: () => (
+          <LabelWithHelp termId="indirect-pool" variant="inline">
+            <Trans>Pool</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.pool
             ? `${row.original.pool.name} · FY${row.original.fiscalYear}`
             : "—",
         meta: {
+          filterHeader: t`Pool`,
           exportValue: (row) =>
             row.pool ? `${row.pool.name} FY${row.fiscalYear}` : null
         }
@@ -212,13 +223,18 @@ export default function ContractBillingBackupRoute() {
       },
       {
         id: "laborCategory",
-        header: t`Labor Category`,
+        header: () => (
+          <LabelWithHelp termId="labor-category" variant="inline">
+            <Trans>Labor Category</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.ledger?.laborCategoryId
             ? (categoryName.get(row.original.ledger.laborCategoryId) ??
               row.original.ledger.laborCategoryId)
             : "—",
         meta: {
+          filterHeader: t`Labor Category`,
           exportValue: (row) =>
             row.ledger?.laborCategoryId
               ? (categoryName.get(row.ledger.laborCategoryId) ??

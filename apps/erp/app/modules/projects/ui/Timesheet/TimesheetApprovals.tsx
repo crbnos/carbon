@@ -14,6 +14,7 @@ import {
   CardTitle,
   HStack,
   IconButton,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -174,10 +175,14 @@ function ApprovalCard({
                   <Trans>Date</Trans>
                 </Th>
                 <Th>
-                  <Trans>Charge Number</Trans>
+                  <LabelWithHelp termId="charge-number" variant="inline">
+                    <Trans>Charge Number</Trans>
+                  </LabelWithHelp>
                 </Th>
                 <Th>
-                  <Trans>Labor Category</Trans>
+                  <LabelWithHelp termId="labor-category" variant="inline">
+                    <Trans>Labor Category</Trans>
+                  </LabelWithHelp>
                 </Th>
                 <Th className="text-right">
                   <Trans>Hours</Trans>

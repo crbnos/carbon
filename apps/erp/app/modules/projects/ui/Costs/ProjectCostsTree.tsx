@@ -5,6 +5,7 @@
 import {
   Badge,
   cn,
+  LabelWithHelp,
   Tooltip,
   TooltipContent,
   TooltipTrigger
@@ -138,7 +139,9 @@ export default function ProjectCostsTree({
       <div className="flex h-full min-h-0 min-w-[63rem] flex-col">
         <div className="sticky top-0 z-10 flex h-10 shrink-0 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
           <div className="min-w-0 flex-1 px-4">
-            <Trans>Element</Trans>
+            <LabelWithHelp termId="element" variant="inline">
+              <Trans>Element</Trans>
+            </LabelWithHelp>
           </div>
           <span className={FIGURE_CELL}>
             <Trans>Plan</Trans>
@@ -153,7 +156,9 @@ export default function ProjectCostsTree({
             <Trans>Allowable</Trans>
           </span>
           <span className={FIGURE_CELL}>
-            <Trans>Unallowable</Trans>
+            <LabelWithHelp termId="allowability" variant="inline">
+              <Trans>Unallowable</Trans>
+            </LabelWithHelp>
           </span>
           <span className={FIGURE_CELL}>
             <Trans>Remaining</Trans>

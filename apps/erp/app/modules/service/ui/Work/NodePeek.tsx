@@ -15,6 +15,7 @@ import {
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
+  LabelWithHelp,
   Modal,
   ModalBody,
   ModalContent,
@@ -253,7 +254,9 @@ export default function NodePeek({
                           <Trans>Cost</Trans>
                         </Th>
                         <Th>
-                          <Trans>Coverage</Trans>
+                          <LabelWithHelp termId="coverage" variant="inline">
+                            <Trans>Coverage</Trans>
+                          </LabelWithHelp>
                         </Th>
                         <Th />
                       </Tr>
@@ -544,7 +547,12 @@ function OverrideCoverageModal({
                   <AlertDescription>{errorMessage}</AlertDescription>
                 </Alert>
               )}
-              <Select name="coverage" label={t`Coverage`} options={options} />
+              <Select
+                name="coverage"
+                label={t`Coverage`}
+                termId="coverage"
+                options={options}
+              />
               <TextArea name="reason" label={t`Reason`} />
             </VStack>
           </ModalBody>

@@ -10,6 +10,7 @@ import {
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
+  LabelWithHelp,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -83,7 +84,9 @@ function EarnedValueLockedRow() {
   return (
     <div className="flex min-h-8 items-center gap-2">
       <span className="w-[120px] shrink-0 text-xs text-muted-foreground">
-        <Trans>Earned value</Trans>
+        <LabelWithHelp termId="earned-value" variant="inline">
+          <Trans>Earned value</Trans>
+        </LabelWithHelp>
       </span>
       <div className="flex min-w-0 flex-1 items-center">
         <Popover>
@@ -163,7 +166,9 @@ function EarnedValueForm({
   return (
     <div className="mt-4 flex flex-col gap-2">
       <h2 className="text-sm font-medium">
-        <Trans>Earned Value</Trans>
+        <LabelWithHelp termId="earned-value" variant="inline">
+          <Trans>Earned Value</Trans>
+        </LabelWithHelp>
       </h2>
       <ValidatedForm
         key={element.id}
@@ -189,6 +194,7 @@ function EarnedValueForm({
             bordered
             name="isControlAccount"
             label={t`Control account`}
+            termId="control-account"
             description={t`Earned value rolls up to this element`}
             onChange={setControlAccountChoice}
           />

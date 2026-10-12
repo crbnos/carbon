@@ -4,7 +4,7 @@
 
 import type { TermId } from "@carbon/content/glossary";
 import { ValidatedForm } from "@carbon/form";
-import { VStack } from "@carbon/react";
+import { LabelWithHelp, VStack } from "@carbon/react";
 import type { ReactNode } from "react";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -49,14 +49,20 @@ type Option = { value: string; label: string | JSX.Element };
 /** A read-only property: the muted label above the value. */
 export function PropertyField({
   label,
+  termId,
   children
 }: {
   label: string;
+  termId?: TermId;
   children: ReactNode;
 }) {
   return (
     <VStack spacing={2}>
-      <h3 className="text-xs text-muted-foreground">{label}</h3>
+      <h3 className="text-xs text-muted-foreground">
+        <LabelWithHelp termId={termId} variant="inline">
+          {label}
+        </LabelWithHelp>
+      </h3>
       {children}
     </VStack>
   );
@@ -65,14 +71,22 @@ export function PropertyField({
 /** A group of properties under the page's plain section heading. */
 export function PropertyGroup({
   title,
+  termId,
   children
 }: {
   title?: string;
+  termId?: TermId;
   children: ReactNode;
 }) {
   return (
     <VStack spacing={4}>
-      {title && <h2 className="text-sm font-medium">{title}</h2>}
+      {title && (
+        <h2 className="text-sm font-medium">
+          <LabelWithHelp termId={termId} variant="inline">
+            {title}
+          </LabelWithHelp>
+        </h2>
+      )}
       {children}
     </VStack>
   );

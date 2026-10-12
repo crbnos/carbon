@@ -11,6 +11,7 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
+  LabelWithHelp,
   Table,
   Tbody,
   Td,
@@ -273,7 +274,9 @@ export default function CustomerAssetPage({
                     <Trans>Removed</Trans>
                   </Th>
                   <Th>
-                    <Trans>Service Order</Trans>
+                    <LabelWithHelp termId="service-order" variant="inline">
+                      <Trans>Service Order</Trans>
+                    </LabelWithHelp>
                   </Th>
                 </Tr>
               </Thead>
@@ -356,7 +359,9 @@ export default function CustomerAssetPage({
               <Thead>
                 <Tr>
                   <Th>
-                    <Trans>Service Order</Trans>
+                    <LabelWithHelp termId="service-order" variant="inline">
+                      <Trans>Service Order</Trans>
+                    </LabelWithHelp>
                   </Th>
                   <Th>
                     <Trans>Status</Trans>

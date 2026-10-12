@@ -8,6 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  LabelWithHelp,
   MenuIcon,
   MenuItem
 } from "@carbon/react";
@@ -144,7 +145,11 @@ const ProjectBillableItemsTable = memo(
         },
         {
           id: "element",
-          header: t`Element`,
+          header: () => (
+            <LabelWithHelp termId="element" variant="inline">
+              <Trans>Element</Trans>
+            </LabelWithHelp>
+          ),
           cell: ({ row }) =>
             row.original.element ? (
               <span className="flex min-w-0 items-center gap-2">
@@ -157,6 +162,7 @@ const ProjectBillableItemsTable = memo(
               "—"
             ),
           meta: {
+            filterHeader: t`Element`,
             exportValue: (row) => row.element?.readableId ?? null
           }
         },

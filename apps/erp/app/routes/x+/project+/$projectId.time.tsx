@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { LabelWithHelp } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
@@ -113,7 +114,11 @@ export default function ProjectTimeRoute() {
       },
       {
         id: "element",
-        header: t`Element`,
+        header: () => (
+          <LabelWithHelp termId="element" variant="inline">
+            <Trans>Element</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) =>
           row.original.element ? (
             <div className="flex max-w-[260px] items-center gap-2">
@@ -128,7 +133,11 @@ export default function ProjectTimeRoute() {
       },
       {
         id: "laborCategory",
-        header: t`Labor Category`,
+        header: () => (
+          <LabelWithHelp termId="labor-category" variant="inline">
+            <Trans>Labor Category</Trans>
+          </LabelWithHelp>
+        ),
         cell: ({ row }) => (
           <span className="whitespace-nowrap">
             {row.original.laborCategory?.name ?? "—"}

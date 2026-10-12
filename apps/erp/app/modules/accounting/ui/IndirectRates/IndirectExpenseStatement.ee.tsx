@@ -3,7 +3,16 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import type { IndirectPool, IndirectRate } from "@carbon/ee/indirect-rates";
-import { cn, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import {
+  cn,
+  LabelWithHelp,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr
+} from "@carbon/react";
 import { formatQuantity, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -103,7 +112,9 @@ const IndirectExpenseStatement = ({
                       <Trans>Amount</Trans>
                     </Th>
                     <Th className="text-right">
-                      <Trans>Unallowable</Trans>
+                      <LabelWithHelp termId="allowability" variant="inline">
+                        <Trans>Unallowable</Trans>
+                      </LabelWithHelp>
                     </Th>
                     <Th className="text-right">
                       <Trans>Claimed</Trans>

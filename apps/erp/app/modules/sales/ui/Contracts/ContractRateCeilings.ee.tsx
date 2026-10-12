@@ -223,7 +223,11 @@ function RateCeilingsCard({
     () => [
       {
         accessorKey: "indirectPoolId",
-        header: t`Pool`,
+        header: () => (
+          <LabelWithHelp termId="indirect-pool" variant="inline">
+            <Trans>Pool</Trans>
+          </LabelWithHelp>
+        ),
         size: 280,
         cell: ({ row }) =>
           row.original.indirectPoolId ? (
@@ -290,7 +294,9 @@ function RateCeilingsCard({
       <Card>
         <CardHeader>
           <CardTitle>
-            <Trans>Rate Ceilings</Trans>
+            <LabelWithHelp termId="rate-ceiling" variant="inline">
+              <Trans>Rate Ceilings</Trans>
+            </LabelWithHelp>
           </CardTitle>
           <CardDescription>
             <Trans>

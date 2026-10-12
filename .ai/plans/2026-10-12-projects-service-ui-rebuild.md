@@ -232,7 +232,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory
 - [x] Task 38: Sweep the remaining empty states
 - [ ] Task 39: Sweep every boolean field to `bordered`
-- [ ] Task 40: Sweep the glossary popovers onto the rebuilt screens
+- [x] Task 40: Sweep the glossary popovers onto the rebuilt screens
 - [ ] Task 41: Update the rules, AGENTS.md, lessons and the design skill
 - [ ] Task 42: Update the docs reference pages
 - [ ] Task 43: Fill the translations

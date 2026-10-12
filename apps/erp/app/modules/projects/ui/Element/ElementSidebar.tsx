@@ -213,6 +213,7 @@ export function ElementSidebar({
           {...common}
           field="milestoneId"
           label={t`Milestone`}
+          termId="milestone"
           value={element.milestoneId}
           options={milestones.map((milestone) => ({
             value: milestone.id,
@@ -254,7 +255,10 @@ export function ElementSidebar({
       </PropertyGroup>
 
       {typeBlock && (
-        <PropertyGroup title={typeLabels[element.type]}>
+        <PropertyGroup
+          title={typeLabels[element.type]}
+          termId={element.type === "Requirement" ? "requirement" : undefined}
+        >
           {typeBlock}
         </PropertyGroup>
       )}
@@ -352,7 +356,7 @@ export function ElementSidebar({
           />
         ) : (
           <PropertyGroup title={t`Government contracting`}>
-            <PropertyField label={t`Charge number`}>
+            <PropertyField label={t`Charge number`} termId="charge-number">
               <span className="flex items-center gap-1">
                 <span className="whitespace-nowrap tabular-nums">
                   {element.readableId}

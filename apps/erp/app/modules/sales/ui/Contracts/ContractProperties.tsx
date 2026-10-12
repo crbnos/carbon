@@ -751,6 +751,7 @@ function ContractResearchFlags({
         <Select
           name="researchFunded"
           label={t`Funded research`}
+          termId="funded-research"
           inline={(value) => (
             <span>
               {fundedOptions.find((option) => option.value === value)?.label ??

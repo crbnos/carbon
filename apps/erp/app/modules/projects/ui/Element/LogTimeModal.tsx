@@ -137,6 +137,7 @@ export function LogTimeModal({
               <Select
                 name="laborCategoryId"
                 label={t`Labor Category`}
+                termId="labor-category"
                 options={laborCategories.map((c) => ({
                   value: c.id,
                   label: c.name

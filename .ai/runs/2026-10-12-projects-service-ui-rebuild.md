@@ -343,6 +343,13 @@ Shots: `38-baselines.png`, `38-change-requests.png` (OB2 has neither: the `Empty
 
 ## Task 40: Sweep the glossary popovers onto the rebuilt screens
 
+- 16 form fields got `termId` and 21 column headers or section labels got `LabelWithHelp` (`variant="inline"`), across 27 files in the projects, service, contract and indirect rates modules and their routes. New terms covered here: `allowability` (the Unallowable columns of the costs tree, burden by pool and the expense statement), `cpi`, `spi`, `burden` (Burden by pool), `requirement` (the element's Requirement group), `research-role`, `funded-research`, `rate-ceiling`, `billable-item`, `charge-number`, `control-account`, `earned-value`, `coverage`, `service-order`, `indirect-pool`, `billing-method`, `revenue-method`, `clin` (CLIN / SLIN), plus the existing `element`, `labor-category` and `milestone`. `PropertyField` and `PropertyGroup` (`ui/Element/PropertyFields.tsx`) take an optional `termId`.
+- Not changed, on purpose: the module list tables (Service Orders, Labor Categories, Planning Groups, Indirect Pools, the project ledger, the indirect rate runs). A JSX header drops a sortable column from the Table's Sort picker (`sortKeyToLabel` keeps string headers only). The ERP `Table` columns that did change keep their CSV heading through `meta.filterHeader`. Menu items (Baselines, Change requests, Stop work) and sidebar links get no icon. The report pages (`projects+/reports.*.tsx`) and `TimesheetGrid.tsx` belong to another session's uncommitted work and were left alone. "Ceiling" on a contract line is the funding ceiling, not a rate ceiling, so it has no `termId`.
+- Verify: `@carbon/content` test 17 passed; `docs` typecheck exit 0; `typecheck --filter=erp` exit 0; erp tests 2,272 passed.
+- Shots: `40-glossary-popover.png` (OB2 Settings, Accounting open, the Cost treatment popover), `40-element.png` (the Milestone icon in the properties column).
+
+1. Reference pattern: yes — `LabelWithHelp` as on the Bill Rate and ACRN headers. 2. No overlap: yes. 3. One toolbar row: unchanged. 4. One primary: unchanged. 5. No input box in a table: unchanged. 6. Secondary actions in menus: unchanged. 7. Advanced fields hidden: unchanged.
+
 ## Task 41: Update the rules, AGENTS.md, lessons and the design skill
 
 ## Task 42: Update the docs reference pages
