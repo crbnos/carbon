@@ -49,6 +49,7 @@ import { z } from "zod";
 import {
   createRevision,
   deleteChangeNotice,
+  deleteItem,
   type getItem,
   insertChangeNotice,
   updateDefaultRevision,
@@ -592,12 +593,15 @@ export async function action({ request }: ActionFunctionArgs) {
     changeNotice = inserted.data;
     summary.changeNotice = inserted.data.changeNoticeId;
   }
+  // An item the notice could not take is removed: left in place it is outside
+  // change control, and a re-push would reuse it instead of staging it. The
+  // service role removes it because the pusher may lack parts_delete.
   const stageInNotice = async (
     label: string,
     itemId: string,
     baseItemId: string | null
-  ) => {
-    if (!changeNotice) return;
+  ): Promise<boolean> => {
+    if (!changeNotice) return true;
     const staged = await stageChangeNoticeItem(db, {
       changeOrderId: changeNotice.id,
       companyId,
@@ -606,12 +610,18 @@ export async function action({ request }: ActionFunctionArgs) {
       baseItemId,
       sortOrder: noticeSortOrder
     });
-    noticeSortOrder += 1;
-    if (staged.error) {
-      summary.errors.push(
-        `${label}: written but not added to change notice ${changeNotice.changeNoticeId} (${staged.error})`
-      );
+    if (!staged.error) {
+      noticeSortOrder += 1;
+      return true;
     }
+    const notice = changeNotice.changeNoticeId;
+    const removed = await deleteItem(serviceRole, db, itemId, companyId);
+    summary.errors.push(
+      removed.error
+        ? `${label}: created but not added to change notice ${notice} (${staged.error}), and could not be removed (${removed.error.message}). Delete it in Carbon, then push again.`
+        : `${label}: not created, because it could not be added to change notice ${notice} (${staged.error}). Push again.`
+    );
+    return false;
   };
 
   for (const decision of decisions) {
@@ -644,6 +654,15 @@ export async function action({ request }: ActionFunctionArgs) {
         );
         continue;
       }
+      if (
+        !(await stageInNotice(
+          `${item.partNumber} Rev ${item.revision}`,
+          inserted.data.id,
+          decision.base.id
+        ))
+      ) {
+        continue;
+      }
       row = {
         id: inserted.data.id,
         readableId: item.partNumber,
@@ -661,11 +680,6 @@ export async function action({ request }: ActionFunctionArgs) {
         baseItemId: decision.base.id
       });
       summary.revisionsCreated += 1;
-      await stageInNotice(
-        `${item.partNumber} Rev ${item.revision}`,
-        row.id,
-        decision.base.id
-      );
     } else {
       // Safe with `upsertPart`'s readback by readableId: no other revision exists.
       const { proposed } = decision;
@@ -697,6 +711,15 @@ export async function action({ request }: ActionFunctionArgs) {
         unitOfMeasureCode: proposed.unitOfMeasureCode
       };
       await writeCreatedExtras(item.partNumber, row.id, proposed);
+      if (
+        !(await stageInNotice(
+          `${item.partNumber} Rev ${item.revision}`,
+          row.id,
+          null
+        ))
+      ) {
+        continue;
+      }
       created.push({
         partNumber: item.partNumber,
         revision: item.revision,
@@ -704,11 +727,6 @@ export async function action({ request }: ActionFunctionArgs) {
         baseItemId: null
       });
       summary.itemsCreated += 1;
-      await stageInNotice(
-        `${item.partNumber} Rev ${item.revision}`,
-        row.id,
-        null
-      );
     }
 
     revisionItemByPartNumber.set(item.partNumber, row);
