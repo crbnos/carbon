@@ -11980,7 +11980,7 @@ msgstr "Retener artículos"
 msgid "Hold the journal as a warning to fix."
 msgstr "Mantener el Asiento como advertencia para corregir."
 
-msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr ""
 
 msgid "Holiday"
@@ -20958,9 +20958,6 @@ msgstr "Revisar y crear"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Revisa los cambios de cada elemento y confirma — liberar no se puede deshacer."
-
-msgid "Review Items"
-msgstr "Revisar Artículos"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Revise el balance general y el estado de resultados del período y confirme que las cifras se ven correctas. Este es un visto bueno manual — marque como hecho una vez que los haya revisado."

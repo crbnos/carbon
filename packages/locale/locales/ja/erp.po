@@ -11980,7 +11980,7 @@ msgstr "品目を保留"
 msgid "Hold the journal as a warning to fix."
 msgstr "修正が必要な警告として仕訳を保留"
 
-msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr ""
 
 msgid "Holiday"
@@ -20958,9 +20958,6 @@ msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
-
-msgid "Review Items"
-msgstr "品目をレビュー"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"

@@ -11980,7 +11980,7 @@ msgstr "Wstrzymaj artykuły"
 msgid "Hold the journal as a warning to fix."
 msgstr "Wstrzymaj dowód księgowy jako ostrzeżenie do naprawy."
 
-msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr ""
 
 msgid "Holiday"
@@ -20958,9 +20958,6 @@ msgstr "Przejrzyj i utwórz"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Przejrzyj zmiany w każdym artykule, a następnie potwierdź — uwolnienie nie może być cofnięte."
-
-msgid "Review Items"
-msgstr "Przegląd artykułów"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Przejrzyj bilans i rachunek zysków i strat za okres i potwierdź, że liczby wyglądają prawidłowo. Jest to ręczne podpisanie — oznacz jako gotowe po ich przejrzeniu."

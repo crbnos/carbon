@@ -11980,7 +11980,7 @@ msgstr "Öğeleri Tut"
 msgid "Hold the journal as a warning to fix."
 msgstr "Düzeltilmesi için uyarı olarak muhasebe fişini beklet."
 
-msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 msgstr ""
 
 msgid "Holiday"
@@ -20958,9 +20958,6 @@ msgstr "İncele ve oluştur"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
-
-msgid "Review Items"
-msgstr "Stok Kartlarını İncele"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu incele ve rakamların doğru göründüğünü onayla. Bu manuel bir onay işlemi — bunları inceledikten sonra bitti olarak işaretle."

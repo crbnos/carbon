@@ -11980,8 +11980,8 @@ msgstr "Hold Items"
 msgid "Hold the journal as a warning to fix."
 msgstr "Hold the journal as a warning to fix."
 
-msgid "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
-msgstr "Hold, release, write off or reprice items in Projects → Approvals, on the Billing tab."
+msgid "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
+msgstr "Hold, release, write off or reprice items in <0>Projects → Approvals</0>, on the Billing tab."
 
 msgid "Holiday"
 msgstr "Holiday"
@@ -20958,9 +20958,6 @@ msgstr "Review & create"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
-
-msgid "Review Items"
-msgstr "Review Items"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."

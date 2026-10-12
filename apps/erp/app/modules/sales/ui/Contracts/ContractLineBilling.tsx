@@ -7,7 +7,6 @@ import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardHeader,
@@ -271,17 +270,16 @@ function ContractLineBillableItems({
         </CardTitle>
         <CardDescription>
           <Trans>
-            Hold, release, write off or reprice items in Projects → Approvals,
-            on the Billing tab.
+            Hold, release, write off or reprice items in{" "}
+            <Link
+              to={`${path.to.projectTimesheetApprovals}?tab=billing`}
+              className="font-medium text-foreground underline-offset-4 hover:underline"
+            >
+              Projects → Approvals
+            </Link>
+            , on the Billing tab.
           </Trans>
         </CardDescription>
-        <CardAction>
-          <Button variant="secondary" asChild>
-            <Link to={`${path.to.projectTimesheetApprovals}?tab=billing`}>
-              <Trans>Review Items</Trans>
-            </Link>
-          </Button>
-        </CardAction>
       </CardHeader>
       <CardContent>
         {items.length === 0 ? (
