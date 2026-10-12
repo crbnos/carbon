@@ -415,6 +415,9 @@ DCAA mode only). `post-timesheet/plan.ts` dilutes an exempt employee's week
 `create-project-billing-invoices/clin.ts` (`planClinSections`, `acrnPositions`) adds a
 Comment line per CLIN and the `salesInvoiceFundingAllocation` rows. The payroll totals
 import is `import-csv/payroll-total-import.ts`.
+R&D tax (Phase 5d): `save-timesheet-entry` fills an entry's `workLocationId` (the
+employee's job location) and `rdActivityRole` (the labor category's role) when the input
+leaves them out (`resolveRdDefaults`); both are part of the cell's key.
 
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and

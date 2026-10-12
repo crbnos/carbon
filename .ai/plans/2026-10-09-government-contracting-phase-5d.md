@@ -1,6 +1,6 @@
 # Government Contracting Phase 5d — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-government-contracting.md (Phase 5d: *R&D tax*)
+**Spec:** .ai/specs/implemented/2026-10-09-government-contracting.md (Phase 5d: *R&D tax*)
 **Research:** .ai/research/government-contracting-layer.md (section 8, *R&D tax: §174A and Form 6765 Section G*)
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** these plans are done and committed:
@@ -66,7 +66,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 12: Add the officer flag to the employee job
 - [x] Task 13: Add the R&D report queries and builders
 - [x] Task 14: Add the two reports to the CSV route and the Reports page
-- [ ] Task 15: Update the rules, AGENTS.md, docs and spec
+- [x] Task 15: Update the rules, AGENTS.md, docs and spec
 - [ ] Task 16: Verify in the browser
 
 ## Dependencies
@@ -560,7 +560,7 @@ pnpm exec turbo run typecheck --filter=erp
 - Modify: `.claude/rules/government-contracting.md` — an *R&D tax* section, and `packages/utils/src/rd-tax.ts` in `paths:`
 - Modify: `.claude/rules/projects-system.md`, `apps/erp/app/modules/projects/AGENTS.md`
 - Modify: `docs/content/docs/reference/government-contracting.mdx` — an R&D tax section
-- Modify: `.ai/specs/2026-10-09-government-contracting.md`
+- Modify: `.ai/specs/implemented/2026-10-09-government-contracting.md`
 
 **Steps:**
 1. Document only committed code. Ground every claim in a file.
@@ -615,7 +615,7 @@ ls .ai/playbooks/government-contracting-phase-5d.md
 - Task 4: `pnpm db:migrate` applied both migrations (11 and 1 statements recorded) and regenerated the types and swagger. `authz check` reports no drift. `pnpm db:check:datasets` passes all four datasets with no change: no `COVERAGE` set is built from `rdActivityRole`, so step 3 does not apply. The workflow catalog is current. The regenerated MCP digest changes the response digest of the tools that return `employeeJob`, `laborCategory`, `projectElement` and `customerContract` rows; it is in this commit. The pre-commit backup check skipped Tasks 2 and 3 (their migrations were not applied yet), so this commit also holds the backup baseline `packages/jobs/manifests/schema.json`, from `pnpm db:check:backups -- --stage` (restorable).
 - Task 5: `RdActivityRole` derives from the generated enum (`Database["public"]["Enums"]["rdActivityRole"]`), as `timekeeping.ts` does for its enums, in place of a hand-written union. The 4 thresholds are exported constants (`SUBSTANTIALLY_ALL_SHARE`, `CONTRACT_RESEARCH_SHARE`, `SECTION_G_MAX_ROWS`, `SECTION_G_MIN_SHARE`). `workCountryClass` reads the code in upper case. The aggregate row has an empty `componentId`. If the grand total is 0, no row is listed, and the aggregate row holds every component. `rd-tax` 10 passed.
 - Task 6:
-  1. A field the input leaves out (`undefined`) takes its default; an explicit `null` means "none". So the ERP grid can post a row whose entries have no role without picking up the category's role. `resolveRdDefaults` reads the job location and the category role (one query each, only for a field that is left out) before the cell lookup, because the resolved values are part of the cell's key in both modes. The defaults apply to every write, not only to a new entry: on an update the key already matched the stored values.
+  1. A field the input leaves out (`undefined`) takes its default; an explicit `null` means "none". So the ERP grid can post a row whose entries have no role without picking up the category's role. `resolveRdDefaults` reads the job location and the category role before the cell lookup, one query each and only for a field that is left out. It runs first because the resolved values are part of the cell's key in both modes. The defaults apply to every write, not only to a new entry: on an update the key already matched the stored values.
   2. Each of the 3 inserts writes both fields. The DCAA revision's `before` and `after` hold both fields.
   3. `createTimesheetCorrection` takes optional `workLocationId` and `rdActivityRole`. The reversal copies the original's values; the replacement takes the new values, else the original's. Its DCAA revision fields are unchanged (the plan names only the copy). `pnpm run generate:mcp` changes `projects_createTimesheetCorrection` (8 parameters).
   4. `save-timesheet-entry` 12 passed (2 new). The second test also checks that an employee with no `employeeJob` row gets no work location.
@@ -629,7 +629,7 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   7. `pnpm run generate:mcp` adds `sales_updateContractResearchFlags` and changes the digests of `people_updateEmployeeJob`, `projects_getTimesheetWeek`, `projects_getProjectOpenTimesheetEntries`, `projects_updateProjectElementField` and `projects_upsertLaborCategory`. `projects-timesheet-week` 7 passed (1 new).
 - Task 8:
   1. The two routes needed no edit. `getTimesheetWeekView` (shared by My Timesheet and the manager's employee page) now reads the employee's `employeeJob.locationId` and returns it as `jobLocationId`. `getLaborCategoriesList` selects `rdActivityRole` (`pnpm run generate:mcp` changes `projects_getLaborCategoriesList`). Both route actions spread the validated cell into the ERP `saveTimesheetEntry` wrapper, which now maps "" to null and passes a field that is left out as undefined.
-  2. **Add row** has a **More** toggle (a ghost button) that shows **Work location** (the `Location` picker, default the job location) and **Research role** (default the chosen category's role; a category change resets it to that category's role). The fields stay mounted while hidden, so their defaults always submit.
+  2. **Add row** has a **More** toggle (a ghost button). It shows **Work location** (the `Location` picker, default the job location) and **Research role** (default the chosen category's role). A category change resets the role to that category's role. The fields stay mounted while hidden, so their defaults always submit.
   3. The row's second line shows the labor category, then " · <location>" when the row's location is not the job location, then the role as a secondary `Badge`. A row added in the grid takes the location name from `useLocations`.
   4. Each cell posts the row's `workLocationId` and `rdActivityRole`, "" for none, so a row of entries with no role never picks up the category's role.
   5. The labels of the 4 roles, 3 component types and 4 software types are hooks in the new `ui/RdTax/useRdTaxLabels.ts`, for Tasks 9, 10 and 14 too.
@@ -651,7 +651,12 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   5. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
 - Task 12: **Officer** is a `Boolean` after **FLSA status**, with the description "Used for Form 6765 Section E". The route action already spreads the validated fields into `updateEmployeeJob` (step 2). The route's initial values now pass the stored `isOfficer`, so the switch shows it. Browser verification deferred.
 - Task 13:
-  1. `getRdLedgerRows(db, { companyId, from, to })` is one raw `sql` query over Kysely, starting with the CTE of step 1. Funded research is 3 more CTEs in the same query (`contract_projects`: a contract's `projectId`, a line's `projectId` or its billing element's project; `funded_contracts`: `COALESCE("researchFunded", has a Cost Plus or T&M line)`; `funded_projects`), so no row calls the TS helper. Each row also returns `documentType`, which the builders need to tell a Timesheet row. A Timesheet row with no work location has no country (Unknown); it does not fall back to the project's location.
+  1. `getRdLedgerRows(db, { companyId, from, to })` is one raw `sql` query over Kysely, starting with the CTE of step 1. Funded research is 3 more CTEs in the same query, so no row calls the TS helper:
+     - `contract_projects`: a contract's `projectId`, a line's `projectId`, or its billing element's project;
+     - `funded_contracts`: `COALESCE("researchFunded", has a Cost Plus or T&M line)`;
+     - `funded_projects`: the projects of a funded contract.
+
+     Each row also returns `documentType`, which the builders need to tell a Timesheet row. A Timesheet row with no work location has no country (Unknown); it does not fall back to the project's location.
   2. `getRdEmployeeYear` returns `grossWages` null when the employee has no payroll row in the range, so the builder can tell "none" from 0. It also returns the employee's name. `getRdComponents(client, companyId)` is an `@mcp read` tool (`pnpm run generate:mcp` adds `projects_getRdComponents`).
   3. `buildSection174ARows` keeps Burden rows out of Domestic, Foreign and Unknown and out of **Total**: a Burden row is a memo row by default (no GL), so the column is "for review" only. **Of which funded** is the funded part of the 3 country columns.
   4. `buildSection6765Input` returns `unknownCountryHours` as hours. A component with no QRE in any column is left out of Section G. The component's name in the input is "<readable id> <name>", for column 49(c).
@@ -662,3 +667,9 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   3. The Reports page has a third section, **R&D tax**, with the two cards. Each opens on the tax year that holds the company's today (`taxYearOf`) and offers it and the 5 years before it. The cards show only to a user with `projects` and `accounting` view. The loader reads the tax start month with the Kysely client; a failed read logs and falls back to January.
   4. The unused constant `RD_WAGES_ESTIMATED_NOTE` of Task 13 is gone: the note line of step 4 carries the estimate count.
   5. `erp` tests 2,241 passed. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 15:
+  1. `government-contracting.md` gains an *R&D tax (Phase 5d)* section (the columns, the defaults, the pure rules, the reports) and `packages/utils/src/rd-tax.ts` in `paths:`; its *Known gaps* name the MES grid and the contract view. `projects-system.md`, `apps/erp/app/modules/projects/AGENTS.md` and `packages/server-functions/AGENTS.md` point to it.
+  2. Docs: `government-contracting.mdx` gains an **R&D tax** section, the 2 reports in the Reports table, and the internals and the new refusal in its `<AgentContext>`. `pnpm --filter docs typecheck` exits 0 and `pnpm --filter @carbon/content test` passes (17).
+  3. Spec: decisions D1–D10 in *Design Decisions*, the composite FK in *Data Model Changes*, Phase 5d done in *Delivery phases*, the status line and a changelog line. D8 says that column 53 needs a check against the Form 6765 instructions. Every phase (5a–5d) is implemented, so `git mv` moved the spec to `.ai/specs/implemented/`. The references in the rules, the 4 plans, the projects spec and 8 source comments now name the new path. The 4 migrations that name the old path in a comment stay as they are: an applied migration is history.
+  4. `pnpm run generate:mcp` changes nothing (each task committed its own digest). `pnpm --filter @carbon/checks license-headers` fixes 0 files.
+- Task 16: Browser verification deferred.

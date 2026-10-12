@@ -8,7 +8,7 @@
 // behavior exactly. DCAA mode adds the entry window, the late reason, charge
 // restrictions, supervisor entry on a recorded absence, Pending Employee
 // Review and the correction trail.
-// Spec: .ai/specs/2026-10-09-government-contracting.md (Timekeeping).
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Timekeeping).
 
 import { getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";

@@ -2,21 +2,24 @@
 paths:
   - "packages/utils/src/timekeeping.ts"
   - "packages/utils/src/contract-funding.ts"
+  - "packages/utils/src/rd-tax.ts"
   - "packages/server-functions/src/save-timesheet-entry/**"
   - "packages/server-functions/src/submit-timesheet-week/**"
   - "apps/erp/app/modules/projects/ui/Timesheet/**"
 ---
 
-# Government contracting (Phase 5a)
+# Government contracting (Phases 5a and 5d)
 
 The accounting system a pre-award survey (SF 1408) checks: cost objectives,
 unallowable cost, DCAA timekeeping, dilution, labor distribution, CLIN and ACRN
-funding, and the reports. Spec `.ai/specs/2026-10-09-government-contracting.md`;
+funding, and the reports. Spec `.ai/specs/implemented/2026-10-09-government-contracting.md`;
 plan `.ai/plans/2026-10-09-government-contracting-phase-5a.md` (decisions P1–P10 and
 an *Execution notes* entry for every deviation). 5a is community code: nothing is in
 `packages/ee`. Phase 5b (indirect rates and burden, commercial) has its own rule:
 `indirect-rates.md`. Phase 5c (budget control, earned value, stop-work orders,
-commercial) has its own rule: `project-control.md`. Phase 5d (R&D tax) is not built.
+commercial) has its own rule: `project-control.md`. Phase 5d (R&D tax, community; plan
+`.ai/plans/2026-10-09-government-contracting-phase-5d.md`, decisions D1–D10) is the
+*R&D tax* section below.
 
 ## Off by default
 
@@ -179,8 +182,59 @@ Indirect (Indirect, IR&D, B&P) or Unclassified, unallowable dollars in Unallowab
 reconciles each employee's hours to timecards and dollars to payroll ("No payroll
 imported" when there is none).
 
+## R&D tax (Phase 5d)
+
+Community code, no feature gate. The tags are columns
+(`20261012005354_rd-tax-enums.sql`, `20261012005458_rd-tax-columns.sql`):
+
+| Column | Meaning |
+|---|---|
+| `projectElement.isBusinessComponent`, `rdComponentType` (Product, Process, All Others), `rdSoftwareType` (Internal Use, Dual Function, Non-Internal Use, Excepted) | A business component; `projectElement_rdComponent_check` keeps the 2 types only on one |
+| `timesheetEntry.rdActivityRole` (enum `rdActivityRole`: Direct Research, Direct Supervision, Direct Support, Not Qualified), `workLocationId` | The time's research role and where it took place; the FK is composite to `location ("id", "companyId")` |
+| `laborCategory.rdActivityRole` | The default role of the category's time |
+| `customerContract.researchFunded` (null = default), `paymentContingentOnSuccess`, `contractorRetainsRights` | Funded research (§41(d)(4)(H)) |
+| `employeeJob.isOfficer` | Form 6765 Section E, line 38 |
+
+**Defaults.** `save-timesheet-entry` resolves both fields before the cell lookup
+(`resolveRdDefaults`): a field the input leaves out takes the employee's
+`employeeJob.locationId` and the labor category's role; an explicit null is none. Both
+are part of the cell's key, so two entries on one day may differ only by location or
+role. A DCAA revision records both. `createTimesheetCorrection` copies both to the
+reversal and the replacement (unless the correction names new values). The ERP grid
+posts each row's own values (`""` for none); the MES grid sends none and takes the
+defaults. Add row on My Timesheet has a **More** toggle with **Work location** and
+**Research role**.
+
+**Pure rules** (`@carbon/utils` `rd-tax.ts`, pinned by `rd-tax.test.ts`):
+`workCountryClass` (US, PR, GU, VI, AS, MP, UM are Domestic, D1; no code is Unknown,
+D2), `taxYearBounds` (twelve months from the tax start month, named by the year it
+starts in, D9), `isFundedResearch` (D10), `wageQres` (80 % or more of the hours
+qualified counts all the wages), `section6765Rows` (descending QRE, rows while fewer
+than 50 and below 80 % of the total, then one aggregate row; contract research at
+65 %).
+
+**Reports** (`rd-section-174a`, `rd-form-6765-g`; `view: projects` and
+`view: accounting`; query `taxYear`). `getRdLedgerRows` is one query: a recursive CTE
+gives each ledger row its business component, down to the next one (D5); the work
+country is the entry's work location for a Timesheet row, else the project's
+location (D3); funded research is computed in SQL for Direct projects (D10).
+`getRdEmployeeYear` gives Posted hours, payroll gross wages (null with none, D4) and
+the Labor ledger amount per employee. The pure builders are in `projects.models.ts`:
+`buildSection174ARows` (Domestic, Foreign, Unknown; Burden apart and out of the total;
+"Of which funded", D6) and `buildSection6765Input` (qualified hours from Timesheet rows
+that are qualified, unfunded and Domestic; supplies from Material rows; contract
+research from Outside Processing and Purchased Service rows; computer rental 0, D7).
+The Section G CSV writes column 53 as the sum of 50–52 (D8) and ends with notes:
+officers' wage QREs, column 55, the estimated-wage count, the hours of an unknown
+country.
+
 ## Known gaps
 
-- The browser verification of the plan (Task 35) is deferred.
+- The browser verification of the plan (Task 35) is deferred, and so is 5d's (Task 16).
+- The MES timesheet groups its rows by charge number and category only. An MES cell
+  save takes the default location and role, so on a row that also has an ERP entry at
+  another location it adds an entry beside it.
+- The `customerContracts` view predates the 3 research columns; the contract page
+  reads them from the table.
 - The report reads load each report in one query and stream the encoded CSV in pages;
   they do not page the reads with a cursor as the Sync Activity export does.

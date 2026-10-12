@@ -1,6 +1,6 @@
 # Government Contracting: an adequate accounting system, indirect rates, control and R&D tax
 
-> Status: Phases 5a, 5b and 5c implemented (2026-10-11); Phase 5d is planned. Every open question is resolved (Q1–Q3 answered 2026-10-09).
+> Status: Phases 5a, 5b, 5c and 5d implemented (2026-10-11). Every open question is resolved (Q1–Q3 answered 2026-10-09).
 > Author: Brad (with Claude)
 > Date: 2026-10-09
 > Research: `.ai/research/government-contracting-layer.md` and `.ai/research/projects-wbs-pmmo.md` (patterns 8 and 10, Answer 7). The first covers indirect rates, unallowable costs, DCAA timekeeping, CLIN/ACRN funding, budget control, earned value, R&D tax and the SF 1408 ranking.
@@ -259,6 +259,16 @@ A **Stop work** action on a Direct project records the order date and the 90-day
 | C16 | Stop work (5c plan) | Needs a Released Direct project. A CHECK keeps `stopWorkDate` only on On Hold, and `updateProjectStatus` refuses any other status while it is set; only Resume clears it. `resumeWork` is not gated. | FAR 52.242-15 applies to contracts; the status menu and the MCP tool must not bypass Resume. |
 | C17 | EAC (5c plan) | EAC = ACWP + (BAC − BCWP) ÷ CPI; with no CPI, EAC = BAC. VAC = BAC − EAC. | DAU Gold Card, the CPI method. |
 | B15 | ICE schedules (5b plan) | Computed at export time from the run's readers. Schedule G reconciles the project ledger to its journal lines. | No stored copy; contract cost sits in Project WIP, so a GL expense total cannot reconcile direct cost. |
+| D1 | Domestic countries (5d plan) | `US`, `PR`, `GU`, `VI`, `AS`, `MP`, `UM`. Any other country is foreign. | IRC §41(d)(4)(F) defines foreign research as research outside the United States, Puerto Rico and the US possessions. |
+| D2 | A location with no country (5d plan) | Its cost goes to an **Unknown** column of the §174A report. Section G leaves its hours out and states them. | Carbon cannot guess the country; the preparer decides. |
+| D3 | Work country of a ledger row (5d plan) | A Timesheet row: the country of the entry's work location. Any other row: the country of the project's location. | Only a labor row has its own work location. |
+| D4 | Wages (5d plan) | The employee's imported payroll gross wages with `periodEnd` in the tax year, else the Labor ledger amount, noted as estimated. | Carbon has no payroll (decision 7). |
+| D5 | What a business component owns (5d plan) | Its own ledger rows and its subtree's, down to the next business component. A nested business component owns its own subtree. | Each row counts once. |
+| D6 | Funded research in §174A (5d plan) | Not excluded. A column shows the funded part. | §174A covers all R&E; the preparer decides on the funded part. |
+| D7 | Column 55, computer rental (5d plan) | 0, with the note "Not tracked in Carbon". | Carbon has no source for it. |
+| D8 | Column 53 (5d plan) | The sum of columns 50–52. | The research file does not define column 53. This is an assumption: check it against the Form 6765 instructions before a filing. |
+| D9 | Tax year (5d plan) | Twelve months from `fiscalYearSettings.taxStartMonth`, named by the calendar year in which it starts. | The company's own tax year. |
+| D10 | `researchFunded` left empty (5d plan) | True when the contract has a Cost Plus or Time & Materials line, else false. | The spec default: cost-reimbursed work is paid whatever the result. |
 
 ## Data Model Changes
 
@@ -361,7 +371,7 @@ ALTER TABLE "projectElement" ADD COLUMN "isBusinessComponent" BOOLEAN NOT NULL D
                              ADD COLUMN "rdComponentType" TEXT,    -- 'Product' | 'Process' | 'All Others'
                              ADD COLUMN "rdSoftwareType" TEXT;     -- 'Internal Use' | 'Dual Function' | 'Non-Internal Use' | 'Excepted'
 ALTER TABLE "timesheetEntry" ADD COLUMN "rdActivityRole" "rdActivityRole",
-                             ADD COLUMN "workLocationId" TEXT;
+                             ADD COLUMN "workLocationId" TEXT;  -- FK ("workLocationId", "companyId") → location
 ALTER TABLE "laborCategory" ADD COLUMN "rdActivityRole" "rdActivityRole";
 ALTER TABLE "customerContract" ADD COLUMN "researchFunded" BOOLEAN,
                                ADD COLUMN "paymentContingentOnSuccess" BOOLEAN NOT NULL DEFAULT FALSE,
@@ -455,7 +465,7 @@ Phase 5d
 1. **Phase 5a: adequate system.** Cost objectives, unallowable, DCAA timekeeping, dilution, labor distribution with payroll import, CLIN/ACRN funding, preproduction. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34; the browser verification (Task 35) is deferred.
 2. **Phase 5b: indirect rates.** Pools, rates, computation, burden, provisional billing and ceilings, re-burden, retroactive billing, the ICE export. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21; the browser verification (Task 22) is deferred. Rule: `.claude/rules/indirect-rates.md`.
 3. **Phase 5c: control and reporting.** Budget availability control, earned value (native and the export), stop-work. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5c.md`, Tasks 1–22; the browser verification (Task 23) is deferred. Rule: `.claude/rules/project-control.md`.
-4. **Phase 5d: R&D tax.** Tags and the two reports.
+4. **Phase 5d: R&D tax.** Tags and the two reports. **Done** (2026-10-11): `.ai/plans/2026-10-09-government-contracting-phase-5d.md`, Tasks 1–15; the browser verification (Task 16) is deferred. Rule: `.claude/rules/government-contracting.md` → *R&D tax*.
 
 ## Out of scope
 
@@ -509,3 +519,4 @@ Resolved autonomously (2026-10-09), open to veto:
 - 2026-10-11: Phase 5a implemented (`.ai/plans/2026-10-09-government-contracting-phase-5a.md`, Tasks 1–34). Decisions P1–P10 of the plan are recorded in *Design Decisions*. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 35) is deferred.
 - 2026-10-11: Phase 5b implemented (`.ai/plans/2026-10-09-government-contracting-phase-5b.md`, Tasks 1–21). Decisions B1–B15 of the plan are recorded in *Design Decisions*; *Data Model Changes* and *API / Service Changes* now name `indirectRateRun`, the burden columns, `post-project-burden` and the ee runs. Rule: `.claude/rules/indirect-rates.md`. The browser verification (Task 22) is deferred.
 - 2026-10-11: Phase 5c implemented (`.ai/plans/2026-10-09-government-contracting-phase-5c.md`, Tasks 1–22). Decisions C1–C17 of the plan are recorded in *Design Decisions*; *Data Model Changes* now names `earnedValuePercent`, the `earnedValuePeriod` columns and the 2 values of `materialMeasurementPoint`; *API / Service Changes* names the ee helpers and `closeEarnedValuePeriod`. Rule: `.claude/rules/project-control.md`. The browser verification (Task 23) is deferred.
+- 2026-10-11: Phase 5d implemented (`.ai/plans/2026-10-09-government-contracting-phase-5d.md`, Tasks 1–15). Decisions D1–D10 of the plan are recorded in *Design Decisions*; D8 (column 53) needs a check against the Form 6765 instructions. The work location FK is composite. Rule: `.claude/rules/government-contracting.md`. The browser verification (Task 16) is deferred. Every phase is implemented, so the spec moves to `implemented/`.

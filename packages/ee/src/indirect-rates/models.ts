@@ -7,7 +7,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 
 // Government Contracting Phase 5b: indirect pools, rates and burden.
-// Spec: .ai/specs/2026-10-09-government-contracting.md (Phase 5b)
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Phase 5b)
 // Plan: .ai/plans/2026-10-09-government-contracting-phase-5b.md
 
 export type IndirectPoolType = Database["public"]["Enums"]["indirectPoolType"];

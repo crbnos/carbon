@@ -1,6 +1,6 @@
 # Government Contracting Phase 5b — indirect rates and burden — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-government-contracting.md
+**Spec:** .ai/specs/implemented/2026-10-09-government-contracting.md
 - *Phase 5b: indirect rates and burden*; decisions 9, 10, 15–19; the Q1 and Q3 answers
 - the Phase 5b acceptance criteria; Risks: *A rate engine error misstates every Cost Plus invoice*
 **Research:** .ai/research/government-contracting-layer.md (patterns 1–3, Answers 1–2, Recommended Approach 2–7)
@@ -1246,7 +1246,7 @@ pnpm --filter erp build
 - Modify: `.claude/rules/commercial-licensing.md` — the rollout list
 - Modify: `.claude/rules/projects-system.md`
 - Modify: `docs/content/docs/reference/projects.mdx`
-- Modify: `.ai/specs/2026-10-09-government-contracting.md`
+- Modify: `.ai/specs/implemented/2026-10-09-government-contracting.md`
 
 **Steps:**
 1. Write the rule file with `paths:` frontmatter for `packages/ee/src/indirect-rates/**` and `packages/server-functions/src/post-project-burden/**`. Cover these 6 points:

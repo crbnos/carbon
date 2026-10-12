@@ -1,6 +1,6 @@
 # Government Contracting Phase 5a — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-government-contracting.md (Phase 5a: *an adequate system*)
+**Spec:** .ai/specs/implemented/2026-10-09-government-contracting.md (Phase 5a: *an adequate system*)
 **Research:** .ai/research/government-contracting-layer.md
 **Branch:** projects-wbs-research-spec
 **Prerequisite:** these plans are done and committed:
@@ -1412,7 +1412,7 @@ pnpm db:check:datasets
 - Modify: `packages/jobs/AGENTS.md`, `packages/server-functions/AGENTS.md`, `apps/erp/app/modules/projects/AGENTS.md`
 - Modify: `AGENTS.md` — a Task Router row: Government contracting (DCAA timekeeping, CLIN funding) → `.claude/rules/government-contracting.md`
 - Create: `docs/content/docs/reference/government-contracting.mdx`
-- Modify: `.ai/specs/2026-10-09-government-contracting.md`
+- Modify: `.ai/specs/implemented/2026-10-09-government-contracting.md`
 
 **Steps:**
 1. Document only committed code. Ground every claim in a file.

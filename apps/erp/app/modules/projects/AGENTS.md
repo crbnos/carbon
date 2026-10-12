@@ -136,6 +136,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `projectElement.isUnallowable` / `isPreproduction` / `isLeave` | Element flags (5a) |
 | `timesheetEntryRevision`, `timesheetCertification` | DCAA correction trail and weekly certification (5a) |
 | `get_missing_timesheet_days` (RPC) | Scheduled work days with no entry (5a) |
+| `projectElement.isBusinessComponent` / `rdComponentType` / `rdSoftwareType`, `timesheetEntry.rdActivityRole` / `workLocationId`, `laborCategory.rdActivityRole` | R&D tax tags (Government Contracting 5d; `government-contracting.md` → *R&D tax*) |
 | `projectPeg` | Versioned pegs: supply (`supplyType`, `supplyId`), member demand, `state`, `supersededAt`, `hardenedAt`, `itemLedgerId` |
 
 ## Key Service Functions
@@ -211,6 +212,13 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   `getCostByClin` (Kysely, no `@mcp` tag); `buildLaborDistribution`, `projectReportKeys`
   (models) — Projects → **Reports** (`projects+/reports.tsx`) and its CSV route
   `api+/projects.reports.$reportKey[.]csv.ts`, which checks each report's permissions.
+- `getRdLedgerRows`, `getRdEmployeeYear` (Kysely, no `@mcp` tag), `getRdComponents`
+  (`@mcp read`); `buildSection174ARows`, `buildSection6765Input`, `rdTaxReportKeys`,
+  `taxYearOf`, `monthNumber`, `rdActivityRoles`, `rdComponentTypes`, `rdSoftwareTypes`
+  (models) — the R&D tax reports `rd-section-174a` and `rd-form-6765-g` by tax year
+  (Government Contracting 5d). The role and type labels are hooks in
+  `ui/RdTax/useRdTaxLabels.ts`; the element sidebar's type pickers use `ChoicePill`
+  (`ui/Elements/ElementProperties.tsx`).
 - `getPlanningSegmentOwners`, `moveActionPegsToSupply` (`.server`) — the planning routes'
   Apply in a group segment: the owner of each segment, and one transaction that moves an
   action's pegs onto the PO line or job it created.

@@ -13,7 +13,7 @@
 // entry costs hours × rate × the week's factor, and a later change to the
 // week re-dilutes its posted entries by posting the difference.
 // Spec: .ai/specs/2026-10-03-projects.md (Charging: the five entry points);
-// .ai/specs/2026-10-09-government-contracting.md (Dilution for exempt staff).
+// .ai/specs/implemented/2026-10-09-government-contracting.md (Dilution for exempt staff).
 
 import {
   type AutomaticJournalStatus,

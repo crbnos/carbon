@@ -5,7 +5,7 @@
 // Submits one week of an employee's timesheet. Standard mode keeps Phase 1a
 // `submitTimesheetEntries`. DCAA mode adds the review check, the total-time
 // check against the timecards and the certification row.
-// Spec: .ai/specs/2026-10-09-government-contracting.md (Timekeeping).
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Timekeeping).
 
 import { createHash } from "node:crypto";
 import { getCompanyTimeZone } from "@carbon/database";

@@ -1,6 +1,6 @@
 # Government Contracting Phase 5c — control and reporting — implementation plan
 
-**Spec:** .ai/specs/2026-10-09-government-contracting.md
+**Spec:** .ai/specs/implemented/2026-10-09-government-contracting.md
 - *Phase 5c: control and reporting*; decisions 8, 12, 15–18; the Q1 answer
 - the Phase 5c acceptance criteria
 
@@ -1042,7 +1042,7 @@ pnpm --filter erp build
 - Modify: `.claude/rules/commercial-licensing.md` — the rollout list
 - Modify: `.claude/rules/projects-system.md`
 - Modify: `docs/content/docs/reference/projects.mdx`
-- Modify: `.ai/specs/2026-10-09-government-contracting.md`
+- Modify: `.ai/specs/implemented/2026-10-09-government-contracting.md`
 
 **Steps:**
 1. Write the rule file with `paths:` frontmatter for `packages/ee/src/project-control/**` and the 4 route files that call `checkBudgetAvailability`. Cover these 5 points:

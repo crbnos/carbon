@@ -1,6 +1,6 @@
 ---
 title: Government contracting
-description: "Run projects the way a pre-award survey checks them, with cost objectives, unallowable cost, DCAA timekeeping, labor distribution and CLIN funding."
+description: "Run projects the way a pre-award survey checks them, with cost objectives, unallowable cost, DCAA timekeeping, labor distribution, CLIN funding and R&D tax reports."
 ---
 
 A US defense manufacturer can win a cost-type contract only when its accounting system passes a pre-award survey (SF 1408). Carbon covers the items the survey checks on [projects](/docs/reference/projects): each project's cost objective, unallowable cost kept apart, timekeeping with a full correction trail, labor reconciled to payroll, and contract line items funded by ACRN.
@@ -95,9 +95,24 @@ A Time & Materials or Cost Plus line has **Funding Actions** on its billing page
 
 When a project billing invoice bills a numbered line, it shows a separate amount per CLIN, with how it splits across the line's ACRNs. Each CLIN draws on its oldest funds first.
 
+## R&D tax
+
+Carbon tags the data a US research tax filing needs and reports it by tax year. A tax year starts in the month set as **Start of Tax Year** in the fiscal year settings, and it takes the name of the calendar year it starts in.
+
+- **Business components.** On an element, turn on **Business component (R&D)**, then pick its **Component type** (Product, Process or All Others) and, for software, its **Software type**. The element's cost and the cost of the elements below it belong to it, down to the next business component. The List layout marks it **R&D**.
+- **Research role.** Each labor category can have a **Research role**: Direct Research, Direct Supervision, Direct Support or Not Qualified. New time in the category takes that role.
+- **Work location.** Each timesheet entry has a work location, by default the employee's job location. The location's country decides domestic or foreign research: the United States, Puerto Rico and the US possessions are domestic. On **My Timesheet**, open **Add row → More** to log time at another location or with another role.
+- **Funded research.** On a contract, the **Research (R&D tax)** group has **Funded research**, **Payment depends on success** and **We keep substantial rights**. With Funded research on Default, a contract with a Cost Plus or Time & Materials line counts as funded. Cost of a Direct project under a funded contract is not a qualified research expense.
+- **Officers.** On a person's **Job** tab, turn on **Officer** for Form 6765 Section E.
+
+The two R&D tax reports:
+
+- **§174A R&E** lists each business component's cost in Domestic, Foreign and Unknown Country columns (a location with no country is unknown). Burden shows apart for review, and **Of Which Funded** shows the funded part.
+- **Form 6765 Section G** lists the business components in descending order of qualified research expenses until they hold 80 % of the total or 50 rows, then one row for all the others. Wages use the employee's imported payroll totals, else their labor cost, and an employee with 80 % or more of their hours qualified counts all of their wages. Contract research counts at 65 %. The file ends with the officers' wage total for Section E line 38 and notes for anything Carbon estimated or left out.
+
 ## Reports
 
-Open **Projects → Reports**. Each report downloads as a CSV for a date range, except labor distribution, which runs for one accounting period:
+Open **Projects → Reports**. Each report downloads as a CSV for a date range, except labor distribution, which runs for one accounting period, and the R&D tax reports, which run for one tax year:
 
 | Report | What it lists | Needs |
 |---|---|---|
@@ -107,6 +122,8 @@ Open **Projects → Reports**. Each report downloads as a CSV for a date range, 
 | **Labor transfers** | Every transfer, with the reason, who asked, who approved, and the days after the entry date | Projects |
 | **Timesheet export for auditors** | Every entry in the range and every change made to it | Projects |
 | **Cost by CLIN** | Allowable and unallowable cost of each contract line item, with its funding and the amount billed | Sales |
+| **§174A R&E (domestic and foreign)** | Research cost of each business component by work country | Projects and Accounting |
+| **Form 6765 Section G** | Qualified research expenses of each business component, columns 49(a)–56 | Projects and Accounting |
 
 A report you do not have the permission for is not shown. In labor distribution, an employee with no imported payroll for the period shows "No payroll imported".
 
@@ -117,6 +134,7 @@ Internals (Government Contracting Phase 5a, rule `.claude/rules/government-contr
 - Every timesheet save goes through the `save-timesheet-entry` server function and every week submit through `submit-timesheet-week`, from the ERP and the MES.
 - `projectLedger.unallowable` is stamped at posting by `isUnallowableCharge`. Revisions are in `timesheetEntryRevision`, certifications in `timesheetCertification`, payroll totals in `payrollPeriodTotal`, funding actions in `customerContractFunding`, invoice ACRN splits in `salesInvoiceFundingAllocation`.
 - The missing-time check runs from pg_cron `timesheet-missing-time-sweeper` at 12:00 UTC.
+- R&D tax (Phase 5d): `projectElement.isBusinessComponent`, `rdComponentType`, `rdSoftwareType`; `timesheetEntry.workLocationId` and `rdActivityRole` (defaults filled by `save-timesheet-entry`); `laborCategory.rdActivityRole`; `customerContract.researchFunded`, `paymentContingentOnSuccess`, `contractorRetainsRights`; `employeeJob.isOfficer`. The pure rules are `@carbon/utils` `rd-tax.ts`. Section G column 53 is the sum of columns 50–52 and column 55 is always 0.
 
 Exact messages and what they mean:
 
@@ -132,4 +150,5 @@ Exact messages and what they mean:
 - "A labor transfer needs an approver other than the requester": the requester tried to approve their own transfer.
 - "Set a cost objective. DCAA timekeeping requires one": a project saved without a cost objective in DCAA mode.
 - "Set a cost objective on N projects first": DCAA mode cannot turn on while Released projects lack a cost objective.
+- "Mark the element as a business component first": a component or software type was set on an element that is not a business component.
 </AgentContext>

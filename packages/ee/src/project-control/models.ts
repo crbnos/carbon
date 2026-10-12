@@ -7,7 +7,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 
 // Government Contracting Phase 5c: budget control, earned value and stop-work orders.
-// Spec: .ai/specs/2026-10-09-government-contracting.md (Phase 5c)
+// Spec: .ai/specs/implemented/2026-10-09-government-contracting.md (Phase 5c)
 // Plan: .ai/plans/2026-10-09-government-contracting-phase-5c.md
 
 export type BudgetControl = Database["public"]["Enums"]["budgetControl"];

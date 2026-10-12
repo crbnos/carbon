@@ -6,7 +6,7 @@
 // change gives, the ISO week, dilution for exempt staff and the timecard
 // check. Pure, so the timesheet server functions, posting and their tests
 // agree.
-// Spec: `.ai/specs/2026-10-09-government-contracting.md` (Phase 5a)
+// Spec: `.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5a)
 
 import type { Database } from "@carbon/database";
 import { round } from "@carbon/database/precision";

@@ -5,7 +5,7 @@
 // R&D tax rules: the work country class (§174A domestic or foreign), the tax
 // year, funded research, wage QREs with the "substantially all" rule, and the
 // Form 6765 Section G rows. Pure, so the reports and their tests agree.
-// Spec: `.ai/specs/2026-10-09-government-contracting.md` (Phase 5d)
+// Spec: `.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5d)
 
 import type { Database } from "@carbon/database";
 import { round } from "@carbon/database/precision";

@@ -26,8 +26,8 @@ Phases 4a and 4b of `.ai/specs/implemented/2026-10-09-project-billing.md`; plans
 `.ai/plans/2026-10-09-project-billing-phase-4b.md` (their *Execution notes* record every
 deviation). Module guide: `apps/erp/app/modules/projects/AGENTS.md`. Cost objectives,
 unallowable cost, DCAA timekeeping, dilution, labor transfers and the reports
-(Government Contracting Phase 5a) have their own rule:
-`.claude/rules/government-contracting.md`.
+(Government Contracting Phase 5a), and the R&D tax tags and reports (Phase 5d), have
+their own rule: `.claude/rules/government-contracting.md`.
 
 A project is a tree of typed elements. A charge number (a project, or a project plus
 an element) is the cost object that jobs, PO lines, purchase invoice lines, charge and
@@ -439,6 +439,9 @@ plus a replacement entry. With `companySettings.timesheetApprovalRequired` off, 
 posts at once. Log time (`save-timesheet-entry`, `add` mode) submits its entry in Standard
 mode. In DCAA mode it saves a Draft, which waits for the weekly certification
 (`submit-timesheet-week`), and the route posts nothing (Brad, 2026-10-11).
+Each entry also carries a work location and a research role (R&D tax, Phase 5d);
+`save-timesheet-entry` defaults them from the job location and the labor category, and
+both are part of a cell's key (`government-contracting.md` → *R&D tax*).
 
 **My Timesheet** is personal and lives at `x+/timesheet` (`path.to.timesheet`), outside
 the Projects layout; `x+/projects+/timesheet.tsx` redirects there. A Service row is

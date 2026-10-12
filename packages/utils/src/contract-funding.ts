@@ -4,7 +4,7 @@
 
 // CLIN numbers and ACRN funding on a customer contract line (DFARS 204.71).
 // Pure, so the funding service, the invoice and their tests agree.
-// Spec: `.ai/specs/2026-10-09-government-contracting.md` (Phase 5a)
+// Spec: `.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5a)
 
 import { round } from "@carbon/database/precision";
 

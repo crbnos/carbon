@@ -11,7 +11,7 @@ paths:
 
 Fringe, overhead, material handling and G&A pools, their rates, the burden they
 put on projects, and burden billing on Cost Plus lines, as Costpoint does them.
-Spec `.ai/specs/2026-10-09-government-contracting.md` (Phase 5b); plan
+Spec `.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5b); plan
 `.ai/plans/2026-10-09-government-contracting-phase-5b.md` (decisions B1–B15 and
 an *Execution notes* entry for every deviation). Phase 5a (cost objectives,
 unallowable cost, timekeeping) is in `government-contracting.md`.

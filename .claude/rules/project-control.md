@@ -13,7 +13,7 @@ paths:
 # Project control (Government Contracting Phase 5c)
 
 Budget control, earned value, the ACWP export and stop-work orders. Spec
-`.ai/specs/2026-10-09-government-contracting.md` (Phase 5c, decisions C1–C17);
+`.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5c, decisions C1–C17);
 plan `.ai/plans/2026-10-09-government-contracting-phase-5c.md` (its *Execution
 notes* record every deviation). Commercial: feature key `GOVERNMENT_CONTRACTING`.
 The engine is in `packages/ee/src/project-control/`: `@carbon/ee/project-control`
