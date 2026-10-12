@@ -662,10 +662,9 @@ export const stockTransferLineScanValidator = z.object({
   trackedEntityId: z
     .string()
     .min(1, { message: "Tracked entity ID is required" }),
-  // The picker sends the clamped pick quantity and the bin the user chose; the
-  // action forwards both to the server function (serial always posts 1).
-  quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
-  storageUnitId: z.string().nullable().optional()
+  // The picker sends the clamped pick quantity; the action forwards it to the
+  // server function (serial always posts 1). The source bin is the line's own.
+  quantity: z.number().positive({ message: "Quantity must be greater than 0" })
 });
 
 /**
@@ -675,19 +674,14 @@ export const stockTransferLineScanValidator = z.object({
  * re-checks the same limits under a row lock (`resolvePick` in @carbon/utils).
  *   - A serial scan always moves one unit; a batch scan moves the picker's
  *     clamped quantity.
- *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
  *   - A line with no outstanding quantity (or a pick that exceeds it) is refused.
  */
 export function resolveStockTransferPickForward(input: {
   transferType: "batch" | "serial";
   quantity: number;
-  storageUnitId: string | null | undefined;
-  currentStorageUnitId: string | null;
   lineQuantity: number;
   pickedQuantity: number;
-}):
-  | { ok: true; quantity: number; fromStorageUnitId: string | null }
-  | { ok: false; message: string } {
+}): { ok: true; quantity: number } | { ok: false; message: string } {
   // Round like the server function's resolvePick does, so the pre-check and the
   // post-lock re-check cannot disagree about a residue pick.
   const pickQuantity = round(
@@ -713,11 +707,7 @@ export function resolveStockTransferPickForward(input: {
       message: `Only ${outstanding} left to pick on this line`
     };
   }
-  return {
-    ok: true,
-    quantity: pickQuantity,
-    fromStorageUnitId: input.storageUnitId ?? input.currentStorageUnitId
-  };
+  return { ok: true, quantity: pickQuantity };
 }
 
 export const pickingListStatusType = [

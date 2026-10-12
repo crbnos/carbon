@@ -20,6 +20,7 @@
 
 import { type AccountClass, toStoredAmount } from "./ledger.ts";
 import { equals } from "./precision.ts";
+import { RUN_SOURCE_TYPE, type RunType } from "./run-type.ts";
 import type { Database } from "./types.ts";
 
 type Enums = Database["public"]["Enums"];
@@ -42,6 +43,8 @@ export type RunJournalLine = {
   amount: number;
   documentType?: Enums["journalLineDocumentType"];
   documentId?: string;
+  /** The document's line: a lessee lease row's asset (`leaseLine`). */
+  documentLineReference?: string | null;
   dimensions: RunLineDimensions;
 };
 
@@ -322,6 +325,22 @@ const REVENUE_LINE_DESCRIPTIONS: Record<
   Interest: {
     debit: "Net investment interest",
     credit: "Lease interest income"
+  },
+  Amortization: {
+    debit: "Lease cost recognized",
+    credit: "Right-of-use asset amortized"
+  }
+};
+
+/** A lessee lease's rows: interest accretes the liability; the ROU asset
+ *  amortizes. Operating leases book both legs to the lease cost account. */
+const LESSEE_LINE_DESCRIPTIONS: Partial<
+  Record<RevenueScheduleType, { debit: string; credit: string }>
+> = {
+  Interest: { debit: "Lease interest", credit: "Lease liability accretion" },
+  Amortization: {
+    debit: "Lease cost recognized",
+    credit: "Right-of-use asset amortized"
   }
 };
 
@@ -344,6 +363,9 @@ export type RecognitionScheduleRow = {
   rentalAgreementLineId: string | null;
   customerContractLineId: string | null;
   rentalLeaseScheduleLineId: string | null;
+  /** A lessee lease's row: the lease, and the schedule line it posts. */
+  leaseId: string | null;
+  leaseScheduleLineId: string | null;
 };
 
 /** The documents the rows' journal lines reference, by source line id. */
@@ -376,6 +398,11 @@ export type RecognitionSources = {
       projectId: string | null;
     }
   >;
+  /** Lessee leases, by lease id. Every lessee row's lease must be here. */
+  leases: Map<string, { supplierId: string; locationId: string | null }>;
+  /** Each lessee schedule line's asset and the asset's location, by
+   *  `leaseScheduleLine` id. Every lessee row's line must be here. */
+  leaseAssets: Map<string, { leaseLineId: string; locationId: string | null }>;
 };
 
 export type RecognitionJournal = RunJournal & {
@@ -384,8 +411,10 @@ export type RecognitionJournal = RunJournal & {
   scheduleIds: string[];
   /** The contract rows among them: their ledger entries store it too. */
   contractScheduleIds: string[];
-  /** The lease schedule lines whose Interest rows it posts. */
+  /** The rental (sales-type) lease schedule lines whose Interest rows it posts. */
   leaseScheduleLineIds: string[];
+  /** The lessee lease schedule lines whose rows it posts. */
+  lesseeScheduleLineIds: string[];
 };
 
 /** The first debit or credit account of the rows with no class, in row
@@ -404,7 +433,38 @@ export function recognitionAccountWithoutClass(
 function recognitionSource(
   row: RecognitionScheduleRow,
   sources: RecognitionSources
-): Pick<RunJournalLine, "documentType" | "documentId" | "dimensions"> {
+): Pick<
+  RunJournalLine,
+  "documentType" | "documentId" | "documentLineReference" | "dimensions"
+> {
+  // A lessee lease's row references the lease and its asset, with the
+  // supplier and the asset's location (else the lease's). Both must be
+  // loaded: a line with no supplier or asset would post untraceably.
+  if (row.leaseId) {
+    const lease = sources.leases.get(row.leaseId);
+    if (!lease) {
+      throw new Error(
+        `Lease ${row.leaseId} of schedule row ${row.scheduleId} was not loaded`
+      );
+    }
+    const asset = row.leaseScheduleLineId
+      ? sources.leaseAssets.get(row.leaseScheduleLineId)
+      : undefined;
+    if (!asset) {
+      throw new Error(
+        `The leased asset of schedule row ${row.scheduleId} was not loaded`
+      );
+    }
+    return {
+      documentType: "Lease",
+      documentId: row.leaseId,
+      documentLineReference: asset.leaseLineId,
+      dimensions: {
+        Supplier: lease.supplierId,
+        Location: asset.locationId ?? lease.locationId
+      }
+    };
+  }
   // A row references its invoice, else its rental agreement, else its
   // contract.
   const invoice = row.salesInvoiceLineId
@@ -452,16 +512,21 @@ function recognitionSource(
  * still gets a journal, with no lines. The run's journal is the one of its
  * own period end, else the latest.
  *
- * Throws when an account of any row has no class.
+ * Throws when an account of any row has no class, or when a lessee row's
+ * lease or leased asset is not in `sources`.
  */
 export function buildRecognitionJournals(args: {
+  /** A lease run posts as 'Lease Run', a revenue recognition run as
+   *  'Revenue Recognition'. */
+  runType: RunType;
   runReadableId: string;
   runPeriodEnd: string;
   rows: RecognitionScheduleRow[];
   sources: RecognitionSources;
   classById: Map<string, AccountClass>;
 }): { journals: RecognitionJournal[]; runJournal: RecognitionJournal | null } {
-  const { runReadableId, runPeriodEnd, rows, sources, classById } = args;
+  const { runType, runReadableId, runPeriodEnd, rows, sources, classById } =
+    args;
   const unclassified = recognitionAccountWithoutClass(rows, classById);
   if (unclassified) {
     throw new Error(
@@ -473,13 +538,14 @@ export function buildRecognitionJournals(args: {
   const byDate = new Map<string, RecognitionJournal>();
   for (const row of rows) {
     const journal = byDate.get(row.postingDate) ?? {
-      description: `Revenue Recognition ${runReadableId}`,
-      sourceType: "Revenue Recognition" as const,
+      description: `${RUN_SOURCE_TYPE[runType]} ${runReadableId}`,
+      sourceType: RUN_SOURCE_TYPE[runType],
       postingDate: row.postingDate,
       lines: [],
       scheduleIds: [],
       contractScheduleIds: [],
-      leaseScheduleLineIds: []
+      leaseScheduleLineIds: [],
+      lesseeScheduleLineIds: []
     };
     byDate.set(row.postingDate, journal);
 
@@ -493,12 +559,19 @@ export function buildRecognitionJournals(args: {
     ) {
       journal.leaseScheduleLineIds.push(row.rentalLeaseScheduleLineId);
     }
+    if (
+      row.leaseScheduleLineId &&
+      !journal.lesseeScheduleLineIds.includes(row.leaseScheduleLineId)
+    ) {
+      journal.lesseeScheduleLineIds.push(row.leaseScheduleLineId);
+    }
     if (row.amount === 0) continue;
 
     const descriptions =
-      row.customerContractLineId && row.type === "Accrual"
+      (row.leaseId ? LESSEE_LINE_DESCRIPTIONS[row.type] : undefined) ??
+      (row.customerContractLineId && row.type === "Accrual"
         ? CONTRACT_ACCRUAL_DESCRIPTIONS
-        : REVENUE_LINE_DESCRIPTIONS[row.type];
+        : REVENUE_LINE_DESCRIPTIONS[row.type]);
     const magnitude = Math.abs(row.amount);
     const debitClass = classOf(row.debitAccountId);
     const creditClass = classOf(row.creditAccountId);

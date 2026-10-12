@@ -210,6 +210,15 @@ export default function ReportsIndexRoute() {
         defaultPinned: false
       },
       {
+        key: "lease-liabilities",
+        name: t`Lease Liabilities`,
+        description: t`Lessee lease balances, maturity analysis and lease cost`,
+        to: path.to.leaseLiabilities,
+        icon: LuScale,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
         key: "revenue",
         name: t`Revenue`,
         description: t`Slice revenue by customer, customer type, or any dimension`,

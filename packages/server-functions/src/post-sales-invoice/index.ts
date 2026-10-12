@@ -84,7 +84,7 @@ export const postSalesInvoiceInput = z.object({
 });
 
 const RECOGNIZED_REVENUE_VOID_ERROR =
-  "Invoice has recognized revenue; reverse its revenue recognition run first";
+  "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first";
 
 /** Posts or voids a sales invoice: its ledger, cost and journal rows, atomically. */
 const postSalesInvoice = defineServerFn({

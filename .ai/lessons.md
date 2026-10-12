@@ -289,6 +289,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
+## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
+
+**Context:** Sales order shipments booked every serial and batch against `shipmentLine.storageUnitId` (copied from the sales order line, which defaults to the item's default bin). A unit picked from any other bin drove the line's bin negative and left its real bin showing stock that had already shipped. The stock transfer picker had the matching gap: it listed every lot at the location, not the line's source bin, and an empty source (`fromStorageUnitId` null — the wizard's "No storage unit") meant "any bin".
+
+**Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
+
+**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`server-functions/src/lib/storage-units.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+
+**Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
+
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
 **Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
@@ -3496,6 +3506,26 @@ After any commit, check its `.po` diff. A removed `msgid` that HEAD code still u
 A ✓ that a script prints after a step that is allowed to fail is not evidence. Read the state back.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
+
+## A new record type copies its sibling's UI, not the generic archetype
+
+**Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
+
+**Problem:** The plan named the sibling for the server side (post-lease mirrors the rental functions) but not for the UI, and the design skill's "where create opens" rule sent a record with a workspace to a Card form. The setup wizard was documented nowhere, so the subagent that built the UI followed the generic rule faithfully.
+
+**Rule:** Before designing a record type, name its closest sibling — the record users would call "the same kind of thing" (rental agreement ↔ lease ↔ contract; sales order ↔ purchase order; RMA ↔ supplier return) — and copy its routes and components file for file: `new`, `$id`, `$id._index`, the setup or detail routes, the module's `ui/` components. The spec and plan state the sibling and the files copied. A deviation from it is a design decision and is asked about first. When the sibling's pattern is missing from `carbon-design`, add it there in the same change (Archetype J was added for this one).
+
+**Applies to:** `/spec-writing`, `/plan`, `carbon-design`, and any subagent prompt that builds UI.
+
+## A dropped column breaks string selects that typecheck cannot see
+
+**Context:** The several-assets change for lessee leases (2026-10-11) moved twelve columns from `lease` to `leaseLine` and recreated the `leases` view.
+
+**Problem:** Typecheck passed, but the Lease Liabilities report still selected the moved columns from the view through `fetchAllFromTable(client, "leases", "id, …, lesseeClassification, …")`. The column list is a string, so the report would only have failed at runtime.
+
+**Rule:** After a migration drops or moves a column, grep every string select of the table and its views (`.select("…")`, `fetchAllFromTable` column lists, embeds) for the old name. Do not rely on typecheck for them.
+
+**Applies to:** any migration that drops, renames or moves a column.
 
 ## A caller-supplied document number used to leave the counter behind
 

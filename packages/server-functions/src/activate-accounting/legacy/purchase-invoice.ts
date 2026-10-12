@@ -37,6 +37,10 @@ import { EPSILON } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError } from "../../errors";
 import {
+  loadLeasePostingFacts,
+  resolveLeasePostingLine
+} from "../../post-purchase-invoice/lease-lines";
+import {
   buildPurchaseInvoicePostingLines,
   isItemLineType,
   type PurchaseInvoiceItem,
@@ -288,6 +292,14 @@ export async function buildLegacyPurchaseInvoiceJournals(
   );
   const assetById = new Map(assets.map((row) => [row.id, row]));
   const glAccountById = new Map(glAccounts.map((row) => [row.id, row]));
+
+  // Lease lines post as at posting (post-purchase-invoice), with its checks.
+  const leaseFacts = await loadLeasePostingFacts(trx, {
+    companyId,
+    companyGroupId,
+    defaults,
+    lines: lines.filter((line) => line.invoiceLineType === "Lease")
+  });
   const receivedWithInvoiceKeys = new Set(
     receivedWithInvoice.map((row) => `${row.documentId}:${row.itemId}`)
   );
@@ -492,6 +504,23 @@ export async function buildLegacyPurchaseInvoiceJournals(
             costCenterId: invoiceLine.costCenterId ?? null,
             projectId: invoiceLine.projectId ?? null
           });
+          break;
+        }
+        case "Lease": {
+          let lease: ReturnType<typeof resolveLeasePostingLine>;
+          try {
+            lease = resolveLeasePostingLine(
+              invoiceLine,
+              base.amounts,
+              leaseFacts
+            );
+          } catch (error) {
+            if (!(error instanceof InvalidInputError)) throw error;
+            throw new InvalidInputError(
+              `Purchase invoice ${invoice.invoiceId}: ${error.message}`
+            );
+          }
+          postingLines.push({ ...base, kind: "lease", ...lease });
           break;
         }
         default:

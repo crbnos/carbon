@@ -3,13 +3,11 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
-import { getNextSequence } from "@carbon/database/sequence";
 import {
   REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
-import { resolveAccountingPeriod } from "../lib/get-accounting-period";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
+import { insertNegatedJournal } from "../lib/void-journal";
 import type { ReimbursementContext } from "./post-reimbursement-post";
 
 export async function voidReimbursement(
@@ -95,81 +93,17 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    // A Provisional journal has no accounting period, and no posting creates a
-    // period before the cutover.
-    const period =
-      postingStatus === "Posted"
-        ? await resolveAccountingPeriod(trx, companyId, today, "current")
-        : null;
-    const reversal = await trx
-      .insertInto("journal")
-      .values({
-        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-        accountingPeriodId: period?.id ?? null,
-        description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-        postingDate: period?.postingDate ?? today,
-        companyId,
-        sourceType: "Reimbursement",
-        status: postingStatus,
-        postedAt: timestamp,
-        postedBy: userId,
-        createdBy: userId
-      })
-      .returning("id")
-      .executeTakeFirstOrThrow();
-    const reversalLineIds = await allocateJournalLineIds(
-      trx,
-      originalLines.length
-    );
-    await trx
-      .insertInto("journalLine")
-      .values(
-        originalLines.map((line, index) => ({
-          id: reversalLineIds[index],
-          journalId: reversal.id,
-          accountId: line.accountId,
-          amount: -Number(line.amount),
-          quantity: line.quantity,
-          description: `VOID: ${line.description ?? ""}`,
-          documentType: "Reimbursement" as const,
-          documentId: reimbursement.id,
-          documentLineReference: line.documentLineReference,
-          journalLineReference: line.journalLineReference,
-          accountDefaultRole: line.accountDefaultRole,
-          companyId
-        }))
-      )
-      .execute();
-    const dimensions = await trx
-      .selectFrom("journalLineDimension")
-      .select(["journalLineId", "dimensionId", "valueId"])
-      .where("companyId", "=", companyId)
-      .where(
-        "journalLineId",
-        "in",
-        originalLines.map((line) => line.id)
-      )
-      .execute();
-    const reversalByOriginal = new Map(
-      originalLines.map((line, index) => [line.id, reversalLineIds[index]])
-    );
-    if (dimensions.length) {
-      const reversedDimensions = dimensions.map((dimension) => {
-        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
-        if (!journalLineId) {
-          throw new Error("Failed to map reversed journal line");
-        }
-        return {
-          ...dimension,
-          journalLineId,
-          companyId
-        };
-      });
-      await trx
-        .insertInto("journalLineDimension")
-        .values(reversedDimensions)
-        .execute();
-    }
+    await insertNegatedJournal(trx, {
+      companyId,
+      userId,
+      originalLines,
+      description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
+      sourceType: "Reimbursement",
+      postingStatus,
+      date: today,
+      periodMode: "current",
+      postedAt: timestamp
+    });
   }
 
   await trx

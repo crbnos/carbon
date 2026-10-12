@@ -56,7 +56,7 @@ dead, legacy or buggy.
 | `ModalDrawer` (+ `ModalDrawerProvider type`) | config-row create/edit: drawer on its route, modal when opened from a picker | canonical |
 | `ModalCard` (+ `ModalCardProvider type`) | record/line form: card on the page, modal when creating | canonical |
 | `Modal` | confirm, lifecycle transition, short focused task, inline create | canonical |
-| `Drawer` | read-only drill-down, large editor, wizard, comparison (`size lg/xl/full`) | canonical |
+| `Drawer` | read-only drill-down, large editor, a multi-step overlay, comparison (`size lg/xl/full`) — setting up an agreement record is the page-level setup wizard (Archetype J), not a Drawer | canonical |
 | `ConfirmDelete`, `Confirm` (`~/components/Modals`) | destructive / generic confirm | canonical — never hand-roll |
 | `Popover` | click-to-open, non-committing pick or explanation | canonical |
 | `HoverCard` | rich preview on hover (documents, glossary) | niche |
@@ -111,7 +111,7 @@ in-panel empty), `UpgradeOverlay` (plan gating). Details in `status-and-feedback
 | Create/edit a config row from its list | `ModalDrawer` (default drawer `md`; `lg` if complex) |
 | Create any entity from inside a selector | that entity's form with `type="modal"` |
 | Record or line form that lives on the page | `ModalCard` (`xxlarge` modal for lines) |
-| Read-only detail / drill-down beside a list, wizard, comparison | `Drawer` `lg`/`xl`/`full` |
+| Read-only detail / drill-down beside a list, multi-step overlay, comparison | `Drawer` `lg`/`xl`/`full` (setting up an agreement is Archetype J) |
 | Pick a value / explain a number without committing | `Popover` |
 | MES action list | `BottomSheet` |
 

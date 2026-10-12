@@ -6,6 +6,7 @@
 > Tracking issue: crbnos/carbon#1056
 > Readiness finding: GAP-2 (`.ai/specs/2026-07-03-public-company-readiness.md`)
 > Scope note (2026-09-22): the LESSOR slice (operating income, sales-type commencement, net-investment schedule, interest income) is superseded by `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I (rental agreements); this spec keeps lessee accounting, modifications/remeasurements, disclosures and the IFRS 16 delta. Enum `lessorClassification` is shared.
+> Scope note (2026-10-12): the LESSEE slice (lease master, classification, ROU asset and lease liability, effective-interest schedules, modifications, termination and purchase, the monthly lease journals, the "Post lease journals" close task, and the disclosure report) is superseded by `.ai/specs/2026-10-11-lessee-leases.md` (lessee leases in purchasing, posted by the lease run). This spec now keeps only the IFRS 16 delta.
 
 ## TLDR
 

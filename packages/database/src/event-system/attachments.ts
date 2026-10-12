@@ -191,6 +191,7 @@ export const attachments = {
     statement: ["broadcast_table_changes"]
   },
   journalLine: { events: true },
+  lease: { after: ["sync_advance_document_sequence"], events: true },
   location: {
     after: ["sync_create_location_related_records"],
     events: true,

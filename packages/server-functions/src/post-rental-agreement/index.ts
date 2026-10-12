@@ -13,10 +13,10 @@ import {
 import { sql } from "kysely";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { currencyDecimals } from "../lib/currency-decimals";
 import {
   type AgreementRow,
   billingPeriodRow,
-  currencyDecimals,
   type Db,
   insertUnitActivity,
   LEASE_ACCOUNTS_REQUIRED,

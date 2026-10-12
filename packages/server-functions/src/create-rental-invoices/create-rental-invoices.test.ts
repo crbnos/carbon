@@ -5,8 +5,10 @@
 // The rental invoice generator against the live database: a Closed agreement
 // whose invoice was voided still bills the rows the void returned to
 // unbilled, and amounts priced in the agreement's currency land on the
-// invoice line in base currency.
+// invoice line in base currency. A charge shares the rent's invoice unless it
+// is invoiced separately, which drafts it on its own held invoice.
 
+import { RENTAL_HOLD_CHARGES } from "@carbon/utils";
 import { sql } from "kysely";
 import { expect } from "vitest";
 import {
@@ -18,7 +20,7 @@ import createRentalInvoices from "./index";
 
 const USER = "system";
 
-async function closedAgreementFixture() {
+async function closedAgreementFixture({ invoiceSeparately = false } = {}) {
   const db = await connectLocalTestDatabase();
   const prefix = `rentest-${crypto
     .randomUUID()
@@ -156,6 +158,7 @@ async function closedAgreementFixture() {
         description: "Delivery",
         amount: 50,
         chargeDate: "2026-09-01",
+        invoiceSeparately,
         companyId,
         createdBy: USER
       })
@@ -236,3 +239,60 @@ databaseTest(
     }
   }
 );
+
+databaseTest("a charge lands on the rent invoice, unheld", async () => {
+  const f = await closedAgreementFixture();
+  try {
+    const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+    expect(result.error).toBeNull();
+    expect(result.data!.failures).toEqual([]);
+    expect(result.data!.invoices).toHaveLength(1);
+    expect(result.data!.invoices[0]?.holdReason).toBeNull();
+
+    const byLine = await invoiceIdsByLine(f);
+    expect(byLine.rent).toBeDefined();
+    expect(byLine.charge).toBe(byLine.rent);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest(
+  "a separately invoiced charge gets its own held invoice",
+  async () => {
+    const f = await closedAgreementFixture({ invoiceSeparately: true });
+    try {
+      const result = await createRentalInvoices(f.ctx, { asOf: "2026-10-05" });
+      expect(result.error).toBeNull();
+      expect(result.data!.failures).toEqual([]);
+      expect(result.data!.invoices).toHaveLength(2);
+
+      const byLine = await invoiceIdsByLine(f);
+      expect(byLine.charge).toBeDefined();
+      expect(byLine.charge).not.toBe(byLine.rent);
+      const held = result.data!.invoices.find(
+        (invoice) => invoice.invoiceId === byLine.charge
+      );
+      expect(held?.holdReason).toBe(RENTAL_HOLD_CHARGES);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** The invoice each of the fixture's two rows was billed on. */
+async function invoiceIdsByLine(
+  f: Awaited<ReturnType<typeof closedAgreementFixture>>
+) {
+  const lines = await f.db
+    .selectFrom("salesInvoiceLine")
+    .select(["invoiceId", "rentalBillingPeriodId", "rentalAgreementChargeId"])
+    .where("companyId", "=", f.companyId)
+    .where("rentalAgreementId", "=", f.agreementId)
+    .execute();
+  return {
+    rent: lines.find((l) => l.rentalBillingPeriodId === f.periodId)?.invoiceId,
+    charge: lines.find((l) => l.rentalAgreementChargeId === f.chargeId)
+      ?.invoiceId
+  };
+}

@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { cn, VStack } from "@carbon/react";
-import { EmptyCabinet } from "@carbon/viewer/empty-cabinet";
 import { Trans } from "@lingui/react/macro";
 import type { ComponentProps } from "react";
 
@@ -20,7 +19,21 @@ export default function Empty({
       )}
       {...props}
     >
-      <EmptyCabinet className="shrink-0 mb-4" />
+      <svg
+        aria-hidden="true"
+        viewBox="0 0 64 64"
+        className="size-16 shrink-0 mb-4 text-muted-foreground/40"
+      >
+        <circle
+          cx="32"
+          cy="32"
+          r="30"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+      </svg>
       <h3 className="text-lg font-medium tracking-tight text-foreground max-md:text-[17px] max-md:font-semibold">
         <Trans>No data yet</Trans>
       </h3>

@@ -9174,7 +9174,8 @@ export async function upsertRentalAgreementCharge(
     chargeDate: charge.chargeDate,
     description: charge.description,
     amount: charge.amount,
-    taxPercent: charge.taxPercent
+    taxPercent: charge.taxPercent,
+    invoiceSeparately: charge.invoiceSeparately
   };
 
   // The agreement is the line's own, read under the caller's company.

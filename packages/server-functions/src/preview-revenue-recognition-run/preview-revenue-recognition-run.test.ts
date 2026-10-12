@@ -18,7 +18,8 @@ async function deferral(
   f: Fixture,
   key: string,
   scheduledDate: string,
-  amount: number
+  amount: number,
+  rentalAgreementLineId: string | null = null
 ) {
   const line = await f.db
     .selectFrom("salesInvoiceLine")
@@ -33,6 +34,7 @@ async function deferral(
       type: "Deferral",
       status: "Planned",
       salesInvoiceLineId: line.id,
+      rentalAgreementLineId,
       periodStart: `${scheduledDate.slice(0, 8)}01`,
       periodEnd: scheduledDate,
       scheduledDate,
@@ -46,14 +48,18 @@ async function deferral(
   return id;
 }
 
-async function preview(f: Fixture, periodEnd: string) {
+async function preview(
+  f: Fixture,
+  periodEnd: string,
+  type: "Revenue Recognition" | "Lease" = "Revenue Recognition"
+) {
   const result = await previewRevenueRecognitionRun(
     ServerFnContext.system({
       db: f.db,
       companyId: f.companyId,
       userId: "system"
     }),
-    { periodEnd }
+    { periodEnd, type }
   );
   if (result.error) throw result.error;
   return result.data;
@@ -106,3 +112,22 @@ databaseTest("the preview of a period with nothing due is empty", async () => {
     await f.cleanup();
   }
 });
+
+databaseTest(
+  "a rental row is previewed by the lease run, never by the revenue run",
+  async () => {
+    const f = await paymentFixture();
+    try {
+      await deferral(f, "rent", "2026-09-30", 40, `${f.companyId}-rental-line`);
+      await deferral(f, "service", "2026-09-30", 60);
+
+      expect(await preview(f, "2026-09-30")).toEqual({ count: 1, amount: 60 });
+      expect(await preview(f, "2026-09-30", "Lease")).toEqual({
+        count: 1,
+        amount: 40
+      });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);

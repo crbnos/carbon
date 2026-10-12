@@ -15,12 +15,13 @@ import {
   round
 } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
-import type { Insertable } from "kysely";
+import type { Insertable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { getTrackedEntityOnHandInBin } from "../lib/storage-units";
 import {
   type ExpiredEntityPolicy,
   type ExpiryOverride,
@@ -31,6 +32,31 @@ import {
 import { attributesContain } from "../tracked-entity-attributes";
 
 const logger = getLogger("server-functions", "post-stock-transfer");
+
+/**
+ * A line moves stock out of the bin it names, and only that bin (`null` is the
+ * unassigned bin). Picking a unit held elsewhere would book its -1 against a
+ * bin that does not hold it.
+ */
+async function assertInSourceBin(
+  trx: Transaction<KyselyDatabase>,
+  args: {
+    trackedEntityId: string;
+    readableId: string | null;
+    quantity: number;
+    locationId: string;
+    storageUnitId: string | null;
+    companyId: string;
+  }
+) {
+  const onHand = await getTrackedEntityOnHandInBin(trx, args);
+  if (round(onHand) < round(args.quantity)) {
+    throw new PickGuardError(
+      "over-pick",
+      `${args.readableId ?? args.trackedEntityId} is not in this line's source storage unit`
+    );
+  }
+}
 
 /**
  * Applies the company's expired-entity policy to one entity about to be
@@ -73,7 +99,6 @@ export const postStockTransferInput = z.discriminatedUnion("type", [
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
     trackedEntityId: z.string(),
-    fromStorageUnitId: z.string().nullable(),
     locationId: z.string()
   }),
   z.object({
@@ -81,7 +106,6 @@ export const postStockTransferInput = z.discriminatedUnion("type", [
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
     trackedEntityId: z.string(),
-    fromStorageUnitId: z.string().nullable(),
     quantity: z.number().positive(),
     overrideExpired: z.boolean().optional(),
     overrideReason: z.string().optional(),
@@ -119,9 +143,9 @@ const postStockTransfer = defineServerFn({
 
     // The permission check proves the caller may act in companyId, not that the
     // body's ids belong to it. Every case writes stockTransferId as the
-    // ledger/activity documentId and locationId / fromStorageUnitId onto this
-    // company's ledger rows, so they are re-read under companyId — and the line
-    // must be on the transfer the body names.
+    // ledger/activity documentId and locationId onto this company's ledger
+    // rows, so they are re-read under companyId — and the line must be on the
+    // transfer the body names.
     {
       const { companyId, stockTransferId, stockTransferLineId, locationId } =
         validatedPayload;
@@ -139,17 +163,6 @@ const postStockTransfer = defineServerFn({
         [locationId],
         companyId,
         "Location"
-      );
-      await assertCompanyRecords(
-        db,
-        "storageUnit",
-        [
-          "fromStorageUnitId" in validatedPayload
-            ? validatedPayload.fromStorageUnitId
-            : null
-        ],
-        companyId,
-        "Storage unit"
       );
     }
 
@@ -319,7 +332,6 @@ const postStockTransfer = defineServerFn({
 
       case "serial": {
         const {
-          fromStorageUnitId,
           stockTransferId,
           stockTransferLineId,
           trackedEntityId,
@@ -358,6 +370,16 @@ const postStockTransfer = defineServerFn({
             .select(["id", "readableId"])
             .forUpdate()
             .executeTakeFirstOrThrow();
+
+          const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
+          await assertInSourceBin(trx, {
+            trackedEntityId,
+            readableId: trackedEntity.readableId,
+            quantity: 1,
+            locationId,
+            storageUnitId: fromStorageUnitId,
+            companyId
+          });
 
           // Refuse a REPEAT scan of the same serial on this transfer. Each scan
           // posts a Transfer activity + a −1/+1 ledger pair, so a silent no-op
@@ -400,8 +422,6 @@ const postStockTransfer = defineServerFn({
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                // The line's own column is overwritten with this same payload
-                // value later in the transaction — read the payload directly.
                 "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId
               },
@@ -464,7 +484,6 @@ const postStockTransfer = defineServerFn({
             .updateTable("stockTransferLine")
             .set({
               trackedEntityId,
-              fromStorageUnitId: fromStorageUnitId,
               pickedQuantity: newPickedQuantity,
               updatedBy: userId,
               updatedAt: datetime.timestamp()
@@ -479,7 +498,6 @@ const postStockTransfer = defineServerFn({
 
       case "batch": {
         const {
-          fromStorageUnitId,
           stockTransferId,
           stockTransferLineId,
           trackedEntityId,
@@ -525,6 +543,15 @@ const postStockTransfer = defineServerFn({
           assertEntityCoversPick({
             entityQuantity: Number(trackedEntity.quantity),
             transferQuantity: quantity
+          });
+          const fromStorageUnitId = stockTransferLine.fromStorageUnitId;
+          await assertInSourceBin(trx, {
+            trackedEntityId,
+            readableId: trackedEntity.readableId,
+            quantity,
+            locationId,
+            storageUnitId: fromStorageUnitId,
+            companyId
           });
 
           // Expiry policy gate (throws on hard reject; returns warning for 'Warn').
@@ -645,8 +672,6 @@ const postStockTransfer = defineServerFn({
                 "Stock Transfer Line": stockTransferLineId,
                 "From Location": locationId,
                 "To Location": locationId,
-                // The line's own column is overwritten with this same payload
-                // value later in the transaction — read the payload directly.
                 "From Shelf": fromStorageUnitId,
                 "To Shelf": stockTransferLine.toStorageUnitId
               },
@@ -717,7 +742,6 @@ const postStockTransfer = defineServerFn({
             .updateTable("stockTransferLine")
             .set({
               trackedEntityId: transferredEntityId,
-              fromStorageUnitId: fromStorageUnitId,
               pickedQuantity: newPickedQuantity,
               updatedBy: userId,
               updatedAt: datetime.timestamp()

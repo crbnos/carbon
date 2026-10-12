@@ -49,6 +49,19 @@ export const reactNodeToString = function (reactNode: ReactNode): string {
   return string;
 };
 
+/**
+ * The plain text of a picker option. A JSX label whose text lives in a
+ * component's props (an avatar that looks up its own name) has none to
+ * extract, so it falls back to the option's `keywords`.
+ */
+export function optionLabelText(option: {
+  label: ReactNode;
+  keywords?: string;
+}): string {
+  if (typeof option.label === "string") return option.label;
+  return reactNodeToString(option.label) || (option.keywords ?? "");
+}
+
 export type Merge<T, P> = P & Omit<T, keyof P>;
 
 export type MaybeRenderProp<P> = ReactNode | ((props: P) => ReactNode);

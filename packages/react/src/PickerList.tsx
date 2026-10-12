@@ -18,7 +18,7 @@ import {
 } from "./Command";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
-import { reactNodeToString } from "./utils/react";
+import { optionLabelText } from "./utils/react";
 import { useViewport } from "./Viewport";
 
 export type PickerListOption = {
@@ -80,11 +80,6 @@ export type PickerListProps = {
 
 const COMPACT_ITEM_HEIGHT = 44;
 
-const labelOf = (option: PickerListOption) =>
-  typeof option.label === "string"
-    ? option.label
-    : reactNodeToString(option.label);
-
 /**
  * The searchable, virtualized option list shared by Combobox,
  * CreatableCombobox, MultiSelect and CreatableMultiSelect.
@@ -125,9 +120,10 @@ function PickerList({
     if (!creatable) return filtered;
 
     const isExactMatch = options.some((option) =>
-      [labelOf(option).toLowerCase(), option.helper?.toLowerCase()].includes(
-        search.toLowerCase()
-      )
+      [
+        optionLabelText(option).toLowerCase(),
+        option.helper?.toLowerCase()
+      ].includes(search.toLowerCase())
     );
 
     if (isExactMatch || (search.trim() === "" && !showCreateOptionOnEmpty)) {
@@ -178,7 +174,7 @@ function PickerList({
     const item = filteredOptions[virtualRow.index]!;
     const itemValue = getItemValue(item);
     const isCreateOption = creatable && item.value === "create";
-    const itemHoverText = [labelOf(item), item.helper]
+    const itemHoverText = [optionLabelText(item), item.helper]
       .filter(Boolean)
       .join(" - ");
     const checked =

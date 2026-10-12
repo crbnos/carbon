@@ -125,6 +125,7 @@ describe("buildLegacyRecognitionJournals", () => {
       runId: "run-1",
       runReadableId: "RR-1",
       runPeriodEnd: "2026-10-31",
+      runType: "Revenue Recognition",
       postingDate: "2026-10-31",
       type: "Deferral",
       amount: 100,
@@ -134,13 +135,17 @@ describe("buildLegacyRecognitionJournals", () => {
       rentalAgreementLineId: null,
       customerContractLineId: null,
       rentalLeaseScheduleLineId: null,
+      leaseId: null,
+      leaseScheduleLineId: null,
       ...overrides
     };
   }
   const sources = {
     invoiceLines: new Map(),
     rentalLines: new Map(),
-    contractLines: new Map()
+    contractLines: new Map(),
+    leases: new Map(),
+    leaseAssets: new Map()
   };
   const classes = new Map([
     ["deferred", "Liability" as const],
@@ -176,6 +181,7 @@ describe("buildLegacyRecognitionJournals", () => {
         runId: "run-1",
         scheduleIds: ["row-1"],
         leaseScheduleLineIds: [],
+        lesseeScheduleLineIds: [],
         isRunJournal: true
       },
       {
@@ -184,6 +190,7 @@ describe("buildLegacyRecognitionJournals", () => {
         runId: "run-1",
         scheduleIds: ["row-2"],
         leaseScheduleLineIds: [],
+        lesseeScheduleLineIds: [],
         isRunJournal: false
       },
       {
@@ -192,6 +199,7 @@ describe("buildLegacyRecognitionJournals", () => {
         runId: "run-2",
         scheduleIds: ["row-3"],
         leaseScheduleLineIds: ["lease-1"],
+        lesseeScheduleLineIds: [],
         isRunJournal: true
       }
     ]);

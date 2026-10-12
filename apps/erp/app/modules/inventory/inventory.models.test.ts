@@ -45,23 +45,17 @@ describe("storageUnitValidator", () => {
 
 describe("resolveStockTransferPickForward", () => {
   const base = {
-    storageUnitId: "bin-chosen" as string | null,
-    currentStorageUnitId: "bin-default" as string | null,
     lineQuantity: 10,
     pickedQuantity: 0
   };
 
-  it("forwards the picker quantity and chosen bin for a batch scan", () => {
+  it("forwards the picker quantity for a batch scan", () => {
     const r = resolveStockTransferPickForward({
       ...base,
       transferType: "batch",
       quantity: 3
     });
-    expect(r).toEqual({
-      ok: true,
-      quantity: 3,
-      fromStorageUnitId: "bin-chosen"
-    });
+    expect(r).toEqual({ ok: true, quantity: 3 });
   });
 
   it("posts quantity 1 for a serial scan regardless of the picker quantity", () => {
@@ -70,21 +64,7 @@ describe("resolveStockTransferPickForward", () => {
       transferType: "serial",
       quantity: 4
     });
-    expect(r).toEqual({
-      ok: true,
-      quantity: 1,
-      fromStorageUnitId: "bin-chosen"
-    });
-  });
-
-  it("falls back to the highest-quantity bin when the picker sends none", () => {
-    const r = resolveStockTransferPickForward({
-      ...base,
-      transferType: "batch",
-      quantity: 3,
-      storageUnitId: null
-    });
-    expect(r.ok && r.fromStorageUnitId).toBe("bin-default");
+    expect(r).toEqual({ ok: true, quantity: 1 });
   });
 
   it("refuses a pick on a fully-picked line", () => {

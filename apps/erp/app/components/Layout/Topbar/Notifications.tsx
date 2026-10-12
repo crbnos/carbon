@@ -4,7 +4,11 @@
 
 "use client";
 import type { ApprovalDocumentType } from "@carbon/ee/approvals";
-import { NotificationEvent, renderInlineLinks } from "@carbon/notifications";
+import {
+  NotificationEvent,
+  type RecurringInvoicingDocumentType,
+  renderInlineLinks
+} from "@carbon/notifications";
 import { useLoaderQuery } from "@carbon/query";
 import {
   Badge,
@@ -25,6 +29,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import {
   LuBell,
+  LuCalendarClock,
   LuCalendarX,
   LuChevronDown,
   LuChevronUp,
@@ -62,6 +67,12 @@ import type { Notification as NotificationRecord } from "~/types";
 import { getRecordPath } from "~/utils/entity";
 import { path } from "~/utils/path";
 import { EnableBrowserNotifications } from "./EnableBrowserNotifications";
+
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 type OutstandingTraining = {
   trainingAssignmentId: string;
@@ -280,7 +291,7 @@ function GenericNotification({
   body?: string;
   event: NotificationEvent;
   from?: string;
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   markMessageAsRead?: () => void;
   onClose: () => void;
 }) {
@@ -358,11 +369,25 @@ function GenericNotification({
       );
     case NotificationEvent.RecurringInvoicing:
       // The description carries the digest's counts; id is only the first
-      // invoice, so land on the invoices that need review instead.
+      // invoice, so land on the list it is about: the lease drafts waiting
+      // for the buyer, else the sales invoices that need review (see
+      // api+/link).
       return (
         <Notification
           icon={<LuDollarSign />}
-          to={`${path.to.invoicingSales}?filter=needsReview:eq:true`}
+          to={
+            documentType === "purchaseInvoice"
+              ? `${path.to.invoicingPurchasing}?filter=status:eq:Draft`
+              : `${path.to.invoicingSales}?filter=needsReview:eq:true`
+          }
+          {...props}
+        />
+      );
+    case NotificationEvent.LeaseCriticalDate:
+      return (
+        <Notification
+          icon={<LuCalendarClock />}
+          to={path.to.leaseDetails(id)}
           {...props}
         />
       );
@@ -645,7 +670,7 @@ function DigestNotification({
                   from={child.payload.from as string | undefined}
                   documentType={
                     child.payload.documentType as
-                      | ApprovalDocumentType
+                      | NotificationDocumentType
                       | undefined
                   }
                   onClose={onClose}
@@ -793,7 +818,7 @@ export function NotificationsPanel({
                     from={notification.payload.from as string | undefined}
                     documentType={
                       notification.payload.documentType as
-                        | ApprovalDocumentType
+                        | NotificationDocumentType
                         | undefined
                     }
                     markMessageAsRead={() =>
@@ -878,7 +903,7 @@ export function NotificationsPanel({
                     from={notification.payload.from as string | undefined}
                     documentType={
                       notification.payload.documentType as
-                        | ApprovalDocumentType
+                        | NotificationDocumentType
                         | undefined
                     }
                     onClose={() => onClose()}
