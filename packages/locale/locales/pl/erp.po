@@ -2067,6 +2067,9 @@ msgstr "Dodaj wymaganie"
 msgid "Add a row"
 msgstr "Dodaj wiersz"
 
+msgid "Add a row for each charge number you worked on."
+msgstr ""
+
 msgid "Add a step"
 msgstr "Dodaj krok"
 
@@ -5133,6 +5136,9 @@ msgstr "Mistrzowie"
 msgid "Change"
 msgstr "Zmień"
 
+msgid "Change cancelled"
+msgstr ""
+
 msgid "Change Date"
 msgstr "Zmień datę"
 
@@ -6590,6 +6596,10 @@ msgstr "Kopiuj tydzień"
 
 msgid "Correct"
 msgstr "Popraw"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr ""
 
 msgid "Correct Answer"
 msgstr "Prawidłowa odpowiedź"
@@ -12019,11 +12029,6 @@ msgstr ""
 msgid "Hours not yet assigned"
 msgstr "Godziny jeszcze nieprzydzielone"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "Godziny na {0} dla {1}"
-
 msgid "Hours Paid"
 msgstr "Godziny opłacone"
 
@@ -16455,11 +16460,8 @@ msgstr "Brak wpisów czasu pracy w tym tygodniu"
 msgid "No time is waiting for approval."
 msgstr "Brak czasu oczekującego na zatwierdzenie."
 
-msgid "No time this week."
-msgstr "Brak czasu w tym tygodniu."
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "Brak czasu w tym tygodniu. Dodaj wiersz dla każdego numeru opłaty, na której pracowałeś."
+msgid "No time this week"
+msgstr ""
 
 msgid "No tools"
 msgstr "Brak narzędzi"
@@ -18484,9 +18486,6 @@ msgstr "Opublikowano przez"
 
 msgid "Posted hours"
 msgstr "Godziny zaksięgowane"
-
-msgid "Posted hours, open the correction menu"
-msgstr "Godziny zaksięgowane, otwórz menu korekty"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Zaksięgowane dowody księgowe z tymi typami źródeł zawsze się synchronizują. Codzienne podsumowanie grupuje dowody księgowe jednego dnia w jeden wpis dostawcy na konto."

@@ -2067,6 +2067,9 @@ msgstr "Gereklilik ekle"
 msgid "Add a row"
 msgstr "Bir satır ekle"
 
+msgid "Add a row for each charge number you worked on."
+msgstr ""
+
 msgid "Add a step"
 msgstr "Bir adım ekle"
 
@@ -5133,6 +5136,9 @@ msgstr "Şampiyonlar"
 msgid "Change"
 msgstr "Değiştir"
 
+msgid "Change cancelled"
+msgstr ""
+
 msgid "Change Date"
 msgstr "Tarihi Değiştir"
 
@@ -6590,6 +6596,10 @@ msgstr "Haftayı kopyala"
 
 msgid "Correct"
 msgstr "Doğru"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr ""
 
 msgid "Correct Answer"
 msgstr "Doğru Cevap"
@@ -12019,11 +12029,6 @@ msgstr ""
 msgid "Hours not yet assigned"
 msgstr "Henüz atanmayan saatler"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "Şu tarihte Saatler {0} için {1}"
-
 msgid "Hours Paid"
 msgstr "Ödenen Saatler"
 
@@ -16455,11 +16460,8 @@ msgstr "Bu hafta için zaman girişi yok"
 msgid "No time is waiting for approval."
 msgstr "Onay bekleyen zaman yok."
 
-msgid "No time this week."
-msgstr "Bu hafta zaman yok."
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "Bu hafta zaman yok. Üzerinde çalıştığınız her masraf numarası için bir satır ekleyin."
+msgid "No time this week"
+msgstr ""
 
 msgid "No tools"
 msgstr "Araç yok"
@@ -18484,9 +18486,6 @@ msgstr "Gönderen"
 
 msgid "Posted hours"
 msgstr "Muhasebeleştirilmiş saatler"
-
-msgid "Posted hours, open the correction menu"
-msgstr "Muhasebeleştirilmiş saatler, düzeltme menüsünü aç"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Bu kaynak türlerine sahip Muhasebeleştirildi Muhasebe fişleri her zaman senkronize olur. Günlük özet, bir günün Muhasebe fişlerini hesap başına bir sağlayıcı giriş halinde gruplandırır."

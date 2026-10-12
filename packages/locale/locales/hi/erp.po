@@ -2067,6 +2067,9 @@ msgstr "एक आवश्यकता जोड़ें"
 msgid "Add a row"
 msgstr "एक पंक्ति जोड़ें"
 
+msgid "Add a row for each charge number you worked on."
+msgstr ""
+
 msgid "Add a step"
 msgstr "एक चरण जोड़ें"
 
@@ -5133,6 +5136,9 @@ msgstr "चैंपियन"
 msgid "Change"
 msgstr "बदलें"
 
+msgid "Change cancelled"
+msgstr ""
+
 msgid "Change Date"
 msgstr "तिथि बदलें"
 
@@ -6590,6 +6596,10 @@ msgstr "सप्ताह की प्रति"
 
 msgid "Correct"
 msgstr "सही करें"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr ""
 
 msgid "Correct Answer"
 msgstr "सही उत्तर"
@@ -12019,11 +12029,6 @@ msgstr ""
 msgid "Hours not yet assigned"
 msgstr "अभी तक असाइन न किए गए घंटे"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "{0} पर {1} के लिए घंटे"
-
 msgid "Hours Paid"
 msgstr "भुगतान किए गए घंटे"
 
@@ -16455,11 +16460,8 @@ msgstr "इस सप्ताह के लिए कोई समय प्र
 msgid "No time is waiting for approval."
 msgstr "अनुमोदन की प्रतीक्षा में कोई समय नहीं है।"
 
-msgid "No time this week."
-msgstr "इस सप्ताह कोई समय नहीं।"
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "इस सप्ताह कोई समय नहीं। प्रत्येक प्रभार संख्या के लिए एक पंक्ति जोड़ें जिस पर आपने काम किया।"
+msgid "No time this week"
+msgstr ""
 
 msgid "No tools"
 msgstr "कोई उपकरण नहीं"
@@ -18484,9 +18486,6 @@ msgstr "द्वारा पोस्ट किया गया"
 
 msgid "Posted hours"
 msgstr "पोस्ट किए गए घंटे"
-
-msgid "Posted hours, open the correction menu"
-msgstr "पोस्ट किए गए घंटे, सुधार मेनू खोलें"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "पोस्ट किए गए जर्नल इन स्रोत प्रकारों के साथ हमेशा सिंक करते हैं। दैनिक सारांश एक दिन के जर्नल को प्रति खाते में एक प्रदाता प्रविष्टि में समूहित करता है।"

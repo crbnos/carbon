@@ -2067,6 +2067,9 @@ msgstr "Add a requirement"
 msgid "Add a row"
 msgstr "Add a row"
 
+msgid "Add a row for each charge number you worked on."
+msgstr "Add a row for each charge number you worked on."
+
 msgid "Add a step"
 msgstr "Add a step"
 
@@ -5133,6 +5136,9 @@ msgstr "Champions"
 msgid "Change"
 msgstr "Change"
 
+msgid "Change cancelled"
+msgstr "Change cancelled"
+
 msgid "Change Date"
 msgstr "Change Date"
 
@@ -6590,6 +6596,10 @@ msgstr "Copy week"
 
 msgid "Correct"
 msgstr "Correct"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr "Correct {0}"
 
 msgid "Correct Answer"
 msgstr "Correct Answer"
@@ -12019,11 +12029,6 @@ msgstr "Hours excluded for an unknown work country: {0}"
 msgid "Hours not yet assigned"
 msgstr "Hours not yet assigned"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "Hours on {0} for {1}"
-
 msgid "Hours Paid"
 msgstr "Hours Paid"
 
@@ -16455,11 +16460,8 @@ msgstr "No time entries for this week"
 msgid "No time is waiting for approval."
 msgstr "No time is waiting for approval."
 
-msgid "No time this week."
-msgstr "No time this week."
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "No time this week. Add a row for each charge number you worked on."
+msgid "No time this week"
+msgstr "No time this week"
 
 msgid "No tools"
 msgstr "No tools"
@@ -18484,9 +18486,6 @@ msgstr "Posted By"
 
 msgid "Posted hours"
 msgstr "Posted hours"
-
-msgid "Posted hours, open the correction menu"
-msgstr "Posted hours, open the correction menu"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."

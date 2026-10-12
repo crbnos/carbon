@@ -254,6 +254,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 25: Rebuild ERP My Time as a grid
 
+Shots: `25-my-time.png`, `25-my-time-last-week.png`, `25-my-time-edited.png` (2 h typed on Tue, Tab, the totals went from 15 to 17; then cleared, which deleted the entry). Reference: the inventory count grid.
+
+1. Reference pattern: yes — `Table compact withInlineEditing`, one `EditableNumber` per day, a footer row with the totals.
+2. No overlap at 1440: yes.
+3. One toolbar row: yes — title and week picker left, Add row (ghost) and Submit right.
+4. One primary: yes (Submit and post week).
+5. No input box in the table: yes — cells are borderless until opened.
+6. Secondary actions in a menu: yes — Correct is in the row menu (shown only when a row has a posted cell).
+7. Advanced fields hidden: yes — the timecard line shows only when the week has timecards; Work location and Research role stay under Add row's More.
+
 ## Task 26: Rebuild MES My Time as a touch grid
 
 ## Task 27: Rebuild Approvals with Time and Billing tabs

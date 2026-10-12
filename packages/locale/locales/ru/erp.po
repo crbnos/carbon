@@ -2067,6 +2067,9 @@ msgstr "Добавить требование"
 msgid "Add a row"
 msgstr "Добавить строку"
 
+msgid "Add a row for each charge number you worked on."
+msgstr ""
+
 msgid "Add a step"
 msgstr "Добавить шаг"
 
@@ -5133,6 +5136,9 @@ msgstr "Чемпионы"
 msgid "Change"
 msgstr "Изменить"
 
+msgid "Change cancelled"
+msgstr ""
+
 msgid "Change Date"
 msgstr "Изменить дату"
 
@@ -6590,6 +6596,10 @@ msgstr "Копировать неделю"
 
 msgid "Correct"
 msgstr "Исправить"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr ""
 
 msgid "Correct Answer"
 msgstr "Правильный ответ"
@@ -12019,11 +12029,6 @@ msgstr ""
 msgid "Hours not yet assigned"
 msgstr "Часы, ещё не назначенные"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "Часы в {0} для {1}"
-
 msgid "Hours Paid"
 msgstr "Оплаченные часы"
 
@@ -16455,11 +16460,8 @@ msgstr "Нет записей о времени на эту неделю"
 msgid "No time is waiting for approval."
 msgstr "Нет времени, ожидающего утверждения."
 
-msgid "No time this week."
-msgstr "Нет времени на этой неделе."
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "Нет времени на этой неделе. Добавьте строку для каждого номера начисления, на котором вы работали."
+msgid "No time this week"
+msgstr ""
 
 msgid "No tools"
 msgstr "Нет инструментов"
@@ -18484,9 +18486,6 @@ msgstr "Опубликовано"
 
 msgid "Posted hours"
 msgstr "Проведенные часы"
-
-msgid "Posted hours, open the correction menu"
-msgstr "Проведенные часы, откройте меню коррекции"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "Проведенные операции с этими типами источников всегда синхронизируются. Ежедневное резюме группирует операции одного дня в одну запись поставщика по счету."

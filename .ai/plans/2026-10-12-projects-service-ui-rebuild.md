@@ -217,7 +217,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 22: Restyle the Tree cards and fix the fit-view
 - [ ] Task 23: Rebuild the element panel and page (Layer 4)
 - [ ] Task 24: Put all plan lines in one grid
-- [ ] Task 25: Rebuild ERP My Time as a grid
+- [x] Task 25: Rebuild ERP My Time as a grid
 - [ ] Task 26: Rebuild MES My Time as a touch grid
 - [ ] Task 27: Rebuild Approvals with Time and Billing tabs
 - [ ] Task 28: Edit labor category rates in a grid
@@ -1705,3 +1705,10 @@ Brad's fixes of 2026-10-12, second review (`bad-two-headers.jpg`, `bad-inline-1.
 - Bordered booleans (Task 39, done early, coordinator's request): every `<Boolean>` form field in the files this branch changed passes `bordered` (the repo writes the bare prop, never `bordered={true}`; same value): Labor category, Planning group, Job (2), Person job, Item planning, the element's earned value. Not changed: the properties panels (`PropertyFields`, `ContractProperties`, `ServiceOrderProperties`), which follow the item properties panels' `variant="small"` as fix 2 asks; the commented-out fields in `ItemSalePriceForm` and `ItemPlanningForm`; and `BurdenSettingsForm.ee.tsx` and `IndirectPoolForm.ee.tsx` (3), which belong to Tasks 35 and 36 of the other session.
 - Conformance (`pnpm --filter @carbon/checks test` found 6 new violations in files this rebuild touched): the Schedule's day count and quarter numbers use `round(x, 0, RoundingMode.Up/Down)` instead of `Math.ceil`/`Math.floor` (the rule's whole-unit form, rather than a baseline entry), and the three "Failed to load …" logs in `$projectId._index.tsx`, `$projectId.tsx` and `settings+/projects.tsx` are constant messages with `what` in the context object. The check suite passes (300 tests).
 - Plan grid width: the grid keeps Type, Line, Quantity (with the unit) and Amount, and fits the 800 px column with no sideways scroll. Method, Unit cost, Date and End left the grid; the row ⋯ menu has **Edit** first, which opens `PlanLineModal` (the whole line for its type, posting the same `upsertMaterial` / `upsertLabor` / `upsertCost` intent without `quiet`). There was no line modal left to reuse (Task 24 removed `PlanLineModal`), so this is a new, small one in the same file. A material's job or PO link moved from the Method cell into the Line cell. Checked: Edit → Unit Cost 10 → Save closed the modal and Amount showed $10.00 (then reset in the database).
+
+Run of 2026-10-12, Part B (Tasks 25–29):
+
+- Task 25: My Time is a `Table` grid (`compact`, `withInlineEditing`, `forceEditMode`, the Charge Number column pinned left), one `EditableNumber` per day through `EditableByRow` (a locked, service, read-only or DCAA future cell renders text), a Total column and a footer row. Per the coordinator's note (Brad), Add row is a quiet (ghost) button in the toolbar row beside Submit, not under the grid, and the timecard hours are a second line in the footer, shown only when the week has timecards (orange where they differ from the day total).
+- Task 25: DCAA reasons: the cell's save returns a promise that the change modal settles; Cancel settles it with an error, so the cell reverts. Not verifiable here (DCAA is off in the dev company).
+- Task 25: Correct for a posted cell is in the row menu, one item per posted day ("Correct Mon 12"); the menu column shows only while a row has a posted cell. A cell's status shows as its icon beside the hours unless Draft; the R&D research role is muted text after the labor category, not a badge.
+- Task 25: the manager page (`projects+/timesheets.$employeeId.tsx`) uses the same component; the dev company has one employee, whose own id redirects to My Time, so it is unverified in the browser.

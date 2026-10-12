@@ -2067,6 +2067,9 @@ msgstr "添加要求"
 msgid "Add a row"
 msgstr "添加一行"
 
+msgid "Add a row for each charge number you worked on."
+msgstr ""
+
 msgid "Add a step"
 msgstr "添加步骤"
 
@@ -5133,6 +5136,9 @@ msgstr "冠军"
 msgid "Change"
 msgstr "更改"
 
+msgid "Change cancelled"
+msgstr ""
+
 msgid "Change Date"
 msgstr "更改日期"
 
@@ -6590,6 +6596,10 @@ msgstr "复制周"
 
 msgid "Correct"
 msgstr "修正"
+
+#. placeholder {0}: formatDate(day, { weekday: "short", day: "numeric" })
+msgid "Correct {0}"
+msgstr ""
 
 msgid "Correct Answer"
 msgstr "正确答案"
@@ -12019,11 +12029,6 @@ msgstr ""
 msgid "Hours not yet assigned"
 msgstr "未分配的小时数"
 
-#. placeholder {0}: formatDate(day)
-#. placeholder {1}: row.readableId
-msgid "Hours on {0} for {1}"
-msgstr "{0} 上 {1} 的小时数"
-
 msgid "Hours Paid"
 msgstr "已支付小时数"
 
@@ -16455,11 +16460,8 @@ msgstr "本周没有时间条目"
 msgid "No time is waiting for approval."
 msgstr "没有工时在等待审批。"
 
-msgid "No time this week."
-msgstr "本周没有工时。"
-
-msgid "No time this week. Add a row for each charge number you worked on."
-msgstr "本周没有工时。为您处理的每个收费编号添加一行。"
+msgid "No time this week"
+msgstr ""
 
 msgid "No tools"
 msgstr "没有工具"
@@ -18484,9 +18486,6 @@ msgstr "过账人"
 
 msgid "Posted hours"
 msgstr "已过账工时"
-
-msgid "Posted hours, open the correction menu"
-msgstr "已过账工时，打开修正菜单"
 
 msgid "Posted journals with these source types always sync. Daily summary groups a day's journals into one provider entry per account."
 msgstr "具有这些来源类型的已过账凭证始终同步。每日汇总将一天的凭证按账户分组为一个供应商条目。"

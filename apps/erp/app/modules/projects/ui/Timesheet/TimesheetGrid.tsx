@@ -7,16 +7,12 @@ import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
-  Badge,
   Button,
   cn,
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuIcon,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
   HStack,
   IconButton,
+  MenuIcon,
+  MenuItem,
   Modal,
   ModalBody,
   ModalContent,
@@ -25,21 +21,19 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  NumberField,
-  NumberInput,
   Switch,
-  Table as TableBase,
-  Tbody,
-  Td,
-  Tfoot,
-  Th,
-  Thead,
-  Tr,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP, isEntryDateAllowed } from "@carbon/utils";
+import {
+  equals,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  isEntryDateAllowed
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { type ReactNode, useMemo, useRef, useState } from "react";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useCallback, useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuChevronLeft,
@@ -47,10 +41,16 @@ import {
   LuPencil,
   LuPlus,
   LuSend,
-  LuTimer,
   LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate } from "react-router";
+import { Table } from "~/components";
+import {
+  EditableByRow,
+  EditableNumber,
+  useStableEditableComponents
+} from "~/components/Editable";
+import Empty from "~/components/Empty";
 import {
   ChargeNumber,
   Hidden,
@@ -63,7 +63,11 @@ import {
   useChargeNumbers
 } from "~/components/Form";
 import { useLocations } from "~/components/Form/Location";
-import { useCellSave } from "~/components/Setup";
+import {
+  rowMenuColumn,
+  setupGridHeight,
+  useCellSave
+} from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
@@ -183,8 +187,14 @@ type PendingChange = {
   previousHours: number | null;
   requiresReason: boolean;
   requiresLateReason: boolean;
-  revert: () => void;
+  /** Settles the cell's save: an error reverts the cell. */
+  resolve: (result: PostgrestSingleResponse<unknown>) => void;
 };
+
+/** A row's height: the charge number over its labor category. */
+const GRID_ROW_HEIGHT = 53;
+/** The footer's second line, the timecard hours. */
+const TIMECARD_FOOTER_EXTRA = 16;
 
 /** Hours in a Draft or Rejected cell can change; the others are locked. */
 const EDITABLE_STATUSES: TimesheetEntryStatusType[] = ["Draft", "Rejected"];
@@ -200,17 +210,33 @@ const MANAGER_EDITABLE_STATUSES: TimesheetEntryStatusType[] = [
   "Approved"
 ];
 
+/** One grid row: the charge number's fields and each day's hours by date. */
+type TableRow = GridRow & Record<string, unknown>;
+
+/** The hours of a cell, as a save resolves it (an emptied cell is 0). */
+function cellHours(value: unknown) {
+  if (value === null || value === undefined || value === "") return 0;
+  const hours = Number(value);
+  return Number.isFinite(hours) ? hours : 0;
+}
+
+const CHARGE_NUMBER_COLUMN = "chargeNumber";
+
 /**
- * The signed-in user's week: one row per charge number and labor category,
- * one cell per day. A cell saves on blur. Submit week submits the Draft
- * cells; a posted cell changes only through a correction. A service order's
- * row is read-only: its visit page posts the time.
+ * The signed-in user's week as an inline-edit grid, like the inventory count
+ * lines: one row per charge number and labor category, one hours column per
+ * day, a Total column and a footer with the day totals (and the timecard
+ * hours under them when the week has any). A cell edits in place and saves
+ * on commit; Tab and the arrows move between cells. Submit week submits the
+ * Draft cells; a posted cell changes only through a correction (row menu).
+ * A service order's row is read-only: its visit page posts the time.
  *
  * DCAA mode (`controls`): a day after today is read-only except on a leave
  * element; a change to a saved entry, and a new value on a late date, ask
- * for their reasons first (`TimesheetChangeModal`); Submit week certifies
- * the week (`CertificationModal`); the changes another user made wait in
- * `TimesheetReviewBanner`; a cell with a correction trail shows its history.
+ * for their reasons first (`TimesheetChangeModal`) and revert when the
+ * modal is cancelled; Submit week certifies the week (`CertificationModal`);
+ * the changes another user made wait in `TimesheetReviewBanner`; a cell
+ * with a correction trail shows its history.
  */
 export default function TimesheetGrid({
   weekOffset,
@@ -261,6 +287,7 @@ export default function TimesheetGrid({
     : path.to.timesheet;
   // Standard mode: only the owner changes time, so a manager only reads it.
   const isReadOnly = Boolean(employee) && !controls;
+  const today = controls?.today ?? null;
   const absenceDays = useMemo(
     () => new Set(employee?.absenceDays ?? []),
     [employee?.absenceDays]
@@ -270,7 +297,7 @@ export default function TimesheetGrid({
     [controls?.revisedEntryIds]
   );
 
-  const gridRows = useMemo<GridRow[]>(() => {
+  const gridRows = useMemo<TableRow[]>(() => {
     const serverRows: GridRow[] = rows.map((row) => {
       const project = row.entry.project;
       const serviceOrder =
@@ -333,8 +360,12 @@ export default function TimesheetGrid({
           total: 0
         };
       });
-    return [...serverRows, ...localRows];
-  }, [rows, addedRows, chargeNumbers, laborCategories, locations]);
+    return [...serverRows, ...localRows].map((row) => {
+      const tableRow: TableRow = { ...row };
+      for (const day of days) tableRow[day] = row.cells[day]?.hours ?? null;
+      return tableRow;
+    });
+  }, [rows, addedRows, chargeNumbers, laborCategories, locations, days]);
 
   const dayTotals = days.map((day) =>
     gridRows.reduce((sum, row) => sum + (row.cells[day]?.hours ?? 0), 0)
@@ -344,12 +375,298 @@ export default function TimesheetGrid({
     (sum, day) => sum + (timecardHours[day] ?? 0),
     0
   );
+  const hasTimecards = timecardTotal > 0;
   const hasDraft = gridRows.some(
     (row) =>
       !row.isService &&
       Object.values(row.cells).some((cell) => cell.status === "Draft")
   );
   const isSubmitting = submitFetcher.state !== "idle";
+
+  // A cell is editable while its entry is open to the viewer; DCAA mode
+  // keeps a future date read-only except on a leave element.
+  const isCellEditable = useCallback(
+    (row: GridRow, day: string) => {
+      if (row.isService || isReadOnly) return false;
+      const cell = row.cells[day];
+      if (cell && !editableStatuses.includes(cell.status)) return false;
+      if (today && day > today && !row.isLeave) return false;
+      return true;
+    },
+    [isReadOnly, editableStatuses, today]
+  );
+
+  // A save posts the cell's key fields. In DCAA mode a value that needs a
+  // reason waits for the change modal; cancelling it reverts the cell.
+  const onCellEdit = useCallback(
+    (day: string, value: unknown, row: TableRow) => {
+      const cell = row.cells[day];
+      const hours = cellHours(value);
+      const fields = {
+        entryDate: day,
+        projectId: row.projectId,
+        projectElementId: row.projectElementId ?? "",
+        laborCategoryId: row.laborCategoryId,
+        // R&D tax: the row's own values; an empty one is none.
+        workLocationId: row.workLocationId ?? "",
+        rdActivityRole: row.rdActivityRole ?? "",
+        hours: String(hours)
+      };
+      if (controls) {
+        const entryWindow = isEntryDateAllowed({
+          entryDate: day,
+          today: controls.today,
+          windowDays: controls.windowDays,
+          isLeave: row.isLeave
+        });
+        const requiresLateReason = entryWindow.allowed && entryWindow.late;
+        // A manager's every change needs a reason.
+        const requiresReason = Boolean(cell) || Boolean(employee);
+        if (requiresReason || requiresLateReason) {
+          return new Promise<Awaited<ReturnType<typeof save>>>((resolve) => {
+            setPendingChange({
+              label: `${row.readableId} · ${formatDate(day)}`,
+              fields,
+              hours,
+              previousHours: cell?.hours ?? null,
+              requiresReason,
+              requiresLateReason,
+              resolve
+            });
+          });
+        }
+      }
+      return save(saveAction, fields);
+    },
+    [controls, employee, formatDate, save, saveAction]
+  );
+
+  const stable = useStableEditableComponents(
+    (latest) => ({
+      hours: EditableNumber<TableRow>(
+        (key, value, row) => latest.current.onCellEdit(key, value, row),
+        {
+          minValue: 0,
+          maxValue: 24,
+          formatOptions: INPUT_FORMAT.quantity,
+          step: INPUT_STEP.quantity
+        },
+        { clearable: true, inputClassName: "text-right" }
+      )
+    }),
+    { onCellEdit }
+  );
+
+  const renderDay = useCallback(
+    (row: GridRow, day: string) => {
+      const cell = row.cells[day];
+      if (!cell) return null;
+      return (
+        <span className="flex w-full items-center justify-end gap-1.5 tabular-nums">
+          {revisedEntryIds.has(cell.entryId) && (
+            <TimesheetRevisionsPopover entryId={cell.entryId} />
+          )}
+          {cell.status !== "Draft" && (
+            <TimesheetEntryStatus status={cell.status} iconOnly />
+          )}
+          {formatQuantity(cell.hours)}
+        </span>
+      );
+    },
+    [revisedEntryIds, formatQuantity]
+  );
+
+  const editableComponents = useMemo(
+    () =>
+      Object.fromEntries(
+        days.map((day) => [
+          day,
+          EditableByRow<TableRow>(
+            (row) => (isCellEditable(row, day) ? stable.hours : null),
+            ({ row }) => renderDay(row, day)
+          )
+        ])
+      ),
+    [days, isCellEditable, stable, renderDay]
+  );
+
+  const columns = useMemo<ColumnDef<TableRow>[]>(
+    () => [
+      {
+        id: CHARGE_NUMBER_COLUMN,
+        header: t`Charge Number`,
+        size: 280,
+        cell: ({ row }) => (
+          <div className="flex min-w-0 flex-col">
+            <span className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 whitespace-nowrap text-muted-foreground tabular-nums">
+                {row.original.readableId}
+              </span>
+              {row.original.to ? (
+                <Link
+                  to={row.original.to}
+                  className="truncate hover:underline"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  {row.original.name}
+                </Link>
+              ) : (
+                <span className="truncate">{row.original.name}</span>
+              )}
+            </span>
+            <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="truncate">
+                {row.original.laborCategory}
+                {/* R&D tax: the place, when it is not the job's. */}
+                {row.original.workLocationName &&
+                  row.original.workLocationId !== jobLocationId &&
+                  ` · ${row.original.workLocationName}`}
+              </span>
+              {row.original.rdActivityRole && (
+                <span className="shrink-0">
+                  · {roleLabels[row.original.rdActivityRole]}
+                </span>
+              )}
+            </span>
+          </div>
+        ),
+        footer: () => (
+          <span className="flex flex-col">
+            <span className="font-medium">
+              <Trans>Total</Trans>
+            </span>
+            {hasTimecards && (
+              <span className="text-xs text-muted-foreground">
+                <Trans>Timecard</Trans>
+              </span>
+            )}
+          </span>
+        )
+      },
+      ...days.map<ColumnDef<TableRow>>((day, index) => ({
+        accessorKey: day,
+        size: 96,
+        header: () => (
+          <span className="flex w-full flex-col items-end gap-0.5">
+            <span className="whitespace-nowrap">
+              {formatDate(day, { weekday: "short", day: "numeric" })}
+            </span>
+            {absenceDays.has(day) && (
+              <span className="text-xs text-muted-foreground">
+                <Trans>Absence</Trans>
+              </span>
+            )}
+          </span>
+        ),
+        cell: ({ row }) => renderDay(row.original, day),
+        footer: () => {
+          const clocked = timecardHours[day] ?? 0;
+          const differs =
+            clocked > 0 && !equals(clocked, dayTotals[index] ?? 0);
+          return (
+            <span className="flex w-full flex-col items-end tabular-nums">
+              <span className="font-medium">
+                {formatQuantity(dayTotals[index] ?? 0)}
+              </span>
+              {hasTimecards && (
+                <span
+                  className={cn(
+                    "text-xs text-muted-foreground",
+                    differs && "text-orange-500"
+                  )}
+                >
+                  {clocked > 0 ? formatQuantity(clocked) : "—"}
+                </span>
+              )}
+            </span>
+          );
+        }
+      })),
+      {
+        id: "total",
+        size: 96,
+        header: () => (
+          <span className="block w-full text-right">
+            <Trans>Total</Trans>
+          </span>
+        ),
+        cell: ({ row }) => (
+          <span className="block w-full text-right font-medium tabular-nums">
+            {formatQuantity(row.original.total)}
+          </span>
+        ),
+        footer: () => (
+          <span className="flex w-full flex-col items-end tabular-nums">
+            <span className="font-medium">{formatQuantity(weekTotal)}</span>
+            {hasTimecards && (
+              <span className="text-xs text-muted-foreground">
+                {formatQuantity(timecardTotal)}
+              </span>
+            )}
+          </span>
+        )
+      }
+    ],
+    [
+      t,
+      days,
+      roleLabels,
+      jobLocationId,
+      formatDate,
+      formatQuantity,
+      absenceDays,
+      renderDay,
+      timecardHours,
+      dayTotals,
+      weekTotal,
+      timecardTotal,
+      hasTimecards
+    ]
+  );
+
+  // The row menu corrects a posted cell; only the employee corrects their
+  // posted time.
+  const renderMenu = useCallback(
+    (row: TableRow) => {
+      if (employee || row.isService) return null;
+      const posted = days.filter((day) => row.cells[day]?.status === "Posted");
+      if (posted.length === 0) return null;
+      return (
+        <>
+          {posted.map((day) => {
+            const cell = row.cells[day]!;
+            return (
+              <MenuItem
+                key={day}
+                onClick={() =>
+                  setCorrecting({
+                    entryId: cell.entryId,
+                    hours: cell.hours,
+                    label: `${row.readableId} · ${formatDate(day)}`,
+                    projectId: row.projectId,
+                    projectElementId: row.projectElementId,
+                    laborCategoryId: row.laborCategoryId
+                  })
+                }
+              >
+                <MenuIcon icon={<LuPencil />} />
+                {t`Correct ${formatDate(day, { weekday: "short", day: "numeric" })}`}
+              </MenuItem>
+            );
+          })}
+        </>
+      );
+    },
+    [employee, days, formatDate, t]
+  );
+
+  // The menu column shows only while a row has a posted cell to correct.
+  const hasMenu = gridRows.some((row) => renderMenu(row) !== null);
+  const gridColumns = useMemo(
+    () =>
+      hasMenu ? [...columns, rowMenuColumn(renderMenu, t`Actions`)] : columns,
+    [columns, renderMenu, hasMenu, t]
+  );
 
   return (
     <div className="flex w-full flex-col gap-4 p-4">
@@ -388,7 +705,7 @@ export default function TimesheetGrid({
         <HStack spacing={2}>
           {!isReadOnly && (
             <Button
-              variant="secondary"
+              variant="ghost"
               leftIcon={<LuPlus />}
               onClick={() => setAddingRow(true)}
             >
@@ -430,234 +747,38 @@ export default function TimesheetGrid({
       )}
 
       {gridRows.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
-          <LuTimer className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
-            {employee ? (
-              <Trans>No time this week.</Trans>
-            ) : (
-              <Trans>
-                No time this week. Add a row for each charge number you worked
-                on.
-              </Trans>
-            )}
-          </p>
-          {!isReadOnly && (
-            <Button leftIcon={<LuPlus />} onClick={() => setAddingRow(true)}>
-              <Trans>Add row</Trans>
-            </Button>
-          )}
-        </div>
+        <Empty
+          title={t`No time this week`}
+          description={
+            employee ? null : t`Add a row for each charge number you worked on.`
+          }
+        />
       ) : (
-        <div className="w-full overflow-x-auto rounded-lg border border-border bg-card">
-          <TableBase full>
-            <Thead>
-              <Tr>
-                <Th className="min-w-[16rem]">
-                  <Trans>Charge Number</Trans>
-                </Th>
-                {days.map((day) => (
-                  <Th key={day} className="w-24 text-right">
-                    <span className="flex flex-col items-end gap-0.5">
-                      <span className="whitespace-nowrap">
-                        {formatDate(day, { weekday: "short", day: "numeric" })}
-                      </span>
-                      {absenceDays.has(day) && (
-                        <Badge variant="secondary">
-                          <Trans>Absence</Trans>
-                        </Badge>
-                      )}
-                    </span>
-                  </Th>
-                ))}
-                <Th className="w-24 text-right">
-                  <Trans>Total</Trans>
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {gridRows.map((row) => (
-                <Tr key={row.key}>
-                  <Td>
-                    <div className="flex min-w-0 max-w-[24rem] flex-col">
-                      <span className="flex min-w-0 items-center gap-2">
-                        <span className="shrink-0 whitespace-nowrap font-mono text-xs text-muted-foreground">
-                          {row.readableId}
-                        </span>
-                        {row.to ? (
-                          <Link
-                            to={row.to}
-                            className="truncate hover:underline"
-                          >
-                            {row.name}
-                          </Link>
-                        ) : (
-                          <span className="truncate">{row.name}</span>
-                        )}
-                      </span>
-                      <span className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
-                        <span className="truncate">
-                          {row.laborCategory}
-                          {/* R&D tax: the place, when it is not the job's. */}
-                          {row.workLocationName &&
-                            row.workLocationId !== jobLocationId &&
-                            ` · ${row.workLocationName}`}
-                        </span>
-                        {row.rdActivityRole && (
-                          <Badge variant="secondary" className="shrink-0">
-                            {roleLabels[row.rdActivityRole]}
-                          </Badge>
-                        )}
-                      </span>
-                    </div>
-                  </Td>
-                  {days.map((day) => {
-                    const cell = row.cells[day];
-                    const cellLabel = `${row.readableId} · ${formatDate(day)}`;
-                    const history =
-                      cell && revisedEntryIds.has(cell.entryId) ? (
-                        <TimesheetRevisionsPopover entryId={cell.entryId} />
-                      ) : null;
-                    if (row.isService || isReadOnly) {
-                      return (
-                        <Td key={day} className="p-0">
-                          {cell && <ReadOnlyCell cell={cell} />}
-                        </Td>
-                      );
-                    }
-                    if (cell && !editableStatuses.includes(cell.status)) {
-                      return (
-                        <Td key={day} className="p-0">
-                          <CellWithHistory history={history}>
-                            <LockedCell
-                              cell={cell}
-                              onCorrect={
-                                // Only the employee corrects their posted time.
-                                employee
-                                  ? undefined
-                                  : () =>
-                                      setCorrecting({
-                                        entryId: cell.entryId,
-                                        hours: cell.hours,
-                                        label: cellLabel,
-                                        projectId: row.projectId,
-                                        projectElementId: row.projectElementId,
-                                        laborCategoryId: row.laborCategoryId
-                                      })
-                              }
-                            />
-                          </CellWithHistory>
-                        </Td>
-                      );
-                    }
-                    // DCAA mode: no time for a future date, except leave.
-                    if (controls && day > controls.today && !row.isLeave) {
-                      return (
-                        <Td key={day} className="p-0">
-                          {cell ? (
-                            <CellWithHistory history={history}>
-                              <ReadOnlyCell cell={cell} />
-                            </CellWithHistory>
-                          ) : (
-                            <span className="block h-9" />
-                          )}
-                        </Td>
-                      );
-                    }
-                    return (
-                      <Td key={day} className="p-0">
-                        <CellWithHistory history={history}>
-                          <HoursCell
-                            action={saveAction}
-                            row={row}
-                            day={day}
-                            cell={cell}
-                            label={t`Hours on ${formatDate(day)} for ${row.readableId}`}
-                            onRequestReasons={
-                              controls
-                                ? (change) => {
-                                    const entryWindow = isEntryDateAllowed({
-                                      entryDate: day,
-                                      today: controls.today,
-                                      windowDays: controls.windowDays,
-                                      isLeave: row.isLeave
-                                    });
-                                    const requiresLateReason =
-                                      entryWindow.allowed && entryWindow.late;
-                                    // A manager's every change needs a reason.
-                                    const requiresReason =
-                                      Boolean(cell) || Boolean(employee);
-                                    if (
-                                      !requiresReason &&
-                                      !requiresLateReason
-                                    ) {
-                                      return false;
-                                    }
-                                    setPendingChange({
-                                      ...change,
-                                      label: cellLabel,
-                                      requiresReason,
-                                      requiresLateReason
-                                    });
-                                    return true;
-                                  }
-                                : undefined
-                            }
-                          />
-                        </CellWithHistory>
-                      </Td>
-                    );
-                  })}
-                  <Td className="text-right tabular-nums font-medium">
-                    {formatQuantity(row.total)}
-                  </Td>
-                </Tr>
-              ))}
-            </Tbody>
-            <Tfoot>
-              <Tr>
-                <Td className="text-xs font-medium text-muted-foreground">
-                  <Trans>Total</Trans>
-                </Td>
-                {dayTotals.map((hours, index) => (
-                  <Td
-                    key={days[index]}
-                    className="text-right tabular-nums font-medium"
-                  >
-                    {formatQuantity(hours)}
-                  </Td>
-                ))}
-                <Td className="text-right tabular-nums font-medium">
-                  {formatQuantity(weekTotal)}
-                </Td>
-              </Tr>
-              <Tr>
-                <Td className="text-xs font-medium text-muted-foreground">
-                  <Trans>Timecard</Trans>
-                </Td>
-                {days.map((day, index) => {
-                  const clocked = timecardHours[day] ?? 0;
-                  const differs =
-                    clocked > 0 &&
-                    Math.abs(clocked - dayTotals[index]!) >= 0.01;
-                  return (
-                    <Td
-                      key={day}
-                      className={cn(
-                        "text-right tabular-nums text-muted-foreground",
-                        differs && "text-orange-500"
-                      )}
-                    >
-                      {clocked > 0 ? formatQuantity(clocked) : "—"}
-                    </Td>
-                  );
-                })}
-                <Td className="text-right tabular-nums text-muted-foreground">
-                  {timecardTotal > 0 ? formatQuantity(timecardTotal) : "—"}
-                </Td>
-              </Tr>
-            </Tfoot>
-          </TableBase>
+        <div
+          className="w-full overflow-hidden rounded-lg border border-border"
+          style={{
+            height:
+              setupGridHeight(gridRows.length, GRID_ROW_HEIGHT) +
+              (hasTimecards ? TIMECARD_FOOTER_EXTRA : 0)
+          }}
+        >
+          <Table<TableRow>
+            compact
+            columns={gridColumns}
+            data={gridRows}
+            count={gridRows.length}
+            editableComponents={editableComponents}
+            withInlineEditing={!isReadOnly}
+            forceEditMode={!isReadOnly}
+            defaultColumnPinning={{ left: [CHARGE_NUMBER_COLUMN] }}
+            withPagination={false}
+            withSearch={false}
+            withSimpleSorting={false}
+            withSidebarTrigger={false}
+            withColumnOrdering={false}
+            withCsvExport={false}
+            sort={null}
+          />
         </div>
       )}
 
@@ -699,11 +820,16 @@ export default function TimesheetGrid({
             });
             // A refusal toasts and keeps the modal open.
             if (result.error) return false;
+            pendingChange.resolve(result);
             setPendingChange(null);
             return true;
           }}
           onCancel={() => {
-            pendingChange.revert();
+            // An error result reverts the cell to its saved hours.
+            pendingChange.resolve({
+              data: null,
+              error: { message: t`Change cancelled` }
+            } as unknown as Awaited<ReturnType<typeof save>>);
             setPendingChange(null);
           }}
         />
@@ -720,161 +846,6 @@ export default function TimesheetGrid({
         />
       )}
     </div>
-  );
-}
-
-/** A cell's content with its history button in front, when it has one. */
-function CellWithHistory({
-  history,
-  children
-}: {
-  history: ReactNode;
-  children: ReactNode;
-}) {
-  if (!history) return <>{children}</>;
-  return (
-    <div className="flex items-center">
-      {history}
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
-  );
-}
-
-/**
- * A day cell that saves its hours on blur. In DCAA mode
- * `onRequestReasons` decides first: when the value needs a reason it opens
- * the change modal, which saves the value or reverts the cell.
- */
-function HoursCell({
-  action,
-  row,
-  day,
-  cell,
-  label,
-  onRequestReasons
-}: {
-  /** The route that saves the cell. */
-  action: string;
-  row: GridRow;
-  day: string;
-  cell?: TimesheetCell;
-  label: string;
-  /** Returns true when it took the value to ask for its reasons. */
-  onRequestReasons?: (
-    change: Pick<PendingChange, "fields" | "hours" | "previousHours" | "revert">
-  ) => boolean;
-}) {
-  const save = useCellSave();
-  const serverHours = cell?.hours;
-  const latest = useRef<number | undefined>(serverHours);
-  // A refused save remounts the input with the stored hours.
-  const [resets, setResets] = useState(0);
-
-  const revert = () => {
-    latest.current = serverHours;
-    setResets((count) => count + 1);
-  };
-
-  const commit = async () => {
-    const next = latest.current;
-    const hours = next === undefined || !Number.isFinite(next) ? 0 : next;
-    if (hours === (serverHours ?? 0)) return;
-    const fields = {
-      entryDate: day,
-      projectId: row.projectId,
-      projectElementId: row.projectElementId ?? "",
-      laborCategoryId: row.laborCategoryId,
-      // R&D tax: the row's own values; an empty one is none.
-      workLocationId: row.workLocationId ?? "",
-      rdActivityRole: row.rdActivityRole ?? "",
-      hours: String(hours)
-    };
-    if (
-      onRequestReasons?.({
-        fields,
-        hours,
-        previousHours: serverHours ?? null,
-        revert
-      })
-    ) {
-      return;
-    }
-    const result = await save(action, fields);
-    if (result.error) revert();
-  };
-
-  return (
-    <div className="flex items-center justify-end gap-1 pr-1">
-      {(cell?.status === "Rejected" ||
-        cell?.status === "Pending Employee Review") && (
-        <TimesheetEntryStatus status={cell.status} iconOnly />
-      )}
-      <NumberField
-        key={`${serverHours ?? ""}:${resets}`}
-        aria-label={label}
-        defaultValue={serverHours}
-        minValue={0}
-        maxValue={24}
-        step={INPUT_STEP.quantity}
-        formatOptions={INPUT_FORMAT.quantity}
-        onChange={(value) => {
-          latest.current = Number.isNaN(value) ? undefined : value;
-        }}
-      >
-        <NumberInput
-          size="sm"
-          className="w-20 text-right tabular-nums"
-          onFocus={(event) => event.currentTarget.select()}
-          onBlur={commit}
-        />
-      </NumberField>
-    </div>
-  );
-}
-
-/** A cell shown with its status and hours, with no action. */
-function ReadOnlyCell({ cell }: { cell: TimesheetCell }) {
-  const formatQuantity = useQuantityFormatter();
-  return (
-    <span className="flex h-9 items-center justify-end gap-1.5 px-3 tabular-nums">
-      <TimesheetEntryStatus status={cell.status} iconOnly />
-      {formatQuantity(cell.hours)}
-    </span>
-  );
-}
-
-/** A submitted, approved or posted cell. A posted one offers a correction. */
-function LockedCell({
-  cell,
-  onCorrect
-}: {
-  cell: TimesheetCell;
-  /** Absent when the viewer cannot correct the time. */
-  onCorrect?: () => void;
-}) {
-  const { t } = useLingui();
-  const content = <ReadOnlyCell cell={cell} />;
-
-  if (cell.status !== "Posted" || !onCorrect) return content;
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="w-full hover:bg-accent/50"
-          aria-label={t`Posted hours, open the correction menu`}
-        >
-          {content}
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={onCorrect}>
-          <DropdownMenuIcon icon={<LuPencil />} />
-          <Trans>Correct</Trans>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
   );
 }
 
