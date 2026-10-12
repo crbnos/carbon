@@ -54,7 +54,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 
 - [x] Task 1: Check the prerequisites
 - [x] Task 2: Create the enum migration
-- [ ] Task 3: Create the R&D tax columns migration
+- [x] Task 3: Create the R&D tax columns migration
 - [ ] Task 4: Apply migrations and regenerate types
 - [ ] Task 5: Add the pure R&D tax helpers
 - [ ] Task 6: Default the work location and research role on timesheet entries
@@ -611,3 +611,4 @@ ls .ai/playbooks/government-contracting-phase-5d.md
 ## Execution notes
 
 - Task 1: every prerequisite exists. `location` has `PRIMARY KEY ("id")` and a separate `UNIQUE ("id", "companyId")`, so Task 3 writes the plain FK of the plan. `location.countryCode` exists; the local database has 2 locations with `US` and 8 with none. Task 1 changes no code, so it has no commit of its own; its tick is in the Task 2 commit.
+- Task 3: the work location FK is composite, `("workLocationId", "companyId") REFERENCES "location"("id", "companyId") ON DELETE SET NULL ("workLocationId")`, against `location`'s `UNIQUE ("id", "companyId")`. The plan's plain FK on `location("id")` would accept a location of another company. The index is `("workLocationId", "companyId")`, as the 5a self FKs do. Tasks 2 and 3 ran together in a `BEGIN … ROLLBACK` dry run against the local database before the commit (the backfill updated 0 rows there).
