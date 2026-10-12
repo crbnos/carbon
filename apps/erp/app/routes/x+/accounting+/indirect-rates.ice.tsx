@@ -15,6 +15,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
 import { IceExport } from "~/modules/accounting/ui/IndirectRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -23,19 +24,21 @@ export const handle: Handle = {
   breadcrumb: msg`ICE Export`
 };
 
-/** The incurred cost submission schedules of one fiscal year (`?fiscalYear`). */
+/** The incurred cost submission schedules of one fiscal year (`?fiscalYear`,
+ *  else the current one). */
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
   });
 
-  const fiscalYear = Number(
-    new URL(request.url).searchParams.get("fiscalYear")
-  );
-  if (!Number.isInteger(fiscalYear) || fiscalYear < 1900 || fiscalYear > 9999) {
-    throw new Response("Choose a fiscal year", { status: 400 });
-  }
+  // A missing or bad `?fiscalYear` opens the current fiscal year, as the
+  // Indirect Rates page does.
+  const raw = Number(new URL(request.url).searchParams.get("fiscalYear"));
+  const fiscalYear =
+    Number.isInteger(raw) && raw >= 1900 && raw <= 9999
+      ? raw
+      : (await getCurrentFiscalYear(client, companyId)).fiscalYear;
 
   return { fiscalYear };
 }

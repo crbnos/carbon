@@ -323,6 +323,10 @@ Step 3 stopped: a grid cell does not map to one rate entry. `set-rate` (`setIndi
 
 ## Task 36: Move Burden Settings to Settings → Accounting and default the fiscal year
 
+Shots: `36-settings-accounting.png`, `36-settings-accounting-burden.png` (the card after Fixed Assets), `36-ice-bare.png` (opens FY2026), `36-statement-bare.png`. No "could not be completed" text on either bare URL. Checked: Save on the card toasts "Burden settings saved".
+
+1. Reference pattern: yes — the Lease Classification and Fixed Assets cards. 2. No overlap: yes. 3. One toolbar row: n/a. 4. One primary: yes (Save per card, as the page). 5. No input box in a table: n/a. 6. Secondary actions in menus: n/a. 7. Advanced fields hidden: n/a.
+
 ## Task 37: Match Settings → Timekeeping and Projects to Settings → Inventory
 
 ## Task 38: Sweep the remaining empty states

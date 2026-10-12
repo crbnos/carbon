@@ -24,7 +24,14 @@ import {
 } from "@carbon/database/run-journals";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { datetime, equals, formatDate, round } from "@carbon/utils";
+import {
+  datetime,
+  equals,
+  fiscalYearAndPeriodFor,
+  formatDate,
+  MONTH_NUMBER,
+  round
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -34,6 +41,7 @@ import {
   getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
+  getFiscalYearSettings,
   getOrCreateAccountingPeriod
 } from "./accounting.service";
 import {
@@ -46,6 +54,27 @@ import {
   monthEndOf,
   runPostingTargets
 } from "./accounting.utils";
+
+/**
+ * The company's current fiscal year — today in its time zone, counted from
+ * its fiscal year's start month — and that start month (1–12).
+ */
+export async function getCurrentFiscalYear(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const [timeZone, settings] = await Promise.all([
+    getCompanyTimeZone(client, companyId),
+    getFiscalYearSettings(client, companyId)
+  ]);
+  const startMonth = MONTH_NUMBER[settings.data?.startMonth ?? "January"] ?? 1;
+  const today = datetime.today(timeZone);
+  return {
+    startMonth,
+    fiscalYear: fiscalYearAndPeriodFor(today.year, today.month, startMonth)
+      .fiscalYear
+  };
+}
 
 /**
  * The cutover date the enable wizard works against, with the earliest and the

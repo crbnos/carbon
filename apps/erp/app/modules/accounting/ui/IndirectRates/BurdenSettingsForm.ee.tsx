@@ -7,16 +7,17 @@ import {
   burdenSettingsValidator
 } from "@carbon/ee/indirect-rates";
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle
+  CardTitle,
+  toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Boolean, Hidden, Select, Submit } from "~/components/Form";
 
@@ -26,14 +27,23 @@ type BurdenSettingsFormProps = {
   isDisabled: boolean;
 };
 
-/** Which rate burdens projects, and whether burden posts to the ledger (B9). */
+/**
+ * Which rate burdens projects, and whether burden posts to the ledger (B9).
+ * A card of Settings → Accounting; it posts `intent=burdenSettings` there.
+ */
 const BurdenSettingsForm = ({
   initialValues,
   action,
   isDisabled
 }: BurdenSettingsFormProps) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{ success?: boolean; message?: string | null }>({
+    onSettled: (data) => {
+      if (!data?.message) return;
+      if (data.success) toast.success(data.message);
+      else toast.error(data.message);
+    }
+  });
 
   return (
     <Card>
@@ -56,11 +66,12 @@ const BurdenSettingsForm = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Hidden name="intent" value="settings" />
+          <Hidden name="intent" value="burdenSettings" />
           <div className="flex flex-col gap-4">
             <Select
               name="burdenRateType"
               label={t`Burden Rate Type`}
+              termId="burden"
               helperText={t`The rate the burden run applies to project cost`}
               options={burdenRateTypes.map((rateType) => ({
                 label: rateType,
@@ -70,12 +81,13 @@ const BurdenSettingsForm = ({
             <Boolean
               name="postAppliedBurden"
               label={t`Post applied burden for Contract projects`}
+              bordered
               description={t`Debit Project WIP and credit each pool's applied account`}
             />
           </div>
         </CardContent>
         <CardFooter>
-          <Submit isDisabled={isDisabled}>
+          <Submit isDisabled={isDisabled || fetcher.state !== "idle"}>
             <Trans>Save</Trans>
           </Submit>
         </CardFooter>

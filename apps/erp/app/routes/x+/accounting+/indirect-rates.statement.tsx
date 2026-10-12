@@ -23,6 +23,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate } from "react-router";
 import { Select } from "~/components";
 import { useUrlParams } from "~/hooks";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
 import { IndirectExpenseStatement } from "~/modules/accounting/ui/IndirectRates";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -41,7 +42,8 @@ function parseInteger(raw: string | null, min: number, max: number) {
 }
 
 /**
- * The Statement of Indirect Expenses of one period (`?fiscalYear&periodNumber`).
+ * The Statement of Indirect Expenses of one period (`?fiscalYear&periodNumber`;
+ * with no year, the current fiscal year).
  * With no period it opens on the last period of the year with Actual rates.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -51,10 +53,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   const searchParams = new URL(request.url).searchParams;
-  const fiscalYear = parseInteger(searchParams.get("fiscalYear"), 1900, 9999);
-  if (fiscalYear === null) {
-    throw new Response("Choose a fiscal year", { status: 400 });
-  }
+  // A missing or bad `?fiscalYear` opens the current fiscal year, as the
+  // Indirect Rates page does.
+  const fiscalYear =
+    parseInteger(searchParams.get("fiscalYear"), 1900, 9999) ??
+    (await getCurrentFiscalYear(client, companyId)).fiscalYear;
 
   const [pools, rates] = await Promise.all([
     getIndirectPools(client, companyId),

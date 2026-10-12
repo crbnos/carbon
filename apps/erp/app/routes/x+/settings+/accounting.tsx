@@ -9,6 +9,13 @@ import {
   getLegacyDocumentCounts,
   hasLegacyDocuments
 } from "@carbon/database/accounting-cutover-reads";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { burdenSettingsValidator } from "@carbon/ee/indirect-rates";
+import {
+  getBurdenSettings,
+  updateBurdenSettings
+} from "@carbon/ee/indirect-rates.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
@@ -50,10 +57,13 @@ import {
   Submit
 } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
+import { UpgradeOverlayRow } from "~/components/UpgradeOverlay";
 import { useDateFormatter, usePermissions } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting";
 import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
+import { BurdenSettingsForm } from "~/modules/accounting/ui/IndirectRates";
 import {
   getCompanySettings,
   updateAssetTaxDepreciationSettings,
@@ -108,10 +118,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "settings"
   });
 
-  const [companySettings, accountDefaults] = await Promise.all([
+  const [companySettings, accountDefaults, burdenSettings] = await Promise.all([
     getCompanySettings(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    getBurdenSettings(client, companyId)
   ]);
+  if (burdenSettings.error) {
+    logger.error("Failed to load the burden settings", {
+      companyId,
+      error: burdenSettings.error
+    });
+  }
 
   if (!companySettings.data)
     throw redirect(
@@ -136,6 +153,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     companySettings: companySettings.data,
     accountDefaults: accountDefaults.data,
+    burdenSettings: {
+      burdenRateType: (burdenSettings.data?.burdenRateType === "Actual"
+        ? "Actual"
+        : "Provisional") as "Provisional" | "Actual",
+      postAppliedBurden: burdenSettings.data?.postAppliedBurden ?? false
+    },
     legacyDocumentsExist: hasLegacy,
     legacyDocumentCount:
       hasLegacy && cutoverDate
@@ -234,6 +257,45 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Fixed asset settings updated" };
   }
 
+  if (intent === "burdenSettings") {
+    // Government contracting (indirect rates): the route redirects a gated
+    // company with an upgrade message; updateBurdenSettings is the lock.
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      feature: "GOVERNMENT_CONTRACTING",
+      redirectTo: path.to.accountingSettings
+    });
+    const validation = await validator(burdenSettingsValidator).validate(
+      formData
+    );
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+    try {
+      const update = await updateBurdenSettings(client, {
+        ...validation.data,
+        companyId,
+        userId
+      });
+      if (update.error) {
+        logger.error("Failed to update the burden settings", {
+          companyId,
+          error: update.error
+        });
+        return {
+          success: false,
+          message: "Failed to save the burden settings"
+        };
+      }
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      return { success: false, message: "Upgrade to use indirect rates" };
+    }
+    return { success: true, message: "Burden settings saved" };
+  }
+
   return { success: false, message: "Unknown intent" };
 }
 
@@ -284,9 +346,13 @@ export default function AccountingSettingsRoute() {
   const {
     companySettings,
     accountDefaults,
+    burdenSettings,
     legacyDocumentsExist,
     legacyDocumentCount: legacyDocumentCountPromise
   } = useLoaderData<typeof loader>();
+  const { isGated: governmentContractingGated } = usePlanGate({
+    feature: "GOVERNMENT_CONTRACTING"
+  });
   const legacyDocumentCount = useResolved(legacyDocumentCountPromise, null);
   const permissions = usePermissions();
   const legacyFetcher = useFetcher<typeof action>();
@@ -643,6 +709,20 @@ export default function AccountingSettingsRoute() {
             )}
           </Card>
         </ValidatedForm>
+
+        {governmentContractingGated ? (
+          <UpgradeOverlayRow
+            title={<Trans>Burden Settings</Trans>}
+            plan={<Trans>Business</Trans>}
+          />
+        ) : (
+          <BurdenSettingsForm
+            key={`${burdenSettings.burdenRateType}:${burdenSettings.postAppliedBurden}`}
+            initialValues={burdenSettings}
+            action={path.to.accountingSettings}
+            isDisabled={!permissions.can("update", "settings")}
+          />
+        )}
       </SettingsPage>
     </ScrollArea>
   );

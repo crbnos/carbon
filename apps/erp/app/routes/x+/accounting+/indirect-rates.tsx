@@ -6,42 +6,31 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { indirectRateEntryValidator } from "@carbon/ee/indirect-rates";
 import {
-  burdenSettingsValidator,
-  indirectRateEntryValidator
-} from "@carbon/ee/indirect-rates";
-import {
-  getBurdenSettings,
   getIndirectPools,
   getIndirectRateRuns,
   getIndirectRates,
   runFinalTrueUp,
   runIndirectRatePeriod,
-  setIndirectRate,
-  updateBurdenSettings
+  setIndirectRate
 } from "@carbon/ee/indirect-rates.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
-import {
-  datetime,
-  fiscalYearAndPeriodFor,
-  MONTH_NUMBER,
-  redirect
-} from "@carbon/utils";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getFiscalYearSettings } from "~/modules/accounting";
+import { getCurrentFiscalYear } from "~/modules/accounting/accounting.server";
 import type { IndirectRateRunRow } from "~/modules/accounting/ui/IndirectRates";
 import {
   IndirectRateRuns,
   IndirectRatesUpgradeOverlay
 } from "~/modules/accounting/ui/IndirectRates";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -67,27 +56,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     role: "employee"
   });
 
-  const [timeZone, fiscalYearSettings] = await Promise.all([
-    getCompanyTimeZone(client, companyId),
-    getFiscalYearSettings(client, companyId)
-  ]);
-  const startMonth =
-    MONTH_NUMBER[fiscalYearSettings.data?.startMonth ?? "January"] ?? 1;
-  const today = datetime.today(timeZone);
-  const currentFiscalYear = fiscalYearAndPeriodFor(
-    today.year,
-    today.month,
-    startMonth
-  ).fiscalYear;
+  const { fiscalYear: currentFiscalYear, startMonth } =
+    await getCurrentFiscalYear(client, companyId);
   const fiscalYear =
     parseFiscalYear(new URL(request.url).searchParams.get("fiscalYear")) ??
     currentFiscalYear;
 
-  const [pools, rates, runs, settings, lockedPeriods] = await Promise.all([
+  const [pools, rates, runs, lockedPeriods] = await Promise.all([
     getIndirectPools(client, companyId),
     getIndirectRates(client, { companyId, fiscalYear }),
     getIndirectRateRuns(client, companyId),
-    getBurdenSettings(client, companyId),
     client
       .from("accountingPeriod")
       .select("id, startDate")
@@ -100,7 +78,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     pools,
     rates,
     runs,
-    settings,
     lockedPeriods
   })) {
     if (result.error) {
@@ -133,13 +110,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     lockedPeriods: lockedPeriods.data ?? [],
     canTrueUp:
       appliedPools.length > 0 &&
-      appliedPools.every((pool) => finalPeriod12.has(pool.id)),
-    burdenSettings: {
-      burdenRateType: (settings.data?.burdenRateType === "Actual"
-        ? "Actual"
-        : "Provisional") as "Provisional" | "Actual",
-      postAppliedBurden: settings.data?.postAppliedBurden ?? false
-    }
+      appliedPools.every((pool) => finalPeriod12.has(pool.id))
   };
 }
 
@@ -222,25 +193,6 @@ export async function action({ request }: ActionFunctionArgs) {
         return done(
           intent === "run" ? "Period run complete" : "True-up complete"
         );
-      }
-      case "settings": {
-        const validation = await validator(burdenSettingsValidator).validate(
-          formData
-        );
-        if (validation.error) return validationError(validation.error);
-        const result = await updateBurdenSettings(client, {
-          ...validation.data,
-          companyId,
-          userId
-        });
-        if (result.error) {
-          logger.error("Failed to update the burden settings", {
-            companyId,
-            error: result.error
-          });
-          return refuse(result.error, "Failed to save the burden settings");
-        }
-        return done("Burden settings saved");
       }
       default:
         return refuse(null, "Unknown action");
