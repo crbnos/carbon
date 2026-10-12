@@ -1,0 +1,17 @@
+{
+  "name": "carbon",
+  "displayName": "Carbon",
+  "version": "1.0.0",
+  "description": "Operate Carbon ERP from Cursor and Grok Bot. Connects to Carbon Cloud over MCP. You sign in, pick a company, and the agent searches, inspects, and calls ERP operations.",
+  "author": {
+    "name": "Carbon",
+    "email": "support@carbon.ms"
+  },
+  "publisher": "Carbon",
+  "homepage": "https://docs.carbon.ms/api/mcp",
+  "repository": "https://github.com/crbnos/carbon",
+  "license": "AGPL-3.0",
+  "logo": "assets/logo.svg",
+  "keywords": ["carbon", "carbon-erp", "manufacturing", "mcp"],
+  "category": "integrations"
+}
