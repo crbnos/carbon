@@ -52,7 +52,7 @@ import {
 } from "./ElementProperties";
 import { ElementTypeIcon } from "./ElementTypeIcon";
 import { MoveElementModal } from "./MoveElementModal";
-import { VerificationStatus } from "./VerificationStatus";
+import { VerificationIcon } from "./VerificationStatus";
 
 type ListElement = ProjectElementListItem & {
   changeOperation?: ChangeOperationMark;
@@ -369,10 +369,8 @@ export function ElementRow({
       </div>
       <div className="relative z-10 flex shrink-0 items-center gap-1.5">
         {rowLabels.length > 0 && <LabelChip labels={rowLabels} />}
-        {element.type === "Requirement" && requirementStatus && (
-          <span className="flex">
-            <VerificationStatus status={requirementStatus} iconOnly />
-          </span>
+        {element.type === "Requirement" && (
+          <VerificationIcon status={requirementStatus} />
         )}
         {(element.targetDate || canUpdate) && (
           <span className={cn("flex", !element.targetDate && onHover)}>
