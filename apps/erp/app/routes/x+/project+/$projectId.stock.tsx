@@ -6,14 +6,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getProjectBorrows } from "~/modules/projects";
+import {
+  getProjectBorrows,
+  getProjectStockTransfers
+} from "~/modules/projects";
 import { getProjectStockOnHand } from "~/modules/projects/projects.server";
 import ProjectStock from "~/modules/projects/ui/Stock/ProjectStock";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-stock");
 
-/** The project's own stock and its open borrows, owed and lent. */
+/** The page lists the latest transfers; "All transfers" opens the rest. */
+const TRANSFER_LIMIT = 10;
+
+/** The project's own stock, its open borrows owed and lent, and its latest transfers. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "projects"
@@ -22,9 +28,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { projectId } = params;
   if (!projectId) throw new Error("Could not find projectId");
 
-  const [onHand, borrows] = await Promise.all([
+  const [onHand, borrows, transfers] = await Promise.all([
     getProjectStockOnHand(getDatabaseClient(), { companyId, projectId }),
-    getProjectBorrows(client, companyId, { projectId, status: ["Open"] })
+    getProjectBorrows(client, companyId, { projectId, status: ["Open"] }),
+    getProjectStockTransfers(client, companyId, {
+      projectId,
+      search: null,
+      limit: TRANSFER_LIMIT,
+      offset: 0
+    })
   ]);
 
   if (borrows.error) {
@@ -35,10 +47,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
   }
 
-  return { onHand, borrows: borrows.data ?? [] };
+  if (transfers.error) {
+    logger.error("Failed to load the project's transfers", {
+      companyId,
+      projectId,
+      error: transfers.error
+    });
+  }
+
+  return {
+    onHand,
+    borrows: borrows.data ?? [],
+    transfers: transfers.data ?? []
+  };
 }
 
 export default function ProjectStockRoute() {
-  const { onHand, borrows } = useLoaderData<typeof loader>();
-  return <ProjectStock onHand={onHand} borrows={borrows} />;
+  const { onHand, borrows, transfers } = useLoaderData<typeof loader>();
+  return (
+    <ProjectStock onHand={onHand} borrows={borrows} transfers={transfers} />
+  );
 }

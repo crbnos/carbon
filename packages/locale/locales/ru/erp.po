@@ -2606,6 +2606,9 @@ msgstr "Все время"
 msgid "All tools"
 msgstr "Все инструменты"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "Все типы"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "Подлежит выставлению счетов"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (планирование)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP запускается автоматически каждые 3 часа, но вы можете запустить его вручную здесь."
 
@@ -15634,6 +15643,9 @@ msgstr "Нет серий"
 msgid "No batches selected yet."
 msgstr "Серии ещё не выбраны."
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Нет подлежащей выставлению счетов номенклатуры. Работа, отнесенная на элемент выставления счетов и элементы ниже него, отображается здесь."
 
@@ -16139,6 +16151,12 @@ msgstr "Нет кредиторской задолженности"
 msgid "No payments yet."
 msgstr "Платежей пока нет."
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "Нет фотографий."
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "Счетов-фактур проекта еще нет. Ночной запуск биллинга создает один на каждый период биллинга."
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "Обучение не назначено"
 
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Нет единиц. Добавьте единицу парка из списка Единицы перед активацией соглашения."
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "Начало проекта"
 
 msgid "Project stock"
-msgstr "Запас проекта"
-
-msgid "Project Stock"
 msgstr "Запас проекта"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "Запас"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "Запас, который другой проект задолжен этому."
-
 msgid "Stock Availability"
 msgstr "Наличие запаса"
 
@@ -23158,9 +23176,6 @@ msgstr "Размер запаса — например, толщина лист�
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "Запас, который проект задолжен другому проекту."
 
 msgid "Stock Transfer"
 msgstr "Перемещение запасов"
@@ -24740,9 +24755,6 @@ msgstr "Упорядоченный список задач, которые до�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "Упорядоченная последовательность операций, которую производственный заказ проходит, скопированная из перечня операций метода."
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "Заказы группы планирования, предназначенные для этого проекта. MRP может переместить мягкий колышек при любом запуске; он сохраняет жесткие и ручные колышки."
-
 msgid "The original model file is no longer available"
 msgstr "Исходный файл модели больше недоступен"
 
@@ -24794,6 +24806,9 @@ msgstr "Запланированные счета-фактуры контрак�
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "Группа планирования не имеет открытого заказа поставщику или производственного заказа для этой номенклатуры."
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Заводы, склады и объекты, где находятся ваша работа и запасы"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "Проект переводится на Приостановлено и не принимает новые начисления. Открытые обязательства по-прежнему проводятся. Заказ завершится через {STOP_WORK_DAYS} дней, если только вы сначала не возобновите работу."
-
-msgid "The project had no pegs on that day."
-msgstr "Проект не имел колышков в этот день."
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "Проект не имеет колышков. MRP привяжет заказы группы планирования к ее членам при следующем запуске."
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "Проект не владеет запасом. Получите строку заказа поставщику или производственный заказ в него, или переместите запас."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "Запас проекта перемещается только на проекты одного и того же покупателя"

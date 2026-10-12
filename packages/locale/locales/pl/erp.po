@@ -2606,6 +2606,9 @@ msgstr "Cały czas"
 msgid "All tools"
 msgstr "Wszystkie narzędzia"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "Wszystkie typy"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "Rozliczalny"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planowanie)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP uruchamia się automatycznie co 3 godziny, ale możesz uruchomić go ręcznie tutaj."
 
@@ -15634,6 +15643,9 @@ msgstr "Brak partii produkcyjnych"
 msgid "No batches selected yet."
 msgstr "Żadne partie nie zostały jeszcze zaznaczone."
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Brak elementów do rozliczenia. Praca obciążona elementem rozliczeniowym i elementami poniżej niego pojawia się tutaj."
 
@@ -16139,6 +16151,12 @@ msgstr "Brak zobowiązań"
 msgid "No payments yet."
 msgstr "Brak płatności."
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "Brak zdjęć."
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "Brak faktur rozliczeniowych projektu jeszcze. Nocne uruchomienie rozliczeń tworzy jedną na okres rozliczeniowy."
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "Brak przydzielonych szkoleń"
 
 msgid "No transactions in this period"
 msgstr "Brak transakcji w tym okresie"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Brak sztuk. Dodaj sztukę floty z listy sztuk przed aktywacją umowy."
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "Początek projektu"
 
 msgid "Project stock"
-msgstr "Zapas projektu"
-
-msgid "Project Stock"
 msgstr "Zapas projektu"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "Zapas"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "Zapas, który inny projekt jest winien temu projektowi."
-
 msgid "Stock Availability"
 msgstr "Dostępność zapasu"
 
@@ -23158,9 +23176,6 @@ msgstr "Wymiar zapasu — np. grubość arkusza lub średnica pręta"
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "Zapas, który projekt jest winien innemu projektowi."
 
 msgid "Stock Transfer"
 msgstr "Przesunięcie zapasu"
@@ -24740,9 +24755,6 @@ msgstr "Uporządkowana lista zadań, które problemy korzystające z tego przep�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "Uporządkowana sekwencja operacji, przez które przechodzi zlecenie produkcyjne, skopiowana z listy operacji metody."
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "Zamówienia grupy planowania dla tego projektu. MRP może przesunąć miękki kołek w dowolnym przebiegu; zachowuje twarde i ręczne kołki."
-
 msgid "The original model file is no longer available"
 msgstr "Oryginalny plik modelu nie jest już dostępny"
 
@@ -24794,6 +24806,9 @@ msgstr "Zaplanowane faktury umowy, podzielone na jej pozycje według częstotliw
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "Grupa planowania nie ma otwartego zamówienia zakupu ani zlecenia produkcyjnego dla tego artykułu."
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Fabryki, magazyny i obiekty, w których znajduje się Twoja praca i zapasy"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "Projekt przechodzi na Wstrzymano i nie przyjmuje nowych opłat. Otwarte zobowiązania są nadal księgowane. Zamówienie kończy się po {STOP_WORK_DAYS} dniach, chyba że wcześniej wznowisz pracę."
-
-msgid "The project had no pegs on that day."
-msgstr "Projekt nie miał kołków w tym dniu."
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "Projekt nie ma kołków. MRP kołkuje zamówienia grupy planowania do jej członków w następnym przebiegu."
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "Projekt nie posiada zapasu. Otrzymaj pozycję zamówienia zakupu lub zlecenie produkcyjne do niego, lub przenieś zapas do niego."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "Zapas projektu przechodzi tylko do projektów tego samego klienta"

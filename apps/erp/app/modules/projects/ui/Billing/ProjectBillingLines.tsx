@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import { LabelWithHelp, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Hyperlink } from "~/components";
 import { useCurrencyFormatter, useUser } from "~/hooks";
@@ -51,7 +51,7 @@ export default function ProjectBillingLines({
 
   if (lines.length === 0) {
     return (
-      <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+      <p className="text-sm text-muted-foreground">
         <Trans>
           No contract bills this project. A Time & Materials or Cost Plus
           contract line names a billing element of it.
@@ -72,10 +72,14 @@ export default function ProjectBillingLines({
               <Trans>Line</Trans>
             </Th>
             <Th>
-              <Trans>Billing Element</Trans>
+              <LabelWithHelp termId="billing-element" variant="inline">
+                <Trans>Billing Element</Trans>
+              </LabelWithHelp>
             </Th>
             <Th>
-              <Trans>Method</Trans>
+              <LabelWithHelp termId="billing-method" variant="inline">
+                <Trans>Method</Trans>
+              </LabelWithHelp>
             </Th>
             <Th className="min-w-40">
               <Trans>Funding</Trans>

@@ -2606,6 +2606,9 @@ msgstr "Tutto il tempo"
 msgid "All tools"
 msgstr "Tutti gli strumenti"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "Tutti i tipi"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "Fatturabile"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
 
@@ -15634,6 +15643,9 @@ msgstr "Nessun lotto di produzione"
 msgid "No batches selected yet."
 msgstr "Nessun lotto di produzione selezionato ancora."
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "Nessun articolo addebitabile ancora. Il lavoro addebitato all'elemento di fatturazione e agli elementi sottostanti viene mostrato qui."
 
@@ -16139,6 +16151,12 @@ msgstr "Nessun debito"
 msgid "No payments yet."
 msgstr "Nessun pagamento ancora."
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "Nessuna foto."
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "Nessuna fattura di fatturazione del progetto per ora. L'esecuzione della fatturazione notturna genera una bozza per periodo di fatturazione."
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "Nessuna formazione assegnata"
 
 msgid "No transactions in this period"
 msgstr "Nessuna transazione in questo periodo"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "Nessuna unità ancora. Aggiungi un'unità della flotta dall'elenco Unità prima di attivare l'accordo."
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "Inizio progetto"
 
 msgid "Project stock"
-msgstr "Giacenza progetto"
-
-msgid "Project Stock"
 msgstr "Giacenza progetto"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "Giacenza"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "Giacenza che un altro progetto deve a questo."
-
 msgid "Stock Availability"
 msgstr "Disponibilità di Giacenza"
 
@@ -23158,9 +23176,6 @@ msgstr "Dimensione delle giacenze — ad es. spessore della lamina o diametro de
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "Giacenza che il progetto deve a un altro progetto."
 
 msgid "Stock Transfer"
 msgstr "Trasferimento giacenza"
@@ -24740,9 +24755,6 @@ msgstr "L'elenco ordinato delle attività che i problemi che utilizzano questo f
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "La sequenza ordinata di operazioni che un ordine di produzione esegue, copiata dalla lista delle operazioni del metodo."
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "Gli ordini del gruppo di pianificazione che sono per questo progetto. MRP può spostare un ancoraggio soft su qualsiasi esecuzione; mantiene gli ancoraggi duri e manuali."
-
 msgid "The original model file is no longer available"
 msgstr "Il file del modello originale non è più disponibile"
 
@@ -24794,6 +24806,9 @@ msgstr "Le fatture pianificate di un contratto, ricavate dalle sue righe in base
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "Il gruppo di pianificazione non ha nessun ordine di acquisto aperto o ordine di produzione per questo articolo."
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "Gli impianti, i depositi e i siti dove vivono il tuo lavoro e le tue giacenze"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "Il progetto va in Sospeso e non accetta nuovi addebiti. Gli impegni aperti continuano a registrarsi. L'ordine termina dopo {STOP_WORK_DAYS} giorni a meno che non riprendi il lavoro per primo."
-
-msgid "The project had no pegs on that day."
-msgstr "Il progetto non aveva ancoraggi quel giorno."
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "Il progetto non ha ancoraggi. MRP ancora gli ordini del gruppo di pianificazione ai suoi membri alla sua prossima esecuzione."
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "Il progetto non possiede giacenza. Ricevere una riga dell'ordine di acquisto o un ordine di produzione in esso, o trasferire la giacenza."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "La giacenza del progetto si sposta solo a progetti dello stesso cliente"

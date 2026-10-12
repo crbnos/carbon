@@ -2606,6 +2606,9 @@ msgstr "전체 기간"
 msgid "All tools"
 msgstr "모든 도구"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "모든 유형"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "청구가능"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
 
@@ -15634,6 +15643,9 @@ msgstr "배치 없음"
 msgid "No batches selected yet."
 msgstr "아직 선택된 배치가 없습니다."
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "청구 가능한 품목이 아직 없습니다. 청구 요소와 그 아래 요소에 청구된 작업이 여기에 표시됩니다."
 
@@ -16139,6 +16151,12 @@ msgstr "매입채무가 없습니다"
 msgid "No payments yet."
 msgstr "아직 지불이 없습니다."
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "사진 없음."
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "아직 프로젝트 청구 송장이 없습니다. 야간 청구 실행이 청구 기간당 하나를 초안으로 작성합니다."
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "할당된 교육 없음"
 
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "아직 개가 없습니다. 계약을 활성화하기 전에 개 목록에서 차량 개를 추가하세요."
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "프로젝트 시작"
 
 msgid "Project stock"
-msgstr "프로젝트 재고"
-
-msgid "Project Stock"
 msgstr "프로젝트 재고"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "재고"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "다른 프로젝트가 이 프로젝트에 빚진 재고입니다."
-
 msgid "Stock Availability"
 msgstr "재고 가용성"
 
@@ -23158,9 +23176,6 @@ msgstr "재고 크기 — 예: 시트 두께 또는 막대 지름"
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "프로젝트가 다른 프로젝트에 빚진 재고입니다."
 
 msgid "Stock Transfer"
 msgstr "재고 이송"
@@ -24740,9 +24755,6 @@ msgstr "이 워크플로를 사용하는 이슈가 완료해야 하는 작업의
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "작업 지시가 실행하는 공정의 순서(방법의 공정 목록에서 복사됨)."
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "이 프로젝트를 위한 계획 그룹의 주문입니다. MRP는 모든 실행에서 소프트 페그를 이동할 수 있습니다. 하드 및 수동 페그는 유지합니다."
-
 msgid "The original model file is no longer available"
 msgstr "원본 모델 파일을 더 이상 사용할 수 없습니다."
 
@@ -24794,6 +24806,9 @@ msgstr "계약의 계획된 송장으로, 청구 빈도, 정렬 및 타이밍에
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "계획 그룹에는 이 품목에 대한 미결 발주서 또는 작업 지시가 없습니다."
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "작업과 재고가 위치하는 공장, 창고, 사업장"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "프로젝트가 보류되고 새 청구를 받지 않습니다. 미결 약정은 여전히 전기됩니다. 먼저 작업을 재개하지 않으면 {STOP_WORK_DAYS}일 후에 주문이 종료됩니다."
-
-msgid "The project had no pegs on that day."
-msgstr "그 날 프로젝트에 페그가 없었습니다."
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "프로젝트에 페그가 없습니다. MRP는 다음 실행에서 계획 그룹의 주문을 멤버에게 페그합니다."
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "프로젝트가 재고를 소유하지 않습니다. 발주서 라인 또는 작업 지시를 받거나 재고를 이송합니다."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "프로젝트의 재고는 같은 고객의 프로젝트로만 이동합니다."

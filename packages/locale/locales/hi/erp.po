@@ -2606,6 +2606,9 @@ msgstr "सभी समय"
 msgid "All tools"
 msgstr "सभी उपकरण"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "सभी प्रकार"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "बिल योग्य"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
@@ -15634,6 +15643,9 @@ msgstr "कोई बैच नहीं"
 msgid "No batches selected yet."
 msgstr "अभी तक कोई बैच चयनित नहीं।"
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "अभी कोई बिल योग्य आइटम नहीं। बिलिंग तत्व और इसके नीचे के तत्वों को चार्ज किया गया कार्य यहाँ दिखाई देता है।"
 
@@ -16139,6 +16151,12 @@ msgstr "कोई देय राशि नहीं"
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "कोई फोटो नहीं।"
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "अभी तक कोई परियोजना चालान नहीं। रात्रिकालीन चालान रन प्रति चालान अवधि एक ड्राफ्ट करता है।"
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "अभी कोई इकाई नहीं। समझौते को सक्रिय करने से पहले यूनिट सूची से एक फ्लीट इकाई जोड़ें।"
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Project stock"
-msgstr "प्रोजेक्ट स्टॉक"
-
-msgid "Project Stock"
 msgstr "प्रोजेक्ट स्टॉक"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "स्टॉक"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "स्टॉक जो एक अन्य परियोजना इसे बकाया है।"
-
 msgid "Stock Availability"
 msgstr "स्टॉक उपलब्धता"
 
@@ -23158,9 +23176,6 @@ msgstr "स्टॉक आकार — उदा. शीट मोटाई �
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "स्टॉक जो परियोजना एक अन्य परियोजना को बकाया है।"
 
 msgid "Stock Transfer"
 msgstr "स्टॉक स्थानांतरण"
@@ -24740,9 +24755,6 @@ msgstr "कार्यों की क्रमित सूची जो इ�
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "ऑपरेशन का क्रमबद्ध अनुक्रम जिसके माध्यम से एक जॉब चलता है, विधि की प्रक्रिया सूची से कॉपी किया गया।"
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "इस परियोजना के लिए योजना समूह के आदेश। MRP किसी भी रन पर एक नरम पेग को स्थानांतरित कर सकता है; यह कठिन और मैनुअल पेग रखता है।"
-
 msgid "The original model file is no longer available"
 msgstr "मूल मॉडल फ़ाइल अब उपलब्ध नहीं है"
 
@@ -24794,6 +24806,9 @@ msgstr "अनुबंध के योजनाबद्ध चालान, �
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "योजना समूह के पास इस आइटम के लिए कोई खुला क्रय आदेश या जॉब नहीं है।"
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "वह संयंत्र, गोदाम, और साइटें जहां आपका काम और स्टॉक रहता है"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "परियोजना होल्ड पर जाती है और कोई नए चार्ज नहीं लेती है। खुली प्रतिबद्धताएं अभी भी पोस्ट होती हैं। {STOP_WORK_DAYS} दिनों के बाद ऑर्डर समाप्त हो जाता है जब तक आप पहले काम फिर से शुरू नहीं करते।"
-
-msgid "The project had no pegs on that day."
-msgstr "परियोजना के पास उस दिन कोई पेग नहीं था।"
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "परियोजना के पास कोई पेग नहीं है। MRP अगले रन पर योजना समूह के आदेशों को इसके सदस्यों से जोड़ता है।"
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "परियोजना के पास कोई स्टॉक नहीं है। इसमें एक क्रय आदेश पंक्ति या एक जॉब प्राप्त करें, या स्टॉक स्थानांतरित करें।"
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "परियोजना का स्टॉक केवल एक ही ग्राहक की परियोजनाओं को जाता है"

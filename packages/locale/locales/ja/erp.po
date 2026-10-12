@@ -2606,6 +2606,9 @@ msgstr "すべての期間"
 msgid "All tools"
 msgstr "すべてのツール"
 
+msgid "All transfers"
+msgstr ""
+
 msgid "All Types"
 msgstr "すべてのタイプ"
 
@@ -4284,6 +4287,9 @@ msgid "Billable"
 msgstr "請求可能"
 
 msgid "Billable item"
+msgstr ""
+
+msgid "Billable items"
 msgstr ""
 
 msgid "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr ""
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
@@ -15634,6 +15643,9 @@ msgstr "バッチなし"
 msgid "No batches selected yet."
 msgstr "バッチがまだ選択されていません。"
 
+msgid "No billable items yet"
+msgstr ""
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "請求可能な品目がまだありません。請求要素と以下の要素に請求された作業がここに表示されます"
 
@@ -16139,6 +16151,12 @@ msgstr "買掛金がありません"
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
 
+msgid "No pegs on that day"
+msgstr ""
+
+msgid "No pegs yet"
+msgstr ""
+
 msgid "No photos."
 msgstr "写真はありません。"
 
@@ -16197,6 +16215,9 @@ msgid "No project billing invoices yet. The nightly billing run drafts one per b
 msgstr "まだプロジェクト請求書がありません。夜間の請求実行では、請求期間ごとに下書きが1つ作成されます。"
 
 msgid "No project found"
+msgstr ""
+
+msgid "No project stock"
 msgstr ""
 
 msgid "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "割り当てられた教育訓練がありません"
 
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
+
+msgid "No transfers"
+msgstr ""
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "個がまだありません。契約を有効化する前に、ユニットリストからフリートユニットを追加してください。"
@@ -18815,9 +18839,6 @@ msgid "Project start"
 msgstr "プロジェクト開始"
 
 msgid "Project stock"
-msgstr "プロジェクト在庫"
-
-msgid "Project Stock"
 msgstr "プロジェクト在庫"
 
 msgid "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "在庫"
 msgid "Stock and planning"
 msgstr ""
 
-msgid "Stock another project owes this one."
-msgstr "別のプロジェクトがこのプロジェクトに負っている在庫。"
-
 msgid "Stock Availability"
 msgstr "在庫可用性"
 
@@ -23158,9 +23176,6 @@ msgstr "在庫サイズ — 例：シート厚さまたはバー直径"
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr ""
-
-msgid "Stock the project owes another project."
-msgstr "プロジェクトが別のプロジェクトに負っている在庫。"
 
 msgid "Stock Transfer"
 msgstr "在庫転送"
@@ -24740,9 +24755,6 @@ msgstr "このワークフローを使用するイシューが完了する必要
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "製造指図が実行する工程の順序（製法の工程表からコピー）。"
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "このプロジェクト向けの計画グループの注文。MRPは任意の実行でソフトペグを移動することがあります。ハードペグと手動ペグは保持します。"
-
 msgid "The original model file is no longer available"
 msgstr "元のモデルファイルはもう利用できません。"
 
@@ -24794,6 +24806,9 @@ msgstr "契約の計画請求書。契約の明細から請求頻度、調整、
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "計画グループにはこの品目のオープンな発注書または製造指図がありません。"
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr ""
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "あなたの仕事と在庫が存在する工場、倉庫、およびサイト"
 
@@ -24832,15 +24847,6 @@ msgstr ""
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "プロジェクトが保留中になり、新しい請求を受け付けません。オープンなコミットメントは転記済のままです。{STOP_WORK_DAYS}日以内に作業を再開しない限り、注文は終了します。"
-
-msgid "The project had no pegs on that day."
-msgstr "プロジェクトはその日にペグがありませんでした。"
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "プロジェクトにはペグがありません。MRPは次の実行で計画グループの注文をそのメンバーにペグします。"
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "プロジェクトは在庫を所有していません。発注書明細または製造指図を受け入れるか、在庫を転送してください。"
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "プロジェクトの在庫は同じ得意先のプロジェクトにのみ移動します"

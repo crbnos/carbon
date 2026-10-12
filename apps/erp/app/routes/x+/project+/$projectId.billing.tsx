@@ -4,10 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { LabelWithHelp, Subheading } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import Empty from "~/components/Empty";
 import {
   getContractBillableItems,
   getContractBillingLines,
@@ -90,20 +92,29 @@ export default function ProjectBillingRoute() {
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
       <section className="flex max-h-80 shrink-0 flex-col gap-1 border-b border-border p-4">
-        <h3 className="text-xs font-medium text-muted-foreground">
+        <Subheading as="h3" variant="light">
           <Trans>Contract lines</Trans>
-        </h3>
+        </Subheading>
         <ProjectBillingLines
           lines={lines}
           funding={funding}
           revenue={revenue}
         />
       </section>
+      <div className="flex h-12 shrink-0 items-center px-4">
+        <Subheading as="h3" variant="light">
+          <LabelWithHelp termId="billable-item" variant="inline">
+            <Trans>Billable items</Trans>
+          </LabelWithHelp>
+        </Subheading>
+      </div>
       <div className="min-h-0 flex-1">
         <ProjectBillableItemsTable
           data={items}
           count={count}
-          title={t`Billable Items`}
+          emptyState={
+            <Empty title={t`No billable items yet`} description={null} />
+          }
           lines={lines.map((line) => ({
             value: line.id,
             label: `${line.contract?.customerContractId ?? ""} · ${

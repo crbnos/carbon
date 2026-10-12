@@ -208,7 +208,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 13: Add the project Overview page
 - [x] Task 14: Fold Details into the project Settings page
 - [x] Task 15: Simplify the Costs page
-- [ ] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
+- [x] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 - [ ] Task 17: Simplify the Time page
 - [ ] Task 18: Turn Milestones into the Schedule page
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
@@ -1638,4 +1638,7 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 14: the Identifier is read-only text (`ReadOnlyField`) with a `Hidden` input, not a read-only input (D6).
 - Task 15: the `emptyState` lives inside `ProjectLedgerTable` rather than at each call site, so the Time page (Task 17 step 3) gets the same empty state with no change of its own.
 - Task 15: the earned value headers keep their 96 px columns and wrap to 2 lines with the glossary icon; BAC, CV, SV, CPI, SPI, EAC and VAC stay acronyms (the *Terminology* table names only the 3).
+- Task 16: the Stock lists show an empty list as one muted line ("Nothing owed"), not `Empty`: four stacked cabinet illustrations were louder than the data. The Billing page does the same for "no contract line"; its billable items table keeps `Empty`.
+- Task 16: the row buttons Pay Back (Stock) and Override (Pegging) moved into row ⋯ menus (Rule: secondary actions live in a row menu). `ManualPegForm.tsx` needed no change.
+- Task 16: the Stock page's Transfers list shows the 10 latest transfers; "All transfers" opens the full list.
 

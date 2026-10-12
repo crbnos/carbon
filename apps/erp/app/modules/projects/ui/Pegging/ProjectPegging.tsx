@@ -4,15 +4,15 @@
 
 import {
   Button,
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
   cn,
   DatePicker,
-  HStack,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  IconButton,
+  LabelWithHelp,
   Status,
   Table as TableBase,
   Tbody,
@@ -25,9 +25,10 @@ import { PROJECT_PEG_STATE_COLOR_MAP } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
-import { LuTriangleAlert } from "react-icons/lu";
-import { Link, useParams } from "react-router";
+import { LuEllipsis, LuHand, LuTriangleAlert } from "react-icons/lu";
+import { useNavigate, useParams } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
+import Empty from "~/components/Empty";
 import { usePermissions, useQuantityFormatter, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ProjectPegRow } from "../../projects.service";
@@ -56,6 +57,7 @@ export default function ProjectPegging({
   const canOverride = permissions.can("update", "projects") && !asOfDate;
   const formatQuantity = useQuantityFormatter();
   const [, setParams] = useUrlParams();
+  const navigate = useNavigate();
 
   const stateLabels: Record<ProjectPegRow["state"], string> = {
     Soft: t`Soft`,
@@ -102,211 +104,210 @@ export default function ProjectPegging({
   };
 
   return (
-    <div className="@container mx-auto flex w-full max-w-[80rem] flex-col gap-4 p-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Trans>Pegging</Trans>
-          </CardTitle>
-          <CardDescription>
-            <Trans>
-              The orders of the planning group that are for this project. MRP
-              may move a soft peg on any run; it keeps hard and manual pegs.
-            </Trans>
-          </CardDescription>
-          <CardAction>
-            <HStack className="flex-wrap justify-end">
-              <span className="whitespace-nowrap text-sm text-muted-foreground">
-                <Trans>As of</Trans>
-              </span>
-              <DatePicker
-                size="sm"
-                aria-label={t`As of`}
-                value={asOfDate ? parseDate(asOfDate) : null}
-                onChange={(value) => setParams({ asOf: value?.toString() })}
-              />
-              {asOfDate && (
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setParams({ asOf: null })}
-                >
-                  <Trans>Current</Trans>
-                </Button>
-              )}
-            </HStack>
-          </CardAction>
-        </CardHeader>
-        <CardContent>
-          {groups.length === 0 ? (
-            <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-              {asOfDate ? (
-                <Trans>The project had no pegs on that day.</Trans>
+    <div className="flex w-full flex-col">
+      <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
+        <p className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
+          <Trans>
+            The planning group's orders for this project. MRP may move a soft
+            peg on any run; it keeps hard and manual pegs.
+          </Trans>
+        </p>
+        <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground">
+          <Trans>As of</Trans>
+        </span>
+        <div className="w-44 shrink-0">
+          <DatePicker
+            size="sm"
+            aria-label={t`As of`}
+            value={asOfDate ? parseDate(asOfDate) : null}
+            onChange={(value) => setParams({ asOf: value?.toString() })}
+          />
+        </div>
+        {asOfDate && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setParams({ asOf: null })}
+          >
+            <Trans>Current</Trans>
+          </Button>
+        )}
+      </div>
+      <div className="@container">
+        {groups.length === 0 ? (
+          <Empty
+            title={
+              asOfDate ? (
+                <Trans>No pegs on that day</Trans>
               ) : (
+                <Trans>No pegs yet</Trans>
+              )
+            }
+            description={
+              asOfDate ? null : (
                 <Trans>
-                  The project has no pegs. MRP pegs the planning group's orders
-                  to its members on its next run.
+                  MRP pegs the planning group's orders to its members on its
+                  next run.
                 </Trans>
-              )}
-            </p>
-          ) : (
-            <TableBase full>
-              <Thead>
-                <Tr>
-                  <Th>
-                    <Trans>Supply</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Quantity</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Need Date</Trans>
-                  </Th>
-                  <Th>
+              )
+            }
+          />
+        ) : (
+          <TableBase full>
+            <Thead>
+              <Tr>
+                <Th>
+                  <Trans>Supply</Trans>
+                </Th>
+                <Th>
+                  <Trans>Quantity</Trans>
+                </Th>
+                <Th>
+                  <Trans>Need Date</Trans>
+                </Th>
+                <Th>
+                  <LabelWithHelp termId="peg" variant="inline">
                     <Trans>State</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Element</Trans>
-                  </Th>
-                  <Th className="w-12">
-                    <span className="sr-only">
-                      <Trans>Actions</Trans>
-                    </span>
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {groups.map((group) => {
-                  const item = group.rows[0]?.item;
-                  const total = group.rows.reduce(
-                    (sum, row) => sum + Number(row.quantity),
-                    0
-                  );
-                  return (
-                    <Fragment key={group.itemId}>
-                      <Tr className="bg-muted/40">
-                        <Td colSpan={6}>
-                          <div className="flex items-center justify-between gap-4">
-                            <div className="flex min-w-0 items-baseline gap-2">
-                              <Hyperlink
-                                to={path.to.inventoryItem(group.itemId)}
-                              >
-                                <span className="whitespace-nowrap font-medium">
-                                  {item?.readableIdWithRevision ?? group.itemId}
-                                </span>
-                              </Hyperlink>
-                              <span className="truncate text-xs text-muted-foreground">
-                                {item?.name ?? ""}
+                  </LabelWithHelp>
+                </Th>
+                <Th>
+                  <Trans>Element</Trans>
+                </Th>
+                <Th className="w-12">
+                  <span className="sr-only">
+                    <Trans>Actions</Trans>
+                  </span>
+                </Th>
+              </Tr>
+            </Thead>
+            <Tbody>
+              {groups.map((group) => {
+                const item = group.rows[0]?.item;
+                const total = group.rows.reduce(
+                  (sum, row) => sum + Number(row.quantity),
+                  0
+                );
+                return (
+                  <Fragment key={group.itemId}>
+                    <Tr className="bg-muted/40">
+                      <Td colSpan={6}>
+                        <div className="flex items-center justify-between gap-4">
+                          <div className="flex min-w-0 items-baseline gap-2">
+                            <Hyperlink to={path.to.inventoryItem(group.itemId)}>
+                              <span className="whitespace-nowrap font-medium">
+                                {item?.readableIdWithRevision ?? group.itemId}
                               </span>
-                            </div>
-                            <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-                              <Trans>Pegged {formatQuantity(total)}</Trans>
+                            </Hyperlink>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {item?.name ?? ""}
                             </span>
                           </div>
-                        </Td>
-                      </Tr>
-                      {group.rows.map((peg) => {
-                        const warning = peg.state === "Manual" && peg.exception;
-                        return (
-                          <Tr
-                            key={peg.id}
-                            className={cn(
-                              warning && "bg-amber-500/10 dark:bg-amber-500/10"
-                            )}
-                          >
-                            <Td>{supplyCell(peg)}</Td>
-                            <Td className="tabular-nums">
-                              {formatQuantity(Number(peg.quantity))}
-                            </Td>
-                            <Td className="whitespace-nowrap">
-                              {peg.needDate ? (
-                                <DateTime value={peg.needDate} variant="date" />
-                              ) : null}
-                            </Td>
-                            <Td>
-                              <div className="flex min-w-0 flex-col gap-1">
-                                <div>
-                                  <Status
-                                    color={
-                                      PROJECT_PEG_STATE_COLOR_MAP[peg.state]
-                                    }
-                                  >
-                                    {stateLabels[peg.state]}
-                                  </Status>
-                                </div>
-                                {peg.state === "Manual" && peg.manualReason && (
-                                  <span className="truncate text-xs text-muted-foreground">
-                                    {peg.manualReason}
-                                  </span>
-                                )}
-                                {warning && (
-                                  <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500">
-                                    <LuTriangleAlert className="size-3 shrink-0" />
-                                    {peg.exception}
-                                  </span>
-                                )}
-                              </div>
-                            </Td>
-                            <Td>
-                              {peg.element && peg.projectElementId ? (
-                                <Hyperlink
-                                  to={path.to.projectElement(
-                                    projectId,
-                                    peg.projectElementId
-                                  )}
+                          <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                            <Trans>Pegged {formatQuantity(total)}</Trans>
+                          </span>
+                        </div>
+                      </Td>
+                    </Tr>
+                    {group.rows.map((peg) => {
+                      const warning = peg.state === "Manual" && peg.exception;
+                      return (
+                        <Tr
+                          key={peg.id}
+                          className={cn(
+                            warning && "bg-amber-500/10 dark:bg-amber-500/10"
+                          )}
+                        >
+                          <Td>{supplyCell(peg)}</Td>
+                          <Td className="tabular-nums">
+                            {formatQuantity(Number(peg.quantity))}
+                          </Td>
+                          <Td className="whitespace-nowrap">
+                            {peg.needDate ? (
+                              <DateTime value={peg.needDate} variant="date" />
+                            ) : null}
+                          </Td>
+                          <Td>
+                            <div className="flex min-w-0 flex-col gap-1">
+                              <div>
+                                <Status
+                                  color={PROJECT_PEG_STATE_COLOR_MAP[peg.state]}
                                 >
-                                  <span className="whitespace-nowrap">
-                                    {peg.element.readableId ?? peg.element.name}
-                                  </span>
-                                </Hyperlink>
-                              ) : (
-                                <span className="text-muted-foreground">
-                                  <Trans>Project</Trans>
+                                  {stateLabels[peg.state]}
+                                </Status>
+                              </div>
+                              {peg.state === "Manual" && peg.manualReason && (
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {peg.manualReason}
                                 </span>
                               )}
-                            </Td>
-                            <Td>
-                              {peg.state === "Soft" && !asOfDate && (
-                                <OverrideButton
-                                  isDisabled={!canOverride}
-                                  to={`${path.to.projectPeggingManual(projectId)}?pegId=${peg.id}`}
-                                />
+                              {warning && (
+                                <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-500">
+                                  <LuTriangleAlert className="size-3 shrink-0" />
+                                  {peg.exception}
+                                </span>
                               )}
-                            </Td>
-                          </Tr>
-                        );
-                      })}
-                    </Fragment>
-                  );
-                })}
-              </Tbody>
-            </TableBase>
-          )}
-        </CardContent>
-      </Card>
+                            </div>
+                          </Td>
+                          <Td>
+                            {peg.element && peg.projectElementId ? (
+                              <Hyperlink
+                                to={path.to.projectElement(
+                                  projectId,
+                                  peg.projectElementId
+                                )}
+                              >
+                                <span className="whitespace-nowrap">
+                                  {peg.element.readableId ?? peg.element.name}
+                                </span>
+                              </Hyperlink>
+                            ) : (
+                              <span className="text-muted-foreground">
+                                <Trans>Project</Trans>
+                              </span>
+                            )}
+                          </Td>
+                          <Td>
+                            {peg.state === "Soft" && !asOfDate && (
+                              <div className="flex justify-end">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <IconButton
+                                      aria-label={t`More options`}
+                                      icon={<LuEllipsis />}
+                                      variant="ghost"
+                                      size="sm"
+                                    />
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent
+                                    align="end"
+                                    className="w-48"
+                                  >
+                                    <DropdownMenuItem
+                                      disabled={!canOverride}
+                                      onClick={() =>
+                                        navigate(
+                                          `${path.to.projectPeggingManual(projectId)}?pegId=${peg.id}`
+                                        )
+                                      }
+                                    >
+                                      <DropdownMenuIcon icon={<LuHand />} />
+                                      <Trans>Override</Trans>
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
+                            )}
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </Fragment>
+                );
+              })}
+            </Tbody>
+          </TableBase>
+        )}
+      </div>
     </div>
-  );
-}
-
-function OverrideButton({
-  to,
-  isDisabled
-}: {
-  to: string;
-  isDisabled: boolean;
-}) {
-  if (isDisabled) {
-    return (
-      <Button variant="secondary" size="sm" isDisabled>
-        <Trans>Override</Trans>
-      </Button>
-    );
-  }
-  return (
-    <Button variant="secondary" size="sm" asChild>
-      <Link to={to}>
-        <Trans>Override</Trans>
-      </Link>
-    </Button>
   );
 }

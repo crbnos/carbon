@@ -14,6 +14,7 @@ import {
 import { BILLABLE_REASON_FUNDING_LIMIT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
+import type { ReactNode } from "react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { LuBan, LuCirclePause, LuCirclePlay, LuPencil } from "react-icons/lu";
 import { Hyperlink, Table } from "~/components";
@@ -47,14 +48,17 @@ const ProjectBillableItemsTable = memo(
     count,
     projects,
     lines,
-    title
+    title,
+    emptyState
   }: {
     data: ContractBillableItem[];
     count: number;
     /** Filter options; omitted on a project's own Billing tab. */
     projects?: FilterOption[];
     lines: FilterOption[];
-    title: string;
+    /** The toolbar title; omitted where the page draws its own heading. */
+    title?: string;
+    emptyState?: ReactNode;
   }) => {
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -359,6 +363,7 @@ const ProjectBillableItemsTable = memo(
           columns={columns}
           data={data}
           title={title}
+          emptyState={emptyState}
           renderActions={renderActions}
           renderContextMenu={renderContextMenu}
           withSelectableRows={canUpdate}

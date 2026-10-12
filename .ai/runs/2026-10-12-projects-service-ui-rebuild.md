@@ -169,6 +169,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 
+- Stock: one toolbar row (the project stock rule as muted text, then the **Transfer** `SplitButton` with Borrow and Payback in its menu). Four sections, each a `Subheading` over a compact `Table` with no toolbar of its own: Project stock, Borrowed by this project, Lent by this project, Transfers (this project's latest 10, from `getProjectStockTransfers` with `projectId`, and an "All transfers" link). Pay Back moved from a row button to the row ⋯ menu.
+- Pegging: no card. One toolbar row: the description, "As of" with the `DatePicker` in a `w-44` wrapper, Current when a day is set. The empty state is `Empty` ("No pegs yet" / "No pegs on that day"). Override moved from a row button to the row ⋯ menu. The page-level `PlanningGroupsUpgradeOverlay` stays.
+- Billing: "Contract lines" and "Billable items" are both `Subheading as="h3" variant="light"`. `ProjectBillableItemsTable` takes an optional `emptyState` and an optional `title` (the Projects → Billing list still passes its title).
+- `termId`: project-stock, borrow-payback (both borrow sections), unassigned-stock (on "Unassigned stock" in the transfers list, `StockOwner withHelp`), peg (State), billing-element, billing-method, billable-item. `payback-variance` has no label on these pages to carry it.
+- Empty lists on Stock and the no-contract-line case on Billing are one muted line, not the cabinet illustration (same deviation as the Overview).
+- Environment: a second start of the dev server failed on the port but re-optimized Vite's dependency cache under the running one, so every dependency answered 504 and the project pages rendered no body. A clean restart (stop, then one `/tmp/uir/start-erp.sh`) fixed it.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; erp 2,261 tests passed.
+- Shots: `16-stock.png`, `16-pegging.png`, `16-billing.png` (OB2 has no billing contract line, so its Billing page shows the empty states; the sidebar does not link it).
+- Screenshot check: 1 yes; 2 yes; 3 yes (one toolbar row on Stock and Pegging, none on Billing); 4 yes (Transfer on Stock; the header's next step); 5 yes; 6 yes (Pay Back and Override in row menus, Borrow and Payback in the split menu); 7 yes.
+
 ## Task 17: Simplify the Time page
 
 ## Task 18: Turn Milestones into the Schedule page

@@ -2606,6 +2606,9 @@ msgstr "All Time"
 msgid "All tools"
 msgstr "All tools"
 
+msgid "All transfers"
+msgstr "All transfers"
+
 msgid "All Types"
 msgstr "All Types"
 
@@ -4285,6 +4288,9 @@ msgstr "Billable"
 
 msgid "Billable item"
 msgstr "Billable item"
+
+msgid "Billable items"
+msgstr "Billable items"
 
 msgid "Billable Items"
 msgstr "Billable Items"
@@ -14886,6 +14892,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planning)"
 
+msgid "MRP pegs the planning group's orders to its members on its next run."
+msgstr "MRP pegs the planning group's orders to its members on its next run."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
@@ -15634,6 +15643,9 @@ msgstr "No batches"
 msgid "No batches selected yet."
 msgstr "No batches selected yet."
 
+msgid "No billable items yet"
+msgstr "No billable items yet"
+
 msgid "No billable items yet. Work charged to the billing element and the elements below it shows here."
 msgstr "No billable items yet. Work charged to the billing element and the elements below it shows here."
 
@@ -16139,6 +16151,12 @@ msgstr "No payables"
 msgid "No payments yet."
 msgstr "No payments yet."
 
+msgid "No pegs on that day"
+msgstr "No pegs on that day"
+
+msgid "No pegs yet"
+msgstr "No pegs yet"
+
 msgid "No photos."
 msgstr "No photos."
 
@@ -16198,6 +16216,9 @@ msgstr "No project billing invoices yet. The nightly billing run drafts one per 
 
 msgid "No project found"
 msgstr "No project found"
+
+msgid "No project stock"
+msgstr "No project stock"
 
 msgid "No projects yet"
 msgstr "No projects yet"
@@ -16396,6 +16417,9 @@ msgstr "No trainings assigned"
 
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
+
+msgid "No transfers"
+msgstr "No transfers"
 
 msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
 msgstr "No units yet. Add a fleet unit from the Units list before activating the agreement."
@@ -18816,9 +18840,6 @@ msgstr "Project start"
 
 msgid "Project stock"
 msgstr "Project stock"
-
-msgid "Project Stock"
-msgstr "Project Stock"
 
 msgid "Project Stock Transfers"
 msgstr "Project Stock Transfers"
@@ -23135,9 +23156,6 @@ msgstr "Stock"
 msgid "Stock and planning"
 msgstr "Stock and planning"
 
-msgid "Stock another project owes this one."
-msgstr "Stock another project owes this one."
-
 msgid "Stock Availability"
 msgstr "Stock Availability"
 
@@ -23158,9 +23176,6 @@ msgstr "Stock size — e.g. sheet thickness or bar diameter"
 
 msgid "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
 msgstr "Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this."
-
-msgid "Stock the project owes another project."
-msgstr "Stock the project owes another project."
 
 msgid "Stock Transfer"
 msgstr "Stock Transfer"
@@ -24740,9 +24755,6 @@ msgstr "The ordered list of tasks issues using this workflow must complete; the 
 msgid "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 msgstr "The ordered sequence of operations a job runs through, copied from the method's bill of process."
 
-msgid "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-msgstr "The orders of the planning group that are for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
-
 msgid "The original model file is no longer available"
 msgstr "The original model file is no longer available"
 
@@ -24794,6 +24806,9 @@ msgstr "The planned invoices of a contract, cut from its lines by the billing fr
 msgid "The planning group has no open purchase order or job for this item."
 msgstr "The planning group has no open purchase order or job for this item."
 
+msgid "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+msgstr "The planning group's orders for this project. MRP may move a soft peg on any run; it keeps hard and manual pegs."
+
 msgid "The plants, warehouses, and sites where your work and stock live"
 msgstr "The plants, warehouses, and sites where your work and stock live"
 
@@ -24832,15 +24847,6 @@ msgstr "The project element a Time & Materials or Cost Plus contract line bills.
 
 msgid "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
 msgstr "The project goes On Hold and takes no new charges. Open commitments still post. The order ends after {STOP_WORK_DAYS} days unless you resume work first."
-
-msgid "The project had no pegs on that day."
-msgstr "The project had no pegs on that day."
-
-msgid "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-msgstr "The project has no pegs. MRP pegs the planning group's orders to its members on its next run."
-
-msgid "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
-msgstr "The project owns no stock. Receive a purchase order line or a job into it, or transfer stock in."
 
 msgid "The project's stock moves only to projects of the same customer"
 msgstr "The project's stock moves only to projects of the same customer"
