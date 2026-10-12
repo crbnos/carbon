@@ -49729,6 +49729,7 @@ export type Database = {
           verificationMethod:
             | Database["public"]["Enums"]["requirementVerificationMethod"]
             | null
+          wbsCode: string | null
         }
         Insert: {
           actualParameterId?: string | null
@@ -49808,6 +49809,7 @@ export type Database = {
           verificationMethod?:
             | Database["public"]["Enums"]["requirementVerificationMethod"]
             | null
+          wbsCode?: string | null
         }
         Update: {
           actualParameterId?: string | null
@@ -49887,6 +49889,7 @@ export type Database = {
           verificationMethod?:
             | Database["public"]["Enums"]["requirementVerificationMethod"]
             | null
+          wbsCode?: string | null
         }
         Relationships: [
           {

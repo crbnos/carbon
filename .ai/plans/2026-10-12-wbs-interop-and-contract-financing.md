@@ -10,7 +10,7 @@
 Phase A — WBS interop
 - [x] Task 1: Write the WBS code engine
 - [x] Task 2: Write the MIL-STD-881F template data
-- [ ] Task 3: Add `projectElement.wbsCode`
+- [x] Task 3: Add `projectElement.wbsCode`
 - [ ] Task 4: Make `wbsCode` a plan-layer field and pin, renumber and template writes
 - [ ] Task 5: Write the CSV reader, writer and import
 - [ ] Task 6: Write the MSPDI export

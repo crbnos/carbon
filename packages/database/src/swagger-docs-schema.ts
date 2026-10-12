@@ -10990,6 +10990,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.wbsCode"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -11244,6 +11247,9 @@ export default {
             $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
           },
           {
+            $ref: "#/parameters/rowFilter.projectElement.wbsCode"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -11450,6 +11456,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.projectElement.rdSoftwareType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.projectElement.wbsCode"
           },
           {
             $ref: "#/parameters/body.projectElement"
@@ -132773,6 +132782,10 @@ export default {
         rdSoftwareType: {
           format: "text",
           type: "string"
+        },
+        wbsCode: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -187015,6 +187028,12 @@ export default {
     },
     "rowFilter.projectElement.rdSoftwareType": {
       name: "rdSoftwareType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.projectElement.wbsCode": {
+      name: "wbsCode",
       required: false,
       in: "query",
       type: "string"
