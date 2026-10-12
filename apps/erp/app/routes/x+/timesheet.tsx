@@ -15,7 +15,7 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "timesheet");
 
-// My Timesheet is personal: it sits outside the Projects and Service modules
+// My Time is personal: it sits outside the Projects and Service modules
 // and needs only an employee role. It shows the user's time of every project
 // type; a service order's rows are read-only (the visit page posts them).
 export const handle: Handle = {

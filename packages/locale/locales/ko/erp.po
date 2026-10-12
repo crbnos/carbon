@@ -6372,7 +6372,7 @@ msgstr "복사되었습니다!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI 코딩 도구용 셋업 프롬프트를 복사합니다"
 
-msgid "Copies the states, labels, milestones, elements, links and planned materials, labor and costs"
+msgid "Copies the milestones, elements, links and planned materials, labor and costs"
 msgstr ""
 
 msgid "Copy"

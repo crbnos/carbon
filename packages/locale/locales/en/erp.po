@@ -6372,8 +6372,8 @@ msgstr "Copied!"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copies a setup prompt for your AI coding tool"
 
-msgid "Copies the states, labels, milestones, elements, links and planned materials, labor and costs"
-msgstr "Copies the states, labels, milestones, elements, links and planned materials, labor and costs"
+msgid "Copies the milestones, elements, links and planned materials, labor and costs"
+msgstr "Copies the milestones, elements, links and planned materials, labor and costs"
 
 msgid "Copy"
 msgstr "Copy"

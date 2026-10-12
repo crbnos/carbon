@@ -24,7 +24,7 @@ const logger = getLogger("erp", "project-log-time");
  * through `save-timesheet-entry` (`add` mode, so DCAA mode applies its
  * controls). In Standard mode the entry is Submitted: with approvals off it
  * posts at once, with approvals on it waits in Approvals. In DCAA mode the
- * entry is Draft and waits for the weekly certification on My Timesheet. A
+ * entry is Draft and waits for the weekly certification on My Time. A
  * refusal is returned as fetcher data, so the modal shows it and stays open.
  */
 export async function action({ request }: ActionFunctionArgs) {

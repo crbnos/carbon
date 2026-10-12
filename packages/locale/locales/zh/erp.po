@@ -6372,7 +6372,7 @@ msgstr "已复制！"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
 
-msgid "Copies the states, labels, milestones, elements, links and planned materials, labor and costs"
+msgid "Copies the milestones, elements, links and planned materials, labor and costs"
 msgstr ""
 
 msgid "Copy"

@@ -248,7 +248,7 @@ const ProjectForm = ({
             name="copyFromProjectId"
             label={t`Copy from`}
             isOptional
-            helperText={t`Copies the states, labels, milestones, elements, links and planned materials, labor and costs`}
+            helperText={t`Copies the milestones, elements, links and planned materials, labor and costs`}
             options={copyFrom.options}
           />
         </FormSection>

@@ -44,7 +44,7 @@ export default function useServiceSubmodules() {
   const permissions = usePermissions();
   const { addSavedViewsToRoutes } = useSavedViews();
 
-  // My Timesheet is not listed here: it opens from the avatar menu.
+  // My Time is not listed here: it opens from the avatar menu.
   const serviceRoutes: AuthenticatedRouteGroup[] = [
     {
       name: t`Manage`,

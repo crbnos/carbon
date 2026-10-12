@@ -6372,7 +6372,7 @@ msgstr "Copié !"
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copie une invite de réglage pour votre outil de codage IA"
 
-msgid "Copies the states, labels, milestones, elements, links and planned materials, labor and costs"
+msgid "Copies the milestones, elements, links and planned materials, labor and costs"
 msgstr ""
 
 msgid "Copy"

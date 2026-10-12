@@ -72,7 +72,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
   const { employeeId } = params;
   if (!employeeId) throw new Error("Could not find employeeId");
-  // Your own week is My Timesheet, where you certify it.
+  // Your own week is My Time, where you certify it.
   if (employeeId === userId) throw redirect(path.to.timesheet);
 
   if (!(await canManageTimesheet(client, { companyId, userId, employeeId }))) {

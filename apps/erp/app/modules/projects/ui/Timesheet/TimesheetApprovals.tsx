@@ -109,7 +109,7 @@ function ApprovalCard({
   const today = useCompanyToday();
 
   const weekEnd = parseDate(group.weekStart).add({ days: 6 }).toString();
-  // The employee page navigates by weeks from this week, as My Timesheet.
+  // The employee page navigates by weeks from this week, as My Time.
   const weekOffset =
     parseDate(group.weekStart).compare(parseDate(weekStartOf(today))) / 7;
   const weekLabel = `${formatDate(group.weekStart)} – ${formatDate(weekEnd)}`;
