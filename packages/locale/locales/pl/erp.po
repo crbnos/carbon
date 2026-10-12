@@ -280,7 +280,7 @@ msgstr "{0} zamówień"
 
 #. placeholder {0}: payments.length
 msgid "{0} payments"
-msgstr ""
+msgstr "{0} płatności"
 
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
@@ -714,7 +714,7 @@ msgid "1 part skipped — nothing to make"
 msgstr "1 część pominięta — nic do zrobienia"
 
 msgid "1 payment"
-msgstr ""
+msgstr "1 płatność"
 
 msgid "1 planned invoice is removed."
 msgstr "1 zaplanowana faktura została usunięta."
@@ -1709,7 +1709,7 @@ msgid "Activating classifies the lease, books the right-of-use asset and the lea
 msgstr "Aktywacja klasyfikuje umowę leasingu, księguje aktywo z prawa użytkowania i zobowiązanie z tytułu leasingu oraz tworzy miesięczny plan. Warunki i wiersze płatności są następnie ustalane."
 
 msgid "Activating fixes the terms and the payment rows, classifies the lease and books it. After that, purchase invoices are drafted automatically as payments come due."
-msgstr ""
+msgstr "Aktywacja ustala warunki i wiersze płatności, klasyfikuje dzierżawę i księguje ją. Następnie faktury zakupu są automatycznie opracowywane, gdy płatności stają się należne."
 
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "Aktywowanie naprawia warunki i sztuki, klasyfikuje każdą sztukę i tworzy pierwsze okresy rozliczeniowe. Następnie faktury są tworzone automatycznie, gdy okresy przypadają."
@@ -1841,7 +1841,7 @@ msgid "Add at least one payment row before activating."
 msgstr "Dodaj co najmniej jeden wiersz płatności przed aktywacją."
 
 msgid "Add at least one payment row."
-msgstr ""
+msgstr "Dodaj co najmniej jeden wiersz płatności."
 
 msgid "Add at least one service."
 msgstr "Dodaj co najmniej jedną usługę."
@@ -2397,7 +2397,7 @@ msgid "An approval requirement on a non-conformance whose reviewers (seeded Engi
 msgstr "Wymóg zatwierdzenia na niezgodności, której recenzenci (wstępnie ustawieni: Inżynieria i Jakość) muszą zatwierdzić, zanim niezgodność będzie mogła zostać zamknięta."
 
 msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
-msgstr ""
+msgstr "Składnik majątku, który firma wynajmuje od dostawcy, rozliczany zgodnie z ASC 842: aktywacja klasyfikuje go jako Operating, Finance lub Short-Term i księguje prawo do użytkowania oraz zobowiązanie z tytułu dzierżawy, jego wiersze płatności są opracowywane jako faktury zakupu, a przebieg dzierżawy księguje jego miesięczne odsetki i amortyzację."
 
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "Cena nabycia aktywa pomniejszona o umorzenie — jego wartość netto w księgach i kwota, za którą jest likwidowane."
@@ -2654,7 +2654,7 @@ msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "Zastosowane kwoty są w bazowej walucie firmy ({baseCurrency})."
 
 msgid "Applied on each anniversary of the commencement date"
-msgstr ""
+msgstr "Stosowane w każdą rocznicę daty rozpoczęcia"
 
 msgid "Applied To"
 msgstr "Zastosowano do"
@@ -2903,7 +2903,7 @@ msgstr "Na pewno chcesz usunąć {readableId}? Nie można tego cofnąć."
 
 #. placeholder {0}: deleting.number
 msgid "Are you sure you want to delete payment {0}?"
-msgstr ""
+msgstr "Czy na pewno chcesz usunąć płatność {0}?"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -6770,7 +6770,7 @@ msgid "Decided when the lease is activated, from the payment rows and the classi
 msgstr "Ustalone w momencie aktywacji leasingu na podstawie wierszy płatności i danych klasyfikacyjnych."
 
 msgid "Decided when the lease is activated, from the payment rows and the inputs below."
-msgstr ""
+msgstr "Decyduje się, gdy dzierżawa jest aktywowana, na podstawie wierszy płatności i poniższych danych wejściowych."
 
 msgid "Decimal Places"
 msgstr "Miejsca Dziesiętne"
@@ -8054,10 +8054,10 @@ msgid "Each operation's unused material returns as soon as the operation is done
 msgstr "Niewykorzystany materiał z każdej operacji powraca natychmiast po zakończeniu operacji."
 
 msgid "Each payment is due on the first day of its period."
-msgstr ""
+msgstr "Każda płatność jest należna pierwszego dnia okresu."
 
 msgid "Each payment is due on the last day of its period."
-msgstr ""
+msgstr "Każda płatność jest należna ostatniego dnia okresu."
 
 msgid "Each period is 28 days from the start date."
 msgstr "Każdy okres to 28 dni od daty rozpoczęcia."
@@ -10661,7 +10661,7 @@ msgid "How long one execution of this schedule typically takes; scheduling block
 msgstr "Jak długo trwa typowo jedno wykonanie tego harmonogramu; planowanie blokuje stanowisko robocze na tę liczbę minut przy każdym zaplanowanym uruchomieniu."
 
 msgid "How long the asset is usable, by anyone"
-msgstr ""
+msgstr "Jak długo składnik majątku może być używany przez kogokolwiek"
 
 msgid "How many"
 msgstr "Ile"
@@ -12007,7 +12007,7 @@ msgid "Lease"
 msgstr "Leasing"
 
 msgid "Lease (lessee)"
-msgstr ""
+msgstr "Dzierżawa (dzierżawca)"
 
 msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
 msgstr "Opłaty leasingowe, które nie są częścią płatności stałych, takie jak opłaty za użytkowanie lub utrzymanie"
@@ -12040,7 +12040,7 @@ msgid "Lease Revenue (default)"
 msgstr "Przychód z dzierżawy (domyślnie)"
 
 msgid "Lease run"
-msgstr ""
+msgstr "Przebieg dzierżawy"
 
 msgid "Lease Run"
 msgstr "Przebieg wynajmu"
@@ -12052,7 +12052,7 @@ msgid "Lease Runs"
 msgstr "Przebiegi wynajmu"
 
 msgid "Lease setup"
-msgstr ""
+msgstr "Konfiguracja dzierżawy"
 
 msgid "Leased Asset"
 msgstr "Aktywa wynajęte"
@@ -12954,7 +12954,7 @@ msgid "Mean Time To Repair"
 msgstr "Średni czas naprawy"
 
 msgid "Measurement"
-msgstr ""
+msgstr "Pomiar"
 
 msgid "Measurement Standard"
 msgstr "Wzorzec pomiarowy"
@@ -14352,7 +14352,7 @@ msgid "No payables"
 msgstr "Brak zobowiązań"
 
 msgid "No payment rows yet. Enter the payment amount above, or add a row."
-msgstr ""
+msgstr "Brak wierszy płatności. Wprowadź kwotę płatności powyżej lub dodaj wiersz."
 
 msgid "No payment rows. Regenerate them from the terms or add one."
 msgstr "Brak wierszy płatności. Wygeneruj je z warunków lub dodaj jeden."
@@ -14959,13 +14959,13 @@ msgid "One or more quantities cannot meet this date"
 msgstr "Jedna lub więcej ilości nie może spełnić tego terminu"
 
 msgid "One payment for each month of the term."
-msgstr ""
+msgstr "Jedna płatność na każdy miesiąc okresu."
 
 msgid "One payment for each year of the term."
-msgstr ""
+msgstr "Jedna płatność na każdy rok okresu."
 
 msgid "One payment for every three months."
-msgstr ""
+msgstr "Jedna płatność co trzy miesiące."
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "Jeden wiersz na fakturę, jedna kolumna na pozycję. Zmień datę lub kwotę, dodaj fakturę lub usuń jedną."
@@ -15792,7 +15792,7 @@ msgstr "Płatność"
 
 #. placeholder {0}: deleting.number
 msgid "payment {0}"
-msgstr ""
+msgstr "płatność {0}"
 
 msgid "Payment actions"
 msgstr "Działania płatności"
@@ -15819,10 +15819,10 @@ msgid "Payment Rate"
 msgstr "Kurs wymiany płatności"
 
 msgid "Payment Rows"
-msgstr ""
+msgstr "Wiersze płatności"
 
 msgid "Payment rows are cut from this date"
-msgstr ""
+msgstr "Wiersze płatności są generowane od tej daty"
 
 msgid "payment term"
 msgstr "warunki płatności"
@@ -15858,7 +15858,7 @@ msgid "Payments due after the termination date are removed. Invoiced payments st
 msgstr "Płatności wymagalne po dacie zakończenia są usuwane. Zafakturowane płatności pozostają."
 
 msgid "Payments due before this date were paid outside Carbon"
-msgstr ""
+msgstr "Płatności należne przed tą datą zostały opłacone poza Carbon"
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "Zwraca zaliczkę zatrzymaną dla tego dokumentu z zaliczek klienta."
@@ -18615,7 +18615,7 @@ msgid "Right item"
 msgstr "Prawy element"
 
 msgid "Right-of-use asset"
-msgstr ""
+msgstr "Składnik majątku z tytułu prawa do użytkowania"
 
 msgid "Right-of-Use Asset"
 msgstr "Prawo do użytkowania"
@@ -21536,7 +21536,7 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna ilość jest sumą jego podpisanych wpisów i źródłem prawdy."
 
 msgid "The asset has no other use to the supplier once the term ends."
-msgstr ""
+msgstr "Składnik majątku nie ma innego użytku dla dostawcy po zakończeniu okresu."
 
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "Zasób przechodzi do swojej klasy w użytku i zaczyna się amortyzować od daty wprowadzenia do użytku."
@@ -21647,7 +21647,7 @@ msgid "The company already has a posted opening balance journal."
 msgstr "Firma ma już zaksięgowany dowód księgowy saldo otwarcia."
 
 msgid "The company expects to buy the asset at the end of the term."
-msgstr ""
+msgstr "Firma spodziewa się kupić składnik majątku na koniec okresu."
 
 msgid "The company has no account defaults."
 msgstr "Firma nie ma skonfigurowanych domyślnych kont."
@@ -21969,7 +21969,7 @@ msgid "The latest date to place this PO so it arrives by the need-by date, given
 msgstr "Najnowsza data złożenia tego zamówienia, aby dotarło do daty wymaganej, biorąc pod uwagę czas realizacji dostawcy."
 
 msgid "The lease is ready to activate."
-msgstr ""
+msgstr "Dzierżawa jest gotowa do aktywacji."
 
 msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Payments due after it are removed."
 msgstr "Wynajęty składnik aktywów staje się środkiem trwałym, który amortyzuje się od daty wykonania. Płatności wymagalne po tej dacie są usuwane."
@@ -21981,7 +21981,7 @@ msgid "The legal entity to bill, when different from the supplier who delivers t
 msgstr "Jednostka prawna, do której wysłać fakturę, gdy różni się od dostawcy, który dostarcza towary - dla umów dotyczących macierzystej/zależnej lub faktoringu."
 
 msgid "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
-msgstr ""
+msgstr "Składnik majątku dzierżawcy z tytułu prawa do użytkowania dzierżawiącego składnika majątku, księgowany wartością bieżącą płatności z tytułu dzierżawy, gdy dzierżawa operacyjna lub finansowa jest aktywowana i amortyzowana co miesiąc przez przebieg dzierżawy."
 
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "Aktywo leasingodawcy w leasingu finansowym: bieżąca wartość płatności leasingowych i niegwarantowanej wartości rezydualnej, rosnąca każdego miesiąca o odsetki leasingowe i zmniejszana o każdy czynsz oraz fakturę opcji nabycia."
@@ -22059,7 +22059,7 @@ msgid "The month your tax year begins; may differ from the fiscal year in some j
 msgstr "Miesiąc, w którym rozpoczyna się rok podatkowy; może różnić się od roku obrachunkowego w niektórych jurysdykcjach."
 
 msgid "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
-msgstr ""
+msgstr "Przebieg okresu co miesiąc, który księguje wpisy dzierżawy: odsetki z tytułu dzierżawy dzierżawcy i amortyzacja prawa do użytkowania, czynsz do odroczenia lub naliczenia oraz odsetki z tytułu dzierżawy typu sprzedażowego jako dzienniki Przebieg dzierżawy."
 
 msgid "The monthly periods you post into and close"
 msgstr "Miesięczne okresy, w których dokonujesz wpisów i które zamykasz"
@@ -22158,7 +22158,7 @@ msgid "The path this step's components travel into place during playback; worked
 msgstr "Ścieżka, którą komponenty tego kroku przechodzą podczas odtwarzania; wyznaczona z modelu lub narysowana ręcznie za pomocą opcji Edytuj ścieżkę."
 
 msgid "The payment rows below are cut from these terms. Changing a term cuts them again."
-msgstr ""
+msgstr "Poniższe wiersze płatności są generowane na podstawie tych warunków. Zmiana warunku generuje je ponownie."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Pracownicy po stronie Carbon, którzy będą prowadzić Twoje wdrożenie, oraz jak ich osiągnąć."
@@ -22245,7 +22245,7 @@ msgid "The rate at the effective date"
 msgstr "Stopa w dniu wejścia w życie"
 
 msgid "The rate the payments are discounted at, and what the asset is worth and how long it lasts."
-msgstr ""
+msgstr "Stawka, według której dyskontuje się płatności, ile wart jest składnik majątku i jak długo trwa."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Surowy materiał i główny katalog materiałów, które kupujesz i zużywasz"
@@ -23112,7 +23112,7 @@ msgid "Title"
 msgstr "Tytuł"
 
 msgid "Title passes to the company when the term ends."
-msgstr ""
+msgstr "Prawo własności przechodzi na firmę po zakończeniu okresu."
 
 msgid "Title passes to the customer when the term ends."
 msgstr "Tytuł przechodzi do klienta po zakończeniu okresu."
@@ -23306,7 +23306,7 @@ msgid "Total Outside Cost"
 msgstr "Całkowity koszt zewnętrzny"
 
 msgid "Total Payments"
-msgstr ""
+msgstr "Suma płatności"
 
 msgid "Total Price"
 msgstr "Cena całkowita"
@@ -24728,7 +24728,7 @@ msgid "What drove inventory up or down, by any dimension"
 msgstr "Co spowodowało wzrost lub spadek zapasów, wg dowolnego wymiaru"
 
 msgid "What each period's payment is in the first year"
-msgstr ""
+msgstr "Jaka jest płatność w każdym okresie w pierwszym roku"
 
 msgid "What happens to an invoice once it is created"
 msgstr "Co się stanie z fakturą po jej utworzeniu"
@@ -24740,7 +24740,7 @@ msgid "What happens to invoices created automatically each day from rental agree
 msgstr "Co się dzieje z fakturami tworzonymi automatycznie każdego dnia z umów wynajmu i umów. Faktury zawierające opłaty wynajmu, kredyty, ponowne rozliczenia unieważnionych faktur lub naruszenia reguł zawsze czekają na przegląd."
 
 msgid "What happens to the asset when the term ends. A purchase option that is reasonably certain becomes a payment row."
-msgstr ""
+msgstr "Co się stanie ze składnikiem majątku po zakończeniu okresu. Opcja zakupu, która jest uzasadniona, staje się wierszem płatności."
 
 msgid "What happens to the units when the term ends, and the rate the rent is discounted at."
 msgstr "Co się stanie ze sztukami gdy okres się kończy, i stawka, po której czynsz jest dyskontowany."
@@ -24776,10 +24776,10 @@ msgid "What source this dimension pulls its allowed values from (custom list or 
 msgstr "Z jakich źródeł ta wymiar pobiera dozwolone wartości (lista niestandardowa lub istniejąca jednostka, taka jak klient, lokalizacja, pracownik)."
 
 msgid "What the asset would cost to buy today"
-msgstr ""
+msgstr "Ile kosztowałby składnik majątku, gdyby kupić go dzisiaj"
 
 msgid "What the company can buy the asset for at the end"
-msgstr ""
+msgstr "Za ile firma może kupić składnik majątku na koniec"
 
 msgid "What the customer can buy each unit for at the end"
 msgstr "Cena, za którą klient może kupić każdą sztukę na koniec"
@@ -24791,10 +24791,10 @@ msgid "What the due-date countdown starts from (invoice date, end of month, etc.
 msgstr "Od czego zaczyna się odliczanie terminu płatności (data faktury, koniec miesiąca itp.)."
 
 msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
-msgstr ""
+msgstr "Co dzierżawa płaci i kiedy. Aktywacja wycenia zobowiązanie z tytułu dzierżawy na podstawie tych wierszy. Kliknij komórkę, aby ją zmienić."
 
 msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
-msgstr ""
+msgstr "Co dzierżawca jest dłużny z tytułu dzierżawy: wartość bieżąca płatności, które nie zostały jeszcze dokonane, wzrastająca co miesiąc o odsetki wg stawki dyskontowej dzierżawy i zmniejszana przez każdą fakturę z tytułu dzierżawy, która rozlicza płatność."
 
 msgid "What these rows mean"
 msgstr "Co te wiersze oznaczają"
@@ -24923,7 +24923,7 @@ msgid "When the kanban card is scanned, the job is automatically moved out of dr
 msgstr "Gdy karta kanban zostanie zeskanowana, zlecenie produkcyjne jest automatycznie przenoszone z wersji roboczej i zwalniane na halę."
 
 msgid "When the lease starts and ends. The end date is the last day of the term, including renewals that are reasonably certain."
-msgstr ""
+msgstr "Kiedy dzierżawa się zaczyna i kończy. Data końcowa to ostatni dzień okresu, łącznie z odnowieniami, które są uzasadnione."
 
 msgid "When the receiving location expects the stock to arrive; drives MRP availability at the destination."
 msgstr "Gdy lokalizacja przyjęcia oczekuje na przybycie zapasu; napędza dostępność MRP w miejscu docelowym."
@@ -25073,7 +25073,7 @@ msgid "Who owns MRP planning actions. Locations inherit the company default; ite
 msgstr "Kto jest właścicielem działań planowania MRP. Lokalizacje dziedziczą domyślne ustawienia firmy; grupy artykułów dziedziczą swoją lokalizację. Przypisanie najbardziej specyficzne wygrywa, a każdy artykuł może nadpisać to na karcie Planowanie."
 
 msgid "Who owns the lease here: they get the invoice digest and the date reminders."
-msgstr ""
+msgstr "Kto jest właścicielem dzierżawy tutaj: on otrzymuje streszczenie faktury i przypomnienia daty."
 
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "Kto odbiera faktury, gdzie i na jakich warunkach."
@@ -25124,7 +25124,7 @@ msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "Kto to sprzedał, do czego należy i kiedy zamknięto."
 
 msgid "Who the company leases from, and who to call there."
-msgstr ""
+msgstr "Od kogo firma wynajmuje i do kogo zadzwonić tam."
 
 msgid "Who the contract is with and what it is called."
 msgstr "Z kim zawarta jest umowa i jak się to nazwała."
