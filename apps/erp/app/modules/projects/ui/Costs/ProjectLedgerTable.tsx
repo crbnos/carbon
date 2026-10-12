@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo } from "react";
 import {
@@ -18,6 +18,7 @@ import {
   LuUser
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
+import Empty from "~/components/Empty";
 import { Enumerable } from "~/components/Enumerable";
 import {
   useCurrencyFormatter,
@@ -253,6 +254,12 @@ const ProjectLedgerTable = memo(
         columns={columns}
         count={count}
         title={title}
+        emptyState={
+          <Empty
+            title={<Trans>No costs posted yet</Trans>}
+            description={null}
+          />
+        }
       />
     );
   }

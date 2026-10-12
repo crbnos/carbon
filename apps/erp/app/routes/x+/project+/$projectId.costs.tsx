@@ -189,7 +189,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
  * Earned value for the Costs tab (Government Contracting 5c). `?evPeriod`
  * is `current` (live, as of today on the company's calendar) or the id of a
  * Closed accounting period (its frozen snapshot). Null when the project has
- * no control account and the company has the feature.
+ * no control account.
  */
 async function loadEarnedValue(args: {
   request: Request;
@@ -199,6 +199,9 @@ async function loadEarnedValue(args: {
   hasControlAccount: boolean;
 }): Promise<EarnedValueData | null> {
   const { request, client, companyId, projectId, hasControlAccount } = args;
+  // Layer 5: earned value shows only on a project with a control account,
+  // and only then does a company without the feature see its upgrade row.
+  if (!hasControlAccount) return null;
   if (
     !(await companyHasFeature(client, companyId, {
       feature: "GOVERNMENT_CONTRACTING"
@@ -206,7 +209,6 @@ async function loadEarnedValue(args: {
   ) {
     return { gated: true };
   }
-  if (!hasControlAccount) return null;
 
   const periodId = new URL(request.url).searchParams.get("evPeriod");
   const closedPeriods = await client

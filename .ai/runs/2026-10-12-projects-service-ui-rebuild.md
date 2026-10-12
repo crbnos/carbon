@@ -157,6 +157,16 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 15: Simplify the Costs page
 
+- Layer 5: the loader returns no earned value for a project with no control account, before it checks the feature. So a company without the feature sees the upgrade row only on a project with a control account, and it is one `UpgradeOverlayRow`, not the overlay section.
+- The Service orders, Burden by pool and Earned value sections each open with the same title bar: `Subheading as="h3" variant="light"` in an `h-12` row. Service orders and Burden by pool keep their column header row under it ("Service order", "Pool").
+- `termId`: Control account, Planned value, Earned value, Actual cost (the earned value headers, inline icons) and Pool (`indirect-pool`).
+- `ProjectLedgerTable` always passes `emptyState` "No costs posted yet" (no description), so the costs drawer and the Time page both get it.
+- `ProjectCostsTree` is unchanged.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; erp 2,261 tests passed.
+- Shots: `15-costs.png` (OB2, earned value under the tree), `15-costs-drawer.png` (OB2-1: the empty ledger), `15-costs-nsops.png` (no control account: no earned value section).
+- Environment: the ERP dev server died during this task (502); restarted with `/tmp/uir/start-erp.sh`.
+- Screenshot check: 1 yes (the costs tree kept; the job costs sections' plain headings); 2 yes: the earned value headers wrap to 2 lines in their fixed 96 px columns, nothing clips; 3 yes (one row: the earned value period picker); 4 yes (the header's next step only); 5 yes; 6 yes; 7 yes (earned value by Layer 5).
+
 ## Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 
 ## Task 17: Simplify the Time page

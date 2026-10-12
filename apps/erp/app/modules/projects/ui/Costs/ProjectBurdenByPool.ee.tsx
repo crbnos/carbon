@@ -2,6 +2,7 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
+import { LabelWithHelp, Subheading } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { useCurrencyFormatter } from "~/hooks";
 
@@ -30,9 +31,16 @@ export default function ProjectBurdenByPool({
 
   return (
     <div className="shrink-0 border-t border-border">
+      <div className="flex h-12 items-center border-b border-border bg-card px-4">
+        <Subheading as="h3" variant="light">
+          <Trans>Burden by pool</Trans>
+        </Subheading>
+      </div>
       <div className="flex h-10 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
         <div className="min-w-0 flex-1 px-4">
-          <Trans>Burden by pool</Trans>
+          <LabelWithHelp termId="indirect-pool" variant="inline">
+            <Trans>Pool</Trans>
+          </LabelWithHelp>
         </div>
         <span className={FIGURE_CELL}>
           <Trans>Allowable</Trans>

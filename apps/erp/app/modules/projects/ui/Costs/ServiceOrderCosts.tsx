@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { Subheading } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { Hyperlink } from "~/components";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
@@ -42,9 +43,14 @@ export default function ServiceOrderCosts({
 
   return (
     <div className="shrink-0 border-t border-border">
+      <div className="flex h-12 items-center border-b border-border bg-card px-4">
+        <Subheading as="h3" variant="light">
+          <Trans>Service orders</Trans>
+        </Subheading>
+      </div>
       <div className="flex h-10 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
         <div className="min-w-0 flex-1 px-4">
-          <Trans>Service orders</Trans>
+          <Trans>Service order</Trans>
         </div>
         <span className="w-40 shrink-0 px-2">
           <Trans>Serial</Trans>

@@ -207,7 +207,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 12: Rebuild the project header on `RecordHeader`
 - [x] Task 13: Add the project Overview page
 - [x] Task 14: Fold Details into the project Settings page
-- [ ] Task 15: Simplify the Costs page
+- [x] Task 15: Simplify the Costs page
 - [ ] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
 - [ ] Task 17: Simplify the Time page
 - [ ] Task 18: Turn Milestones into the Schedule page
@@ -1636,4 +1636,6 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 14: the Project card posts through a fetcher. The details route has no page now, so a plain form post would move the browser to `/details` to show a validation error.
 - Task 14: a folded section opens while one of its fields has a validation error, so an error is never hidden.
 - Task 14: the Identifier is read-only text (`ReadOnlyField`) with a `Hidden` input, not a read-only input (D6).
+- Task 15: the `emptyState` lives inside `ProjectLedgerTable` rather than at each call site, so the Time page (Task 17 step 3) gets the same empty state with no change of its own.
+- Task 15: the earned value headers keep their 96 px columns and wrap to 2 lines with the glossary icon; BAC, CV, SV, CPI, SPI, EAC and VAC stay acronyms (the *Terminology* table names only the 3).
 

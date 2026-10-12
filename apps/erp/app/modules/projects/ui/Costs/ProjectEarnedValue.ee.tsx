@@ -8,23 +8,21 @@ import {
   AlertDescription,
   Button,
   cn,
+  LabelWithHelp,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
+  Subheading
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { Fragment } from "react";
-import {
-  LuChartNoAxesCombined,
-  LuDownload,
-  LuTriangleAlert
-} from "react-icons/lu";
+import { LuDownload, LuTriangleAlert } from "react-icons/lu";
 import { useSearchParams } from "react-router";
-import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
+import { UpgradeOverlayRow } from "~/components/UpgradeOverlay";
 import { useCurrencyFormatter, useQuantityFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -72,8 +70,8 @@ const CURRENT = "current";
 /**
  * Earned value on the Costs tab (Government Contracting 5c): one row per
  * control account with its work packages below it, live or as frozen at a
- * Closed period. A company without government contracting sees the upgrade
- * overlay.
+ * Closed period. A company without government contracting sees one upgrade
+ * row.
  */
 export default function ProjectEarnedValue({
   projectId,
@@ -84,28 +82,12 @@ export default function ProjectEarnedValue({
 }) {
   if (data.gated) {
     return (
-      <UpgradeOverlaySection
-        icon={
-          <LuChartNoAxesCombined className="size-6 text-muted-foreground" />
-        }
-        title={<Trans>Earned Value</Trans>}
-        description={
-          <Trans>Earned value: CPI, SPI and EAC per control account.</Trans>
-        }
-        className="border-t border-border"
-      >
-        <EarnedValueTable
-          projectId={projectId}
-          data={{
-            gated: false,
-            periodId: null,
-            periods: [],
-            workPackages: [],
-            controlAccounts: [],
-            warnings: []
-          }}
+      <div className="shrink-0 border-t border-border p-4">
+        <UpgradeOverlayRow
+          title={<Trans>Earned value</Trans>}
+          plan={<Trans>Business</Trans>}
         />
-      </UpgradeOverlaySection>
+      </div>
     );
   }
   return <EarnedValueTable projectId={projectId} data={data} />;
@@ -182,9 +164,9 @@ function EarnedValueTable({
   return (
     <div className="shrink-0 border-t border-border">
       <div className="flex h-12 items-center gap-2 border-b border-border bg-card px-4 text-sm">
-        <span className="min-w-0 flex-1 truncate font-medium">
+        <Subheading as="h3" variant="light" className="min-w-0 flex-1 truncate">
           <Trans>Earned value</Trans>
-        </span>
+        </Subheading>
         {data.periodId && (
           <Button asChild variant="secondary" leftIcon={<LuDownload />}>
             <a
@@ -225,21 +207,29 @@ function EarnedValueTable({
           </Alert>
         </div>
       )}
-      <div className="flex h-10 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
+      <div className="flex h-12 items-center border-b border-border bg-card pr-4 text-xs font-medium leading-tight text-muted-foreground">
         <div className={NAME_CELL}>
-          <Trans>Control account</Trans>
+          <LabelWithHelp termId="control-account" variant="inline">
+            <Trans>Control account</Trans>
+          </LabelWithHelp>
         </div>
         <span className={FIGURE_CELL} title={t`Budget at completion`}>
           <Trans>BAC</Trans>
         </span>
         <span className={FIGURE_CELL} title={t`BCWS`}>
-          <Trans>Planned value</Trans>
+          <LabelWithHelp termId="planned-value" variant="inline">
+            <Trans>Planned value</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL} title={t`BCWP`}>
-          <Trans>Earned value</Trans>
+          <LabelWithHelp termId="earned-value" variant="inline">
+            <Trans>Earned value</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL} title={t`ACWP`}>
-          <Trans>Actual cost</Trans>
+          <LabelWithHelp termId="actual-cost" variant="inline">
+            <Trans>Actual cost</Trans>
+          </LabelWithHelp>
         </span>
         <span className={FIGURE_CELL} title={t`Cost variance`}>
           <Trans>CV</Trans>
