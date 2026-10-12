@@ -23,9 +23,9 @@ import {
   LuUsers
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { Empty, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   planningGroupExcessRules,
@@ -46,6 +46,8 @@ function memberCount(group: PlanningGroup) {
 const PlanningGroupsTable = memo(
   ({ data, count }: PlanningGroupsTableProps) => {
     const { t } = useLingui();
+    const [params] = useUrlParams();
+    const isFiltered = params.has("filter") || params.has("search");
     const excessRuleLabels = usePlanningGroupExcessRuleLabels();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -182,6 +184,14 @@ const PlanningGroupsTable = memo(
         }
         renderContextMenu={renderContextMenu}
         title={t`Planning Groups`}
+        emptyState={
+          isFiltered ? undefined : (
+            <Empty
+              title={t`No planning groups yet`}
+              description={t`Projects in one group net their demand together in MRP.`}
+            />
+          )
+        }
       />
     );
   }

@@ -1193,6 +1193,9 @@ msgstr "La date de début d'un travail change"
 msgid "A job's status changes"
 msgstr "Le statut d'un travail change"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "Une ligne règle plus que le solde impayé de sa facture"
 
@@ -1278,6 +1281,9 @@ msgstr "Un signal de tirage physique – une carte imprimée ou un code QR plac�
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Un point dans l'un des propres flux de Carbon qu'un flux de travail peut surveiller — un travail libéré, un devis accepté, une expédition publiée — par rapport à un simple changement de champ ; il fournit au flux de travail les enregistrements impliqués par id."
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr ""
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr ""
@@ -1632,6 +1638,9 @@ msgstr "Le type d'un fournisseur change"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Une majoration taxable (manutention, réglage, carburant) ajoutée à la ligne; s'ajoute à la base imposable."
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr ""
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "Un enregistrement de temps pour travail de Réglage, Main-d'œuvre ou Machine enregistré sur une Opération d'OF, dont la durée s'accumule dans le coût réel de l'opération."
@@ -4540,6 +4549,9 @@ msgstr "Emprunté par ce projet"
 
 msgid "Borrower"
 msgstr "Emprunteur"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr ""
 
 msgid "Both"
 msgstr "Les deux"
@@ -11010,6 +11022,9 @@ msgstr "Mappage des champs"
 msgid "Field Visit"
 msgstr "Visite sur site"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr ""
+
 msgid "Fields"
 msgstr "Champs"
 
@@ -15723,14 +15738,17 @@ msgstr "Aucune entité suivie disponible trouvée"
 msgid "No bank accounts have been added yet."
 msgstr "Aucun compte bancaire n'a été ajouté pour l'instant."
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "Aucune ligne de base pour le moment. Prenez une pour garder une copie du plan, puis comparez-la avec le plan ultérieurement."
+msgid "No baselines yet"
+msgstr ""
 
 msgid "No batches"
 msgstr "Aucun lot de production"
 
 msgid "No batches selected yet."
 msgstr "Aucun lot de production sélectionné pour l'instant."
+
+msgid "No billable items on this invoice"
+msgstr ""
 
 msgid "No billable items yet"
 msgstr ""
@@ -15765,8 +15783,8 @@ msgstr "Aucun texte de certification n'est défini pour vous. Demandez à un adm
 msgid "No change request"
 msgstr "Aucune demande de modification"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "Aucune demande de modification pour le moment. Ouvrez-en une pour modifier le plan dans un brouillon que les relecteurs approuvent avant son application."
+msgid "No change requests yet"
+msgstr ""
 
 msgid "No changes"
 msgstr "Aucun changement"
@@ -16008,6 +16026,9 @@ msgstr "Aucun groupe assigné"
 msgid "No image"
 msgstr "Aucune image"
 
+msgid "No indirect pools yet"
+msgstr ""
+
 msgid "No inspection plans"
 msgstr "Aucun plan de contrôle"
 
@@ -16056,6 +16077,9 @@ msgstr "Aucun libellé"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr ""
 
+msgid "No labor categories yet"
+msgstr ""
+
 msgid "No lines"
 msgstr "Aucune ligne"
 
@@ -16101,8 +16125,8 @@ msgstr "Aucun matériau"
 msgid "No materials yet"
 msgstr "Aucune matière pour le moment"
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "Aucun membre pour le moment. Un projet avec du stock de projet rejoint le groupe dans son onglet Détails."
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr ""
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "Aucun membre pour le moment. Personne ne peut facturer du temps au projet."
@@ -16240,6 +16264,9 @@ msgstr "Aucun temps planifié ou enregistré."
 msgid "No planning data"
 msgstr "Aucune donnée de planification"
 
+msgid "No planning groups yet"
+msgstr ""
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "Aucune allocation encore. Ajouter une sous Allocations indirectes."
 
@@ -16286,6 +16313,9 @@ msgid "No project found"
 msgstr ""
 
 msgid "No project stock"
+msgstr ""
+
+msgid "No project stock transfers yet"
 msgstr ""
 
 msgid "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "Aucune commande de service n'a adapté une pièce à cette unité."
 msgid "No service orders"
 msgstr ""
 
+msgid "No service orders yet"
+msgstr ""
+
 msgid "No service templates yet"
 msgstr "Aucun modèle de service encore"
 
@@ -16408,8 +16441,8 @@ msgstr "Aucune diapositive pour le moment"
 msgid "No sorts applied to this view"
 msgstr "Aucun tri appliqué à cette vue"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "Aucun relevé pour cette période. Exécuter la période pour la calculer."
+msgid "No statement for this period"
+msgstr ""
 
 msgid "No step selected"
 msgstr "Aucune étape sélectionnée"
@@ -17157,6 +17190,9 @@ msgstr "Ordres de fabrication Ouverts"
 msgid "Open menu"
 msgstr "Ouvrir le menu"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Commandes Ouvertes"
 
@@ -17210,9 +17246,6 @@ msgstr "Modèle ouvert"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Ouvrir les registres comptables à une date limite. L'activation de la comptabilité est irréversible."
-
-msgid "Open the first change request"
-msgstr "Ouvrir la première demande de modification"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Ouvrez l'intégration Onshape Government et enregistrez ses paramètres pour vous reconnecter."
@@ -18952,6 +18985,9 @@ msgstr "Projections"
 
 msgid "Projects"
 msgstr "Projets"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr ""
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr ""
@@ -21140,6 +21176,9 @@ msgstr "Exécuter la liste de contrôle d'acceptation jusqu'à la réussite"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Exécuter l'atelier sur des tablettes : enregistrer la main-d'œuvre, signaler la progression, voir les instructions"
+
+msgid "Run the period to compute it."
+msgstr ""
 
 msgid "Run this workflow now?"
 msgstr "Exécuter ce flux de travail maintenant ?"
@@ -23882,14 +23921,14 @@ msgstr "Personnalisez ce hub pour le client. Les modifications s'appliquent en d
 msgid "Take Baseline"
 msgstr "Prendre la ligne de base"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "Take out of service"
 msgstr "Retirer du service"
 
 msgid "Take Out of Service"
 msgstr "Mettre hors service"
-
-msgid "Take the first baseline"
-msgstr "Prendre la première ligne de base"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Prendre la durée de conservation la plus courte parmi les matières consommées pour fabriquer cet article. Utilisez-le lorsque la péremption du produit dépend de ses ingrédients."

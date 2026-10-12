@@ -8,6 +8,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { createElement, useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
+import { Empty } from "~/components";
 import { useQuantityFormatter } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -57,9 +58,7 @@ export function ElementReader({
 
   if (outline.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        <Trans>No elements to show</Trans>
-      </div>
+      <Empty title={<Trans>No elements to show</Trans>} description={null} />
     );
   }
 

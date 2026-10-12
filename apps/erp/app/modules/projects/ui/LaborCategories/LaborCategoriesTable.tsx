@@ -20,8 +20,13 @@ import {
   LuText
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
-import { useCompanyToday, useCurrencyFormatter, usePermissions } from "~/hooks";
+import { Empty, Hyperlink, New, Table } from "~/components";
+import {
+  useCompanyToday,
+  useCurrencyFormatter,
+  usePermissions,
+  useUrlParams
+} from "~/hooks";
 import { path } from "~/utils/path";
 import type { LaborCategory } from "../../types";
 import { useRdActivityRoleLabels } from "../RdTax/useRdTaxLabels";
@@ -52,6 +57,8 @@ function currentRate(row: LaborCategoryRow, today: string) {
 const LaborCategoriesTable = memo(
   ({ data, count }: LaborCategoriesTableProps) => {
     const { t } = useLingui();
+    const [params] = useUrlParams();
+    const isFiltered = params.has("filter") || params.has("search");
     const navigate = useNavigate();
     const permissions = usePermissions();
     const today = useCompanyToday();
@@ -167,6 +174,14 @@ const LaborCategoriesTable = memo(
         }
         renderContextMenu={renderContextMenu}
         title={t`Labor Categories`}
+        emptyState={
+          isFiltered ? undefined : (
+            <Empty
+              title={t`No labor categories yet`}
+              description={t`A labor category sets the cost and bill rates of the people in it.`}
+            />
+          )
+        }
       />
     );
   }

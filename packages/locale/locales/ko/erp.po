@@ -1193,6 +1193,9 @@ msgstr "작업 지시의 시작일이 변경됨"
 msgid "A job's status changes"
 msgstr "작업의 상태가 변경됨"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "한 항목이 송장의 미결제 잔액보다 많이 정산합니다"
 
@@ -1278,6 +1281,9 @@ msgstr "실제 풀 신호로 재고와 함께 있는 인쇄된 카드 또는 QR 
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon 자체 흐름의 한 지점으로 워크플로가 감시할 수 있습니다 — 작업 지시 릴리스됨, 견적서 수락됨, 출하 전기됨 — 원시 필드 변경과는 다릅니다; 워크플로에 관련 레코드를 ID로 제공합니다."
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr ""
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr ""
@@ -1632,6 +1638,9 @@ msgstr "공급업체의 유형이 변경됨"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "라인에 추가된 과세 부과금(취급, 셋업, 연료); 세금 기초에 포함됩니다."
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr ""
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "작업 지시 공정에 기록된 셋업, 노무 또는 기계 작업의 시간 기록으로, 그 기간은 공정의 실제 원가에 누적됩니다."
@@ -4540,6 +4549,9 @@ msgstr "이 프로젝트에 의해 차용됨"
 
 msgid "Borrower"
 msgstr "차용자"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr ""
 
 msgid "Both"
 msgstr "모두"
@@ -11010,6 +11022,9 @@ msgstr "필드 매핑"
 msgid "Field Visit"
 msgstr "현장 방문"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr ""
+
 msgid "Fields"
 msgstr "필드"
 
@@ -15723,14 +15738,17 @@ msgstr "추적된 가용 객체를 찾을 수 없습니다"
 msgid "No bank accounts have been added yet."
 msgstr "아직 추가된 은행 계좌가 없습니다."
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "기준선이 아직 없습니다. 계획의 사본을 유지하기 위해 하나를 작성한 후 나중에 계획과 비교하세요."
+msgid "No baselines yet"
+msgstr ""
 
 msgid "No batches"
 msgstr "배치 없음"
 
 msgid "No batches selected yet."
 msgstr "아직 선택된 배치가 없습니다."
+
+msgid "No billable items on this invoice"
+msgstr ""
 
 msgid "No billable items yet"
 msgstr ""
@@ -15765,8 +15783,8 @@ msgstr "인증 텍스트가 설정되지 않았습니다. 관리자에게 설정
 msgid "No change request"
 msgstr "변경 요청 없음"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "변경 요청이 아직 없습니다. 검토자가 승인하기 전에 초안에서 계획을 변경하려면 하나를 여세요."
+msgid "No change requests yet"
+msgstr ""
 
 msgid "No changes"
 msgstr "변경 사항 없음"
@@ -16008,6 +16026,9 @@ msgstr "배정된 그룹이 없습니다"
 msgid "No image"
 msgstr "이미지 없음"
 
+msgid "No indirect pools yet"
+msgstr ""
+
 msgid "No inspection plans"
 msgstr "검사 계획 없음"
 
@@ -16056,6 +16077,9 @@ msgstr "레이블 없음"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr ""
 
+msgid "No labor categories yet"
+msgstr ""
+
 msgid "No lines"
 msgstr "항목 없음"
 
@@ -16101,8 +16125,8 @@ msgstr "자재 없음"
 msgid "No materials yet"
 msgstr "아직 자재가 없습니다."
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "아직 구성원이 없습니다. 프로젝트 재고가 있는 프로젝트는 세부 정보 탭에서 그룹에 참여합니다."
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr ""
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "아직 구성원이 없습니다. 누구도 프로젝트에 시간을 청구할 수 없습니다."
@@ -16240,6 +16264,9 @@ msgstr "계획되거나 기록된 시간이 없습니다."
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
 
+msgid "No planning groups yet"
+msgstr ""
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "풀이 아직 없습니다. 간접비 풀에서 하나를 추가하세요."
 
@@ -16286,6 +16313,9 @@ msgid "No project found"
 msgstr ""
 
 msgid "No project stock"
+msgstr ""
+
+msgid "No project stock transfers yet"
 msgstr ""
 
 msgid "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "이 개에 부품을 장착한 서비스 주문이 없습니다."
 msgid "No service orders"
 msgstr ""
 
+msgid "No service orders yet"
+msgstr ""
+
 msgid "No service templates yet"
 msgstr "아직 서비스 템플릿이 없습니다."
 
@@ -16408,8 +16441,8 @@ msgstr "아직 슬라이드 없음"
 msgid "No sorts applied to this view"
 msgstr "이 보기에는 정렬이 적용되지 않았습니다"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "이 기간에 대한 명세서가 없습니다. 기간을 실행하여 계산하세요."
+msgid "No statement for this period"
+msgstr ""
 
 msgid "No step selected"
 msgstr "선택한 단계 없음"
@@ -17157,6 +17190,9 @@ msgstr "미결 작업 지시"
 msgid "Open menu"
 msgstr "메뉴 열기"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "Open Orders"
 msgstr "미결 주문"
 
@@ -17210,9 +17246,6 @@ msgstr "미결 템플릿"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "정산일에 장부를 개설하십시오. 회계 활성화는 일방향입니다."
-
-msgid "Open the first change request"
-msgstr "첫 번째 변경 요청 열기"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government 연동을 열고 설정을 저장하여 다시 연동하세요."
@@ -18952,6 +18985,9 @@ msgstr "예측"
 
 msgid "Projects"
 msgstr "프로젝트"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr ""
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr ""
@@ -21140,6 +21176,9 @@ msgstr "인수 체크리스트를 통과할 때까지 진행하세요"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "태블릿에서 작업장을 실행합니다: 노무를 기록하고, 진행 상황을 보고하고, 지침을 확인합니다."
+
+msgid "Run the period to compute it."
+msgstr ""
 
 msgid "Run this workflow now?"
 msgstr "이 워크플로우를 지금 실행하시겠습니까?"
@@ -23882,14 +23921,14 @@ msgstr "이 허브를 고객에 맞게 조정하세요. 변경 사항은 이를 
 msgid "Take Baseline"
 msgstr "기준선 설정"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "Take out of service"
 msgstr "서비스 중지"
 
 msgid "Take Out of Service"
 msgstr "사용 중단"
-
-msgid "Take the first baseline"
-msgstr "첫 번째 기준선 설정"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "이 품목을 만드는 데 소비되는 자재 중 가장 짧은 보존 기간을 사용합니다. 제품의 유통기한이 재료에 따라 결정될 때 사용합니다."

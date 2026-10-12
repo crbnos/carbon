@@ -1193,6 +1193,9 @@ msgstr "Дата начала работы изменяется"
 msgid "A job's status changes"
 msgstr "Статус работы изменяется"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "Строка превышает открытый остаток счета-фактуры при погашении"
 
@@ -1278,6 +1281,9 @@ msgstr "Физический сигнал вытягивания — печат�
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Точка в одном из потоков Carbon, которую может отслеживать рабочий процесс — например, запуск производственного заказа, принятие коммерческого предложения, проведение отгрузки — в отличие от простого изменения поля; она передает рабочему процессу вовлеченные записи по идентификатору."
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr ""
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr ""
@@ -1632,6 +1638,9 @@ msgstr "Тип поставщика изменяется"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Налоговый сбор (погрузка, наладка, топливо), добавляемый к строке и включаемый в налоговую базу."
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr ""
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "Фиксированная по времени запись работы «Наладка», «Труд» или «Станок», зарегистрированная для операции заказа, чья продолжительность суммируется в фактическую себестоимость операции."
@@ -4540,6 +4549,9 @@ msgstr "Заимствовано этим проектом"
 
 msgid "Borrower"
 msgstr "Заёмщик"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr ""
 
 msgid "Both"
 msgstr "Оба"
@@ -11010,6 +11022,9 @@ msgstr "Сопоставление полей"
 msgid "Field Visit"
 msgstr "Выезд на объект"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr ""
+
 msgid "Fields"
 msgstr "Поля"
 
@@ -15723,14 +15738,17 @@ msgstr "Не найдено доступных отслеживаемых объ
 msgid "No bank accounts have been added yet."
 msgstr "Банковские счета ещё не добавлены."
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "Нет базовых планов. Создайте один, чтобы сохранить копию плана, а затем сравните его с планом позже."
+msgid "No baselines yet"
+msgstr ""
 
 msgid "No batches"
 msgstr "Нет серий"
 
 msgid "No batches selected yet."
 msgstr "Серии ещё не выбраны."
+
+msgid "No billable items on this invoice"
+msgstr ""
 
 msgid "No billable items yet"
 msgstr ""
@@ -15765,8 +15783,8 @@ msgstr "Для вас не установлен текст сертификац�
 msgid "No change request"
 msgstr "Нет запроса на изменение"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "Нет запросов на изменение. Откройте один, чтобы изменить план в черновике, который рецензенты одобрят перед его применением."
+msgid "No change requests yet"
+msgstr ""
 
 msgid "No changes"
 msgstr "Нет изменений"
@@ -16008,6 +16026,9 @@ msgstr "Нет назначенных групп"
 msgid "No image"
 msgstr "Нет изображения"
 
+msgid "No indirect pools yet"
+msgstr ""
+
 msgid "No inspection plans"
 msgstr "Нет планов контроля"
 
@@ -16056,6 +16077,9 @@ msgstr "Нет меток"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr ""
 
+msgid "No labor categories yet"
+msgstr ""
+
 msgid "No lines"
 msgstr "Нет строк"
 
@@ -16101,8 +16125,8 @@ msgstr "Нет материалов"
 msgid "No materials yet"
 msgstr "Нет материалов ещё"
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "Членов еще нет. Проект с запасами проекта присоединяется к группе на вкладке «Детали»."
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr ""
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "Членов еще нет. Никто не может отнести время на проект."
@@ -16240,6 +16264,9 @@ msgstr "Нет запланированного или записанного в
 msgid "No planning data"
 msgstr "Нет данных планирования"
 
+msgid "No planning groups yet"
+msgstr ""
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "Пока нет пулов. Добавьте один в разделе «Косвенные пулы»."
 
@@ -16286,6 +16313,9 @@ msgid "No project found"
 msgstr ""
 
 msgid "No project stock"
+msgstr ""
+
+msgid "No project stock transfers yet"
 msgstr ""
 
 msgid "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "Ни один заказ на обслуживание не устано
 msgid "No service orders"
 msgstr ""
 
+msgid "No service orders yet"
+msgstr ""
+
 msgid "No service templates yet"
 msgstr "Нет шаблонов обслуживания"
 
@@ -16408,8 +16441,8 @@ msgstr "Слайдов еще нет"
 msgid "No sorts applied to this view"
 msgstr "Сортировка не применена к этому представлению"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "Выписки для этого периода нет. Запустите период для его расчета."
+msgid "No statement for this period"
+msgstr ""
 
 msgid "No step selected"
 msgstr "Шаг не выбран"
@@ -17157,6 +17190,9 @@ msgstr "Открытые производственные заказы"
 msgid "Open menu"
 msgstr "Открыть меню"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Открытые заказы"
 
@@ -17210,9 +17246,6 @@ msgstr "Открытый шаблон"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Открыть учет на дату переходу. Включение бухгалтерии необратимо."
-
-msgid "Open the first change request"
-msgstr "Открыть первый запрос на изменение"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Откройте интеграцию Onshape Government и сохраните ее настройки для повторного подключения."
@@ -18952,6 +18985,9 @@ msgstr "Прогнозы"
 
 msgid "Projects"
 msgstr "Проекты"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr ""
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr ""
@@ -21140,6 +21176,9 @@ msgstr "Запустить контрольный список приемки д
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Управляйте цехом на планшетах: фиксируйте труд, сообщайте о прогрессе, смотрите инструкции"
+
+msgid "Run the period to compute it."
+msgstr ""
 
 msgid "Run this workflow now?"
 msgstr "Запустить этот рабочий процесс сейчас?"
@@ -23882,14 +23921,14 @@ msgstr "Настройте этот центр для покупателя. Из
 msgid "Take Baseline"
 msgstr "Взять базовое значение"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "Take out of service"
 msgstr "Вывести из эксплуатации"
 
 msgid "Take Out of Service"
 msgstr "Вывести из эксплуатации"
-
-msgid "Take the first baseline"
-msgstr "Взять первое базовое значение"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Возьмите кратчайший оставшийся срок хранения из всей используемой номенклатуры для производства этой номенклатуры. Используйте, когда срок годности продукта зависит от его компонентов."

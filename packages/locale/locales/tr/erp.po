@@ -1193,6 +1193,9 @@ msgstr "İş emrinin başlangıç tarihi değişiyor"
 msgid "A job's status changes"
 msgstr "Bir işin durumu değiştirildi"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "Bir satır, faturasının açık bakiyesinden fazlasını kapatıyor"
 
@@ -1278,6 +1281,9 @@ msgstr "Stoğun yanında yaşayan basılı kart veya QR kodu olan, göz doldurma
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon'un kendi akışlarından birinde, bir iş akışı tarafından izlenebilir — bir iş serbest bırakıldı, bir teklif kabul edildi, bir sevkiyat nakledildi — ham alan değişimine karşın; iş akışına söz konusu kayıtları id'ye göre teslim eder."
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr ""
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr ""
@@ -1632,6 +1638,9 @@ msgstr "Bir tedarikçinin türü değişti"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "Vergilendirilecek bir ek ücret (işçilik, kurulum, yakıt) satıra eklenir ve vergi matrahına dahil edilir."
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr ""
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "Bir iş emri operasyonuna karşı kaydedilen Hazırlık, İşçilik veya Makine çalışmasının zamanlı kaydı, süresi operasyonun gerçek maliyetinde toplanır."
@@ -4540,6 +4549,9 @@ msgstr "Bu proje tarafından ödünç alınan"
 
 msgid "Borrower"
 msgstr "Ödünç alan"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr ""
 
 msgid "Both"
 msgstr "Her ikisi"
@@ -11010,6 +11022,9 @@ msgstr "Alan Adlandırma"
 msgid "Field Visit"
 msgstr "Arazi Ziyareti"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr ""
+
 msgid "Fields"
 msgstr "Alanlar"
 
@@ -15723,14 +15738,17 @@ msgstr "Kullanılabilir izlenen varlık bulunamadı"
 msgid "No bank accounts have been added yet."
 msgstr "Henüz hiçbir banka hesabı eklenmemiştir."
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "Henüz temel yoktur. Planın bir kopyasını saklı tutmak için bir tanesini alın, ardından daha sonra planla karşılaştırın."
+msgid "No baselines yet"
+msgstr ""
 
 msgid "No batches"
 msgstr "Parti yok"
 
 msgid "No batches selected yet."
 msgstr "Henüz hiçbir parti seçilmemiştir."
+
+msgid "No billable items on this invoice"
+msgstr ""
 
 msgid "No billable items yet"
 msgstr ""
@@ -15765,8 +15783,8 @@ msgstr "Sizin için sertifika metni ayarlanmamış. Ayarlar → Zaman Takibi'nde
 msgid "No change request"
 msgstr "Değişiklik isteği yok"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "Henüz değişiklik isteği yok. İnceleyicilerin uygulanmadan önce onaylayacağı bir taslakta planı değiştirmek için bir tanesini açın."
+msgid "No change requests yet"
+msgstr ""
 
 msgid "No changes"
 msgstr "Değişiklik yok"
@@ -16008,6 +16026,9 @@ msgstr "Atanmış grup yok"
 msgid "No image"
 msgstr "Resim yok"
 
+msgid "No indirect pools yet"
+msgstr ""
+
 msgid "No inspection plans"
 msgstr "Kontrol planı yok"
 
@@ -16056,6 +16077,9 @@ msgstr "Etiket yok"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr ""
 
+msgid "No labor categories yet"
+msgstr ""
+
 msgid "No lines"
 msgstr "Satır yok"
 
@@ -16101,8 +16125,8 @@ msgstr "Malzeme yok"
 msgid "No materials yet"
 msgstr "Henüz malzeme yok"
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "Henüz üye yok. Proje stoklu bir proje, Details sekmesinde gruba katılır."
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr ""
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "Henüz üye yok. Kimse projeye zaman tahakkuk edemez."
@@ -16240,6 +16264,9 @@ msgstr "Planlanan veya kaydedilen zaman yok."
 msgid "No planning data"
 msgstr "Planlama verisi yok"
 
+msgid "No planning groups yet"
+msgstr ""
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "Henüz havuz yok. Dolaylı Havuzlar altında bir havuz ekleyin."
 
@@ -16286,6 +16313,9 @@ msgid "No project found"
 msgstr ""
 
 msgid "No project stock"
+msgstr ""
+
+msgid "No project stock transfers yet"
 msgstr ""
 
 msgid "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "Hiçbir hizmet emri bu ünitesine bir parça takmamıştır."
 msgid "No service orders"
 msgstr ""
 
+msgid "No service orders yet"
+msgstr ""
+
 msgid "No service templates yet"
 msgstr "Henüz hizmet şablonu yok"
 
@@ -16408,8 +16441,8 @@ msgstr "Henüz slayt yok"
 msgid "No sorts applied to this view"
 msgstr "Bu görünüme herhangi bir sıralama uygulanmadı"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "Bu dönem için hiçbir rapor yok. Hesaplamak için dönemi çalıştırın."
+msgid "No statement for this period"
+msgstr ""
 
 msgid "No step selected"
 msgstr "Adım seçilmedi"
@@ -17157,6 +17190,9 @@ msgstr "Açık İş Emirleri"
 msgid "Open menu"
 msgstr "Menüyü aç"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "Open Orders"
 msgstr "Açık Siparişler"
 
@@ -17210,9 +17246,6 @@ msgstr "Şablonu Aç"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Cutover tarihinde defteri-kebiri açınız. Muhasebeyi etkinleştirmek geri dönüşsüzdür."
-
-msgid "Open the first change request"
-msgstr "İlk değişiklik isteğini aç"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Onshape Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
@@ -18952,6 +18985,9 @@ msgstr "Projeksiyonlar"
 
 msgid "Projects"
 msgstr "Projeler"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr ""
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr ""
@@ -21140,6 +21176,9 @@ msgstr "Kabul kontrol listesini başarıyla tamamlayın"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Kat'ı tabletlerde çalıştır: İşçiliği kaydet, ilerleme bildir, talimatları gör"
+
+msgid "Run the period to compute it."
+msgstr ""
 
 msgid "Run this workflow now?"
 msgstr "Bu iş akışı şimdi çalıştırılsın mı?"
@@ -23882,14 +23921,14 @@ msgstr "Bu hub'ı müşteri için özelleştirin. Değişiklikler bunu görünt�
 msgid "Take Baseline"
 msgstr "Temeli Alıkoy"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "Take out of service"
 msgstr "Hizmetten Çıkart"
 
 msgid "Take Out of Service"
 msgstr "Hizmetten Çıkar"
-
-msgid "Take the first baseline"
-msgstr "İlk temeli al"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Bu öğeyi üretmek için tüketilen malzemelerdeki en kısa kalan raf ömrünü alır. Ürünün son kullanma tarihinin bileşenlerine bağlı olduğu durumlarda kullanılır."

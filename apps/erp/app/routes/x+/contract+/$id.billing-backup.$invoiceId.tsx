@@ -12,7 +12,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { EmployeeAvatar, Table } from "~/components";
+import { EmployeeAvatar, Empty, Table } from "~/components";
 import { useLaborCategories } from "~/components/Form";
 import {
   useDateFormatter,
@@ -308,6 +308,12 @@ export default function ContractBillingBackupRoute() {
       withSearch={false}
       withSimpleSorting={false}
       withSidebarTrigger={false}
+      emptyState={
+        <Empty
+          title={t`No billable items on this invoice`}
+          description={null}
+        />
+      }
     />
   );
 }

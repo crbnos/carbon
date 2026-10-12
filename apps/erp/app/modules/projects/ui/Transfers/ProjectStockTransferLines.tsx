@@ -330,9 +330,10 @@ export default function ProjectStockTransferLines({
         </CardHeader>
         <CardContent>
           {lines.length === 0 ? (
-            <Empty>
-              <Trans>Add the items to move.</Trans>
-            </Empty>
+            <Empty
+              title={<Trans>No lines yet</Trans>}
+              description={<Trans>Add the items to move.</Trans>}
+            />
           ) : (
             <TableBase full>
               <Thead>

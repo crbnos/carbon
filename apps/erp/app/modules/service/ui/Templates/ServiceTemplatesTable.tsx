@@ -8,7 +8,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
 import { LuHash, LuLayoutTemplate, LuListTree, LuPencil } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { Empty, Hyperlink, New, Table } from "~/components";
 import { usePermissions, useQuantityFormatter, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ServiceTemplate } from "../../types";
@@ -26,6 +26,7 @@ const ServiceTemplatesTable = memo(
   ({ data, count }: { data: ServiceTemplate[]; count: number }) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
+    const isFiltered = params.has("filter") || params.has("search");
     const navigate = useNavigate();
     const permissions = usePermissions();
     const formatQuantity = useQuantityFormatter();
@@ -100,6 +101,14 @@ const ServiceTemplatesTable = memo(
         }
         renderContextMenu={renderContextMenu}
         title={t`Service Templates`}
+        emptyState={
+          isFiltered ? undefined : (
+            <Empty
+              title={t`No service templates yet`}
+              description={t`A template holds the elements and planned work a service order starts from.`}
+            />
+          )
+        }
       />
     );
   }

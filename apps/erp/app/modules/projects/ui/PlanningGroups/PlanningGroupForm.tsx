@@ -160,10 +160,10 @@ const PlanningGroupForm = ({
                       <Trans>Members</Trans>
                     </span>
                     {(members ?? []).length === 0 ? (
-                      <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                      <p className="text-sm text-muted-foreground">
                         <Trans>
                           No members yet. A project with project stock joins the
-                          group on its Details tab.
+                          group on its Settings page.
                         </Trans>
                       </p>
                     ) : (

@@ -1193,6 +1193,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr ""
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "某行结算金额超过其发票的未结余额"
 
@@ -1278,6 +1281,9 @@ msgstr "一个物理拉动信号——一张印刷卡片或 QR 码与库存一�
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "Carbon 自身流程中的一个点，工作流可以监控——工单已下达、报价单已接受、发货已过账——相对于原始字段更改；它通过 ID 将所涉及的记录传递给工作流。"
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr ""
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr ""
@@ -1632,6 +1638,9 @@ msgstr "供应商的类型已更改"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "应税附加费（处理、换型、燃料）添加到行中；纳入税基。"
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr ""
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "针对工单工序记录的换型、人工或机器工作的计时记录，其时长汇总到该工序的实际成本。"
@@ -4540,6 +4549,9 @@ msgstr "由此项目借用"
 
 msgid "Borrower"
 msgstr "借用人"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr ""
 
 msgid "Both"
 msgstr "两者"
@@ -11010,6 +11022,9 @@ msgstr "字段映射"
 msgid "Field Visit"
 msgstr "现场访问"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr ""
+
 msgid "Fields"
 msgstr "字段"
 
@@ -15723,14 +15738,17 @@ msgstr "未找到可用的追踪实体"
 msgid "No bank accounts have been added yet."
 msgstr "尚未添加银行账户。"
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "还没有基线。创建一个来保存计划副本，然后稍后与计划进行比较。"
+msgid "No baselines yet"
+msgstr ""
 
 msgid "No batches"
 msgstr "无生产批次"
 
 msgid "No batches selected yet."
 msgstr "尚未选择生产批次。"
+
+msgid "No billable items on this invoice"
+msgstr ""
 
 msgid "No billable items yet"
 msgstr ""
@@ -15765,8 +15783,8 @@ msgstr "没有为您设置认证文本。请要求管理员在设置 → 时间�
 msgid "No change request"
 msgstr "没有更改请求"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "还没有更改请求。打开一个来在评审员批准前以草稿形式更改计划。"
+msgid "No change requests yet"
+msgstr ""
 
 msgid "No changes"
 msgstr "没有更改"
@@ -16008,6 +16026,9 @@ msgstr "没有已分配的组"
 msgid "No image"
 msgstr "没有图像"
 
+msgid "No indirect pools yet"
+msgstr ""
+
 msgid "No inspection plans"
 msgstr "无检验计划"
 
@@ -16056,6 +16077,9 @@ msgstr "没有标签"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr ""
 
+msgid "No labor categories yet"
+msgstr ""
+
 msgid "No lines"
 msgstr "无行项"
 
@@ -16101,8 +16125,8 @@ msgstr "无物料"
 msgid "No materials yet"
 msgstr "暂无原材料"
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "还没有成员。具有项目库存的项目在其\"详细信息\"标签中加入该组。"
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr ""
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "还没有成员。没人可以对项目计费。"
@@ -16240,6 +16264,9 @@ msgstr "没有计划或记录的时间。"
 msgid "No planning data"
 msgstr "没有计划数据"
 
+msgid "No planning groups yet"
+msgstr ""
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "还没有资源池。在\"间接资源池\"下添加一个。"
 
@@ -16286,6 +16313,9 @@ msgid "No project found"
 msgstr ""
 
 msgid "No project stock"
+msgstr ""
+
+msgid "No project stock transfers yet"
 msgstr ""
 
 msgid "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "没有服务单为该单位配备零件。"
 msgid "No service orders"
 msgstr ""
 
+msgid "No service orders yet"
+msgstr ""
+
 msgid "No service templates yet"
 msgstr "还没有服务模板"
 
@@ -16408,8 +16441,8 @@ msgstr "还没有幻灯片"
 msgid "No sorts applied to this view"
 msgstr "此查看未应用任何排序"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "此期间没有报表。运行该期间以计算它。"
+msgid "No statement for this period"
+msgstr ""
 
 msgid "No step selected"
 msgstr "未选择步骤"
@@ -17157,6 +17190,9 @@ msgstr "未结工单"
 msgid "Open menu"
 msgstr "打开菜单"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr ""
+
 msgid "Open Orders"
 msgstr "未结订单"
 
@@ -17210,9 +17246,6 @@ msgstr "打开模板"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "在结转日期打开账簿。启用会计是单向的。"
-
-msgid "Open the first change request"
-msgstr "打开第一个变更请求"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "打开 Onshape Government 集成并保存其设置以重新连接。"
@@ -18952,6 +18985,9 @@ msgstr "预测"
 
 msgid "Projects"
 msgstr "项目"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr ""
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr ""
@@ -21140,6 +21176,9 @@ msgstr "运行验收清单至合格"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "在平板电脑上运行车间：计时人工、报告进度、查看说明"
+
+msgid "Run the period to compute it."
+msgstr ""
 
 msgid "Run this workflow now?"
 msgstr "立即运行此工作流？"
@@ -23882,14 +23921,14 @@ msgstr "为客户定制此中心。更改对所有查看者实时生效。永远
 msgid "Take Baseline"
 msgstr "取基线"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr ""
+
 msgid "Take out of service"
 msgstr "停用"
 
 msgid "Take Out of Service"
 msgstr "停用"
-
-msgid "Take the first baseline"
-msgstr "取第一个基线"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用制造此物料所消耗的原材料中最短的保质期。当产品的有效期取决于其成分时使用。"

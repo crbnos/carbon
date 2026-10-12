@@ -27,9 +27,9 @@ import {
   LuTrash
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { Hyperlink, New, Table } from "~/components";
+import { Empty, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { path } from "~/utils/path";
 
 type IndirectPoolsTableProps = {
@@ -40,6 +40,8 @@ type IndirectPoolsTableProps = {
 /** Accounting → Indirect Pools: the pools in cascade order (Phase 5b). */
 const IndirectPoolsTable = memo(({ data, count }: IndirectPoolsTableProps) => {
   const { t } = useLingui();
+  const [params] = useUrlParams();
+  const isFiltered = params.has("filter") || params.has("search");
   const navigate = useNavigate();
   const permissions = usePermissions();
 
@@ -146,6 +148,14 @@ const IndirectPoolsTable = memo(({ data, count }: IndirectPoolsTableProps) => {
       }
       renderContextMenu={renderContextMenu}
       title={t`Indirect Pools`}
+      emptyState={
+        isFiltered ? undefined : (
+          <Empty
+            title={t`No indirect pools yet`}
+            description={t`A pool collects indirect cost and spreads it over its base.`}
+          />
+        )
+      }
     />
   );
 });

@@ -26,12 +26,13 @@ import {
   DateTime,
   EmployeeAvatar,
   EmployeeAvatarGroup,
+  Empty,
   Enumerable,
   Hyperlink,
   New,
   Table
 } from "~/components";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import type { ServiceOrderType } from "../../service.models";
@@ -75,6 +76,8 @@ function visitTechnicians(order: ServiceOrderListItem): string[] {
 
 const ServiceOrdersTable = memo(({ data, count }: ServiceOrdersTableProps) => {
   const { t } = useLingui();
+  const [params] = useUrlParams();
+  const isFiltered = params.has("filter") || params.has("search");
   const permissions = usePermissions();
   const navigate = useNavigate();
   const [customers] = useCustomers();
@@ -318,6 +321,14 @@ const ServiceOrdersTable = memo(({ data, count }: ServiceOrdersTableProps) => {
       }
       renderContextMenu={renderContextMenu}
       title={t`Service Orders`}
+      emptyState={
+        isFiltered ? undefined : (
+          <Empty
+            title={t`No service orders yet`}
+            description={t`Field visits and refurbishments show here once opened.`}
+          />
+        )
+      }
       table="serviceOrder"
       withSavedView
     />

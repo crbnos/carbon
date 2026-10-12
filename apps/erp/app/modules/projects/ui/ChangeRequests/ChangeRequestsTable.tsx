@@ -5,8 +5,9 @@
 import { Button } from "@carbon/react";
 import { Plural, Trans } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuGitPullRequestArrow, LuPlus } from "react-icons/lu";
+import { LuPlus } from "react-icons/lu";
 import { Link } from "react-router";
+import { Empty } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -47,22 +48,15 @@ const ChangeRequestsTable = ({
       </div>
 
       {changeRequests.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
-          <LuGitPullRequestArrow className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
+        <Empty
+          title={<Trans>No change requests yet</Trans>}
+          description={
             <Trans>
-              No change requests yet. Open one to change the plan in a draft
-              that reviewers approve before it applies.
+              Open one to change the plan in a draft that reviewers approve
+              before it applies.
             </Trans>
-          </p>
-          <Button
-            leftIcon={<LuPlus />}
-            isDisabled={!canUpdate}
-            onClick={() => setIsOpening(true)}
-          >
-            <Trans>Open the first change request</Trans>
-          </Button>
-        </div>
+          }
+        />
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-card">
           {changeRequests.map((changeRequest) => (

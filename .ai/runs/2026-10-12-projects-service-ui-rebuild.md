@@ -335,6 +335,10 @@ Shots: `37-settings-timekeeping.png` (Standard: the Controls card alone), `37-se
 
 ## Task 38: Sweep the remaining empty states
 
+Shots: `38-baselines.png`, `38-change-requests.png` (OB2 has neither: the `Empty` state, one action in the header), `38-planning-groups.png` (one row, unchanged). Verify grep: `border-dashed` outside `ElementBoxNode` in the projects and service modules and routes: 0.
+
+1. Reference pattern: yes — `Empty` for a page or list, one muted line inside a form. 2. No overlap: yes. 3. One toolbar row: yes. 4. One primary: yes (the empty states no longer repeat the header's button). 5. No input box in a table: n/a. 6. Secondary actions in menus: n/a. 7. Advanced fields hidden: n/a.
+
 ## Task 39: Sweep every boolean field to bordered
 
 ## Task 40: Sweep the glossary popovers onto the rebuilt screens

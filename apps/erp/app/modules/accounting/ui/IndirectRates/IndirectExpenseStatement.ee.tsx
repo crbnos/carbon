@@ -7,6 +7,7 @@ import { cn, Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
 import { formatQuantity, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import { Empty } from "~/components";
 import { useCurrencyFormatter, usePercentFormatter } from "~/hooks";
 
 export type IndirectExpenseStatementLine = {
@@ -64,11 +65,10 @@ const IndirectExpenseStatement = ({
 
   if (sections.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
-        <Trans>
-          No statement for this period. Run the period to compute it.
-        </Trans>
-      </p>
+      <Empty
+        title={<Trans>No statement for this period</Trans>}
+        description={<Trans>Run the period to compute it.</Trans>}
+      />
     );
   }
 

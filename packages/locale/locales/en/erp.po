@@ -1193,6 +1193,9 @@ msgstr "A job's start date changes"
 msgid "A job's status changes"
 msgstr "A job's status changes"
 
+msgid "A labor category sets the cost and bill rates of the people in it."
+msgstr "A labor category sets the cost and bill rates of the people in it."
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "A line settles more than its invoice's open balance"
 
@@ -1278,6 +1281,9 @@ msgstr "A physical pull signal — a printed card or QR code living with the sto
 
 msgid "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
 msgstr "A point in one of Carbon's own flows that a workflow can watch — a job released, a quote accepted, a shipment posted — as opposed to a raw field change; it hands the workflow the records involved by id."
+
+msgid "A pool collects indirect cost and spreads it over its base."
+msgstr "A pool collects indirect cost and spreads it over its base."
 
 msgid "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
 msgstr "A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists."
@@ -1632,6 +1638,9 @@ msgstr "A supplier's type changes"
 
 msgid "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
 msgstr "A taxable surcharge (handling, setup, fuel) added to the line; rolls into the tax base."
+
+msgid "A template holds the elements and planned work a service order starts from."
+msgstr "A template holds the elements and planned work a service order starts from."
 
 msgid "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
 msgstr "A timed record of Setup, Labor, or Machine work logged against a job operation, whose duration rolls up into the operation's actual cost."
@@ -4540,6 +4549,9 @@ msgstr "Borrowed by this project"
 
 msgid "Borrower"
 msgstr "Borrower"
+
+msgid "Borrows, paybacks and transfers between projects show here."
+msgstr "Borrows, paybacks and transfers between projects show here."
 
 msgid "Both"
 msgstr "Both"
@@ -11010,6 +11022,9 @@ msgstr "Field Mapping"
 msgid "Field Visit"
 msgstr "Field Visit"
 
+msgid "Field visits and refurbishments show here once opened."
+msgstr "Field visits and refurbishments show here once opened."
+
 msgid "Fields"
 msgstr "Fields"
 
@@ -15723,14 +15738,17 @@ msgstr "No available tracked entities found"
 msgid "No bank accounts have been added yet."
 msgstr "No bank accounts have been added yet."
 
-msgid "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
-msgstr "No baselines yet. Take one to keep a copy of the plan, then compare it with the plan later."
+msgid "No baselines yet"
+msgstr "No baselines yet"
 
 msgid "No batches"
 msgstr "No batches"
 
 msgid "No batches selected yet."
 msgstr "No batches selected yet."
+
+msgid "No billable items on this invoice"
+msgstr "No billable items on this invoice"
 
 msgid "No billable items yet"
 msgstr "No billable items yet"
@@ -15765,8 +15783,8 @@ msgstr "No certification text is set for you. Ask an administrator to set it in 
 msgid "No change request"
 msgstr "No change request"
 
-msgid "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
-msgstr "No change requests yet. Open one to change the plan in a draft that reviewers approve before it applies."
+msgid "No change requests yet"
+msgstr "No change requests yet"
 
 msgid "No changes"
 msgstr "No changes"
@@ -16008,6 +16026,9 @@ msgstr "No groups assigned"
 msgid "No image"
 msgstr "No image"
 
+msgid "No indirect pools yet"
+msgstr "No indirect pools yet"
+
 msgid "No inspection plans"
 msgstr "No inspection plans"
 
@@ -16056,6 +16077,9 @@ msgstr "No labels"
 msgid "No labels yet. Add them in Settings → Projects."
 msgstr "No labels yet. Add them in Settings → Projects."
 
+msgid "No labor categories yet"
+msgstr "No labor categories yet"
+
 msgid "No lines"
 msgstr "No lines"
 
@@ -16101,8 +16125,8 @@ msgstr "No materials"
 msgid "No materials yet"
 msgstr "No materials yet"
 
-msgid "No members yet. A project with project stock joins the group on its Details tab."
-msgstr "No members yet. A project with project stock joins the group on its Details tab."
+msgid "No members yet. A project with project stock joins the group on its Settings page."
+msgstr "No members yet. A project with project stock joins the group on its Settings page."
 
 msgid "No members yet. Nobody can charge time to the project."
 msgstr "No members yet. Nobody can charge time to the project."
@@ -16240,6 +16264,9 @@ msgstr "No planned or recorded time."
 msgid "No planning data"
 msgstr "No planning data"
 
+msgid "No planning groups yet"
+msgstr "No planning groups yet"
+
 msgid "No pools yet. Add one under Indirect Pools."
 msgstr "No pools yet. Add one under Indirect Pools."
 
@@ -16287,6 +16314,9 @@ msgstr "No project found"
 
 msgid "No project stock"
 msgstr "No project stock"
+
+msgid "No project stock transfers yet"
+msgstr "No project stock transfers yet"
 
 msgid "No projects yet"
 msgstr "No projects yet"
@@ -16378,6 +16408,9 @@ msgstr "No service order has fitted a part to this unit."
 msgid "No service orders"
 msgstr "No service orders"
 
+msgid "No service orders yet"
+msgstr "No service orders yet"
+
 msgid "No service templates yet"
 msgstr "No service templates yet"
 
@@ -16408,8 +16441,8 @@ msgstr "No slides yet"
 msgid "No sorts applied to this view"
 msgstr "No sorts applied to this view"
 
-msgid "No statement for this period. Run the period to compute it."
-msgstr "No statement for this period. Run the period to compute it."
+msgid "No statement for this period"
+msgstr "No statement for this period"
 
 msgid "No step selected"
 msgstr "No step selected"
@@ -17157,6 +17190,9 @@ msgstr "Open Jobs"
 msgid "Open menu"
 msgstr "Open menu"
 
+msgid "Open one to change the plan in a draft that reviewers approve before it applies."
+msgstr "Open one to change the plan in a draft that reviewers approve before it applies."
+
 msgid "Open Orders"
 msgstr "Open Orders"
 
@@ -17210,9 +17246,6 @@ msgstr "Open Template"
 
 msgid "Open the books at a cutover date. Enabling accounting is one-way."
 msgstr "Open the books at a cutover date. Enabling accounting is one-way."
-
-msgid "Open the first change request"
-msgstr "Open the first change request"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "Open the Onshape Government integration and save its settings to connect again."
@@ -18952,6 +18985,9 @@ msgstr "Projections"
 
 msgid "Projects"
 msgstr "Projects"
+
+msgid "Projects in one group net their demand together in MRP."
+msgstr "Projects in one group net their demand together in MRP."
 
 msgid "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
 msgstr "Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan."
@@ -21140,6 +21176,9 @@ msgstr "Run the acceptance checklist to a pass"
 
 msgid "Run the floor on tablets: clock labor, report progress, see instructions"
 msgstr "Run the floor on tablets: clock labor, report progress, see instructions"
+
+msgid "Run the period to compute it."
+msgstr "Run the period to compute it."
 
 msgid "Run this workflow now?"
 msgstr "Run this workflow now?"
@@ -23882,14 +23921,14 @@ msgstr "Tailor this hub for the customer. Changes apply live for everyone viewin
 msgid "Take Baseline"
 msgstr "Take Baseline"
 
+msgid "Take one to keep a copy of the plan, then compare it with the plan later."
+msgstr "Take one to keep a copy of the plan, then compare it with the plan later."
+
 msgid "Take out of service"
 msgstr "Take out of service"
 
 msgid "Take Out of Service"
 msgstr "Take Out of Service"
-
-msgid "Take the first baseline"
-msgstr "Take the first baseline"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."

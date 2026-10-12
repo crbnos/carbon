@@ -19,10 +19,17 @@ import {
   LuUser
 } from "react-icons/lu";
 import { useNavigate } from "react-router";
-import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Empty,
+  Hyperlink,
+  New,
+  Table
+} from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import {
@@ -43,6 +50,8 @@ type ProjectStockTransfersTableProps = {
 const ProjectStockTransfersTable = memo(
   ({ data, count }: ProjectStockTransfersTableProps) => {
     const { t } = useLingui();
+    const [params] = useUrlParams();
+    const isFiltered = params.has("filter") || params.has("search");
     const navigate = useNavigate();
     const permissions = usePermissions();
     const locations = useLocations();
@@ -219,6 +228,14 @@ const ProjectStockTransfersTable = memo(
         }
         renderContextMenu={renderContextMenu}
         title={t`Project Stock Transfers`}
+        emptyState={
+          isFiltered ? undefined : (
+            <Empty
+              title={t`No project stock transfers yet`}
+              description={t`Borrows, paybacks and transfers between projects show here.`}
+            />
+          )
+        }
       />
     );
   }

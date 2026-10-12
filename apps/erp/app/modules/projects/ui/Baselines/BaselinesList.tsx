@@ -34,6 +34,7 @@ import {
   LuPlus
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
+import { Empty } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { useDateFormatter, usePermissions } from "~/hooks";
@@ -75,22 +76,15 @@ const BaselinesList = ({
       </div>
 
       {baselines.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-border px-4 py-10 text-center">
-          <LuHistory className="size-6 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">
+        <Empty
+          title={<Trans>No baselines yet</Trans>}
+          description={
             <Trans>
-              No baselines yet. Take one to keep a copy of the plan, then
-              compare it with the plan later.
+              Take one to keep a copy of the plan, then compare it with the plan
+              later.
             </Trans>
-          </p>
-          <Button
-            leftIcon={<LuPlus />}
-            isDisabled={!canUpdate}
-            onClick={() => setIsTaking(true)}
-          >
-            <Trans>Take the first baseline</Trans>
-          </Button>
-        </div>
+          }
+        />
       ) : (
         <div className="flex flex-col rounded-lg border border-border bg-card">
           {baselines.map((baseline) => (

@@ -334,7 +334,7 @@ export function PlanDiffGroups({
   return (
     <div className="w-full rounded-lg border border-border bg-card p-3">
       {groups.length === 0 ? (
-        <span className="text-sm italic text-muted-foreground">
+        <span className="text-sm text-muted-foreground">
           <Trans>No differences.</Trans>
         </span>
       ) : (

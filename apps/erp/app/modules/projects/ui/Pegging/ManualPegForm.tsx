@@ -123,7 +123,7 @@ export default function ManualPegForm({
                 </dd>
               </dl>
               {options.length === 0 ? (
-                <p className="w-full rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                <p className="w-full text-sm text-muted-foreground">
                   <Trans>
                     The planning group has no open purchase order or job for
                     this item.
