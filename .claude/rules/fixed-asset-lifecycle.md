@@ -310,24 +310,27 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    `Available` serialized unit into a new (or a Draft) asset at its carrying
    cost — or, for a unit carried at zero, at the cost the user enters; see
    **post-asset-transfer** below.
-5. Exercise a lessee lease's purchase option: `post-lease` `purchase`
-   (`packages/server-functions/src/post-lease/lifecycle.ts`; lease page →
-   **Change Lease → Exercise Purchase Option**, `x+/lease+/$id.purchase.tsx`,
-   `update: purchasing`). Refused for a Short-Term lease, a lease with no
-   `purchaseOptionAmount`, and a Construction in Progress class ("Choose an
-   in-service fixed asset class"). In ONE transaction it posts a `'Lease'`
-   journal (`purchaseLines`, `post-lease/lessee.ts`): Dr the class's
-   `assetAccountId` at `assetCost = ROU cost − accumulated ROU amortization +
-   price − carrying liability` (refused below zero), Dr accumulated ROU
-   amortization, Dr lease liability (carrying), Cr ROU asset (cost), Cr lease
-   liability (the price, billed later as a `Purchase Option` `leasePayment` row
-   whose Lease invoice line debits the liability). Then it INSERTS a new
-   `fixedAsset` directly with `status 'Active'`, `quantity 1`, the lease's
-   `locationId`, `acquisitionCost = assetCost`, `acquisitionDate =
+5. Exercise a lessee lease's purchase option for one leased asset:
+   `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
+   lease page → Assets card → **Exercise Purchase Option**,
+   `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
+   Short-Term asset, an asset with no `purchaseOptionAmount`, and a
+   Construction in Progress class ("Choose an in-service fixed asset class").
+   In ONE transaction it posts a `'Lease'` journal (`purchaseLines`,
+   `post-lease/lessee.ts`): Dr the class's `assetAccountId` at
+   `assetCost = ROU cost − accumulated ROU amortization + price − carrying
+   liability` (refused below zero), Dr accumulated ROU amortization, Dr lease
+   liability (carrying, plus a Pending option row the schedule already counted
+   as paid), Cr ROU asset (cost), Cr lease liability (the price, billed later
+   as a `Purchase Option` `leasePayment` row whose Lease invoice line debits
+   the liability — or nothing, when an option row was already invoiced at that
+   price). Then it INSERTS a new `fixedAsset` directly with `status 'Active'`,
+   `quantity 1`, the asset's location (else the lease's), `acquisitionCost = assetCost`, `acquisitionDate =
    depreciationStartDate =` the exercise date, and the class's method, useful
    life and residual; no `fixedAssetCipCost` row and no accumulated
-   depreciation. `lease.fixedAssetId` and the `leaseEvent` (type `Purchase`)
-   point at it; the lease becomes `Purchased`. See purchasing AGENTS → Leases.
+   depreciation. `leaseLine.fixedAssetId` and the asset's `leaseEvent` (type
+   `Purchase`) point at it; the asset becomes `Purchased`, and the lease too
+   when it was its last active asset. See purchasing AGENTS → Leases.
 
 **Adjust Cost (post-capitalization).** An asset that came onto the books for
 less than it cost — a Make to Asset job with no WIP creates it at 0 — is raised

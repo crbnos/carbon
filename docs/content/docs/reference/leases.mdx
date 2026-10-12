@@ -3,26 +3,29 @@ title: Leases
 description: "Equipment and buildings your company leases from a supplier, under ASC 842: classification, payment rows, drafted invoices, and the lease run."
 ---
 
-A **<Term id="lessee-lease">lease</Term>** records an asset your company rents from a supplier, such as a building or a forklift. Carbon accounts for it as the lessee under ASC 842. Activation books a <Term>right-of-use asset</Term> and a <Term>lease liability</Term>, payments become draft purchase invoices as they fall due, and the monthly <Term>lease run</Term> posts the interest and amortization.
+A **<Term id="lessee-lease">lease</Term>** records one or more assets your company rents from a supplier, such as a building or a fleet of forklifts. Carbon accounts for it as the lessee under ASC 842, and accounts for each asset on its own. Activation books a <Term>right-of-use asset</Term> and a <Term>lease liability</Term> for each asset, payments become draft purchase invoices as they fall due, and the monthly <Term>lease run</Term> posts the interest and amortization.
 
 Leases live under **Purchasing → Leases**. To rent your own fleet to a customer, use a [rental agreement](/docs/reference/rental-agreements) instead. The examples below use a forklift leased for 36 months from January 1, 2027, at 2,000 a month paid in advance and discounted at 6%.
 
 ## Setting up a lease
 
-A new lease opens a four-step setup. **"Next"** on the first step saves it as a draft, and later steps save as you edit. Opening a draft continues its setup if you can edit purchasing; anyone else sees its page.
+A new lease opens a five-step setup. **"Next"** on the first step saves it as a draft, and later steps save as you edit. Opening a draft continues its setup if you can edit purchasing; anyone else sees its page.
 
 <Steps>
 <Step>
-**Details.** The **"Supplier"**, **"Supplier Location"** and **"Supplier Contact"**; the leased asset's **"Name"**, such as "Forklift FL-12", and the **"Location"** where it is used; then the term: **"Commencement Date"**, **"End Date"** (including renewals that are reasonably certain), **"Notice Date"**, the last day to give notice, and **"Invoice From"**: payments due before it are marked as paid outside Carbon. Under **More Details**, the **"Owner"**, who gets the invoice digest and the date reminders.
+**Details.** The **"Supplier"**, **"Supplier Location"** and **"Supplier Contact"**; the lease's **"Name"**, such as "Warehouse forklifts", and the **"Location"** where its assets are used; then the term, which every asset shares: **"Commencement Date"**, **"End Date"** (including renewals that are reasonably certain), **"Notice Date"**, the last day to give notice, and **"Invoice From"**: payments due before it are marked as paid outside Carbon. Under **More Details**, the **"Owner"**, who gets the invoice digest and the date reminders.
 </Step>
 <Step>
-**Payments.** **"Payment Amount"**, **"Annual Escalation (%)"** (applied on each anniversary of commencement), **"Payment Frequency"** (Monthly, Quarterly or Annual) and **"Payment Timing"** (Advance or Arrears). Each change cuts the **payment rows** again: one per period, a short last period prorated by days, and a purchase option row on the end date when its exercise is reasonably certain. Click a cell to change a row's period, due date or amount, for a rent holiday or an irregular step; **"Add Payment"** adds a row, and **"Regenerate from Terms"** cuts every row again, replacing your edits.
+**Assets.** **"Add Asset"** for each asset the lease covers: its description, such as "Forklift FL-12", its **"Serial Number"**, and the **"Payment"** the lease pays for it each period. Click a cell to change it, or to give an asset its own **"Location"**. Each asset's payment rows are cut as you add it.
 </Step>
 <Step>
-**Accounting.** How the lease would be [classified](#classification), live, with **"Override"** for an accountant. Below it the **"Discount Rate (%)"**, prefilled from the company's incremental borrowing rate, the asset's **"Fair Value"** and **"Economic Life (months)"**, the **"Purchase Option"**, and the end-of-term switches.
+**Payments.** **"Annual Escalation (%)"** (applied on each anniversary of commencement), **"Payment Frequency"** (Monthly, Quarterly or Annual) and **"Payment Timing"** (Advance or Arrears), shared by every asset. Each change cuts every asset's **payment rows** again: one per period at the asset's payment, a short last period prorated by days, and a purchase option row on the end date when its exercise is reasonably certain. Click a cell to change a row's period, due date or amount, for a rent holiday or an irregular step; **"Add Payment"** adds a row to an asset, and **"Regenerate from Terms"** cuts every row again, replacing your edits.
 </Step>
 <Step>
-**Review.** A summary, a linked list of anything that blocks **"Activate"** (no payment row, or a currency other than the company's), and the journal activation posts. **"Activate"** is here, and **"Save as Draft"** returns to the list.
+**Accounting.** How each asset would be [classified](#classification), live, with **"Override"** on each asset for an accountant. Below it the **"Discount Rate (%)"**, prefilled from the company's incremental borrowing rate, and a grid of each asset's **"Fair Value"**, **"Economic Life (months)"**, **"Purchase Option"** and end-of-term switches.
+</Step>
+<Step>
+**Review.** A summary, a linked list of anything that blocks **"Activate"** (no asset, an asset with no payment row, or a currency other than the company's), and the journal activation posts. **"Activate"** is here, and **"Save as Draft"** returns to the list.
 </Step>
 </Steps>
 
@@ -32,20 +35,20 @@ A new lease opens a four-step setup. **"Next"** on the first step saves it as a 
 
 | Status | Meaning |
 | --- | --- |
-| Draft | Terms and payment rows are editable. Nothing is posted. |
+| Draft | Terms, assets and payment rows are editable. Nothing is posted. |
 | Active | Classified, measured, and on the books. Payments are invoiced as they fall due. |
 | Expired | Past its end date, with every lease run entry posted and every payment invoiced. Set by the daily job. |
-| Terminated | Ended early with **"Terminate"**. |
-| Purchased | Ended by exercising the purchase option. The asset is now a fixed asset. |
+| Terminated | Its last asset was ended early with **"Terminate"**. |
+| Purchased | Its last asset was bought with its purchase option, and is now a fixed asset. |
 | Cancelled | Activated, then cancelled before anything was invoiced or posted. |
 
-**"Activate"** needs at least one payment row. It classifies the lease, measures the liability at the present value of the payment rows, posts the commencement journal, and writes the monthly schedule. The terms and payment rows are fixed from then on.
+**"Activate"** needs at least one asset and a payment row for each. It classifies each asset, measures each asset's liability at the present value of its payment rows, posts one commencement journal with lines for each asset, and writes each asset's monthly schedule. The terms, assets and payment rows are fixed from then on. Each asset also has its own status: Active, Terminated, Purchased or Expired. The lease stays Active while any asset is.
 
-**"Cancel Lease"**, in the header menu of an active lease, voids the commencement journal and removes the schedule. It is refused once a payment is invoiced or a lease run holds or has posted the lease's entries: terminate the lease instead. **"Delete Lease"** is for drafts only.
+**"Cancel Lease"**, in the header menu of an active lease, voids the lease's journals and removes the schedule. It is refused once a payment is invoiced or a lease run holds or has posted the lease's entries: terminate its assets instead. **"Delete Lease"** is for drafts only.
 
 ## Classification
 
-Activation runs the five ASC 842 tests. A lease that meets any of them is a **Finance** lease, and one that meets none is an **Operating** lease:
+Activation runs the five ASC 842 tests on each asset, so one lease can hold both. An asset that meets any of them is a **Finance** lease, and one that meets none is an **Operating** lease:
 
 | Test | Met when |
 | --- | --- |
@@ -55,15 +58,15 @@ Activation runs the five ASC 842 tests. A lease that meets any of them is a **Fi
 | Present value | The present value of the payments is at least the substantially-all threshold (90% by default) of **"Fair Value"** |
 | Specialized asset | **"Specialized asset with no alternative use"** is ticked |
 
-A test with no economic life or fair value entered counts as not met. With the company's short-term expedient on, a lease of 12 months or less with no reasonably certain purchase option is **Short-Term** instead. A short-term lease is never on the balance sheet: activation posts nothing, and each invoice is expensed.
+A test with no economic life or fair value entered counts as not met. With the company's short-term expedient on, an asset leased for 12 months or less with no reasonably certain purchase option is **Short-Term** instead. A short-term asset is never on the balance sheet: activation posts nothing for it, and each of its invoice lines is expensed.
 
-A draft lease's details page previews the classification with each test. **"Override"** sets Operating or Finance by hand with a required **"Reason"**. It needs accounting update permission, and activation keeps it in place of the tests' answer.
+A draft lease's Accounting step previews each asset's classification with each test. **"Override"** on an asset sets Operating or Finance by hand with a required **"Reason"**. It needs accounting update permission, and activation keeps it in place of the tests' answer.
 
 ## What posts to the ledger
 
-At commencement, an operating or finance lease posts Dr Right-of-Use Assets, Cr Lease Liabilities, at the present value of the payment rows. The forklift's 36 payments are worth 66,070.74.
+At commencement, each operating or finance asset posts Dr Right-of-Use Assets, Cr Lease Liabilities, at the present value of its payment rows, all in one journal. The forklift's 36 payments are worth 66,070.74.
 
-Each month the lease run posts two entries per lease: interest on the liability, and amortization of the right-of-use asset.
+Each month the lease run posts two entries per asset: interest on the liability, and amortization of the right-of-use asset.
 
 | Entry | Operating lease | Finance lease |
 | --- | --- | --- |
@@ -74,39 +77,39 @@ An operating lease books one straight-line lease cost. The forklift costs 2,000 
 
 A finance lease amortizes the asset straight-line, so its cost is highest at the start: as a finance lease, the forklift would amortize 1,835.30 a month plus 320.35 of interest in month 1. It amortizes over the economic life instead of the term when the asset will be yours and that life is longer.
 
-An invoice line that bills a payment row debits Lease Liabilities, or Operating Lease Expense for a short-term lease. A Lease line you add by hand, such as a usage charge, posts to Variable Lease Expense.
+An invoice line that bills a payment row debits Lease Liabilities, or Operating Lease Expense for a short-term asset. Its amount must match the payment row: change a payment with **"Modify"**. A Lease line you add by hand, such as a usage charge, posts to Variable Lease Expense.
 
 The seven accounts are the **"Leases (Lessee)"** group of **Accounting → Default Accounts**, seeded as 1450, 1460, 2440, 6130, 6140, 6330 and 7020. Gains and losses use the **"Gain on Disposal"** and **"Loss on Disposal"** defaults.
 
 ## Invoicing
 
-Every day, Carbon drafts a [purchase invoice](/docs/reference/invoices) per lease and due date, with one **Lease** line per payment row due by today, and marks the rows **Invoiced**. The invoices stay Draft: add the supplier's invoice number and post them. The lease's owner and the **"Also notify"** group in **Settings → Invoicing** get the recurring invoicing summary.
+Every day, Carbon drafts a [purchase invoice](/docs/reference/invoices) per lease and due date, with one **Lease** line for each asset's payment row due by today, and marks the rows **Invoiced**. The invoices stay Draft: add the supplier's invoice number and post them. The lease's owner and the **"Also notify"** group in **Settings → Invoicing** get the recurring invoicing summary.
 
 **"Invoice Now"** on an active lease drafts its due payments at once. Deleting a draft lease invoice or one of its lines, or voiding a posted one, returns its payment rows to Pending for the next run.
 
 ## Changing an active lease
 
-**"Change Lease"** on an active lease offers three changes. Each needs the earlier months posted by a lease run and no invoiced payment due on or after its date. Each modal previews its journal, and each change is recorded on the **Events** tab.
+**"Modify"** in the header changes the whole lease. **"Terminate"** and **"Exercise Purchase Option"**, on each asset's row in the **Assets** card, change one asset; the others do not change, and the lease ends with its last asset. Each change needs the earlier months posted by a lease run, no invoiced payment due on or after its date, and a date where a payment period starts or ends. Each modal previews its journal, and each change is recorded for each asset on the **Events** tab.
 
-- **"Modify"** changes the end date, payment, frequency, escalation or discount rate from an **"Effective Date"**, the first day of a lease month. The remaining payments are cut again and the liability is remeasured. The right-of-use asset moves by the same amount, and a decrease larger than the asset is a gain. The classification is checked again. A short-term lease cannot be extended past 12 months.
-- **"Terminate"** ends the lease on a **"Termination Date"**, the last day of a lease month. The liability and the asset leave the books, with a gain or loss. A **"Termination Penalty"** becomes a payment row.
-- **"Exercise Purchase Option"** buys the asset on an **"Exercise Date"**, the last day of a lease month. Carbon creates an active [fixed asset](/docs/reference/fixed-assets) in the chosen **"Asset Class"**, at the asset's net book value plus the **"Purchase Price"**, less the remaining liability. The price becomes a payment row. A short-term lease has no asset to buy.
+- **"Modify"** changes the end date, each asset's payment, the frequency, escalation or discount rate from an **"Effective Date"**, the first day of a lease month. Each asset's remaining payments are cut again and its liability is remeasured. Its right-of-use asset moves by the same amount, and a decrease larger than the asset is a gain. Each classification is checked again. A short-term asset cannot be extended past 12 months.
+- **"Terminate"** ends one asset on a **"Termination Date"**, the last day of a lease month. Its liability and right-of-use asset leave the books, with a gain or loss. A **"Termination Penalty"** becomes a payment row.
+- **"Exercise Purchase Option"** buys one asset on an **"Exercise Date"**, the last day of a lease month. Carbon creates an active [fixed asset](/docs/reference/fixed-assets) in the chosen **"Asset Class"**, at the asset's net book value plus the **"Purchase Price"**, less the remaining liability. The price becomes a payment row, unless the purchase option was already invoiced at that price. A short-term asset has nothing to buy.
 
 ## Reminders and expiry
 
 When a lease's notice date or end date is within the company's **"Lease Reminder Days"**, its owner and the **"Also notify"** group get a "Lease date coming up" notification, once per date.
 
-An active lease expires on its own once it is past its end date, every lease run entry is posted, and no payment is left to invoice.
+An active lease expires on its own once it is past its end date, every lease run entry is posted, and no payment is left to invoice. An asset the company will own, by an ownership transfer or a reasonably certain purchase option, still carries a right-of-use asset at the end of the term, so the lease waits for its **"Exercise Purchase Option"**.
 
 ## Leases that started before the cutover
 
-When you [set up accounting](/docs/reference/accounting#setting-up-accounting), each active operating or finance lease that commenced before the cutover date opens with its liability, its right-of-use asset at cost and its accumulated amortization. The trial balance step treats those three accounts as control accounts.
+When you [set up accounting](/docs/reference/accounting#setting-up-accounting), each operating or finance asset of an active lease that commenced before the cutover date opens with its liability, its right-of-use asset at cost and its accumulated amortization. The trial balance step treats those three accounts as control accounts.
 
-A lease that commenced before the cutover but is activated after it posts its own opening balance, on the cutover date or the start of the first open period after it. The difference goes to retained earnings, and the months before are marked as posted.
+A lease that commenced before the cutover but is activated after it posts its own opening balance, on the cutover date or the start of the first open period after it. The difference goes to retained earnings, the months before are marked as posted, and the payments due before it are marked as paid outside Carbon.
 
 ## Lease Liabilities report
 
-**Accounting → Reports → Lease Liabilities** shows each operating and finance lease as of a date: the liability with its current and non-current portions, the net right-of-use asset, the maturity analysis by fiscal year, and the weighted-average term and rate. It also shows the lease cost and cash paid between two dates. It needs accounting view and purchasing view permission.
+**Accounting → Reports → Lease Liabilities** shows each operating and finance asset, with its lease, as of a date: the liability with its current and non-current portions, the net right-of-use asset, the maturity analysis by fiscal year, and the weighted-average term and rate. It also shows the lease cost and cash paid between two dates. It needs accounting view and purchasing view permission.
 
 ## Lease policy
 
