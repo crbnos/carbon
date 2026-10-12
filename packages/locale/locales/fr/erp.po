@@ -19369,8 +19369,8 @@ msgstr "Configurer la comptabilité"
 msgid "Set Up Accounting"
 msgstr "Configurer la comptabilité"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "Configurez la comptabilité pour utiliser des rapports, des écritures, des périodes comptables, des immobilisations et plus."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Configurer l'application d'authentification"

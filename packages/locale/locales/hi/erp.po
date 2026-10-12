@@ -19369,8 +19369,8 @@ msgstr "लेखांकन स्थापित करें"
 msgid "Set Up Accounting"
 msgstr "लेखांकन स्थापित करें"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "रिपोर्ट, जर्नल प्रविष्टियाँ, लेखा अवधि, अचल संपत्ति और बहुत कुछ उपयोग करने के लिए लेखांकन स्थापित करें।"
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"

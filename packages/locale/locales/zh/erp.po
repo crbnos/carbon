@@ -19369,8 +19369,8 @@ msgstr "设置会计"
 msgid "Set Up Accounting"
 msgstr "设置会计"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "设置会计以使用报告、凭证、会计期间、固定资产等。"
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"

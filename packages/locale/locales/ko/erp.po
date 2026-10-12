@@ -19369,8 +19369,8 @@ msgstr "회계 설정"
 msgid "Set Up Accounting"
 msgstr "회계 설정"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "보고서, 전표, 회계 기간, 고정자산 등을 사용하기 위해 회계를 설정하십시오."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "인증자 앱 설정"

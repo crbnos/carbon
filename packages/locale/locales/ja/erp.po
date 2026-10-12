@@ -19369,8 +19369,8 @@ msgstr "会計を設定"
 msgid "Set Up Accounting"
 msgstr "会計を設定"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "レポート、仕訳、会計期間、固定資産などを使用するために会計を設定します。"
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"

@@ -19369,8 +19369,8 @@ msgstr "Set up accounting"
 msgid "Set Up Accounting"
 msgstr "Set Up Accounting"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"

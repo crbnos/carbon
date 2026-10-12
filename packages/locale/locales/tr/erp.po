@@ -19369,8 +19369,8 @@ msgstr "Muhasebeyi ayarlayın"
 msgid "Set Up Accounting"
 msgstr "Muhasebeyi Ayarlayın"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "Raporlar, muhasebe fişleri, muhasebe dönemleri, sabit kıymetler ve daha fazlasını kullanmak için muhasebeyi ayarlayın."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"

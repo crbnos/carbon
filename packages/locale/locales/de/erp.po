@@ -19369,8 +19369,8 @@ msgstr "Buchhaltung einrichten"
 msgid "Set Up Accounting"
 msgstr "Buchhaltung einrichten"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "Richten Sie die Buchhaltung ein, um Berichte, Buchungssätze, Buchungsperioden, Anlagegüter und weitere Funktionen nutzen zu können."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Authentifizierungs-App einrichten"

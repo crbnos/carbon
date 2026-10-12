@@ -19369,8 +19369,8 @@ msgstr "Установить бухгалтерию"
 msgid "Set Up Accounting"
 msgstr "Установка бухгалтерии"
 
-msgid "Set up accounting to use reports, journal entries, accounting periods, fixed assets and more."
-msgstr "Установите бухгалтерию для использования отчетов, записей операций, учетных периодов, основных средств и многого другого."
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Установить приложение аутентификации"
