@@ -127,6 +127,11 @@ export function ElementList({
       .filter((group) => group.rows.length > 0);
   }, [elements, states]);
 
+  const idChars = useMemo(
+    () => Math.max(0, ...elements.map((e) => e.readableId.length)),
+    [elements]
+  );
+
   const labelsById = useMemo(
     () => new Map(labels.map((label) => [label.id, label])),
     [labels]
@@ -174,20 +179,13 @@ export function ElementList({
         const isOpen = !collapsed.has(state.id);
         return (
           <section key={state.id} aria-label={state.name}>
-            <div className="group/header sticky top-0 z-20 flex h-9 items-center gap-2 border-y border-border bg-muted/60 px-4 backdrop-blur-sm first:border-t-0">
+            <div className="group/header sticky top-0 z-20 flex h-9 items-center gap-2 bg-muted/50 px-4 backdrop-blur-sm">
               <button
                 type="button"
                 aria-expanded={isOpen}
                 onClick={() => toggle(state.id)}
-                className="-ml-1.5 flex min-w-0 items-center gap-2 rounded-md px-1.5 py-1 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="-ml-1.5 flex min-w-0 items-center gap-2 rounded-md px-1.5 py-0.5 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <LuChevronRight
-                  aria-hidden
-                  className={cn(
-                    "size-3.5 shrink-0 text-muted-foreground transition-transform",
-                    isOpen && "rotate-90"
-                  )}
-                />
                 <StateIcon group={state.group} color={state.color} />
                 <span className="truncate">{state.name}</span>
                 <span className="text-muted-foreground tabular-nums">
@@ -218,6 +216,7 @@ export function ElementList({
                   href={`${path.to.projectElementFull(projectId, element.id)}${search}`}
                   isHighlighted={element.id === highlightId}
                   canUpdate={canUpdate}
+                  idChars={idChars}
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
@@ -284,6 +283,9 @@ type ElementRowProps = {
   canUpdate: boolean;
   /** The row's ⋯ menu, shown on hover. */
   menu?: ReactNode;
+  /** The id's minimum width in characters: the longest id in the list, so
+   *  the names line up while the cluster stays tight. */
+  idChars?: number;
 };
 
 /**
@@ -302,7 +304,8 @@ export function ElementRow({
   href,
   isHighlighted,
   canUpdate,
-  menu
+  menu,
+  idChars
 }: ElementRowProps) {
   const state = states.find((s) => s.id === element.stateId);
   const isComplete =
@@ -319,19 +322,27 @@ export function ElementRow({
     <div
       data-element-row={element.id}
       className={cn(
-        "group/row relative flex h-11 items-center gap-3 px-4 transition-colors hover:bg-accent/50",
+        "group/row relative flex h-9 items-center gap-3 px-4 transition-colors hover:bg-accent/50",
         isHighlighted && "bg-accent/70"
       )}
     >
       <div
-        className="flex min-w-0 flex-1 items-center gap-2.5"
+        className="flex min-w-0 flex-1 items-center gap-2"
         style={{ paddingLeft: level * 20 }}
       >
-        <ElementTypeIcon type={element.type} tinted />
-        <span className="min-w-[4.5rem] shrink-0 whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+        <ElementTypeIcon
+          type={element.type}
+          className="size-3.5 text-muted-foreground"
+        />
+        <span
+          className="shrink-0 whitespace-nowrap text-sm text-muted-foreground tabular-nums"
+          style={idChars ? { minWidth: `${idChars}ch` } : undefined}
+        >
           {element.readableId}
         </span>
-        <span className="relative z-10 flex">
+        {/* The picker's 24 px square, pulled in so the icon sits 8 px from
+            its neighbours like the rest of the cluster. */}
+        <span className="relative z-10 -mx-[5px] flex">
           <StatePill
             projectId={projectId}
             elementId={element.id}
@@ -354,6 +365,25 @@ export function ElementRow({
         )}
       </div>
       <div className="relative z-10 flex shrink-0 items-center gap-1.5">
+        {rowLabels.length > 0 && <LabelChip labels={rowLabels} />}
+        {element.type === "Requirement" && requirementStatus && (
+          <span className="flex">
+            <VerificationStatus status={requirementStatus} iconOnly />
+          </span>
+        )}
+        {(element.targetDate || canUpdate) && (
+          <span className={cn("flex", !element.targetDate && onHover)}>
+            <DatePill
+              projectId={projectId}
+              elementId={element.id}
+              field="targetDate"
+              date={element.targetDate}
+              isComplete={isComplete}
+              variant="plain"
+              isDisabled={!canUpdate}
+            />
+          </span>
+        )}
         {(element.ownerId || canUpdate) && (
           <span className={cn("flex", !element.ownerId && onHover)}>
             <OwnerPill
@@ -363,25 +393,6 @@ export function ElementRow({
               variant="icon"
               isDisabled={!canUpdate}
             />
-          </span>
-        )}
-        {rowLabels.length > 0 && <LabelChip labels={rowLabels} />}
-        {(element.targetDate || canUpdate) && (
-          <span className={cn("flex", !element.targetDate && onHover)}>
-            <DatePill
-              projectId={projectId}
-              elementId={element.id}
-              field="targetDate"
-              date={element.targetDate}
-              isComplete={isComplete}
-              variant="pill"
-              isDisabled={!canUpdate}
-            />
-          </span>
-        )}
-        {element.type === "Requirement" && requirementStatus && (
-          <span className="flex">
-            <VerificationStatus status={requirementStatus} iconOnly />
           </span>
         )}
         {menu && <span className={cn("flex", onHover)}>{menu}</span>}

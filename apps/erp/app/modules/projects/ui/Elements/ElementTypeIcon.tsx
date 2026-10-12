@@ -37,42 +37,14 @@ const iconColors: Record<ProjectElementType, string> = {
   Task: "text-muted-foreground"
 };
 
-/** The tint behind a `tinted` icon: the icon's hue at low strength. */
-const tintColors: Record<ProjectElementType, string> = {
-  Requirement: "bg-blue-500/10",
-  System: "bg-orange-500/10",
-  "Test Case": "bg-teal-500/10",
-  Function: "bg-violet-500/10",
-  Parameter: "bg-emerald-500/10",
-  Folder: "bg-muted",
-  Task: "bg-muted"
-};
-
 export function ElementTypeIcon({
   type,
-  tinted,
   className
 }: {
   type: ProjectElementType;
-  /** A small icon on a tinted square, as the rows of the Plan list show it. */
-  tinted?: boolean;
   className?: string;
 }) {
   const Icon = icons[type] ?? LuSquareCheck;
-  if (tinted) {
-    return (
-      <span
-        aria-hidden
-        className={cn(
-          "flex size-5 shrink-0 items-center justify-center rounded",
-          tintColors[type],
-          className
-        )}
-      >
-        <Icon className={cn("size-3.5", iconColors[type])} />
-      </span>
-    );
-  }
   return (
     <Icon
       aria-hidden

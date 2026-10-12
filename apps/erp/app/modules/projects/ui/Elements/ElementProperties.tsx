@@ -143,7 +143,7 @@ function shown<T>(pending: string | null | undefined, saved: T) {
 
 // --- The pill -----------------------------------------------------------------
 
-export type PillVariant = "pill" | "ghost" | "icon";
+export type PillVariant = "pill" | "ghost" | "icon" | "plain";
 
 type PillProps = ComponentPropsWithoutRef<"button"> & {
   variant?: PillVariant;
@@ -153,7 +153,8 @@ type PillProps = ComponentPropsWithoutRef<"button"> & {
 /**
  * The trigger of every property editor. A `pill` is a 24 px chip (the rows of
  * the Plan list). A `ghost` fills the value column of the element sidebar. An
- * `icon` is a bare square that shows only the value's icon or avatar.
+ * `icon` is a bare square that shows only the value's icon or avatar. A
+ * `plain` is borderless muted text (a list row's date, as in Linear).
  */
 const Pill = forwardRef<HTMLButtonElement, PillProps>(
   (
@@ -171,7 +172,9 @@ const Pill = forwardRef<HTMLButtonElement, PillProps>(
           ? "h-6 max-w-[12rem] shrink-0 rounded-md border border-border px-2 text-muted-foreground enabled:hover:bg-accent enabled:hover:text-foreground"
           : variant === "icon"
             ? "size-6 shrink-0 justify-center rounded-md text-muted-foreground enabled:hover:bg-accent"
-            : "h-8 w-full rounded-md px-2 text-sm text-foreground enabled:hover:bg-accent",
+            : variant === "plain"
+              ? "h-6 shrink-0 rounded-md px-1.5 text-muted-foreground enabled:hover:bg-accent enabled:hover:text-foreground"
+              : "h-8 w-full rounded-md px-2 text-sm text-foreground enabled:hover:bg-accent",
         className
       )}
       onClick={(event) => {
@@ -673,7 +676,9 @@ export function DatePill({
           aria-label={label}
           className={cn(isLate && "text-red-500 enabled:hover:text-red-500")}
         >
-          <Icon className="size-3 shrink-0" />
+          {(variant !== "plain" || !value) && (
+            <Icon className="size-3 shrink-0" />
+          )}
           {value ? (
             <span className="whitespace-nowrap tabular-nums">
               {formatDate(value, {
