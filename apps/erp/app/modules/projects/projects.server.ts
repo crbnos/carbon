@@ -23,7 +23,14 @@ import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import type { SaveTimesheetEntryResult } from "@carbon/server-functions/save-timesheet-entry";
 import type { SubmitTimesheetWeekResult } from "@carbon/server-functions/submit-timesheet-week";
-import { datetime, taxYearBounds, timesheetWeek } from "@carbon/utils";
+import {
+  computeWbsCodes,
+  datetime,
+  taxYearBounds,
+  timesheetWeek,
+  wbsTemplate,
+  wbsTemplateParentCode
+} from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
@@ -93,7 +100,8 @@ import {
   rollUpRequirementStatus,
   taxYearOf,
   toPlanSnapshot,
-  typeSpecificElementFields
+  typeSpecificElementFields,
+  wbsTemplateElementType
 } from "./projects.models";
 import {
   getElementHistoryByItem,
@@ -128,6 +136,8 @@ export async function createProject(
   args: Omit<z.infer<typeof projectValidator>, "id"> & {
     companyId: string;
     userId: string;
+    /** A MIL-STD-881F template key (`WBS_TEMPLATES`) to start the plan from. */
+    wbsTemplateKey?: string;
   }
 ): Promise<string> {
   return db.transaction().execute(async (trx) => {
@@ -161,9 +171,180 @@ export async function createProject(
       .returning("id")
       .executeTakeFirstOrThrow();
 
+    if (args.wbsTemplateKey) {
+      await insertElementsFromWbsTemplate(trx, {
+        companyId: args.companyId,
+        userId: args.userId,
+        projectId: project.id,
+        templateKey: args.wbsTemplateKey
+      });
+    }
+
     // States are company-wide (Settings → Projects): nothing to seed here.
     return project.id;
   });
+}
+
+/**
+ * Inserts a MIL-STD-881F template's elements into a project with no elements,
+ * every code pinned to the template's. A row with children is a System, a
+ * leaf a Task. Takes one readable id per row from `nextElementSequence`.
+ */
+export async function insertElementsFromWbsTemplate(
+  trx: KyselyTx,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    templateKey: string;
+  }
+) {
+  const template = wbsTemplate(args.templateKey);
+  if (!template) throw new Error("The WBS template does not exist");
+
+  const state = await trx
+    .selectFrom("projectState")
+    .select("id")
+    .where("companyId", "=", args.companyId)
+    .where("group", "=", "Unstarted")
+    .orderBy("isDefault", "desc")
+    .orderBy("sortOrder", "asc")
+    .limit(1)
+    .executeTakeFirst();
+  if (!state) {
+    throw new Error("The company has no Unstarted state (Settings → Projects)");
+  }
+
+  const project = await trx
+    .updateTable("project")
+    .set({
+      nextElementSequence: sql`"nextElementSequence" + ${template.rows.length}`
+    })
+    .where("id", "=", args.projectId)
+    .where("companyId", "=", args.companyId)
+    .returning([
+      sql<number>`"nextElementSequence" - ${template.rows.length}`.as(
+        "firstSequence"
+      ),
+      "identifier"
+    ])
+    .executeTakeFirst();
+  if (!project?.identifier) throw new Error("The project does not exist");
+
+  const idByCode = new Map<string, string>();
+  const siblingCount = new Map<string | null, number>();
+  const rows = template.rows.map((row, index) => {
+    const id = makeCopyId("pje");
+    idByCode.set(row.code, id);
+    const parentCode = wbsTemplateParentCode(row.code, template.rows);
+    const parentId = parentCode ? (idByCode.get(parentCode) ?? null) : null;
+    const sortOrder = (siblingCount.get(parentId) ?? 0) + 1;
+    siblingCount.set(parentId, sortOrder);
+    const sequence = Number(project.firstSequence) + index;
+    const type = wbsTemplateElementType(row.code, template.rows);
+    return {
+      id,
+      companyId: args.companyId,
+      projectId: args.projectId,
+      parentId,
+      sequence,
+      readableId: `${project.identifier}-${sequence}`,
+      type,
+      name: row.name,
+      wbsCode: row.code,
+      stateId: state.id,
+      isChargeable: chargeableByDefault[type],
+      sortOrder,
+      createdBy: args.userId
+    };
+  });
+
+  await trx.insertInto("projectElement").values(rows).execute();
+}
+
+/**
+ * Pins every derived WBS code of a project, as a contractor does at award:
+ * afterwards a move keeps each element's code. Refuses while 2 elements have
+ * the same code.
+ */
+export async function pinProjectWbsCodes(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; userId: string; projectId: string }
+): Promise<number> {
+  return db.transaction().execute(async (trx) => {
+    const nodes = await trx
+      .selectFrom("projectElement")
+      .select(["id", "parentId", "type", "sortOrder", "sequence", "wbsCode"])
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .execute();
+    const { codes, duplicates } = computeWbsCodes(
+      nodes.map((node) => ({ ...node, sortOrder: Number(node.sortOrder) }))
+    );
+    if (duplicates.size > 0) {
+      throw new Error(
+        `Duplicate WBS codes: ${[...duplicates].join(", ")}. Change one of each pair first.`
+      );
+    }
+
+    const derived = nodes
+      .filter((node) => node.wbsCode === null && codes.has(node.id))
+      .map((node) => ({ id: node.id, code: codes.get(node.id)! }));
+    if (derived.length === 0) return 0;
+
+    const values = sql.join(
+      derived.map((row) => sql`(${row.id}, ${row.code})`)
+    );
+    await sql`
+      UPDATE "projectElement" AS e
+      SET "wbsCode" = v.code,
+          "updatedBy" = ${args.userId},
+          "updatedAt" = ${datetime.timestamp()}
+      FROM (VALUES ${values}) AS v(id, code)
+      WHERE e."id" = v.id
+        AND e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+    `.execute(trx);
+    return derived.length;
+  });
+}
+
+/**
+ * Clears the pinned WBS codes of an element and its descendants, so the
+ * subtree derives its codes from the tree again.
+ */
+export async function renumberWbsSubtree(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    elementId: string;
+  }
+): Promise<number> {
+  const result = await sql<{ id: string }>`
+    WITH RECURSIVE subtree AS (
+      SELECT "id" FROM "projectElement"
+      WHERE "id" = ${args.elementId}
+        AND "projectId" = ${args.projectId}
+        AND "companyId" = ${args.companyId}
+      UNION
+      SELECT e."id" FROM "projectElement" e
+      JOIN subtree s ON e."parentId" = s."id"
+      WHERE e."projectId" = ${args.projectId}
+        AND e."companyId" = ${args.companyId}
+    )
+    UPDATE "projectElement"
+    SET "wbsCode" = NULL,
+        "updatedBy" = ${args.userId},
+        "updatedAt" = ${datetime.timestamp()}
+    WHERE "id" IN (SELECT "id" FROM subtree)
+      AND "companyId" = ${args.companyId}
+      AND "wbsCode" IS NOT NULL
+    RETURNING "id"
+  `.execute(db);
+  return result.rows.length;
 }
 
 /** A new row id with the prefix the SQL `id()` default would give it. */
@@ -2809,6 +2990,9 @@ async function planBuildFromPart(
       const isRoot = element.parentId === null;
       return {
         ...element,
+        // The template's pinned codes would collide with the project's own;
+        // the built elements derive theirs from where they land.
+        wbsCode: null,
         parentId: element.parentId ?? args.parentId,
         stateId: stateIds.has(element.stateId)
           ? element.stateId

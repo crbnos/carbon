@@ -9,10 +9,13 @@ import {
   estimateAtCompletion,
   formatPercent,
   formatQuantity,
+  isValidWbsCode,
   type QualifiedHours,
   round,
   type Section6765Input,
+  type WbsTemplateRow,
   wageQres,
+  wbsTemplateParentCode,
   workCountryClass
 } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
@@ -346,6 +349,7 @@ export const projectElementValidator = z
 /** The element fields that the List, Board and Table layouts edit in place. */
 export const projectElementEditableFields = [
   "name",
+  "wbsCode",
   "stateId",
   "ownerId",
   "priority",
@@ -431,6 +435,19 @@ export function rdSoftwareTypeIrsText(
   return (
     RD_SOFTWARE_TYPE_IRS_TEXT[softwareType as RdSoftwareType] ?? softwareType
   );
+}
+
+/**
+ * The element type a MIL-STD-881F template row is built as: a row with
+ * children is a System, a leaf a Task. Both take charges by default.
+ */
+export function wbsTemplateElementType(
+  code: string,
+  rows: readonly WbsTemplateRow[]
+): "System" | "Task" {
+  return rows.some((row) => wbsTemplateParentCode(row.code, rows) === code)
+    ? "System"
+    : "Task";
 }
 
 export const projectElementFieldUpdateValidator = z.object({
@@ -3281,6 +3298,7 @@ export const PLAN_LAYER_FIELDS: Record<ProjectPlanTable, readonly string[]> = {
     "id",
     "parentId",
     "readableId",
+    "wbsCode",
     "sortOrder",
     "type",
     "name",
@@ -3679,6 +3697,10 @@ export function parseElementPlanFieldValue(
   switch (field) {
     case "name":
       return raw ? { value: raw } : { error: "Name is required" };
+    case "wbsCode":
+      return raw === null || isValidWbsCode(raw)
+        ? { value: raw }
+        : { error: "A WBS code has 1 to 40 letters, digits, dots and dashes" };
     case "estimatedHours":
     case "budget":
       return number(0) ?? { error: "Enter a number of 0 or more" };

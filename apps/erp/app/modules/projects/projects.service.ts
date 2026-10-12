@@ -6,7 +6,13 @@ import type { Database, Json } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { toJson } from "@carbon/database/json";
-import { BILLABLE_REASON_NO_BILL_RATE, datetime, round } from "@carbon/utils";
+import {
+  BILLABLE_REASON_NO_BILL_RATE,
+  datetime,
+  isUniqueViolation,
+  isValidWbsCode,
+  round
+} from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -1082,7 +1088,7 @@ export async function getLaborCategoryNames(
 // --- Elements ----------------------------------------------------------------
 
 const PROJECT_ELEMENT_LIST_COLUMNS =
-  "id, projectId, readableId, sequence, type, parentId, name, stateId, ownerId, priority, milestoneId, startDate, targetDate, completedAt, estimatedHours, isChargeable, isUnallowable, isBusinessComponent, isControlAccount, earnedValueTechnique, budget, itemId, sortOrder, createdAt, updatedAt, requirementCategory, targetOperator, targetValue, targetUpperValue, targetUnit, verificationMethod, actualParameterId, qualityDocumentId, verdict, verdictAt, verdictBy, parameterValue, parameterUnit, parameterSource, parameterFormula, parameterItemField, parameterContingencyPercent, allocationPercent, state:projectState!projectElement_state_fkey!inner(name, group, color), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)" as const;
+  "id, projectId, readableId, sequence, wbsCode, type, parentId, name, stateId, ownerId, priority, milestoneId, startDate, targetDate, completedAt, estimatedHours, isChargeable, isUnallowable, isBusinessComponent, isControlAccount, earnedValueTechnique, budget, itemId, sortOrder, createdAt, updatedAt, requirementCategory, targetOperator, targetValue, targetUpperValue, targetUnit, verificationMethod, actualParameterId, qualityDocumentId, verdict, verdictAt, verdictBy, parameterValue, parameterUnit, parameterSource, parameterFormula, parameterItemField, parameterContingencyPercent, allocationPercent, state:projectState!projectElement_state_fkey!inner(name, group, color), labels:projectElementLabel!projectElementLabel_element_fkey(projectLabelId)" as const;
 
 function projectElementsQuery(
   client: Client,
@@ -1096,6 +1102,25 @@ function projectElementsQuery(
     .eq("companyId", companyId)
     .order("sortOrder", { ascending: true })
     .order("id", { ascending: true });
+}
+
+/**
+ * Every element of a project as `computeWbsCodes` needs it. The element list
+ * may be filtered, so the codes are always computed from this full tree.
+ */
+export async function getProjectWbsNodes(
+  client: Client,
+  projectId: string,
+  companyId: string
+) {
+  return fetchAll(() =>
+    client
+      .from("projectElement")
+      .select("id, parentId, type, sortOrder, sequence, wbsCode")
+      .eq("projectId", projectId)
+      .eq("companyId", companyId)
+      .order("id", { ascending: true })
+  );
 }
 
 export type ProjectElementListItem = NonNullable<
@@ -1440,6 +1465,18 @@ export async function updateProjectElementField(
       if (!raw) return refusal("Name is required");
       update.name = raw;
       break;
+    case "wbsCode":
+      // Blank unpins the code: the element derives it from the tree again.
+      if (raw !== null && !isValidWbsCode(raw)) {
+        return refusal(
+          "A WBS code has 1 to 40 letters, digits, dots and dashes"
+        );
+      }
+      if (raw !== null && args.ids.length > 1) {
+        return refusal("Pin a WBS code on one element at a time");
+      }
+      update.wbsCode = raw;
+      break;
     case "stateId": {
       if (!raw) return refusal("State is required");
       const state = await client
@@ -1771,7 +1808,12 @@ export async function updateProjectElementField(
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .select("id");
-  if (result.error) return result;
+  if (result.error) {
+    if (args.field === "wbsCode" && isUniqueViolation(result.error)) {
+      return refusal(`WBS code ${raw} is already pinned in this project`);
+    }
+    return result;
+  }
 
   if (changedIds.length === 0) return result;
 
