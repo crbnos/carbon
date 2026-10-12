@@ -104,7 +104,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 17: Add the control fields to project settings and the element page
 - [x] Task 18: Add earned value to the Costs tab
 - [x] Task 19: Add Stop work and Resume to the project header
-- [ ] Task 20: Extend the demo datasets
+- [x] Task 20: Extend the demo datasets
 - [ ] Task 21: Run the scoped gates
 - [ ] Task 22: Update the rules, docs and spec
 - [ ] Task 23: Verify in the browser
@@ -1226,4 +1226,13 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   1. Task 16 added the route but no path helper; `path.to.projectStopWork` is new.
   2. **Stop work** is in the header's ⋯ menu, for a user with `update: projects` on a Released Direct project, on every plan. `StopWorkModal.ee.tsx` shows the order date form, or `UpgradeOverlayDialog` when the company is gated, so the item stays visible. The modal posts through `useAction` and closes when the action settles; the route redirects back with a flash in every case.
   3. While `stopWorkDate` is set, the header hides every status button (the status route refuses them), shows a red badge "Stop-work order <date> · ends <date> · <n> days left" (`stopWorkEnd`, `stopWorkDaysLeft`, today from `useCompanyToday`), and shows **Resume**, which posts `intent: resume`. The badge follows the Overdue borrows badge: an exception, not a status.
+- Task 20:
+  1. No dataset project had a cost objective, so "the satellite Direct project" did not exist. `ProjectSpec` gained an optional `costObjective`, and the satellite Contract project **ORBSEC Constellation Block 2** (`OB2`) is Direct, so **Stop work** and the ACWP export apply to it.
+  2. On OB2, `bus` and `payload` are control accounts. The work packages are `task-array` 0/100, `task-mass` 50/50, `task-alignment` Percent Complete 40 % and `tc-pointing` Level of Effort. Budget control is Warn with a 5 % tolerance.
+  3. The dataset states `earnedValuePercent` and `budgetTolerancePercent` as people write them (40, 5), and tier 09 divides by 100, as `allocationPercent` does (lesson "Demo datasets state percentages the way people write them"). The plan wrote 0.4 and 0.05.
+  4. `earnedValueTechnique` in the spec type leaves out Apportioned, because the spec has no base element field.
+  5. The validator refuses a technique on a control account, a technique with no control account above it (or on a Parameter), and a percent complete without Percent Complete. A rolled-in check that removed `bus`'s flag failed both of its work packages.
+  6. `coverage.ts` is unchanged: the seed writes no `earnedValuePeriod` row, and the other columns are on tables that already have floors.
+  7. The work packages have no budgets and the elements no start or target dates, and no baseline is seeded. Until a user takes a baseline (and sets budgets and dates), the Costs tab shows "Take a baseline first" and BAC and BCWS read 0.
+  8. `pnpm db:check:datasets`: all four datasets pass, with the database layer.
 

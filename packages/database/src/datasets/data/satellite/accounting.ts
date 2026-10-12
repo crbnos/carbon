@@ -424,6 +424,12 @@ export const PROJECTS: ProjectSpec[] = [
     identifier: "OB2",
     costTreatment: "Contract",
     status: "Released",
+    // Government Contracting 5c: a Direct contract with budget control and
+    // two control accounts. No earned value snapshot is seeded: the period
+    // close writes them.
+    costObjective: "Direct",
+    budgetControl: "Warn",
+    budgetTolerancePercent: 5,
     // Phase 2a: the contract keeps its own stock — two parts received for
     // it, and fasteners transferred in from common stock.
     projectStock: {
@@ -475,7 +481,8 @@ export const PROJECTS: ProjectSpec[] = [
         type: "System",
         name: "Satellite bus",
         state: "In Progress",
-        budget: 180000
+        budget: 180000,
+        isControlAccount: true
       },
       {
         key: "req-power",
@@ -492,7 +499,8 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-power",
         state: "Done",
         milestone: "cdr",
-        estimatedHours: 24
+        estimatedHours: 24,
+        earnedValueTechnique: "0/100"
       },
       {
         key: "tc-power",
@@ -516,7 +524,8 @@ export const PROJECTS: ProjectSpec[] = [
         name: "Update the mass budget after the harness redesign",
         parentKey: "req-mass",
         state: "In Progress",
-        estimatedHours: 12
+        estimatedHours: 12,
+        earnedValueTechnique: "50/50"
       },
       {
         key: "payload",
@@ -524,7 +533,8 @@ export const PROJECTS: ProjectSpec[] = [
         name: "Payload integration",
         state: "Todo",
         milestone: "flight-acceptance",
-        budget: 95000
+        budget: 95000,
+        isControlAccount: true
       },
       {
         key: "req-pointing",
@@ -541,6 +551,8 @@ export const PROJECTS: ProjectSpec[] = [
         state: "Backlog",
         milestone: "flight-acceptance",
         estimatedHours: 20,
+        earnedValueTechnique: "Percent Complete",
+        earnedValuePercent: 40,
         // Phase 3: the first two flight units' trackers, from the group.
         materials: [{ item: "ST-050", quantity: 2, requiredOffset: 20 }]
       },
@@ -551,6 +563,7 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-pointing",
         state: "Backlog",
         estimatedHours: 10,
+        earnedValueTechnique: "Level of Effort",
         materials: [{ item: "ST-050", quantity: 1, requiredOffset: 60 }]
       }
     ]

@@ -1972,6 +1972,18 @@ export type ProjectElementSpec = {
   /** A Capitalize project's final asset. Never on a Parameter. */
   isFinalAsset?: boolean;
   /**
+   * Earned value (Government Contracting 5c). A control account takes no
+   * technique; a technique needs a chargeable element below a control
+   * account. Never on a Parameter.
+   */
+  isControlAccount?: boolean;
+  earnedValueTechnique?: Exclude<
+    Database["public"]["Enums"]["earnedValueTechnique"],
+    "Apportioned"
+  >;
+  /** Percent Complete only, as people write it: 40 means 40 %. */
+  earnedValuePercent?: number;
+  /**
    * Plan-line materials, Pull from Inventory, each registered as
    * `projectElementMaterial:<project>:<element>:<item>`. MRP reads them as
    * Project Material demand (Projects Phase 2b). Never on a Parameter.
@@ -2032,6 +2044,12 @@ export type ProjectSpec = {
    */
   fixedAssetClass?: string;
   status: "Draft" | "Released" | "On Hold" | "Technically Complete" | "Closed";
+  /** Government contracting: the cost objective (a Contract project takes Direct). */
+  costObjective?: Database["public"]["Enums"]["projectCostObjective"];
+  /** Budget control (Government Contracting 5c); null reads as None. */
+  budgetControl?: Database["public"]["Enums"]["budgetControl"];
+  /** As people write it: 5 means 5 % over the budget. */
+  budgetTolerancePercent?: number;
   milestones: ProjectMilestoneSpec[];
   /** Parent-first order; `readableId` follows this order. */
   elements: ProjectElementSpec[];

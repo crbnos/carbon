@@ -5440,9 +5440,36 @@ function projectElementChecks(
     if (parameter?.source === "Item") {
       fail(`${at}: the Item source is not seeded (it needs a custom field)`);
     }
+    if (element.isControlAccount && element.earnedValueTechnique) {
+      fail(`${at}: a control account takes no earned value technique`);
+    }
+    if (element.earnedValueTechnique) {
+      // The nearest control account above it makes it a work package (C7).
+      let parentKey = element.parentKey;
+      const seen = new Set<string>();
+      let found = false;
+      while (parentKey && !seen.has(parentKey)) {
+        seen.add(parentKey);
+        const parent = project.elements.find((e) => e.key === parentKey);
+        if (parent?.isControlAccount) found = true;
+        parentKey = found ? undefined : parent?.parentKey;
+      }
+      if (!found || element.type === "Parameter") {
+        fail(
+          `${at}: an earned value technique needs a chargeable element below a control account`
+        );
+      }
+    }
+    if (
+      element.earnedValuePercent !== undefined &&
+      element.earnedValueTechnique !== "Percent Complete"
+    ) {
+      fail(`${at}: a percent complete without the Percent Complete technique`);
+    }
     for (const value of [
       parameter?.allocationPercent,
-      parameter?.contingencyPercent
+      parameter?.contingencyPercent,
+      element.earnedValuePercent
     ]) {
       if (value !== undefined && (value < 0 || value > 100)) {
         fail(`${at}: a percent outside 0–100`);

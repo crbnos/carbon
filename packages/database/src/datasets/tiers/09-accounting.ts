@@ -1652,7 +1652,13 @@ async function seedProjects(ctx: Ctx): Promise<void> {
       status: spec.status,
       ownerId: userId,
       locationId: ctx.locationId,
-      nextElementSequence: spec.elements.length + 1
+      nextElementSequence: spec.elements.length + 1,
+      costObjective: spec.costObjective ?? null,
+      budgetControl: spec.budgetControl ?? "None",
+      budgetTolerancePercent:
+        spec.budgetTolerancePercent === undefined
+          ? null
+          : round(spec.budgetTolerancePercent / 100)
     });
     ctx.refs.misc[`project:${spec.key}`] = projectId;
 
@@ -1722,6 +1728,9 @@ async function seedProjects(ctx: Ctx): Promise<void> {
             ? need(ctx.refs.items, element.item, "item").id
             : null,
           isFinalAsset: element.isFinalAsset ?? false,
+          isControlAccount: element.isControlAccount ?? false,
+          earnedValueTechnique: element.earnedValueTechnique ?? null,
+          earnedValuePercent: percent(element.earnedValuePercent),
           ...requirementColumns(element.requirement, (key) =>
             need(elementIds, `${spec.key}:${key}`, "actual parameter")
           ),
