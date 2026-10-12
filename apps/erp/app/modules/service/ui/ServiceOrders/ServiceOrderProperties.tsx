@@ -4,7 +4,7 @@
 
 import { Combobox, Select, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
-import { Copy, HStack, toast, VStack } from "@carbon/react";
+import { Copy, cn, HStack, toast, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare } from "react-icons/lu";
@@ -32,6 +32,7 @@ import {
   useUser
 } from "~/hooks";
 import { projectElementPriorities } from "~/modules/projects/projects.models";
+import { hideOptionalTags } from "~/modules/projects/ui/Element/PropertyFields";
 import { path } from "~/utils/path";
 import type { ServiceInvoiceDetail } from "../../service.models";
 import { serviceInvoiceDetails } from "../../service.models";
@@ -135,7 +136,10 @@ const ServiceOrderProperties = () => {
   return (
     <VStack
       spacing={4}
-      className="w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm"
+      className={cn(
+        "w-96 bg-background/30 h-full overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent border-l border-border px-4 py-2 text-sm",
+        hideOptionalTags
+      )}
     >
       <VStack spacing={2}>
         <HStack className="w-full justify-between">

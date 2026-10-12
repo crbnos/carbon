@@ -27,6 +27,14 @@ import { useElementField } from "../Elements/ElementProperties";
  * update route.
  */
 
+/**
+ * Hides the form labels' grey "Optional" tag inside a properties panel. An
+ * empty property already reads as empty, so the tag only adds noise (Brad,
+ * 2026-10-12: project and service screens only). Put it on the panel's root;
+ * the shared `FormLabel` keeps its tag everywhere else.
+ */
+export const hideOptionalTags = "[&_[data-optional-tag]]:hidden";
+
 type FieldProps = {
   projectId: string;
   elementId: string;

@@ -52,6 +52,7 @@ import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
 import {
+  hideOptionalTags,
   PropertyDate,
   PropertyField,
   PropertyGroup,
@@ -181,7 +182,7 @@ export function ElementSidebar({
   );
 
   return (
-    <VStack spacing={8} className={cn("text-sm", className)}>
+    <VStack spacing={8} className={cn("text-sm", hideOptionalTags, className)}>
       <PropertyGroup>
         <PropertySelect
           {...common}
