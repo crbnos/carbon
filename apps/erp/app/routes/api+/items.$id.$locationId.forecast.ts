@@ -233,6 +233,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
+  // A failed supply read must not chart as "no supply".
+  if (openPurchaseOrderLines.error || openProductionOrders.error) {
+    return data(
+      defaultResponse,
+      await flash(
+        request,
+        error(
+          openPurchaseOrderLines.error ?? openProductionOrders.error,
+          "Failed to load supply"
+        )
+      )
+    );
+  }
 
   const redirectedOpenJobMaterials = await getRedirectedOpenJobMaterials(
     client,

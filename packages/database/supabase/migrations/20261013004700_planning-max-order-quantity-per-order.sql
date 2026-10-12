@@ -36,6 +36,7 @@ DECLARE
   i INTEGER;
   j INTEGER;
   iterations INTEGER;
+  window_length INTEGER;
 BEGIN
   num_periods := COALESCE(array_length(p_projections, 1), 0);
   IF num_periods = 0 THEN RETURN 0; END IF;
@@ -45,11 +46,14 @@ BEGIN
       RETURN 0;
 
     WHEN 'Demand-Based Reorder' THEN
+      -- A stored period of 0 (or NULL) never advanced the loop; one week at least,
+      -- as computePlanningOrders.
+      window_length := GREATEST(1, COALESCE(p_demand_accumulation_period, 1));
       i := 1;
       WHILE i <= num_periods LOOP
         projected_stock := 0;
         j := i;
-        WHILE j <= LEAST(i + p_demand_accumulation_period - 1, num_periods) LOOP
+        WHILE j <= LEAST(i + window_length - 1, num_periods) LOOP
           projected_stock := COALESCE(p_projections[j], 0) + ordered_quantity;
           j := j + 1;
         END LOOP;
@@ -66,7 +70,7 @@ BEGIN
           ordered_quantity := ordered_quantity + total_order_qty;
         END IF;
 
-        i := i + p_demand_accumulation_period;
+        i := i + window_length;
       END LOOP;
       RETURN ordered_quantity;
 
