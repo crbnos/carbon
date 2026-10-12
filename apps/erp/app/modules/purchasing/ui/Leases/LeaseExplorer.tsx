@@ -53,7 +53,7 @@ function ExplorerLines({
           key={line.id}
           lease={lease}
           line={line}
-          location={locationName.get(line.locationId ?? "")}
+          location={locationName.get(line.locationId ?? lease.locationId ?? "")}
         />
       ))}
     </>

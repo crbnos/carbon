@@ -21,10 +21,11 @@ import type {
   LesseeClassificationType
 } from "./types";
 
-/** A schedule month is on the books when every one of its lease run rows has
- *  posted (plan decision P6). A month with no rows needs no posting. */
+/** A schedule month is on the books once the lease run posted it, or it is
+ *  in an opening balance: both stamp `postedAt`. Its run rows are not read —
+ *  they need accounting_view, and a purchasing-only viewer gets none. */
 export function isScheduleLinePosted(line: LeaseScheduleLine): boolean {
-  return (line.rows ?? []).every((row) => row.status === "Posted");
+  return Boolean(line.postedAt);
 }
 
 /** The lease months in order, each posted when every asset's line of that

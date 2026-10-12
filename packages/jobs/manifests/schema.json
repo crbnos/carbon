@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261011202305",
+  "schemaVersion": "20261012183637",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-11T20:26:08.435Z",
+  "exportedAt": "2026-10-12T18:40:39.268Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -5706,6 +5706,39 @@
       ]
     },
     {
+      "name": "leaseLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "description",
+        "serialNumber",
+        "locationId",
+        "paymentAmount",
+        "fairValue",
+        "economicLifeMonths",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "lesseeClassification",
+        "classificationInputs",
+        "classificationOverride",
+        "classificationOverrideReason",
+        "initialLiability",
+        "initialRouAsset",
+        "rouAssetCost",
+        "fixedAssetId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "leaseEvent",
       "rows": 0,
       "columns": [
@@ -5727,7 +5760,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "leaseLineId"
       ]
     },
     {
@@ -5748,7 +5782,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "leaseLineId"
       ]
     },
     {
@@ -5772,7 +5807,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "leaseLineId"
       ]
     },
     {
@@ -6961,27 +6997,12 @@
         "endDate",
         "noticeDate",
         "invoiceFromDate",
-        "paymentAmount",
         "paymentFrequency",
         "paymentTiming",
         "annualEscalationPercent",
         "discountRate",
         "currencyCode",
-        "fairValue",
-        "economicLifeMonths",
-        "ownershipTransfers",
-        "specializedAsset",
-        "purchaseOptionAmount",
-        "purchaseOptionReasonablyCertain",
-        "lesseeClassification",
-        "classificationInputs",
-        "classificationOverride",
-        "classificationOverrideReason",
-        "initialLiability",
-        "initialRouAsset",
-        "rouAssetCost",
         "commencementJournalId",
-        "fixedAssetId",
         "noticeRemindedFor",
         "endRemindedFor",
         "activatedAt",

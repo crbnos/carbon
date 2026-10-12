@@ -45,7 +45,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Account,
-  Boolean,
+  Boolean as BooleanInput,
   Hidden,
   Number as NumberInput,
   Submit
@@ -585,7 +585,7 @@ export default function AccountingSettingsRoute() {
                   minValue={0}
                   helperText={t`Days before a lease's notice or end date that its owner is reminded.`}
                 />
-                <Boolean
+                <BooleanInput
                   name="leaseShortTermExpedient"
                   label={t`Short-Term Lease Expedient`}
                   description={t`Leases of 12 months or less with no reasonably certain purchase option are expensed as paid.`}

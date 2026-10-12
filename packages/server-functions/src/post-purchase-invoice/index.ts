@@ -1347,6 +1347,7 @@ const postPurchaseInvoice = defineServerFn({
                 .selectFrom("account")
                 .select(["id", "name", "class"])
                 .where("id", "in", ids)
+                .where("companyGroupId", "=", companyGroupId!)
                 .execute()
             : [];
         const accountOf = (id: string | null | undefined) => {

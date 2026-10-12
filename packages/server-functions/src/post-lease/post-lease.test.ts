@@ -440,6 +440,32 @@ databaseTest(
         expect(row.journalId).toBeNull();
       }
 
+      // The opening months are on the books, so their lines carry postedAt
+      // (the leases view and the lease page read posted state from it).
+      const postedAt = await f.db
+        .selectFrom("leaseScheduleLine")
+        .select([sql<string>`"periodDate"::text`.as("periodDate"), "postedAt"])
+        .where("leaseId", "=", f.leaseId)
+        .execute();
+      for (const line of postedAt) {
+        expect(line.postedAt !== null).toBe(line.periodDate < "2027-07-01");
+      }
+
+      // A change dated inside the opening balance would rewrite months that
+      // are already in the GL: refused.
+      const inOpening = await run(f, {
+        type: "modify",
+        leaseId: f.leaseId,
+        effectiveDate: "2027-04-01",
+        endDate: "2029-12-31",
+        discountRate: 7,
+        paymentFrequency: "Monthly",
+        annualEscalationPercent: 0
+      });
+      expect(String((inOpening.error as Error | null)?.message)).toMatch(
+        /already posted/
+      );
+
       // The payments due before the opening date are in its balance: they
       // are not invoiced.
       const payments = await f.db

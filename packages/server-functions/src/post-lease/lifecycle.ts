@@ -102,8 +102,9 @@ type Carrying = {
  * The checks every lifecycle action shares, and each asset's carrying
  * amounts at `startDate` (the first day after the change takes effect).
  * Refuses a date that is not a lease-month boundary or falls inside a
- * payment period, a month before it whose run rows are not Posted, a later
- * row a run holds, and an Invoiced payment due on or after `startDate`.
+ * payment period, a month before it whose run rows are not Posted, a month
+ * on or after it that is already Posted, a later row a run holds, and an
+ * Invoiced payment due on or after `startDate`.
  */
 async function prepare(
   trx: Trx,
@@ -184,6 +185,28 @@ async function prepare(
   if (unposted) {
     throw new InvalidInputError(
       `Post the lease run for ${unposted.scheduledDate} first: the months before the change must be on the books`
+    );
+  }
+  // A month already posted — by a lease run or in an opening balance — is in
+  // the GL. Rewriting it from an earlier date would post it twice, or leave
+  // its amortization out of the carrying amounts below.
+  const postedLater = await trx
+    .selectFrom("revenueRecognitionSchedule as s")
+    .innerJoin("leaseScheduleLine as l", (join) =>
+      join
+        .onRef("l.id", "=", "s.leaseScheduleLineId")
+        .onRef("l.companyId", "=", "s.companyId")
+    )
+    .select(sql<string>`s."scheduledDate"::text`.as("scheduledDate"))
+    .where("s.companyId", "=", companyId)
+    .where("l.leaseLineId", "in", recognizedIds)
+    .where("s.status", "=", "Posted")
+    .where("s.scheduledDate", ">=", startDate)
+    .orderBy("s.scheduledDate", "desc")
+    .executeTakeFirst();
+  if (postedLater) {
+    throw new InvalidInputError(
+      `The month ending ${postedLater.scheduledDate} is already posted; choose a date after it`
     );
   }
   const run = await heldByRun(trx, {

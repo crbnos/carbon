@@ -103,12 +103,12 @@ const LeaseHeader = ({
     (payment) => payment.status === "Pending" && payment.dueDate <= today
   );
   // Cancel is refused once anything is invoiced or a lease run has posted.
+  // The run stamps the schedule line's journal (an opening balance does not),
+  // and its run rows are not read: they need accounting_view.
   const hasInvoicedPayment = payments.some(
     (payment) => payment.status === "Invoiced"
   );
-  const hasPostedMonth = schedule.some((line) =>
-    (line.rows ?? []).some((row) => row.status === "Posted")
-  );
+  const hasPostedMonth = schedule.some((line) => Boolean(line.journalId));
   const canCancel = isActive && !hasInvoicedPayment && !hasPostedMonth;
   const isReady =
     leaseActivationGaps({

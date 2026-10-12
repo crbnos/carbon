@@ -153,7 +153,7 @@ A change to the thresholds or the expedient applies to leases activated afterwar
 ## Troubleshooting
 
 ### "A lease needs at least one payment row to activate"
-The draft has no `leasePayment` rows. On the setup's **Payments** step, enter the **"Payment Amount"** or use **"Add Payment"**.
+The draft has no `leasePayment` rows. On the setup's **Assets** step, enter each asset's **"Payment"**, or use **"Add Payment"** on the **Payments** step.
 
 ### "Leases in a foreign currency are not supported yet"
 `lease.currencyCode` differs from the company's base currency. The form always writes the base currency; this comes from an API or MCP write.
@@ -165,7 +165,7 @@ One of the seven lessee defaults, or the Gain on Disposal / Loss on Disposal def
 Activating a lease whose commencement date is before the accounting cutover posts an opening balance whose difference goes to retained earnings.
 
 ### "Only a Draft lease's terms can change; modify an active lease instead" / "A payment row changes only while the lease is Draft; modify an active lease instead" / "Payment rows are cut again only while the lease is Draft; modify an active lease instead"
-Terms and payment rows are fixed at activation. Use **Change Lease → Modify**.
+Terms and payment rows are fixed at activation. Use **"Modify"** in the lease header.
 
 ### "The classification is fixed once the lease is activated"
 **Override** works on a Draft lease only.

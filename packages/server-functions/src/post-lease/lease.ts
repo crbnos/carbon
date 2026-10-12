@@ -413,9 +413,9 @@ export type AssetSchedule = {
  * Writes each asset's schedule lines, and two `revenueRecognitionSchedule`
  * rows per line (Interest and Amortization, each on its own accounts — spec
  * §3) that the lease run posts. A row with no amount is not written. Rows
- * dated before `postedBefore` are written Posted with no journal: their
- * entries are in an opening balance, as the enable's step 5 does for rows
- * before the cutover.
+ * dated before `postedBefore` are written Posted with no journal, and their
+ * lines with `postedAt`: their entries are in an opening balance, as the
+ * enable's step 5 does for rows before the cutover.
  */
 export async function writeSchedules(
   trx: Trx,
@@ -433,6 +433,7 @@ export async function writeSchedules(
     schedule.lines.map((line, index) => ({ schedule, line, index }))
   );
   if (lines.length === 0) return;
+  const postedAt = datetime.timestamp();
 
   const inserted = await trx
     .insertInto("leaseScheduleLine")
@@ -449,6 +450,12 @@ export async function writeSchedules(
         leaseCost: line.leaseCost,
         rouAmortization: line.rouAmortization,
         closingRouAsset: line.closingRouAsset,
+        // An opening-balance month is on the books like a run-posted one;
+        // the `leases` view and the lease page read posted state from here.
+        postedAt:
+          args.postedBefore !== undefined && line.periodDate < args.postedBefore
+            ? postedAt
+            : null,
         companyId,
         createdBy: userId
       }))
