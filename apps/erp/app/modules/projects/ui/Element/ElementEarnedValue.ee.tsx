@@ -186,6 +186,7 @@ function EarnedValueForm({
         <Hidden name="elementId" />
         <VStack spacing={3}>
           <Boolean
+            bordered
             name="isControlAccount"
             label={t`Control account`}
             description={t`Earned value rolls up to this element`}

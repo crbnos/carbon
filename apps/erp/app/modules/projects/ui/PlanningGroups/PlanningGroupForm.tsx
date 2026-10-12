@@ -149,6 +149,7 @@ const PlanningGroupForm = ({
                   />
                 )}
                 <Boolean
+                  bordered
                   name="active"
                   label={t`Active`}
                   description={t`An inactive group's members are planned on their own`}

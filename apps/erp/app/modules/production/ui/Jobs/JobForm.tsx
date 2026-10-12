@@ -571,6 +571,7 @@ const JobForm = ({
                         }}
                       />
                       <Boolean
+                        bordered
                         name="consumeToProject"
                         label={t`Consume to project`}
                         description={t`The job's cost goes to the project when it completes, instead of into stock`}
@@ -583,6 +584,7 @@ const JobForm = ({
                       />
                       {canReceiveToProjectStock && (
                         <Boolean
+                          bordered
                           name="receiveToProjectStock"
                           label={t`Receive to project stock`}
                           description={t`The job's output enters the project's stock instead of unassigned stock`}

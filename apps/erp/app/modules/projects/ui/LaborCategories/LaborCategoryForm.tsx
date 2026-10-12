@@ -147,6 +147,7 @@ const LaborCategoryForm = ({
                     }))}
                   />
                   <Boolean
+                    bordered
                     name="active"
                     label={t`Active`}
                     description={t`Inactive categories cannot be picked for new time`}

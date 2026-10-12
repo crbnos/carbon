@@ -196,6 +196,7 @@ const ItemPlanningForm = ({
             />
 
             <Boolean
+              bordered
               name="allowCommonSupplyForProjects"
               label={t`Unassigned stock for projects`}
               description={t`Let projects with project stock use spare unassigned stock of this item at this location`}

@@ -75,6 +75,7 @@ const PersonJob = ({ initialValues }: PersonJobProps) => {
               helperText={t`In DCAA mode, an exempt employee's hours over the standard week dilute the cost of each hour.`}
             />
             <Boolean
+              bordered
               name="isOfficer"
               label={t`Officer`}
               description={t`Used for Form 6765 Section E`}
