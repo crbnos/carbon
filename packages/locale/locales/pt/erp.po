@@ -11193,6 +11193,9 @@ msgstr "Taxa de câmbio da fatura"
 msgid "Invoice schedule"
 msgstr "Cronograma de faturamento"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "Liquidação de fatura"
 
@@ -11222,6 +11225,9 @@ msgstr "Faturado"
 
 msgid "Invoiced Amount:"
 msgstr "Valor Faturado:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "Status Faturados"
@@ -16563,6 +16569,9 @@ msgstr "Enviar o diário sem a dimensão"
 
 msgid "Push to accounting"
 msgstr "Enviar para contabilidade"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "Colocando seus dados de volta"

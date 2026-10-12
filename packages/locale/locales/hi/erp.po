@@ -11193,6 +11193,9 @@ msgstr "चालान विनिमय दर"
 msgid "Invoice schedule"
 msgstr "चालान शेड्यूल"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "चालान निपटान"
 
@@ -11222,6 +11225,9 @@ msgstr "चालान किया गया"
 
 msgid "Invoiced Amount:"
 msgstr "चालान की गई राशि:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "चालान की गई स्थितियां"
@@ -16563,6 +16569,9 @@ msgstr "आयाम के बिना जर्नल पुश करें"
 
 msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"

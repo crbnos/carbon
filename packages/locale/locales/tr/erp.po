@@ -11193,6 +11193,9 @@ msgstr "Fatura döviz kuru"
 msgid "Invoice schedule"
 msgstr "Fatura çizelgesi"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "Fatura Ödeme"
 
@@ -11222,6 +11225,9 @@ msgstr "Faturalandırıldı"
 
 msgid "Invoiced Amount:"
 msgstr "Faturalandı Tutarı:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "Faturalandı Durumları"
@@ -16563,6 +16569,9 @@ msgstr "Muhasebe fişini boyut olmadan gönder"
 
 msgid "Push to accounting"
 msgstr "Muhasebede gönder"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"

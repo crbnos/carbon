@@ -11193,6 +11193,9 @@ msgstr "Invoice Rate"
 msgid "Invoice schedule"
 msgstr "Invoice schedule"
 
+msgid "Invoice Separately"
+msgstr "Invoice Separately"
+
 msgid "Invoice settlement"
 msgstr "Invoice settlement"
 
@@ -11222,6 +11225,9 @@ msgstr "Invoiced"
 
 msgid "Invoiced Amount:"
 msgstr "Invoiced Amount:"
+
+msgid "Invoiced separately"
+msgstr "Invoiced separately"
 
 msgid "Invoiced Statuses"
 msgstr "Invoiced Statuses"
@@ -16563,6 +16569,9 @@ msgstr "Push the journal without the dimension"
 
 msgid "Push to accounting"
 msgstr "Push to accounting"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
 
 msgid "Putting your data back"
 msgstr "Putting your data back"

@@ -11193,6 +11193,9 @@ msgstr "Валютный курс счета-фактуры"
 msgid "Invoice schedule"
 msgstr "График выставления счетов"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "Расчет по счету-фактуре"
 
@@ -11222,6 +11225,9 @@ msgstr "Выставлен счет"
 
 msgid "Invoiced Amount:"
 msgstr "Выставленная сумма счета-фактуры:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "Статусы выставленного счета"
@@ -16563,6 +16569,9 @@ msgstr "Провести операцию без измерения"
 
 msgid "Push to accounting"
 msgstr "Отправить в бухгалтерию"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "Восстановление ваших данных"

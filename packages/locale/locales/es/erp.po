@@ -11193,6 +11193,9 @@ msgstr "Tipo de cambio de la factura"
 msgid "Invoice schedule"
 msgstr "Programa de facturación"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "Liquidación de facturas"
 
@@ -11222,6 +11225,9 @@ msgstr "Facturado"
 
 msgid "Invoiced Amount:"
 msgstr "Monto Facturado:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "Estados Facturados"
@@ -16563,6 +16569,9 @@ msgstr "Enviar el asiento sin la dimensión"
 
 msgid "Push to accounting"
 msgstr "Enviar a contabilidad"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "Restaurando tus datos"

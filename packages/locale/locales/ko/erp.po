@@ -11193,6 +11193,9 @@ msgstr "송장 환율"
 msgid "Invoice schedule"
 msgstr "송장 일정"
 
+msgid "Invoice Separately"
+msgstr ""
+
 msgid "Invoice settlement"
 msgstr "송장 결제"
 
@@ -11222,6 +11225,9 @@ msgstr "송장 발행됨"
 
 msgid "Invoiced Amount:"
 msgstr "송장 발행 금액:"
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "송장 발행됨 상태"
@@ -16563,6 +16569,9 @@ msgstr "차원 없이 전표를 전기하세요"
 
 msgid "Push to accounting"
 msgstr "회계로 푸시"
+
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
 
 msgid "Putting your data back"
 msgstr "데이터 복원 중"
