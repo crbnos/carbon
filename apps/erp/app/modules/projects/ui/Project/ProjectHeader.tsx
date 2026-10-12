@@ -3,7 +3,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
   Command,
   CommandEmpty,
   CommandGroup,
@@ -39,7 +38,7 @@ import {
 } from "react-icons/lu";
 import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
-import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
+import { RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -53,11 +52,12 @@ import StopWorkModal from "./StopWorkModal.ee";
 type ProjectSwitcherOption = { id: string; identifier: string; name: string };
 
 /**
- * The project workspace's one-line header (Layer 2): the identifier and name
- * (a button that opens the project switcher), the status, ONE primary action
- * (the next step for the status) and a ⋯ menu with everything else. Facts
- * and exceptions (owner, cost treatment, stop-work, overdue borrows) are on
- * the Overview page.
+ * The project workspace's one-line header (Layer 2): on the left the
+ * identifier and name (a button that opens the project switcher) and the
+ * status; on the right the copy button and the ⋯ menu. There is no primary
+ * button (Brad, 2026-10-12): the menu opens with the status transitions, the
+ * next step first, then everything else. Facts and exceptions (owner, cost
+ * treatment, stop-work, overdue borrows) are on the Overview page.
  */
 const ProjectHeader = () => {
   const { t } = useLingui();
@@ -102,82 +102,32 @@ const ProjectHeader = () => {
   const showStopWork =
     status === "Released" && project.costObjective === "Direct";
 
-  // The one primary action: the next step for the status. A stop-work order
-  // overrides it, because nothing else can change until work resumes.
-  let primary: ReactNode = null;
-  if (stopWorkDate) {
-    primary = (
-      <Button
-        leftIcon={<LuCirclePlay />}
-        isLoading={resumeFetcher.state !== "idle"}
-        isDisabled={!canUpdate || isChanging}
-        onClick={() =>
-          resumeFetcher.submit(
-            { intent: "resume" },
-            { method: "post", action: path.to.projectStopWork(projectId) }
-          )
-        }
-      >
-        <Trans>Resume work</Trans>
-      </Button>
+  const resumeWork = () =>
+    resumeFetcher.submit(
+      { intent: "resume" },
+      { method: "post", action: path.to.projectStopWork(projectId) }
     );
-  } else if (status === "Draft") {
-    primary = (
-      <Button
-        leftIcon={<LuRocket />}
-        isLoading={isChanging}
-        isDisabled={!can("Released") || isChanging}
-        onClick={() => changeStatus("Released")}
-      >
-        <Trans>Release</Trans>
-      </Button>
-    );
-  } else if (status === "Released") {
-    primary = (
-      <Button
-        leftIcon={<LuCircleCheck />}
-        isLoading={isChanging}
-        isDisabled={!can("Technically Complete") || isChanging}
-        onClick={() => changeStatus("Technically Complete")}
-      >
-        <Trans>Work complete</Trans>
-      </Button>
-    );
-  } else if (status === "On Hold") {
-    primary = (
-      <Button
-        leftIcon={<LuCirclePlay />}
-        isLoading={isChanging}
-        isDisabled={!can("Released") || isChanging}
-        onClick={() => changeStatus("Released")}
-      >
-        <Trans>Resume</Trans>
-      </Button>
-    );
-  } else if (status === "Technically Complete") {
-    primary = (
-      <Button
-        leftIcon={<LuLock />}
-        isDisabled={!can("Closed") || isChanging}
-        onClick={closeDisclosure.onOpen}
-      >
-        <Trans>Close</Trans>
-      </Button>
-    );
-  }
 
-  const menu = (
+  // Brad, 2026-10-12: the header has no primary button. The status
+  // transitions open the ⋯ menu, the next step first. A stop-work order
+  // overrides them, because nothing else can change until work resumes.
+  const transitions: ReactNode = stopWorkDate ? (
+    <DropdownMenuItem disabled={!canUpdate || isChanging} onClick={resumeWork}>
+      <DropdownMenuIcon icon={<LuCirclePlay />} />
+      <Trans>Resume work</Trans>
+    </DropdownMenuItem>
+  ) : (
     <>
-      {status === "Released" && (
+      {status === "Draft" && (
         <DropdownMenuItem
-          disabled={!can("On Hold") || isChanging}
-          onClick={() => changeStatus("On Hold")}
+          disabled={!can("Released") || isChanging}
+          onClick={() => changeStatus("Released")}
         >
-          <DropdownMenuIcon icon={<LuCirclePause />} />
-          <Trans>Put on hold</Trans>
+          <DropdownMenuIcon icon={<LuRocket />} />
+          <Trans>Release</Trans>
         </DropdownMenuItem>
       )}
-      {status === "On Hold" && (
+      {status === "Released" && (
         <DropdownMenuItem
           disabled={!can("Technically Complete") || isChanging}
           onClick={() => changeStatus("Technically Complete")}
@@ -186,7 +136,49 @@ const ProjectHeader = () => {
           <Trans>Work complete</Trans>
         </DropdownMenuItem>
       )}
+      {status === "On Hold" && (
+        <DropdownMenuItem
+          disabled={!can("Released") || isChanging}
+          onClick={() => changeStatus("Released")}
+        >
+          <DropdownMenuIcon icon={<LuCirclePlay />} />
+          <Trans>Resume</Trans>
+        </DropdownMenuItem>
+      )}
       {status === "Technically Complete" && (
+        <DropdownMenuItem
+          disabled={!can("Closed") || isChanging}
+          onClick={closeDisclosure.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuLock />} />
+          <Trans>Close</Trans>
+        </DropdownMenuItem>
+      )}
+    </>
+  );
+
+  const menu = (
+    <>
+      {transitions}
+      {!stopWorkDate && status === "Released" && (
+        <DropdownMenuItem
+          disabled={!can("On Hold") || isChanging}
+          onClick={() => changeStatus("On Hold")}
+        >
+          <DropdownMenuIcon icon={<LuCirclePause />} />
+          <Trans>Put on hold</Trans>
+        </DropdownMenuItem>
+      )}
+      {!stopWorkDate && status === "On Hold" && (
+        <DropdownMenuItem
+          disabled={!can("Technically Complete") || isChanging}
+          onClick={() => changeStatus("Technically Complete")}
+        >
+          <DropdownMenuIcon icon={<LuCircleCheck />} />
+          <Trans>Work complete</Trans>
+        </DropdownMenuItem>
+      )}
+      {!stopWorkDate && status === "Technically Complete" && (
         <DropdownMenuItem
           disabled={!can("Released") || isChanging}
           onClick={() => changeStatus("Released")}
@@ -271,9 +263,7 @@ const ProjectHeader = () => {
         menu={menu}
         status={<ProjectStatus status={status} />}
         onToggleExplorer={toggleExplorer}
-        actions={
-          primary ? <RecordAction slot="primary">{primary}</RecordAction> : null
-        }
+        toolsPlacement="end"
       />
       {stoppingWork && (
         <StopWorkModal

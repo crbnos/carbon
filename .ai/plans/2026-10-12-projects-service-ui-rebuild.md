@@ -1645,3 +1645,9 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 18, Brad's decision (2026-10-12, after the first build): no table under the timeline. The Schedule is one aligned layout: milestone names on the left, each bar on the same row on the right, Weekly / Monthly / Quarterly scales, the current period tinted instead of a today line, and a drawer for the details (status, dates, progress, hours, cost, burn chart, actions). This replaces steps 2, 3 and 6 (the timeline over a table, the burn chart under the table). The row menu has Open (the drawer, which holds the burn chart) instead of Burn chart.
 - Task 18: `MilestoneTimeline.tsx` and `MilestonesList.tsx` are gone; `MilestoneSchedule.tsx` and `schedule-scale.ts` replace them. `timeline-geometry.ts` stays (`dayIndex`).
 
+Brad's decision of 2026-10-12, the project header (overrides "at most one primary action" for the project header, and Task 12 step 2):
+
+- The project header has no primary button. The status transitions open the ⋯ menu, the next step first: Release (Draft); Work complete, then Put on hold (Released); Resume, then Work complete (On Hold); Close, then Reopen (Work complete); Resume work alone during a stop-work order. Then Place in service and Stop work, a separator, Baselines, Change requests, Copy project and Template. The permission checks (`can`, `canChangeProjectStatus`) and the Close confirmation stay the same; the header had no keyboard shortcuts.
+- The copy button and the ⋯ menu sit at the right end. The left side is the identifier, the name with its chevron (the switcher) and the status badge. `RecordHeader` has a new optional prop, `toolsPlacement` (`"title"` by default, `"end"`); no other header changes.
+- Shot: `header-no-primary.png` (OB2, menu open). Checked on NSOPS: Put on hold, then Resume, from the menu; it ends Released.
+
