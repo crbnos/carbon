@@ -4495,6 +4495,9 @@ msgstr ""
 msgid "Burn chart"
 msgstr ""
 
+msgid "Business component (R&D)"
+msgstr ""
+
 msgid "Business moment"
 msgstr "비즈니스 순간"
 
@@ -4951,6 +4954,9 @@ msgstr "챔피언"
 msgid "Change"
 msgstr "변경"
 
+msgid "Change component type"
+msgstr ""
+
 msgid "Change Date"
 msgstr "날짜 변경"
 
@@ -5003,6 +5009,9 @@ msgid "Change requests"
 msgstr ""
 
 msgid "Change Requests"
+msgstr ""
+
+msgid "Change software type"
 msgstr ""
 
 msgid "Change state"
@@ -5200,6 +5209,9 @@ msgid "choose a supplier for {0} on the job"
 msgstr "작업 지시의 {0}에 대한 공급업체를 선택하세요"
 
 msgid "Choose a template"
+msgstr ""
+
+msgid "Choose a type"
 msgstr ""
 
 msgid "Choose an item"
@@ -5669,6 +5681,9 @@ msgstr "구성 요소 그룹 이름"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "구성 요소 그룹이 업데이트되었습니다 — 변경 사항을 적용하려면 모션 계획을 다시 실행하세요"
+
+msgid "Component type"
+msgstr ""
 
 msgid "Components"
 msgstr "구성품"
@@ -19170,6 +19185,9 @@ msgstr "견적서 작성 및 수주"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "견적, 주문, 주문형 구성(Configure-to-Order)"
 
+msgid "R&D"
+msgstr ""
+
 msgid "Raise it at the weekly status call"
 msgstr "매주 상태 검토 회의에서 제기하세요"
 
@@ -22485,6 +22503,9 @@ msgid "so you can assign it here."
 msgstr "그래서 여기에 할당할 수 있습니다."
 
 msgid "Soft"
+msgstr ""
+
+msgid "Software type"
 msgstr ""
 
 msgid "Sold"

@@ -15,9 +15,11 @@ import type {
   ProjectCostObjective,
   ProjectCostTreatment
 } from "../../projects.models";
+import { rdComponentTypes, rdSoftwareTypes } from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type { ProjectLabel, ProjectMilestone, ProjectState } from "../../types";
 import {
+  ChoicePill,
   DatePill,
   LabelsPill,
   MilestonePill,
@@ -31,6 +33,10 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "../Elements/ElementTypeIcon";
+import {
+  useRdComponentTypeLabels,
+  useRdSoftwareTypeLabels
+} from "../RdTax/useRdTaxLabels";
 import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
@@ -186,6 +192,11 @@ export function ElementSidebar({
               />
             </Property>
           )}
+          <BusinessComponentFields
+            projectId={projectId}
+            element={element}
+            isDisabled={isDisabled}
+          />
         </>
       )}
       <Property label={t`Budget`}>
@@ -267,6 +278,85 @@ function ChargeableSwitch({
   );
 }
 
+/**
+ * R&D tax (Government Contracting 5d): the business component switch and,
+ * while it is on, the component type and the optional software type of
+ * Form 6765 Section G.
+ */
+function BusinessComponentFields({
+  projectId,
+  element,
+  isDisabled
+}: {
+  projectId: string;
+  element: Element;
+  isDisabled: boolean;
+}) {
+  const { t } = useLingui();
+  const componentTypeLabels = useRdComponentTypeLabels();
+  const softwareTypeLabels = useRdSoftwareTypeLabels();
+  // The switch's own fetcher: its pending value shows the selects at once.
+  const { pending } = useElementField(
+    projectId,
+    element.id,
+    "isBusinessComponent"
+  );
+  const isOn =
+    pending === undefined ? element.isBusinessComponent : pending === "true";
+
+  return (
+    <>
+      <Property label={t`Business component (R&D)`}>
+        <FlagSwitch
+          projectId={projectId}
+          elementId={element.id}
+          field="isBusinessComponent"
+          label={t`Business component (R&D)`}
+          value={element.isBusinessComponent}
+          isDisabled={isDisabled}
+        />
+      </Property>
+      {isOn && (
+        <>
+          <Property label={t`Component type`}>
+            <ChoicePill
+              projectId={projectId}
+              elementId={element.id}
+              field="rdComponentType"
+              value={element.rdComponentType}
+              options={rdComponentTypes.map((value) => ({
+                value,
+                label: componentTypeLabels[value]
+              }))}
+              placeholder={t`Choose a type`}
+              label={t`Change component type`}
+              variant="ghost"
+              isDisabled={isDisabled}
+            />
+          </Property>
+          <Property label={t`Software type`}>
+            <ChoicePill
+              projectId={projectId}
+              elementId={element.id}
+              field="rdSoftwareType"
+              value={element.rdSoftwareType}
+              options={rdSoftwareTypes.map((value) => ({
+                value,
+                label: softwareTypeLabels[value]
+              }))}
+              noneLabel={t`None`}
+              placeholder={t`None`}
+              label={t`Change software type`}
+              variant="ghost"
+              isDisabled={isDisabled}
+            />
+          </Property>
+        </>
+      )}
+    </>
+  );
+}
+
 /** A yes/no element flag, saved through the element field update route. */
 function FlagSwitch({
   projectId,
@@ -278,7 +368,11 @@ function FlagSwitch({
 }: {
   projectId: string;
   elementId: string;
-  field: "isUnallowable" | "isPreproduction" | "isLeave";
+  field:
+    | "isUnallowable"
+    | "isPreproduction"
+    | "isLeave"
+    | "isBusinessComponent";
   label: string;
   value: boolean;
   isDisabled: boolean;

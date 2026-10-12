@@ -4495,6 +4495,9 @@ msgstr ""
 msgid "Burn chart"
 msgstr ""
 
+msgid "Business component (R&D)"
+msgstr ""
+
 msgid "Business moment"
 msgstr "Momento empresarial"
 
@@ -4951,6 +4954,9 @@ msgstr "Campeones"
 msgid "Change"
 msgstr "Cambiar"
 
+msgid "Change component type"
+msgstr ""
+
 msgid "Change Date"
 msgstr "Cambiar fecha"
 
@@ -5003,6 +5009,9 @@ msgid "Change requests"
 msgstr ""
 
 msgid "Change Requests"
+msgstr ""
+
+msgid "Change software type"
 msgstr ""
 
 msgid "Change state"
@@ -5200,6 +5209,9 @@ msgid "choose a supplier for {0} on the job"
 msgstr "elegir un proveedor para {0} en la orden de trabajo"
 
 msgid "Choose a template"
+msgstr ""
+
+msgid "Choose a type"
 msgstr ""
 
 msgid "Choose an item"
@@ -5669,6 +5681,9 @@ msgstr "Nombre del grupo de componentes"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "Grupo de componentes actualizado — vuelve a ejecutar la planificación de movimiento para aplicar el cambio"
+
+msgid "Component type"
+msgstr ""
 
 msgid "Components"
 msgstr "Componentes"
@@ -19170,6 +19185,9 @@ msgstr "Presupuestos y pedidos de venta"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Cotizaciones, Pedidos, Configurar para Pedido"
 
+msgid "R&D"
+msgstr ""
+
 msgid "Raise it at the weekly status call"
 msgstr "Plantéalo en la llamada de estado semanal"
 
@@ -22485,6 +22503,9 @@ msgid "so you can assign it here."
 msgstr "para que puedas asignarlo aquí."
 
 msgid "Soft"
+msgstr ""
+
+msgid "Software type"
 msgstr ""
 
 msgid "Sold"

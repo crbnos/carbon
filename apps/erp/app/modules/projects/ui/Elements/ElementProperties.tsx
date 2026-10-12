@@ -843,6 +843,70 @@ export function MilestonePill({
   );
 }
 
+// --- A choice from a fixed list -------------------------------------------------
+
+/**
+ * One value from a fixed list of options, saved through the update route.
+ * With `noneLabel` the value can be cleared.
+ */
+export function ChoicePill({
+  projectId,
+  elementId,
+  field,
+  value: saved,
+  options,
+  noneLabel,
+  placeholder,
+  label,
+  variant,
+  isDisabled
+}: FieldPillProps & {
+  field: ProjectElementEditableField;
+  value: string | null;
+  options: { value: string; label: string }[];
+  /** The label of the empty choice; without it the value cannot be cleared. */
+  noneLabel?: string;
+  /** Shown while no value is set. */
+  placeholder: string;
+  /** The accessible name of the trigger. */
+  label: string;
+}) {
+  const { pending, submit } = useElementField(projectId, elementId, field);
+  const value = shown(pending, saved);
+  const current = options.find((option) => option.value === value);
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Pill variant={variant} isDisabled={isDisabled} aria-label={label}>
+          {current ? (
+            <span className="truncate">{current.label}</span>
+          ) : (
+            <Placeholder>{placeholder}</Placeholder>
+          )}
+        </Pill>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" onClick={(e) => e.stopPropagation()}>
+        <DropdownMenuRadioGroup
+          value={value ?? ""}
+          onValueChange={(next) => {
+            if (next !== (value ?? "")) submit(next || null);
+          }}
+        >
+          {noneLabel && (
+            <DropdownMenuRadioItem value="">{noneLabel}</DropdownMenuRadioItem>
+          )}
+          {options.map((option) => (
+            <DropdownMenuRadioItem key={option.value} value={option.value}>
+              {option.label}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // --- Hours and budget ---------------------------------------------------------
 
 export function NumberPill({

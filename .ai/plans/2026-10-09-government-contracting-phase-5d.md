@@ -60,7 +60,7 @@ The spec leaves these points open. The plan decides them, and Task 15 records th
 - [x] Task 6: Default the work location and research role on timesheet entries
 - [x] Task 7: Add the validators and service functions
 - [x] Task 8: Add the work location and research role to My Timesheet
-- [ ] Task 9: Add the business component fields to the element
+- [x] Task 9: Add the business component fields to the element
 - [ ] Task 10: Add the research role to the labor category
 - [ ] Task 11: Add the research flags to the contract
 - [ ] Task 12: Add the officer flag to the employee job
@@ -634,3 +634,8 @@ ls .ai/playbooks/government-contracting-phase-5d.md
   4. Each cell posts the row's `workLocationId` and `rdActivityRole`, "" for none, so a row of entries with no role never picks up the category's role.
   5. The labels of the 4 roles, 3 component types and 4 software types are hooks in the new `ui/RdTax/useRdTaxLabels.ts`, for Tasks 9, 10 and 14 too.
   6. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.
+- Task 9:
+  1. **Business component (R&D)** is a `FlagSwitch` below the 5a flags, on every element but a Parameter. While it is on (the switch's pending value counts), **Component type** and **Software type** show as property rows.
+  2. The two selects are a new `ChoicePill` in `ElementProperties.tsx`, the shape of `MilestonePill`: a ghost pill with a radio dropdown, saved through `useElementField` and the existing field update route. Software type has a **None** choice; component type does not. The sidebar has no form `Select`, so a pill matches its other property rows.
+  3. `PROJECT_ELEMENT_LIST_COLUMNS` selects `isBusinessComponent`; the List layout shows a secondary **R&D** badge after the name, beside the Unallowable badge. `pnpm run generate:mcp` changes the response digest of the element list reads.
+  4. Browser verification deferred. The new strings have an empty `msgstr` in the other locales; the branch-wide `/translate` run fills them.

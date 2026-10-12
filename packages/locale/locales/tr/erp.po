@@ -4495,6 +4495,9 @@ msgstr ""
 msgid "Burn chart"
 msgstr ""
 
+msgid "Business component (R&D)"
+msgstr ""
+
 msgid "Business moment"
 msgstr "İş anı"
 
@@ -4951,6 +4954,9 @@ msgstr "Şampiyonlar"
 msgid "Change"
 msgstr "Değiştir"
 
+msgid "Change component type"
+msgstr ""
+
 msgid "Change Date"
 msgstr "Tarihi Değiştir"
 
@@ -5003,6 +5009,9 @@ msgid "Change requests"
 msgstr ""
 
 msgid "Change Requests"
+msgstr ""
+
+msgid "Change software type"
 msgstr ""
 
 msgid "Change state"
@@ -5200,6 +5209,9 @@ msgid "choose a supplier for {0} on the job"
 msgstr "İş emirde {0} için bir tedarikçi seçin"
 
 msgid "Choose a template"
+msgstr ""
+
+msgid "Choose a type"
 msgstr ""
 
 msgid "Choose an item"
@@ -5669,6 +5681,9 @@ msgstr "Bileşen grubu adı"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "Bileşen grubu güncellendi — değişikliği uygulamak için hareketi planlama'yı yeniden çalıştırın"
+
+msgid "Component type"
+msgstr ""
 
 msgid "Components"
 msgstr "Bileşenler"
@@ -19170,6 +19185,9 @@ msgstr "Teklifler ve satış siparişleri"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Teklifler, Siparişler, Sipariş Yapılandırması"
 
+msgid "R&D"
+msgstr ""
+
 msgid "Raise it at the weekly status call"
 msgstr "Bunu haftalık durum çağrısında gündeme getir"
 
@@ -22485,6 +22503,9 @@ msgid "so you can assign it here."
 msgstr "burada atayabilmeniz için."
 
 msgid "Soft"
+msgstr ""
+
+msgid "Software type"
 msgstr ""
 
 msgid "Sold"

@@ -297,6 +297,11 @@ export function ElementList({
                       <Trans>Unallowable</Trans>
                     </Badge>
                   )}
+                  {element.isBusinessComponent && (
+                    <Badge variant="secondary" className="shrink-0">
+                      <Trans>R&D</Trans>
+                    </Badge>
+                  )}
                   {suspectIds?.has(element.id) && <SuspectBadge />}
                   {element.type === "Requirement" &&
                     requirementStatus?.[element.id] && (

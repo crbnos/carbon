@@ -4495,6 +4495,9 @@ msgstr ""
 msgid "Burn chart"
 msgstr ""
 
+msgid "Business component (R&D)"
+msgstr ""
+
 msgid "Business moment"
 msgstr "业务时刻"
 
@@ -4951,6 +4954,9 @@ msgstr "冠军"
 msgid "Change"
 msgstr "更改"
 
+msgid "Change component type"
+msgstr ""
+
 msgid "Change Date"
 msgstr "更改日期"
 
@@ -5003,6 +5009,9 @@ msgid "Change requests"
 msgstr ""
 
 msgid "Change Requests"
+msgstr ""
+
+msgid "Change software type"
 msgstr ""
 
 msgid "Change state"
@@ -5200,6 +5209,9 @@ msgid "choose a supplier for {0} on the job"
 msgstr "为工单上的{0}选择供应商"
 
 msgid "Choose a template"
+msgstr ""
+
+msgid "Choose a type"
 msgstr ""
 
 msgid "Choose an item"
@@ -5669,6 +5681,9 @@ msgstr "组件组名称"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "组件组已更新 — 重新运行运动规划以应用更改"
+
+msgid "Component type"
+msgstr ""
 
 msgid "Components"
 msgstr "组件"
@@ -19170,6 +19185,9 @@ msgstr "报价和销售订单"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "报价、订单、按订单配置"
 
+msgid "R&D"
+msgstr ""
+
 msgid "Raise it at the weekly status call"
 msgstr "在每周状态会议上提出"
 
@@ -22485,6 +22503,9 @@ msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
 
 msgid "Soft"
+msgstr ""
+
+msgid "Software type"
 msgstr ""
 
 msgid "Sold"

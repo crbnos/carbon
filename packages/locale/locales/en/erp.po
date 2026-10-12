@@ -4495,6 +4495,9 @@ msgstr "Burden Settings"
 msgid "Burn chart"
 msgstr "Burn chart"
 
+msgid "Business component (R&D)"
+msgstr "Business component (R&D)"
+
 msgid "Business moment"
 msgstr "Business moment"
 
@@ -4951,6 +4954,9 @@ msgstr "Champions"
 msgid "Change"
 msgstr "Change"
 
+msgid "Change component type"
+msgstr "Change component type"
+
 msgid "Change Date"
 msgstr "Change Date"
 
@@ -5004,6 +5010,9 @@ msgstr "Change requests"
 
 msgid "Change Requests"
 msgstr "Change Requests"
+
+msgid "Change software type"
+msgstr "Change software type"
 
 msgid "Change state"
 msgstr "Change state"
@@ -5201,6 +5210,9 @@ msgstr "choose a supplier for {0} on the job"
 
 msgid "Choose a template"
 msgstr "Choose a template"
+
+msgid "Choose a type"
+msgstr "Choose a type"
 
 msgid "Choose an item"
 msgstr "Choose an item"
@@ -5669,6 +5681,9 @@ msgstr "Component group name"
 
 msgid "Component group updated — re-run motion planning to apply the change"
 msgstr "Component group updated — re-run motion planning to apply the change"
+
+msgid "Component type"
+msgstr "Component type"
 
 msgid "Components"
 msgstr "Components"
@@ -19170,6 +19185,9 @@ msgstr "Quoting and sales orders"
 msgid "Quoting, Orders, Configure-to-Order"
 msgstr "Quoting, Orders, Configure-to-Order"
 
+msgid "R&D"
+msgstr "R&D"
+
 msgid "Raise it at the weekly status call"
 msgstr "Raise it at the weekly status call"
 
@@ -22486,6 +22504,9 @@ msgstr "so you can assign it here."
 
 msgid "Soft"
 msgstr "Soft"
+
+msgid "Software type"
+msgstr "Software type"
 
 msgid "Sold"
 msgstr "Sold"
