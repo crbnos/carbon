@@ -2603,6 +2603,9 @@ msgstr "सभी तकनीशियन"
 msgid "All Time"
 msgstr "सभी समय"
 
+msgid "All time is posted"
+msgstr ""
+
 msgid "All tools"
 msgstr "सभी उपकरण"
 

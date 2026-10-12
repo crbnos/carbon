@@ -209,7 +209,7 @@ If an id returns 404, find the new one with `.ai/scratch/ui-audit/q.sh "<SQL>"` 
 - [x] Task 14: Fold Details into the project Settings page
 - [x] Task 15: Simplify the Costs page
 - [x] Task 16: Rebuild the Stock, Pegging and Billing pages under Costs
-- [ ] Task 17: Simplify the Time page
+- [x] Task 17: Simplify the Time page
 - [ ] Task 18: Turn Milestones into the Schedule page
 - [x] Task 19: Reduce the Plan loader to Table, Tree and Reader
 - [x] Task 20: Give Plan one toolbar row and add rows in the grid
@@ -1641,4 +1641,5 @@ Run of 2026-10-12, Task 22 (the Tree), then Tasks 2, 8, 14–18:
 - Task 16: the Stock lists show an empty list as one muted line ("Nothing owed"), not `Empty`: four stacked cabinet illustrations were louder than the data. The Billing page does the same for "no contract line"; its billable items table keeps `Empty`.
 - Task 16: the row buttons Pay Back (Stock) and Override (Pegging) moved into row ⋯ menus (Rule: secondary actions live in a row menu). `ManualPegForm.tsx` needed no change.
 - Task 16: the Stock page's Transfers list shows the 10 latest transfers; "All transfers" opens the full list.
+- Task 17: "All time is posted" is one muted line, not `Empty`, so the page never stacks two cabinet illustrations (the ledger below keeps its `Empty`).
 

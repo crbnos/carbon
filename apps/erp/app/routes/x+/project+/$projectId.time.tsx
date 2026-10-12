@@ -4,11 +4,13 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { Table as TableBase, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
+import { Subheading } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ColumnDef } from "@tanstack/react-table";
+import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { EmployeeAvatar } from "~/components";
+import { EmployeeAvatar, Table } from "~/components";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
 import {
   getProjectElementCosts,
@@ -80,94 +82,123 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+/** The open time list's row height and its cap, before it scrolls. */
+const OPEN_TIME_ROW = 44;
+const OPEN_TIME_MAX_HEIGHT = 320;
+
+type OpenTimeEntry = Awaited<ReturnType<typeof loader>>["openTime"][number];
+
 export default function ProjectTimeRoute() {
   const { t } = useLingui();
   const { ledger, count, openTime, elements } = useLoaderData<typeof loader>();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
 
+  const columns = useMemo<ColumnDef<OpenTimeEntry>[]>(
+    () => [
+      {
+        id: "entryDate",
+        header: t`Date`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap tabular-nums">
+            {formatDate(row.original.entryDate)}
+          </span>
+        )
+      },
+      {
+        id: "employeeId",
+        header: t`Employee`,
+        cell: ({ row }) => (
+          <EmployeeAvatar employeeId={row.original.employeeId} size="xxs" />
+        )
+      },
+      {
+        id: "element",
+        header: t`Element`,
+        cell: ({ row }) =>
+          row.original.element ? (
+            <div className="flex max-w-[260px] items-center gap-2">
+              <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                {row.original.element.readableId}
+              </span>
+              <span className="truncate">{row.original.element.name}</span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+      },
+      {
+        id: "laborCategory",
+        header: t`Labor Category`,
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">
+            {row.original.laborCategory?.name ?? "—"}
+          </span>
+        )
+      },
+      {
+        id: "hours",
+        header: t`Hours`,
+        cell: ({ row }) => (
+          <span className="tabular-nums">
+            {formatQuantity(row.original.hours)}
+          </span>
+        )
+      },
+      {
+        id: "status",
+        header: t`Status`,
+        cell: ({ row }) => <TimesheetEntryStatus status={row.original.status} />
+      }
+    ],
+    [t, formatDate, formatQuantity]
+  );
+
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <section className="flex max-h-72 shrink-0 flex-col gap-1 border-b border-border p-4">
-        <h3 className="text-xs font-medium text-muted-foreground">
-          <Trans>Time not posted yet</Trans>
-        </h3>
+      <section className="flex shrink-0 flex-col border-b border-border">
+        <div className="flex h-12 items-center px-4">
+          <Subheading as="h3" variant="light">
+            <Trans>Time not posted yet</Trans>
+          </Subheading>
+        </div>
         {openTime.length === 0 ? (
-          <p className="rounded-md border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
-            <Trans>No open time</Trans>
+          // One muted line, as on the Overview: the section sits above the
+          // ledger, and an illustration here was louder than the data.
+          <p className="px-4 pb-4 text-sm text-muted-foreground">
+            <Trans>All time is posted</Trans>
           </p>
         ) : (
-          <div className="min-h-0 overflow-auto rounded-md border border-border">
-            <TableBase full>
-              <Thead>
-                <Tr>
-                  <Th>
-                    <Trans>Date</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Employee</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Element</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Labor Category</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Hours</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Status</Trans>
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {openTime.map((entry) => (
-                  <Tr key={entry.id}>
-                    <Td className="whitespace-nowrap tabular-nums">
-                      {formatDate(entry.entryDate)}
-                    </Td>
-                    <Td>
-                      <EmployeeAvatar
-                        employeeId={entry.employeeId}
-                        size="xxs"
-                      />
-                    </Td>
-                    <Td>
-                      {entry.element ? (
-                        <div className="flex max-w-[260px] items-center gap-2">
-                          <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                            {entry.element.readableId}
-                          </span>
-                          <span className="truncate">{entry.element.name}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </Td>
-                    <Td className="whitespace-nowrap">
-                      {entry.laborCategory?.name ?? "—"}
-                    </Td>
-                    <Td className="tabular-nums">
-                      {formatQuantity(entry.hours)}
-                    </Td>
-                    <Td>
-                      <TimesheetEntryStatus status={entry.status} />
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </TableBase>
+          <div
+            style={{
+              height: Math.min(
+                48 + OPEN_TIME_ROW * openTime.length + 2,
+                OPEN_TIME_MAX_HEIGHT
+              )
+            }}
+          >
+            <Table<OpenTimeEntry>
+              compact
+              columns={columns}
+              data={openTime}
+              count={openTime.length}
+              sort={null}
+              withPagination={false}
+              withSearch={false}
+              withColumnOrdering={false}
+              withCsvExport={false}
+              withSidebarTrigger={false}
+            />
           </div>
         )}
       </section>
+      <div className="flex h-12 shrink-0 items-center px-4">
+        <Subheading as="h3" variant="light">
+          <Trans>Costs posted</Trans>
+        </Subheading>
+      </div>
       <div className="flex min-h-0 flex-1 flex-col">
-        <ProjectLedgerTable
-          data={ledger}
-          count={count}
-          elements={elements}
-          title={t`Costs posted`}
-        />
+        <ProjectLedgerTable data={ledger} count={count} elements={elements} />
       </div>
     </div>
   );

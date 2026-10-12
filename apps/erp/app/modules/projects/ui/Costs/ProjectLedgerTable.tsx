@@ -37,7 +37,8 @@ type ProjectLedgerTableProps = {
   count: number;
   /** The readable id and name of each element, by id. */
   elements: Record<string, ElementLabel>;
-  title: string;
+  /** The toolbar title; omitted where the page draws its own heading. */
+  title?: string;
 };
 
 /** The page a project ledger row's document opens, when it has one. */

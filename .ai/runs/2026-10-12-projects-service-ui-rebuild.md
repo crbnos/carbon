@@ -181,6 +181,13 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 17: Simplify the Time page
 
+- "Time not posted yet" is a compact `Table` (Date, Employee, Element, Labor Category, Hours, Status) with no pagination, search, column picker, CSV or sort; it sizes to its rows and scrolls past 320 px.
+- Both sections open with `Subheading as="h3" variant="light"`: "Time not posted yet" and "Costs posted". `ProjectLedgerTable`'s `title` is optional now, so the Time page draws the heading itself; the costs drawer keeps its title.
+- With no open time the section shows one muted line, "All time is posted", not `Empty` (as on the Overview and Stock). The ledger keeps Task 15's `Empty`.
+- Code gate: Biome clean; `typecheck --filter=erp` exit 0; erp 2,261 tests passed.
+- Shot: `17-time.png` (4 open entries, an empty ledger).
+- Screenshot check: 1 yes (the ledger table precedent); 2 yes; 3 yes (no toolbar); 4 yes (the header only); 5 yes; 6 yes (no row actions); 7 yes.
+
 ## Task 18: Turn Milestones into the Schedule page
 
 ## Task 19: Reduce the Plan loader to Table, Tree and Reader

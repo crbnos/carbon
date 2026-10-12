@@ -2603,6 +2603,9 @@ msgstr "모든 기술자"
 msgid "All Time"
 msgstr "전체 기간"
 
+msgid "All time is posted"
+msgstr ""
+
 msgid "All tools"
 msgstr "모든 도구"
 

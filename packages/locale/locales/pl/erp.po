@@ -2603,6 +2603,9 @@ msgstr "Wszyscy technicy"
 msgid "All Time"
 msgstr "Cały czas"
 
+msgid "All time is posted"
+msgstr ""
+
 msgid "All tools"
 msgstr "Wszystkie narzędzia"
 
