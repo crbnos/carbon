@@ -38497,6 +38497,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -38598,6 +38601,9 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
           },
           {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -38651,6 +38657,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementCharge.voidedSalesInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementCharge.invoiceSeparately"
           },
           {
             $ref: "#/parameters/body.rentalAgreementCharge"
@@ -113800,6 +113809,51 @@ export default {
         tags: ["(rpc) update_receipt_line_batch_tracking"]
       }
     },
+    "/rpc/sync_advance_document_sequence": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_advance_document_sequence"]
+      }
+    },
     "/rpc/sync_update_stock_transfer_status": {
       post: {
         parameters: [
@@ -133077,7 +133131,8 @@ export default {
         "amount",
         "taxPercent",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "invoiceSeparately"
       ],
       properties: {
         id: {
@@ -133147,6 +133202,11 @@ export default {
         voidedSalesInvoiceId: {
           format: "text",
           type: "string"
+        },
+        invoiceSeparately: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
         }
       },
       type: "object"
@@ -183891,6 +183951,12 @@ export default {
     },
     "rowFilter.rentalAgreementCharge.voidedSalesInvoiceId": {
       name: "voidedSalesInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementCharge.invoiceSeparately": {
+      name: "invoiceSeparately",
       required: false,
       in: "query",
       type: "string"

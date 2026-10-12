@@ -54030,6 +54030,7 @@ export type Database = {
           createdBy: string
           description: string
           id: string
+          invoiceSeparately: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId: string | null
           taxPercent: number
@@ -54046,6 +54047,7 @@ export type Database = {
           createdBy: string
           description: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -54062,6 +54064,7 @@ export type Database = {
           createdBy?: string
           description?: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId?: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
