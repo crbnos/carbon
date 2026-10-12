@@ -5,7 +5,7 @@
 // A live-database company with the lessee lease accounts mapped, an accounting
 // cutover of 2026-01-01, and one Draft lease with its assets and their payment
 // rows. Each asset defaults to the spec's worked example (36 months from
-// 2027-01-01, 10,000 a month in arrears, 6 %).
+// 2027-01-01, 10,000 a month in arrears, 6 %, no escalation).
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { generateLeasePayments } from "@carbon/utils";
@@ -22,12 +22,17 @@ export type LeaseFixtureAsset = {
   economicLifeMonths?: number | null;
   purchaseOptionAmount?: number | null;
   purchaseOptionReasonablyCertain?: boolean;
+  ownershipTransfers?: boolean;
+  serialNumber?: string | null;
 };
 
 export type LeaseFixtureOptions = LeaseFixtureAsset & {
+  /** Default 2027-01-01; it is also the invoice-from date. */
+  commencementDate?: string;
   /** Default 2029-12-31; null is open-ended (rows cut through 2027-03-01). */
   endDate?: string | null;
   timing?: "Advance" | "Arrears"; // default Arrears
+  annualEscalationPercent?: number; // default 0
   /** The leased assets; default one, from the asset options above. */
   assets?: LeaseFixtureAsset[];
 };
@@ -56,9 +61,11 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
   accounts: Record<LeaseFixtureAccount, string>;
   cleanup(): Promise<void>;
 }> {
+  const commencementDate = options.commencementDate ?? "2027-01-01";
   const endDate =
     options.endDate === undefined ? "2029-12-31" : options.endDate;
   const timing = options.timing ?? "Arrears";
+  const annualEscalationPercent = options.annualEscalationPercent ?? 0;
   const db = await connectLocalTestDatabase();
   const prefix = `leasefx-${crypto
     .randomUUID()
@@ -224,11 +231,12 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
         name: "Forklift FL-12",
         supplierId,
         locationId,
-        commencementDate: "2027-01-01",
+        commencementDate,
         endDate,
-        invoiceFromDate: "2027-01-01",
+        invoiceFromDate: commencementDate,
         paymentFrequency: "Monthly",
         paymentTiming: timing,
+        annualEscalationPercent,
         discountRate: 6,
         currencyCode: "USD",
         companyId,
@@ -248,6 +256,8 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
           purchaseOptionAmount: asset.purchaseOptionAmount ?? null,
           purchaseOptionReasonablyCertain:
             asset.purchaseOptionReasonablyCertain ?? false,
+          ownershipTransfers: asset.ownershipTransfers ?? false,
+          serialNumber: asset.serialNumber ?? null,
           sortOrder: index + 1,
           companyId,
           createdBy: USER
@@ -259,13 +269,13 @@ export async function leaseFixture(options: LeaseFixtureOptions = {}): Promise<{
       .values(
         assets.flatMap((asset, index) =>
           generateLeasePayments({
-            commencementDate: "2027-01-01",
+            commencementDate,
             endDate,
             through: endDate ? undefined : "2027-03-01",
             paymentAmount: asset.paymentAmount ?? 10000,
             frequency: "Monthly",
             timing,
-            annualEscalationPercent: 0,
+            annualEscalationPercent,
             purchaseOptionAmount: asset.purchaseOptionReasonablyCertain
               ? (asset.purchaseOptionAmount ?? 0)
               : 0,

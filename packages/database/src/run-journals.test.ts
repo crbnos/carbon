@@ -260,6 +260,8 @@ describe("buildRecognitionJournals", () => {
       rentalAgreementLineId: null,
       customerContractLineId: null,
       rentalLeaseScheduleLineId: null,
+      leaseId: null,
+      leaseScheduleLineId: null,
       ...overrides
     };
   }
@@ -296,7 +298,9 @@ describe("buildRecognitionJournals", () => {
           projectId: "proj-3"
         }
       ]
-    ])
+    ]),
+    leases: new Map(),
+    leaseAssets: new Map()
   };
   const classById = new Map([
     ["deferred", "Liability" as const],
@@ -472,45 +476,51 @@ describe("buildRecognitionJournals", () => {
 });
 
 describe("buildRecognitionJournals for a lease run", () => {
-  it("posts lessee rows as one Lease Run journal referencing the lease", () => {
-    const base = {
-      postingDate: "2027-01-31",
-      salesInvoiceLineId: null,
-      rentalAgreementLineId: null,
-      customerContractLineId: null,
-      rentalLeaseScheduleLineId: null,
-      leaseId: "lease-1",
-      leaseScheduleLineId: "lssl-1"
-    };
-    const { journals, runJournal } = buildRecognitionJournals({
+  const base = {
+    postingDate: "2027-01-31",
+    salesInvoiceLineId: null,
+    rentalAgreementLineId: null,
+    customerContractLineId: null,
+    rentalLeaseScheduleLineId: null,
+    leaseId: "lease-1",
+    leaseScheduleLineId: "lssl-1"
+  };
+  const rows: RecognitionScheduleRow[] = [
+    {
+      ...base,
+      scheduleId: "interest",
+      type: "Interest",
+      amount: 1643.55,
+      debitAccountId: "lease-cost",
+      creditAccountId: "lease-liability"
+    },
+    {
+      ...base,
+      scheduleId: "amortization",
+      type: "Amortization",
+      amount: 8356.45,
+      debitAccountId: "lease-cost",
+      creditAccountId: "accumulated-rou"
+    }
+  ];
+  const leases = new Map([
+    ["lease-1", { supplierId: "supplier-1", locationId: "loc-1" }]
+  ]);
+  // The asset has no location of its own: the lease's is used.
+  const leaseAssets = new Map([
+    ["lssl-1", { leaseLineId: "asset-1", locationId: null }]
+  ]);
+  const build = (sources: Pick<RecognitionSources, "leases" | "leaseAssets">) =>
+    buildRecognitionJournals({
       runType: "Lease",
       runReadableId: "LR-1",
       runPeriodEnd: "2027-01-31",
-      rows: [
-        {
-          ...base,
-          scheduleId: "interest",
-          type: "Interest",
-          amount: 1643.55,
-          debitAccountId: "lease-cost",
-          creditAccountId: "lease-liability"
-        },
-        {
-          ...base,
-          scheduleId: "amortization",
-          type: "Amortization",
-          amount: 8356.45,
-          debitAccountId: "lease-cost",
-          creditAccountId: "accumulated-rou"
-        }
-      ],
+      rows,
       sources: {
         invoiceLines: new Map(),
         rentalLines: new Map(),
         contractLines: new Map(),
-        leases: new Map([
-          ["lease-1", { supplierId: "supplier-1", locationId: "loc-1" }]
-        ])
+        ...sources
       },
       classById: new Map([
         ["lease-cost", "Expense" as const],
@@ -518,7 +528,27 @@ describe("buildRecognitionJournals for a lease run", () => {
         ["accumulated-rou", "Asset" as const]
       ])
     });
+
+  it("refuses a lessee row whose lease was not loaded", () => {
+    expect(() => build({ leases: new Map(), leaseAssets })).toThrow(
+      "Lease lease-1 of schedule row interest was not loaded"
+    );
+  });
+
+  it("refuses a lessee row whose leased asset was not loaded", () => {
+    expect(() => build({ leases, leaseAssets: new Map() })).toThrow(
+      "The leased asset of schedule row interest was not loaded"
+    );
+  });
+
+  it("posts lessee rows as one Lease Run journal referencing the lease", () => {
+    const { journals, runJournal } = build({ leases, leaseAssets });
     expect(journals).toHaveLength(1);
+    expect(
+      runJournal!.lines.every(
+        (line) => line.documentLineReference === "asset-1"
+      )
+    ).toBe(true);
     const journal = runJournal!;
     expect(journal.sourceType).toBe("Lease Run");
     expect(journal.description).toBe("Lease Run LR-1");

@@ -58,9 +58,12 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "invoicing_deleteSalesInvoice",
   "invoicing_deleteSalesInvoiceLine",
   // Likewise a purchase invoice (or line) that billed a lease payment row:
-  // the routes return the row to Pending
-  // (`deletePurchaseInvoiceReleasingLeases`); a plain delete leaves it
-  // Invoiced and it is never billed again.
+  // deleting its line returns the row to Pending
+  // (`purchaseInvoiceLine_release_lease_payment`), so it is billed again —
+  // right for a Draft, a double bill for a posted invoice. The routes check
+  // the invoice is Draft under a row lock
+  // (`deletePurchaseInvoiceReleasingLeases`); `deletePurchaseInvoiceLine`
+  // checks nothing.
   "invoicing_deletePurchaseInvoice",
   "invoicing_deletePurchaseInvoiceLine",
   // Variadic (`...items`): the dispatcher fills one positional argument per

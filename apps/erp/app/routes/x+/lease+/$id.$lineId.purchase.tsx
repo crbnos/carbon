@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       leaseId: id,
       leaseLineId: lineId,
       exerciseDate: validation.data.exerciseDate,
-      purchasePrice: Number(validation.data.purchasePrice),
+      purchasePrice: validation.data.purchasePrice,
       fixedAssetClassId: validation.data.fixedAssetClassId,
       name: validation.data.name,
       notes: validation.data.notes ?? null

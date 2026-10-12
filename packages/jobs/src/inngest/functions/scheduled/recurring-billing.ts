@@ -6,6 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
+import { ENDED_LEASE_STATUSES } from "@carbon/server-functions/post-purchase-invoice";
 import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
@@ -21,8 +22,8 @@ import {
   type InvoiceRunResult
 } from "../../../invoicing/digest";
 import {
-  dueLeaseReminders,
   expireLeases,
+  loadLeaseReminders,
   stampLeaseReminders
 } from "../../../invoicing/lease-reminders";
 import { inngest } from "../../client";
@@ -36,10 +37,6 @@ type DraftedInvoice = {
   mode: InvoiceAutomation;
   holdReason: string | null;
 };
-
-/** Lease statuses that can still have a payment to bill (see
- *  `create-lease-invoices`). */
-const ENDED_LEASE_STATUSES = ["Expired", "Terminated", "Purchased"] as const;
 
 /**
  * The one daily job for every recurring-invoice source — rental agreements
@@ -65,65 +62,15 @@ export const recurringBillingFunction = inngest.createFunction(
      *  `leaseReminderDays`, once per date. Sent before the dates are stamped,
      *  so a failed stamp repeats a reminder rather than losing one. */
     const remindLeaseDates = async (company: { id: string; name: string }) => {
-      const due = await step.run(`lease-reminders-${company.id}`, async () => {
-        const db = getJobDatabaseClient();
-        const today = datetime
-          .today(await getCompanyTimeZone(serviceRole, company.id))
-          .toString();
-        const [leases, settings] = await Promise.all([
-          db
-            .selectFrom("lease")
-            .select([
-              "id",
-              "assignee",
-              "createdBy",
-              "noticeDate",
-              "endDate",
-              "noticeRemindedFor",
-              "endRemindedFor"
-            ])
-            .where("companyId", "=", company.id)
-            .where("status", "=", "Active")
-            .execute(),
-          db
-            .selectFrom("companySettings")
-            .select(["leaseReminderDays", "invoiceNotificationGroup"])
-            .where("id", "=", company.id)
-            .executeTakeFirst()
-        ]);
-        const reminders = dueLeaseReminders(
-          leases,
-          today,
-          settings?.leaseReminderDays ?? 90
-        );
-        if (reminders.length === 0) {
-          return { reminders, owners: [], groupIds: [] };
-        }
-
-        const remindedIds = new Set(reminders.map((r) => r.leaseId));
-        const ownerOf = leases
-          .filter((l) => remindedIds.has(l.id))
-          .map((l) => ({ id: l.id, owner: l.assignee ?? l.createdBy }))
-          .filter((l) => l.owner !== "system");
-        const ownerIds = [...new Set(ownerOf.map((l) => l.owner))];
-        const members =
-          ownerIds.length > 0
-            ? await db
-                .selectFrom("userToCompany")
-                .select("userId")
-                .where("companyId", "=", company.id)
-                .where("userId", "in", ownerIds)
-                .execute()
-            : [];
-        const memberIds = new Set(members.map((m) => m.userId));
-        return {
-          reminders,
-          owners: ownerOf
-            .filter((l) => memberIds.has(l.owner))
-            .map((l) => [l.id, l.owner] as [string, string]),
-          groupIds: settings?.invoiceNotificationGroup ?? []
-        };
-      });
+      const due = await step.run(`lease-reminders-${company.id}`, async () =>
+        loadLeaseReminders(
+          getJobDatabaseClient(),
+          company.id,
+          datetime
+            .today(await getCompanyTimeZone(serviceRole, company.id))
+            .toString()
+        )
+      );
       if (due.reminders.length === 0) return;
 
       // An owner who is in the group hears it once, through the group.
@@ -443,6 +390,7 @@ export const recurringBillingFunction = inngest.createFunction(
           for (const invoice of leases.invoices) {
             leaseDrafts.push({
               invoiceId: invoice.invoiceId,
+              documentType: "purchaseInvoice",
               sourceId: invoice.leaseId,
               outcome: "drafted"
             });
@@ -505,6 +453,7 @@ export const recurringBillingFunction = inngest.createFunction(
         if (invoice.mode === "Draft Only" || !invoice.holdReason) continue;
         results.push({
           invoiceId: invoice.invoiceId,
+          documentType: "salesInvoice",
           sourceId: invoice.sourceId,
           outcome: "held"
         });
@@ -533,6 +482,7 @@ export const recurringBillingFunction = inngest.createFunction(
         const result = (outcome: InvoiceRunResult["outcome"]) =>
           results.push({
             invoiceId: invoice.invoiceId,
+            documentType: "salesInvoice",
             sourceId: invoice.sourceId,
             outcome
           });
@@ -678,10 +628,15 @@ export const recurringBillingFunction = inngest.createFunction(
           recipients.groupIds
         );
         for (const digest of digests) {
-          const key =
+          const recipientKey =
             digest.recipient.type === "user"
               ? digest.recipient.userId
               : "group";
+          // A recipient can get two: the sales invoices and the lease drafts.
+          const key =
+            digest.documentType === "purchaseInvoice"
+              ? `${recipientKey}-lease`
+              : recipientKey;
           await step.sendEvent(
             `notify-recurring-invoicing-${company.id}-${key}`,
             {
@@ -690,6 +645,7 @@ export const recurringBillingFunction = inngest.createFunction(
                 event: NotificationEvent.RecurringInvoicing,
                 companyId: company.id,
                 documentIds: digest.documentIds,
+                documentType: digest.documentType,
                 recipient: digest.recipient,
                 body: digest.body
               }

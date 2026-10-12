@@ -1023,6 +1023,30 @@ function isOnOrAfter(later: string, earlier: string): boolean {
   }
 }
 
+/** A real calendar date written `YYYY-MM-DD` — what a DATE column takes and
+ *  what the lease's month arithmetic parses. */
+function isIsoDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  try {
+    return parseDate(value).toString() === value;
+  } catch {
+    return false;
+  }
+}
+
+const INVALID_DATE = "Enter a date as YYYY-MM-DD";
+
+/** A required lease date. */
+const leaseDate = (required: string) =>
+  z
+    .string()
+    .min(1, { message: required })
+    .refine(isIsoDate, { message: INVALID_DATE });
+
+/** An optional lease date: a cleared DatePicker posts "". */
+const optionalLeaseDate = () =>
+  zfd.text(z.string().refine(isIsoDate, { message: INVALID_DATE }).optional());
+
 /** How long a lease runs, as the Details step asks it (the AR contract's
  *  Duration): N months from commencement, open-ended, or a custom end date.
  *  Not stored — `leaseDurationOf` reads it back from the dates. */
@@ -1050,6 +1074,54 @@ export function leaseEndDate(
   if (duration === "open") return null;
   if (duration === "custom") return endDate || null;
   return addDays(addMonths(commencementDate, Number(duration)), -1);
+}
+
+/** `leaseEndDate`, or null when the commencement is not a date — for a
+ *  refine, which must report the bad date rather than throw on it. */
+function safeLeaseEndDate(
+  commencementDate: string,
+  duration: LeaseDuration,
+  endDate?: string | null
+): string | null {
+  try {
+    return leaseEndDate(commencementDate, duration, endDate);
+  } catch {
+    return null;
+  }
+}
+
+/** The dates the payment rows are cut from, as they are saved. The end date
+ *  comes from the duration when the Details step sends one (a single saved
+ *  term keeps the one given; null is open-ended). Invoicing starts at
+ *  commencement unless it was moved: an invoice-from date that still equals
+ *  the current commencement, and was not changed, follows a new
+ *  commencement. `current` is null for a new lease. */
+export function resolveLeaseDates(
+  current: { commencementDate: string; invoiceFromDate: string } | null,
+  next: {
+    commencementDate: string;
+    duration?: LeaseDuration;
+    endDate?: string | null;
+    invoiceFromDate?: string | null;
+  }
+): {
+  commencementDate: string;
+  endDate: string | null;
+  invoiceFromDate: string;
+} {
+  const followsCommencement =
+    current !== null &&
+    current.invoiceFromDate === current.commencementDate &&
+    (!next.invoiceFromDate || next.invoiceFromDate === current.invoiceFromDate);
+  return {
+    commencementDate: next.commencementDate,
+    endDate: next.duration
+      ? leaseEndDate(next.commencementDate, next.duration, next.endDate)
+      : next.endDate || null,
+    invoiceFromDate: followsCommencement
+      ? next.commencementDate
+      : next.invoiceFromDate || next.commencementDate
+  };
 }
 
 /** The duration a lease's dates show: a preset when the end falls exactly
@@ -1081,15 +1153,13 @@ export const leaseValidator = z
     supplierContactId: zfd.text(z.string().optional()),
     locationId: zfd.text(z.string().optional()),
     assignee: zfd.text(z.string().optional()),
-    commencementDate: z
-      .string()
-      .min(1, { message: "Commencement date is required" }),
+    commencementDate: leaseDate("Commencement date is required"),
     /** Absent when a single term is saved: the end date is then as given. */
     duration: z.enum(leaseDurations).optional(),
     /** Empty is open-ended. */
-    endDate: zfd.text(z.string().optional()),
-    noticeDate: zfd.text(z.string().optional()),
-    invoiceFromDate: zfd.text(z.string().optional()),
+    endDate: optionalLeaseDate(),
+    noticeDate: optionalLeaseDate(),
+    invoiceFromDate: optionalLeaseDate(),
     paymentFrequency: z.enum(leasePaymentFrequencies, {
       error: "Payment frequency is required"
     }),
@@ -1121,7 +1191,7 @@ export const leaseValidator = z
   .refine(
     (data) => {
       const end = data.duration
-        ? leaseEndDate(data.commencementDate, data.duration, data.endDate)
+        ? safeLeaseEndDate(data.commencementDate, data.duration, data.endDate)
         : data.endDate || null;
       return !data.noticeDate || !end || isOnOrAfter(end, data.noticeDate);
     },
@@ -1137,6 +1207,79 @@ export const leaseValidator = z
     {
       message: "Invoicing cannot start before the commencement date",
       path: ["invoiceFromDate"]
+    }
+  );
+
+/** The lease terms a write may set — never `status`, the classification or
+ *  anything activation owns. Picked rather than spread: the inputs of a
+ *  service reach it unfiltered. `current` is the saved lease (null when it
+ *  is new), so an invoice-from date that followed the commencement keeps
+ *  following it (`resolveLeaseDates`). */
+export function leaseTermColumns(
+  terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">,
+  current: { commencementDate: string; invoiceFromDate: string } | null = null
+) {
+  return {
+    name: terms.name || null,
+    description: terms.description ?? null,
+    supplierId: terms.supplierId,
+    supplierLocationId: terms.supplierLocationId || null,
+    supplierContactId: terms.supplierContactId || null,
+    locationId: terms.locationId || null,
+    assignee: terms.assignee || null,
+    ...resolveLeaseDates(current, terms),
+    // A cleared DatePicker posts "", which a DATE column rejects.
+    noticeDate: terms.noticeDate || null,
+    paymentFrequency: terms.paymentFrequency,
+    paymentTiming: terms.paymentTiming,
+    annualEscalationPercent: terms.annualEscalationPercent,
+    discountRate: terms.discountRate,
+    currencyCode: terms.currencyCode
+  };
+}
+
+/** The lease terms every asset's payment rows are cut from: a change cuts
+ *  them again (`regenerateLeasePayments`). */
+export const leasePaymentTermFields = [
+  "commencementDate",
+  "endDate",
+  "invoiceFromDate",
+  "paymentFrequency",
+  "paymentTiming",
+  "annualEscalationPercent"
+] as const satisfies readonly (keyof ReturnType<typeof leaseTermColumns>)[];
+
+/** What stays editable once a lease has started: who owns it, when to give
+ *  notice, what it is called and its notes. Every term the books were
+ *  measured from changes only with Modify. The database refuses the rest
+ *  (`lease_api_write_guard`). */
+export const leaseDetailFields = [
+  "name",
+  "description",
+  "assignee",
+  "noticeDate"
+] as const;
+
+export type LeaseDetailField = (typeof leaseDetailFields)[number];
+
+/** A started lease's details (`leaseDetailFields`). Pass `endDate` to check
+ *  a notice date against it. */
+export const leaseDetailsValidator = z
+  .object({
+    name: zfd.text(z.string().trim().optional()),
+    description: zfd.text(z.string().optional()),
+    assignee: zfd.text(z.string().optional()),
+    noticeDate: optionalLeaseDate(),
+    endDate: optionalLeaseDate()
+  })
+  .refine(
+    (data) =>
+      !data.noticeDate ||
+      !data.endDate ||
+      isOnOrAfter(data.endDate, data.noticeDate),
+    {
+      message: "The notice date must be on or before the end date",
+      path: ["noticeDate"]
     }
   );
 
@@ -1185,15 +1328,42 @@ export const leaseLineValidator = z
     }
   );
 
+/** The fields of a leased asset a write may set — never its status, its
+ *  classification or anything activation owns. Picked rather than spread. */
+export function leaseLineColumns(
+  line: Omit<z.infer<typeof leaseLineValidator>, "id" | "leaseId">
+) {
+  return {
+    description: line.description,
+    serialNumber: line.serialNumber || null,
+    locationId: line.locationId || null,
+    paymentAmount: line.paymentAmount,
+    fairValue: line.fairValue ?? null,
+    economicLifeMonths: line.economicLifeMonths ?? null,
+    ownershipTransfers: line.ownershipTransfers,
+    specializedAsset: line.specializedAsset,
+    purchaseOptionAmount: line.purchaseOptionAmount ?? null,
+    purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain
+  };
+}
+
+/** The asset fields its payment rows are cut from: a change cuts them
+ *  again. */
+export const leaseLinePaymentFields = [
+  "paymentAmount",
+  "purchaseOptionAmount",
+  "purchaseOptionReasonablyCertain"
+] as const satisfies readonly (keyof ReturnType<typeof leaseLineColumns>)[];
+
 export const leasePaymentValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     leaseId: z.string().min(1, { message: "Lease is required" }),
     leaseLineId: z.string().min(1, { message: "Asset is required" }),
     paymentType: z.enum(leasePaymentTypes).default("Rent"),
-    periodStart: z.string().min(1, { message: "Period start is required" }),
-    periodEnd: z.string().min(1, { message: "Period end is required" }),
-    dueDate: z.string().min(1, { message: "Due date is required" }),
+    periodStart: leaseDate("Period start is required"),
+    periodEnd: leaseDate("Period end is required"),
+    dueDate: leaseDate("Due date is required"),
     amount: zfd.numeric(
       z.number().min(0, { message: "Amount cannot be negative" })
     )
@@ -1216,8 +1386,8 @@ export const leaseClassificationValidator = z.object({
  *  its own payment amount. */
 export const leaseModifyValidator = z
   .object({
-    effectiveDate: z.string().min(1, { message: "Effective date is required" }),
-    endDate: z.string().min(1, { message: "End date is required" }),
+    effectiveDate: leaseDate("Effective date is required"),
+    endDate: leaseDate("End date is required"),
     discountRate: zfd.numeric(
       z.number().min(0, { message: "Discount rate cannot be negative" })
     ),
@@ -1243,9 +1413,7 @@ export const leaseModifyValidator = z
   });
 
 export const leaseTerminateValidator = z.object({
-  terminationDate: z
-    .string()
-    .min(1, { message: "Termination date is required" }),
+  terminationDate: leaseDate("Termination date is required"),
   penaltyAmount: zfd.numeric(
     z.number().min(0, { message: "Penalty cannot be negative" }).default(0)
   ),
@@ -1253,7 +1421,7 @@ export const leaseTerminateValidator = z.object({
 });
 
 export const leasePurchaseValidator = z.object({
-  exerciseDate: z.string().min(1, { message: "Exercise date is required" }),
+  exerciseDate: leaseDate("Exercise date is required"),
   purchasePrice: zfd.numeric(
     z.number().min(0, { message: "Price cannot be negative" })
   ),

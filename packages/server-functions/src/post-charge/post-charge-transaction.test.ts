@@ -4,8 +4,8 @@
 
 import { sql } from "kysely";
 import { expect } from "vitest";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { databaseTest } from "../local-database-test-fixture";
-import { allocateJournalLineIds } from "./journal-line-ids";
 import { chargeFixture } from "./post-charge-test-fixture";
 import { postChargeTransaction } from "./post-charge-transaction";
 

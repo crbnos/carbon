@@ -15,7 +15,7 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import { addDays, INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useFetcher } from "react-router";
@@ -28,19 +28,18 @@ import {
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { leaseTerminateValidator } from "../../purchasing.models";
-import LeaseJournalPreview, {
-  type LeaseJournalPreviewRow
-} from "./LeaseJournalPreview";
+import LeaseJournalPreview from "./LeaseJournalPreview";
 import type {
   Lease,
   LeaseLine,
   LeasePayment,
   LeaseScheduleLine
 } from "./types";
+import { useLeaseLegLabel } from "./useLeaseLabels";
 import {
-  endedPaymentsAddBack,
   lastPostedLeaseMonthEnd,
-  leaseCarryingAt
+  leaseJournalRows,
+  leaseTerminationPreview
 } from "./utils";
 
 type LeaseTerminateModalProps = {
@@ -68,45 +67,34 @@ const LeaseTerminateModal = ({
   const currencyCode = lease.currencyCode ?? "";
   const decimals = useCurrencyDecimals(currencyCode);
 
-  const lineSchedule = schedule.filter((row) => row.leaseLineId === line.id);
-  const [terminationDate, setTerminationDate] = useState(
-    lastPostedLeaseMonthEnd(lineSchedule) ?? ""
-  );
+  const legLabel = useLeaseLegLabel();
+
+  // Only what the user typed is state; the defaults come from the data.
+  const [dateInput, setDateInput] = useState<string | null>(null);
   const [penalty, setPenalty] = useState(0);
+  const terminationDate =
+    dateInput ??
+    lastPostedLeaseMonthEnd(
+      schedule.filter((row) => row.leaseLineId === line.id)
+    ) ??
+    "";
 
   const isShortTerm = line.lesseeClassification === "Short-Term";
   const commencementDay = lease.commencementDate?.slice(8) ?? "";
 
-  const journal: LeaseJournalPreviewRow[] = (() => {
-    if (isShortTerm || !terminationDate) return [];
-    const carrying = leaseCarryingAt(
-      line,
-      schedule,
-      addDays(terminationDate, 1)
-    );
-    const liability = round(
-      carrying.liability +
-        endedPaymentsAddBack(payments, line.id, terminationDate)
-    );
-    const rouAssetCost = Number(line.rouAssetCost ?? 0);
-    const gainLoss = round(liability - penalty - carrying.rouAsset);
-    return [
-      {
-        account: t`Lease Liability`,
-        debit: round(liability - penalty),
-        credit: 0
-      },
-      {
-        account: t`Accumulated ROU Amortization`,
-        debit: carrying.accumulated,
-        credit: 0
-      },
-      { account: t`Right-of-Use Asset`, debit: 0, credit: rouAssetCost },
-      gainLoss >= 0
-        ? { account: t`Gain on Lease Termination`, debit: 0, credit: gainLoss }
-        : { account: t`Loss on Lease Termination`, debit: -gainLoss, credit: 0 }
-    ];
-  })();
+  const journal =
+    isShortTerm || !terminationDate
+      ? []
+      : leaseJournalRows(
+          leaseTerminationPreview({
+            line,
+            payments,
+            schedule,
+            terminationDate,
+            penalty
+          }).legs,
+          (leg) => legLabel(leg.account, "termination")
+        );
 
   return (
     <Modal
@@ -147,7 +135,7 @@ const LeaseTerminateModal = ({
                 name="terminationDate"
                 label={t`Termination Date`}
                 helperText={t`The last day of a lease month (the day before day ${commencementDay}), after the last posted lease run`}
-                onChange={(date) => setTerminationDate(date ?? "")}
+                onChange={(date) => setDateInput(date ?? "")}
               />
               <NumberField
                 name="penaltyAmount"

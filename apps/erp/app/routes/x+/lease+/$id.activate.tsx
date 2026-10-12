@@ -29,15 +29,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (lease.data.status !== "Draft") {
-    throw redirect(
-      path.to.leaseDetails(id),
-      await flash(request, error(null, "Only a Draft lease can be activated"))
-    );
-  }
-
   // Classifies, measures, posts the commencement journal and writes the
-  // monthly schedule — one transaction in the server function.
+  // monthly schedule — one transaction in the server function, which
+  // refuses a lease that is not a Draft.
   const result = await serverFns
     .system({ db: getDatabaseClient(), companyId, userId })
     .invoke("post-lease", { type: "activate", leaseId: id });

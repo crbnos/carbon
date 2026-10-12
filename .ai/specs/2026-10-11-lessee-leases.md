@@ -151,7 +151,7 @@ The revenue recognition run engine becomes two runs that the user sees as separa
 | Synthesizers | `synthesizeContractRevenue` | `synthesizeRentalAccruals` (moved) |
 | Sequence | `RR` | `LR` (new sequence `leaseRun`) |
 | Journal `sourceType` | `Revenue Recognition` | `Lease Run` (new `journalEntrySourceType` value) |
-| List | Accounting → Revenue Recognition | Accounting → Lease Runs |
+| List | Accounting → Closing → Revenue Recognition | Accounting → Closing (lease runs) |
 | Close task | "Recognize revenue for the period" (`unposted-revenue-schedules`) | "Post lease journals" (`unposted-lease-schedules`, new) |
 
 - `revenueRecognitionRun` gains `type` (`runType` enum: `Revenue Recognition` | `Lease`, NOT NULL, default `Revenue Recognition` for existing rows). One Draft per period per type.
@@ -204,9 +204,10 @@ A new `NotificationEvent.LeaseCriticalDate`. The daily job notifies the lease `a
 
 ### 11. Lease Liabilities report (disclosures)
 
-Route `x+/reports+/lease-liabilities.tsx` (`view: accounting`), a card on the accounting reports hub, built like `lease-net-investment.tsx` with CSV export. As of a date, from the lease rows:
+Route `x+/reports+/lease-liabilities.tsx` (`view: accounting` and `view: purchasing`, since the lease tables' RLS is `purchasing_view`), a card on the accounting reports hub, built like `lease-net-investment.tsx` with CSV export. As of a date, from the lease rows:
 
-- Per lease: classification, supplier, remaining months, rate, liability, current portion (principal due within 12 months), non-current portion, net ROU.
+- Per leased asset: classification, supplier, remaining months, rate, liability, current portion (the principal of the next 12 schedule lines; all of it when the asset ends within them, by its own Termination or Purchase date), non-current portion, net ROU.
+- The figures are the schedule's. When a lessee month due by the as-of date is not posted yet, the report says how far the lease run is posted.
 - Maturity analysis: undiscounted remaining payments for each of the next 5 fiscal years and thereafter, less imputed interest, equal to the total liability. Operating and Finance shown apart.
 - Weighted-average remaining lease term (weighted by liability) and weighted-average discount rate (weighted by remaining payments), Operating and Finance apart.
 - For a date range: operating lease cost, finance lease amortization and interest, short-term lease cost, variable lease cost (from posted Lease lines without a payment row), and cash paid for amounts in the liability.
@@ -400,8 +401,8 @@ RLS: every new table through `packages/database/src/authz/manifest.ts`: `company
 |---|---|
 | `packages/utils/src/lease-math.ts` | `presentValueOfPayments`, `buildLesseeSchedule`, `classifyLesseeLease`, `generateLeasePayments`; the five tests shared with `lessor-lease.ts` |
 | `purchasing.models.ts` | `leaseValidator`, `leasePaymentValidator`, `leaseClassificationValidator`, `leaseModifyValidator`, `leaseTerminateValidator`, `leasePurchaseValidator`; option arrays |
-| `purchasing.service.ts` (Leases section) | `getLeases`, `getLease`, `insertLease`, `updateLease`, `deleteLease`, `getLeasePayments`, `upsertLeasePayment`, `deleteLeasePayment`, `regenerateLeasePayments`, `getLeaseSchedule`, `getLeaseEvents`, `getLeaseRelatedDocuments` |
-| `purchasing.server.ts` | `generateLeaseInvoicesNow`, `draftLeaseSetupPath` if the shell needs it |
+| `purchasing.service.ts` (Leases section) | `getLeases`, `getLease`, `insertLease`, `updateLeaseDetails` (name, notes, owner, notice date — any status), `deleteLease`, `getLeasePayments`, `upsertLeasePayment`, `deleteLeasePayment`, `getLeaseSchedule`, `getLeaseEvents`, `getLeaseRelatedDocuments` |
+| `purchasing.server.ts` | `updateDraftLease` / `saveDraftLeaseLine` (write and re-cut the rows in one Kysely transaction), `regenerateLeasePayments`, `generateLeaseInvoicesNow`, `draftLeaseSetupPath` |
 | `invoicing.server.ts` | `deletePurchaseInvoiceReleasingLeases`, `deletePurchaseInvoiceLineReleasingLeases` |
 | server function `post-lease` | `activate`, `modify`, `terminate`, `purchase`, `cancel` |
 | server function `create-lease-invoices` | daily drafting, expiry, critical-date reminders |
@@ -440,7 +441,7 @@ RLS: every new table through `packages/database/src/authz/manifest.ts`: `company
 - [ ] The daily job drafts one purchase invoice per lease and due date with Lease lines; posting it debits Lease liability 10,000.00 / credits AP; deleting the Draft returns the rows to Pending; VOID of a posted one does the same.
 - [ ] The assignee receives a "Recurring invoicing" digest naming the drafted lease invoices; the "Also notify" group receives the company digest.
 - [ ] 90 days before `noticeDate` the assignee gets one `LeaseCriticalDate` notification, and not a second one the next day.
-- [ ] Proposing a lease run for a month claims every due lessee row AND every due rental-agreement row; the revenue recognition run for the same month claims neither; each posts with its own source type (`Lease` / `Revenue Recognition`); Reverse Run clears `leaseScheduleLine` stamps.
+- [ ] Proposing a lease run for a month claims every due lessee row AND every due rental-agreement row; the revenue recognition run for the same month claims neither; each posts with its own source type (`Lease Run` / `Revenue Recognition`); Reverse Run clears `leaseScheduleLine` stamps.
 - [ ] The close wizard shows "Post lease journals" failing while the month has unposted lease rows, and passing after the lease run posts.
 - [ ] A Draft revenue run holding rental rows before the migration holds none after it; a Posted one is unchanged.
 - [ ] Modify at month 13 (extend 12 months, new rate 7%) posts one adjustment equal to the liability change, replaces only unposted schedule lines, and the new schedule closes at 0.00. Modify is refused while a Draft lease run holds a row of the lease from month 13, and the message names the run.
@@ -494,6 +495,7 @@ RLS: every new table through `packages/database/src/authz/manifest.ts`: `company
 - 2026-10-11 (planning): lease runs post as a new source type `Lease Run`; the Draft index, Post and Reverse Run take the run type; Cancel voids inline; added `invoiceFromDate`, `rouAssetCost` and payment status `Skipped`; Q8 re-opened (Migration Clearing conflict).
 - 2026-10-11 (overlap with the projects branch): Operating Lease Expense moves from 6120 (taken by Warranty Expense there) to 6140; Lease lines refuse `projectId`; the run synthesizers take the run type in a merge-friendly signature.
 - 2026-10-11: Q8 resolved — the difference goes to retained earnings (research: ASC 250; NetSuite mid-life leases; D365 opening balance import).
+- 2026-10-12 (review fixes): the report's current portion is the next 12 schedule lines, not a 12-month date window; an asset ends on its own Termination / Purchase date; the report requires purchasing view and warns when the lease run is not posted through the as-of date. Acceptance: a lease run posts as `Lease Run`.
 
 ## Addendum (2026-10-11): several assets per lease
 

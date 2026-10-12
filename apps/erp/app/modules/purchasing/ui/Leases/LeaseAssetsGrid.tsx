@@ -20,7 +20,6 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
@@ -39,6 +38,7 @@ import {
 } from "~/components/Form";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
+import Money from "~/components/Money";
 import {
   rowMenuColumn,
   setupGridHeight,
@@ -47,7 +47,6 @@ import {
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { leaseLineValidator } from "../../purchasing.models";
-import LeaseMoney from "./LeaseMoney";
 import type { Lease, LeaseLine } from "./types";
 
 type AssetRow = {
@@ -153,7 +152,7 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
         header: t`Payment`,
         cell: ({ row }) =>
           row.original.paymentAmount > 0 ? (
-            <LeaseMoney
+            <Money
               value={row.original.paymentAmount}
               currencyCode={currencyCode}
             />
@@ -168,12 +167,11 @@ const LeaseAssetsGrid = ({ lease, lines }: LeaseAssetsGridProps) => {
   );
 
   const editableComponents = useMemo(() => {
-    // The cell save answers like a PostgREST write: `{ error }`.
-    const text = onCellEdit as (
-      accessorKey: string,
-      value: string,
-      row: AssetRow
-    ) => Promise<PostgrestSingleResponse<null>>;
+    // A text cell expects a write that answers with no data.
+    const text = async (accessorKey: string, value: string, row: AssetRow) => ({
+      ...(await onCellEdit(accessorKey, value, row)),
+      data: null
+    });
     return {
       description: EditableText<AssetRow>(text),
       serialNumber: EditableText<AssetRow>(text),

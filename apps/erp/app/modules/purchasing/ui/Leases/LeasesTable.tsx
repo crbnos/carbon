@@ -23,18 +23,18 @@ import {
 import { useNavigate } from "react-router";
 import { Hyperlink, New, SupplierAvatar, Table } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
+import Money from "~/components/Money";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useSuppliers } from "~/stores";
 import { path } from "~/utils/path";
 import { leaseStatuses, lesseeClassifications } from "../../purchasing.models";
-import { useLesseeClassificationLabel } from "./LeaseClassificationPreview";
-import LeaseMoney from "./LeaseMoney";
 import LeaseStatus from "./LeaseStatus";
-import type { LeaseListItem } from "./types";
+import { useLesseeClassificationLabel } from "./LesseeClassificationBadge";
+import type { Lease } from "./types";
 
 type LeasesTableProps = {
-  data: LeaseListItem[];
+  data: Lease[];
   count: number;
 };
 
@@ -46,13 +46,13 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
   const [suppliers] = useSuppliers();
   const classificationLabel = useLesseeClassificationLabel();
 
-  const [selected, setSelected] = useState<LeaseListItem | null>(null);
+  const [selected, setSelected] = useState<Lease | null>(null);
   const deleteModal = useDisclosure();
 
-  const customColumns = useCustomColumns<LeaseListItem>("lease");
+  const customColumns = useCustomColumns<Lease>("lease");
 
-  const columns = useMemo<ColumnDef<LeaseListItem>[]>(() => {
-    const defaultColumns: ColumnDef<LeaseListItem>[] = [
+  const columns = useMemo<ColumnDef<Lease>[]>(() => {
+    const defaultColumns: ColumnDef<Lease>[] = [
       {
         accessorKey: "leaseId",
         header: t`Lease`,
@@ -90,8 +90,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
             }))
           },
           icon: <LuTruck />,
-          exportValue: (row: LeaseListItem) =>
-            row.supplierName ?? row.supplierId
+          exportValue: (row: Lease) => row.supplierName ?? row.supplierId
         }
       },
       {
@@ -168,7 +167,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         accessorKey: "paymentAmount",
         header: t`Payment`,
         cell: ({ row }) => (
-          <LeaseMoney
+          <Money
             value={row.original.paymentAmount}
             currencyCode={row.original.currencyCode}
           />
@@ -181,7 +180,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         accessorKey: "currentLiability",
         header: t`Liability`,
         cell: ({ row }) => (
-          <LeaseMoney
+          <Money
             value={row.original.currentLiability}
             currencyCode={row.original.currencyCode}
           />
@@ -212,7 +211,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
   }, [classificationLabel, customColumns, formatDate, suppliers, t]);
 
   const renderContextMenu = useMemo(() => {
-    return (row: LeaseListItem) => (
+    return (row: Lease) => (
       <>
         <MenuItem
           disabled={!permissions.can("view", "purchasing")}
@@ -242,7 +241,7 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
 
   return (
     <>
-      <Table<LeaseListItem>
+      <Table<Lease>
         count={count}
         columns={columns}
         data={data}

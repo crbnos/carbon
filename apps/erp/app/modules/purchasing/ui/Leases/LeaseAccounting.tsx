@@ -9,6 +9,7 @@ import { useCallback, useMemo } from "react";
 import { Table } from "~/components";
 import { EditableList, EditableNumber } from "~/components/Editable";
 import { NumberControlled } from "~/components/Form";
+import Money from "~/components/Money";
 import {
   SetupSection,
   setupGridHeight,
@@ -18,7 +19,6 @@ import {
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { LeaseClassificationPreview } from "./LeaseClassificationPreview";
-import LeaseMoney from "./LeaseMoney";
 import { useLeaseTermSave } from "./LeaseSetupSteps";
 import type { Lease, LeaseLine, LeasePayment, LeasePolicy } from "./types";
 
@@ -197,7 +197,7 @@ function LeaseAssetInputsGrid({
       value === null ? (
         <span className="text-muted-foreground">—</span>
       ) : (
-        <LeaseMoney value={value} currencyCode={currencyCode} />
+        <Money value={value} currencyCode={currencyCode} />
       ),
     [currencyCode]
   );

@@ -9,7 +9,11 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { Database } from "@carbon/database";
+import {
+  RUN_LABEL,
+  type RunType,
+  runLabelSentence
+} from "@carbon/database/run-type";
 import { validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
 import { datetime, redirect } from "@carbon/utils";
@@ -22,20 +26,9 @@ import { revenueRecognitionRunValidator } from "./accounting.models";
 import { futureRunPeriodError } from "./accounting.server";
 import { getRevenueRecognitionRuns } from "./accounting.service";
 import { getNextRevenueRecognitionPeriodEnd } from "./accounting.utils";
+import { RUN_PAGES } from "./ui/RevenueRecognition/runPages";
 
-export type PeriodRunType = Database["public"]["Enums"]["runType"];
-
-/** The run list of a type, and the period its New Run proposes. */
-export function periodRunsPath(type: PeriodRunType) {
-  return type === "Lease" ? path.to.leaseRuns : path.to.revenueRecognitionRuns;
-}
-
-const RUN_LABEL: Record<PeriodRunType, string> = {
-  "Revenue Recognition": "revenue recognition run",
-  Lease: "lease run"
-};
-
-export async function loadPeriodRuns(request: Request, type: PeriodRunType) {
+export async function loadPeriodRuns(request: Request, type: RunType) {
   const { client, companyId } = await requirePermissions(request, {
     view: "accounting",
     role: "employee"
@@ -84,12 +77,12 @@ export async function loadPeriodRuns(request: Request, type: PeriodRunType) {
 
 export async function proposePeriodRun(
   request: Request,
-  type: PeriodRunType
+  type: RunType
 ): Promise<never> {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "accounting"
   });
-  const listPath = periodRunsPath(type);
+  const { listPath } = RUN_PAGES[type];
   const label = RUN_LABEL[type];
 
   // The list page posts the period it showed; a bare POST falls back to the
@@ -170,10 +163,7 @@ export async function proposePeriodRun(
 
     throw redirect(
       path.to.revenueRecognitionRun(proposal.id),
-      await flash(
-        request,
-        success(`${label.charAt(0).toUpperCase()}${label.slice(1)} created`)
-      )
+      await flash(request, success(`${runLabelSentence(type)} created`))
     );
   } catch (e) {
     if (e instanceof Response) throw e;

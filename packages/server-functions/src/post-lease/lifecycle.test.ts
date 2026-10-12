@@ -2,6 +2,9 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+// The rows Modify cuts are pinned with the shared cutter
+// (`../lib/lease-payment-rows.test.ts`).
+
 import { describe, expect, it } from "vitest";
 import { leaseMonthStarting, straddledPeriod } from "./lifecycle";
 

@@ -17,8 +17,8 @@ import {
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { DateTime, Hyperlink } from "~/components";
+import Money from "~/components/Money";
 import { path } from "~/utils/path";
-import LeaseMoney from "./LeaseMoney";
 import type {
   Lease,
   LeaseJournal,
@@ -110,39 +110,36 @@ const LeaseSchedule = ({
                   <DateTime value={row.periodDate} variant="date" />
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <LeaseMoney
+                  <Money
                     value={row.paymentAmount}
                     currencyCode={currencyCode}
                   />
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <LeaseMoney
+                  <Money
                     value={row.interestAmount}
                     currencyCode={currencyCode}
                   />
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <LeaseMoney
+                  <Money
                     value={row.closingLiability}
                     currencyCode={currencyCode}
                   />
                 </Td>
                 {isOperating && (
                   <Td className="text-right whitespace-nowrap">
-                    <LeaseMoney
-                      value={row.leaseCost}
-                      currencyCode={currencyCode}
-                    />
+                    <Money value={row.leaseCost} currencyCode={currencyCode} />
                   </Td>
                 )}
                 <Td className="text-right whitespace-nowrap">
-                  <LeaseMoney
+                  <Money
                     value={row.rouAmortization}
                     currencyCode={currencyCode}
                   />
                 </Td>
                 <Td className="text-right whitespace-nowrap">
-                  <LeaseMoney
+                  <Money
                     value={row.closingRouAsset}
                     currencyCode={currencyCode}
                   />

@@ -19,22 +19,24 @@
 //   for a service. All on `purchase-invoice:<poLineId>`;
 // - a fixed asset line clears GR/IR when a receipt brought the asset in,
 //   else debits the asset class's account;
-// - a G/L line debits its account.
+// - a G/L line debits its account;
+// - a Lease line debits the account `lease-lines.ts` picked: a capitalized
+//   payment debits the lease liability with its nominal amount and the
+//   operating lease expense with the rest (tax, shipping, freight); a
+//   short-term payment or a variable charge debits its expense in full.
 // Every line but a comment is written, at zero too. Each debit and its
 // payable share one `journalLineReference`.
 
 import type { Database } from "@carbon/database";
 import { journalReference } from "@carbon/database";
 import type { OptionalDefaultRole } from "@carbon/database/journal-posting-status";
-import {
-  type AccountClass,
-  accountTypeFromClass
-} from "@carbon/database/ledger";
+import { accountTypeFromClass } from "@carbon/database/ledger";
 import {
   allocateVarianceAcrossLayers,
   credit,
   debit,
   EPSILON,
+  equals,
   type ReceiptLayerLike,
   round,
   type VarianceAllocation
@@ -43,6 +45,7 @@ import { nanoid } from "nanoid";
 import { InvalidInputError } from "../errors";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import type { JournalLineDimensionValues } from "../lib/journal-line-dimensions";
+import type { LeaseAccount } from "./lease-lines";
 import type { PurchasePostingAmounts } from "./purchase-posting-amounts";
 
 type Enums = Database["public"]["Enums"];
@@ -118,7 +121,10 @@ type LineBase = {
   locationId: string | null;
   amounts: Pick<
     PurchasePostingAmounts,
-    "inventoryQuantity" | "totalBaseCost" | "inventoryUnitCost"
+    | "inventoryQuantity"
+    | "nominalBaseCost"
+    | "totalBaseCost"
+    | "inventoryUnitCost"
   >;
 };
 
@@ -154,12 +160,17 @@ export type PurchaseInvoicePostingLine = LineBase &
         projectId: string | null;
       }
     | {
-        /** A lessee lease's line: a fixed payment debits the lease liability
-         *  (lease expense for a short-term lease), a variable charge the
-         *  variable lease expense. Never a project or cost center cost. */
+        /** A lessee lease's line, its accounts from `resolveLeasePostingLine`.
+         *  Never a project or cost center cost. */
         kind: "lease";
         leaseId: string;
-        account: { id: string; name: string; class: AccountClass };
+        /** Takes the nominal amount, and the whole total when there is no
+         *  `extrasAccount`. */
+        account: LeaseAccount;
+        /** A capitalized payment's: takes the total less the nominal amount
+         *  (tax, line shipping, the share of header freight), so the lease
+         *  liability is debited by exactly what the schedule took out of it. */
+        extrasAccount: LeaseAccount | null;
       }
   );
 
@@ -705,6 +716,9 @@ export function buildPurchaseInvoicePostingLines(
           documentLineReference: null,
           journalLineReference: nanoid()
         };
+        const extras = line.extrasAccount
+          ? total - line.amounts.nominalBaseCost
+          : 0;
         // Signed by the account's class: a debit to the Liability-class lease
         // liability stores a negative amount, to an expense a positive one.
         push(
@@ -712,12 +726,25 @@ export function buildPurchaseInvoicePostingLines(
             accountId: line.account.id,
             description: line.account.name,
             amount: round(
-              debit(accountTypeFromClass(line.account.class), total)
+              debit(accountTypeFromClass(line.account.class), total - extras)
             ),
             ...keys
           },
           meta
         );
+        if (line.extrasAccount && !equals(extras, 0)) {
+          push(
+            {
+              accountId: line.extrasAccount.id,
+              description: line.extrasAccount.name,
+              amount: round(
+                debit(accountTypeFromClass(line.extrasAccount.class), extras)
+              ),
+              ...keys
+            },
+            meta
+          );
+        }
         push(payable(total, quantity, keys), meta);
         break;
       }

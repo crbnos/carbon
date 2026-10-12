@@ -3,7 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllByIds,
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   convertUnitPrice,
@@ -21,11 +26,11 @@ import {
   RoundingMode,
   round
 } from "@carbon/utils";
-import type {
+import {
   PostgrestError,
-  PostgrestResponse,
-  PostgrestSingleResponse,
-  SupabaseClient
+  type PostgrestResponse,
+  type PostgrestSingleResponse,
+  type SupabaseClient
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
@@ -46,7 +51,6 @@ import {
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
-  leaseLineValidator,
   leasePaymentValidator,
   leaseValidator,
   purchaseOrderDeliveryValidator,
@@ -74,7 +78,8 @@ import type {
   supplierValidator
 } from "./purchasing.models";
 import {
-  leaseEndDate,
+  leaseDetailFields,
+  leaseTermColumns,
   PLANNING_EDITABLE_PURCHASE_ORDER_STATUSES,
   PURCHASE_ORDER_LOCKED_STATUSES,
   type PURCHASE_ORDER_REOPEN_STATUSES,
@@ -5257,7 +5262,7 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
 function leaseRefusal(code: string, message: string) {
   return {
     data: null,
-    error: { message, details: "", hint: "", code } as PostgrestError
+    error: new PostgrestError({ message, details: "", hint: "", code })
   };
 }
 
@@ -5298,41 +5303,10 @@ export async function getLease(
     .single();
 }
 
-/** The terms a caller may write — never `status`, the classification or
- *  anything activation owns. These writers are also MCP tools, whose inputs
- *  reach them unfiltered, so the fields are picked rather than spread. */
-function leaseTerms(
-  terms: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId">
-) {
-  return {
-    name: terms.name || null,
-    description: terms.description ?? null,
-    supplierId: terms.supplierId,
-    supplierLocationId: terms.supplierLocationId || null,
-    supplierContactId: terms.supplierContactId || null,
-    locationId: terms.locationId || null,
-    assignee: terms.assignee || null,
-    commencementDate: terms.commencementDate,
-    // A duration from the Details step gives the end date; a single saved
-    // term keeps the one given. Null is open-ended.
-    endDate: terms.duration
-      ? leaseEndDate(terms.commencementDate, terms.duration, terms.endDate)
-      : terms.endDate || null,
-    // A cleared DatePicker posts "", which a DATE column rejects.
-    noticeDate: terms.noticeDate || null,
-    invoiceFromDate: terms.invoiceFromDate || terms.commencementDate,
-    paymentFrequency: terms.paymentFrequency,
-    paymentTiming: terms.paymentTiming,
-    annualEscalationPercent: terms.annualEscalationPercent,
-    discountRate: terms.discountRate,
-    currencyCode: terms.currencyCode
-  };
-}
-
 /** `leaseId` (the readable LSE number) comes from the caller — the route
- *  draws it from the sequence. The leased assets are added with
- *  `upsertLeaseLine`, and their payment rows are cut separately
- *  (`regenerateLeasePayments`, `purchasing.server.ts`). @mcp create */
+ *  draws it from the sequence. The leased assets are added, and their
+ *  payment rows cut, by `saveDraftLeaseLine` (`purchasing.server.ts`).
+ *  @mcp create */
 export async function insertLease(
   client: SupabaseClient<Database>,
   lease: Omit<z.infer<typeof leaseValidator>, "id"> & {
@@ -5346,7 +5320,7 @@ export async function insertLease(
     .from("lease")
     .insert([
       {
-        ...leaseTerms(lease),
+        ...leaseTermColumns(lease),
         leaseId: lease.leaseId,
         companyId: lease.companyId,
         createdBy: lease.createdBy,
@@ -5357,39 +5331,46 @@ export async function insertLease(
     .single();
 }
 
-/** Payment rows and the classification are cut from the terms at
- *  activation, so only a Draft lease's terms can change. @mcp update */
-export async function updateLease(
+/** A lease's details — its name, notes, owner and notice date
+ *  (`leaseDetailFields`) — which stay editable in every status: nothing was
+ *  measured from them. A Draft's terms are saved with `updateDraftLease`
+ *  (`purchasing.server.ts`), which cuts the payment rows again in the same
+ *  transaction; an active lease's terms change only with Modify.
+ *  @mcp update */
+export async function updateLeaseDetails(
   client: SupabaseClient<Database>,
-  lease: Omit<z.infer<typeof leaseValidator>, "id" | "leaseId"> & {
+  lease: {
     id: string;
     companyId: string;
     updatedBy: string;
-    customFields?: Json;
+    name?: string | null;
+    description?: string | null;
+    assignee?: string | null;
+    /** `YYYY-MM-DD`; on or before the end date. */
+    noticeDate?: string | null;
   }
 ) {
+  const details = Object.fromEntries(
+    leaseDetailFields
+      .filter((field) => lease[field] !== undefined)
+      .map((field) => [field, lease[field] || null])
+  );
+  if (Object.keys(details).length === 0) {
+    return leaseRefusal("LEASE_NO_DETAILS", "Nothing to update");
+  }
   const updated = await client
     .from("lease")
     .update({
-      ...leaseTerms(lease),
+      ...details,
       updatedBy: lease.updatedBy,
-      updatedAt: datetime.timestamp(),
-      ...(lease.customFields !== undefined
-        ? { customFields: lease.customFields }
-        : {})
+      updatedAt: datetime.timestamp()
     })
     .eq("id", lease.id)
     .eq("companyId", lease.companyId)
-    .eq("status", "Draft")
     .select("id")
     .maybeSingle();
   if (updated.error) return updated;
-  if (!updated.data) {
-    return leaseRefusal(
-      "LEASE_NOT_DRAFT",
-      "Only a Draft lease's terms can change; modify an active lease instead"
-    );
-  }
+  if (!updated.data) return leaseRefusal("LEASE_NOT_FOUND", "Lease not found");
   return updated;
 }
 
@@ -5399,12 +5380,21 @@ export async function deleteLease(
   leaseId: string,
   companyId: string
 ) {
-  return client
+  const deleted = await client
     .from("lease")
     .delete()
     .eq("id", leaseId)
     .eq("companyId", companyId)
-    .eq("status", "Draft");
+    .eq("status", "Draft")
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal(
+      "LEASE_NOT_DRAFT",
+      "No Draft lease was found to delete. Cancel or terminate an active lease instead."
+    );
+  }
+  return deleted;
 }
 
 /** The lease's assets in their order. @mcp read */
@@ -5413,29 +5403,36 @@ export async function getLeaseLines(
   leaseId: string,
   companyId: string
 ) {
-  return client
-    .from("leaseLine")
-    .select("*, fixedAsset(item(thumbnailPath))")
-    .eq("leaseId", leaseId)
-    .eq("companyId", companyId)
-    .order("sortOrder")
-    .order("createdAt");
+  return fetchAllRecords(() =>
+    client
+      .from("leaseLine")
+      .select("*, fixedAsset(item(thumbnailPath))")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("sortOrder")
+      .order("createdAt")
+      .order("id")
+  );
 }
 
-/** @mcp read */
+/** Every payment row of every asset: a long lease of many assets runs past
+ *  PostgREST's 1,000-row page. @mcp read */
 export async function getLeasePayments(
   client: SupabaseClient<Database>,
   leaseId: string,
   companyId: string
 ) {
-  return client
-    .from("leasePayment")
-    .select("*")
-    .eq("leaseId", leaseId)
-    .eq("companyId", companyId)
-    .order("dueDate")
-    .order("paymentType")
-    .order("leaseLineId");
+  return fetchAllRecords(() =>
+    client
+      .from("leasePayment")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("dueDate")
+      .order("paymentType")
+      .order("leaseLineId")
+      .order("id")
+  );
 }
 
 /** The lease when it is a Draft, else why it cannot change. */
@@ -5450,8 +5447,9 @@ async function requireDraftLease(
     .select("status, invoiceFromDate")
     .eq("id", leaseId)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
   if (lease.error) return { lease: null, refusal: lease.error.message };
+  if (!lease.data) return { lease: null, refusal: "Lease not found" };
   if (lease.data.status !== "Draft") {
     return {
       lease: null,
@@ -5459,82 +5457,6 @@ async function requireDraftLease(
     };
   }
   return { lease: lease.data, refusal: null };
-}
-
-/** The fields of a leased asset a caller may write — never its status, its
- *  classification or anything activation owns. Also an MCP tool, so the
- *  fields are picked rather than spread. */
-function leaseLineTerms(
-  line: Omit<z.infer<typeof leaseLineValidator>, "id" | "leaseId">
-) {
-  return {
-    description: line.description,
-    serialNumber: line.serialNumber || null,
-    locationId: line.locationId || null,
-    paymentAmount: line.paymentAmount,
-    fairValue: line.fairValue ?? null,
-    economicLifeMonths: line.economicLifeMonths ?? null,
-    ownershipTransfers: line.ownershipTransfers,
-    specializedAsset: line.specializedAsset,
-    purchaseOptionAmount: line.purchaseOptionAmount ?? null,
-    purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain
-  };
-}
-
-/** Add or change one asset of a Draft lease. Its payment rows are cut
- *  separately (`regenerateLeasePayments`). @mcp update */
-export async function upsertLeaseLine(
-  client: SupabaseClient<Database>,
-  line: z.infer<typeof leaseLineValidator> & {
-    companyId: string;
-    userId: string;
-  }
-) {
-  const { refusal } = await requireDraftLease(
-    client,
-    line.leaseId,
-    line.companyId,
-    "An asset"
-  );
-  if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
-
-  if (line.id) {
-    return client
-      .from("leaseLine")
-      .update({
-        ...leaseLineTerms(line),
-        updatedBy: line.userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", line.id)
-      .eq("leaseId", line.leaseId)
-      .eq("companyId", line.companyId)
-      .select("id")
-      .single();
-  }
-
-  const last = await client
-    .from("leaseLine")
-    .select("sortOrder")
-    .eq("leaseId", line.leaseId)
-    .eq("companyId", line.companyId)
-    .order("sortOrder", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (last.error) return last;
-  return client
-    .from("leaseLine")
-    .insert([
-      {
-        ...leaseLineTerms(line),
-        leaseId: line.leaseId,
-        sortOrder: (last.data?.sortOrder ?? 0) + 1,
-        companyId: line.companyId,
-        createdBy: line.userId
-      }
-    ])
-    .select("id")
-    .single();
 }
 
 /** Removes an asset, and its payment rows with it, from a Draft lease.
@@ -5550,12 +5472,18 @@ export async function deleteLeaseLine(
     "An asset"
   );
   if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
-  return client
+  const deleted = await client
     .from("leaseLine")
     .delete()
     .eq("id", args.leaseLineId)
     .eq("leaseId", args.leaseId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_LINE_NOT_FOUND", "Asset not found");
+  }
+  return deleted;
 }
 
 /** Add or change one payment row of a Draft lease's asset (a rent holiday,
@@ -5635,29 +5563,39 @@ export async function deleteLeasePayment(
     args.companyId
   );
   if (refusal) return leaseRefusal("LEASE_NOT_DRAFT", refusal);
-  return client
+  const deleted = await client
     .from("leasePayment")
     .delete()
     .eq("id", args.paymentId)
     .eq("leaseId", args.leaseId)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return deleted;
+  if (deleted.data.length === 0) {
+    return leaseRefusal("LEASE_PAYMENT_NOT_FOUND", "Payment not found");
+  }
+  return deleted;
 }
 
-/** The monthly schedule, each line with whether its lease run rows have
- *  posted. @mcp read */
+/** The monthly schedule of every asset, each line with whether its lease run
+ *  rows have posted: a long lease of many assets runs past PostgREST's
+ *  1,000-row page. @mcp read */
 export async function getLeaseSchedule(
   client: SupabaseClient<Database>,
   leaseId: string,
   companyId: string
 ) {
-  return client
-    .from("leaseScheduleLine")
-    .select(
-      "*, rows:revenueRecognitionSchedule!revenueRecognitionSchedule_leaseScheduleLine_fkey(id, type, status, journalId)"
-    )
-    .eq("leaseId", leaseId)
-    .eq("companyId", companyId)
-    .order("periodDate");
+  return fetchAllRecords(() =>
+    client
+      .from("leaseScheduleLine")
+      .select(
+        "*, rows:revenueRecognitionSchedule!revenueRecognitionSchedule_leaseScheduleLine_fkey(id, type, status, journalId)"
+      )
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("periodDate")
+      .order("id")
+  );
 }
 
 /** @mcp read */
@@ -5666,12 +5604,15 @@ export async function getLeaseEvents(
   leaseId: string,
   companyId: string
 ) {
-  return client
-    .from("leaseEvent")
-    .select("*")
-    .eq("leaseId", leaseId)
-    .eq("companyId", companyId)
-    .order("effectiveDate", { ascending: false });
+  return fetchAllRecords(() =>
+    client
+      .from("leaseEvent")
+      .select("*")
+      .eq("leaseId", leaseId)
+      .eq("companyId", companyId)
+      .order("effectiveDate", { ascending: false })
+      .order("id")
+  );
 }
 
 /** The purchase invoices that bill the lease, and the journals that name it.
@@ -5683,18 +5624,25 @@ export async function getLeaseRelatedDocuments(
 ) {
   // Plain id reads, then one read per document table: the embedded selects
   // trip TS2589 on these busy tables (.ai/lessons.md).
+  // Paged: every lease run month adds journal lines.
   const [invoiceLines, journalLines] = await Promise.all([
-    client
-      .from("purchaseInvoiceLine")
-      .select("invoiceId")
-      .eq("leaseId", leaseId)
-      .eq("companyId", companyId),
-    client
-      .from("journalLine")
-      .select("journalId")
-      .eq("documentType", "Lease")
-      .eq("documentId", leaseId)
-      .eq("companyId", companyId)
+    fetchAllRecords(() =>
+      client
+        .from("purchaseInvoiceLine")
+        .select("id, invoiceId")
+        .eq("leaseId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("journalLine")
+        .select("id, journalId")
+        .eq("documentType", "Lease")
+        .eq("documentId", leaseId)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
   if (invoiceLines.error) return { data: null, error: invoiceLines.error };
   if (journalLines.error) return { data: null, error: journalLines.error };
@@ -5705,31 +5653,37 @@ export async function getLeaseRelatedDocuments(
   const journalIds = [
     ...new Set((journalLines.data ?? []).map((line) => line.journalId))
   ];
+  // In groups of ids, so each `.in()` fits in the request URL.
   const [invoices, journals] = await Promise.all([
-    invoiceIds.length > 0
-      ? client
-          .from("purchaseInvoice")
-          .select("id, invoiceId, status, dateIssued")
-          .in("id", invoiceIds)
-          .eq("companyId", companyId)
-          .order("dateIssued", { ascending: false })
-      : null,
-    journalIds.length > 0
-      ? client
-          .from("journal")
-          .select("id, journalEntryId, postingDate, status, sourceType")
-          .in("id", journalIds)
-          .eq("companyId", companyId)
-          .order("postingDate", { ascending: false })
-      : null
+    fetchAllByIds(invoiceIds, (batch) =>
+      client
+        .from("purchaseInvoice")
+        .select("id, invoiceId, status, dateIssued")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    ),
+    fetchAllByIds(journalIds, (batch) =>
+      client
+        .from("journal")
+        .select("id, journalEntryId, postingDate, status, sourceType")
+        .in("id", batch)
+        .eq("companyId", companyId)
+        .order("id")
+    )
   ]);
-  if (invoices?.error) return { data: null, error: invoices.error };
-  if (journals?.error) return { data: null, error: journals.error };
+  if (invoices.error) return { data: null, error: invoices.error };
+  if (journals.error) return { data: null, error: journals.error };
 
   return {
     data: {
-      purchaseInvoices: invoices?.data ?? [],
-      journals: journals?.data ?? []
+      // Newest first. ISO dates sort as strings.
+      purchaseInvoices: invoices.data.sort((a, b) =>
+        (b.dateIssued ?? "").localeCompare(a.dateIssued ?? "")
+      ),
+      journals: journals.data.sort((a, b) =>
+        b.postingDate.localeCompare(a.postingDate)
+      )
     },
     error: null
   };

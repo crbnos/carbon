@@ -4,12 +4,17 @@
 
 import { getCompanyTimeZone } from "@carbon/database";
 import { isBeforeCutover } from "@carbon/database/accounting-cutover-dates";
-import { readAccountingCutoverDate } from "@carbon/database/journal-posting-status";
+import {
+  journalPostingStatus,
+  readAccountingCutoverDate
+} from "@carbon/database/journal-posting-status";
 import { round } from "@carbon/database/precision";
 import {
   buildLesseeSchedule,
   datetime,
-  type LesseeScheduleLine
+  isPaidBeforeOpening,
+  type LesseeScheduleLine,
+  lesseeScheduleSpan
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { defineServerFn } from "../define-server-fn";
@@ -21,6 +26,8 @@ import {
   amortizationMonths,
   heldByRun,
   type LeaseLineRow,
+  type LeasePaymentRow,
+  type LeaseRow,
   loadLesseeAccounting,
   lockLease,
   type MeasuredAsset,
@@ -31,7 +38,6 @@ import {
   readPayments,
   readThresholds,
   type Scope,
-  scheduleSpan,
   type Trx,
   updateLineMeasurements,
   voidLeaseJournal,
@@ -63,8 +69,9 @@ import {
 //              run rows. A Short-Term asset posts nothing: its invoices go to
 //              lease expense. A lease that started before the accounting
 //              cutover posts an opening balance instead (spec Q8).
-//   cancel     Draft → deleted; Active with nothing invoiced or posted →
-//              Cancelled, every journal of the lease voided.
+//   cancel     Active with nothing invoiced, posted by a run, modified or
+//              ended → Cancelled, the commencement journal voided. A Draft
+//              is deleted instead (the app's delete route).
 //   modify     remeasure every active asset from an effective date
 //              (lifecycle.ts).
 //   terminate  end one asset early, derecognize it, gain or loss
@@ -91,6 +98,43 @@ export function balancesBefore(
       before.reduce((sum, line) => sum + line.rouAmortization, 0)
     )
   };
+}
+
+/** Why a Skipped payment of a capitalized asset cannot activate, or null.
+ *  Skipped means paid outside Carbon (before Invoice From): its invoice will
+ *  never relieve the lease liability, so it must be one the opening balance
+ *  holds. A payment due before the commencement is not in the schedule's
+ *  months and is left alone. */
+export function skippedPaymentBlocker(
+  payment: Pick<
+    LeasePaymentRow,
+    "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "status"
+  >,
+  args: {
+    description: string;
+    lease: Pick<LeaseRow, "commencementDate" | "paymentTiming">;
+    periodDates: string[];
+    /** The opening balance's as-of date; null when there is none. */
+    openingAsOf: string | null;
+  }
+): string | null {
+  if (payment.status !== "Skipped") return null;
+  if (payment.dueDate < args.lease.commencementDate) return null;
+  if (
+    args.openingAsOf &&
+    isPaidBeforeOpening(payment, {
+      commencementDate: args.lease.commencementDate,
+      timing: args.lease.paymentTiming,
+      periodDates: args.periodDates,
+      asOf: args.openingAsOf
+    })
+  ) {
+    return null;
+  }
+  const settledBy = args.openingAsOf
+    ? `the opening balance on ${args.openingAsOf} still owes it`
+    : "only its invoice settles the lease liability";
+  return `${args.description}: the payment due ${payment.dueDate} is Skipped (paid outside Carbon), but ${settledBy}. Set Invoice From on or before ${payment.dueDate} so it is invoiced.`;
 }
 
 /** The retained earnings account default, with its class: an opening
@@ -160,7 +204,6 @@ async function activate(
         ? measureAsset({
             line,
             payments: paymentsOf(line),
-            fromDate: lease.commencementDate,
             endDate,
             lease,
             thresholds,
@@ -184,14 +227,46 @@ async function activate(
 
     let commencementJournalId: string | null = null;
     if (endDate && recognized.length > 0) {
+      const span = lesseeScheduleSpan(lease.commencementDate, endDate);
+
+      // A lease that started before the accounting cutover opens with the
+      // balances its schedules reach on the as-of date (spec Q8) — the
+      // cutover, or the first open period after it — and the months before
+      // that are already in the opening equity: written Posted with no
+      // journal. The payments those months pay are in that balance too, so
+      // they are not invoiced.
+      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
+      const openingAsOf =
+        cutoverDate && lease.commencementDate < cutoverDate
+          ? (
+              await resolveAccountingPeriod(
+                trx,
+                companyId,
+                cutoverDate,
+                "historical-with-shift"
+              )
+            ).postingDate
+          : null;
+      for (const asset of recognized) {
+        for (const payment of paymentsOf(asset.line)) {
+          const skipped = skippedPaymentBlocker(payment, {
+            description: asset.line.description,
+            lease,
+            periodDates: span.periodDates,
+            openingAsOf
+          });
+          if (skipped) throw new InvalidInputError(skipped);
+        }
+      }
+
       const accounting = await loadLesseeAccounting(trx, {
         companyId,
         companyGroupId: company.companyGroupId
       });
-      const span = scheduleSpan(lease.commencementDate, endDate);
       const schedules: AssetSchedule[] = recognized.map((asset) => ({
         leaseLineId: asset.line.id,
-        startDate: lease.commencementDate,
+        commencementDate: lease.commencementDate,
+        fromMonth: 0,
         classification: asset.classification,
         lines: buildLesseeSchedule({
           openingLiability: asset.liability,
@@ -206,28 +281,10 @@ async function activate(
           timing: lease.paymentTiming,
           classification: asset.classification,
           amortizationMonths: amortizationMonths(asset.line, span.months),
-          periodDates: span.periodDates
+          periodDates: span.periodDates,
+          lastMonthShare: span.lastMonthShare
         })
       }));
-
-      // A lease that started before the accounting cutover opens with the
-      // balances its schedules reach on the as-of date (spec Q8) — the
-      // cutover, or the first open period after it — and the months before
-      // that are already in the opening equity: written Posted with no
-      // journal. The payments due before it are in that balance too, so
-      // they are not invoiced.
-      const cutoverDate = await readAccountingCutoverDate(trx, companyId);
-      const openingAsOf =
-        cutoverDate && lease.commencementDate < cutoverDate
-          ? (
-              await resolveAccountingPeriod(
-                trx,
-                companyId,
-                cutoverDate,
-                "historical-with-shift"
-              )
-            ).postingDate
-          : null;
 
       const retainedEarnings = openingAsOf
         ? await retainedEarningsAccount(trx, companyId)
@@ -271,19 +328,28 @@ async function activate(
         postedBefore: openingAsOf ?? undefined
       });
 
-      if (openingAsOf) {
+      const inOpening = openingAsOf
+        ? recognized.flatMap((asset) =>
+            paymentsOf(asset.line)
+              .filter(
+                (payment) =>
+                  payment.status === "Pending" &&
+                  isPaidBeforeOpening(payment, {
+                    commencementDate: lease.commencementDate,
+                    timing: lease.paymentTiming,
+                    periodDates: span.periodDates,
+                    asOf: openingAsOf
+                  })
+              )
+              .map((payment) => payment.id)
+          )
+        : [];
+      if (inOpening.length > 0) {
         await trx
           .updateTable("leasePayment")
           .set({ status: "Skipped", updatedBy: userId, updatedAt: now })
-          .where("leaseId", "=", lease.id)
+          .where("id", "in", inOpening)
           .where("companyId", "=", companyId)
-          .where(
-            "leaseLineId",
-            "in",
-            recognized.map((asset) => asset.line.id)
-          )
-          .where("status", "=", "Pending")
-          .where("dueDate", "<", openingAsOf)
           .execute();
       }
     }
@@ -320,27 +386,47 @@ async function activate(
 
 async function cancel(
   scope: Scope,
-  payload: Extract<LeasePayload, { type: "cancel" }>,
-  today: string
+  payload: Extract<LeasePayload, { type: "cancel" }>
 ): Promise<{ id: string }> {
   const { db, companyId, userId } = scope;
+  const today = datetime
+    .today(await getCompanyTimeZone(db, companyId))
+    .toString();
   return db.transaction().execute(async (trx: Trx) => {
     const lease = await lockLease(trx, companyId, payload.leaseId);
-
     if (lease.status === "Draft") {
-      await trx
-        .deleteFrom("lease")
-        .where("id", "=", lease.id)
-        .where("companyId", "=", companyId)
-        .execute();
-      return { id: lease.id };
+      throw new InvalidInputError(
+        "A Draft lease is deleted, not cancelled; delete it instead"
+      );
     }
     if (lease.status !== "Active") {
       throw new InvalidInputError(
-        `The lease is ${lease.status}; only a Draft lease or an Active lease with nothing invoiced or posted can be cancelled`
+        `The lease is ${lease.status}; only an Active lease with nothing invoiced or posted can be cancelled`
       );
     }
 
+    // Cancel undoes the activation and nothing else: once an asset has
+    // ended or the lease has changed, its journals and its fixed asset are
+    // history that a void would leave half undone.
+    const ended = (await readLines(trx, companyId, lease.id)).find(
+      (line) => line.status !== "Active"
+    );
+    if (ended) {
+      throw new InvalidInputError(
+        `${ended.description} is ${ended.status}; a lease with an ended asset cannot be cancelled. Terminate its other assets instead.`
+      );
+    }
+    const event = await trx
+      .selectFrom("leaseEvent")
+      .select("eventType")
+      .where("leaseId", "=", lease.id)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (event) {
+      throw new InvalidInputError(
+        `The lease has a ${event.eventType} since it commenced; terminate it instead`
+      );
+    }
     const invoiced = await trx
       .selectFrom("leasePayment")
       .select("id")
@@ -375,53 +461,28 @@ async function cancel(
       );
     }
 
-    // Every journal the lease posted: the commencement (or opening balance)
-    // and each Modify, Terminate or Purchase journal since.
-    const events = await trx
-      .selectFrom("leaseEvent")
-      .select("journalId")
-      .where("leaseId", "=", lease.id)
-      .where("companyId", "=", companyId)
-      .where("journalId", "is not", null)
-      .execute();
-    const journalIds = [
-      ...new Set(
-        [
-          lease.commencementJournalId,
-          ...events.map((event) => event.journalId)
-        ].filter((id): id is string => id !== null)
-      )
-    ];
-    if (journalIds.length > 0) {
-      const journals = await trx
+    // The only journal an unchanged lease has: its commencement (or opening
+    // balance). A Short-Term lease has none.
+    if (lease.commencementJournalId) {
+      const journal = await trx
         .selectFrom("journal")
-        .select(["id", sql<string>`"postingDate"::text`.as("postingDate")])
-        .where("id", "in", journalIds)
+        .select(sql<string>`"postingDate"::text`.as("postingDate"))
+        .where("id", "=", lease.commencementJournalId)
         .where("companyId", "=", companyId)
-        .execute();
+        .executeTakeFirstOrThrow();
       const cutoverDate = await readAccountingCutoverDate(trx, companyId);
-      if (
-        journals.some((journal) =>
-          isBeforeCutover(journal.postingDate, cutoverDate)
-        )
-      ) {
+      if (isBeforeCutover(journal.postingDate, cutoverDate)) {
         throw new InvalidInputError(
           "This lease commenced before accounting was set up; its balances came from the opening journal. Terminate it instead."
         );
       }
-      const accounting = await loadLesseeAccounting(trx, {
+      await voidLeaseJournal(trx, {
+        journalId: lease.commencementJournalId,
+        postingStatus: await journalPostingStatus(trx, companyId),
         companyId,
-        companyGroupId: null
+        userId,
+        today
       });
-      for (const journalId of journalIds) {
-        await voidLeaseJournal(trx, {
-          journalId,
-          postingStatus: accounting.postingStatus,
-          companyId,
-          userId,
-          today
-        });
-      }
     }
 
     // The Planned run rows cascade with their schedule lines.
@@ -456,20 +517,17 @@ const postLease = defineServerFn({
   permissions: { update: "purchasing" },
   async run({ db, companyId, userId }, payload): Promise<{ id: string }> {
     const scope = { db, companyId, userId };
-    const today = datetime
-      .today(await getCompanyTimeZone(db, companyId))
-      .toString();
     switch (payload.type) {
       case "activate":
         return activate(scope, payload);
       case "cancel":
-        return cancel(scope, payload, today);
+        return cancel(scope, payload);
       case "modify":
-        return modify(scope, payload, today);
+        return modify(scope, payload);
       case "terminate":
-        return terminate(scope, payload, today);
+        return terminate(scope, payload);
       case "purchase":
-        return purchase(scope, payload, today);
+        return purchase(scope, payload);
     }
   }
 });

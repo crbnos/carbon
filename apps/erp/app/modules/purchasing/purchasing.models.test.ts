@@ -23,15 +23,21 @@ import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  leaseClassificationValidator,
+  leaseDetailsValidator,
   leaseDurationOf,
   leaseEndDate,
   leaseLineValidator,
   leaseModifyValidator,
   leasePaymentValidator,
+  leasePurchaseValidator,
+  leaseTermColumns,
+  leaseTerminateValidator,
   leaseValidator,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderStatusType,
   purchaseOrderValidator,
+  resolveLeaseDates,
   supplierQuoteValidator
 } from "./purchasing.models";
 
@@ -320,6 +326,228 @@ describe("leaseModifyValidator", () => {
     expect(
       leaseModifyValidator.safeParse({ ...terms, endDate: "2027-12-31" })
         .success
+    ).toBe(false);
+  });
+});
+
+describe("lease dates", () => {
+  const base = {
+    supplierId: "supplier-1",
+    commencementDate: "2027-01-01",
+    endDate: "2029-12-31",
+    paymentFrequency: "Monthly",
+    paymentTiming: "Arrears",
+    discountRate: "6",
+    currencyCode: "USD"
+  };
+
+  it("refuses a lease date that is not a YYYY-MM-DD calendar date", () => {
+    for (const field of [
+      "commencementDate",
+      "endDate",
+      "noticeDate",
+      "invoiceFromDate"
+    ]) {
+      for (const value of ["2027-02-30", "01/02/2027", "soon"]) {
+        const result = leaseValidator.safeParse({ ...base, [field]: value });
+        expect(result.success, `${field} = ${value}`).toBe(false);
+      }
+    }
+  });
+
+  it("reports a bad commencement date instead of throwing from the notice refine", () => {
+    expect(() =>
+      leaseValidator.safeParse({
+        ...base,
+        commencementDate: "not-a-date",
+        duration: "36",
+        noticeDate: "2029-06-30"
+      })
+    ).not.toThrow();
+  });
+
+  it("refuses a payment row date, and a Modify date, that is not a date", () => {
+    expect(
+      leasePaymentValidator.safeParse({
+        leaseId: "lease-1",
+        leaseLineId: "line-1",
+        periodStart: "2027-01-01",
+        periodEnd: "2027-01-31",
+        dueDate: "2027-01-32",
+        amount: "100"
+      }).success
+    ).toBe(false);
+    expect(
+      leaseModifyValidator.safeParse({
+        effectiveDate: "2028-1-1",
+        endDate: "2029-12-31",
+        discountRate: "7",
+        lines: [],
+        paymentFrequency: "Monthly"
+      }).success
+    ).toBe(false);
+  });
+});
+
+describe("resolveLeaseDates", () => {
+  const current = {
+    commencementDate: "2027-01-01",
+    invoiceFromDate: "2027-01-01"
+  };
+
+  it("moves invoicing with the commencement while it still starts there", () => {
+    expect(
+      resolveLeaseDates(current, {
+        commencementDate: "2027-03-01",
+        invoiceFromDate: "2027-01-01"
+      }).invoiceFromDate
+    ).toBe("2027-03-01");
+    expect(
+      resolveLeaseDates(current, { commencementDate: "2027-03-01" })
+        .invoiceFromDate
+    ).toBe("2027-03-01");
+  });
+
+  it("keeps an invoice-from date that was moved, or that the same save moves", () => {
+    expect(
+      resolveLeaseDates(
+        { commencementDate: "2027-01-01", invoiceFromDate: "2027-06-01" },
+        { commencementDate: "2027-03-01", invoiceFromDate: "2027-06-01" }
+      ).invoiceFromDate
+    ).toBe("2027-06-01");
+    expect(
+      resolveLeaseDates(current, {
+        commencementDate: "2027-03-01",
+        invoiceFromDate: "2027-05-01"
+      }).invoiceFromDate
+    ).toBe("2027-05-01");
+  });
+
+  it("takes the end date from a duration, and defaults invoicing for a new lease", () => {
+    expect(
+      resolveLeaseDates(null, {
+        commencementDate: "2027-01-01",
+        duration: "36"
+      })
+    ).toEqual({
+      commencementDate: "2027-01-01",
+      endDate: "2029-12-31",
+      invoiceFromDate: "2027-01-01"
+    });
+    expect(
+      resolveLeaseDates(null, {
+        commencementDate: "2027-01-01",
+        duration: "open",
+        endDate: "2027-06-30"
+      }).endDate
+    ).toBeNull();
+  });
+});
+
+describe("leaseTermColumns", () => {
+  it("writes the terms only, never what activation owns", () => {
+    const parsed = leaseValidator.parse({
+      supplierId: "supplier-1",
+      commencementDate: "2027-01-01",
+      duration: "12",
+      paymentFrequency: "Monthly",
+      paymentTiming: "Arrears",
+      discountRate: "6",
+      currencyCode: "USD",
+      noticeDate: ""
+    });
+    const columns = leaseTermColumns({
+      ...parsed,
+      // An MCP caller's extra keys reach the service unfiltered.
+      ...({ status: "Active", commencementJournalId: "j-1" } as object)
+    });
+    expect(columns).not.toHaveProperty("status");
+    expect(columns).not.toHaveProperty("commencementJournalId");
+    expect(columns).toMatchObject({
+      endDate: "2027-12-31",
+      invoiceFromDate: "2027-01-01",
+      noticeDate: null
+    });
+  });
+});
+
+describe("leaseDetailsValidator", () => {
+  it("refuses a notice date after the end date it is checked against", () => {
+    expect(
+      leaseDetailsValidator.safeParse({
+        noticeDate: "2030-01-31",
+        endDate: "2029-12-31"
+      }).success
+    ).toBe(false);
+    expect(
+      leaseDetailsValidator.safeParse({
+        noticeDate: "2029-09-30",
+        endDate: "2029-12-31"
+      }).success
+    ).toBe(true);
+    expect(leaseDetailsValidator.safeParse({ name: "Forklift" }).success).toBe(
+      true
+    );
+  });
+});
+
+describe("lease action validators", () => {
+  it("terminate: a date, and a penalty that defaults to 0 and is never negative", () => {
+    const ok = leaseTerminateValidator.safeParse({
+      terminationDate: "2028-06-30"
+    });
+    expect(ok.success).toBe(true);
+    expect(ok.data?.penaltyAmount).toBe(0);
+    expect(
+      leaseTerminateValidator.safeParse({
+        terminationDate: "2028-06-30",
+        penaltyAmount: "-1"
+      }).success
+    ).toBe(false);
+    expect(
+      leaseTerminateValidator.safeParse({ terminationDate: "" }).success
+    ).toBe(false);
+  });
+
+  it("purchase: a price of 0 or more, a fixed asset class and a name", () => {
+    const terms = {
+      exerciseDate: "2029-12-31",
+      purchasePrice: "0",
+      fixedAssetClassId: "class-1",
+      name: "Forklift FL-12"
+    };
+    expect(leasePurchaseValidator.safeParse(terms).success).toBe(true);
+    expect(
+      leasePurchaseValidator.safeParse({ ...terms, purchasePrice: "-5" })
+        .success
+    ).toBe(false);
+    expect(
+      leasePurchaseValidator.safeParse({ ...terms, fixedAssetClassId: "" })
+        .success
+    ).toBe(false);
+    expect(
+      leasePurchaseValidator.safeParse({ ...terms, name: " " }).success
+    ).toBe(false);
+  });
+
+  it("classification: Operating or Finance, with a reason", () => {
+    expect(
+      leaseClassificationValidator.safeParse({
+        classification: "Finance",
+        reason: "Specialized tooling"
+      }).success
+    ).toBe(true);
+    expect(
+      leaseClassificationValidator.safeParse({
+        classification: "Short-Term",
+        reason: "Under a year"
+      }).success
+    ).toBe(false);
+    expect(
+      leaseClassificationValidator.safeParse({
+        classification: "Operating",
+        reason: " "
+      }).success
     ).toBe(false);
   });
 });

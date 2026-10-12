@@ -4,17 +4,21 @@
 
 import { useCurrencyFormatter } from "~/hooks";
 
-type LeaseMoneyProps = {
+type MoneyProps = {
   value: number | null | undefined;
   currencyCode?: string | null;
+  /** A per-unit rate (a price, a day / week / month tier) rather than a
+   *  settled amount: it keeps the digits past the currency's own. */
+  rate?: boolean;
 };
 
-/** A lease amount in the lease's own currency. A component rather than a
- *  formatter call so table cells in different currencies can each use the
- *  hook. */
-const LeaseMoney = ({ value, currencyCode }: LeaseMoneyProps) => {
+/** An amount in a document's own currency, "—" when there is none. A
+ *  component rather than a formatter call so table cells in different
+ *  currencies can each use the hook. */
+const Money = ({ value, currencyCode, rate }: MoneyProps) => {
   const formatter = useCurrencyFormatter({
-    currency: currencyCode ?? undefined
+    currency: currencyCode ?? undefined,
+    rate
   });
   if (value === null || value === undefined) return <span>—</span>;
   return (
@@ -22,4 +26,4 @@ const LeaseMoney = ({ value, currencyCode }: LeaseMoneyProps) => {
   );
 };
 
-export default LeaseMoney;
+export default Money;

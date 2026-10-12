@@ -4,13 +4,8 @@
 
 import { Table, Tbody, Td, Th, Thead, Tr } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import LeaseMoney from "./LeaseMoney";
-
-export type LeaseJournalPreviewRow = {
-  account: string;
-  debit: number;
-  credit: number;
-};
+import Money from "~/components/Money";
+import type { LeaseJournalPreviewRow } from "./utils";
 
 /** The journal a lifecycle action would post, before the user confirms.
  *  Rows with nothing on either side are left out. */
@@ -46,12 +41,12 @@ const LeaseJournalPreview = ({
             <Td>{row.account}</Td>
             <Td className="text-right">
               {row.debit !== 0 && (
-                <LeaseMoney value={row.debit} currencyCode={currencyCode} />
+                <Money value={row.debit} currencyCode={currencyCode} />
               )}
             </Td>
             <Td className="text-right">
               {row.credit !== 0 && (
-                <LeaseMoney value={row.credit} currencyCode={currencyCode} />
+                <Money value={row.credit} currencyCode={currencyCode} />
               )}
             </Td>
           </Tr>

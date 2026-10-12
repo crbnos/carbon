@@ -12,13 +12,15 @@ import type {
   LeasePayment,
   LeaseScheduleLine
 } from "./types";
-import { isScheduleLinePosted } from "./utils";
+import { type LeasePurchaseOffer, leasePurchaseOffer } from "./utils";
 
 export type LeaseAssetAction = "terminate" | "purchase";
 
 export type LeaseAssetActionState = {
   canTerminate: boolean;
-  canPurchase: boolean;
+  /** How the asset can be bought — at its purchase option, or taken on the
+   *  end date when ownership transfers — or null. */
+  purchase: LeasePurchaseOffer | null;
 };
 
 /** What can happen to one asset of an Active lease, and the modal for it.
@@ -46,16 +48,12 @@ export function useLeaseAssetActions({
     const isActive = canChange && line.status === "Active";
     return {
       canTerminate: isActive,
-      // An open-ended or short-term asset has no purchase option to exercise.
-      canPurchase:
-        isActive &&
-        !!lease.endDate &&
-        Number(line.purchaseOptionAmount ?? 0) > 0 &&
-        line.lesseeClassification !== "Short-Term"
+      purchase: isActive ? leasePurchaseOffer(lease, line) : null
     };
   };
 
   const close = () => setPending(null);
+  const offer = pending ? leasePurchaseOffer(lease, pending.line) : null;
 
   const modals =
     pending?.action === "terminate" ? (
@@ -66,10 +64,11 @@ export function useLeaseAssetActions({
         schedule={schedule}
         onClose={close}
       />
-    ) : pending?.action === "purchase" ? (
+    ) : pending?.action === "purchase" && offer ? (
       <LeasePurchaseModal
         lease={lease}
         line={pending.line}
+        offer={offer}
         payments={payments}
         schedule={schedule}
         onClose={close}
@@ -82,29 +81,4 @@ export function useLeaseAssetActions({
       setPending({ action, line }),
     modals
   };
-}
-
-/** The asset's lease liability after its last posted month: null once it
- *  has ended, and for a short-term asset, which is never on the balance
- *  sheet. */
-export function leaseAssetLiability(
-  line: LeaseLine,
-  schedule: LeaseScheduleLine[]
-) {
-  if (
-    line.status !== "Active" ||
-    !line.lesseeClassification ||
-    line.lesseeClassification === "Short-Term"
-  ) {
-    return null;
-  }
-  let last: LeaseScheduleLine | undefined;
-  for (const row of schedule) {
-    if (row.leaseLineId !== line.id) continue;
-    if (!isScheduleLinePosted(row)) break;
-    last = row;
-  }
-  return last
-    ? Number(last.closingLiability)
-    : Number(line.initialLiability ?? 0);
 }

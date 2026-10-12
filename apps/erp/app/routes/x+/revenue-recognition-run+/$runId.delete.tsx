@@ -12,6 +12,7 @@ import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { getRevenueRecognitionRun } from "~/modules/accounting";
 import { deleteRevenueRecognitionRun } from "~/modules/accounting/accounting.server";
+import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -56,10 +57,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Back to the list of the run's own type.
   const run = await getRevenueRecognitionRun(client, runId, companyId);
-  const listPath =
-    run.data?.type === "Lease"
-      ? path.to.leaseRuns
-      : path.to.revenueRecognitionRuns;
+  const listPath = RUN_PAGES[run.data?.type ?? "Revenue Recognition"].listPath;
 
   try {
     await deleteRevenueRecognitionRun(getDatabaseClient(), {

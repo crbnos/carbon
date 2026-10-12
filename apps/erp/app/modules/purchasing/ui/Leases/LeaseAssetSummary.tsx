@@ -16,10 +16,10 @@ import type { ReactNode } from "react";
 import { LuCircleStop, LuHandCoins } from "react-icons/lu";
 import { Link } from "react-router";
 import { useLocations } from "~/components/Form/Location";
+import Money from "~/components/Money";
 import { path } from "~/utils/path";
-import { LesseeClassificationBadge } from "./LeaseClassificationPreview";
-import LeaseMoney from "./LeaseMoney";
 import LeaseStatus from "./LeaseStatus";
+import { LesseeClassificationBadge } from "./LesseeClassificationBadge";
 import type {
   Lease,
   LeaseFixedAssets,
@@ -27,10 +27,9 @@ import type {
   LeasePayment,
   LeaseScheduleLine
 } from "./types";
-import {
-  leaseAssetLiability,
-  useLeaseAssetActions
-} from "./useLeaseAssetActions";
+import { useLeaseAssetActions } from "./useLeaseAssetActions";
+import { useLeaseFrequencyLabel } from "./useLeaseLabels";
+import { leaseAssetLiability } from "./utils";
 
 type LeaseAssetSummaryProps = {
   lease: Lease;
@@ -51,6 +50,7 @@ const LeaseAssetSummary = ({
 }: LeaseAssetSummaryProps) => {
   const { t } = useLingui();
   const locations = useLocations();
+  const frequencyLabel = useLeaseFrequencyLabel();
   const actions = useLeaseAssetActions({ lease, payments, schedule });
   const state = actions.stateOf(line);
 
@@ -63,12 +63,7 @@ const LeaseAssetSummary = ({
   const fixedAsset = line.fixedAssetId
     ? fixedAssets[line.fixedAssetId]
     : undefined;
-  const frequency =
-    lease.paymentFrequency === "Quarterly"
-      ? t`per quarter`
-      : lease.paymentFrequency === "Annual"
-        ? t`per year`
-        : t`per month`;
+  const frequency = frequencyLabel(lease.paymentFrequency, "per");
 
   return (
     <>
@@ -99,10 +94,7 @@ const LeaseAssetSummary = ({
                   : "—"}
             </DetailRow>
             <DetailRow label={t`Payment`}>
-              <LeaseMoney
-                value={line.paymentAmount}
-                currencyCode={currencyCode}
-              />{" "}
+              <Money value={line.paymentAmount} currencyCode={currencyCode} />{" "}
               <span className="text-muted-foreground font-normal">
                 {frequency}
               </span>
@@ -111,7 +103,7 @@ const LeaseAssetSummary = ({
               {line.initialLiability === null ? (
                 "—"
               ) : (
-                <LeaseMoney
+                <Money
                   value={line.initialLiability}
                   currencyCode={currencyCode}
                 />
@@ -121,7 +113,7 @@ const LeaseAssetSummary = ({
               {liability === null ? (
                 "—"
               ) : (
-                <LeaseMoney value={liability} currencyCode={currencyCode} />
+                <Money value={liability} currencyCode={currencyCode} />
               )}
             </DetailRow>
             {fixedAsset && (
@@ -136,7 +128,7 @@ const LeaseAssetSummary = ({
             )}
           </div>
         </CardContent>
-        {(state.canTerminate || state.canPurchase) && (
+        {(state.canTerminate || state.purchase) && (
           <CardFooter>
             <HStack>
               {state.canTerminate && (
@@ -148,13 +140,17 @@ const LeaseAssetSummary = ({
                   <Trans>Terminate</Trans>
                 </Button>
               )}
-              {state.canPurchase && (
+              {state.purchase && (
                 <Button
                   variant="secondary"
                   leftIcon={<LuHandCoins />}
                   onClick={() => actions.open("purchase", line)}
                 >
-                  <Trans>Exercise Purchase Option</Trans>
+                  {state.purchase.kind === "ownership" ? (
+                    <Trans>Take Ownership</Trans>
+                  ) : (
+                    <Trans>Exercise Purchase Option</Trans>
+                  )}
                 </Button>
               )}
             </HStack>

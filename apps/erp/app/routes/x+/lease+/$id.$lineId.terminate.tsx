@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       leaseId: id,
       leaseLineId: lineId,
       terminationDate: validation.data.terminationDate,
-      penaltyAmount: Number(validation.data.penaltyAmount),
+      penaltyAmount: validation.data.penaltyAmount,
       notes: validation.data.notes ?? null
     });
 

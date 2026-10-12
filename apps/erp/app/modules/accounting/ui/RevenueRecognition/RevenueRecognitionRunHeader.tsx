@@ -25,6 +25,7 @@ import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
+import { RUN_PAGES } from "./runPages";
 
 type RevenueRecognitionRun =
   Database["public"]["Tables"]["revenueRecognitionRun"]["Row"];
@@ -151,11 +152,7 @@ const RevenueRecognitionRunHeader = () => {
           onCancel={deleteModal.onClose}
           onSubmit={() => {
             deleteModal.onClose();
-            navigate(
-              run.type === "Lease"
-                ? path.to.leaseRuns
-                : path.to.revenueRecognitionRuns
-            );
+            navigate(RUN_PAGES[run.type].listPath);
           }}
         />
       )}

@@ -15,11 +15,10 @@ import { useRouteData } from "~/hooks";
 import {
   getLease,
   leaseDurationOf,
-  leaseEndDate,
   leaseValidator,
-  updateLease
+  resolveLeaseDates
 } from "~/modules/purchasing";
-import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
+import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import { LeaseDetailsForm } from "~/modules/purchasing/ui/Leases";
 import { getDatabaseClient } from "~/services/database.server";
@@ -28,14 +27,9 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "lease-setup-details");
 
-/** The dates the payment rows are cut from: a change cuts them again. */
-const PAYMENT_DATES = [
-  "commencementDate",
-  "endDate",
-  "invoiceFromDate"
-] as const;
-
-/** Saves a Draft's details from setup step 1 and moves on to Assets. */
+/** Saves a Draft's details from setup step 1 and moves on to Assets. New
+ *  dates move every asset's payment rows: `updateDraftLease` cuts them again
+ *  in the same transaction. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -54,6 +48,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
+  // Invoicing that started at the old commencement follows a new one, as a
+  // single saved term does (update.tsx).
+  const commencementDate = formData.get("commencementDate");
+  const invoiceFromDate = formData.get("invoiceFromDate");
+  if (
+    typeof commencementDate === "string" &&
+    commencementDate &&
+    current.data.commencementDate &&
+    current.data.invoiceFromDate
+  ) {
+    formData.set(
+      "invoiceFromDate",
+      resolveLeaseDates(
+        {
+          commencementDate: current.data.commencementDate,
+          invoiceFromDate: current.data.invoiceFromDate
+        },
+        {
+          commencementDate,
+          invoiceFromDate:
+            typeof invoiceFromDate === "string" ? invoiceFromDate : null
+        }
+      ).invoiceFromDate
+    );
+  }
+
   const validation = await validator(leaseValidator).validate(formData);
   if (validation.error) {
     return validationError(validation.error);
@@ -61,67 +81,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, leaseId: _leaseId, ...data } = validation.data;
 
-  // Refuses a lease that is no longer a Draft.
-  const update = await updateLease(client, {
-    ...data,
-    id,
-    companyId,
-    updatedBy: userId,
-    // Merged, so a field the form did not render is kept.
-    customFields: {
-      ...((current.data.customFields ?? {}) as Record<string, unknown>),
-      ...setCustomFields(formData)
-    } as Json
-  });
-  if (update.error) {
+  try {
+    // Refuses a lease that is no longer a Draft.
+    await updateDraftLease(getDatabaseClient(), {
+      leaseId: id,
+      companyId,
+      userId,
+      terms: data,
+      // Merged, so a field the form did not render is kept.
+      customFields: {
+        ...((current.data.customFields ?? {}) as Record<string, unknown>),
+        ...setCustomFields(formData)
+      } as Json
+    });
+  } catch (err) {
+    logger.error("lease details were not saved", {
+      companyId,
+      leaseId: id,
+      error: err
+    });
     throw redirect(
       path.to.leaseSetup(id, "details"),
       await flash(
         request,
-        error(update.error, update.error.message || "Failed to update lease")
+        error(err, getErrorMessage(err, "Failed to update lease"))
       )
     );
-  }
-
-  // New dates move every payment row of every asset: cut them again. A
-  // lease with no asset yet has none to cut.
-  const dates = {
-    commencementDate: data.commencementDate,
-    endDate: data.duration
-      ? leaseEndDate(data.commencementDate, data.duration, data.endDate)
-      : data.endDate || null,
-    invoiceFromDate: data.invoiceFromDate || data.commencementDate
-  };
-  const datesChanged = PAYMENT_DATES.some(
-    (field) => (current.data[field] ?? "") !== (dates[field] ?? "")
-  );
-  if (datesChanged && Number(current.data.assetCount ?? 0) > 0) {
-    try {
-      await regenerateLeasePayments(getDatabaseClient(), {
-        leaseId: id,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      logger.error("lease payment rows were not cut again", {
-        companyId,
-        leaseId: id,
-        error: err
-      });
-      throw redirect(
-        path.to.leaseSetup(id, "payments"),
-        await flash(
-          request,
-          error(
-            err,
-            getErrorMessage(
-              err,
-              "The details were saved, but the payment rows could not be cut again"
-            )
-          )
-        )
-      );
-    }
   }
 
   throw redirect(path.to.leaseSetup(id, "assets"));

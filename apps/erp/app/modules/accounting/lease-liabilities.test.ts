@@ -14,9 +14,10 @@ import {
   type LeaseLiabilityLease,
   type LeaseLiabilityPayment,
   type LeaseLiabilityScheduleLine,
+  leaseLiabilityAssets,
   summarizeLeaseCosts,
   summarizeLeaseLiabilities
-} from "./accounting.utils";
+} from "./lease-liabilities";
 
 // Two real leases, built by the same lease math activation uses.
 function buildLease(args: {
@@ -70,7 +71,7 @@ function buildLease(args: {
     status: "Active",
     classification: args.classification,
     commencementDate: args.commencementDate,
-    endDate: args.endDate,
+    endedOn: null,
     discountRate: args.discountRate,
     initialLiability: liability,
     initialRouAsset: liability
@@ -255,7 +256,7 @@ describe("summarizeLeaseLiabilities", () => {
       classification: "Operating"
     });
     terminated.lease.status = "Terminated";
-    terminated.lease.endDate = "2026-11-30";
+    terminated.lease.endedOn = "2026-11-30";
     const shortTerm = buildLease({
       ...forkliftArgs,
       id: "lse-short",
@@ -273,6 +274,195 @@ describe("summarizeLeaseLiabilities", () => {
     expect(
       result.totals.map((total) => total.weightedAverageDiscountRate)
     ).toEqual([null, null]);
+  });
+});
+
+describe("summarizeLeaseLiabilities current portion", () => {
+  const principal = (
+    schedule: ReturnType<typeof buildLease>["schedule"],
+    from: number,
+    to: number
+  ) => sumOf(schedule.slice(from, to).map((line) => line.principalAmount));
+
+  it("takes the next 12 schedule lines on a leap-year as-of", () => {
+    // Month ends from 2026-03-31; the 12 lines after 2027-02-28 run through
+    // 2028-02-29, which a 12-month date window (to 2028-02-28) leaves out.
+    const lease = buildLease({
+      ...forkliftArgs,
+      commencementDate: "2026-03-01",
+      endDate: "2029-02-28",
+      classification: "Operating"
+    });
+    expect(lease.schedule[11]!.periodDate).toBe("2027-02-28");
+    expect(lease.schedule[23]!.periodDate).toBe("2028-02-29");
+    const [row] = summarizeLeaseLiabilities(
+      [lease.lease],
+      lease.lines,
+      lease.payments,
+      { asOf: "2027-02-28", startMonth: 1 }
+    ).rows;
+    expect(row!.currentPortion).toBeCloseTo(
+      principal(lease.schedule, 12, 24),
+      2
+    );
+    expect(row!.nonCurrentPortion).toBeCloseTo(
+      lease.schedule[23]!.closingLiability,
+      2
+    );
+  });
+
+  it("takes the next 12 schedule lines on a mid-month as-of", () => {
+    const lease = buildLease({ ...forkliftArgs, classification: "Finance" });
+    const [row] = summarizeLeaseLiabilities(
+      [lease.lease],
+      lease.lines,
+      lease.payments,
+      { asOf: "2026-12-15", startMonth: 1 }
+    ).rows;
+    // The last line on or before 2026-12-15 is November's (index 10).
+    expect(row!.liability).toBe(lease.schedule[10]!.closingLiability);
+    expect(row!.remainingMonths).toBe(25);
+    expect(row!.currentPortion).toBeCloseTo(
+      principal(lease.schedule, 11, 23),
+      2
+    );
+  });
+});
+
+describe("summarizeLeaseLiabilities on a terminated asset", () => {
+  // The forklift terminated on 2027-06-15: termination deletes the schedule
+  // lines after that day and the payments due after it.
+  function terminatedForklift() {
+    const lease = buildLease({ ...forkliftArgs, classification: "Operating" });
+    const endedOn = "2027-06-15";
+    lease.lease.endedOn = endedOn;
+    lease.lines = lease.lines.filter((line) => line.periodDate <= endedOn);
+    lease.payments = lease.payments.filter(
+      (payment) => payment.dueDate <= endedOn
+    );
+    return lease;
+  }
+
+  const summarizeAt = (
+    lease: ReturnType<typeof buildLease>,
+    asOfDate: string
+  ) =>
+    summarizeLeaseLiabilities([lease.lease], lease.lines, lease.payments, {
+      asOf: asOfDate,
+      startMonth: 1
+    }).rows;
+
+  it("keeps the asset until its own end, all of it current", () => {
+    const lease = terminatedForklift();
+    expect(lease.lines.at(-1)!.periodDate).toBe("2027-05-31");
+    // No schedule line is left after 2027-06-10, but the asset is still on
+    // the books until 2027-06-15.
+    const [row] = summarizeAt(lease, "2027-06-10");
+    expect(row).toBeDefined();
+    expect(row!.liability).toBe(lease.schedule[16]!.closingLiability);
+    expect(row!.remainingMonths).toBe(0);
+    expect(row!.currentPortion).toBe(row!.liability);
+    expect(row!.nonCurrentPortion).toBe(0);
+  });
+
+  it("makes the liability current when the end falls within the next 12 lines", () => {
+    const [row] = summarizeAt(terminatedForklift(), "2027-03-31");
+    expect(row!.remainingMonths).toBe(2);
+    expect(row!.currentPortion).toBe(row!.liability);
+  });
+
+  it("drops the asset on its end date", () => {
+    expect(summarizeAt(terminatedForklift(), "2027-06-15")).toEqual([]);
+  });
+});
+
+describe("leaseLiabilityAssets", () => {
+  const lease = {
+    id: "lse-1",
+    leaseId: "LSE000001",
+    name: "Forklifts",
+    supplierName: "Lessor",
+    status: "Active" as const,
+    commencementDate: "2026-01-01",
+    discountRate: 6
+  };
+  const asset = {
+    leaseId: "lse-1",
+    lesseeClassification: "Operating" as const,
+    initialLiability: 1000,
+    initialRouAsset: 1100
+  };
+
+  it("gives each asset its lease's terms and its own end", () => {
+    const result = leaseLiabilityAssets(
+      [lease],
+      [
+        { ...asset, id: "a-active", description: "FL-12", status: "Active" },
+        {
+          ...asset,
+          id: "a-terminated",
+          description: "FL-13",
+          status: "Terminated"
+        },
+        {
+          ...asset,
+          id: "a-purchased",
+          description: "FL-14",
+          status: "Purchased"
+        },
+        // A Draft or Cancelled lease is not read, so its assets have no lease.
+        {
+          ...asset,
+          id: "a-draft",
+          leaseId: "lse-draft",
+          description: "FL-15",
+          status: "Active"
+        }
+      ],
+      [
+        {
+          leaseLineId: "a-terminated",
+          eventType: "Modification",
+          effectiveDate: "2026-06-01"
+        },
+        {
+          leaseLineId: "a-terminated",
+          eventType: "Termination",
+          effectiveDate: "2027-06-15"
+        },
+        {
+          leaseLineId: "a-purchased",
+          eventType: "Purchase",
+          effectiveDate: "2027-09-30"
+        }
+      ]
+    );
+    expect(result).toEqual([
+      {
+        id: "lse-1",
+        leaseLineId: "a-active",
+        leaseId: "LSE000001",
+        name: "Forklifts",
+        asset: "FL-12",
+        supplierName: "Lessor",
+        status: "Active",
+        classification: "Operating",
+        commencementDate: "2026-01-01",
+        endedOn: null,
+        discountRate: 6,
+        initialLiability: 1000,
+        initialRouAsset: 1100
+      },
+      expect.objectContaining({
+        leaseLineId: "a-terminated",
+        status: "Active",
+        endedOn: "2027-06-15"
+      }),
+      expect.objectContaining({
+        leaseLineId: "a-purchased",
+        endedOn: "2027-09-30"
+      })
+    ]);
   });
 });
 

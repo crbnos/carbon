@@ -11,15 +11,24 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
-import {
-  generateLeasePayments,
-  openEndedLeaseHorizon,
-  round
-} from "@carbon/utils";
+import { openEndedLeaseHorizon, round } from "@carbon/utils";
 import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
-import { currencyDecimals } from "../post-rental-agreement/agreement";
+import { currencyDecimals } from "../lib/currency-decimals";
+import { cutLeasePaymentRows } from "../lib/lease-payment-rows";
+import {
+  BILLABLE_LEASE_STATUSES,
+  isBillableLeaseStatus
+} from "../post-purchase-invoice/lease-lines";
+
+// The ERP's Draft setup cuts a lease's rows with the same cutter.
+export {
+  type CutLeasePaymentRow,
+  cutLeasePaymentRows,
+  type LeasePaymentCutAsset,
+  type LeasePaymentCutTerms
+} from "../lib/lease-payment-rows";
 
 export type LeaseInvoiceGenerationArgs = {
   companyId: string;
@@ -50,22 +59,11 @@ export type LeaseInvoiceGenerationResult = {
   failures: LeaseInvoiceGenerationFailure[];
 };
 
-/** Statuses that can still have a payment to bill: an Active lease, and an
- *  ended one with a termination penalty, a purchase price, or a row a voided
- *  invoice returned to Pending. A Draft lease is not yet a lease, and a
- *  Cancelled one never was. */
-const BILLABLE_STATUSES: Database["public"]["Enums"]["leaseStatus"][] = [
-  "Active",
-  "Expired",
-  "Terminated",
-  "Purchased"
-];
-
 /**
  * Drafts the purchase invoices of every lease with a Pending payment row due
  * on or before `asOf`: one Draft invoice per lease and due date, one Lease
- * line per row (a lease with several assets has a row per asset). Each lease is its own transaction, so one lease's failure
- * never rolls back another's invoice. The billed rows are stamped Invoiced
+ * line per row (a lease with several assets has a row per asset). Each
+ * lease is its own transaction, so one lease's failure never rolls back another's invoice. The billed rows are stamped Invoiced
  * with their invoice line, which is what makes a second call for the same
  * day a no-op; deleting the Draft invoice or voiding a posted one returns
  * them to Pending.
@@ -80,7 +78,9 @@ async function createLeaseInvoicesForDuePayments(
     .selectFrom("lease")
     .select("lease.id")
     .where("lease.companyId", "=", companyId)
-    .where("lease.status", "in", BILLABLE_STATUSES)
+    // An ended lease can still owe a termination penalty, a purchase
+    // price, or a row a voided invoice returned to Pending.
+    .where("lease.status", "in", BILLABLE_LEASE_STATUSES)
     .where((eb) =>
       eb.or([
         eb.exists(
@@ -148,7 +148,7 @@ async function draftLeaseInvoices(
     .where("companyId", "=", companyId)
     .forUpdate()
     .executeTakeFirstOrThrow();
-  if (!BILLABLE_STATUSES.includes(lease.status)) return [];
+  if (!isBillableLeaseStatus(lease.status)) return [];
   if (lease.status === "Active" && lease.endDate === null) {
     await rollOpenEndedLeasePayments(trx, { companyId, userId, leaseId, asOf });
   }
@@ -309,8 +309,8 @@ async function draftLeaseInvoices(
  * Cuts an open-ended lease's payment rows forward to one period past `asOf`
  * (`openEndedLeaseHorizon`), for each active asset with a payment: only the
  * periods after its last Rent row, so an edited or deleted row is never cut
- * again. A row due before `invoiceFromDate` is Skipped, as at setup. The
- * lease row is locked by the caller.
+ * again (`cutLeasePaymentRows`, as at setup). The lease row is locked by the
+ * caller.
  */
 export async function rollOpenEndedLeasePayments(
   trx: KyselyTx,
@@ -341,13 +341,20 @@ export async function rollOpenEndedLeasePayments(
     .select([
       "l.id",
       "l.paymentAmount",
+      "l.purchaseOptionAmount",
+      "l.purchaseOptionReasonablyCertain",
       sql<string | null>`max(p."periodStart")::text`.as("lastPeriodStart")
     ])
     .where("l.leaseId", "=", leaseId)
     .where("l.companyId", "=", companyId)
     .where("l.status", "=", "Active")
     .where("l.paymentAmount", ">", 0)
-    .groupBy(["l.id", "l.paymentAmount"])
+    .groupBy([
+      "l.id",
+      "l.paymentAmount",
+      "l.purchaseOptionAmount",
+      "l.purchaseOptionReasonablyCertain"
+    ])
     .execute();
   if (lines.length === 0) return 0;
 
@@ -357,35 +364,23 @@ export async function rollOpenEndedLeasePayments(
     asOf,
     lease.paymentFrequency
   );
-  const rows = lines.flatMap((line) =>
-    generateLeasePayments({
-      commencementDate: lease.commencementDate,
-      endDate: null,
-      through,
-      paymentAmount: Number(line.paymentAmount),
-      frequency: lease.paymentFrequency,
-      timing: lease.paymentTiming,
-      annualEscalationPercent: Number(lease.annualEscalationPercent),
-      purchaseOptionAmount: 0,
-      decimals
-    })
-      .filter(
-        (row) => !line.lastPeriodStart || row.periodStart > line.lastPeriodStart
-      )
-      .map((row) => ({
-        ...row,
-        leaseId,
-        leaseLineId: line.id,
-        status:
-          row.dueDate < lease.invoiceFromDate
-            ? ("Skipped" as const)
-            : ("Pending" as const),
-        companyId,
-        createdBy: userId
-      }))
+  const rows = lines.flatMap(
+    (line) =>
+      cutLeasePaymentRows({
+        lease: { ...lease, endDate: null },
+        asset: line,
+        decimals,
+        through,
+        after: line.lastPeriodStart
+      }).rows
   );
   if (rows.length > 0) {
-    await trx.insertInto("leasePayment").values(rows).execute();
+    await trx
+      .insertInto("leasePayment")
+      .values(
+        rows.map((row) => ({ ...row, leaseId, companyId, createdBy: userId }))
+      )
+      .execute();
   }
   return rows.length;
 }

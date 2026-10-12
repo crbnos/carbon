@@ -14,32 +14,27 @@ import {
 } from "@carbon/database/journal-posting-status";
 import type { AccountClass } from "@carbon/database/ledger";
 import { round } from "@carbon/database/precision";
-import { getNextSequence } from "@carbon/database/sequence";
 import {
   addMonths,
   buildJournalLineDimensionInserts,
-  classifyLesseeLease,
   datetime,
-  isTermWithinTwelveMonths,
   type LeasePaymentPoint,
   type LesseeScheduleLine,
-  leaseMonthEnds,
-  leaseTermMonths,
-  paymentMonthIndex,
-  presentValueOfPayments
+  measureLesseeAsset,
+  paymentMonthIndex
 } from "@carbon/utils";
 import { sql, type Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { InvalidInputError, NotFoundError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
+import { insertNegatedJournal } from "../lib/void-journal";
 import {
   type LesseeAccounts,
   type PostingLine,
   scheduleRowAccounts
 } from "./lessee";
-import { scheduleMonths } from "./validators";
 
 export type Db = Kysely<KyselyDatabase>;
 export type Trx = Transaction<KyselyDatabase>;
@@ -70,6 +65,7 @@ export type LeaseRow = {
 export type LeaseLineRow = {
   id: string;
   description: string;
+  serialNumber: string | null;
   locationId: string | null;
   paymentAmount: number;
   fairValue: number | null;
@@ -141,6 +137,7 @@ export async function readLines(
     .select([
       "id",
       "description",
+      "serialNumber",
       "locationId",
       "paymentAmount",
       "fairValue",
@@ -176,6 +173,17 @@ export function findLine(lines: LeaseLineRow[], id: string): LeaseLineRow {
   const line = lines.find((row) => row.id === id);
   if (!line) throw new NotFoundError("Leased asset not found");
   return line;
+}
+
+/** The classification of an asset past Draft. Activation stores one for
+ *  every asset, so a missing one is a broken row, not a default. */
+export function classificationOf(
+  line: Pick<LeaseLineRow, "description" | "lesseeClassification">
+): Enums["lesseeClassification"] {
+  if (!line.lesseeClassification) {
+    throw new Error(`${line.description} has no lessee classification`);
+  }
+  return line.lesseeClassification;
 }
 
 export type LeasePaymentRow = {
@@ -401,10 +409,12 @@ export async function postLesseeJournal(
   return journalId;
 }
 
-/** One asset's schedule from the lease month that starts on `startDate`. */
+/** One asset's schedule from lease month `fromMonth` on: line `i` is lease
+ *  month `fromMonth + i` of the lease that commenced on `commencementDate`. */
 export type AssetSchedule = {
   leaseLineId: string;
-  startDate: string;
+  commencementDate: string;
+  fromMonth: number;
   lines: LesseeScheduleLine[];
   classification: "Operating" | "Finance";
 };
@@ -489,7 +499,10 @@ export async function writeSchedules(
       status: posted ? ("Posted" as const) : ("Planned" as const),
       leaseId,
       leaseScheduleLineId,
-      periodStart: addMonths(schedule.startDate, index),
+      periodStart: addMonths(
+        schedule.commencementDate,
+        schedule.fromMonth + index
+      ),
       periodEnd: line.periodDate,
       scheduledDate: line.periodDate,
       companyId,
@@ -577,9 +590,9 @@ export async function heldByRun(
   return row?.runId ?? null;
 }
 
-/** Voids a journal with a negated copy dated today (the next open period
- *  when today's is Locked or Closed), keeping its documents and dimensions —
- *  the pattern of `post-charge/post-charge-void.ts`. */
+/** Voids a lease journal with a negated copy dated today (the next open
+ *  period when today's is Locked or Closed), keeping its documents and
+ *  dimensions. */
 export async function voidLeaseJournal(
   trx: Trx,
   args: {
@@ -590,7 +603,7 @@ export async function voidLeaseJournal(
     today: string;
   }
 ): Promise<string> {
-  const { companyId, userId } = args;
+  const { companyId } = args;
   const original = await trx
     .selectFrom("journal")
     .select(["id", "sourceType", "description"])
@@ -608,118 +621,39 @@ export async function voidLeaseJournal(
     .where("companyId", "=", companyId)
     .orderBy("id")
     .execute();
-
-  const period =
-    args.postingStatus === "Posted"
-      ? await resolveAccountingPeriod(
-          trx,
-          companyId,
-          args.today,
-          "historical-with-shift"
-        )
-      : null;
-  const reversal = await trx
-    .insertInto("journal")
-    .values({
-      journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-      accountingPeriodId: period?.id ?? null,
-      description: `VOID ${original.description ?? "Lease"}`,
-      postingDate: period?.postingDate ?? args.today,
-      companyId,
-      sourceType: "Lease",
-      status: args.postingStatus,
-      postedAt: datetime.timestamp(),
-      postedBy: userId,
-      createdBy: userId
-    })
-    .returning("id")
-    .executeTakeFirstOrThrow();
-  if (originalLines.length === 0) return reversal.id;
-
-  const reversalLineIds = await allocateJournalLineIds(
-    trx,
-    originalLines.length
-  );
-  await trx
-    .insertInto("journalLine")
-    .values(
-      originalLines.map((line, index) => ({
-        id: reversalLineIds[index],
-        journalId: reversal.id,
-        accountId: line.accountId,
-        amount: -Number(line.amount),
-        quantity: line.quantity,
-        description: `VOID: ${line.description ?? ""}`,
-        documentType: line.documentType,
-        documentId: line.documentId,
-        documentLineReference: line.documentLineReference,
-        journalLineReference: line.journalLineReference,
-        accountDefaultRole: line.accountDefaultRole,
-        companyId
-      }))
-    )
-    .execute();
-  const dimensions = await trx
-    .selectFrom("journalLineDimension")
-    .select(["journalLineId", "dimensionId", "valueId"])
-    .where("companyId", "=", companyId)
-    .where(
-      "journalLineId",
-      "in",
-      originalLines.map((line) => line.id)
-    )
-    .execute();
-  const reversalByOriginal = new Map(
-    originalLines.map((line, index) => [line.id, reversalLineIds[index]])
-  );
-  if (dimensions.length > 0) {
-    await trx
-      .insertInto("journalLineDimension")
-      .values(
-        dimensions.map((dimension) => {
-          const journalLineId = reversalByOriginal.get(dimension.journalLineId);
-          if (!journalLineId) {
-            throw new Error("Failed to map a reversed journal line");
-          }
-          return { ...dimension, journalLineId, companyId };
-        })
-      )
-      .execute();
-  }
-  return reversal.id;
+  return insertNegatedJournal(trx, {
+    companyId,
+    userId: args.userId,
+    originalLines,
+    description: `VOID ${original.description ?? "Lease"}`,
+    sourceType: "Lease",
+    postingStatus: args.postingStatus,
+    date: args.today,
+    periodMode: "historical-with-shift",
+    postedAt: datetime.timestamp()
+  });
 }
 
 export type Scope = { db: Db; companyId: string; userId: string };
 
-/** The lease's whole-month points, measured from `fromDate`. */
+/** The payments' whole-month points from lease month `fromMonth` (0 at
+ *  commencement). Counted from the commencement, never from a later date: a
+ *  lease from the 29th–31st has clamped months that a later start would
+ *  not line up with. */
 export function paymentPoints(
   payments: Pick<
     LeasePaymentRow,
     "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
   >[],
-  fromDate: string,
-  timing: LeaseRow["paymentTiming"]
+  commencementDate: string,
+  timing: LeaseRow["paymentTiming"],
+  fromMonth = 0
 ): LeasePaymentPoint[] {
   return payments.map((payment) => ({
-    monthIndex: paymentMonthIndex(payment, fromDate, timing),
+    monthIndex:
+      paymentMonthIndex(payment, commencementDate, timing) - fromMonth,
     amount: payment.amount
   }));
-}
-
-/** The lease months a schedule from `fromDate` to `endDate` covers, and
- *  their last days (the final one clamped to `endDate`). */
-export function scheduleSpan(fromDate: string, endDate: string) {
-  const whole = leaseTermMonths(fromDate, endDate);
-  const months = scheduleMonths(whole, addMonths(fromDate, whole) <= endDate);
-  const periodDates = leaseMonthEnds(fromDate, 0, months).map((date) =>
-    date > endDate ? endDate : date
-  );
-  return {
-    termMonths: whole,
-    withinTwelveMonths: isTermWithinTwelveMonths(fromDate, endDate),
-    months,
-    periodDates
-  };
 }
 
 /** Straight-line ROU amortization runs over what is left of the useful life
@@ -753,51 +687,44 @@ export type MeasuredAsset = {
 };
 
 /** One asset's liability (the PV of its payment rows) and classification
- *  over the term from `fromDate` to `endDate`. An override wins. */
+ *  over the term from lease month `fromMonth` (0 at commencement) to
+ *  `endDate`. An override wins. */
 export function measureAsset(args: {
   line: LeaseLineRow;
   payments: Pick<
     LeasePaymentRow,
     "periodStart" | "periodEnd" | "dueDate" | "paymentType" | "amount"
   >[];
-  fromDate: string;
+  fromMonth?: number;
   endDate: string;
-  lease: Pick<LeaseRow, "paymentTiming" | "discountRate">;
+  lease: Pick<LeaseRow, "commencementDate" | "paymentTiming" | "discountRate">;
   thresholds: Thresholds;
   shortTermExpedient: boolean;
 }): MeasuredAsset {
   const { line, lease, thresholds } = args;
-  const span = scheduleSpan(args.fromDate, args.endDate);
-  const liability = presentValueOfPayments({
-    payments: paymentPoints(args.payments, args.fromDate, lease.paymentTiming),
-    annualRate: lease.discountRate
-  });
-  const result = classifyLesseeLease(
-    {
-      termMonths: span.termMonths,
-      withinTwelveMonths: span.withinTwelveMonths,
-      pvPayments: liability,
-      fairValue: line.fairValue,
-      economicLifeMonths: line.economicLifeMonths,
-      ownershipTransfers: line.ownershipTransfers,
-      purchaseOptionReasonablyCertain: line.purchaseOptionReasonablyCertain,
-      specializedAsset: line.specializedAsset,
-      shortTermExpedient: args.shortTermExpedient
-    },
+  const { liability, termMonths, ...result } = measureLesseeAsset({
+    commencementDate: lease.commencementDate,
+    endDate: args.endDate,
+    timing: lease.paymentTiming,
+    discountRate: lease.discountRate,
+    payments: args.payments,
+    fromMonth: args.fromMonth,
+    inputs: line,
+    shortTermExpedient: args.shortTermExpedient,
     thresholds
-  );
+  });
   return {
     line,
     liability,
     classification: line.classificationOverride ?? result.classification,
     classificationInputs: {
       ...result,
-      termMonths: span.termMonths,
+      termMonths,
       pvPayments: liability,
       discountRate: lease.discountRate,
       thresholds,
       override: line.classificationOverride
-    } as unknown as Json
+    }
   };
 }
 

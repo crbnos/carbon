@@ -22,11 +22,16 @@ import {
   type RecognitionSources,
   type RunJournal
 } from "@carbon/database/run-journals";
+import {
+  runLabelSentence,
+  runTypeFilter,
+  runTypeOfScheduleRow
+} from "@carbon/database/run-type";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import { datetime, equals, formatDate, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { type ExpressionBuilder, sql } from "kysely";
+import { sql } from "kysely";
 import {
   ACCOUNTING_NOT_STARTED,
   applyCtaToReportPeriodSeries,
@@ -1084,29 +1089,6 @@ export type RevenueRecognitionDimensionIds = {
   supplier?: string;
 };
 
-/** The schedule rows a run of `type` claims: a lease run takes the rows of
- *  rental agreements and lessee leases, a revenue recognition run the rest.
- *  Mirrors `runTypeFilter` in `@carbon/server-functions` (lib/run-type.ts),
- *  which the proposals use. */
-function scheduleRowsOfRunType(type: Database["public"]["Enums"]["runType"]) {
-  return (
-    eb: ExpressionBuilder<KyselyDatabase, "revenueRecognitionSchedule">
-  ) =>
-    type === "Lease"
-      ? eb.or([
-          eb("rentalAgreementLineId", "is not", null),
-          eb("leaseId", "is not", null)
-        ])
-      : eb.and([
-          eb("rentalAgreementLineId", "is", null),
-          eb("leaseId", "is", null)
-        ]);
-}
-
-/** "revenue recognition run" / "lease run", for messages. */
-const runLabel = (type: Database["public"]["Enums"]["runType"]) =>
-  type === "Lease" ? "Lease run" : "Revenue recognition run";
-
 type AccountClass = NonNullable<Database["public"]["Enums"]["glAccountClass"]>;
 type DimensionEntityType = Database["public"]["Enums"]["dimensionEntityType"];
 
@@ -1148,7 +1130,7 @@ export async function postRevenueRecognitionRun(
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
-        `${runLabel(run.type)} ${run.runId} is already ${run.status}`
+        `${runLabelSentence(run.type)} ${run.runId} is already ${run.status}`
       );
     }
 
@@ -1180,7 +1162,9 @@ export async function postRevenueRecognitionRun(
       .where("l.companyId", "=", companyId)
       .execute();
     if (rows.length === 0) {
-      throw new Error(`${runLabel(run.type)} ${run.runId} has no lines`);
+      throw new Error(
+        `${runLabelSentence(run.type)} ${run.runId} has no lines`
+      );
     }
 
     // A Draft is a snapshot of the schedule when it was proposed. Posting it
@@ -1191,7 +1175,7 @@ export async function postRevenueRecognitionRun(
       .selectFrom("revenueRecognitionSchedule")
       .select("id")
       .where("companyId", "=", companyId)
-      .where(scheduleRowsOfRunType(run.type))
+      .where(runTypeFilter(run.type))
       .where("status", "=", "Planned")
       .where("runLineId", "is", null)
       .where("scheduledDate", "<=", run.periodEnd)
@@ -1235,7 +1219,7 @@ export async function postRevenueRecognitionRun(
     );
     if (unclaimed || unsynthesizedContractRevenue || drifted) {
       throw new RunOutOfDateError(
-        `${runLabel(run.type)} ${run.runId} is out of date with its schedule; recalculate it before posting`
+        `${runLabelSentence(run.type)} ${run.runId} is out of date with its schedule; recalculate it before posting`
       );
     }
 
@@ -1804,7 +1788,7 @@ export async function reverseRevenueRecognitionRun(
       .executeTakeFirstOrThrow();
     if (run.status !== "Posted") {
       throw new RunReversalError(
-        `${runLabel(run.type)} ${run.runId} is ${run.status}; only a posted run can be reversed`
+        `${runLabelSentence(run.type)} ${run.runId} is ${run.status}; only a posted run can be reversed`
       );
     }
     // The reversed run becomes the period's Draft, and a period holds one.
@@ -1930,10 +1914,8 @@ export async function reverseRevenueRecognitionRun(
     // belong to the lease run: release them, so the next lease run claims
     // them. A run left holding nothing is deleted rather than kept as an
     // empty Draft.
-    const isLeaseRow = (row: (typeof rows)[number]) =>
-      Boolean(row.rentalAgreementLineId || row.leaseId);
     const otherFamily = rows.filter(
-      (row) => isLeaseRow(row) !== (run.type === "Lease")
+      (row) => runTypeOfScheduleRow(row) !== run.type
     );
     if (otherFamily.length > 0) {
       await trx
@@ -2160,14 +2142,14 @@ export async function deleteRevenueRecognitionRun(
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("revenueRecognitionRun")
-      .select(["runId", "status"])
+      .select(["runId", "status", "type"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
-        `Revenue recognition run ${run.runId} is ${run.status}; reverse the run instead of deleting it`
+        `${runLabelSentence(run.type)} ${run.runId} is ${run.status}; reverse the run instead of deleting it`
       );
     }
 

@@ -61,6 +61,7 @@ import {
   type RunJournal,
   recognitionAccountWithoutClass
 } from "@carbon/database/run-journals";
+import type { RunType } from "@carbon/database/run-type";
 import { type AccountClass, chunkArray, isAccountClass } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
@@ -214,7 +215,7 @@ export type RecognitionRow = RecognitionScheduleRow & {
   runReadableId: string;
   runPeriodEnd: string;
   /** The run's type: a lease run's journals post as 'Lease Run'. */
-  runType: "Revenue Recognition" | "Lease";
+  runType: RunType;
 };
 
 /**
@@ -288,7 +289,9 @@ async function loadRecognitionRows(
       sources: {
         invoiceLines: new Map(),
         rentalLines: new Map(),
-        contractLines: new Map()
+        contractLines: new Map(),
+        leases: new Map(),
+        leaseAssets: new Map()
       },
       classById: new Map()
     };

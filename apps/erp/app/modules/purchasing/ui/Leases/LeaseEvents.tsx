@@ -18,9 +18,9 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DateTime, Hyperlink } from "~/components";
+import Money from "~/components/Money";
 import { path } from "~/utils/path";
-import { useLesseeClassificationLabel } from "./LeaseClassificationPreview";
-import LeaseMoney from "./LeaseMoney";
+import { useLesseeClassificationLabel } from "./LesseeClassificationBadge";
 import type {
   Lease,
   LeaseEvent,
@@ -163,29 +163,29 @@ const LeaseEvents = ({
                       <DateTime value={event.effectiveDate} variant="date" />
                     </Td>
                     <Td className="text-right whitespace-nowrap">
-                      <LeaseMoney
+                      <Money
                         value={event.liabilityBefore}
                         currencyCode={currencyCode}
                       />
                       {" → "}
-                      <LeaseMoney
+                      <Money
                         value={event.liabilityAfter}
                         currencyCode={currencyCode}
                       />
                     </Td>
                     <Td className="text-right whitespace-nowrap">
-                      <LeaseMoney
+                      <Money
                         value={event.rouAssetBefore}
                         currencyCode={currencyCode}
                       />
                       {" → "}
-                      <LeaseMoney
+                      <Money
                         value={event.rouAssetAfter}
                         currencyCode={currencyCode}
                       />
                     </Td>
                     <Td className="text-right whitespace-nowrap">
-                      <LeaseMoney
+                      <Money
                         value={event.gainLoss}
                         currencyCode={currencyCode}
                       />

@@ -7,20 +7,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { leaseLineValidator, upsertLeaseLine } from "~/modules/purchasing";
-import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
+import { leaseLineValidator } from "~/modules/purchasing";
+import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "lease-line-new");
 
 /** Adds an asset to a Draft lease (the setup wizard's Add Asset) and cuts
- *  its payment rows from the lease's terms. */
+ *  its payment rows from the lease's terms, in one transaction. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     create: "purchasing"
   });
 
@@ -36,33 +36,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const back = requestReferrer(request) ?? path.to.leaseSetup(id, "assets");
 
-  // Refuses a lease that is not a Draft.
   const { id: _id, leaseId: _leaseId, ...line } = validation.data;
-  const insert = await upsertLeaseLine(client, {
-    ...line,
-    leaseId: id,
-    companyId,
-    userId
-  });
-  if (insert.error || !insert.data) {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(insert.error, insert.error?.message || "Failed to add the asset")
-      )
-    );
-  }
-
   try {
-    await regenerateLeasePayments(getDatabaseClient(), {
+    // Refuses a lease that is not a Draft.
+    await saveDraftLeaseLine(getDatabaseClient(), {
       leaseId: id,
-      leaseLineId: insert.data.id,
       companyId,
-      userId
+      userId,
+      line
     });
   } catch (err) {
-    logger.error("lease payment rows for a new asset failed", {
+    logger.error("lease asset was not added", {
       companyId,
       leaseId: id,
       error: err
@@ -71,7 +55,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       back,
       await flash(
         request,
-        error(err, "Added the asset, but its payment rows were not cut")
+        error(err, getErrorMessage(err, "Failed to add the asset"))
       )
     );
   }

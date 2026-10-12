@@ -125,13 +125,3 @@ export function activateBlocker(args: {
   }
   return null;
 }
-
-/** Whole lease months the schedule covers: the whole months of the term,
- *  plus the last part month when the term does not end on a month boundary.
- *  Never less than one. */
-export function scheduleMonths(
-  wholeMonths: number,
-  hasPartMonth: boolean
-): number {
-  return Math.max(1, wholeMonths + (hasPartMonth ? 1 : 0));
-}

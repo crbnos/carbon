@@ -6,11 +6,12 @@ import { redirect, redirectBeforeLoaders } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { path } from "~/utils/path";
 
-/** A Draft reopens its setup on the Payments step: its details are saved. */
+/** A Draft reopens its setup on the Assets step, as `draftLeaseSetupPath`
+ *  sends it: its details are saved. */
 export async function loader({ params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
-  throw redirect(path.to.leaseSetup(id, "payments"));
+  throw redirect(path.to.leaseSetup(id, "assets"));
 }
 
 export const middleware = [redirectBeforeLoaders(loader)];

@@ -368,7 +368,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "revenueRecognitionRun_one_draft_per_period"
   WHERE "status" = 'Draft';
 
 -- 9) Rental rows move to lease runs: release them from Draft revenue runs ---------------
--- Posted runs keep their rows (history is immutable). A Draft run left empty is deleted.
+-- Posted runs keep their rows (history is immutable). A Draft run this release
+-- leaves empty is deleted; a Draft run that was already empty is not ours to
+-- remove.
+CREATE TEMP TABLE "leaseReleasedRun" ("runId" TEXT, "companyId" TEXT) ON COMMIT DROP;
+
 WITH released AS (
   DELETE FROM "revenueRecognitionRunLine" l
   USING "revenueRecognitionRun" r, "revenueRecognitionSchedule" s
@@ -376,18 +380,26 @@ WITH released AS (
     AND r."status" = 'Draft' AND r."type" = 'Revenue Recognition'
     AND s."id" = l."scheduleId" AND s."companyId" = l."companyId"
     AND s."rentalAgreementLineId" IS NOT NULL
-  RETURNING l."scheduleId", l."companyId"
+  RETURNING l."scheduleId", l."companyId", l."runId"
+),
+cleared AS (
+  UPDATE "revenueRecognitionSchedule" s SET "runLineId" = NULL
+  FROM released
+  WHERE s."id" = released."scheduleId" AND s."companyId" = released."companyId"
 )
-UPDATE "revenueRecognitionSchedule" s SET "runLineId" = NULL
-FROM released
-WHERE s."id" = released."scheduleId" AND s."companyId" = released."companyId";
+INSERT INTO "leaseReleasedRun" ("runId", "companyId")
+SELECT DISTINCT released."runId", released."companyId" FROM released;
 
 DELETE FROM "revenueRecognitionRun" r
-WHERE r."status" = 'Draft'
+USING "leaseReleasedRun" rr
+WHERE r."id" = rr."runId" AND r."companyId" = rr."companyId"
+  AND r."status" = 'Draft'
   AND NOT EXISTS (
     SELECT 1 FROM "revenueRecognitionRunLine" l
     WHERE l."runId" = r."id" AND l."companyId" = r."companyId"
   );
+
+DROP TABLE "leaseReleasedRun";
 
 -- 10) purchaseInvoiceLines gains the lease (forked from 20260811123616) ----------------
 DROP VIEW IF EXISTS "purchaseInvoiceLines";

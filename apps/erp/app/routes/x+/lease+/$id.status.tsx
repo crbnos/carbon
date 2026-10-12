@@ -36,17 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(lease.error, "Lease not found"))
     );
   }
-  // A Draft is deleted, not cancelled: that is the delete route, which
-  // needs `delete: purchasing`.
-  if (lease.data.status === "Draft") {
-    throw redirect(
-      path.to.leaseDetails(id),
-      await flash(request, error(null, "Delete a Draft lease instead"))
-    );
-  }
-
-  // The server function owns the guards: an Active lease needs no invoiced
-  // payment and no posted lease run.
+  // The server function owns the guards: a Draft is refused (it is deleted
+  // through the delete route, which needs `delete: purchasing`), and an
+  // Active lease needs no invoiced payment and no posted lease run.
   const result = await serverFns
     .system({ db: getDatabaseClient(), companyId, userId })
     .invoke("post-lease", { type: "cancel", leaseId: id });

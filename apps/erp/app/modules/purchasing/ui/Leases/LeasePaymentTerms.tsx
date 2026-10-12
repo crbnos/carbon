@@ -21,6 +21,7 @@ import type {
 } from "../../purchasing.models";
 import { type LeaseTerm, useLeaseTermSave } from "./LeaseSetupSteps";
 import type { Lease } from "./types";
+import { useLeaseFrequencyLabel } from "./useLeaseLabels";
 
 type PaymentFrequency = (typeof leasePaymentFrequencies)[number];
 type PaymentTiming = (typeof leasePaymentTimings)[number];
@@ -35,6 +36,7 @@ type LeasePaymentTermsProps = {
 const LeasePaymentTerms = ({ lease }: LeasePaymentTermsProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const frequencyLabel = useLeaseFrequencyLabel();
 
   const id = lease.id!;
   const { save } = useLeaseTermSave(id);
@@ -90,21 +92,21 @@ const LeasePaymentTerms = ({ lease }: LeasePaymentTermsProps) => {
           options={[
             {
               value: "Monthly",
-              title: t`Monthly`,
+              title: frequencyLabel("Monthly"),
               description: t`One payment for each month of the term.`,
               icon: <LuCalendarDays />,
               disabled: isDisabled
             },
             {
               value: "Quarterly",
-              title: t`Quarterly`,
+              title: frequencyLabel("Quarterly"),
               description: t`One payment for every three months.`,
               icon: <LuCalendarRange />,
               disabled: isDisabled
             },
             {
               value: "Annual",
-              title: t`Annual`,
+              title: frequencyLabel("Annual"),
               description: t`One payment for each year of the term.`,
               icon: <LuCalendar />,
               disabled: isDisabled

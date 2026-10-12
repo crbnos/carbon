@@ -7,8 +7,16 @@ import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getLease, leaseValidator, updateLease } from "~/modules/purchasing";
-import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
+import {
+  getLease,
+  type LeaseDetailField,
+  leaseDetailFields,
+  leaseDetailsValidator,
+  leaseValidator,
+  resolveLeaseDates,
+  updateLeaseDetails
+} from "~/modules/purchasing";
+import { updateDraftLease } from "~/modules/purchasing/purchasing.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "lease-update");
@@ -34,30 +42,25 @@ const TERM_FIELDS = [
 ] as const;
 type TermField = (typeof TERM_FIELDS)[number];
 
-/** The terms every asset's payment rows are cut from: a change cuts them
- *  again. An asset's own payment is saved through its line
- *  (`$id.$lineId.update`). */
-const PAYMENT_TERM_FIELDS = new Set<TermField>([
-  "commencementDate",
-  "endDate",
-  "invoiceFromDate",
-  "paymentFrequency",
-  "paymentTiming",
-  "annualEscalationPercent"
-]);
-
 const isTermField = (field: string): field is TermField =>
   (TERM_FIELDS as readonly string[]).includes(field);
 
+const isDetailField = (field: string): field is LeaseDetailField =>
+  (leaseDetailFields as readonly string[]).includes(field);
+
 /**
- * One term of a Draft lease, saved from its properties panel.
+ * One term of a lease, saved from its properties panel.
  *
- * The terms are validated as a whole (an end date on or after the
- * commencement, invoicing from on or after it), so a
- * single field is never written on its own: the current terms are read, the
- * one field is swapped in, and the merged set runs through the same
- * validator and service the new lease form uses. When a payment term
- * changes, the payment rows are cut again from the new terms.
+ * A Draft's terms are validated as a whole (an end date on or after the
+ * commencement, invoicing from on or after it), so a single field is never
+ * written on its own: the current terms are read, the one field is swapped
+ * in, and the merged set runs through the same validator the new lease form
+ * uses. `updateDraftLease` saves it and, when a term the payment rows are cut
+ * from changed, cuts them again in the same transaction.
+ *
+ * Once the lease has started only its details stay editable — name, notes,
+ * owner and notice date (`leaseDetailFields`); every term the books were
+ * measured from changes with Modify.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -88,11 +91,50 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Lease not found" }, data: null };
   }
   const lease = current.data;
+
   if (lease.status !== "Draft") {
-    return {
-      error: { message: "Only a Draft lease's terms can be edited" },
-      data: null
-    };
+    if (!isDetailField(field)) {
+      return {
+        error: {
+          message:
+            "Only the name, notes, owner and notice date of an activated lease can change. Change its terms with Modify."
+        },
+        data: null
+      };
+    }
+    const validation = await leaseDetailsValidator.safeParseAsync({
+      [field]: value || undefined,
+      // A notice date is checked against the end date it gives notice of.
+      endDate: field === "noticeDate" ? (lease.endDate ?? undefined) : undefined
+    });
+    if (!validation.success) {
+      return {
+        error: {
+          message:
+            validation.error.issues[0]?.message ?? "This value is not valid"
+        },
+        data: null
+      };
+    }
+    const update = await updateLeaseDetails(client, {
+      id,
+      companyId,
+      updatedBy: userId,
+      [field]: validation.data[field] ?? null
+    });
+    if (update.error) {
+      logger.error("lease detail update failed", {
+        companyId,
+        id,
+        field,
+        error: update.error
+      });
+      return {
+        error: { message: update.error.message || "Failed to update lease" },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
   }
 
   const terms: Record<TermField, unknown> = {
@@ -124,9 +166,16 @@ export async function action({ request }: ActionFunctionArgs) {
   if (
     field === "commencementDate" &&
     value &&
-    lease.invoiceFromDate === lease.commencementDate
+    lease.commencementDate &&
+    lease.invoiceFromDate
   ) {
-    terms.invoiceFromDate = value;
+    terms.invoiceFromDate = resolveLeaseDates(
+      {
+        commencementDate: lease.commencementDate,
+        invoiceFromDate: lease.invoiceFromDate
+      },
+      { commencementDate: value, invoiceFromDate: lease.invoiceFromDate }
+    ).invoiceFromDate;
   }
 
   // The same FormData the new lease form posts, so the same zfd coercion
@@ -149,50 +198,26 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { id: _id, leaseId: _leaseId, ...data } = validation.data;
 
-  const update = await updateLease(client, {
-    ...data,
-    id,
-    companyId,
-    updatedBy: userId
-  });
-  if (update.error) {
+  try {
+    // Refuses a lease that is no longer a Draft.
+    await updateDraftLease(getDatabaseClient(), {
+      leaseId: id,
+      companyId,
+      userId,
+      terms: data
+    });
+  } catch (err) {
     logger.error("lease term update failed", {
       companyId,
       id,
       field,
-      error: update.error
+      error: err
     });
     return {
-      error: { message: update.error.message || "Failed to update lease" },
+      error: { message: getErrorMessage(err, "Failed to update lease") },
       data: null
     };
   }
 
-  if (PAYMENT_TERM_FIELDS.has(field)) {
-    try {
-      await regenerateLeasePayments(getDatabaseClient(), {
-        leaseId: id,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      logger.error("lease payment rows were not cut again", {
-        companyId,
-        id,
-        field,
-        error: err
-      });
-      return {
-        error: {
-          message: getErrorMessage(
-            err,
-            "The term was saved, but the payment rows could not be cut again"
-          )
-        },
-        data: null
-      };
-    }
-  }
-
-  return { error: null, data: update.data };
+  return { error: null, data: { id } };
 }

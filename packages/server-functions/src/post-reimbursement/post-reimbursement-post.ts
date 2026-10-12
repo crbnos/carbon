@@ -13,7 +13,7 @@ import { costCenterAndProjectDimensions } from "../lib/cost-center-project-dimen
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { buildReimbursementJournal } from "./build-reimbursement-journal";
 
 export type ReimbursementContext = {

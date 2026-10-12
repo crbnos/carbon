@@ -7,8 +7,11 @@
 // digest over THEIR invoices with no setup (a lease's owner is its assignee,
 // else its creator); the company's "Also notify" group
 // gets one digest over all of them. An owner who is also in that group gets
-// only the company digest, never both.
+// only the company digest, never both. Sales invoices and lease drafts are
+// told apart: each is its own notification, linking to its own list.
 // Spec: `.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part II (plan decision 9)
+
+import type { RecurringInvoicingDocumentType } from "@carbon/notifications";
 
 /** `drafted`: a lease's purchase invoice, left Draft for the buyer to add the
  *  supplier's invoice number and post. */
@@ -21,6 +24,9 @@ export type InvoiceRunOutcome =
 
 export type InvoiceRunResult = {
   invoiceId: string;
+  /** A sales invoice of an agreement or contract, or a lease's purchase
+   *  invoice. */
+  documentType: RecurringInvoicingDocumentType;
   /** The recurring source document the invoice was drafted from. */
   sourceId: string;
   outcome: InvoiceRunOutcome;
@@ -30,32 +36,62 @@ export type RecurringInvoicingDigest = {
   recipient:
     | { type: "user"; userId: string }
     | { type: "group"; groupIds: string[] };
+  /** What `documentIds` are, and so where the notification links. */
+  documentType: RecurringInvoicingDocumentType;
   body: string;
   documentIds: string[];
 };
 
-function summarize(results: InvoiceRunResult[]) {
+function summarizeSales(results: InvoiceRunResult[]) {
   // An emailed or unsent invoice was posted too.
-  const posted = results.filter(
-    (r) => r.outcome !== "held" && r.outcome !== "drafted"
-  );
+  const posted = results.filter((r) => r.outcome !== "held");
   const emailed = results.filter((r) => r.outcome === "emailed");
   const review = results.filter(
     (r) => r.outcome === "held" || r.outcome === "unsent"
   );
-  const drafted = results.filter((r) => r.outcome === "drafted");
-  const counts = `${posted.length} posted, ${emailed.length} emailed, ${review.length} need review`;
   return {
-    body: drafted.length > 0 ? `${counts}, ${drafted.length} drafted` : counts,
-    // What needs a person first, then the drafts waiting for one; else what
-    // was posted (notify needs an id).
-    documentIds: (review.length > 0
-      ? review
-      : drafted.length > 0
-        ? drafted
-        : posted
-    ).map((r) => r.invoiceId)
+    body: `${posted.length} posted, ${emailed.length} emailed, ${review.length} need review`,
+    // What needs a person first, else what was posted (notify needs an id).
+    documentIds: (review.length > 0 ? review : posted).map((r) => r.invoiceId)
   };
+}
+
+function summarizeLeaseDrafts(results: InvoiceRunResult[]) {
+  const count = results.length;
+  return {
+    body: `${count} lease invoice${count === 1 ? "" : "s"} drafted`,
+    documentIds: results.map((r) => r.invoiceId)
+  };
+}
+
+/** One notification per kind of invoice: the sales invoices link to the
+ *  ones that need review, the lease drafts to the Draft purchase invoices. */
+function digestsFor(
+  recipient: RecurringInvoicingDigest["recipient"],
+  results: InvoiceRunResult[]
+): RecurringInvoicingDigest[] {
+  const sales = results.filter((r) => r.documentType === "salesInvoice");
+  const leases = results.filter((r) => r.documentType === "purchaseInvoice");
+  return [
+    ...(sales.length > 0
+      ? [
+          {
+            recipient,
+            documentType: "salesInvoice" as const,
+            ...summarizeSales(sales)
+          }
+        ]
+      : []),
+    ...(leases.length > 0
+      ? [
+          {
+            recipient,
+            documentType: "purchaseInvoice" as const,
+            ...summarizeLeaseDrafts(leases)
+          }
+        ]
+      : [])
+  ];
 }
 
 /**
@@ -80,17 +116,11 @@ export function buildRecurringInvoicingDigests(
     byOwner.set(owner, list);
   }
 
-  const digests: RecurringInvoicingDigest[] = [...byOwner].map(
-    ([userId, own]) => ({
-      recipient: { type: "user", userId },
-      ...summarize(own)
-    })
+  const digests = [...byOwner].flatMap(([userId, own]) =>
+    digestsFor({ type: "user", userId }, own)
   );
   if (groupIds.length > 0) {
-    digests.push({
-      recipient: { type: "group", groupIds },
-      ...summarize(results)
-    });
+    digests.push(...digestsFor({ type: "group", groupIds }, results));
   }
   return digests;
 }

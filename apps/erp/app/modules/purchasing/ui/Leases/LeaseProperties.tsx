@@ -18,12 +18,12 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { INPUT_FORMAT } from "@carbon/utils";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useCallback, useEffect } from "react";
 import { LuCopy, LuLink } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
 import {
@@ -35,32 +35,21 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
+import Money from "~/components/Money";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
+// What can change once a lease has started (`update.tsx`): the name, the
+// notes, the owner and the notice date. Every ASC 842 term changes only
+// through Modify, Terminate and Purchase, and the database refuses the rest
+// (`lease_api_write_guard`).
 import {
+  type LeaseDetailField,
   leasePaymentFrequencies,
   leasePaymentTimings
 } from "../../purchasing.models";
-import LeaseMoney from "./LeaseMoney";
-import type { Lease, LeaseRouteData } from "./types";
-
-type Term =
-  | "supplierId"
-  | "supplierLocationId"
-  | "supplierContactId"
-  | "assignee"
-  | "locationId"
-  | "name"
-  | "description"
-  | "commencementDate"
-  | "endDate"
-  | "noticeDate"
-  | "invoiceFromDate"
-  | "paymentFrequency"
-  | "paymentTiming"
-  | "annualEscalationPercent"
-  | "discountRate";
+import type { LeaseRouteData } from "./types";
+import { useLeaseFrequencyLabel } from "./useLeaseLabels";
 
 /** Each property is its own form so a field validates on its own; the save
  *  goes through the update route, which validates the terms as a whole. */
@@ -69,7 +58,7 @@ const PropertyForm = ({
   value,
   children
 }: {
-  name: Term;
+  name: string;
   value: unknown;
   children: ReactNode;
 }) => (
@@ -89,8 +78,10 @@ const SectionHeading = ({ children }: { children: ReactNode }) => (
 );
 
 /** The lease's terms, in the properties panel every document with an
- *  explorer has. Editable while Draft; after activation they change only
- *  through Modify, Terminate and Purchase, so they are read only. */
+ *  explorer has. A Draft is edited in its setup, so the panel is for a lease
+ *  that has started: the owner, the notice date, the name and the notes stay
+ *  editable; every other term changes only through Modify, Terminate and
+ *  Purchase, and is read only. */
 const LeaseProperties = () => {
   const { t } = useLingui();
   const { id } = useParams();
@@ -99,6 +90,7 @@ const LeaseProperties = () => {
   const routeData = useRouteData<LeaseRouteData>(path.to.lease(id));
   const lease = routeData?.lease;
   const permissions = usePermissions();
+  const frequencyLabel = useLeaseFrequencyLabel();
   const currencyCode = lease?.currencyCode ?? "";
 
   const fetcher = useFetcher<{ error: { message: string } | null }>();
@@ -110,11 +102,8 @@ const LeaseProperties = () => {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity is stable
   const onUpdate = useCallback(
-    (field: Term, value: string | null) => {
-      const current = lease?.[field as keyof Lease];
-      if ((current ?? null) === (value ?? null) || String(current) === value) {
-        return;
-      }
+    (field: LeaseDetailField, value: string | null) => {
+      if ((lease?.[field] ?? null) === (value || null)) return;
       const formData = new FormData();
       formData.append("id", id);
       formData.append("field", field);
@@ -144,14 +133,7 @@ const LeaseProperties = () => {
 
   if (!lease) return null;
 
-  const isDisabled =
-    lease.status !== "Draft" || !permissions.can("update", "purchasing");
-  const frequencyLabel = (value: string) =>
-    value === "Monthly"
-      ? t`Monthly`
-      : value === "Quarterly"
-        ? t`Quarterly`
-        : t`Annual`;
+  const canEdit = permissions.can("update", "purchasing");
   const timingLabel = (value: string) =>
     value === "Advance" ? t`Advance` : t`Arrears`;
 
@@ -217,22 +199,13 @@ const LeaseProperties = () => {
           label={t`Name`}
           size="sm"
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={!canEdit}
           value={lease.name ?? ""}
-          onBlur={(e) => {
-            if (e.target.value) onUpdate("name", e.target.value);
-          }}
+          onBlur={(e) => onUpdate("name", e.target.value || null)}
         />
       </PropertyForm>
       <PropertyForm name="supplierId" value={lease.supplierId}>
-        <Supplier
-          name="supplierId"
-          inline
-          isReadOnly={isDisabled}
-          onChange={(value) => {
-            if (value?.value) onUpdate("supplierId", value.value);
-          }}
-        />
+        <Supplier name="supplierId" inline isReadOnly />
       </PropertyForm>
       <PropertyForm name="supplierLocationId" value={lease.supplierLocationId}>
         <SupplierLocation
@@ -240,10 +213,7 @@ const LeaseProperties = () => {
           label={t`Supplier Location`}
           supplier={lease.supplierId ?? ""}
           inline
-          isReadOnly={isDisabled}
-          onChange={(location) => {
-            if (location?.id) onUpdate("supplierLocationId", location.id);
-          }}
+          isReadOnly
         />
       </PropertyForm>
       <PropertyForm name="supplierContactId" value={lease.supplierContactId}>
@@ -252,10 +222,7 @@ const LeaseProperties = () => {
           label={t`Supplier Contact`}
           supplier={lease.supplierId ?? ""}
           inline
-          isReadOnly={isDisabled}
-          onChange={(contact) => {
-            if (contact?.id) onUpdate("supplierContactId", contact.id);
-          }}
+          isReadOnly
         />
       </PropertyForm>
       <PropertyForm name="assignee" value={lease.assignee}>
@@ -263,30 +230,22 @@ const LeaseProperties = () => {
           name="assignee"
           label={t`Owner`}
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={!canEdit}
           onChange={(employee) => {
             onUpdate("assignee", employee?.value ?? null);
           }}
         />
       </PropertyForm>
       <PropertyForm name="locationId" value={lease.locationId}>
-        <Location
-          name="locationId"
-          label={t`Location`}
-          inline
-          isReadOnly={isDisabled}
-          onChange={(location) => {
-            if (location?.value) onUpdate("locationId", location.value);
-          }}
-        />
+        <Location name="locationId" label={t`Location`} inline isReadOnly />
       </PropertyForm>
       <PropertyForm name="description" value={lease.description}>
         <InputControlled
           name="description"
-          label={t`Description`}
+          label={t`Notes`}
           size="sm"
           inline
-          isReadOnly={isDisabled}
+          isReadOnly={!canEdit}
           value={lease.description ?? ""}
           onBlur={(e) => {
             onUpdate("description", e.target.value || null);
@@ -303,29 +262,18 @@ const LeaseProperties = () => {
             name="commencementDate"
             label={t`Commencement Date`}
             inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              if (date) onUpdate("commencementDate", date);
-            }}
+            isDisabled
           />
         </PropertyForm>
         <PropertyForm name="endDate" value={lease.endDate}>
-          <DatePicker
-            name="endDate"
-            label={t`End Date`}
-            inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              if (date) onUpdate("endDate", date);
-            }}
-          />
+          <DatePicker name="endDate" label={t`End Date`} inline isDisabled />
         </PropertyForm>
         <PropertyForm name="noticeDate" value={lease.noticeDate}>
           <DatePicker
             name="noticeDate"
             label={t`Notice Date`}
             inline
-            isDisabled={isDisabled}
+            isDisabled={!canEdit}
             onChange={(date) => {
               onUpdate("noticeDate", date || null);
             }}
@@ -336,10 +284,7 @@ const LeaseProperties = () => {
             name="invoiceFromDate"
             label={t`Invoice From`}
             inline
-            isDisabled={isDisabled}
-            onChange={(date) => {
-              onUpdate("invoiceFromDate", date || null);
-            }}
+            isDisabled
           />
         </PropertyForm>
       </VStack>
@@ -353,14 +298,15 @@ const LeaseProperties = () => {
             <Trans>Payment</Trans>
           </span>
           <span>
-            <LeaseMoney
-              value={lease.paymentAmount}
-              currencyCode={currencyCode}
-            />
+            <Money value={lease.paymentAmount} currencyCode={currencyCode} />
             {Number(lease.assetCount ?? 0) > 1 && (
               <span className="text-muted-foreground">
                 {" "}
-                <Trans>for {lease.assetCount} assets</Trans>
+                <Plural
+                  value={Number(lease.assetCount)}
+                  one="for # asset"
+                  other="for # assets"
+                />
               </span>
             )}
           </span>
@@ -370,14 +316,11 @@ const LeaseProperties = () => {
             name="paymentFrequency"
             label={t`Payment Frequency`}
             inline={(value) => <span>{frequencyLabel(value)}</span>}
-            isReadOnly={isDisabled}
+            isReadOnly
             options={leasePaymentFrequencies.map((frequency) => ({
               value: frequency,
               label: frequencyLabel(frequency)
             }))}
-            onChange={(option) => {
-              if (option?.value) onUpdate("paymentFrequency", option.value);
-            }}
           />
         </PropertyForm>
         <PropertyForm name="paymentTiming" value={lease.paymentTiming}>
@@ -385,14 +328,11 @@ const LeaseProperties = () => {
             name="paymentTiming"
             label={t`Payment Timing`}
             inline={(value) => <span>{timingLabel(value)}</span>}
-            isReadOnly={isDisabled}
+            isReadOnly
             options={leasePaymentTimings.map((timing) => ({
               value: timing,
               label: timingLabel(timing)
             }))}
-            onChange={(option) => {
-              if (option?.value) onUpdate("paymentTiming", option.value);
-            }}
           />
         </PropertyForm>
         <PropertyForm
@@ -403,17 +343,9 @@ const LeaseProperties = () => {
             name="annualEscalationPercent"
             label={t`Annual Escalation (%)`}
             inline
-            isReadOnly={isDisabled}
+            isReadOnly
             value={lease.annualEscalationPercent ?? 0}
-            minValue={0}
-            step={INPUT_STEP.percent}
             formatOptions={INPUT_FORMAT.percentPoints}
-            onChange={(value) => {
-              onUpdate(
-                "annualEscalationPercent",
-                String(Number.isNaN(value) ? 0 : value)
-              );
-            }}
           />
         </PropertyForm>
         <VStack spacing={1}>
@@ -422,14 +354,6 @@ const LeaseProperties = () => {
           </span>
           <span>{lease.currencyCode}</span>
         </VStack>
-        {!isDisabled && (
-          <p className="text-xs text-muted-foreground">
-            <Trans>
-              Changing a payment term or a date cuts the payment rows again.
-              Edited rows are replaced.
-            </Trans>
-          </p>
-        )}
       </VStack>
 
       <VStack spacing={4} className="w-full border-t border-border pt-4">
@@ -441,20 +365,18 @@ const LeaseProperties = () => {
             name="discountRate"
             label={t`Discount Rate (%)`}
             inline
-            isReadOnly={isDisabled}
+            isReadOnly
             value={lease.discountRate ?? 0}
-            minValue={0}
-            step={INPUT_STEP.percent}
             formatOptions={INPUT_FORMAT.percentPoints}
-            onChange={(value) => {
-              onUpdate("discountRate", String(Number.isNaN(value) ? 0 : value));
-            }}
           />
         </PropertyForm>
         <p className="text-xs text-muted-foreground">
           <Trans>
-            Each asset's fair value, economic life and purchase option are on
-            its row in the Assets card.
+            Each asset's classification and the tests behind it are on the{" "}
+            <Link to={path.to.leaseDetails(id)} className="underline">
+              lease's details
+            </Link>
+            .
           </Trans>
         </p>
       </VStack>

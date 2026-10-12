@@ -97,6 +97,10 @@ msgstr "{0, plural, one {# Woche} other {# Wochen}}"
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Schließen Sie den # Fertigungsauftrag ab oder brechen Sie ihn ab, der Kosten verursacht hat, bevor Carbon sie aufzeichnete.} other {Schließen Sie die # Fertigungsaufträge ab oder brechen Sie sie ab, die Kosten verursacht haben, bevor Carbon sie aufzeichnete.}}"
 
+#. placeholder {0}: Number(lease.assetCount)
+msgid "{0, plural, one {for # asset} other {for # assets}}"
+msgstr "{0, plural, one {für # Anlage} other {für # Anlagen}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Buchen Sie das # Dokument ab oder löschen Sie es, das vor dem Stichtag datiert ist.} other {Buchen Sie die # Dokumente ab oder löschen Sie sie, die vor dem Stichtag datiert sind.}}"
@@ -363,6 +367,14 @@ msgstr "{0} wird als {name} gespeichert"
 msgid "{0}-Year"
 msgstr "{0}-Jahr"
 
+#. placeholder {0}: blocker.description
+msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
+msgstr "{0}: die fällige Zahlung {dueDate} ist außerhalb von Carbon als bezahlt markiert, aber nichts würde sie aus der Mietverbindlichkeit befreien. Legen Sie das Rechnungsdatum auf oder vor {dueDate} fest, damit es fakturiert wird."
+
+#. placeholder {0}: line.description
+msgid "{0}: the treatment cannot be worked out. {message}"
+msgstr "{0}: die Behandlung kann nicht ermittelt werden. {message}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -402,6 +414,9 @@ msgstr "{apOverduePct}% der Verbindlichkeiten"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% der Forderungen"
 
+msgid "{asset}: the payment due {dueDate} is Skipped (paid outside Carbon), so nothing would take it off the lease liability. Set Invoice From on or before {dueDate}."
+msgstr "{asset}: die fällige Zahlung {dueDate} ist Übersprungen (außerhalb von Carbon bezahlt), daher würde nichts sie aus der Mietverbindlichkeit entfernen. Legen Sie das Rechnungsdatum auf oder vor {dueDate} fest."
+
 msgid "{assetCount} Assets"
 msgstr "{assetCount} Anlagegüter"
 
@@ -416,6 +431,9 @@ msgstr "{componentCount, plural, one {# Komponente} other {# Komponenten}}"
 
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} Konflikte"
+
+msgid "{count, plural, one {# asset} other {# assets}}"
+msgstr "{count, plural, one {# Anlage} other {# Anlagen}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
@@ -437,9 +455,6 @@ msgstr "{count, plural, one {# Los freigegeben} other {# Lose freigegeben}}"
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# Fertigungsauftrag freigegeben} other {# Fertigungsaufträge freigegeben}}"
-
-msgid "{count} assets"
-msgstr "{count} Anlagen"
 
 msgid "{count} of {total} units"
 msgstr "{count} von {total} Einheiten"
@@ -592,8 +607,8 @@ msgstr "{sectionLineCount} Positionen"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} ausgewählt"
 
-msgid "{termMonths} months"
-msgstr "{termMonths} Monate"
+msgid "{termMonths, plural, one {# month} other {# months}}"
+msgstr "{termMonths, plural, one {# Monat} other {# Monate}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total} Phasen, um Ihr Unternehmen auf Carbon live zu schalten. Jede endet an einem Checkpoint."
@@ -718,9 +733,6 @@ msgstr "1 Auftrag erstellt"
 
 msgid "1 line"
 msgstr "1 Position"
-
-msgid "1 month"
-msgstr "1 Monat"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 Teil übersprungen — es hat bereits einen offenen Auftrag"
@@ -1369,6 +1381,9 @@ msgstr "Der Status einer Lieferung ändert sich"
 
 msgid "A shipment's tracking number changes"
 msgstr "Die Verfolgungsnummer einer Lieferung ändert sich"
+
+msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
+msgstr "Ein kurzfristiges Leasing kann 12 Monate ab Beginn nicht überschreiten. Beenden Sie es und geben Sie die Verlängerung als neues Leasing ein."
 
 msgid "A short-term asset has no schedule: only its payment rows change, and no journal is posted."
 msgstr "Eine kurzfristige Anlage hat keinen Terminplan: nur ihre Zahlungspositionen ändern sich und es wird kein Buchungssatz gebucht."
@@ -3364,8 +3379,8 @@ msgstr "Bitten Sie einen Admin mit {0}-Berechtigung, den ersten {1} hinzuzufüge
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "Fragt die Abschreibung, was ein neuer Lauf für diesen Zeitraum jetzt abschreiben würde, und prüft auf Entwurfläufe, die in diesem Zeitraum enden. Erstellen Sie den Lauf und buchen Sie ihn, damit der Zeitraum seine Abschreibungsaufwand und kumulierte Abschreibung hat. Überspringen Sie mit einem Grund, wenn die Abschreibung in diesem Zeitraum nicht zutrifft."
 
-msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "Fragt die Umsatzerfassung, was ein neuer Lauf für diesen Zeitraum jetzt erfassen würde – aufgeschobene Rechnungsumsatzerlöse, aufgelaufene Miete und Vertragserlöse – und prüft auf Entwurfläufe, die bis zum Ende des Zeitraums fällige Umsatzerlöse halten. Erstellen Sie den Lauf und buchen Sie ihn, damit die Umsatzerlöse zum Ledger gelangen. Überspringen Sie mit einem Grund, wenn nichts erfasst werden sollte."
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr "Fragt die Ertragsrealisierung, was ein neuer Durchlauf für diesen Zeitraum jetzt realisieren würde — aufgeschobene Rechnungs-Umsatzerlöse und Vertrags-Umsatzerlöse — und prüft auf Entwurfdurchläufe, die Umsatzerlöse halten, die bis zum Ende des Zeitraums fällig sind. Erstellen Sie den Durchlauf und buchen Sie ihn, damit die Umsatzerlöse das Hauptbuch erreichen. Überspringen Sie es mit einem Grund, wenn nichts realisiert werden sollte."
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "Fragt den Leasinglauf, was ein neuer Lauf für diesen Zeitraum jetzt buchen würde – Leasingzinsen und Amortisation von Nutzungsrechten, Mietmiete zum Aufschieben oder Abgrenzung und Leasingzinsen für Sales-Type-Leasingverhältnisse – und prüft auf Entwurfsleasingläufe mit Buchungen, die bis zum Ende des Zeitraums fällig sind. Erstellen Sie den Lauf und buchen Sie ihn, damit die Buchungen das Hauptbuch erreichen. Überspringen Sie mit einem Grund, wenn nichts gebucht werden sollte."
@@ -4339,8 +4354,8 @@ msgstr "Storniert"
 msgid "Cancelling voids the agreement and releases its units. An agreement with a unit on rent or an invoiced period cannot be cancelled."
 msgstr "Das Abbrechen storniert den Vertrag und gibt seine Einheiten frei. Ein Vertrag mit einer vermieteten Einheit oder einer abgerechneten Periode kann nicht abgebrochen werden."
 
-msgid "Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead."
-msgstr "Das Stornieren hebt die Buchungssätze des Leasings auf und entfernt den Terminplan. Ein Leasing mit einer fakturierten Zahlung oder einem gebuchten Leasinglauf kann nicht storniert werden; beenden Sie stattdessen seine Anlagen."
+msgid "Cancelling voids the lease's journal and removes the schedule. Once a payment is invoiced, a lease run has posted, or the lease has been modified or an asset ended, it cannot be cancelled; terminate its assets instead."
+msgstr "Das Stornieren annulliert den Leasing-Buchungssatz und entfernt den Terminplan. Sobald eine Zahlung fakturiert wird, ein Leasing-Durchlauf gebucht wurde, das Leasing geändert wurde oder eine Anlage beendet wurde, kann es nicht storniert werden; beenden Sie stattdessen seine Anlagen."
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Kann keine Parameter zu nicht gespeichertem Vorgang hinzufügen"
@@ -4630,9 +4645,6 @@ msgstr "Änderungslog-Newsletter"
 
 msgid "Changes"
 msgstr "Änderungen"
-
-msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
-msgstr "Das Ändern einer Zahlungsbedingung oder eines Datums regeneriert die Zahlungszeilen. Bearbeitete Zeilen werden ersetzt."
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "Das Ändern der Komponenten definiert die Gruppe neu. Führen Sie Motion Planning erneut aus, um die Änderung auf die Schritte anzuwenden."
@@ -8057,8 +8069,8 @@ msgstr "Jede Anlage wird separat verbucht, zu ihrer eigenen Zahlung. Klicken Sie
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "Jede Anlage wird separat verbucht. Seine Zahlungspositionen werden aus den Leasingzahlungsbedingungen erzeugt."
 
-msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
-msgstr "Der beizulegende Zeitwert, die Nutzungsdauer und die Kaufoption jeder Anlage befinden sich in ihrer Zeile in der Anlagenkarte."
+msgid "Each asset's classification and the tests behind it are on the <0>lease's details</0>."
+msgstr "Die Klassifizierung jeder Anlage und die zugrunde liegenden Tests finden Sie in den <0>Details des Leasings</0>."
 
 msgid "Each asset's payment rows below are cut from these terms at its own payment. Changing a term cuts them again."
 msgstr "Die nachfolgenden Zahlungspositionen jeder Anlage werden aus diesen Bedingungen bei ihrer Zahlung erzeugt. Das Ändern einer Bedingung erzeugt sie erneut."
@@ -10015,10 +10027,6 @@ msgstr "Flotteneinheit"
 
 msgid "Fleet Units"
 msgstr "Flotteneinheiten"
-
-#. placeholder {0}: lease.assetCount
-msgid "for {0} assets"
-msgstr "für {0} Anlagen"
 
 msgid "For <0/>"
 msgstr "Für <0/>"
@@ -12107,6 +12115,10 @@ msgstr "Leasing-Durchlauf-Einträge und gebuchte Leasing-Rechnungspositionen in 
 
 msgid "Lease Runs"
 msgstr "Leasing-Durchläufe"
+
+#. placeholder {0}: formatDate(leaseRunPostedThrough)
+msgid "Lease runs are posted through {0}"
+msgstr "Leasing-Durchläufe werden bis zum {0} gebucht."
 
 msgid "Lease setup"
 msgstr "Leasing-Einrichtung"
@@ -14269,6 +14281,9 @@ msgstr "Keine Fertigungsaufträge wurden erstellt"
 msgid "No journal lines in scope for this period"
 msgstr "Keine Buchungssatzpositionen im Umfang für diesen Zeitraum"
 
+msgid "No lease run is posted yet"
+msgstr "Es wurde noch kein Leasing-Durchlauf gebucht."
+
 msgid "No lines"
 msgstr "Keine Zeilen"
 
@@ -15648,6 +15663,9 @@ msgstr "Verantwortlicher (Kostenstelle)"
 
 msgid "Ownership"
 msgstr "Zuständigkeit"
+
+msgid "Ownership passes to you at the end of the lease, for nothing. The leased asset becomes a fixed asset that depreciates from the end date. The lease's other assets do not change."
+msgstr "Die Eigentümerschaft geht am Ende des Leasings kostenlos auf Sie über. Die geleaste Anlage wird zum Anlagegut, das ab dem Enddatum abgeschrieben wird. Die anderen Anlagen des Leasings ändern sich nicht."
 
 msgid "Ownership transfers"
 msgstr "Eigentumsübertragungen"
@@ -17919,6 +17937,9 @@ msgstr "Position entfernen"
 
 msgid "Remove order"
 msgstr "Bestellung entfernen"
+
+msgid "Remove Override"
+msgstr "Übersteuerung entfernen"
 
 msgid "Remove pair"
 msgstr "Paar entfernen"
@@ -21322,6 +21343,13 @@ msgstr "Außer Betrieb nehmen"
 msgid "Take Out of Service"
 msgstr "Außer Betrieb nehmen"
 
+msgid "Take Ownership"
+msgstr "Eigentümerschaft übernehmen"
+
+#. placeholder {0}: line.description
+msgid "Take Ownership: {0}"
+msgstr "Eigentümerschaft übernehmen: {0}"
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "Berücksichtigen Sie die kürzeste verbleibende Haltbarkeit der verbrauchten Werkstoffe zur Herstellung dieses Artikels. Verwenden Sie dies, wenn der Verfall des Produkts von seinen Inhaltsstoffen abhängt."
 
@@ -21871,6 +21899,9 @@ msgstr "Der Mitarbeiter, der für diese Kostenstelle verantwortlich ist – wenn
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "Die Aktivierung setzt den Bestand jedes Artikels auf seine Istmenge zum Stichtagsdatum zurück, zum unten angegebenen Stückpreis. Überprüfen Sie die Kosten jedes Artikels mit Durchschnittskostenmethode."
 
+msgid "The end date of the lease"
+msgstr "Das Enddatum des Leasings"
+
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "Der durchgehende kommerzielle Ablauf von der Angebotserstellung für einen Kunden bis zum Zahlungsempfang: Anfrage zu Angebot zu Kundenauftrag, dann Lieferung, Rechnung und eingegangene Zahlung."
 
@@ -22038,6 +22069,11 @@ msgstr "Der letzte Tag, um eine Verlängerungs- oder Kündigungsmitteilung einzu
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "Das späteste Datum, um diese Bestellung aufzugeben, damit sie bis zum Bedarfsdatum eintrifft, angesichts der Beschaffungszeit des Lieferanten."
+
+#. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
+#. placeholder {1}: formatDate(asOf)
+msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
+msgstr "Die Leasing-Buchungssätze vom {0} bis {1} sind noch nicht im Hauptbuch. Diese Zahlen folgen den Leasing-Terminplänen, daher werden sie nicht mit dem Hauptbuch übereinstimmen, bis ein Leasing-Durchlauf sie bucht."
 
 msgid "The lease is ready to activate."
 msgstr "Das Leasing ist bereit zur Aktivierung."
@@ -22231,6 +22267,9 @@ msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Der Pfad, auf dem die Komponenten dieses Schritts während der Wiedergabe an ihren Platz fahren; aus dem Modell ermittelt oder von Hand mit Bearbeitungspfad gezeichnet."
 
+msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
+msgstr "Die Zahlung ab dem wirksamen Datum. Die Erhöhung tritt immer noch an jedem Jahrestag des Anfangsdatums ein."
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Das Personal auf der Carbon-Seite, das Ihre Umsetzung durchführt, und wie Sie sie erreichen."
 
@@ -22278,6 +22317,13 @@ msgstr "Die Verfahren, die dieser Arbeitsplatz ausführen kann; erscheint in Ver
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Der Provider bietet keine Dimensionsziele. Aktivieren Sie die Funktion zuerst beim Provider (z. B. Tracking-Kategorien, Klassenverfolgung oder Felder)."
+
+#. placeholder {0}: formatter.format(invoicedOption)
+msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
+msgstr "Die Kaufoption ist bereits mit {0} fakturiert. Nutzen Sie sie zu diesem Preis, oder löschen Sie zuerst die Rechnung."
+
+msgid "The purchase option is already invoiced; its invoice settles the price"
+msgstr "Die Kaufoption ist bereits fakturiert; ihre Rechnung bestimmt den Preis."
 
 msgid "The purchase order"
 msgstr "Die Bestellung"

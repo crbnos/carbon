@@ -20,6 +20,7 @@ import {
   getLeaseRelatedDocuments,
   getLeaseSchedule
 } from "~/modules/purchasing";
+import { leaseOpeningAsOf } from "~/modules/purchasing/purchasing.server";
 import type {
   LeaseFixedAssets,
   LeasePaymentInvoiceLinks,
@@ -30,6 +31,7 @@ import {
   LeaseHeader,
   LeaseProperties
 } from "~/modules/purchasing/ui/Leases";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -96,6 +98,31 @@ export async function loader({
         companyId,
         leaseId: id,
         error: result.error
+      });
+    }
+  }
+
+  // A Draft that commenced before the accounting cutover opens with a
+  // balance on this date: its Skipped payment check needs it.
+  const accountingCutoverDate = settings.data?.accountingCutoverDate ?? null;
+  let openingAsOf: string | null = null;
+  if (
+    lease.data.status === "Draft" &&
+    accountingCutoverDate &&
+    lease.data.commencementDate &&
+    lease.data.commencementDate < accountingCutoverDate
+  ) {
+    try {
+      openingAsOf = await leaseOpeningAsOf(getDatabaseClient(), {
+        companyId,
+        cutoverDate: accountingCutoverDate
+      });
+    } catch (err) {
+      // The UI falls back to the cutover itself.
+      logger.error("Lease opening balance date read failed", {
+        companyId,
+        leaseId: id,
+        error: err
       });
     }
   }
@@ -177,7 +204,8 @@ export async function loader({
         settings.data?.leaseSubstantiallyAllThresholdPercent ?? 90
       ),
       shortTermExpedient: settings.data?.leaseShortTermExpedient ?? true,
-      accountingCutoverDate: settings.data?.accountingCutoverDate ?? null
+      accountingCutoverDate,
+      openingAsOf
     }
   };
 }

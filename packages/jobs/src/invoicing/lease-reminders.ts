@@ -6,9 +6,10 @@
 // date (the last day to give notice or exercise an option) and the end date,
 // each once, when it is `leadDays` away or closer. A date already passed is
 // not "coming up" and is never reminded. The lease records the date it last
-// reminded for, so a moved date is reminded again. Also the two writes the
-// job makes for leases: stamping the reminded dates, and expiring the leases
-// that have run their course.
+// reminded for, so a moved date is reminded again. Also what the job reads
+// to send them (`loadLeaseReminders`), and the two writes it makes for
+// leases: stamping the reminded dates, and expiring the leases that have run
+// their course.
 // Spec: `.ai/specs/2026-10-11-lessee-leases.md` → Notifications.
 
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -29,6 +30,22 @@ export type LeaseReminder = {
   kind: "notice" | "end";
   /** `YYYY-MM-DD`. */
   date: string;
+};
+
+/** `companySettings.leaseReminderDays` when a company has no settings row. */
+const DEFAULT_LEASE_REMINDER_DAYS = 90;
+
+/** A right-of-use asset carried at less than this is fully amortized: the
+ *  schedule's last closing balance can keep a rounding residue. */
+const AMORTIZED_ROU_TOLERANCE = 0.005;
+
+export type LeaseReminderPlan = {
+  reminders: LeaseReminder[];
+  /** `[leaseId, userId]`: each reminded lease's owner (assignee, else
+   *  creator), when they can be notified in this company. */
+  owners: [string, string][];
+  /** The company's "Also notify" selection. */
+  groupIds: string[];
 };
 
 /** @param today `YYYY-MM-DD` in the company's timezone. */
@@ -59,6 +76,67 @@ export function dueLeaseReminders(
     }
   }
   return reminders;
+}
+
+/** What the daily job reminds a company's Active leases of today, and to
+ *  whom. */
+export async function loadLeaseReminders(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  today: string
+): Promise<LeaseReminderPlan> {
+  const [leases, settings] = await Promise.all([
+    db
+      .selectFrom("lease")
+      .select([
+        "id",
+        "assignee",
+        "createdBy",
+        "noticeDate",
+        "endDate",
+        "noticeRemindedFor",
+        "endRemindedFor"
+      ])
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Active")
+      .execute(),
+    db
+      .selectFrom("companySettings")
+      .select(["leaseReminderDays", "invoiceNotificationGroup"])
+      .where("id", "=", companyId)
+      .executeTakeFirst()
+  ]);
+  const reminders = dueLeaseReminders(
+    leases,
+    today,
+    settings?.leaseReminderDays ?? DEFAULT_LEASE_REMINDER_DAYS
+  );
+  const groupIds = settings?.invoiceNotificationGroup ?? [];
+  if (reminders.length === 0) return { reminders, owners: [], groupIds };
+
+  const remindedIds = new Set(reminders.map((r) => r.leaseId));
+  const ownerOf = leases
+    .filter((l) => remindedIds.has(l.id))
+    .map((l) => ({ id: l.id, owner: l.assignee ?? l.createdBy }))
+    .filter((l) => l.owner !== "system");
+  const ownerIds = [...new Set(ownerOf.map((l) => l.owner))];
+  const members =
+    ownerIds.length > 0
+      ? await db
+          .selectFrom("userToCompany")
+          .select("userId")
+          .where("companyId", "=", companyId)
+          .where("userId", "in", ownerIds)
+          .execute()
+      : [];
+  const memberIds = new Set(members.map((m) => m.userId));
+  return {
+    reminders,
+    owners: ownerOf
+      .filter((l) => memberIds.has(l.owner))
+      .map((l) => [l.id, l.owner]),
+    groupIds
+  };
 }
 
 /** Records the dates the owners were reminded of, so each is sent once. A
@@ -139,7 +217,8 @@ export async function expireLeases(
                 ORDER BY sl."periodDate" DESC LIMIT 1
               ) last
               WHERE l."leaseId" = "lease"."id" AND l."companyId" = "lease"."companyId"
-                AND l."status" = 'Active' AND last."closingRouAsset" > 0.005
+                AND l."status" = 'Active'
+                AND last."closingRouAsset" > ${AMORTIZED_ROU_TOLERANCE}
             )`
           ])
         )

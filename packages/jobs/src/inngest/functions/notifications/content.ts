@@ -13,11 +13,17 @@ import {
 import { ERP_URL } from "@carbon/env";
 import {
   type NotificationDetail,
-  NotificationEvent
+  NotificationEvent,
+  type RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import { NonRetriableError } from "inngest";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
+/** The approvable document of an Approval* event, or what a Recurring
+ *  invoicing notification lists. */
+type NotificationDocumentType =
+  | ApprovalDocumentType
+  | RecurringInvoicingDocumentType;
 
 // The ERP's /api/link route resolves event + documentId to the right page
 // (switching the user's active company first) — route shapes never leak here.
@@ -25,7 +31,7 @@ export function buildNotificationLink(
   event: NotificationEvent,
   documentId: string,
   companyId: string,
-  documentType?: ApprovalDocumentType
+  documentType?: NotificationDocumentType
 ): string {
   const params = new URLSearchParams({ event, documentId, companyId });
   if (documentType) params.set("documentType", documentType);
@@ -122,7 +128,7 @@ export function buildDetails(
 type EventContentOptions = {
   companyId: string;
   // Which approvable document an Approval* event is about.
-  documentType?: ApprovalDocumentType;
+  documentType?: NotificationDocumentType;
   documentIds?: string[];
   userId?: string;
   // Workflow-authored text, carried on the payload instead of read from a document.

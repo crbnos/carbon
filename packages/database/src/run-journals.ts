@@ -20,6 +20,7 @@
 
 import { type AccountClass, toStoredAmount } from "./ledger.ts";
 import { equals } from "./precision.ts";
+import { RUN_SOURCE_TYPE, type RunType } from "./run-type.ts";
 import type { Database } from "./types.ts";
 
 type Enums = Database["public"]["Enums"];
@@ -363,8 +364,8 @@ export type RecognitionScheduleRow = {
   customerContractLineId: string | null;
   rentalLeaseScheduleLineId: string | null;
   /** A lessee lease's row: the lease, and the schedule line it posts. */
-  leaseId?: string | null;
-  leaseScheduleLineId?: string | null;
+  leaseId: string | null;
+  leaseScheduleLineId: string | null;
 };
 
 /** The documents the rows' journal lines reference, by source line id. */
@@ -397,11 +398,11 @@ export type RecognitionSources = {
       projectId: string | null;
     }
   >;
-  /** Lessee leases, by lease id. */
-  leases?: Map<string, { supplierId: string; locationId: string | null }>;
+  /** Lessee leases, by lease id. Every lessee row's lease must be here. */
+  leases: Map<string, { supplierId: string; locationId: string | null }>;
   /** Each lessee schedule line's asset and the asset's location, by
-   *  `leaseScheduleLine` id. */
-  leaseAssets?: Map<string, { leaseLineId: string; locationId: string | null }>;
+   *  `leaseScheduleLine` id. Every lessee row's line must be here. */
+  leaseAssets: Map<string, { leaseLineId: string; locationId: string | null }>;
 };
 
 export type RecognitionJournal = RunJournal & {
@@ -437,19 +438,30 @@ function recognitionSource(
   "documentType" | "documentId" | "documentLineReference" | "dimensions"
 > {
   // A lessee lease's row references the lease and its asset, with the
-  // supplier and the asset's location (else the lease's).
-  const lease = row.leaseId ? sources.leases?.get(row.leaseId) : undefined;
+  // supplier and the asset's location (else the lease's). Both must be
+  // loaded: a line with no supplier or asset would post untraceably.
   if (row.leaseId) {
+    const lease = sources.leases.get(row.leaseId);
+    if (!lease) {
+      throw new Error(
+        `Lease ${row.leaseId} of schedule row ${row.scheduleId} was not loaded`
+      );
+    }
     const asset = row.leaseScheduleLineId
-      ? sources.leaseAssets?.get(row.leaseScheduleLineId)
+      ? sources.leaseAssets.get(row.leaseScheduleLineId)
       : undefined;
+    if (!asset) {
+      throw new Error(
+        `The leased asset of schedule row ${row.scheduleId} was not loaded`
+      );
+    }
     return {
       documentType: "Lease",
       documentId: row.leaseId,
-      documentLineReference: asset?.leaseLineId ?? null,
+      documentLineReference: asset.leaseLineId,
       dimensions: {
-        Supplier: lease?.supplierId ?? null,
-        Location: asset?.locationId ?? lease?.locationId ?? null
+        Supplier: lease.supplierId,
+        Location: asset.locationId ?? lease.locationId
       }
     };
   }
@@ -500,12 +512,13 @@ function recognitionSource(
  * still gets a journal, with no lines. The run's journal is the one of its
  * own period end, else the latest.
  *
- * Throws when an account of any row has no class.
+ * Throws when an account of any row has no class, or when a lessee row's
+ * lease or leased asset is not in `sources`.
  */
 export function buildRecognitionJournals(args: {
   /** A lease run posts as 'Lease Run', a revenue recognition run as
    *  'Revenue Recognition'. */
-  runType: Enums["runType"];
+  runType: RunType;
   runReadableId: string;
   runPeriodEnd: string;
   rows: RecognitionScheduleRow[];
@@ -525,14 +538,8 @@ export function buildRecognitionJournals(args: {
   const byDate = new Map<string, RecognitionJournal>();
   for (const row of rows) {
     const journal = byDate.get(row.postingDate) ?? {
-      description:
-        runType === "Lease"
-          ? `Lease Run ${runReadableId}`
-          : `Revenue Recognition ${runReadableId}`,
-      sourceType:
-        runType === "Lease"
-          ? ("Lease Run" as const)
-          : ("Revenue Recognition" as const),
+      description: `${RUN_SOURCE_TYPE[runType]} ${runReadableId}`,
+      sourceType: RUN_SOURCE_TYPE[runType],
       postingDate: row.postingDate,
       lines: [],
       scheduleIds: [],

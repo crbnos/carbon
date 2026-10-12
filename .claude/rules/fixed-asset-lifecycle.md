@@ -314,8 +314,12 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
    lease page → the asset in the explorer → its page → **Exercise Purchase Option**,
    `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
-   Short-Term asset, an asset with no `purchaseOptionAmount`, and a
-   Construction in Progress class ("Choose an in-service fixed asset class").
+   Short-Term asset (and an open-ended lease, whose assets all are), an
+   exercise date before the commencement, and a Construction in Progress
+   class ("Choose an in-service fixed asset class"). An asset with no
+   `purchaseOptionAmount` can be taken only when `ownershipTransfers`: on the
+   lease's end date, at price 0 (ownership passes for nothing); with neither,
+   it is refused ("has no purchase option").
    In ONE transaction it posts a `'Lease'` journal (`purchaseLines`,
    `post-lease/lessee.ts`): Dr the class's `assetAccountId` at
    `assetCost = ROU cost − accumulated ROU amortization + price − carrying
@@ -325,7 +329,8 @@ fifth (5, a lessee lease's purchase option) inserts the asset already Active:
    as a `Purchase Option` `leasePayment` row whose Lease invoice line debits
    the liability — or nothing, when an option row was already invoiced at that
    price). Then it INSERTS a new `fixedAsset` directly with `status 'Active'`,
-   `quantity 1`, the asset's location (else the lease's), `acquisitionCost = assetCost`, `acquisitionDate =
+   `quantity 1`, the leased asset's `serialNumber`, the asset's location (else
+   the lease's), `acquisitionCost = assetCost`, `acquisitionDate =
    depreciationStartDate =` the exercise date, and the class's method, useful
    life and residual; no `fixedAssetCipCost` row and no accumulated
    depreciation. `leaseLine.fixedAssetId` and the asset's `leaseEvent` (type

@@ -16,12 +16,9 @@ import {
   VStack
 } from "@carbon/react";
 import {
-  generateLeasePayments,
   INPUT_FORMAT,
   INPUT_STEP,
-  type LeasePaymentFrequency,
-  paymentMonthIndex,
-  remeasureLease
+  lesseeRemeasurementLegs
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
@@ -29,7 +26,7 @@ import { useFetcher } from "react-router";
 import {
   DatePicker,
   Hidden,
-  Number as NumberField,
+  NumberControlled,
   Select,
   Submit,
   TextArea
@@ -40,26 +37,40 @@ import {
   leaseModifyValidator,
   leasePaymentFrequencies
 } from "../../purchasing.models";
-import LeaseJournalPreview, {
-  type LeaseJournalPreviewRow
-} from "./LeaseJournalPreview";
-import type { Lease, LeaseLine, LeaseScheduleLine } from "./types";
-import { firstOpenLeaseMonth, leaseCarryingAt } from "./utils";
+import LeaseJournalPreview from "./LeaseJournalPreview";
+import type {
+  Lease,
+  LeaseLine,
+  LeasePayment,
+  LeaseScheduleLine
+} from "./types";
+import { useLeaseFrequencyLabel, useLeaseLegLabel } from "./useLeaseLabels";
+import {
+  firstOpenLeaseMonth,
+  type LeaseModifyTerms,
+  leaseJournalRows,
+  leaseModifyPaymentAt,
+  leaseModifyPreview,
+  shortTermPastTwelveMonths
+} from "./utils";
 
 type LeaseModifyModalProps = {
   lease: Lease;
   lines: LeaseLine[];
+  payments: LeasePayment[];
   schedule: LeaseScheduleLine[];
   onClose: () => void;
 };
 
 /** Remeasure every active asset of an Active lease from the first day of a
  *  lease month: each asset's remaining payments are cut again from the new
- *  terms at its own payment and re-discounted at the revised rate, and its
- *  right-of-use asset moves with its liability. */
+ *  terms — still on the commencement's months and anniversaries — at the
+ *  payment it pays from the effective date, and re-discounted at the revised
+ *  rate; its right-of-use asset moves with its liability. */
 const LeaseModifyModal = ({
   lease,
   lines,
+  payments,
   schedule,
   onClose
 }: LeaseModifyModalProps) => {
@@ -68,99 +79,71 @@ const LeaseModifyModal = ({
   const fetcher = useFetcher<{}>();
   const currencyCode = lease.currencyCode ?? "";
   const decimals = useCurrencyDecimals(currencyCode);
+  const frequencyLabel = useLeaseFrequencyLabel();
+  const legLabel = useLeaseLegLabel();
 
   const active = lines.filter((line) => line.status === "Active");
-  const activeIds = active.map((line) => line.id);
-  const defaultEffectiveDate =
-    firstOpenLeaseMonth(
-      lease,
-      schedule.filter((row) => activeIds.includes(row.leaseLineId))
-    ) ?? "";
-  const [terms, setTerms] = useState({
-    effectiveDate: defaultEffectiveDate,
+  const activeIds = new Set(active.map((line) => line.id));
+
+  // Only what the user typed is state; every default comes from the lease.
+  const [termsInput, setTermsInput] = useState<Partial<LeaseModifyTerms>>({});
+  const [paymentInput, setPaymentInput] = useState<Record<string, number>>({});
+  const defaults: LeaseModifyTerms = {
+    effectiveDate:
+      firstOpenLeaseMonth(
+        lease,
+        schedule.filter((row) => activeIds.has(row.leaseLineId))
+      ) ?? "",
     endDate: lease.endDate ?? "",
     discountRate: Number(lease.discountRate ?? 0),
-    paymentFrequency: (lease.paymentFrequency ??
-      "Monthly") as LeasePaymentFrequency,
+    paymentFrequency:
+      leasePaymentFrequencies.find(
+        (frequency) => frequency === lease.paymentFrequency
+      ) ?? "Monthly",
     annualEscalationPercent: Number(lease.annualEscalationPercent ?? 0)
-  });
-  const [paymentOf, setPaymentOf] = useState<Record<string, number>>(() =>
-    Object.fromEntries(
-      active.map((line) => [line.id, Number(line.paymentAmount)])
-    )
-  );
+  };
+  const terms: LeaseModifyTerms = { ...defaults, ...termsInput };
+  const setTerm = (next: Partial<LeaseModifyTerms>) =>
+    setTermsInput((prev) => ({ ...prev, ...next }));
+
+  // The payment entered is the one the asset pays from the effective date:
+  // until it is typed over, the rate it pays then, escalated on each
+  // anniversary of the commencement.
+  const paymentOf = (line: LeaseLine) =>
+    paymentInput[line.id] ??
+    (terms.effectiveDate
+      ? leaseModifyPaymentAt(lease, line, terms.effectiveDate, decimals)
+      : Number(line.paymentAmount));
 
   const commencementDay = lease.commencementDate?.slice(8) ?? "";
   const moneyFormat = INPUT_FORMAT.money(currencyCode, decimals);
   const moneyStep = INPUT_STEP.money(decimals);
   const severalAssets = active.length > 1;
-
-  // Each capitalized asset's remeasurement; a short-term asset only has its
-  // payment rows cut again.
-  const remeasured = (() => {
-    if (!terms.effectiveDate || !terms.endDate || !lease.paymentTiming) {
-      return null;
-    }
-    const timing = lease.paymentTiming;
-    try {
-      return active
-        .filter((line) => line.lesseeClassification !== "Short-Term")
-        .map((line) => {
-          const carrying = leaseCarryingAt(line, schedule, terms.effectiveDate);
-          const rows = generateLeasePayments({
-            commencementDate: terms.effectiveDate,
-            endDate: terms.endDate,
-            paymentAmount: paymentOf[line.id] ?? 0,
-            frequency: terms.paymentFrequency,
-            timing,
-            annualEscalationPercent: terms.annualEscalationPercent,
-            purchaseOptionAmount: line.purchaseOptionReasonablyCertain
-              ? Number(line.purchaseOptionAmount ?? 0)
-              : 0,
-            decimals
-          }).filter((row) => row.amount > 0);
-          return {
-            line,
-            result: remeasureLease({
-              carryingLiability: carrying.liability,
-              carryingRouAsset: carrying.rouAsset,
-              remainingPayments: rows.map((row) => ({
-                monthIndex: paymentMonthIndex(row, terms.effectiveDate, timing),
-                amount: row.amount
-              })),
-              annualRate: terms.discountRate
-            })
-          };
-        });
-    } catch {
-      return null;
-    }
-  })();
-
-  const journal: LeaseJournalPreviewRow[] = (remeasured ?? []).flatMap(
-    ({ line, result }) => {
-      const { adjustment, gain } = result;
-      if (adjustment === 0 && gain === 0) return [];
-      const suffix = severalAssets ? ` — ${line.description}` : "";
-      const rouAsset = `${t`Right-of-Use Asset`}${suffix}`;
-      const liability = `${t`Lease Liability`}${suffix}`;
-      if (adjustment >= 0) {
-        return [
-          { account: rouAsset, debit: adjustment, credit: 0 },
-          { account: liability, debit: 0, credit: adjustment }
-        ];
-      }
-      return [
-        { account: liability, debit: -adjustment, credit: 0 },
-        { account: rouAsset, debit: 0, credit: -(adjustment + gain) },
-        {
-          account: `${t`Gain on Lease Modification`}${suffix}`,
-          debit: 0,
-          credit: gain
-        }
-      ];
-    }
+  const shortTermTooLong = shortTermPastTwelveMonths(
+    lease,
+    active,
+    terms.endDate
   );
+
+  const remeasured = leaseModifyPreview({
+    lease,
+    lines: active,
+    payments,
+    schedule,
+    terms,
+    paymentOf,
+    decimals
+  });
+  const journal = (remeasured ?? []).flatMap(({ line, result }) => {
+    const suffix = severalAssets ? ` — ${line.description}` : "";
+    return leaseJournalRows(
+      lesseeRemeasurementLegs({
+        adjustment: result.adjustment,
+        gain: result.gain
+      }),
+      (leg) => `${legLabel(leg.account, "modification")}${suffix}`
+    );
+  });
 
   return (
     <Modal
@@ -180,7 +163,7 @@ const LeaseModifyModal = ({
             ...terms,
             lines: active.map((line) => ({
               leaseLineId: line.id,
-              paymentAmount: Number(line.paymentAmount)
+              paymentAmount: paymentOf(line)
             })),
             notes: ""
           }}
@@ -204,16 +187,12 @@ const LeaseModifyModal = ({
                 name="effectiveDate"
                 label={t`Effective Date`}
                 helperText={t`The first day of a lease month (day ${commencementDay}) where a payment period starts, after the last posted lease run`}
-                onChange={(date) =>
-                  setTerms((prev) => ({ ...prev, effectiveDate: date ?? "" }))
-                }
+                onChange={(date) => setTerm({ effectiveDate: date ?? "" })}
               />
               <DatePicker
                 name="endDate"
                 label={t`End Date`}
-                onChange={(date) =>
-                  setTerms((prev) => ({ ...prev, endDate: date ?? "" }))
-                }
+                onChange={(date) => setTerm({ endDate: date ?? "" })}
               />
               {active.map((line, index) => (
                 <div key={line.id} className="w-full">
@@ -221,18 +200,20 @@ const LeaseModifyModal = ({
                     name={`lines[${index}].leaseLineId`}
                     value={line.id}
                   />
-                  <NumberField
+                  <NumberControlled
                     name={`lines[${index}].paymentAmount`}
                     label={
                       severalAssets
                         ? t`Payment — ${line.description}`
                         : t`Payment Amount`
                     }
+                    helperText={t`The payment from the effective date. Escalation still steps up on each anniversary of the commencement`}
+                    value={paymentOf(line)}
                     minValue={0}
                     step={moneyStep}
                     formatOptions={moneyFormat}
                     onChange={(value) =>
-                      setPaymentOf((prev) => ({
+                      setPaymentInput((prev) => ({
                         ...prev,
                         [line.id]: Number.isNaN(value) ? 0 : value
                       }))
@@ -245,51 +226,49 @@ const LeaseModifyModal = ({
                 label={t`Payment Frequency`}
                 options={leasePaymentFrequencies.map((frequency) => ({
                   value: frequency,
-                  label:
-                    frequency === "Monthly"
-                      ? t`Monthly`
-                      : frequency === "Quarterly"
-                        ? t`Quarterly`
-                        : t`Annual`
+                  label: frequencyLabel(frequency)
                 }))}
                 onChange={(option) => {
-                  if (option?.value) {
-                    setTerms((prev) => ({
-                      ...prev,
-                      paymentFrequency: option.value as LeasePaymentFrequency
-                    }));
-                  }
+                  const paymentFrequency = leasePaymentFrequencies.find(
+                    (frequency) => frequency === option?.value
+                  );
+                  if (paymentFrequency) setTerm({ paymentFrequency });
                 }}
               />
-              <NumberField
+              <NumberControlled
                 name="annualEscalationPercent"
                 label={t`Annual Escalation (%)`}
+                value={terms.annualEscalationPercent}
                 minValue={0}
                 step={INPUT_STEP.percent}
                 formatOptions={INPUT_FORMAT.percentPoints}
                 onChange={(value) =>
-                  setTerms((prev) => ({
-                    ...prev,
+                  setTerm({
                     annualEscalationPercent: Number.isNaN(value) ? 0 : value
-                  }))
+                  })
                 }
               />
-              <NumberField
+              <NumberControlled
                 name="discountRate"
                 label={t`Discount Rate (%)`}
                 helperText={t`The rate at the effective date`}
+                value={terms.discountRate}
                 minValue={0}
                 step={INPUT_STEP.percent}
                 formatOptions={INPUT_FORMAT.percentPoints}
                 onChange={(value) =>
-                  setTerms((prev) => ({
-                    ...prev,
-                    discountRate: Number.isNaN(value) ? 0 : value
-                  }))
+                  setTerm({ discountRate: Number.isNaN(value) ? 0 : value })
                 }
               />
               <TextArea name="notes" label={t`Notes`} />
-              {remeasured && remeasured.length === 0 ? (
+              {shortTermTooLong ? (
+                <p className="text-sm text-destructive">
+                  <Trans>
+                    A short-term asset cannot run past 12 months from the
+                    commencement. End it and enter the extension as a new lease.
+                  </Trans>
+                </p>
+              ) : remeasured && remeasured.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   <Trans>
                     A short-term asset has no schedule: only its payment rows
@@ -316,7 +295,11 @@ const LeaseModifyModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Submit isDisabled={!permissions.can("update", "purchasing")}>
+            <Submit
+              isDisabled={
+                !permissions.can("update", "purchasing") || shortTermTooLong
+              }
+            >
               <Trans>Modify Lease</Trans>
             </Submit>
           </ModalFooter>

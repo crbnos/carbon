@@ -23,8 +23,6 @@ export type LeaseEventTypeType = Enums["leaseEventType"];
  *  `nextDueDate` and `currentLiability`. */
 export type Lease = Database["public"]["Views"]["leases"]["Row"];
 
-export type LeaseListItem = Lease;
-
 /** One leased asset: a separate lease component with its own payment,
  *  classification and measurement. */
 export type LeaseLine = NonNullable<
@@ -59,13 +57,21 @@ export type LeasePolicy = {
   shortTermExpedient: boolean;
   /** A lease commenced before it opens with an opening balance. */
   accountingCutoverDate: string | null;
+  /** The date that opening balance is struck on: the cutover, or the first
+   *  open period after it (`post-lease` resolves it with
+   *  `resolveAccountingPeriod`). The cutover when not given. */
+  openingAsOf?: string | null;
 };
 
 /** The purchase invoice behind each invoiced payment row, keyed by the
  *  row's `purchaseInvoiceLineId`. */
 export type LeasePaymentInvoiceLinks = Record<
   string,
-  { id: string; invoiceId: string | null; status: string | null }
+  {
+    id: string;
+    invoiceId: string | null;
+    status: Enums["purchaseInvoiceStatus"] | null;
+  }
 >;
 
 /** The fixed assets the lease's events created, keyed by id. */

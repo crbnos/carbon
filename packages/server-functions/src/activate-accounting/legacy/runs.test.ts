@@ -135,13 +135,17 @@ describe("buildLegacyRecognitionJournals", () => {
       rentalAgreementLineId: null,
       customerContractLineId: null,
       rentalLeaseScheduleLineId: null,
+      leaseId: null,
+      leaseScheduleLineId: null,
       ...overrides
     };
   }
   const sources = {
     invoiceLines: new Map(),
     rentalLines: new Map(),
-    contractLines: new Map()
+    contractLines: new Map(),
+    leases: new Map(),
+    leaseAssets: new Map()
   };
   const classes = new Map([
     ["deferred", "Liability" as const],

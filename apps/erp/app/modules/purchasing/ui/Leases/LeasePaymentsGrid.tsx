@@ -17,6 +17,7 @@ import { LuPlus, LuRefreshCw, LuTrash } from "react-icons/lu";
 import { DateTime, Table } from "~/components";
 import { EditableDate, EditableNumber } from "~/components/Editable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
+import Money from "~/components/Money";
 import {
   rowMenuColumn,
   SetupSection,
@@ -25,7 +26,6 @@ import {
 } from "~/components/Setup";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
-import LeaseMoney from "./LeaseMoney";
 import LeasePaymentForm from "./LeasePaymentForm";
 import type { Lease, LeaseLine, LeasePayment } from "./types";
 import { useLeasePaymentTypeLabel } from "./useLeaseLabels";
@@ -165,7 +165,7 @@ const LeasePaymentsGrid = ({
         accessorKey: "amount",
         header: t`Amount`,
         cell: ({ row }) => (
-          <LeaseMoney value={row.original.amount} currencyCode={currencyCode} />
+          <Money value={row.original.amount} currencyCode={currencyCode} />
         )
       }
     ],
@@ -283,7 +283,7 @@ const LeasePaymentsGrid = ({
                 <span className="text-muted-foreground">
                   <Trans>Total Payments</Trans>
                 </span>
-                <LeaseMoney value={total} currencyCode={currencyCode} />
+                <Money value={total} currencyCode={currencyCode} />
               </span>
             </div>
           </>

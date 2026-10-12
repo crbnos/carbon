@@ -133,6 +133,11 @@ export function isNotificationTopicEnabledByDefault(
   }
 }
 
+// What a Recurring invoicing notification lists, which decides where its link
+// lands: the sales invoices the run posted or held, or the lease purchase
+// invoices it drafted. The two are never mixed in one notification.
+export type RecurringInvoicingDocumentType = "salesInvoice" | "purchaseInvoice";
+
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.
 export type NotificationDetail = {

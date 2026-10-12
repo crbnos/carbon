@@ -5,6 +5,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Card,
   CardContent,
   CardDescription,
@@ -21,13 +24,14 @@ import {
   Tr,
   VStack
 } from "@carbon/react";
-import { datetime, round } from "@carbon/utils";
+import { datetime, formatDate, round } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
 import { useMemo } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { Table } from "~/components";
@@ -38,7 +42,7 @@ import {
   useUrlParams
 } from "~/hooks";
 import { getLeaseLiabilities } from "~/modules/accounting";
-import type { LeaseLiabilityRow } from "~/modules/accounting/accounting.utils";
+import type { LeaseLiabilityRow } from "~/modules/accounting/lease-liabilities";
 import { useLesseeClassificationLabel } from "~/modules/purchasing/ui/Leases";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
@@ -63,8 +67,10 @@ function parseDateParam(raw: string | null): string | null {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // The lease tables' RLS is purchasing_view: without it every lease reads
+  // as absent and the report would show no liability at all.
   const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
+    view: ["accounting", "purchasing"],
     role: "employee"
   });
 
@@ -102,8 +108,17 @@ type DisplayRow = Omit<LeaseLiabilityRow, "classification"> & {
 };
 
 export default function LeaseLiabilitiesRoute() {
-  const { asOf, from, to, fiscalYears, rows, totals, costs } =
-    useLoaderData<typeof loader>();
+  const {
+    asOf,
+    from,
+    to,
+    fiscalYears,
+    rows,
+    totals,
+    costs,
+    leaseRunPostedThrough,
+    firstUnpostedLeaseMonth
+  } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const [, setParams] = useUrlParams();
   const currencyFormatter = useCurrencyFormatter();
@@ -440,6 +455,31 @@ export default function LeaseLiabilitiesRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
+      {firstUnpostedLeaseMonth && (
+        <div className="w-full p-4 pb-0">
+          <Alert variant="warning">
+            <LuTriangleAlert className="h-4 w-4" />
+            <AlertTitle>
+              {leaseRunPostedThrough ? (
+                <Trans>
+                  Lease runs are posted through{" "}
+                  {formatDate(leaseRunPostedThrough)}
+                </Trans>
+              ) : (
+                <Trans>No lease run is posted yet</Trans>
+              )}
+            </AlertTitle>
+            <AlertDescription>
+              <Trans>
+                The lease entries from {formatDate(firstUnpostedLeaseMonth)} to{" "}
+                {formatDate(asOf)} are not in the general ledger yet. These
+                figures follow the lease schedules, so they will not tie to the
+                ledger until a lease run posts them.
+              </Trans>
+            </AlertDescription>
+          </Alert>
+        </div>
+      )}
       <div className="flex-1 min-h-0 w-full">
         {/* Every row is returned at once, and search / sort / pagination are
             URL-driven server-side controls this loader does not read — turn

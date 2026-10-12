@@ -17,14 +17,16 @@ import { path, requestReferrer } from "~/utils/path";
 const logger = getLogger("erp", "lease-classification");
 
 /**
- * Overrides one leased asset's lessee classification (spec §2). An
+ * Overrides one leased asset's lessee classification (spec §2), or removes
+ * the override (`intent=remove`, D8) so the five tests decide again. An
  * accounting decision, so it is gated on `update: accounting` rather than
  * the purchasing permissions the rest of the lease uses; the read and the
  * write go through the service role, scoped to the company, the lease and
  * the asset in the URL, because an accountant need not hold
- * `purchasing_update` for the lease's RLS. Only a Draft lease's asset can
- * change — activation keeps an overridden value and posts the commencement
- * journal from it.
+ * `purchasing_update` for the lease's RLS (and the API guard refuses an
+ * override written by an API role). Only a Draft lease's asset can change —
+ * activation keeps an overridden value and posts the commencement journal
+ * from it. Both are audit-logged.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -38,14 +40,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const back = requestReferrer(request) ?? path.to.leaseSetup(id, "accounting");
 
   const formData = await request.formData();
-  const validation = await validator(leaseClassificationValidator).validate(
-    formData
-  );
-  if (validation.error) {
-    return validationError(validation.error);
+  const remove = formData.get("intent") === "remove";
+  let override: {
+    classification: "Operating" | "Finance";
+    reason: string;
+  } | null = null;
+  if (!remove) {
+    const validation = await validator(leaseClassificationValidator).validate(
+      formData
+    );
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+    override = validation.data;
   }
 
-  const { classification, reason } = validation.data;
   const serviceRole = getCarbonServiceRole();
 
   const [lease, line] = await Promise.all([
@@ -65,6 +74,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ]);
 
   if (lease.error || !lease.data || line.error || !line.data) {
+    logger.error("leased asset not found for a classification override", {
+      companyId,
+      leaseId: id,
+      leaseLineId: lineId,
+      error: lease.error ?? line.error
+    });
     throw redirect(
       path.to.leases,
       await flash(
@@ -91,8 +106,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await serviceRole
     .from("leaseLine")
     .update({
-      classificationOverride: classification,
-      classificationOverrideReason: reason,
+      classificationOverride: override?.classification ?? null,
+      classificationOverrideReason: override?.reason ?? null,
       updatedBy: userId,
       updatedAt: datetime.timestamp()
     })
@@ -108,13 +123,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       leaseId: id,
       leaseLineId: lineId,
+      remove,
       error: update.error
     });
     throw redirect(
       back,
       await flash(
         request,
-        error(update.error, "Failed to override the classification")
+        error(
+          update.error,
+          remove
+            ? "Failed to remove the classification override"
+            : "Failed to override the classification"
+        )
       )
     );
   }
@@ -131,8 +152,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Best-effort — the audit write creates the company's audit table on first
   // use, whether or not the audit log is switched on; a failure never undoes
-  // the override, and the asset keeps the override and its reason
-  // regardless.
+  // the change, and the asset keeps it regardless.
   try {
     await insertAuditLogEntries(serviceRole, companyId, [
       {
@@ -145,11 +165,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
         diff: {
           classificationOverride: {
             old: line.data.classificationOverride,
-            new: classification
+            new: override?.classification ?? null
           },
           classificationOverrideReason: {
             old: line.data.classificationOverrideReason,
-            new: reason
+            new: override?.reason ?? null
           }
         },
         metadata: { origin: "web" }
@@ -163,6 +183,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   throw redirect(
     back,
-    await flash(request, success(`Classified as ${classification}`))
+    await flash(
+      request,
+      success(
+        override
+          ? `Classified as ${override.classification}`
+          : "Classification override removed"
+      )
+    )
   );
 }

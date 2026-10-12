@@ -5,7 +5,8 @@
 import type { Database } from "@carbon/database";
 import type {
   NotificationDestination,
-  NotificationEvent
+  NotificationEvent,
+  RecurringInvoicingDocumentType
 } from "@carbon/notifications";
 import type { InvoiceAutomation } from "@carbon/utils";
 import type { RunTrigger } from "@carbon/workflows-core";
@@ -32,7 +33,9 @@ export type Events = {
         | { type: "group"; groupIds: string[] }
         | { type: "users"; userIds: string[] };
       from?: string;
-      documentType?: ApprovalDocumentType;
+      /** The approvable document of an Approval* event, or what a Recurring
+       *  invoicing notification lists. */
+      documentType?: ApprovalDocumentType | RecurringInvoicingDocumentType;
       /** Set by a workflow: the message is authored by the customer, not read from a document. */
       title?: string;
       body?: string;

@@ -27,6 +27,12 @@ import { credit, debit, debitSigned } from "../ledger";
 import { EPSILON, round } from "../precision";
 import { journalReference } from "../utils";
 import {
+  type CutoverPayment,
+  cutoverPaymentAdjustment,
+  invoicePostedBefore,
+  lesseeScheduleHasPaid
+} from "./lease-payments";
+import {
   type AccountDefaults,
   addTo,
   type CutoverArgs,
@@ -1168,6 +1174,13 @@ async function getDeferredRevenueItems(
  * falls before it. Read from the lease rows, not the commencement journal:
  * a lease commenced before the reset has none. Commencement sells the unit
  * to the lease, so the date is its asset's disposal date.
+ *
+ * A rent invoice credits the net investment when it posts, so a billing
+ * period that schedule line has taken off but whose invoice posts after the
+ * cutover (or is not invoiced yet) is added back, and one invoiced before the
+ * cutover that the schedule takes off later is taken off now
+ * (`cutoverPaymentAdjustment`). Line `i` of the schedule pays billing period
+ * `i`, dated at its end.
  */
 async function getLeaseNetInvestmentItems(
   db: CutoverDb,
@@ -1203,7 +1216,7 @@ async function getLeaseNetInvestmentItems(
   const lastScheduleLines = await db
     .selectFrom("rentalLeaseScheduleLine")
     .distinctOn("rentalAgreementLineId")
-    .select(["rentalAgreementLineId", "closingNetInvestment"])
+    .select(["rentalAgreementLineId", "periodDate", "closingNetInvestment"])
     .where("companyId", "=", companyId)
     .where(
       "rentalAgreementLineId",
@@ -1214,17 +1227,68 @@ async function getLeaseNetInvestmentItems(
     .orderBy("rentalAgreementLineId")
     .orderBy("periodDate", "desc")
     .execute();
-  const closingByLine = new Map(
-    lastScheduleLines.map((row) => [
-      row.rentalAgreementLineId,
-      Number(row.closingNetInvestment)
-    ])
+  const lastLineByLine = new Map(
+    lastScheduleLines.map((row) => [row.rentalAgreementLineId, row])
   );
+
+  const billingPeriods = await db
+    .selectFrom("rentalBillingPeriod as period")
+    .leftJoin("salesInvoiceLine as invoiceLine", (join) =>
+      join
+        .onRef("invoiceLine.id", "=", "period.salesInvoiceLineId")
+        .onRef("invoiceLine.companyId", "=", "period.companyId")
+    )
+    .leftJoin("salesInvoice as invoice", (join) =>
+      join
+        .onRef("invoice.id", "=", "invoiceLine.invoiceId")
+        .onRef("invoice.companyId", "=", "invoiceLine.companyId")
+    )
+    .select([
+      "period.rentalAgreementLineId",
+      "period.periodEnd",
+      "period.amount",
+      "period.status",
+      "invoice.status as invoiceStatus",
+      "invoice.postingDate as invoicePostingDate"
+    ])
+    .where("period.companyId", "=", companyId)
+    .where(
+      "period.rentalAgreementLineId",
+      "in",
+      leaseLines.map((line) => line.id)
+    )
+    .where("period.isAdjustment", "=", false)
+    .execute();
+  const paymentsByLine = new Map<string, CutoverPayment[]>();
+  for (const period of billingPeriods) {
+    const lastLine = lastLineByLine.get(period.rentalAgreementLineId);
+    const payments = paymentsByLine.get(period.rentalAgreementLineId) ?? [];
+    payments.push({
+      amount: Number(period.amount),
+      paidBySchedule: !!lastLine && period.periodEnd <= lastLine.periodDate,
+      settledBeforeCutover:
+        period.status === "Invoiced" &&
+        invoicePostedBefore(
+          period.invoiceStatus
+            ? {
+                status: period.invoiceStatus,
+                postingDate: period.invoicePostingDate
+              }
+            : null,
+          cutoverDate
+        )
+    });
+    paymentsByLine.set(period.rentalAgreementLineId, payments);
+  }
 
   const byAgreement = new Map<string, number>();
   for (const line of leaseLines) {
+    const lastLine = lastLineByLine.get(line.id);
     const netInvestment =
-      closingByLine.get(line.id) ?? Number(line.initialNetInvestment ?? 0);
+      (lastLine
+        ? Number(lastLine.closingNetInvestment)
+        : Number(line.initialNetInvestment ?? 0)) +
+      cutoverPaymentAdjustment(paymentsByLine.get(line.id) ?? []);
     const rate = Number(line.exchangeRate ?? 1) || 1;
     addTo(byAgreement, line.rentalAgreementId, netInvestment / rate);
   }
@@ -1258,7 +1322,13 @@ async function getLeaseNetInvestmentItems(
  *
  * - the lease liability: the closing liability of its last schedule line
  *   before the cutover (else its initial liability), plus any remeasurement
- *   effective after that line and before the cutover;
+ *   effective after that line and before the cutover, and corrected for the
+ *   payments that line and the invoices disagree on: a purchase invoice's
+ *   Lease line debits the liability when it posts, so a payment the schedule
+ *   has taken off whose invoice posts after the cutover (or is not invoiced
+ *   yet) is added back, and one invoiced before the cutover that a later
+ *   schedule line takes off is taken off now (`cutoverPaymentAdjustment`). A
+ *   Skipped row was paid outside Carbon, on its due date;
  * - the right-of-use asset at cost: the initial asset plus every
  *   remeasurement effective before the cutover;
  * - the accumulated amortization: every schedule line's amortization before
@@ -1285,7 +1355,9 @@ async function getLeaseLiabilityItems(
       "l.leaseId",
       "l.description",
       "l.initialLiability",
-      "l.initialRouAsset"
+      "l.initialRouAsset",
+      "lease.commencementDate",
+      "lease.paymentTiming"
     ])
     .where("l.companyId", "=", companyId)
     .where("lease.status", "in", [
@@ -1301,44 +1373,93 @@ async function getLeaseLiabilityItems(
   if (assets.length === 0) return [];
   const assetIds = assets.map((asset) => asset.id);
 
-  const [lastLines, amortization, events] = await Promise.all([
-    db
-      .selectFrom("leaseScheduleLine")
-      .distinctOn("leaseLineId")
-      .select(["leaseLineId", "periodDate", "closingLiability"])
-      .where("companyId", "=", companyId)
-      .where("leaseLineId", "in", assetIds)
-      .where("periodDate", "<", cutoverDate)
-      .orderBy("leaseLineId")
-      .orderBy("periodDate", "desc")
-      .execute(),
-    db
-      .selectFrom("leaseScheduleLine")
-      .select(["leaseLineId", (eb) => eb.fn.sum("rouAmortization").as("total")])
-      .where("companyId", "=", companyId)
-      .where("leaseLineId", "in", assetIds)
-      .where("periodDate", "<", cutoverDate)
-      .groupBy("leaseLineId")
-      .execute(),
-    db
-      .selectFrom("leaseEvent")
-      .select([
-        "leaseLineId",
-        "eventType",
-        "effectiveDate",
-        "liabilityBefore",
-        "liabilityAfter",
-        "rouAssetBefore",
-        "rouAssetAfter"
-      ])
-      .where("companyId", "=", companyId)
-      .where("leaseLineId", "in", assetIds)
-      .where("effectiveDate", "<", cutoverDate)
-      .execute()
-  ]);
+  const [lastLines, scheduleEnds, payments, amortization, events] =
+    await Promise.all([
+      db
+        .selectFrom("leaseScheduleLine")
+        .distinctOn("leaseLineId")
+        .select(["leaseLineId", "periodDate", "closingLiability"])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("periodDate", "<", cutoverDate)
+        .orderBy("leaseLineId")
+        .orderBy("periodDate", "desc")
+        .execute(),
+      db
+        .selectFrom("leaseScheduleLine")
+        .select([
+          "leaseLineId",
+          (eb) => eb.fn.max("periodDate").as("lastPeriodDate")
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .groupBy("leaseLineId")
+        .execute(),
+      db
+        .selectFrom("leasePayment as p")
+        .leftJoin("purchaseInvoiceLine as invoiceLine", (join) =>
+          join
+            .onRef("invoiceLine.id", "=", "p.purchaseInvoiceLineId")
+            .onRef("invoiceLine.companyId", "=", "p.companyId")
+        )
+        .leftJoin("purchaseInvoice as invoice", (join) =>
+          join
+            .onRef("invoice.id", "=", "invoiceLine.invoiceId")
+            .onRef("invoice.companyId", "=", "invoiceLine.companyId")
+        )
+        .select([
+          "p.leaseLineId",
+          "p.periodStart",
+          "p.periodEnd",
+          "p.dueDate",
+          "p.paymentType",
+          "p.amount",
+          "p.status",
+          "invoice.status as invoiceStatus",
+          "invoice.postingDate as invoicePostingDate"
+        ])
+        .where("p.companyId", "=", companyId)
+        .where("p.leaseLineId", "in", assetIds)
+        .execute(),
+      db
+        .selectFrom("leaseScheduleLine")
+        .select([
+          "leaseLineId",
+          (eb) => eb.fn.sum("rouAmortization").as("total")
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("periodDate", "<", cutoverDate)
+        .groupBy("leaseLineId")
+        .execute(),
+      db
+        .selectFrom("leaseEvent")
+        .select([
+          "leaseLineId",
+          "eventType",
+          "effectiveDate",
+          "liabilityBefore",
+          "liabilityAfter",
+          "rouAssetBefore",
+          "rouAssetAfter"
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("effectiveDate", "<", cutoverDate)
+        .execute()
+    ]);
   const lastLineByAsset = new Map(
     lastLines.map((row) => [row.leaseLineId, row])
   );
+  const scheduleEndByAsset = new Map(
+    scheduleEnds.map((row) => [row.leaseLineId, row.lastPeriodDate])
+  );
+  const paymentsByAsset = new Map<string, typeof payments>();
+  for (const payment of payments) {
+    const own = paymentsByAsset.get(payment.leaseLineId) ?? [];
+    own.push(payment);
+    paymentsByAsset.set(payment.leaseLineId, own);
+  }
   const amortizationByAsset = new Map(
     amortization.map((row) => [row.leaseLineId, Number(row.total ?? 0)])
   );
@@ -1363,10 +1484,41 @@ async function getLeaseLiabilityItems(
     );
 
     const lastLine = lastLineByAsset.get(asset.id);
+    const paidThrough = lastLine
+      ? {
+          periodDate: lastLine.periodDate,
+          isLastLine: scheduleEndByAsset.get(asset.id) === lastLine.periodDate
+        }
+      : null;
+    const paymentAdjustment = cutoverPaymentAdjustment(
+      (paymentsByAsset.get(asset.id) ?? []).map((payment) => ({
+        amount: Number(payment.amount),
+        paidBySchedule: lesseeScheduleHasPaid({
+          payment,
+          commencementDate: asset.commencementDate,
+          timing: asset.paymentTiming,
+          paidThrough
+        }),
+        settledBeforeCutover:
+          payment.status === "Skipped"
+            ? payment.dueDate < cutoverDate
+            : payment.status === "Invoiced" &&
+              invoicePostedBefore(
+                payment.invoiceStatus
+                  ? {
+                      status: payment.invoiceStatus,
+                      postingDate: payment.invoicePostingDate
+                    }
+                  : null,
+                cutoverDate
+              )
+      }))
+    );
     const liability =
       (lastLine
         ? Number(lastLine.closingLiability)
         : Number(asset.initialLiability ?? 0)) +
+      paymentAdjustment +
       remeasurements
         .filter(
           (event) => !lastLine || event.effectiveDate > lastLine.periodDate

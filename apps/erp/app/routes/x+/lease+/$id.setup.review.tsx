@@ -7,13 +7,14 @@ import type { ReactNode } from "react";
 import { LuCircleCheck, LuTriangleAlert } from "react-icons/lu";
 import { Link, useParams } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { useRouteData, useUser } from "~/hooks";
+import { useDateFormatter, useRouteData, useUser } from "~/hooks";
 import type { LeaseRouteData } from "~/modules/purchasing/ui/Leases";
 import {
   LeaseCommencementPreview,
   LeaseSummary,
   leaseActivationGaps,
-  OpenEndedExpedientNotice
+  OpenEndedExpedientNotice,
+  skippedPaymentBlockers
 } from "~/modules/purchasing/ui/Leases";
 import { path } from "~/utils/path";
 
@@ -25,6 +26,7 @@ export default function LeaseSetupReviewRoute() {
 
   const routeData = useRouteData<LeaseRouteData>(path.to.lease(id));
   const { company } = useUser();
+  const { formatDate } = useDateFormatter();
   if (!routeData) return null;
   const { lease, lines, payments, schedule, leasePolicy } = routeData;
 
@@ -35,6 +37,9 @@ export default function LeaseSetupReviewRoute() {
     baseCurrencyCode: company?.baseCurrencyCode,
     policy: leasePolicy
   });
+  const skipped = gaps.includes("skippedPayment")
+    ? skippedPaymentBlockers({ lease, lines, payments, policy: leasePolicy })
+    : [];
 
   return (
     <SetupBody>
@@ -88,6 +93,23 @@ export default function LeaseSetupReviewRoute() {
                   <Trans>Give every asset a payment.</Trans>
                 </Gap>
               )}
+              {skipped.map((blocker) => {
+                const asset = blocker.description;
+                const dueDate = formatDate(blocker.dueDate);
+                return (
+                  <Gap
+                    key={`${blocker.leaseLineId}:${blocker.dueDate}`}
+                    to={path.to.leaseSetup(id, "details")}
+                    icon={<LuTriangleAlert className="text-red-500" />}
+                  >
+                    <Trans>
+                      {asset}: the payment due {dueDate} is Skipped (paid
+                      outside Carbon), so nothing would take it off the lease
+                      liability. Set Invoice From on or before {dueDate}.
+                    </Trans>
+                  </Gap>
+                );
+              })}
               {gaps.includes("foreignCurrency") && (
                 <Gap
                   to={path.to.leaseSetup(id, "details")}

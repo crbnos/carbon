@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RunType } from "@carbon/database/run-type";
 import {
   Button,
   DatePicker,
@@ -21,14 +22,14 @@ import { LuCirclePlus } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
-import { path } from "~/utils/path";
 import RevenueRecognitionRunsTable, {
   type RevenueRecognitionRunListItem
 } from "./RevenueRecognitionRunsTable";
+import { RUN_PAGES } from "./runPages";
 
 type PeriodRunsPageProps = {
   /** Which runs the page lists and creates. */
-  type: "Revenue Recognition" | "Lease";
+  type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
   nextPeriodEnd: string;
@@ -55,8 +56,7 @@ export default function PeriodRunsPage({
   const [pickedPeriodEnd, setPeriodEnd] = useState<string | null>(null);
   const periodEnd = pickedPeriodEnd ?? nextPeriodEnd;
 
-  const isLease = type === "Lease";
-  const listPath = isLease ? path.to.leaseRuns : path.to.revenueRecognitionRuns;
+  const { listPath, newPath } = RUN_PAGES[type];
   const canCreate =
     permissions.can("create", "accounting") && !hasDraftBlocking;
 
@@ -94,13 +94,11 @@ export default function PeriodRunsPage({
       />
 
       <Confirm
-        action={
-          isLease ? path.to.newLeaseRun : path.to.newRevenueRecognitionRun
-        }
+        action={newPath}
         isOpen={confirmModal.isOpen}
         title={t`New Run`}
         text={
-          isLease
+          type === "Lease"
             ? t`This will create a draft lease run for the period ending ${formatDate(periodEnd)}. Every lease and rental schedule row due on or before that date will be included.`
             : t`This will create a draft revenue recognition run for the period ending ${formatDate(periodEnd)}. Every schedule row due on or before that date will be included.`
         }

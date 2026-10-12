@@ -4,12 +4,14 @@
 
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import type { RunType } from "@carbon/database/run-type";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
@@ -74,13 +76,16 @@ import {
   depreciationFloor,
   diffJournalLines,
   hasAccountingCutover,
-  type LeaseCostSummary,
-  type LeaseLiabilitySummary,
   monthEndOf,
-  summarizeLeaseCosts,
-  summarizeLeaseLiabilities,
   usageKey
 } from "./accounting.utils";
+import {
+  type LeaseCostSummary,
+  type LeaseLiabilitySummary,
+  leaseLiabilityAssets,
+  summarizeLeaseCosts,
+  summarizeLeaseLiabilities
+} from "./lease-liabilities";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -3297,10 +3302,7 @@ export async function getPeriodRunPreview(
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
-  const previewRun = (
-    type: "Revenue Recognition" | "Lease",
-    fallback: string
-  ): Promise<RunPreview> =>
+  const previewRun = (type: RunType, fallback: string): Promise<RunPreview> =>
     serverFns
       .system({ db, companyId, userId })
       .invoke("preview-revenue-recognition-run", { periodEnd, type })
@@ -3507,7 +3509,7 @@ export async function computePeriodReadiness(
       id: string;
       runId: string;
       periodEnd: string;
-      type: "Revenue Recognition" | "Lease";
+      type: RunType;
     };
   }>(
     client,
@@ -3523,7 +3525,7 @@ export async function computePeriodReadiness(
   );
 
   // Each run type: what a new run would claim, plus what its Draft runs hold.
-  const heldByType = (type: "Revenue Recognition" | "Lease") => {
+  const heldByType = (type: RunType) => {
     const draftRuns = new Map<
       string,
       { id: string; readableId: string; periodEnd: string }
@@ -8174,6 +8176,11 @@ export type LeaseLiabilities = LeaseLiabilitySummary & {
   from: string;
   to: string;
   costs: LeaseCostSummary;
+  /** The latest lessee month a lease run posted; null before the first. */
+  leaseRunPostedThrough: string | null;
+  /** The earliest lessee month due by `asOf` that no lease run has posted;
+   *  null when every one has. */
+  firstUnpostedLeaseMonth: string | null;
 };
 
 /**
@@ -8183,9 +8190,11 @@ export type LeaseLiabilities = LeaseLiabilitySummary & {
  * `[from, to]` (`summarizeLeaseCosts`). `from` defaults to the first day of
  * the fiscal year `asOf` falls in, `to` to `asOf`. Cost reads the lease rows
  * the lease run posted (status Posted, dated in the range) and the Lease
- * lines of posted purchase invoices (posting date in the range). Reads the
- * lease tables, whose RLS is `purchasing_view` — an accountant without
- * purchasing view sees an empty report.
+ * lines of posted purchase invoices (posting date in the range). Schedule
+ * lines, payments and events are read for the Operating and Finance assets
+ * of leases past Draft only, every read paged. Reads the lease tables, whose
+ * RLS is `purchasing_view` — a caller without purchasing view gets an empty
+ * report, so the report route requires it.
  * @mcp read
  */
 export async function getLeaseLiabilities(
@@ -8217,156 +8226,166 @@ export async function getLeaseLiabilities(
   const from = args.from ?? fiscalYearStart;
   const to = args.to ?? asOf;
 
-  const [leases, assets, lines, payments, scheduleRows, invoiceLines] =
-    await Promise.all([
-      fetchAllFromTable<{
-        id: string;
-        leaseId: string;
-        name: string;
-        supplierName: string | null;
-        status: Database["public"]["Enums"]["leaseStatus"];
-        commencementDate: string;
-        endDate: string;
-        discountRate: number;
-      }>(
-        client,
-        "leases",
-        "id, leaseId, name, supplierName, status, commencementDate, endDate, discountRate",
-        (query: any) =>
-          query
-            .eq("companyId", companyId)
-            .not("status", "in", '("Draft","Cancelled")')
-            .order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{
-        id: string;
-        leaseId: string;
-        description: string;
-        status: Database["public"]["Enums"]["leaseLineStatus"];
-        lesseeClassification:
-          | Database["public"]["Enums"]["lesseeClassification"]
-          | null;
-        initialLiability: number | null;
-        initialRouAsset: number | null;
-      }>(
-        client,
-        "leaseLine",
-        "id, leaseId, description, status, lesseeClassification, initialLiability, initialRouAsset",
-        (query: any) =>
-          query
-            .eq("companyId", companyId)
-            .not("lesseeClassification", "is", null)
-            .order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{
-        leaseLineId: string;
-        periodDate: string;
-        principalAmount: number;
-        closingLiability: number;
-        closingRouAsset: number;
-      }>(
-        client,
-        "leaseScheduleLine",
-        "leaseLineId, periodDate, principalAmount, closingLiability, closingRouAsset",
-        (query: any) =>
-          query.eq("companyId", companyId).order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{
-        id: string;
-        leaseLineId: string;
-        dueDate: string;
-        amount: number;
-      }>(
-        client,
-        "leasePayment",
-        "id, leaseLineId, dueDate, amount",
-        (query: any) =>
-          query.eq("companyId", companyId).order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{
-        type: Database["public"]["Enums"]["revenueScheduleType"];
-        amount: number;
-        leaseScheduleLine: { leaseLineId: string } | null;
-      }>(
-        client,
-        "revenueRecognitionSchedule",
-        "type, amount, leaseScheduleLine!revenueRecognitionSchedule_leaseScheduleLine_fkey(leaseLineId)",
-        (query: any) =>
-          query
-            .eq("companyId", companyId)
-            .not("leaseId", "is", null)
-            .eq("status", "Posted")
-            .gte("scheduledDate", from)
-            .lte("scheduledDate", to)
-            .order("id", { ascending: true })
-      ),
-      fetchAllFromTable<{
-        leaseId: string;
-        leasePaymentId: string | null;
-        extendedPrice: number | null;
-      }>(
-        client,
-        "purchaseInvoiceLine",
-        "leaseId, leasePaymentId, extendedPrice, purchaseInvoice!inner(status, postingDate)",
-        (query: any) =>
-          query
-            .eq("companyId", companyId)
-            .eq("invoiceLineType", "Lease")
-            .not("leaseId", "is", null)
-            .not("purchaseInvoice.status", "in", '("Draft","Pending","Voided")')
-            .gte("purchaseInvoice.postingDate", from)
-            .lte("purchaseInvoice.postingDate", to)
-            .order("id", { ascending: true })
-      )
-    ]);
+  const [
+    leases,
+    assets,
+    scheduleRows,
+    invoiceLines,
+    postedThrough,
+    firstUnposted
+  ] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("lease")
+        .select(
+          "id, leaseId, name, status, commencementDate, discountRate, supplier(name)"
+        )
+        .eq("companyId", companyId)
+        .not("status", "in", '("Draft","Cancelled")')
+        .order("id", { ascending: true })
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("leaseLine")
+        .select(
+          "id, leaseId, description, status, lesseeClassification, initialLiability, initialRouAsset"
+        )
+        .eq("companyId", companyId)
+        .not("lesseeClassification", "is", null)
+        .order("id", { ascending: true })
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("revenueRecognitionSchedule")
+        .select(
+          "type, amount, leaseScheduleLine!revenueRecognitionSchedule_leaseScheduleLine_fkey(leaseLineId)"
+        )
+        .eq("companyId", companyId)
+        .not("leaseId", "is", null)
+        .eq("status", "Posted")
+        .gte("scheduledDate", from)
+        .lte("scheduledDate", to)
+        .order("id", { ascending: true })
+    ),
+    // Typed by hand: the inferred type of this embed is too deep for tsc.
+    fetchAllFromTable<{
+      leasePaymentId: string | null;
+      extendedPrice: number | null;
+      leasePayment: { leaseLineId: string } | null;
+    }>(
+      client,
+      "purchaseInvoiceLine",
+      "leasePaymentId, extendedPrice, purchaseInvoice!inner(status, postingDate), leasePayment!purchaseInvoiceLine_leasePayment_fkey(leaseLineId)",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("invoiceLineType", "Lease")
+          .not("leaseId", "is", null)
+          .not("purchaseInvoice.status", "in", '("Draft","Pending","Voided")')
+          .gte("purchaseInvoice.postingDate", from)
+          .lte("purchaseInvoice.postingDate", to)
+          .order("id", { ascending: true })
+    ),
+    // The figures are the schedule's. When a lessee month due by `asOf` is
+    // not posted yet, the report says how far the lease run has posted.
+    client
+      .from("revenueRecognitionSchedule")
+      .select("scheduledDate")
+      .eq("companyId", companyId)
+      .not("leaseId", "is", null)
+      .eq("status", "Posted")
+      .order("scheduledDate", { ascending: false })
+      .limit(1),
+    client
+      .from("revenueRecognitionSchedule")
+      .select("scheduledDate")
+      .eq("companyId", companyId)
+      .not("leaseId", "is", null)
+      .eq("status", "Planned")
+      .lte("scheduledDate", asOf)
+      .order("scheduledDate", { ascending: true })
+      .limit(1)
+  ]);
   for (const result of [
     leases,
     assets,
-    lines,
-    payments,
     scheduleRows,
-    invoiceLines
+    invoiceLines,
+    postedThrough,
+    firstUnposted
   ]) {
     if (result.error) return { data: null, error: result.error };
   }
 
-  // One entry per classified asset of a lease past Draft, with its lease's
-  // terms; a Cancelled lease's assets never were on the books.
-  const leaseById = new Map((leases.data ?? []).map((row) => [row.id, row]));
-  const assetRows = (assets.data ?? []).flatMap((asset) => {
-    const lease = leaseById.get(asset.leaseId);
-    return lease ? [{ asset, lease }] : [];
-  });
+  // Only an Operating or Finance asset of a lease past Draft (and not
+  // Cancelled: its assets never were on the books) has a schedule and a
+  // liability. Read the schedule lines, payments and events of those alone.
+  const leaseRows = (leases.data ?? []).map(({ supplier, ...lease }) => ({
+    ...lease,
+    name: lease.name ?? "",
+    supplierName: supplier?.name ?? null
+  }));
+  const readLeaseIds = new Set(leaseRows.map((lease) => lease.id));
+  const capitalizedIds = (assets.data ?? [])
+    .filter(
+      (asset) =>
+        readLeaseIds.has(asset.leaseId) &&
+        (asset.lesseeClassification === "Operating" ||
+          asset.lesseeClassification === "Finance")
+    )
+    .map((asset) => asset.id);
+  const [lines, payments, events] = await Promise.all([
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leaseScheduleLine")
+        .select(
+          "leaseLineId, periodDate, principalAmount, closingLiability, closingRouAsset"
+        )
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leasePayment")
+        .select("leaseLineId, dueDate, amount")
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leaseEvent")
+        .select("leaseLineId, eventType, effectiveDate")
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .in("eventType", ["Termination", "Purchase"])
+        .order("id", { ascending: true })
+    )
+  ]);
+  for (const result of [lines, payments, events]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // One entry per classified asset, with its lease's terms and its own end.
+  const assetRows = leaseLiabilityAssets(
+    leaseRows,
+    assets.data ?? [],
+    events.data ?? []
+  );
   const summary = summarizeLeaseLiabilities(
-    assetRows.map(({ asset, lease }) => ({
-      id: lease.id,
-      leaseLineId: asset.id,
-      leaseId: lease.leaseId,
-      name: lease.name,
-      asset: asset.description,
-      supplierName: lease.supplierName,
-      status: asset.status === "Active" ? lease.status : asset.status,
-      classification: asset.lesseeClassification,
-      commencementDate: lease.commencementDate,
-      endDate: lease.endDate,
-      discountRate: lease.discountRate,
-      initialLiability: asset.initialLiability,
-      initialRouAsset: asset.initialRouAsset
-    })),
+    assetRows,
     lines.data ?? [],
     payments.data ?? [],
     { asOf, startMonth }
   );
 
   const classificationByAsset = new Map(
-    assetRows.flatMap(({ asset }) =>
-      asset.lesseeClassification
-        ? [[asset.id, asset.lesseeClassification] as const]
+    assetRows.flatMap((asset) =>
+      asset.classification
+        ? [[asset.leaseLineId, asset.classification] as const]
         : []
     )
-  );
-  const assetOfPayment = new Map(
-    (payments.data ?? []).map((payment) => [payment.id, payment.leaseLineId])
   );
   const costs = summarizeLeaseCosts(
     classificationByAsset,
@@ -8382,15 +8401,23 @@ export async function getLeaseLiabilities(
         : []
     ),
     (invoiceLines.data ?? []).map((line) => ({
-      leaseLineId: line.leasePaymentId
-        ? (assetOfPayment.get(line.leasePaymentId) ?? null)
-        : null,
+      leaseLineId: line.leasePayment?.leaseLineId ?? null,
       leasePaymentId: line.leasePaymentId,
       amount: line.extendedPrice ?? 0
     }))
   );
 
-  return { data: { ...summary, from, to, costs }, error: null };
+  return {
+    data: {
+      ...summary,
+      from,
+      to,
+      costs,
+      leaseRunPostedThrough: postedThrough.data?.[0]?.scheduledDate ?? null,
+      firstUnpostedLeaseMonth: firstUnposted.data?.[0]?.scheduledDate ?? null
+    },
+    error: null
+  };
 }
 
 // -- Depreciation History for a single asset --

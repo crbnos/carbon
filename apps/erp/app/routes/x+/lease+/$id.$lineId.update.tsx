@@ -6,10 +6,11 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { leaseLineValidator, upsertLeaseLine } from "~/modules/purchasing";
-import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
+import { leaseLineValidator } from "~/modules/purchasing";
+import { saveDraftLeaseLine } from "~/modules/purchasing/purchasing.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "lease-line-update");
@@ -33,13 +34,6 @@ type LineField = (typeof LINE_FIELDS)[number];
 const isLineField = (field: string): field is LineField =>
   (LINE_FIELDS as readonly string[]).includes(field);
 
-/** The fields the asset's payment rows are cut from. */
-const PAYMENT_FIELDS: LineField[] = [
-  "paymentAmount",
-  "purchaseOptionAmount",
-  "purchaseOptionReasonablyCertain"
-];
-
 const SWITCHES: LineField[] = [
   "ownershipTransfers",
   "specializedAsset",
@@ -50,9 +44,10 @@ const SWITCHES: LineField[] = [
  * One field of a Draft lease's asset, saved from a setup grid cell.
  *
  * The current asset is read, the one field swapped in, and the merged asset
- * runs through the validator and service the asset form uses. A change to
- * the payment or the purchase option cuts the asset's payment rows again.
- * Returns `{ error }`: a cell reverts on error, and nothing flashes.
+ * runs through the validator the asset form uses. `saveDraftLeaseLine` saves
+ * it and, when the payment or the purchase option changed, cuts the asset's
+ * payment rows again in the same transaction. Returns `{ error }`: a cell
+ * reverts on error, and nothing flashes.
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -117,46 +112,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ error: message }, { status: 400 });
   }
 
-  // Refuses a lease that is not a Draft.
-  const update = await upsertLeaseLine(client, {
-    ...validation.data,
-    id: lineId,
-    leaseId: id,
-    companyId,
-    userId
-  });
-  if (update.error) {
+  const { id: _id, leaseId: _leaseId, ...asset } = validation.data;
+  try {
+    // Refuses a lease that is not a Draft.
+    await saveDraftLeaseLine(getDatabaseClient(), {
+      leaseId: id,
+      leaseLineId: lineId,
+      companyId,
+      userId,
+      line: asset
+    });
+  } catch (err) {
     logger.error("lease line update failed", {
       companyId,
       leaseLineId: lineId,
       field,
-      error: update.error
+      error: err
     });
     return data(
-      { error: update.error.message || "Failed to update the asset" },
+      { error: getErrorMessage(err, "Failed to update the asset") },
       { status: 400 }
     );
-  }
-
-  if (PAYMENT_FIELDS.includes(field)) {
-    try {
-      await regenerateLeasePayments(getDatabaseClient(), {
-        leaseId: id,
-        leaseLineId: lineId,
-        companyId,
-        userId
-      });
-    } catch (err) {
-      logger.error("lease payment rows for an asset failed", {
-        companyId,
-        leaseLineId: lineId,
-        error: err
-      });
-      return data(
-        { error: "Saved the asset, but its payment rows were not cut" },
-        { status: 500 }
-      );
-    }
   }
 
   return data({ error: null });

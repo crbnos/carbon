@@ -17,9 +17,9 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { DateTime, Hyperlink } from "~/components";
-import { PurchaseInvoicingStatus } from "~/modules/invoicing/ui/PurchaseInvoice";
+import Money from "~/components/Money";
 import { path } from "~/utils/path";
-import LeaseMoney from "./LeaseMoney";
+import LeaseInvoiceStatus from "./LeaseInvoiceStatus";
 import { LeasePaymentStatus } from "./LeaseStatus";
 import type {
   Lease,
@@ -135,7 +135,7 @@ const LeasePayments = ({
                       <DateTime value={payment.periodEnd} variant="date" />
                     </Td>
                     <Td className="text-right whitespace-nowrap">
-                      <LeaseMoney
+                      <Money
                         value={payment.amount}
                         currencyCode={currencyCode}
                       />
@@ -155,13 +155,7 @@ const LeasePayments = ({
                       {/* Once invoiced, the invoice's own status says more
                           than "Invoiced": Draft, Submitted, Paid. */}
                       {invoice?.status ? (
-                        <PurchaseInvoicingStatus
-                          status={
-                            invoice.status as Parameters<
-                              typeof PurchaseInvoicingStatus
-                            >[0]["status"]
-                          }
-                        />
+                        <LeaseInvoiceStatus status={invoice.status} />
                       ) : (
                         <LeasePaymentStatus status={payment.status} />
                       )}
@@ -177,7 +171,7 @@ const LeasePayments = ({
                 {severalTypes && <Td />}
                 <Td />
                 <Td className="text-right font-medium whitespace-nowrap">
-                  <LeaseMoney value={total} currencyCode={currencyCode} />
+                  <Money value={total} currencyCode={currencyCode} />
                 </Td>
                 <Td />
                 <Td />

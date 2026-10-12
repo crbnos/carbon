@@ -97,6 +97,10 @@ msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {# जॉब को पूर्ण करें या रद्द करें जिस पर Carbon के लागत दर्ज करने से पहले लागत लगी थी।} other {# जॉबें को पूर्ण करें या रद्द करें जिन पर Carbon के लागत दर्ज करने से पहले लागत लगी थी।}}"
 
+#. placeholder {0}: Number(lease.assetCount)
+msgid "{0, plural, one {for # asset} other {for # assets}}"
+msgstr "{0, plural, one {# संपत्ति के लिए} other {# संपत्तियों के लिए}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित है।} other {# दस्तावेज़ों को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित हैं।}}"
@@ -363,6 +367,14 @@ msgstr "{0} को {name} के रूप में सहेजा जाए�
 msgid "{0}-Year"
 msgstr "{0}-वर्ष"
 
+#. placeholder {0}: blocker.description
+msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
+msgstr "{0}: {dueDate} को देय भुगतान को Carbon के बाहर भुगतान के रूप में चिह्नित किया गया है, लेकिन कुछ भी इसे पट्टा देयता से राहत नहीं देगा। इसे चालान किया जाए, इसके लिए {dueDate} को या उससे पहले चालान स्रोत सेट करें।"
+
+#. placeholder {0}: line.description
+msgid "{0}: the treatment cannot be worked out. {message}"
+msgstr "{0}: उपचार को काम नहीं किया जा सकता। {message}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}द"
@@ -402,6 +414,9 @@ msgstr "{apOverduePct}% देय राशि का"
 msgid "{arOverduePct}% of receivables"
 msgstr "प्राप्य राशि का {arOverduePct}%"
 
+msgid "{asset}: the payment due {dueDate} is Skipped (paid outside Carbon), so nothing would take it off the lease liability. Set Invoice From on or before {dueDate}."
+msgstr "{asset}: {dueDate} को देय भुगतान छोड़ा गया है (Carbon के बाहर भुगतान किया गया), इसलिए कुछ भी इसे पट्टा देयता से दूर नहीं करेगा। {dueDate} को या उससे पहले चालान स्रोत सेट करें।"
+
 msgid "{assetCount} Assets"
 msgstr "{assetCount} अचल संपत्तियाँ"
 
@@ -416,6 +431,9 @@ msgstr "{componentCount, plural, one {# घटक} other {# घटक}}"
 
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} विरोध"
+
+msgid "{count, plural, one {# asset} other {# assets}}"
+msgstr "{count, plural, one {# संपत्ति} other {# संपत्तियाँ}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
@@ -437,9 +455,6 @@ msgstr "{count, plural, one {# बैच जारी} other {# बैच जा
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {# जॉब जारी} other {# जॉब जारी}}"
-
-msgid "{count} assets"
-msgstr "{count} संपत्तियाँ"
 
 msgid "{count} of {total} units"
 msgstr "{count} का {total} इकाइयों में से"
@@ -592,8 +607,8 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
 
-msgid "{termMonths} months"
-msgstr "{termMonths} महीने"
+msgid "{termMonths, plural, one {# month} other {# months}}"
+msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "आपकी कंपनी को Carbon पर लाइव करने के लिए {total} चरण। प्रत्येक एक चेकपॉइंट पर समाप्त होता है।"
@@ -718,9 +733,6 @@ msgstr "1 नौकरी बनाई गई"
 
 msgid "1 line"
 msgstr "1 पंक्ति"
-
-msgid "1 month"
-msgstr "1 महीना"
 
 msgid "1 part skipped — it already has an open job"
 msgstr "1 पार्ट छोड़ा गया — इसके पास पहले से एक खुला जॉब है"
@@ -1369,6 +1381,9 @@ msgstr "किसी शिपमेंट की स्थिति में �
 
 msgid "A shipment's tracking number changes"
 msgstr "एक शिपमेंट का ट्रैकिंग नंबर बदल जाता है"
+
+msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
+msgstr "एक अल्पकालिक संपत्ति शुरुआत से 12 महीने के बाद नहीं चल सकती। इसे समाप्त करें और विस्तार को एक नई पट्टा के रूप में दर्ज करें।"
 
 msgid "A short-term asset has no schedule: only its payment rows change, and no journal is posted."
 msgstr "एक अल्पकालिक संपत्ति के पास कोई शेड्यूल नहीं है: केवल इसकी भुगतान पंक्तियाँ बदलती हैं, और कोई जर्नल पोस्ट नहीं किया जाता है।"
@@ -3364,8 +3379,8 @@ msgstr "{0} अनुमति वाले एक व्यवस्थाप�
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "मूल्यह्रास से पूछता है कि इस अवधि के लिए एक नया रन अब क्या मूल्यह्रास करेगा, और अवधि में समाप्त होने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि अवधि में इसका मूल्यह्रास व्यय और संचित मूल्यह्रास हो। यदि इस अवधि में मूल्यह्रास लागू नहीं होता है तो कारण के साथ छोड़ दें।"
 
-msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "राजस्व मान्यता से पूछता है कि इस अवधि के लिए एक नया रन अब क्या मान्य करेगा — आस्थगित चालान राजस्व, देय किराया, और अनुबंध राजस्व — और अवधि के अंत तक देय राजस्व धारण करने वाले ड्राफ्ट रन की जांच करता है। रन बनाएँ और पोस्ट करें ताकि राजस्व बहीखाता तक पहुंचे। यदि कुछ भी मान्य नहीं होना चाहिए तो कारण के साथ छोड़ दें।"
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr "राजस्व स्वीकृति से पूछता है कि इस अवधि के लिए एक नया रन अब क्या स्वीकार करेगा - स्थगित चालान राजस्व और अनुबंध राजस्व - और अवधि के अंत तक राजस्व के लिए ड्राफ्ट रन को धारण करने के लिए जांचता है। रन बनाएँ और पोस्ट करें ताकि राजस्व सामान्य खाता बही तक पहुंचे। यदि कुछ भी स्वीकार नहीं किया जाना चाहिए तो कारण के साथ छोड़ दें।"
 
 msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
 msgstr "पट्टा रन से पूछता है कि इस अवधि के लिए एक नया रन अब क्या पोस्ट करेगा — पट्टा ब्याज और उपयोग अधिकार परिशोधन, किराये का किराया स्थगित या अर्जित करने के लिए, और बिक्रय-प्रकार पट्टा ब्याज — और अवधि के अंत तक भुगतान के लिए प्रविष्टियों को पकड़े हुए ड्राफ्ट पट्टा रन के लिए जाँच करता है। रन बनाएँ और इसे पोस्ट करें ताकि प्रविष्टियाँ खाता तक पहुँचें। यदि कुछ भी पोस्ट न किया जाना चाहिए तो एक कारण के साथ छोड़ दें।"
@@ -4339,8 +4354,8 @@ msgstr "रद्द किया गया"
 msgid "Cancelling voids the agreement and releases its units. An agreement with a unit on rent or an invoiced period cannot be cancelled."
 msgstr "रद्द करना समझौते को अमान्य करता है और इसकी इकाइयों को जारी करता है। एक समझौता जिसकी एक इकाई किराये पर है या एक चालान की गई अवधि रद्द नहीं की जा सकती।"
 
-msgid "Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead."
-msgstr "रद्द करने से पट्टे की जर्नलों को अमान्य किया जाता है और शेड्यूल हटाया जाता है। एक चालान किया गया भुगतान या एक पोस्ट किया गया पट्टे रन वाले पट्टे को रद्द नहीं किया जा सकता है; इसकी संपत्तियों को समाप्त करें।"
+msgid "Cancelling voids the lease's journal and removes the schedule. Once a payment is invoiced, a lease run has posted, or the lease has been modified or an asset ended, it cannot be cancelled; terminate its assets instead."
+msgstr "रद्द करने से पट्टा के जर्नल को अमान्य करें और शेड्यूल को निकालें। एक बार भुगतान को चालान किया जाए, एक पट्टा रन पोस्ट किया जाए, या पट्टा को संशोधित किया जाए या संपत्ति समाप्त हो जाए, इसे रद्द नहीं किया जा सकता; इसकी संपत्तियों को समाप्त करें।"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "असहेजे गए ऑपरेशन में पैरामीटर नहीं जोड़े जा सकते"
@@ -4630,9 +4645,6 @@ msgstr "परिवर्तन न्यूजलेटर"
 
 msgid "Changes"
 msgstr "परिवर्तन"
-
-msgid "Changing a payment term or a date cuts the payment rows again. Edited rows are replaced."
-msgstr "भुगतान शर्तें या तारीख बदलने से भुगतान पंक्तियाँ फिर से कट जाती हैं। संपादित पंक्तियाँ प्रतिस्थापित होती हैं।"
 
 msgid "Changing the components redefines the group. Re-run Motion Planning to apply the change to the steps."
 msgstr "घटकों को बदलने से समूह को पुनः परिभाषित किया जाता है। परिवर्तन को चरणों पर लागू करने के लिए मोशन योजना को पुनः चलाएं।"
@@ -8057,8 +8069,8 @@ msgstr "प्रत्येक संपत्ति को अपने ह�
 msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
 msgstr "प्रत्येक संपत्ति को अपने आप खाता दिया जाता है। इसकी भुगतान पंक्तियाँ पट्टे की भुगतान शर्तों से काट दी जाती हैं।"
 
-msgid "Each asset's fair value, economic life and purchase option are on its row in the Assets card."
-msgstr "प्रत्येक संपत्ति का उचित मूल्य, आर्थिक जीवन और खरीद विकल्प संपत्ति कार्ड में इसकी पंक्ति पर हैं।"
+msgid "Each asset's classification and the tests behind it are on the <0>lease's details</0>."
+msgstr "प्रत्येक संपत्ति का वर्गीकरण और इसके पीछे की परीक्षाएं <0>पट्टा के विवरण</0> पर हैं।"
 
 msgid "Each asset's payment rows below are cut from these terms at its own payment. Changing a term cuts them again."
 msgstr "प्रत्येक संपत्ति की भुगतान पंक्तियाँ नीचे इन शर्तों से इसके अपने भुगतान पर काट दी जाती हैं। किसी शर्त को बदलने से उन्हें फिर से काट दिया जाता है।"
@@ -10015,10 +10027,6 @@ msgstr "बेड़े की इकाई"
 
 msgid "Fleet Units"
 msgstr "फ्लीट इकाई"
-
-#. placeholder {0}: lease.assetCount
-msgid "for {0} assets"
-msgstr "{0} संपत्तियों के लिए"
 
 msgid "For <0/>"
 msgstr "के लिए <0/>"
@@ -12107,6 +12115,10 @@ msgstr "अवधि में पट्टा रन प्रविष्ट�
 
 msgid "Lease Runs"
 msgstr "पट्टा रन"
+
+#. placeholder {0}: formatDate(leaseRunPostedThrough)
+msgid "Lease runs are posted through {0}"
+msgstr "पट्टा रन {0} के माध्यम से पोस्ट किए गए हैं"
 
 msgid "Lease setup"
 msgstr "पट्टा सेटअप"
@@ -14269,6 +14281,9 @@ msgstr "कोई जॉब नहीं बनाया गया"
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
+msgid "No lease run is posted yet"
+msgstr "अभी तक कोई पट्टा रन पोस्ट नहीं किया गया है"
+
 msgid "No lines"
 msgstr "कोई पंक्तियाँ नहीं"
 
@@ -15648,6 +15663,9 @@ msgstr "स्वामी (लागत केंद्र)"
 
 msgid "Ownership"
 msgstr "स्वामित्व"
+
+msgid "Ownership passes to you at the end of the lease, for nothing. The leased asset becomes a fixed asset that depreciates from the end date. The lease's other assets do not change."
+msgstr "पट्टा के अंत में स्वामित्व आपके पास आता है, कुछ नहीं के लिए। पट्टा की गई संपत्ति एक अचल संपत्ति बन जाती है जो अंत तिथि से मूल्यह्रास करती है। पट्टा की अन्य संपत्तियाँ नहीं बदलती हैं।"
 
 msgid "Ownership transfers"
 msgstr "स्वामित्व स्थानांतरण"
@@ -17919,6 +17937,9 @@ msgstr "पंक्ति हटाएँ"
 
 msgid "Remove order"
 msgstr "आदेश निकालें"
+
+msgid "Remove Override"
+msgstr "ओवरराइड निकालें"
 
 msgid "Remove pair"
 msgstr "जोड़ी निकालें"
@@ -21322,6 +21343,13 @@ msgstr "सेवा से बाहर निकालें"
 msgid "Take Out of Service"
 msgstr "सेवा से बाहर लें"
 
+msgid "Take Ownership"
+msgstr "स्वामित्व लें"
+
+#. placeholder {0}: line.description
+msgid "Take Ownership: {0}"
+msgstr "स्वामित्व लें: {0}"
+
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "इस आइटम को बनाने के लिए उपयोग की गई सामग्रियों में सबसे कम शेष शेल्फ लाइफ लें। जब उत्पाद की समाप्ति तारीख इसकी सामग्री पर निर्भर करती है तो उपयोग करें।"
 
@@ -21871,6 +21899,9 @@ msgstr "वह कर्मचारी जो इस लागत केंद�
 msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
 msgstr "सक्षमीकरण प्रत्येक आइटम के स्टॉक को कटओवर तारीख पर उसकी ऑन-हैंड मात्रा में रीसेट करता है, नीचे यूनिट लागत पर। प्रत्येक औसत आइटम की लागत की जांच करें।"
 
+msgid "The end date of the lease"
+msgstr "पट्टा की समाप्ति तिथि"
+
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "एक ग्राहक को कोटेशन देने से भुगतान एकत्र करने तक अंत से अंत तक व्यावसायिक प्रवाह: RFQ से कोटेशन से विक्रय आदेश, फिर शिपमेंट, चालान और निपटारा भुगतान।"
 
@@ -22038,6 +22069,11 @@ msgstr "नवीकरण या समाप्ति सूचना दे�
 
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "इस PO को रखने की सबसे हाल की तिथि ताकि यह प्राप्ति की आवश्यकता तिथि तक पहुँचे, आपूर्तिकर्ता की लीड टाइम दी गई।"
+
+#. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
+#. placeholder {1}: formatDate(asOf)
+msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
+msgstr "पट्टा प्रविष्टियाँ {0} से {1} तक अभी सामान्य खाता बही में नहीं हैं। ये आंकड़े पट्टा शेड्यूल का पालन करते हैं, इसलिए जब तक एक पट्टा रन उन्हें पोस्ट नहीं करता, ये खाता बही से संबद्ध नहीं होंगे।"
 
 msgid "The lease is ready to activate."
 msgstr "पट्टा सक्रिय करने के लिए तैयार है।"
@@ -22231,6 +22267,9 @@ msgstr "पार्ट को मौजूदा स्टॉक से लि�
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "वह पथ जो इस चरण के घटक प्लेबैक के दौरान स्थान पर यात्रा करते हैं; मॉडल से प्राप्त, या पथ संपादित करें के साथ हाथ से खींचा गया।"
 
+msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
+msgstr "प्रभावी तिथि से भुगतान। बढ़ोतरी अभी भी शुरुआत की प्रत्येक वर्षगांठ पर बढ़ती है"
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "कार्बन की ओर से वे लोग जो आपके कार्यान्वयन को चलाएंगे, और उन तक कैसे पहुंचें।"
 
@@ -22278,6 +22317,13 @@ msgstr "प्रक्रियाएँ जो यह वर्क सें�
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
+
+#. placeholder {0}: formatter.format(invoicedOption)
+msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
+msgstr "क्रय विकल्प पहले से ही {0} पर चालान किया गया है। उस मूल्य पर इसका प्रयोग करें, या पहले चालान को हटाएँ।"
+
+msgid "The purchase option is already invoiced; its invoice settles the price"
+msgstr "क्रय विकल्प पहले से ही चालान किया गया है; इसका चालान मूल्य को निपटाता है"
 
 msgid "The purchase order"
 msgstr "क्रय आदेश"

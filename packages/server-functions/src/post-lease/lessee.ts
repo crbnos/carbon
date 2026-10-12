@@ -2,13 +2,28 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// Pure journal-line builders of a lessee lease (spec
-// `.ai/specs/2026-10-11-lessee-leases.md` §4). Every set is balanced or it
-// throws. Amounts are signed by the account's class (`toStoredAmount`), so a
-// debit to the Liability-class lease liability stores a negative amount.
+// Journal-line builders of a lessee lease (spec
+// `.ai/specs/2026-10-11-lessee-leases.md` §4). The legs — which account, which
+// side, how much — are the shared lifecycle math in `@carbon/utils`
+// (`lesseeTerminationLegs` …), the same functions the app's previews call;
+// this file resolves each leg's account role to the company's account and
+// signs the amount by the account's class (`toStoredAmount`), so a debit to
+// the Liability-class lease liability stores a negative amount. Every set is
+// balanced or it throws.
 
 import { type AccountClass, toStoredAmount } from "@carbon/database/ledger";
 import { assertBalanced, EPSILON, round } from "@carbon/database/precision";
+import {
+  type LesseeLeg,
+  type LesseeLegAccount,
+  lesseeCommencementLegs,
+  lesseeOpeningBalanceLegs,
+  lesseePurchaseLegs,
+  lesseeRemeasurementLegs,
+  lesseeTerminationLegs,
+  normalizeLesseeLegs
+} from "@carbon/utils";
+import { InvalidInputError } from "../errors";
 
 export type LeaseAccount = { id: string; class: AccountClass };
 
@@ -64,27 +79,41 @@ export function toPostingLines(legs: Leg[], label: string): PostingLine[] {
   return lines;
 }
 
+/** The accounts of the roles a leg names. `fixedAsset` and
+ *  `retainedEarnings` are not lease defaults: a purchase passes the asset
+ *  class's account and an opening balance the retained earnings default. */
+type LegAccounts = Partial<Record<LesseeLegAccount, LeaseAccount>>;
+
+/** The shared legs posted to the company's accounts. A role with no account
+ *  is a programming error, never a user's. */
+function postLegs(
+  legs: LesseeLeg[],
+  accounts: LesseeAccounts,
+  extra: LegAccounts,
+  label: string
+): PostingLine[] {
+  const resolved: LegAccounts = { ...accounts, ...extra };
+  return toPostingLines(
+    normalizeLesseeLegs(legs).map((leg) => {
+      const account = resolved[leg.account];
+      if (!account) {
+        throw new Error(`${label}: no account for ${leg.account}`);
+      }
+      return { ...leg, account };
+    }),
+    label
+  );
+}
+
 /** Commencement: Dr ROU asset / Cr Lease liability, both at the PV. */
 export function commencementLines(args: {
   liability: number;
   accounts: LesseeAccounts;
 }): PostingLine[] {
-  const { liability, accounts } = args;
-  return toPostingLines(
-    [
-      {
-        side: "debit",
-        account: accounts.rightOfUseAsset,
-        description: "Right-of-use asset",
-        amount: liability
-      },
-      {
-        side: "credit",
-        account: accounts.leaseLiability,
-        description: "Lease liability",
-        amount: liability
-      }
-    ],
+  return postLegs(
+    lesseeCommencementLegs({ liability: args.liability }),
+    args.accounts,
+    {},
     "Lease commencement journal"
   );
 }
@@ -106,34 +135,10 @@ export function openingBalanceLines(args: {
   retainedEarnings: LeaseAccount;
   accounts: LesseeAccounts;
 }): PostingLine[] {
-  const { rouAssetCost, accumulated, carryingLiability, accounts } = args;
-  return toPostingLines(
-    [
-      {
-        side: "debit",
-        account: accounts.rightOfUseAsset,
-        description: "Right-of-use asset",
-        amount: rouAssetCost
-      },
-      {
-        side: "credit",
-        account: accounts.accumulatedRightOfUseAmortization,
-        description: "Accumulated right-of-use amortization",
-        amount: accumulated
-      },
-      {
-        side: "credit",
-        account: accounts.leaseLiability,
-        description: "Lease liability",
-        amount: carryingLiability
-      },
-      {
-        side: "credit",
-        account: args.retainedEarnings,
-        description: "Lease cost before the opening date",
-        amount: round(rouAssetCost - accumulated - carryingLiability)
-      }
-    ],
+  return postLegs(
+    lesseeOpeningBalanceLegs(args),
+    args.accounts,
+    { retainedEarnings: args.retainedEarnings },
     "Lease opening balance journal"
   );
 }
@@ -146,28 +151,10 @@ export function remeasurementLines(args: {
   gain: number;
   accounts: LesseeAccounts;
 }): PostingLine[] {
-  const { adjustment, gain, accounts } = args;
-  return toPostingLines(
-    [
-      {
-        side: "debit",
-        account: accounts.rightOfUseAsset,
-        description: "Right-of-use asset remeasured",
-        amount: round(adjustment + gain)
-      },
-      {
-        side: "credit",
-        account: accounts.leaseLiability,
-        description: "Lease liability remeasured",
-        amount: adjustment
-      },
-      {
-        side: "credit",
-        account: accounts.gain,
-        description: "Gain on lease modification",
-        amount: gain
-      }
-    ],
+  return postLegs(
+    lesseeRemeasurementLegs(args),
+    args.accounts,
+    {},
     "Lease remeasurement journal"
   );
 }
@@ -188,54 +175,18 @@ export function terminationLines(args: {
   accumulated: number;
   accounts: LesseeAccounts;
 }): { lines: PostingLine[]; gainLoss: number } {
-  const { carryingLiability, penalty, rouAssetCost, accumulated, accounts } =
-    args;
-  const gainLoss = round(
-    carryingLiability - penalty - (rouAssetCost - accumulated)
-  );
-  const lines = toPostingLines(
-    [
-      {
-        side: "debit",
-        account: accounts.leaseLiability,
-        description: "Lease liability derecognized",
-        amount: round(carryingLiability - penalty)
-      },
-      {
-        side: "debit",
-        account: accounts.accumulatedRightOfUseAmortization,
-        description: "Accumulated amortization derecognized",
-        amount: accumulated
-      },
-      {
-        side: "credit",
-        account: accounts.rightOfUseAsset,
-        description: "Right-of-use asset derecognized",
-        amount: rouAssetCost
-      },
-      gainLoss >= 0
-        ? {
-            side: "credit",
-            account: accounts.gain,
-            description: "Gain on lease termination",
-            amount: gainLoss
-          }
-        : {
-            side: "debit",
-            account: accounts.loss,
-            description: "Loss on lease termination",
-            amount: -gainLoss
-          }
-    ],
-    "Lease termination journal"
-  );
-  return { lines, gainLoss };
+  const { legs, gainLoss } = lesseeTerminationLegs(args);
+  return {
+    lines: postLegs(legs, args.accounts, {}, "Lease termination journal"),
+    gainLoss
+  };
 }
 
 /** Purchase option exercise (ASC 842-20-40-2): not a termination. The ROU
  *  asset moves into PP&E at its net book value, adjusted by the price less
  *  the carrying liability; the price stays in the liability as a payment row
- *  the next invoice settles.
+ *  the next invoice settles. A price that leaves the asset a negative cost
+ *  is refused as a 400.
  *
  *   Dr Fixed asset class asset account  net ROU + price − carrying liability
  *   Dr Accumulated ROU amortization     accumulated
@@ -251,52 +202,21 @@ export function purchaseLines(args: {
   assetAccount: LeaseAccount;
   accounts: LesseeAccounts;
 }): { lines: PostingLine[]; assetCost: number } {
-  const { carryingLiability, price, rouAssetCost, accumulated, accounts } =
-    args;
-  const assetCost = round(
-    rouAssetCost - accumulated + price - carryingLiability
-  );
+  const { legs, assetCost } = lesseePurchaseLegs(args);
   if (assetCost < 0) {
-    throw new Error(
+    throw new InvalidInputError(
       "The purchased asset would have a negative cost; check the purchase price"
     );
   }
-  const lines = toPostingLines(
-    [
-      {
-        side: "debit",
-        account: args.assetAccount,
-        description: "Leased asset purchased",
-        amount: assetCost
-      },
-      {
-        side: "debit",
-        account: accounts.accumulatedRightOfUseAmortization,
-        description: "Accumulated amortization derecognized",
-        amount: accumulated
-      },
-      {
-        side: "debit",
-        account: accounts.leaseLiability,
-        description: "Lease liability derecognized",
-        amount: carryingLiability
-      },
-      {
-        side: "credit",
-        account: accounts.rightOfUseAsset,
-        description: "Right-of-use asset derecognized",
-        amount: rouAssetCost
-      },
-      {
-        side: "credit",
-        account: accounts.leaseLiability,
-        description: "Purchase price payable",
-        amount: price
-      }
-    ],
-    "Lease purchase journal"
-  );
-  return { lines, assetCost };
+  return {
+    lines: postLegs(
+      legs,
+      args.accounts,
+      { fixedAsset: args.assetAccount },
+      "Lease purchase journal"
+    ),
+    assetCost
+  };
 }
 
 /** The accounts of one month's two schedule rows (spec §3): an operating

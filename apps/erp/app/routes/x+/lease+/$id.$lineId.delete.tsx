@@ -5,10 +5,13 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { deleteLeaseLine } from "~/modules/purchasing";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("erp", "lease-line-delete");
 
 /** Removes an asset, with its payment rows, from a Draft lease. */
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -30,6 +33,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     companyId
   });
   if (result.error) {
+    logger.error("lease asset was not removed", {
+      companyId,
+      leaseId: id,
+      leaseLineId: lineId,
+      error: result.error
+    });
     throw redirect(
       back,
       await flash(

@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { RunType } from "@carbon/database/run-type";
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import {
   RecordOutlet
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -39,27 +39,22 @@ import {
   type RunRentalAgreement,
   type RunSalesInvoice
 } from "~/modules/accounting/ui/RevenueRecognition";
+import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
-const revenueBreadcrumb = detailBreadcrumb(
-  {
-    breadcrumb: msg`Revenue Recognition`,
-    to: path.to.revenueRecognitionRuns
-  },
-  (data) => data?.run?.runId
-);
-const leaseBreadcrumb = detailBreadcrumb(
-  { breadcrumb: msg`Lease Runs`, to: path.to.leaseRuns },
-  (data) => data?.run?.runId
-);
+type RunBreadcrumbData = { run?: { runId: string; type: RunType } | null };
 
 export const handle: Handle = {
-  // A lease run lives under Lease Runs, a revenue run under Revenue Recognition.
-  breadcrumb: (params: unknown, data: unknown) =>
-    (data as { run?: { type?: string } } | undefined)?.run?.type === "Lease"
-      ? leaseBreadcrumb(params, data)
-      : revenueBreadcrumb(params, data),
+  // A run sits under the list of its own type.
+  breadcrumb: (params: unknown, data: RunBreadcrumbData | undefined) => {
+    const { listPath, title } =
+      RUN_PAGES[data?.run?.type ?? "Revenue Recognition"];
+    return detailBreadcrumb(
+      { breadcrumb: title, to: listPath },
+      (loaded: RunBreadcrumbData) => loaded.run?.runId
+    )(params, data);
+  },
   module: "accounting"
 };
 

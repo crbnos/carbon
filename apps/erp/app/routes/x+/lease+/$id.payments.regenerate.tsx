@@ -8,7 +8,6 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { getLease } from "~/modules/purchasing";
 import { regenerateLeasePayments } from "~/modules/purchasing/purchasing.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -20,7 +19,7 @@ const logger = getLogger("erp", "lease-payments-regenerate");
  *  the lease currency's decimal places inside `regenerateLeasePayments`. */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -29,23 +28,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const back = requestReferrer(request) ?? path.to.leaseDetails(id);
 
-  const lease = await getLease(client, id, companyId);
-  if (lease.error || lease.data?.companyId !== companyId) {
-    throw redirect(
-      path.to.leases,
-      await flash(request, error(lease.error, "Lease not found"))
-    );
-  }
-  if (lease.data.status !== "Draft") {
-    throw redirect(
-      back,
-      await flash(
-        request,
-        error(null, "Payment rows change only while the lease is Draft")
-      )
-    );
-  }
-
+  // Refuses a lease that is not a Draft.
   try {
     await regenerateLeasePayments(getDatabaseClient(), {
       leaseId: id,

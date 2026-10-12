@@ -31490,6 +31490,20 @@ export type Database = {
             referencedColumns: ["userId"]
           },
           {
+            foreignKeyName: "leaseEvent_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "leaseEvent_journalId_fkey"
             columns: ["journalId"]
             isOneToOne: false
@@ -31505,10 +31519,10 @@ export type Database = {
           },
           {
             foreignKeyName: "leaseEvent_leaseLine_fkey"
-            columns: ["leaseLineId", "companyId"]
+            columns: ["leaseLineId", "leaseId", "companyId"]
             isOneToOne: false
             referencedRelation: "leaseLine"
-            referencedColumns: ["id", "companyId"]
+            referencedColumns: ["id", "leaseId", "companyId"]
           },
           {
             foreignKeyName: "leaseEvent_lease_fkey"
@@ -31918,10 +31932,10 @@ export type Database = {
           },
           {
             foreignKeyName: "leasePayment_leaseLine_fkey"
-            columns: ["leaseLineId", "companyId"]
+            columns: ["leaseLineId", "leaseId", "companyId"]
             isOneToOne: false
             referencedRelation: "leaseLine"
-            referencedColumns: ["id", "companyId"]
+            referencedColumns: ["id", "leaseId", "companyId"]
           },
           {
             foreignKeyName: "leasePayment_lease_fkey"
@@ -32118,10 +32132,10 @@ export type Database = {
           },
           {
             foreignKeyName: "leaseScheduleLine_leaseLine_fkey"
-            columns: ["leaseLineId", "companyId"]
+            columns: ["leaseLineId", "leaseId", "companyId"]
             isOneToOne: false
             referencedRelation: "leaseLine"
-            referencedColumns: ["id", "companyId"]
+            referencedColumns: ["id", "leaseId", "companyId"]
           },
           {
             foreignKeyName: "leaseScheduleLine_lease_fkey"

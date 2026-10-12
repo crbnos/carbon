@@ -15,12 +15,12 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { currencyDecimals } from "../lib/currency-decimals";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
 import {
   type AgreementRow,
   billingPeriodRow,
-  currencyDecimals,
   insertUnitActivity,
   loadLeaseAccounting,
   postLeaseJournal,

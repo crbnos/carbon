@@ -16,15 +16,16 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
 import { DateTime, SupplierAvatar } from "~/components";
-import { LesseeClassificationBadge } from "./LeaseClassificationPreview";
-import LeaseMoney from "./LeaseMoney";
+import Money from "~/components/Money";
+import { LesseeClassificationBadge } from "./LesseeClassificationBadge";
 import type {
   Lease,
   LeaseLine,
   LeasePayment,
   LeaseScheduleLine
 } from "./types";
-import { isScheduleLinePosted } from "./utils";
+import { useLeaseFrequencyLabel } from "./useLeaseLabels";
+import { leaseAssetBalances } from "./utils";
 
 type LeaseSummaryProps = {
   lease: Lease;
@@ -42,9 +43,10 @@ function Fact({ label, children }: { label: ReactNode; children: ReactNode }) {
   );
 }
 
-/** The lease at a glance: its terms, its treatment, its assets' liability
- *  and net right-of-use asset as of the last posted lease run, and the next
- *  payment. */
+/** The lease at a glance: its terms, its treatment, its active assets'
+ *  liability and net right-of-use asset as of the last posted lease run, and
+ *  the next payment. The asset count and the payment are the `leases`
+ *  view's, over the active assets (all of them once the lease has ended). */
 const LeaseSummary = ({
   lease,
   lines,
@@ -55,39 +57,33 @@ const LeaseSummary = ({
   const { locale } = useLocale();
   const currencyCode = lease.currencyCode;
 
-  // Each active, capitalized asset's balances after its last posted month.
-  const recognized = lines.filter(
-    (line) =>
-      line.status === "Active" &&
-      line.lesseeClassification !== null &&
-      line.lesseeClassification !== "Short-Term"
-  );
+  const frequencyLabel = useLeaseFrequencyLabel();
+
+  // Each active, capitalized asset's balances after its last posted month —
+  // the same liability the asset page and the leases list show.
   let liability = 0;
   let netRou = 0;
   let initialLiability = 0;
   let lastPosted: string | null = null;
-  for (const line of recognized) {
-    const posted: LeaseScheduleLine[] = [];
-    for (const row of schedule) {
-      if (row.leaseLineId !== line.id) continue;
-      if (!isScheduleLinePosted(row)) break;
-      posted.push(row);
-    }
-    const last = posted[posted.length - 1];
-    if (last && (!lastPosted || last.periodDate > lastPosted)) {
-      lastPosted = last.periodDate;
-    }
+  let recognized = 0;
+  for (const line of lines) {
+    const balances = leaseAssetBalances(line, schedule);
+    if (!balances) continue;
+    recognized += 1;
     initialLiability += Number(line.initialLiability ?? 0);
-    liability += last
-      ? Number(last.closingLiability)
-      : Number(line.initialLiability ?? 0);
-    netRou +=
-      Number(line.rouAssetCost ?? 0) -
-      posted.reduce((sum, row) => sum + Number(row.rouAmortization), 0);
+    liability += balances.liability;
+    netRou += balances.netRouAsset;
+    if (
+      balances.postedThrough &&
+      (!lastPosted || balances.postedThrough > lastPosted)
+    ) {
+      lastPosted = balances.postedThrough;
+    }
   }
   liability = round(liability);
   netRou = round(netRou);
-  const hasBalances = lease.status === "Active" && recognized.length > 0;
+  initialLiability = round(initialLiability);
+  const hasBalances = lease.status === "Active" && recognized > 0;
 
   // The next due date with a payment to bill, and every asset's payment on
   // it.
@@ -102,12 +98,7 @@ const LeaseSummary = ({
       )
       .reduce((sum, payment) => sum + Number(payment.amount), 0)
   );
-  const frequency =
-    lease.paymentFrequency === "Quarterly"
-      ? t`per quarter`
-      : lease.paymentFrequency === "Annual"
-        ? t`per year`
-        : t`per month`;
+  const frequency = frequencyLabel(lease.paymentFrequency, "per");
   const timing =
     lease.paymentTiming === "Arrears" ? t`in arrears` : t`in advance`;
 
@@ -144,10 +135,12 @@ const LeaseSummary = ({
           <div className="@container w-full">
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 @xl:grid-cols-4">
               <Fact label={<Trans>Assets</Trans>}>
-                <span className="tabular-nums">{lines.length}</span>
+                <span className="tabular-nums">
+                  {lease.assetCount ?? lines.length}
+                </span>
               </Fact>
               <Fact label={<Trans>Payment</Trans>}>
-                <LeaseMoney
+                <Money
                   value={lease.paymentAmount}
                   currencyCode={currencyCode}
                 />{" "}
@@ -202,22 +195,19 @@ const LeaseSummary = ({
                   <span>
                     <Trans>Initial Liability:</Trans>
                   </span>
-                  <LeaseMoney
-                    value={initialLiability}
-                    currencyCode={currencyCode}
-                  />
+                  <Money value={initialLiability} currencyCode={currencyCode} />
                 </HStack>
                 <HStack className="justify-between text-sm text-muted-foreground w-full">
                   <span>
                     <Trans>Net Right-of-Use Asset:</Trans>
                   </span>
-                  <LeaseMoney value={netRou} currencyCode={currencyCode} />
+                  <Money value={netRou} currencyCode={currencyCode} />
                 </HStack>
                 <HStack className="justify-between text-xl font-semibold w-full">
                   <span>
                     <Trans>Lease Liability:</Trans>
                   </span>
-                  <LeaseMoney value={liability} currencyCode={currencyCode} />
+                  <Money value={liability} currencyCode={currencyCode} />
                 </HStack>
                 <p className="text-xs text-muted-foreground w-full">
                   {lastPosted ? (
@@ -238,7 +228,7 @@ const LeaseSummary = ({
               </span>
               {nextDueDate ? (
                 <span className="flex items-center gap-2">
-                  <LeaseMoney
+                  <Money
                     value={nextPaymentAmount}
                     currencyCode={currencyCode}
                   />

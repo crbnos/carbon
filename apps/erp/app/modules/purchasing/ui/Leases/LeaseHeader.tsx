@@ -26,7 +26,6 @@ import {
   LuEllipsisVertical,
   LuPanelLeft,
   LuPencilRuler,
-  LuPlay,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -37,19 +36,15 @@ import {
   useCompanyToday,
   useDateFormatter,
   usePermissions,
-  useUser
+  useRouteData
 } from "~/hooks";
-import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { path } from "~/utils/path";
-import {
-  LeaseCommencementPreview,
-  LesseeClassificationBadge
-} from "./LeaseClassificationPreview";
+import LeaseInvoiceStatus from "./LeaseInvoiceStatus";
 import LeaseModifyModal from "./LeaseModifyModal";
 import LeaseStatus from "./LeaseStatus";
+import { LesseeClassificationBadge } from "./LesseeClassificationBadge";
 import type { LeaseRouteData } from "./types";
-import { useLeaseActivateText } from "./useLeaseLabels";
-import { leaseActivationGaps } from "./utils";
+import { canCancelLease } from "./utils";
 
 type LeaseHeaderProps = Pick<
   LeaseRouteData,
@@ -62,18 +57,19 @@ type LeaseHeaderProps = Pick<
   | "journals"
 >;
 
-type PendingAction = "activate" | "invoice" | "cancel";
+type PendingAction = "invoice" | "cancel";
 
-/** The lease's actions: Activate a Draft; Invoice Now, Modify and Cancel an
- *  Active lease. Terminate and Purchase act on one asset, from its explorer
- *  row or its page. The purchase invoices and journals that name the lease
- *  are listed here, as a rental agreement lists its shipments. */
+/** The lease's actions once it is set up: Modify and Cancel an Active lease,
+ *  and Invoice Now while payments can still come due (Active, or ended with
+ *  rows to bill). A Draft is activated from its setup. Terminate and
+ *  Purchase act on one asset, from its page. The purchase invoices and
+ *  journals that name the lease are listed here, as a rental agreement lists
+ *  its shipments. */
 const LeaseHeader = ({
   lease,
   lines,
   payments,
   schedule,
-  leasePolicy,
   purchaseInvoices,
   journals
 }: LeaseHeaderProps) => {
@@ -81,16 +77,16 @@ const LeaseHeader = ({
   const permissions = usePermissions();
   const { toggleExplorer } = usePanels();
   const today = useCompanyToday();
-  const { company } = useUser();
   const { formatDate } = useDateFormatter();
 
   const confirm = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const [action, setAction] = useState<PendingAction | null>(null);
   const modify = useDisclosure();
-  const activateText = useLeaseActivateText();
 
   const id = lease.id!;
+  // The events are read by the shell route with the rest of the lease.
+  const events = useRouteData<LeaseRouteData>(path.to.lease(id))?.events ?? [];
   const readableId = lease.leaseId ?? "";
   const status = lease.status;
   const isDraft = status === "Draft";
@@ -98,26 +94,20 @@ const LeaseHeader = ({
   const canUpdate = permissions.can("update", "purchasing");
   // Invoicing drafts purchase invoices, so it needs the invoicing permission.
   const canInvoice = canUpdate && permissions.can("create", "invoicing");
+  // `create-lease-invoices` bills an Active lease and an ended one (its last
+  // rows can come due after it ends); never a Draft or a Cancelled one.
+  const isBillable = !isDraft && status !== "Cancelled";
 
   const hasDuePayment = payments.some(
     (payment) => payment.status === "Pending" && payment.dueDate <= today
   );
-  // Cancel is refused once anything is invoiced or a lease run has posted.
-  // The run stamps the schedule line's journal (an opening balance does not),
-  // and its run rows are not read: they need accounting_view.
-  const hasInvoicedPayment = payments.some(
-    (payment) => payment.status === "Invoiced"
-  );
-  const hasPostedMonth = schedule.some((line) => Boolean(line.journalId));
-  const canCancel = isActive && !hasInvoicedPayment && !hasPostedMonth;
-  const isReady =
-    leaseActivationGaps({
-      lease,
-      lines,
-      payments,
-      baseCurrencyCode: company?.baseCurrencyCode,
-      policy: leasePolicy
-    }).length === 0;
+  const canCancel = canCancelLease({
+    lease,
+    lines,
+    payments,
+    schedule,
+    events
+  });
 
   const open = (next: PendingAction) => {
     setAction(next);
@@ -135,12 +125,6 @@ const LeaseHeader = ({
       destructive?: boolean;
     }
   > = {
-    activate: {
-      action: path.to.leaseActivate(id),
-      title: t`Activate ${readableId}`,
-      text: activateText(lease),
-      confirmText: t`Activate`
-    },
     invoice: {
       action: path.to.leaseInvoice(id),
       title: t`Invoice ${readableId} now?`,
@@ -150,7 +134,7 @@ const LeaseHeader = ({
     cancel: {
       action: path.to.leaseStatus(id),
       title: t`Cancel ${readableId}`,
-      text: t`Cancelling voids the lease's journals and removes the schedule. A lease with an invoiced payment or a posted lease run cannot be cancelled; terminate its assets instead.`,
+      text: t`Cancelling voids the lease's journal and removes the schedule. Once a payment is invoiced, a lease run has posted, or the lease has been modified or an asset ended, it cannot be cancelled; terminate its assets instead.`,
       confirmText: t`Cancel Lease`,
       intent: "cancel",
       destructive: true
@@ -255,8 +239,47 @@ const LeaseHeader = ({
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
-            {isActive &&
-              (purchaseInvoices.length === 0 ? (
+            {purchaseInvoices.length > 0 ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={
+                      isBillable && hasDuePayment ? "primary" : "secondary"
+                    }
+                    leftIcon={<LuCreditCard />}
+                    rightIcon={<LuChevronDown />}
+                  >
+                    <Trans>Purchase Invoices</Trans>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {isBillable && (
+                    <>
+                      <DropdownMenuItem
+                        disabled={!canInvoice || !hasDuePayment}
+                        onClick={() => open("invoice")}
+                      >
+                        <DropdownMenuIcon icon={<LuCirclePlus />} />
+                        <Trans>Invoice Now</Trans>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {purchaseInvoices.map((invoice) => (
+                    <DropdownMenuItem key={invoice.id} asChild>
+                      <Link to={path.to.purchaseInvoiceDetails(invoice.id)}>
+                        <DropdownMenuIcon icon={<LuCreditCard />} />
+                        <HStack spacing={8}>
+                          <span>{invoice.invoiceId}</span>
+                          <LeaseInvoiceStatus status={invoice.status} />
+                        </HStack>
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              isBillable && (
                 <Button
                   variant={hasDuePayment ? "primary" : "secondary"}
                   leftIcon={<LuCreditCard />}
@@ -265,55 +288,7 @@ const LeaseHeader = ({
                 >
                   <Trans>Invoice Now</Trans>
                 </Button>
-              ) : (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant={hasDuePayment ? "primary" : "secondary"}
-                      leftIcon={<LuCreditCard />}
-                      rightIcon={<LuChevronDown />}
-                    >
-                      <Trans>Purchase Invoices</Trans>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      disabled={!canInvoice || !hasDuePayment}
-                      onClick={() => open("invoice")}
-                    >
-                      <DropdownMenuIcon icon={<LuCirclePlus />} />
-                      <Trans>Invoice Now</Trans>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    {purchaseInvoices.map((invoice) => (
-                      <DropdownMenuItem key={invoice.id} asChild>
-                        <Link to={path.to.purchaseInvoiceDetails(invoice.id)}>
-                          <DropdownMenuIcon icon={<LuCreditCard />} />
-                          <HStack spacing={8}>
-                            <span>{invoice.invoiceId}</span>
-                            <PurchaseInvoicingStatus
-                              status={
-                                invoice.status as Parameters<
-                                  typeof PurchaseInvoicingStatus
-                                >[0]["status"]
-                              }
-                            />
-                          </HStack>
-                        </Link>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ))}
-            {isDraft && (
-              <Button
-                variant="primary"
-                leftIcon={<LuPlay />}
-                isDisabled={!canUpdate || !isReady}
-                onClick={() => open("activate")}
-              >
-                <Trans>Activate</Trans>
-              </Button>
+              )
             )}
           </HStack>
         </HStack>
@@ -328,16 +303,6 @@ const LeaseHeader = ({
           confirmVariant={current.destructive ? "destructive" : "primary"}
           onCancel={confirm.onClose}
           onSubmit={confirm.onClose}
-          details={
-            action === "activate" ? (
-              <LeaseCommencementPreview
-                lease={lease}
-                lines={lines}
-                payments={payments}
-                policy={leasePolicy}
-              />
-            ) : undefined
-          }
         >
           {current.intent && (
             <input type="hidden" name="intent" value={current.intent} />
@@ -349,6 +314,7 @@ const LeaseHeader = ({
         <LeaseModifyModal
           lease={lease}
           lines={lines}
+          payments={payments}
           schedule={schedule}
           onClose={modify.onClose}
         />

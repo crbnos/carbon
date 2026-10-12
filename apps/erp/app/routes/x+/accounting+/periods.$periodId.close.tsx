@@ -476,7 +476,7 @@ function PeriodCloseTaskRow({
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
       case "unposted-revenue-schedules":
-        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
       case "unposted-lease-schedules":
         return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":

@@ -10,6 +10,7 @@ import { LuPlay } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useMatches, useParams } from "react-router";
 import { Confirm } from "~/components/Modals";
+import Money from "~/components/Money";
 import { SetupFooter, SetupFrame } from "~/components/Setup";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type {
@@ -18,7 +19,6 @@ import type {
 } from "~/modules/purchasing/ui/Leases";
 import {
   LeaseCommencementPreview,
-  LeaseMoney,
   LeaseSetupSteps,
   leaseActivationGaps,
   leaseSetupSteps,
@@ -123,10 +123,7 @@ export default function LeaseSetupRoute() {
                     <Trans>Total Payments</Trans>
                   </span>
                   <span className="font-medium">
-                    <LeaseMoney
-                      value={total}
-                      currencyCode={lease.currencyCode}
-                    />
+                    <Money value={total} currencyCode={lease.currencyCode} />
                   </span>
                 </span>
               )}

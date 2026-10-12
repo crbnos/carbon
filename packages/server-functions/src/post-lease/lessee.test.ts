@@ -2,10 +2,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { lesseeTerminationLegs, normalizeLesseeLegs } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
+import { InvalidInputError } from "../errors";
 import {
   commencementLines,
   type LesseeAccounts,
+  openingBalanceLines,
   purchaseLines,
   remeasurementLines,
   terminationLines
@@ -88,5 +91,53 @@ describe("purchaseLines", () => {
       ["rou", -345423.06],
       ["liab", 20000]
     ]);
+  });
+
+  it("refuses a price that leaves the asset a negative cost, as a 400", () => {
+    expect(() =>
+      purchaseLines({
+        carryingLiability: 50000,
+        price: 0,
+        rouAssetCost: 345423.06,
+        accumulated: 340000,
+        assetAccount: { id: "ppe", class: "Asset" },
+        accounts
+      })
+    ).toThrow(InvalidInputError);
+  });
+});
+
+describe("openingBalanceLines", () => {
+  it("puts the lease cost before the opening date to retained earnings", () => {
+    expect(
+      byAccount(
+        openingBalanceLines({
+          rouAssetCost: 1000,
+          accumulated: 300,
+          carryingLiability: 650,
+          retainedEarnings: { id: "re", class: "Equity" },
+          accounts
+        })
+      )
+    ).toEqual({ rou: 1000, acc: -300, liab: 650, re: 50 });
+  });
+});
+
+describe("the shared lifecycle legs", () => {
+  it("posts exactly the legs the app's preview shows", () => {
+    const args = {
+      carryingLiability: 113000,
+      penalty: 5000,
+      rouAssetCost: 328710.16,
+      accumulated: 219140.16
+    };
+    const preview = normalizeLesseeLegs(lesseeTerminationLegs(args).legs);
+    const posted = terminationLines({ ...args, accounts }).lines;
+    expect(posted.map((line) => line.description)).toEqual(
+      preview.map((leg) => leg.description)
+    );
+    expect(posted.map((line) => Math.abs(line.amount))).toEqual(
+      preview.map((leg) => leg.amount)
+    );
   });
 });

@@ -47,13 +47,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       leaseId: id,
       effectiveDate: terms.effectiveDate,
       endDate: terms.endDate,
-      discountRate: Number(terms.discountRate),
+      discountRate: terms.discountRate,
       paymentFrequency: terms.paymentFrequency,
-      annualEscalationPercent: Number(terms.annualEscalationPercent),
-      lines: terms.lines.map((line) => ({
-        leaseLineId: line.leaseLineId,
-        paymentAmount: Number(line.paymentAmount)
-      })),
+      annualEscalationPercent: terms.annualEscalationPercent,
+      lines: terms.lines,
       notes: terms.notes ?? null
     });
 

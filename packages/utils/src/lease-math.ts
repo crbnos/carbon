@@ -2,13 +2,27 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import {
+  addMonths,
+  type LeasePaymentType,
+  leaseMonthEnd,
+  leaseMonthShare,
+  leaseMonthsAt,
+  leaseMonthsThrough,
+  paymentMonthIndex,
+  scheduleMonthOfPayment
+} from "@carbon/database/lease-months";
 import { round } from "@carbon/database/precision";
-import { classifyLessorLease, type Timing } from "./lessor-lease.ts";
+import {
+  assertDiscountRate,
+  classifyLessorLease,
+  discountFactor,
+  monthlyRate,
+  type Timing
+} from "./lessor-lease.ts";
 import {
   addDays,
   daysBetweenInclusive,
-  daysInMonth,
-  formatIsoDate,
   parseIsoDate
 } from "./revenue-schedule.ts";
 
@@ -18,16 +32,20 @@ import {
 //
 // A lease month runs from the commencement day: month `m` covers
 // `addMonths(commencement, m)` to the day before `addMonths(commencement, m + 1)`.
-// A payment sits at a whole-month point `k` from commencement: an Advance rent
-// row at the start of its period, an Arrears rent row at the end of its period,
-// a purchase option or termination penalty at the end of its due date.
+// The month arithmetic and where a payment sits (`paymentMonthIndex`) live in
+// `@carbon/database/lease-months`, so the accounting cutover reads payments the
+// way this schedule pays them; they are re-exported here.
+
+export {
+  addMonths,
+  type LeasePaymentType,
+  leaseMonthShare,
+  leaseMonthsAt,
+  paymentMonthIndex
+} from "@carbon/database/lease-months";
 
 export type LesseeClassification = "Operating" | "Finance" | "Short-Term";
 export type LeasePaymentFrequency = "Monthly" | "Quarterly" | "Annual";
-export type LeasePaymentType =
-  | "Rent"
-  | "Purchase Option"
-  | "Termination Penalty";
 
 const MONTHS_PER_YEAR = 12;
 const FREQUENCY_MONTHS: Record<LeasePaymentFrequency, number> = {
@@ -35,23 +53,6 @@ const FREQUENCY_MONTHS: Record<LeasePaymentFrequency, number> = {
   Quarterly: 3,
   Annual: 12
 };
-
-/** Periodic rate from an annual percentage: 6 (%) → 0.005 per month. */
-const monthlyRate = (annualRate: number): number => annualRate / 100 / 12;
-
-/** `date` moved by whole calendar months, the day clamped to the target
- *  month's length: 2027-01-31 + 1 → 2027-02-28. */
-export function addMonths(date: string, months: number): string {
-  const { year, month, day } = parseIsoDate(date);
-  const index = year * MONTHS_PER_YEAR + (month - 1) + months;
-  const targetYear = (index - (index % MONTHS_PER_YEAR)) / MONTHS_PER_YEAR;
-  const targetMonth = (index % MONTHS_PER_YEAR) + 1;
-  return formatIsoDate(
-    targetYear,
-    targetMonth,
-    Math.min(day, daysInMonth(targetYear, targetMonth))
-  );
-}
 
 export type LeasePaymentRowInput = {
   periodStart: string;
@@ -142,66 +143,26 @@ export function openEndedLeaseHorizon(
   return addMonths(commencementDate, (period + 1) * step);
 }
 
-/** The lease months that have started by `date`, after the first: the
- *  largest `m` with `addMonths(commencementDate, m) <= date`, 0 before the
- *  commencement. Counted with `addMonths`, which clamps a day the month does
- *  not have (a lease from the 31st has its next month start on Feb 28), so
- *  every reader agrees with the rows `generateLeasePayments` cuts. */
-export function leaseMonthsAt(commencementDate: string, date: string): number {
-  if (date <= commencementDate) return 0;
-  const start = parseIsoDate(commencementDate);
-  const at = parseIsoDate(date);
-  let months =
-    (at.year - start.year) * MONTHS_PER_YEAR + (at.month - start.month);
-  while (months > 0 && addMonths(commencementDate, months) > date) months -= 1;
-  while (addMonths(commencementDate, months + 1) <= date) months += 1;
-  return months;
-}
-
-/** Whole months from commencement to the start of `date`. */
-function monthsBefore(commencementDate: string, date: string): number {
-  return leaseMonthsAt(commencementDate, date);
-}
-
-/** Whole months from commencement to the end of `date`. */
-function monthsThrough(commencementDate: string, date: string): number {
-  if (date < commencementDate) return 0;
-  return leaseMonthsAt(commencementDate, addDays(date, 1));
-}
-
 /** The whole lease months from `commencementDate` through `endDate`. */
 export function leaseTermMonths(
   commencementDate: string,
   endDate: string
 ): number {
-  return monthsThrough(commencementDate, endDate);
+  return leaseMonthsThrough(commencementDate, endDate);
 }
 
 /** The short-term test of ASC 842: a term of 12 months or less, measured on
  *  the dates — the rounded-down whole months would let 12 months and 15
- *  days pass. */
+ *  days pass. The term may run through the day before the first anniversary;
+ *  a lease from Feb 29 has none the next year, so it runs through Feb 28. */
 export function isTermWithinTwelveMonths(
   commencementDate: string,
   endDate: string
 ): boolean {
-  return endDate <= addDays(addMonths(commencementDate, MONTHS_PER_YEAR), -1);
-}
-
-/** The whole-month point `k` a payment row sits at (plan decision P4). */
-export function paymentMonthIndex(
-  row: Pick<
-    LeasePaymentRowInput,
-    "periodStart" | "periodEnd" | "dueDate" | "paymentType"
-  >,
-  commencementDate: string,
-  timing: Timing
-): number {
-  if (row.paymentType !== "Rent") {
-    return monthsThrough(commencementDate, row.dueDate);
-  }
-  return timing === "Advance"
-    ? monthsBefore(commencementDate, row.periodStart)
-    : monthsThrough(commencementDate, row.periodEnd);
+  const anniversary = addMonths(commencementDate, MONTHS_PER_YEAR);
+  const clamped =
+    parseIsoDate(anniversary).day < parseIsoDate(commencementDate).day;
+  return endDate <= (clamped ? anniversary : addDays(anniversary, -1));
 }
 
 export type LeasePaymentPoint = { monthIndex: number; amount: number };
@@ -211,15 +172,11 @@ export function presentValueOfPayments(args: {
   payments: LeasePaymentPoint[];
   annualRate: number;
 }): number {
+  assertDiscountRate(args.annualRate);
   const r = monthlyRate(args.annualRate);
-  if (!Number.isFinite(args.annualRate) || args.annualRate < 0) {
-    throw new Error(
-      `The discount rate must be zero or more, got ${args.annualRate}`
-    );
-  }
   let pv = 0;
   for (const payment of args.payments) {
-    pv += payment.amount * (1 + r) ** -payment.monthIndex;
+    pv += payment.amount * discountFactor(r, payment.monthIndex);
   }
   return round(pv);
 }
@@ -291,11 +248,14 @@ export type LesseeScheduleLine = {
 
 /** The monthly effective-interest schedule of a capitalized lease (spec §3).
  *  Month `m` pays the payments at point `m` first (Advance) and the ones at
- *  point `m + 1` last (Arrears, and an end-of-term purchase option). Each line
- *  is rounded as it is cut; the last line's interest closes the liability at
- *  exactly 0. Operating: one straight-line lease cost, the ROU amortization is
- *  cost − interest. Finance: straight-line ROU amortization over
- *  `amortizationMonths`, the cost is interest + amortization. */
+ *  point `m + 1` last (Arrears, and an end-of-term purchase option) —
+ *  `scheduleMonthOfPayment`. Each line is rounded as it is cut; the last
+ *  line's interest closes the liability at exactly 0. Operating: one
+ *  straight-line lease cost, the ROU amortization is cost − interest.
+ *  Finance: straight-line ROU amortization over `amortizationMonths`, the
+ *  cost is interest + amortization. A last month cut short by the end date
+ *  (`lastMonthShare`, its days over a full month's — `leaseMonthShare`) takes
+ *  that share of a month's straight line, not a whole month's. */
 export function buildLesseeSchedule(args: {
   openingLiability: number;
   openingRouAsset: number;
@@ -306,20 +266,30 @@ export function buildLesseeSchedule(args: {
   classification: "Operating" | "Finance";
   amortizationMonths: number;
   periodDates: string[];
+  /** The last month's share of a full lease month, in (0, 1]. Default 1. */
+  lastMonthShare?: number;
 }): LesseeScheduleLine[] {
   const { months } = args;
   if (!Number.isInteger(months) || months < 1) {
-    throw new Error(`A lease needs a whole number of months, got ${months}`);
+    throw new Error(
+      months === 0
+        ? "A lease schedule needs at least one month; a lease that ends before its first month does cannot be capitalized"
+        : `A lease schedule needs a whole number of months, got ${months}`
+    );
   }
   if (args.periodDates.length !== months) {
     throw new Error(
       `A ${months}-month schedule needs ${months} dates, got ${args.periodDates.length}`
     );
   }
+  const share = args.lastMonthShare ?? 1;
+  if (!(share > 0 && share <= 1)) {
+    throw new Error(
+      `The last month's share must be more than 0 and at most 1, got ${share}`
+    );
+  }
   const r = monthlyRate(args.annualRate);
 
-  // A payment at point k: the start of month k, unless k is past the last
-  // month or the lease pays in arrears — then the end of month k − 1.
   const atStart = new Array<number>(months).fill(0);
   const atEnd = new Array<number>(months).fill(0);
   let totalPayments = 0;
@@ -331,16 +301,19 @@ export function buildLesseeSchedule(args: {
       );
     }
     totalPayments += payment.amount;
-    if (k < months && (args.timing === "Advance" || k === 0)) {
-      atStart[k] = (atStart[k] ?? 0) + payment.amount;
-    } else {
-      atEnd[k - 1] = (atEnd[k - 1] ?? 0) + payment.amount;
-    }
+    const { month, at } = scheduleMonthOfPayment(k, args.timing, months);
+    const into = at === "start" ? atStart : atEnd;
+    into[month] = (into[month] ?? 0) + payment.amount;
   }
 
+  // The term in full months: the last one counts for its share.
+  const termWeight = months - 1 + share;
   const operatingCost =
-    (totalPayments + args.openingRouAsset - args.openingLiability) / months;
-  const financeAmortization = args.openingRouAsset / args.amortizationMonths;
+    (totalPayments + args.openingRouAsset - args.openingLiability) / termWeight;
+  const amortizesOverTerm = args.amortizationMonths === months;
+  const financeAmortization =
+    args.openingRouAsset /
+    (amortizesOverTerm ? termWeight : args.amortizationMonths);
 
   const lines: LesseeScheduleLine[] = [];
   let opening = round(args.openingLiability);
@@ -363,9 +336,9 @@ export function buildLesseeSchedule(args: {
       leaseCost = round(rouAmortization + interest);
     } else {
       rouAmortization =
-        last && args.amortizationMonths === months
+        last && amortizesOverTerm
           ? rou
-          : round(Math.min(financeAmortization, rou));
+          : round(Math.min(financeAmortization * (last ? share : 1), rou));
       leaseCost = round(interest + rouAmortization);
     }
 
@@ -394,7 +367,7 @@ export function leaseMonthEnds(
   count: number
 ): string[] {
   return Array.from({ length: count }, (_, i) =>
-    addDays(addMonths(commencementDate, fromMonth + i + 1), -1)
+    leaseMonthEnd(commencementDate, fromMonth + i)
   );
 }
 
@@ -416,4 +389,521 @@ export function remeasureLease(args: {
   return rouAsset < 0
     ? { liability, adjustment, rouAsset: 0, gain: round(-rouAsset) }
     : { liability, adjustment, rouAsset, gain: 0 };
+}
+
+// --- Lifecycle math -----------------------------------------------------------
+// What `post-lease` books when an asset is measured, modified, ended or bought,
+// as pure functions the app's previews call too, so a preview and the journal
+// it previews cannot disagree.
+
+/** The whole years of the lease before lease month `month`: the escalation
+ *  steps up on each anniversary of the commencement. */
+export function leaseEscalationYears(month: number): number {
+  return (month - (month % MONTHS_PER_YEAR)) / MONTHS_PER_YEAR;
+}
+
+/** The payment an asset pays in lease month `month`: its commencement
+ *  payment, escalated on each anniversary. Not rounded — the rows round. */
+export function escalatedLeasePayment(
+  paymentAmount: number,
+  annualEscalationPercent: number,
+  month: number
+): number {
+  return (
+    paymentAmount *
+    (1 + annualEscalationPercent / 100) ** leaseEscalationYears(month)
+  );
+}
+
+/** One asset's payment rows from lease month `fromMonth` on, cut from the
+ *  COMMENCEMENT so the escalation steps up on its anniversaries and a lease
+ *  from the 29th–31st keeps its clamped months. `paymentAtStart` is the
+ *  payment at lease month `fromMonth` (the escalated rate then); the asset's
+ *  commencement payment is derived from it. A period that started before
+ *  `fromMonth` (the frequency changed) is cut down to its days from there. */
+export function remainingLeasePayments(args: {
+  commencementDate: string;
+  fromMonth: number;
+  endDate: string;
+  paymentAtStart: number;
+  frequency: LeasePaymentFrequency;
+  timing: Timing;
+  annualEscalationPercent: number;
+  purchaseOptionAmount: number;
+  decimals: number;
+}): { commencementPayment: number; rows: LeasePaymentRowInput[] } {
+  const startDate = addMonths(args.commencementDate, args.fromMonth);
+  const commencementPayment =
+    args.paymentAtStart /
+    escalatedLeasePayment(1, args.annualEscalationPercent, args.fromMonth);
+  const rows = generateLeasePayments({
+    commencementDate: args.commencementDate,
+    endDate: args.endDate,
+    paymentAmount: commencementPayment,
+    frequency: args.frequency,
+    timing: args.timing,
+    annualEscalationPercent: args.annualEscalationPercent,
+    purchaseOptionAmount: args.purchaseOptionAmount,
+    decimals: args.decimals
+  }).flatMap((row): LeasePaymentRowInput[] => {
+    if (row.paymentType !== "Rent" || row.periodStart >= startDate) {
+      return [row];
+    }
+    if (row.periodEnd < startDate) return [];
+    const share =
+      daysBetweenInclusive(startDate, row.periodEnd) /
+      daysBetweenInclusive(row.periodStart, row.periodEnd);
+    return [
+      {
+        ...row,
+        periodStart: startDate,
+        dueDate: args.timing === "Advance" ? startDate : row.periodEnd,
+        amount: round(row.amount * share, args.decimals)
+      }
+    ];
+  });
+  return {
+    commencementPayment: round(commencementPayment),
+    rows: rows.filter((row) => row.amount > 0)
+  };
+}
+
+/** The lease months a schedule from lease month `fromMonth` to `endDate`
+ *  covers — the whole months of the term, plus a last part month when the
+ *  term does not end on a month boundary, never fewer than one — and their
+ *  last days, the final one clamped to `endDate`. The months are the
+ *  commencement's. `termMonths` is the whole months from `fromMonth`.
+ *  `lastMonthShare` is the last month's share of a full month by days
+ *  (`leaseMonthShare`), for `buildLesseeSchedule`: a part month takes that
+ *  share of the lease cost. */
+export function lesseeScheduleSpan(
+  commencementDate: string,
+  endDate: string,
+  fromMonth = 0
+): {
+  termMonths: number;
+  withinTwelveMonths: boolean;
+  months: number;
+  periodDates: string[];
+  lastMonthShare: number;
+} {
+  const allMonths = leaseTermMonths(commencementDate, endDate);
+  const termMonths = allMonths - fromMonth;
+  const hasPartMonth = addMonths(commencementDate, allMonths) <= endDate;
+  const months = Math.max(1, termMonths + (hasPartMonth ? 1 : 0));
+  const periodDates = leaseMonthEnds(commencementDate, fromMonth, months).map(
+    (date) => (date > endDate ? endDate : date)
+  );
+  const lastMonth = fromMonth + months - 1;
+  return {
+    termMonths,
+    withinTwelveMonths: isTermWithinTwelveMonths(
+      addMonths(commencementDate, fromMonth),
+      endDate
+    ),
+    months,
+    periodDates,
+    // A last month that starts after the end (a span forced to one month)
+    // has no days to share.
+    lastMonthShare:
+      addMonths(commencementDate, lastMonth) <= endDate
+        ? leaseMonthShare(commencementDate, lastMonth, endDate)
+        : 1
+  };
+}
+
+type PaymentPosition = {
+  periodStart: string;
+  periodEnd: string;
+  dueDate: string;
+  paymentType: LeasePaymentType;
+};
+
+/** The schedule month a payment is paid in, as `buildLesseeSchedule` places
+ *  it: at the start of month `k` (Advance, or point 0), else at the end of
+ *  month `k − 1`. `months` is the schedule's length. */
+export function lesseeScheduleMonthOf(
+  payment: PaymentPosition,
+  commencementDate: string,
+  timing: Timing,
+  months: number
+): number {
+  return scheduleMonthOfPayment(
+    paymentMonthIndex(payment, commencementDate, timing),
+    timing,
+    months
+  ).month;
+}
+
+/** Whether an opening balance struck on `asOf` holds a payment: the
+ *  schedule pays it in a month that ends before `asOf` (the months the
+ *  carrying balances have already deducted). Decided by the schedule month,
+ *  not the due date — an Advance payment due inside the as-of month is still
+ *  in the carrying liability. `periodDates` are the schedule's month ends
+ *  (`lesseeScheduleSpan`). */
+export function isPaidBeforeOpening(
+  payment: PaymentPosition,
+  args: {
+    commencementDate: string;
+    timing: Timing;
+    periodDates: string[];
+    asOf: string;
+  }
+): boolean {
+  const monthsBefore = args.periodDates.filter(
+    (date) => date < args.asOf
+  ).length;
+  return (
+    lesseeScheduleMonthOf(
+      payment,
+      args.commencementDate,
+      args.timing,
+      args.periodDates.length
+    ) < monthsBefore
+  );
+}
+
+export type LesseeAssetInputs = {
+  fairValue: number | null;
+  economicLifeMonths: number | null;
+  ownershipTransfers: boolean;
+  purchaseOptionReasonablyCertain: boolean;
+  specializedAsset: boolean;
+};
+
+/** One asset's liability — the PV of its payment rows from lease month
+ *  `fromMonth` (0 at commencement) — and how it classifies over the term
+ *  from there to `endDate`. The override, when there is one, is the
+ *  caller's. */
+export function measureLesseeAsset(args: {
+  commencementDate: string;
+  endDate: string;
+  timing: Timing;
+  /** Annual %. */
+  discountRate: number;
+  payments: (PaymentPosition & { amount: number })[];
+  fromMonth?: number;
+  inputs: LesseeAssetInputs;
+  shortTermExpedient: boolean;
+  thresholds: { majorPartPercent: number; substantiallyAllPercent: number };
+}): LesseeClassificationResult & {
+  liability: number;
+  termMonths: number;
+} {
+  const fromMonth = args.fromMonth ?? 0;
+  const span = lesseeScheduleSpan(
+    args.commencementDate,
+    args.endDate,
+    fromMonth
+  );
+  const liability = presentValueOfPayments({
+    payments: args.payments.map((payment) => ({
+      monthIndex:
+        paymentMonthIndex(payment, args.commencementDate, args.timing) -
+        fromMonth,
+      amount: Number(payment.amount)
+    })),
+    annualRate: args.discountRate
+  });
+  const result = classifyLesseeLease(
+    {
+      ...args.inputs,
+      termMonths: span.termMonths,
+      withinTwelveMonths: span.withinTwelveMonths,
+      pvPayments: liability,
+      shortTermExpedient: args.shortTermExpedient
+    },
+    args.thresholds
+  );
+  return { ...result, liability, termMonths: span.termMonths };
+}
+
+export type LesseeCarrying = {
+  /** The asset's lease liability at the start of `startDate`. */
+  liability: number;
+  /** ROU amortization booked before `startDate`. */
+  accumulated: number;
+  /** ROU cost less the accumulated amortization. */
+  rouAsset: number;
+};
+
+/** One asset's carrying amounts at the start of `startDate`: the closing
+ *  liability of its last schedule month before the date (its initial
+ *  liability when none is), and the amortization of every month before it.
+ *  `schedule` is that asset's schedule lines. */
+export function lesseeCarryingAt(args: {
+  schedule: {
+    periodDate: string;
+    closingLiability: number;
+    rouAmortization: number;
+  }[];
+  startDate: string;
+  initialLiability: number | null;
+  rouAssetCost: number | null;
+}): LesseeCarrying {
+  const before = args.schedule
+    .filter((row) => row.periodDate < args.startDate)
+    .sort((a, b) => a.periodDate.localeCompare(b.periodDate));
+  const last = before.at(-1);
+  const accumulated = round(
+    before.reduce((sum, row) => sum + Number(row.rouAmortization), 0)
+  );
+  return {
+    liability: last
+      ? Number(last.closingLiability)
+      : Number(args.initialLiability ?? 0),
+    accumulated,
+    rouAsset: round(Number(args.rouAssetCost ?? 0) - accumulated)
+  };
+}
+
+/** What an asset's ending adds back to its carrying liability: a Pending
+ *  Purchase Option row due on or before `lastDay` was counted as paid by
+ *  the schedule, and the ending removes it unpaid. `payments` are that
+ *  asset's rows. */
+export function endedPaymentsAddBack(
+  payments: {
+    paymentType: LeasePaymentType;
+    status: string;
+    dueDate: string;
+    amount: number;
+  }[],
+  lastDay: string
+): number {
+  return round(
+    payments
+      .filter(
+        (payment) =>
+          payment.status === "Pending" &&
+          payment.paymentType === "Purchase Option" &&
+          payment.dueDate <= lastDay
+      )
+      .reduce((sum, payment) => sum + Number(payment.amount), 0)
+  );
+}
+
+/** The accounts a lessee journal posts to, by role. The server resolves each
+ *  to the company's account; the app labels it. */
+export type LesseeLegAccount =
+  | "rightOfUseAsset"
+  | "accumulatedRightOfUseAmortization"
+  | "leaseLiability"
+  | "gain"
+  | "loss"
+  | "fixedAsset"
+  | "retainedEarnings";
+
+/** One side of a lessee journal. A negative amount belongs on the other
+ *  side (`normalizeLesseeLegs`). */
+export type LesseeLeg = {
+  side: "debit" | "credit";
+  account: LesseeLegAccount;
+  description: string;
+  amount: number;
+};
+
+/** The legs as they post: each amount rounded, a negative one moved to the
+ *  other side, and a zero one dropped. */
+export function normalizeLesseeLegs(legs: LesseeLeg[]): LesseeLeg[] {
+  return legs.flatMap((leg): LesseeLeg[] => {
+    const amount = round(leg.amount);
+    if (amount === 0) return [];
+    if (amount > 0) return [{ ...leg, amount }];
+    return [
+      {
+        ...leg,
+        side: leg.side === "debit" ? "credit" : "debit",
+        amount: -amount
+      }
+    ];
+  });
+}
+
+/** Commencement: Dr ROU asset / Cr Lease liability, both at the PV. */
+export function lesseeCommencementLegs(args: {
+  liability: number;
+}): LesseeLeg[] {
+  return [
+    {
+      side: "debit",
+      account: "rightOfUseAsset",
+      description: "Right-of-use asset",
+      amount: args.liability
+    },
+    {
+      side: "credit",
+      account: "leaseLiability",
+      description: "Lease liability",
+      amount: args.liability
+    }
+  ];
+}
+
+/** Opening balance of a lease that commenced before the accounting cutover:
+ *  the balances its schedule reaches on the as-of date, the difference — the
+ *  lease cost of the months before it — to retained earnings. */
+export function lesseeOpeningBalanceLegs(args: {
+  rouAssetCost: number;
+  accumulated: number;
+  carryingLiability: number;
+}): LesseeLeg[] {
+  const { rouAssetCost, accumulated, carryingLiability } = args;
+  return [
+    {
+      side: "debit",
+      account: "rightOfUseAsset",
+      description: "Right-of-use asset",
+      amount: rouAssetCost
+    },
+    {
+      side: "credit",
+      account: "accumulatedRightOfUseAmortization",
+      description: "Accumulated right-of-use amortization",
+      amount: accumulated
+    },
+    {
+      side: "credit",
+      account: "leaseLiability",
+      description: "Lease liability",
+      amount: carryingLiability
+    },
+    {
+      side: "credit",
+      account: "retainedEarnings",
+      description: "Lease cost before the opening date",
+      amount: round(rouAssetCost - accumulated - carryingLiability)
+    }
+  ];
+}
+
+/** Remeasurement (Modify): the ROU asset moves by the liability change; a
+ *  decrease larger than the ROU asset leaves it at zero and the rest is a
+ *  gain. `adjustment` = new liability − carrying liability. */
+export function lesseeRemeasurementLegs(args: {
+  adjustment: number;
+  gain: number;
+}): LesseeLeg[] {
+  return [
+    {
+      side: "debit",
+      account: "rightOfUseAsset",
+      description: "Right-of-use asset remeasured",
+      amount: round(args.adjustment + args.gain)
+    },
+    {
+      side: "credit",
+      account: "leaseLiability",
+      description: "Lease liability remeasured",
+      amount: args.adjustment
+    },
+    {
+      side: "credit",
+      account: "gain",
+      description: "Gain on lease modification",
+      amount: args.gain
+    }
+  ];
+}
+
+/** Early termination (ASC 842-20-40-1): the liability and the ROU asset
+ *  leave the books, and the difference is a gain or a loss. A penalty stays
+ *  in the liability as a payment row the next invoice settles. */
+export function lesseeTerminationLegs(args: {
+  carryingLiability: number;
+  penalty: number;
+  rouAssetCost: number;
+  accumulated: number;
+}): { legs: LesseeLeg[]; gainLoss: number } {
+  const { carryingLiability, penalty, rouAssetCost, accumulated } = args;
+  const gainLoss = round(
+    carryingLiability - penalty - (rouAssetCost - accumulated)
+  );
+  return {
+    gainLoss,
+    legs: [
+      {
+        side: "debit",
+        account: "leaseLiability",
+        description: "Lease liability derecognized",
+        amount: round(carryingLiability - penalty)
+      },
+      {
+        side: "debit",
+        account: "accumulatedRightOfUseAmortization",
+        description: "Accumulated amortization derecognized",
+        amount: accumulated
+      },
+      {
+        side: "credit",
+        account: "rightOfUseAsset",
+        description: "Right-of-use asset derecognized",
+        amount: rouAssetCost
+      },
+      gainLoss >= 0
+        ? {
+            side: "credit",
+            account: "gain",
+            description: "Gain on lease termination",
+            amount: gainLoss
+          }
+        : {
+            side: "debit",
+            account: "loss",
+            description: "Loss on lease termination",
+            amount: -gainLoss
+          }
+    ]
+  };
+}
+
+/** Purchase option exercise (ASC 842-20-40-2): not a termination. The ROU
+ *  asset moves into PP&E at its net book value, adjusted by the price less
+ *  the carrying liability; the price stays in the liability as a payment row
+ *  the next invoice settles. A negative `assetCost` is returned, not refused:
+ *  the caller decides (`post-lease` refuses it, the app disables Purchase). */
+export function lesseePurchaseLegs(args: {
+  carryingLiability: number;
+  price: number;
+  rouAssetCost: number;
+  accumulated: number;
+}): { legs: LesseeLeg[]; assetCost: number } {
+  const { carryingLiability, price, rouAssetCost, accumulated } = args;
+  const assetCost = round(
+    rouAssetCost - accumulated + price - carryingLiability
+  );
+  return {
+    assetCost,
+    legs: [
+      {
+        side: "debit",
+        account: "fixedAsset",
+        description: "Leased asset purchased",
+        amount: assetCost
+      },
+      {
+        side: "debit",
+        account: "accumulatedRightOfUseAmortization",
+        description: "Accumulated amortization derecognized",
+        amount: accumulated
+      },
+      {
+        side: "debit",
+        account: "leaseLiability",
+        description: "Lease liability derecognized",
+        amount: carryingLiability
+      },
+      {
+        side: "credit",
+        account: "rightOfUseAsset",
+        description: "Right-of-use asset derecognized",
+        amount: rouAssetCost
+      },
+      {
+        side: "credit",
+        account: "leaseLiability",
+        description: "Purchase price payable",
+        amount: price
+      }
+    ]
+  };
 }
