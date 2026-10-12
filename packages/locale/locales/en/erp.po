@@ -1880,6 +1880,9 @@ msgstr "Actual"
 msgid "Actual <0>{0}</0>"
 msgstr "Actual <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr "Actual cost"
+
 msgid "Actual Cost"
 msgstr "Actual Cost"
 
@@ -1900,6 +1903,9 @@ msgstr "Actual Start"
 
 msgid "Actual time"
 msgstr "Actual time"
+
+msgid "ACWP"
+msgstr "ACWP"
 
 msgid "Add"
 msgstr "Add"
@@ -3917,6 +3923,9 @@ msgstr "Avg Days to Close"
 msgid "Awaiting approval"
 msgstr "Awaiting approval"
 
+msgid "BAC"
+msgstr "BAC"
+
 msgid "Back"
 msgstr "Back"
 
@@ -4094,6 +4103,12 @@ msgstr "Batches to return"
 
 msgid "Batching"
 msgstr "Batching"
+
+msgid "BCWP"
+msgstr "BCWP"
+
+msgid "BCWS"
+msgstr "BCWS"
 
 msgid "Before cutover"
 msgstr "Before cutover"
@@ -4394,6 +4409,9 @@ msgstr "Bucket"
 
 msgid "Budget"
 msgstr "Budget"
+
+msgid "Budget at completion"
+msgstr "Budget at completion"
 
 msgid "Budget Control"
 msgstr "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "Cost of Sales"
 msgid "Cost of service work covered by a warranty"
 msgstr "Cost of service work covered by a warranty"
 
+msgid "Cost performance index"
+msgstr "Cost performance index"
+
 msgid "Cost Plus"
 msgstr "Cost Plus"
 
@@ -6518,6 +6539,9 @@ msgstr "Cost Type"
 
 msgid "Cost Types"
 msgstr "Cost Types"
+
+msgid "Cost variance"
+msgstr "Cost variance"
 
 msgid "Costing"
 msgstr "Costing"
@@ -6633,6 +6657,9 @@ msgstr "Coverage"
 
 msgid "Coverage Contract"
 msgstr "Coverage Contract"
+
+msgid "CPI"
+msgstr "CPI"
 
 msgid "Create"
 msgstr "Create"
@@ -7318,6 +7345,9 @@ msgstr "Cutover step"
 
 msgid "Cutover support"
 msgstr "Cutover support"
+
+msgid "CV"
+msgstr "CV"
 
 msgid "Cycle billing"
 msgstr "Cycle billing"
@@ -8927,6 +8957,9 @@ msgstr "Earliest operation start"
 msgid "Earned to Date"
 msgstr "Earned to Date"
 
+msgid "Earned value"
+msgstr "Earned value"
+
 msgid "Earned Value"
 msgstr "Earned Value"
 
@@ -10156,6 +10189,9 @@ msgstr "Expiry trace"
 msgid "Export"
 msgstr "Export"
 
+msgid "Export ACWP"
+msgstr "Export ACWP"
+
 msgid "Export CSV"
 msgstr "Export CSV"
 
@@ -11163,7 +11199,9 @@ msgstr "FX Gain/Loss"
 msgid "FY {year}"
 msgstr "FY {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr "FY{0} P{1}"
@@ -15537,6 +15575,9 @@ msgstr "No due date"
 msgid "No earlier service orders."
 msgstr "No earlier service orders."
 
+msgid "No earned value was recorded for this period."
+msgstr "No earned value was recorded for this period."
+
 msgid "No editable properties for this item."
 msgstr "No editable properties for this item."
 
@@ -16176,6 +16217,9 @@ msgstr "No work centers at this location"
 
 msgid "No work centers exist"
 msgstr "No work centers exist"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr "No work packages yet. Give a chargeable element below a control account an earned value technique."
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr "No work yet. Build the tree from the unit, or add the first node."
@@ -17933,6 +17977,9 @@ msgstr "Planned Start Time"
 
 msgid "Planned time"
 msgstr "Planned time"
+
+msgid "Planned value"
+msgstr "Planned value"
 
 msgid "Planning"
 msgstr "Planning"
@@ -21080,8 +21127,14 @@ msgstr "Schedule outdated at"
 msgid "Schedule outdated reason"
 msgstr "Schedule outdated reason"
 
+msgid "Schedule performance index"
+msgstr "Schedule performance index"
+
 msgid "Schedule regenerated"
 msgstr "Schedule regenerated"
+
+msgid "Schedule variance"
+msgstr "Schedule variance"
 
 msgid "Schedule Visit"
 msgstr "Schedule Visit"
@@ -22530,6 +22583,9 @@ msgstr "Specific Items"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Spend by supplier, item, or category — your biggest cost drivers"
 
+msgid "SPI"
+msgstr "SPI"
+
 msgid "Split"
 msgstr "Split"
 
@@ -23327,6 +23383,9 @@ msgstr "Suspect link"
 
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
+
+msgid "SV"
+msgstr "SV"
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "Uses {0} · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Uses sub-assembly {0} · {1}"
 
+msgid "VAC"
+msgstr "VAC"
+
 msgid "Valid"
 msgstr "Valid"
 
@@ -26557,6 +26619,9 @@ msgstr "Variables"
 
 msgid "Variance"
 msgstr "Variance"
+
+msgid "Variance at completion"
+msgstr "Variance at completion"
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Variance between actual and standard BOM component consumption"

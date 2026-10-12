@@ -1880,6 +1880,9 @@ msgstr "Rzeczywista"
 msgid "Actual <0>{0}</0>"
 msgstr "Rzeczywisty <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "Rzeczywisty koszt"
 
@@ -1900,6 +1903,9 @@ msgstr "Rzeczywisty początek"
 
 msgid "Actual time"
 msgstr "Czas rzeczywisty"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "Dodaj"
@@ -3917,6 +3923,9 @@ msgstr "Średnia liczba dni do zamknięcia"
 msgid "Awaiting approval"
 msgstr "Oczekuje na zatwierdzenie"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "Wstecz"
 
@@ -4094,6 +4103,12 @@ msgstr "Partie do zwrotu"
 
 msgid "Batching"
 msgstr "Tworzenie Partii Produkcyjnych"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "Przed przełączeniem"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "Zasobnik"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "Koszt sprzedaży"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "Pokrycie"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "Krok przejścia"
 
 msgid "Cutover support"
 msgstr "Wsparcie przejścia"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "Rozliczenie cykliczne"
@@ -8927,6 +8957,9 @@ msgstr "Najwcześniejszy początek operacji"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "Śledzenie terminu ważności"
 msgid "Export"
 msgstr "Eksportuj"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "Eksportuj CSV"
 
@@ -11163,7 +11199,9 @@ msgstr "Zysk/Strata z kursu walut"
 msgid "FY {year}"
 msgstr "Rok obrotowy {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "Brak daty terminu"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Brak edytowalnych właściwości dla tego elementu."
 
@@ -16176,6 +16217,9 @@ msgstr "Brak stanowisk roboczych w tej lokalizacji"
 
 msgid "No work centers exist"
 msgstr "Nie istnieją stanowiska robocze"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "Planowany czas rozpoczęcia"
 
 msgid "Planned time"
 msgstr "Zaplanowany czas"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planowanie"
@@ -21080,8 +21127,14 @@ msgstr "Harmonogram przestarzały o"
 msgid "Schedule outdated reason"
 msgstr "Przyczyna nieaktualnego harmonogramu"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "Harmonogram wygenerowany"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "Określone artykuły"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Wydatki według dostawcy, pozycji lub kategorii — Twoje największe czynniki kosztowe"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "Podziel"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Podejrzewany tryb awarii"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "Używa {0} · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Używa zestawu podrzędnego {0} · {1}"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "Używa podzespołu {0} · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "Zmienne"
 
 msgid "Variance"
 msgstr "Odchylenie"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Odchylenie między rzeczywistym a standardowym zużyciem komponentów BOM"

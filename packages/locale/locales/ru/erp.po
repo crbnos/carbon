@@ -1880,6 +1880,9 @@ msgstr "Фактическое"
 msgid "Actual <0>{0}</0>"
 msgstr "Фактический <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "Фактическая себестоимость"
 
@@ -1900,6 +1903,9 @@ msgstr "Фактическое начало"
 
 msgid "Actual time"
 msgstr "Фактическое время"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "Добавить"
@@ -3917,6 +3923,9 @@ msgstr "Среднее количество дней до закрытия"
 msgid "Awaiting approval"
 msgstr "Ожидает утверждения"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "Назад"
 
@@ -4094,6 +4103,12 @@ msgstr "Серии для возврата"
 
 msgid "Batching"
 msgstr "Объединение в серии"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "До переключения"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "Хранилище"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "Себестоимость продаж"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "Покрытие"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "Шаг перехода"
 
 msgid "Cutover support"
 msgstr "Поддержка при переходе"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "Циклическое выставление счетов"
@@ -8927,6 +8957,9 @@ msgstr "Самое раннее начало операции"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "Трассировка срока годности"
 msgid "Export"
 msgstr "Экспортировать"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "Экспортировать CSV"
 
@@ -11163,7 +11199,9 @@ msgstr "Курсовая прибыль/убыток"
 msgid "FY {year}"
 msgstr "Финансовый год {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "Нет срока выполнения"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Нет редактируемых свойств для этого элемента."
 
@@ -16176,6 +16217,9 @@ msgstr "На этой площадке нет рабочих центров"
 
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "Запланированное время начала"
 
 msgid "Planned time"
 msgstr "Плановое время"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "Планирование"
@@ -21080,8 +21127,14 @@ msgstr "График устарел в"
 msgid "Schedule outdated reason"
 msgstr "Причина неактуальности графика"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "График пересчитан"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "Конкретные товары"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Расходы по поставщику, номенклатуре или категории — ваши основные факторы затрат"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "Разделить"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Предполагаемый режим отказа"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "Использует {0} · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Использует подсборку {0} · {1}"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "Использует под-сборку {0} · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "Переменные"
 
 msgid "Variance"
 msgstr "Отклонение"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Отклонение между фактическим и нормальным потреблением компонентов BOM"

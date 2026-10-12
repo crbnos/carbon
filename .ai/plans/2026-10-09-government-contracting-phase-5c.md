@@ -102,7 +102,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 15: Add the ACWP export
 - [x] Task 16: Add stop-work orders
 - [x] Task 17: Add the control fields to project settings and the element page
-- [ ] Task 18: Add earned value to the Costs tab
+- [x] Task 18: Add earned value to the Costs tab
 - [ ] Task 19: Add Stop work and Resume to the project header
 - [ ] Task 20: Extend the demo datasets
 - [ ] Task 21: Run the scoped gates
@@ -1214,4 +1214,12 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   5. The `earned-value` action lives on `$projectId.elements.$elementId.tsx` (the peek route had no action). It refuses a Closed project, like the element update route. A refusal of `updateElementEarnedValue` is a field error on `earnedValueTechnique` (on `isControlAccount` when the element is a control account).
   6. The settings intent is `control-settings` and the element intent `earned-value`, as the plan names them; the other settings intents are camelCase.
   7. New strings get empty `msgstr` in the catalogs, as in Tasks 14–16. A `/translate` pass is still due.
+- Task 18:
+  1. The loader checks `companyHasFeature` first, so a gated company gets the overlay in both modes (`getEarnedValueSnapshots` has no gate of its own). Then it returns null (no section) when no element is a control account; `PROJECT_ELEMENT_COST_COLUMNS` gained `isControlAccount` for that.
+  2. The Closed periods are one `accountingPeriod` query (newest first). An `evPeriod` that is not one of them shows Current. A failed earned value read is logged and shows the warning "Earned value could not be loaded." instead of failing the tab.
+  3. The section sits under the burden table inside the tree's scroll container, through a new `footer` prop on `ProjectCostsTree`.
+  4. The work package rows compute CV, SV, CPI, SPI, EAC and VAC with the client-safe `performanceIndexes`; the ee results carry indexes only on the control accounts. The control account rows use the same function on their sums, which gives the same figures.
+  5. CPI and SPI use `useQuantityFormatter`, as the plan says, so they show up to 5 decimals, not 2. A 2-digit format needs inline fraction digits, which `no-inline-fraction-digits` refuses.
+  6. The component's row types are declared in the `.ee.tsx` file (structural copies of the ee result types), so no client module imports a type from `project-control.server`.
+  7. The ee warnings (for example "Take a baseline first") are server strings in English.
 

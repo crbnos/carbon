@@ -3,9 +3,14 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import {
+  getEarnedValue,
+  getEarnedValueSnapshots
+} from "@carbon/ee/project-control.server";
 import { getLogger } from "@carbon/logger";
 import { RecordOutlet } from "@carbon/react";
-import { round } from "@carbon/utils";
+import { datetime, round } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useParams } from "react-router";
 import {
@@ -19,7 +24,14 @@ import {
 import type { ProjectBurdenPoolRow } from "~/modules/projects/ui/Costs/ProjectBurdenByPool.ee";
 import type { ProjectCostRow } from "~/modules/projects/ui/Costs/ProjectCostsTree";
 import ProjectCostsTree from "~/modules/projects/ui/Costs/ProjectCostsTree";
+import type {
+  EarnedValueData,
+  EarnedValuePeriodOption
+} from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
+import ProjectEarnedValue from "~/modules/projects/ui/Costs/ProjectEarnedValue.ee";
 import type { ServiceOrderCostRow } from "~/modules/projects/ui/Costs/ServiceOrderCosts";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "project-costs");
 
@@ -152,7 +164,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     [...subtreeBurden].map(([id, amount]) => [id, round(amount)])
   );
 
+  const earnedValue = await loadEarnedValue({
+    request,
+    client,
+    companyId,
+    projectId,
+    hasControlAccount: elementRows.some((element) => element.isControlAccount)
+  });
+
   return {
+    earnedValue,
     rows,
     project,
     serviceOrders,
@@ -164,10 +185,90 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
+/**
+ * Earned value for the Costs tab (Government Contracting 5c). `?evPeriod`
+ * is `current` (live, as of today on the company's calendar) or the id of a
+ * Closed accounting period (its frozen snapshot). Null when the project has
+ * no control account and the company has the feature.
+ */
+async function loadEarnedValue(args: {
+  request: Request;
+  client: Parameters<typeof getEarnedValueSnapshots>[0];
+  companyId: string;
+  projectId: string;
+  hasControlAccount: boolean;
+}): Promise<EarnedValueData | null> {
+  const { request, client, companyId, projectId, hasControlAccount } = args;
+  if (
+    !(await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    }))
+  ) {
+    return { gated: true };
+  }
+  if (!hasControlAccount) return null;
+
+  const periodId = new URL(request.url).searchParams.get("evPeriod");
+  const closedPeriods = await client
+    .from("accountingPeriod")
+    .select("id, startDate, endDate, fiscalYear, periodNumber")
+    .eq("companyId", companyId)
+    .eq("closeStatus", "Closed")
+    .order("startDate", { ascending: false });
+  if (closedPeriods.error) {
+    logger.error("Failed to load the closed accounting periods", {
+      companyId,
+      error: closedPeriods.error
+    });
+  }
+  const periods: EarnedValuePeriodOption[] = closedPeriods.data ?? [];
+  const period =
+    periodId && periodId !== "current"
+      ? (periods.find((p) => p.id === periodId) ?? null)
+      : null;
+
+  try {
+    if (period) {
+      const snapshot = await getEarnedValueSnapshots(client, {
+        companyId,
+        projectId,
+        accountingPeriodId: period.id
+      });
+      return { gated: false, periodId: period.id, periods, ...snapshot };
+    }
+    const asOf = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+    const live = await getEarnedValue(getDatabaseClient(), client, {
+      companyId,
+      projectId,
+      asOf
+    });
+    if (live.gated) return { gated: true };
+    const { gated: _, ...values } = live;
+    return { gated: false, periodId: null, periods, ...values };
+  } catch (err) {
+    logger.error("Failed to load the project's earned value", {
+      companyId,
+      projectId,
+      error: err
+    });
+    return {
+      gated: false,
+      periodId: period?.id ?? null,
+      periods,
+      workPackages: [],
+      controlAccounts: [],
+      warnings: ["Earned value could not be loaded."]
+    };
+  }
+}
+
 export default function ProjectCostsRoute() {
   const { projectId } = useParams();
   if (!projectId) throw new Error("Could not find projectId");
   const {
+    earnedValue,
     rows,
     project,
     serviceOrders,
@@ -190,6 +291,11 @@ export default function ProjectCostsRoute() {
         burdenByElement={burdenByElement}
         projectBurden={projectBurden}
         burdenByPool={burdenByPool}
+        footer={
+          earnedValue ? (
+            <ProjectEarnedValue projectId={projectId} data={earnedValue} />
+          ) : null
+        }
       />
       <RecordOutlet />
     </div>

@@ -1880,6 +1880,9 @@ msgstr "実際"
 msgid "Actual <0>{0}</0>"
 msgstr "実績 <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "実際原価"
 
@@ -1900,6 +1903,9 @@ msgstr "実際の開始"
 
 msgid "Actual time"
 msgstr "実際の時間"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "追加"
@@ -3917,6 +3923,9 @@ msgstr "平均クローズ日数"
 msgid "Awaiting approval"
 msgstr "承認待ち"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "戻る"
 
@@ -4094,6 +4103,12 @@ msgstr "返品するバッチ"
 
 msgid "Batching"
 msgstr "バッチ処理"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "カットオーバー前"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "バケット"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "販売原価"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "配置"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "カットオーバーステップ"
 
 msgid "Cutover support"
 msgstr "カットオーバーサポート"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "サイクル請求"
@@ -8927,6 +8957,9 @@ msgstr "最早操作開始"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "使用期限トレース"
 msgid "Export"
 msgstr "エクスポート"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "CSVをエクスポート"
 
@@ -11163,7 +11199,9 @@ msgstr "為替差益/差損"
 msgid "FY {year}"
 msgstr "FY {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "期日なし"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "このアイテムの編集可能なプロパティはありません。"
 
@@ -16176,6 +16217,9 @@ msgstr "この拠点には作業区がありません"
 
 msgid "No work centers exist"
 msgstr "作業区がありません"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "計画開始時刻"
 
 msgid "Planned time"
 msgstr "予定時間"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "計画"
@@ -21080,8 +21127,14 @@ msgstr "スケジュール時代遅れ時刻"
 msgid "Schedule outdated reason"
 msgstr "スケジュール古くなった理由"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "スケジュール再生成完了"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "特定の品目"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "仕入先、品目、またはカテゴリ別の支出 — 最大の原価ドライバー"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "分割"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "疑わしい故障モード"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "{0}を使用 · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "サブアセンブリ {0} · {1} を使用"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "サブアセンブリ {0}を使用 · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "変数"
 
 msgid "Variance"
 msgstr "差異"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "実際のBOM部品消費と標準消費の差異"

@@ -883,7 +883,7 @@
     {"name":"projects_getProjectCostSummary","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"2517130d0da4","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElement","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"09a2c7b3eb17","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementComments","classification":"READ","paramCount":1,"schema":"cd1b36ad7fc2","response":"ae5568f33137","injectAuth":"companyId","permission":"projects:view","paginates":false},
-    {"name":"projects_getProjectElementCosts","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"2b69671cfd42","injectAuth":"companyId","permission":"projects:view","paginates":false},
+    {"name":"projects_getProjectElementCosts","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"3bb5fc7525f0","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementDescriptions","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"db0b8785978e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementLinks","classification":"READ","paramCount":1,"schema":"8e1d73142851","response":"4dfca6fcdf4e","injectAuth":"companyId","permission":"projects:view","paginates":false},
     {"name":"projects_getProjectElementPlanLines","classification":"READ","paramCount":1,"schema":"cd1b36ad7fc2","response":"d2f19080755f","injectAuth":"companyId","permission":"projects:view","paginates":false},

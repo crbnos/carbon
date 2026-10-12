@@ -1880,6 +1880,9 @@ msgstr "实际"
 msgid "Actual <0>{0}</0>"
 msgstr "实际<0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "实际成本"
 
@@ -1900,6 +1903,9 @@ msgstr "实际开始"
 
 msgid "Actual time"
 msgstr "实际时间"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "添加"
@@ -3917,6 +3923,9 @@ msgstr "平均关闭天数"
 msgid "Awaiting approval"
 msgstr "等待审批"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "返回"
 
@@ -4094,6 +4103,12 @@ msgstr "待退货的生产批次"
 
 msgid "Batching"
 msgstr "分批"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "过账前"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "存储桶"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "销售成本"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "覆盖范围"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "转换步骤"
 
 msgid "Cutover support"
 msgstr "转换支持"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "循环计费"
@@ -8927,6 +8957,9 @@ msgstr "最早操作开始"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "有效期追踪"
 msgid "Export"
 msgstr "导出"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "导出 CSV"
 
@@ -11163,7 +11199,9 @@ msgstr "汇兑收益/损失"
 msgid "FY {year}"
 msgstr "会计年度 {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "没有到期日"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
 
@@ -16176,6 +16217,9 @@ msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "计划开始时间"
 
 msgid "Planned time"
 msgstr "已计划时间"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "计划"
@@ -21080,8 +21127,14 @@ msgstr "排程过期于"
 msgid "Schedule outdated reason"
 msgstr "排程过时原因"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "排程已重新生成"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "特定物料"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "按供应商、项目或类别的支出 — 您最大的成本驱动因素"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "拆分"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "疑似故障模式"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "使用 {0} · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "使用子装配体{0} · {1}"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "使用子装配体 {0} · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "变量"
 
 msgid "Variance"
 msgstr "差异"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "实际与标准 BOM 组件消耗的差异"

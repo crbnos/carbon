@@ -1880,6 +1880,9 @@ msgstr "वास्तविक"
 msgid "Actual <0>{0}</0>"
 msgstr "वास्तविक <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "वास्तविक लागत"
 
@@ -1900,6 +1903,9 @@ msgstr "वास्तविक शुरुआत"
 
 msgid "Actual time"
 msgstr "वास्तविक समय"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "जोड़ें"
@@ -3917,6 +3923,9 @@ msgstr "बंद करने के लिए औसत दिन"
 msgid "Awaiting approval"
 msgstr "अनुमोदन की प्रतीक्षा में"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "वापस"
 
@@ -4094,6 +4103,12 @@ msgstr "वापस करने के लिए बैच"
 
 msgid "Batching"
 msgstr "बैचिंग"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "कटओवर से पहले"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "बकेट"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "बिक्री की लागत"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "कवरेज"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "कटओवर चरण"
 
 msgid "Cutover support"
 msgstr "कटओवर सहायता"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "चक्रीय बिलिंग"
@@ -8927,6 +8957,9 @@ msgstr "सबसे पहले संचालन शुरू"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "समाप्ति ट्रेस"
 msgid "Export"
 msgstr "निर्यात करें"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "CSV निर्यात करें"
 
@@ -11163,7 +11199,9 @@ msgstr "विदेशी मुद्रा लाभ/हानि"
 msgid "FY {year}"
 msgstr "वित्तीय वर्ष {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "कोई नियत तिथि नहीं"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "इस आइटम के लिए कोई संपादन योग्य गुण नहीं।"
 
@@ -16176,6 +16217,9 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "नियोजित प्रारंभ समय"
 
 msgid "Planned time"
 msgstr "योजनाबद्ध समय"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "योजना"
@@ -21080,8 +21127,14 @@ msgstr "शेड्यूल पुराना हुआ"
 msgid "Schedule outdated reason"
 msgstr "शेड्यूल पुरातन कारण"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "शेड्यूल पुनर्जनित"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "विशिष्ट आइटम"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "आपूर्तिकर्ता, आइटम, या श्रेणी द्वारा व्यय — आपके सबसे बड़े लागत ड्राइवर"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "विभाजित करें"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "संदिग्ध विफलता मोड"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "{0} का उपयोग करता है · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "उप-विधानसभा {0} · {1} का उपयोग करता है"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "उप-विधानसभा {0} का उपयोग करता है · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "चर"
 
 msgid "Variance"
 msgstr "विचलन"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "वास्तविक और मानक BOM घटक खपत के बीच विचलन"

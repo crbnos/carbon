@@ -1880,6 +1880,9 @@ msgstr "실제"
 msgid "Actual <0>{0}</0>"
 msgstr "실제 <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "실제원가"
 
@@ -1900,6 +1903,9 @@ msgstr "실제 시작"
 
 msgid "Actual time"
 msgstr "실제 시간"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "추가"
@@ -3917,6 +3923,9 @@ msgstr "평균 마감 소요일"
 msgid "Awaiting approval"
 msgstr "승인 대기 중"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "뒤로"
 
@@ -4094,6 +4103,12 @@ msgstr "반품할 배치"
 
 msgid "Batching"
 msgstr "배치 처리"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "기준일 이전"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "버킷"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "매출 원가"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "배치"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "전환 단계"
 
 msgid "Cutover support"
 msgstr "전환 지원"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "주기 청구"
@@ -8927,6 +8957,9 @@ msgstr "최초 작업 시작"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "유통기한 추적"
 msgid "Export"
 msgstr "내보내기"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "CSV 내보내기"
 
@@ -11163,7 +11199,9 @@ msgstr "환율 손익"
 msgid "FY {year}"
 msgstr "FY {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "마감일 없음"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "이 항목에 대한 편집 가능한 속성이 없습니다."
 
@@ -16176,6 +16217,9 @@ msgstr "이 사업장에 작업장이 없습니다"
 
 msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "계획 시작 시간"
 
 msgid "Planned time"
 msgstr "계획된 시간"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "계획"
@@ -21080,8 +21127,14 @@ msgstr "일정 업데이트 시간"
 msgid "Schedule outdated reason"
 msgstr "일정 만료 사유"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "일정 재생성됨"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "특정 품목"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "공급업체, 품목 또는 카테고리별 지출 — 주요 원가 요인"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "분할"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "의심되는 고장 모드"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "{0} · {1} 사용"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "부분 조립품 {0} · {1} 사용"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "하위 어셈블리 {0} · {1} 사용"
 
@@ -26557,6 +26619,9 @@ msgstr "변수"
 
 msgid "Variance"
 msgstr "차이"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "실제와 표준 BOM 부품 소모 간의 차이"

@@ -10,6 +10,7 @@ import {
   TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { useMemo, useRef } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { useNavigate, useParams } from "react-router";
@@ -54,6 +55,8 @@ type ProjectCostsTreeProps = {
   projectBurden: number;
   /** The project's burden per indirect pool; empty with no burden. */
   burdenByPool: ProjectBurdenPoolRow[];
+  /** A section under the burden, such as earned value. */
+  footer?: ReactNode;
 };
 
 const ROW_HEIGHT = 36;
@@ -73,7 +76,8 @@ export default function ProjectCostsTree({
   preproduction,
   burdenByElement,
   projectBurden,
-  burdenByPool
+  burdenByPool,
+  footer
 }: ProjectCostsTreeProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
@@ -250,6 +254,7 @@ export default function ProjectCostsTree({
         )}
         <ServiceOrderCosts rows={serviceOrders} />
         <ProjectBurdenByPool rows={burdenByPool} />
+        {footer}
       </div>
     </div>
   );

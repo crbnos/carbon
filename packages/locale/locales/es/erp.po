@@ -1880,6 +1880,9 @@ msgstr "Real"
 msgid "Actual <0>{0}</0>"
 msgstr "Real <0>{0}</0>"
 
+msgid "Actual cost"
+msgstr ""
+
 msgid "Actual Cost"
 msgstr "Costo Real"
 
@@ -1900,6 +1903,9 @@ msgstr "Inicio Real"
 
 msgid "Actual time"
 msgstr "Tiempo real"
+
+msgid "ACWP"
+msgstr ""
 
 msgid "Add"
 msgstr "Agregar"
@@ -3917,6 +3923,9 @@ msgstr "Días promedio para cerrar"
 msgid "Awaiting approval"
 msgstr "A la espera de aprobación"
 
+msgid "BAC"
+msgstr ""
+
 msgid "Back"
 msgstr "Atrás"
 
@@ -4094,6 +4103,12 @@ msgstr "Lotes de producción a retornar"
 
 msgid "Batching"
 msgstr "Lote de producción"
+
+msgid "BCWP"
+msgstr ""
+
+msgid "BCWS"
+msgstr ""
 
 msgid "Before cutover"
 msgstr "Antes del cambio"
@@ -4393,6 +4408,9 @@ msgid "Bucket"
 msgstr "Depósito"
 
 msgid "Budget"
+msgstr ""
+
+msgid "Budget at completion"
 msgstr ""
 
 msgid "Budget Control"
@@ -6486,6 +6504,9 @@ msgstr "Costo de Ventas"
 msgid "Cost of service work covered by a warranty"
 msgstr ""
 
+msgid "Cost performance index"
+msgstr ""
+
 msgid "Cost Plus"
 msgstr ""
 
@@ -6517,6 +6538,9 @@ msgid "Cost Type"
 msgstr ""
 
 msgid "Cost Types"
+msgstr ""
+
+msgid "Cost variance"
 msgstr ""
 
 msgid "Costing"
@@ -6632,6 +6656,9 @@ msgid "Coverage"
 msgstr "Cobertura"
 
 msgid "Coverage Contract"
+msgstr ""
+
+msgid "CPI"
 msgstr ""
 
 msgid "Create"
@@ -7318,6 +7345,9 @@ msgstr "Paso de transición"
 
 msgid "Cutover support"
 msgstr "Soporte de transición"
+
+msgid "CV"
+msgstr ""
 
 msgid "Cycle billing"
 msgstr "Facturación cíclica"
@@ -8927,6 +8957,9 @@ msgstr "Inicio más temprano de la operación"
 msgid "Earned to Date"
 msgstr ""
 
+msgid "Earned value"
+msgstr ""
+
 msgid "Earned Value"
 msgstr ""
 
@@ -10156,6 +10189,9 @@ msgstr "Trazabilidad de caducidad"
 msgid "Export"
 msgstr "Exportar"
 
+msgid "Export ACWP"
+msgstr ""
+
 msgid "Export CSV"
 msgstr "Exportar CSV"
 
@@ -11163,7 +11199,9 @@ msgstr "Ganancia/Pérdida de cambio"
 msgid "FY {year}"
 msgstr "EF {year}"
 
+#. placeholder {0}: period.fiscalYear
 #. placeholder {0}: run.fiscalYear
+#. placeholder {1}: period.periodNumber
 #. placeholder {1}: run.periodNumber
 msgid "FY{0} P{1}"
 msgstr ""
@@ -15537,6 +15575,9 @@ msgstr "Sin fecha de vencimiento"
 msgid "No earlier service orders."
 msgstr ""
 
+msgid "No earned value was recorded for this period."
+msgstr ""
+
 msgid "No editable properties for this item."
 msgstr "Sin propiedades editables para este elemento."
 
@@ -16176,6 +16217,9 @@ msgstr "No hay centros de trabajo en esta ubicación"
 
 msgid "No work centers exist"
 msgstr "No existen centros de trabajo"
+
+msgid "No work packages yet. Give a chargeable element below a control account an earned value technique."
+msgstr ""
 
 msgid "No work yet. Build the tree from the unit, or add the first node."
 msgstr ""
@@ -17933,6 +17977,9 @@ msgstr "Hora de Inicio Planeada"
 
 msgid "Planned time"
 msgstr "Tiempo planificado"
+
+msgid "Planned value"
+msgstr ""
 
 msgid "Planning"
 msgstr "Planificación"
@@ -21080,8 +21127,14 @@ msgstr "Programa desactualizado en"
 msgid "Schedule outdated reason"
 msgstr "Motivo del programa desactualizado"
 
+msgid "Schedule performance index"
+msgstr ""
+
 msgid "Schedule regenerated"
 msgstr "Programa regenerado"
+
+msgid "Schedule variance"
+msgstr ""
 
 msgid "Schedule Visit"
 msgstr ""
@@ -22530,6 +22583,9 @@ msgstr "Artículos Específicos"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Gasto por proveedor, artículo o categoría — sus mayores generadores de costos"
 
+msgid "SPI"
+msgstr ""
+
 msgid "Split"
 msgstr "Dividir"
 
@@ -23327,6 +23383,9 @@ msgstr ""
 
 msgid "Suspected Failure Mode"
 msgstr "Modo de Falla Sospechado"
+
+msgid "SV"
+msgstr ""
 
 #. placeholder {0}: job.fixedAssetId ?? ""
 msgid "Sweeps cost to asset {0}"
@@ -26504,6 +26563,9 @@ msgstr "Utiliza {0} · {1}"
 msgid "Uses sub-assembly {0} · {1}"
 msgstr "Usa subconjunto {0} · {1}"
 
+msgid "VAC"
+msgstr ""
+
 msgid "Valid"
 msgstr "Utiliza subconjunto {0} · {1}"
 
@@ -26557,6 +26619,9 @@ msgstr "Variables"
 
 msgid "Variance"
 msgstr "Desviación"
+
+msgid "Variance at completion"
+msgstr ""
 
 msgid "Variance between actual and standard BOM component consumption"
 msgstr "Desviación entre el consumo real y estándar de componentes de BOM"
