@@ -105,7 +105,7 @@ These correct or add to the spec. Task 22 records them there.
 - [x] Task 18: Add earned value to the Costs tab
 - [x] Task 19: Add Stop work and Resume to the project header
 - [x] Task 20: Extend the demo datasets
-- [ ] Task 21: Run the scoped gates
+- [x] Task 21: Run the scoped gates
 - [ ] Task 22: Update the rules, docs and spec
 - [ ] Task 23: Verify in the browser
 
@@ -1231,8 +1231,15 @@ ls .ai/playbooks/government-contracting-phase-5c.md
   2. On OB2, `bus` and `payload` are control accounts. The work packages are `task-array` 0/100, `task-mass` 50/50, `task-alignment` Percent Complete 40 % and `tc-pointing` Level of Effort. Budget control is Warn with a 5 % tolerance.
   3. The dataset states `earnedValuePercent` and `budgetTolerancePercent` as people write them (40, 5), and tier 09 divides by 100, as `allocationPercent` does (lesson "Demo datasets state percentages the way people write them"). The plan wrote 0.4 and 0.05.
   4. `earnedValueTechnique` in the spec type leaves out Apportioned, because the spec has no base element field.
-  5. The validator refuses a technique on a control account, a technique with no control account above it (or on a Parameter), and a percent complete without Percent Complete. A rolled-in check that removed `bus`'s flag failed both of its work packages.
+  5. The validator refuses a technique on a control account, a technique with no control account above it (or on a Parameter), and a percent complete without Percent Complete. A one-off check that removed the flag from `bus` failed both of its work packages.
   6. `coverage.ts` is unchanged: the seed writes no `earnedValuePeriod` row, and the other columns are on tables that already have floors.
   7. The work packages have no budgets and the elements no start or target dates, and no baseline is seeded. Until a user takes a baseline (and sets budgets and dates), the Costs tab shows "Take a baseline first" and BAC and BCWS read 0.
   8. `pnpm db:check:datasets`: all four datasets pass, with the database layer.
+- Task 21 (no fixes needed):
+  1. `turbo run typecheck` for `@carbon/ee`, `@carbon/notifications`, `@carbon/jobs`, `erp` and `mes`: 6 tasks pass.
+  2. Tests: `@carbon/ee` 150 files, 2,046 tests; `erp` 195 files, 2,236 tests. Both pass, with `SUPABASE_DB_URL` on the worktree database.
+  3. `pnpm run lint`: 37 tasks pass, no errors; the warnings are in files this plan did not touch.
+  4. `pnpm --filter @carbon/checks clobbers`: no clobber risks against `origin/main`.
+  5. `pnpm --filter erp build` and `pnpm --filter mes build` pass, with no "Server-only module referenced by client".
+  6. `pnpm db:check:datasets` passed on the Task 20 commit (all four datasets, database layer included).
 
