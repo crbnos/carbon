@@ -361,6 +361,13 @@ Shots: `38-baselines.png`, `38-change-requests.png` (OB2 has neither: the `Empty
 
 ## Task 42: Update the docs reference pages
 
+- `projects.mdx`: the module sidebar; a new *The project workspace* section (header, sidebar, Layer 5); *The Plan page* (List, Tree, Reader, Filter, Search elements, New Element) and *The element page* replace "Layouts and the element page" (no inbound glossary anchor); the Milestones section describes the Schedule (heading kept: a glossary entry links to it); states and labels at Settings → Projects; status moves in the ⋯ menu, "Work Complete"; Stock, Pegging and Billing under Costs; transfers from the Stock page; "Unassigned stock"; My Time; Approvals tabs; earned value headers; keyboard shortcuts rewritten to the real bindings; the in-app agent notes and route list. Board, Table, Timeline, Display, Views and the Details tab are gone.
+- `service-orders.mdx`: the sidebar, the New drawer (More), "element" for "node", Build from part, My Time, Work Complete, the template element page.
+- `project-billing.mdx`: the Billing element switch, Edit Funding in the ⋯ menu, the labor rate grid, review in Approvals → Billing or the project Billing page.
+- `government-contracting.mdx`: Cost Objective on Settings, the element's Government contracting group (DCAA), the Timekeeping screenshot label, My Time, members under Charging, Correct in the row menu, the Funding Actions headers. The other session's lines (Timesheet required, the Reports intro, Missing Time) are not in this commit.
+- `contracts.mdx`: no billing UI path to change.
+- Verify: `docs` typecheck exit 0; the link check prints no MISSING; `@carbon/content` test 17 passed (it checks every glossary link and anchor).
+
 ## Task 43: Fill the translations
 
 ## Task 44: Run the final screenshot pass

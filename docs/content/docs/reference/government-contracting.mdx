@@ -9,7 +9,7 @@ Everything on this page is included in every plan. The timekeeping controls stay
 
 ## Cost objectives
 
-Open a project's **Details** and set **Cost Objective**:
+Open a project's **Settings** page and set **Cost Objective** in the **Accounting** section. The field shows in DCAA mode, or when your plan has government contracting:
 
 | Cost objective | Use it for |
 |---|---|
@@ -26,17 +26,17 @@ A project with cost treatment **Expense** takes Indirect, IR&D or B&P only. In D
 FAR 31.201-6 requires you to identify unallowable cost and keep it out of what you bill. Carbon marks it in two places:
 
 - **The account.** In the chart of accounts, set **Allowability** to Expressly Unallowable, Mutually Agreed Unallowable or Directly Associated Unallowable, and give an **Unallowable reason** (for example `31.205-14 Entertainment`). **Element of cost** classifies the account as Labor, Material, Subcontract, Other Direct or Travel. Group accounts take none of these fields.
-- **The element.** Turn on **Unallowable** in an element's sidebar. The elements below it inherit it.
+- **The element.** In DCAA mode, the properties of an element page have a **Government contracting** group. Turn on **Unallowable** there. The elements below it inherit it.
 
 When a cost posts to an unallowable account or element, its project ledger row is marked unallowable. That row never becomes a [billable item](/docs/reference/project-billing#billable-items). The mark is kept at posting, so a later change to the account does not rewrite history.
 
-The project's **Costs** tab shows **Allowable** and **Unallowable** in separate columns, and the ledger has an **Unallowable** column you can filter on. Turn on **Preproduction** on an element to show its cost as **Preproduction** in the total row.
+The project's **Costs** page shows **Allowable** and **Unallowable** in separate columns, and the ledger has an **Unallowable** column you can filter on. Turn on **Preproduction** on an element to show its cost as **Preproduction** in the total row.
 
 ## DCAA timekeeping
 
 Open **Settings → Timekeeping** and set **Controls** to **DCAA**. You need both certification texts first.
 
-<Screenshot label="Settings, Timekeeping page with the Timekeeping Controls card: Controls set to DCAA, Entry window (days), Timecard check, the two certification texts and Standard weekly hours" />
+<Screenshot label="Settings, Timekeeping page: the Controls card set to DCAA, and the DCAA rules card with Entry window (days), Timecard check, Standard weekly hours and the two certification texts" />
 
 <FieldTable>
   <Field name="Controls" type="enum">**Standard** keeps the light timesheet. **DCAA** adds every control below.</Field>
@@ -47,7 +47,7 @@ Open **Settings → Timekeeping** and set **Controls** to **DCAA**. You need bot
   <Field name="Standard weekly hours" type="number">Default 40. The hours an exempt employee's week is diluted to.</Field>
 </FieldTable>
 
-In DCAA mode, **My Timesheet** works like this:
+In DCAA mode, **My Time** works like this:
 
 - **Daily entry.** Time for a future date is refused, except on a leave element. A late entry asks for a **Reason for late entry**, and it shows on the late entries report.
 - **Correction trail.** Changing saved time asks for a **Reason for change**. Every change keeps the hours before and after, who changed them, when and why. The history icon on a cell opens **Changes**.
@@ -59,7 +59,7 @@ A manager opens an employee's week from **Open timesheet** on an approval card. 
 
 ### Charge restrictions
 
-On a project's **Settings** tab, turn on **Restrict charging to members** and add the people under **Members**. In DCAA mode, time from anyone else is refused when it posts.
+On a project's **Settings** page, turn on **Restrict charging to members** in the **Charging** section, then add the people under **Members**. In DCAA mode, time from anyone else is refused when it posts.
 
 ### Leave
 
@@ -73,7 +73,7 @@ A later correction to the week posts the difference on its other entries.
 
 ## Labor transfers
 
-Moving posted time to another charge number is a labor transfer. Open the menu of a posted cell and choose **Correct**, turn on **Move to another charge number**, pick the new charge number and labor category, and give a reason.
+Moving posted time to another charge number is a labor transfer. On **My Time**, open the row's menu and choose **Correct** for the posted day, turn on **Move to another charge number**, pick the new charge number and labor category, and give a reason.
 
 In DCAA mode a transfer always waits for approval, even with timesheet approval off, and the person who asked for it cannot approve it. The approvals list marks it **Transfer** and shows the charge number it came from.
 
@@ -91,7 +91,7 @@ The [close checklist](/docs/reference/period-close#the-close-checklist) gains **
 
 A contract line can carry a contract line item number (DFARS 204.71). On the line, enter **CLIN / SLIN**: 4 digits for a CLIN (`0001`), or 2 more letters or digits for a SubCLIN (`0001AA`). Pick the **Parent CLIN** for a SubCLIN.
 
-A Time & Materials or Cost Plus line has **Funding Actions** on its billing page, one row per contract modification: **Modification Number**, **Funded Date**, **ACRN**, **Expires On**, **Funded Cost** and **Funded Fee**. In DCAA mode the line's funded cost and funded amount are the sums of its funding actions, and you edit the actions instead.
+A Time & Materials or Cost Plus line has a **Funding Actions** grid on its billing page, one row per contract modification: **Modification**, **Funded** (the date), **ACRN**, **Expires**, **Funded Cost** and **Funded Fee**. **Add Funding** adds a row. In DCAA mode the line's funded cost and funded amount are the sums of its funding actions, and you edit the actions instead.
 
 When a project billing invoice bills a numbered line, it shows a separate amount per CLIN, with how it splits across the line's ACRNs. Each CLIN draws on its oldest funds first.
 
@@ -99,9 +99,9 @@ When a project billing invoice bills a numbered line, it shows a separate amount
 
 Carbon tags the data a US research tax filing needs and reports it by tax year. A tax year starts in the month set as **Start of Tax Year** in the fiscal year settings, and it takes the name of the calendar year it starts in.
 
-- **Business components.** On an element, turn on **Business component (R&D)**, then pick its **Component type** (Product, Process or All Others) and, for software, its **Software type**. The element's cost and the cost of the elements below it belong to it, down to the next business component. The List layout marks it **R&D**.
+- **Business components.** In an element's **Government contracting** properties, turn on **Business component (R&D)**, then pick its **Component type** (Product, Process or All Others) and, for software, its **Software type**. The element's cost and the cost of the elements below it belong to it, down to the next business component.
 - **Research role.** Each labor category can have a **Research role**: Direct Research, Direct Supervision, Direct Support or Not Qualified. New time in the category takes that role.
-- **Work location.** Each timesheet entry has a work location, by default the employee's job location. The location's country decides domestic or foreign research: the United States, Puerto Rico and the US possessions are domestic. On **My Timesheet**, open **Add row → More** to log time at another location or with another role.
+- **Work location.** Each timesheet entry has a work location, by default the employee's job location. The location's country decides domestic or foreign research: the United States, Puerto Rico and the US possessions are domestic. On **My Time**, open **Add row → More** to log time at another location or with another role.
 - **Funded research.** On a contract, the **Research (R&D tax)** group has **Funded research**, **Payment depends on success** and **We keep substantial rights**. With Funded research on Default, a contract with a Cost Plus or Time & Materials line counts as funded. Cost of a Direct project under a funded contract is not a qualified research expense.
 - **Officers.** On a person's **Job** tab, turn on **Officer** for Form 6765 Section E.
 
@@ -142,7 +142,7 @@ Exact messages and what they mean:
 - "Give a reason for the late entry": the entry is older than the entry window.
 - "Give a reason for the change": someone other than the owner, or the owner on a saved entry, changed time without a reason.
 - "You can enter time for another employee only on a day of recorded absence": a manager may add time only on an absence day.
-- "Review the changes to your timesheet first": the week has an entry in Pending Employee Review; accept it on My Timesheet.
+- "Review the changes to your timesheet first": the week has an entry in Pending Employee Review; accept it on My Time.
 - "Set the certification text in Settings → Timekeeping before you submit": the certification text for the employee's FLSA status is empty.
 - "The certification text changed. Reload the page": the text changed after the dialog opened.
 - "Your entries account for X h of Y h on your timecards": the timecard check found a shortfall (refused on Block, a warning on Warn).
