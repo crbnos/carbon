@@ -83,3 +83,4 @@ export * from "./types";
 export * from "./url";
 export * from "./viewport";
 export * from "./wbs";
+export * from "./wbs-templates";
