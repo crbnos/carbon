@@ -23,6 +23,8 @@ export type Authenticated<T = {}> = T & {
 export type AuthenticatedRouteGroup<T = {}> = T & {
   name: string;
   icon?: any;
+  /** Folds the group under its heading; it starts open only while one of its routes is active. */
+  collapsible?: boolean;
   routes: Authenticated<Route & T>[];
 };
 
@@ -95,11 +97,15 @@ export type Route<T = {}> = T & {
   table?: string;
   /** When present, overrides the default pathname-includes active check. */
   isActive?: (pathname: string) => boolean;
+  /** A count shown at the right of the link when it is above 0 (items waiting). */
+  count?: number;
 };
 
 export type RouteGroup<T = {}> = {
   name: string;
   icon?: any;
+  /** Folds the group under its heading; it starts open only while one of its routes is active. */
+  collapsible?: boolean;
   routes: (Route & T)[];
 };
 

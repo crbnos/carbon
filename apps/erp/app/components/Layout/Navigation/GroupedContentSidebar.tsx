@@ -4,6 +4,10 @@
 
 import {
   Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -88,6 +92,14 @@ const GroupedContentSidebar = ({
     sortOrder: number;
   } | null>(null);
 
+  // A collapsible group follows the page (open while one of its routes is
+  // active) until the user opens or closes it; then their choice sticks.
+  const [openedGroups, setOpenedGroups] = useState<Record<string, boolean>>({});
+  const isGroupOpen = (group: RouteGroup) =>
+    openedGroups[group.name] ?? group.routes.some((route) => isActive(route));
+  const setGroupOpen = (group: RouteGroup, open: boolean) =>
+    setOpenedGroups((prev) => ({ ...prev, [group.name]: open }));
+
   const toggleViews = (routeName: string) => {
     setExpandedViews((prev) => ({
       ...prev,
@@ -121,7 +133,13 @@ const GroupedContentSidebar = ({
     return (
       <div className="flex flex-col">
         {groups.map((group) => (
-          <SheetNavGroup key={group.name} title={group.name}>
+          <SheetNavGroup
+            key={group.name}
+            title={group.name}
+            collapsible={group.collapsible}
+            open={group.collapsible ? isGroupOpen(group) : undefined}
+            onOpenChange={(open) => setGroupOpen(group, open)}
+          >
             {group.routes.map((route) => {
               const views = [...(route.views ?? [])].sort(
                 (a, b) => a.sortOrder - b.sortOrder
@@ -132,6 +150,7 @@ const GroupedContentSidebar = ({
                     to={route.to + (route.q ? `?q=${route.q}` : "")}
                     icon={route.icon}
                     label={route.name}
+                    count={route.count}
                     isActive={isActive(route)}
                   />
                   {views.map((view) => (
@@ -152,6 +171,74 @@ const GroupedContentSidebar = ({
     );
   }
 
+  const renderRoute = (route: GroupedRoute) => {
+    const active = isActive(route);
+
+    const hasViews = route.views && route.views.length > 0;
+    const isExpanded = expandedViews[route.name];
+
+    if (hasViews && !(route.name in expandedViews)) {
+      setExpandedViews((prev) => ({
+        ...prev,
+        [route.name]: true
+      }));
+    }
+
+    return (
+      <div className="w-full flex flex-col" key={route.name}>
+        <div className="flex items-center gap-x-0.5 relative" data-nav-item="">
+          <Button
+            asChild
+            leftIcon={route.icon}
+            variant={active ? "active" : "ghost"}
+            className={cn(
+              "justify-start flex-grow truncate",
+              active
+                ? "shadow-none dark:shadow-button-base"
+                : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
+            )}
+          >
+            <PrefetchLink to={route.to + (route.q ? `?q=${route.q}` : "")}>
+              <span className="truncate">{route.name}</span>
+              {route.count !== undefined && route.count > 0 && (
+                <Count
+                  count={route.count}
+                  className={cn("ml-auto", hasViews && "mr-7")}
+                />
+              )}
+            </PrefetchLink>
+          </Button>
+          {hasViews && (
+            <IconButton
+              aria-label={t`Toggle views`}
+              icon={isExpanded ? <LuChevronDown /> : <LuChevronRight />}
+              variant="ghost"
+              size="sm"
+              onClick={() => toggleViews(route.name)}
+              className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
+            />
+          )}
+        </div>
+        {hasViews && isExpanded && (
+          <ViewsReorderGroup
+            views={route.views ?? []}
+            isViewActive={isViewActive}
+            onReorder={(updates) => {
+              const formData = new FormData();
+              formData.append("updates", JSON.stringify(updates));
+              submit(formData, {
+                action: path.to.saveViewOrder,
+                method: "post",
+                navigate: false
+              });
+            }}
+            onDelete={(view) => setSelectedView(view)}
+          />
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <SidebarLinks>
@@ -161,77 +248,28 @@ const GroupedContentSidebar = ({
               key={group.name}
               className="border-b border-border p-2 pb-4 space-y-0.5"
             >
-              <Subheading as="h4" variant="light" className="pl-4 py-1">
-                {group.name}
-              </Subheading>
-              {group.routes.map((route) => {
-                const active = isActive(route);
-
-                const hasViews = route.views && route.views.length > 0;
-                const isExpanded = expandedViews[route.name];
-
-                if (hasViews && !(route.name in expandedViews)) {
-                  setExpandedViews((prev) => ({
-                    ...prev,
-                    [route.name]: true
-                  }));
-                }
-
-                return (
-                  <div className="w-full flex flex-col" key={route.name}>
-                    <div
-                      className="flex items-center gap-x-0.5 relative"
-                      data-nav-item=""
-                    >
-                      <Button
-                        asChild
-                        leftIcon={route.icon}
-                        variant={active ? "active" : "ghost"}
-                        className={cn(
-                          "justify-start flex-grow truncate",
-                          active
-                            ? "shadow-none dark:shadow-button-base"
-                            : "hover:bg-transparent hover:text-active-foreground hover:scale-100 focus-visible:scale-100"
-                        )}
-                      >
-                        <PrefetchLink
-                          to={route.to + (route.q ? `?q=${route.q}` : "")}
-                        >
-                          {route.name}
-                        </PrefetchLink>
-                      </Button>
-                      {hasViews && (
-                        <IconButton
-                          aria-label={t`Toggle views`}
-                          icon={
-                            isExpanded ? <LuChevronDown /> : <LuChevronRight />
-                          }
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => toggleViews(route.name)}
-                          className="absolute right-1 flex-shrink-0 text-foreground/70 hover:text-foreground"
-                        />
-                      )}
-                    </div>
-                    {hasViews && isExpanded && (
-                      <ViewsReorderGroup
-                        views={route.views ?? []}
-                        isViewActive={isViewActive}
-                        onReorder={(updates) => {
-                          const formData = new FormData();
-                          formData.append("updates", JSON.stringify(updates));
-                          submit(formData, {
-                            action: path.to.saveViewOrder,
-                            method: "post",
-                            navigate: false
-                          });
-                        }}
-                        onDelete={(view) => setSelectedView(view)}
-                      />
-                    )}
-                  </div>
-                );
-              })}
+              {group.collapsible ? (
+                <Collapsible
+                  open={isGroupOpen(group)}
+                  onOpenChange={(open) => setGroupOpen(group, open)}
+                  className="w-full space-y-0.5"
+                >
+                  <CollapsibleTrigger className="group/trigger flex w-full items-center justify-between rounded-md py-1 pl-4 pr-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <Subheading variant="light">{group.name}</Subheading>
+                    <LuChevronRight className="size-3.5 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]/trigger:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-0.5">
+                    {group.routes.map(renderRoute)}
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <>
+                  <Subheading as="h4" variant="light" className="pl-4 py-1">
+                    {group.name}
+                  </Subheading>
+                  {group.routes.map(renderRoute)}
+                </>
+              )}
             </VStack>
           ))}
         </VStack>

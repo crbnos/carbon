@@ -32,6 +32,15 @@ Plan: `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`. Screenshots go to `
 
 ## Task 6: Add collapsible groups and counts to the sidebars
 
+- `RouteGroup` and `AuthenticatedRouteGroup` get `collapsible?`. `Route` gets `count?`.
+- `GroupedContentSidebar` folds a `collapsible` group in a `Collapsible`. The group follows the page (open while one of its routes is active) until the user toggles it. Then the user's choice sticks for the session.
+- A route `count` above 0 shows a `Count` at the right of the link, on the panel and on the phone sheet (`SheetNavRow count`).
+- `SheetNavGroup` takes `collapsible`, `open` and `onOpenChange`.
+- `DetailSidebar` links take `isActive` and `indent` (`pl-8`).
+- Code gate: Biome clean, `typecheck --filter=erp` exit 0, `erp test` 2,242 passed.
+- `06-sales-sidebar-unchanged.png` and `06-projects-sidebar-unchanged.png` look as before.
+- Environment: the ERP dev server died during the gate (no error in its log). I restarted it with `/tmp/uir/start-erp.sh`, which sources `.env.local` first. The shell exports `SUPABASE_URL`, `SUPABASE_DB_URL` and `REDIS_URL` for another stack, and those override `.env.local` in Vite. A restart without the source step serves the wrong database and loses the session.
+
 ## Task 7: Add useGovernmentContracting and UpgradeOverlayRow
 
 ## Task 8: Fix the week views on a Sunday
