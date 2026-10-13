@@ -12,7 +12,7 @@
 - [ ] Task 3: Ignore load-pointer changes in the event and broadcast filters
 - [x] Task 4: Tidy the engine slots, always close a slot, and merge repeated states
 - [x] Task 5: Stop a sync run when the provider is unavailable
-- [ ] Task 6: Fix the sync cursor, log late events, and close Canceled operations
+- [x] Task 6: Fix the sync cursor, log late events, and close Canceled operations
 - [ ] Task 7: Test `syncOeeDevice` against the local database
 - [ ] Task 8: Resolve an OEE provider in one place
 - [ ] Task 9: Make machine time one stream per work center

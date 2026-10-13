@@ -46,11 +46,19 @@ function toInstant(value: Date | string): string;
 function toInstant(value: Date | string | null | undefined): string | null;
 function toInstant(value: Date | string | null | undefined): string | null {
   if (value === null || value === undefined) return null;
-  return (value instanceof Date ? value : new Date(value)).toISOString();
+  return value instanceof Date
+    ? value.toISOString()
+    : parseAbsolute(value, "UTC").toAbsoluteString();
 }
 
 const minus = (iso: string, duration: { hours?: number; minutes?: number }) =>
   parseAbsolute(iso, "UTC").subtract(duration).toAbsoluteString();
+
+const compareInstants = (a: string, b: string) =>
+  parseAbsolute(a, "UTC").compare(parseAbsolute(b, "UTC"));
+
+/** The later of two ISO instants. */
+const later = (a: string, b: string) => (compareInstants(a, b) >= 0 ? a : b);
 
 export async function syncOeeDevice({
   db,
@@ -82,8 +90,11 @@ export async function syncOeeDevice({
     { since, until: now }
   );
 
+  // `changedAt` of every row this sync stored; a row already stored by an
+  // earlier sync conflicts and is not returned.
+  const inserted: string[] = [];
   for (let i = 0; i < changes.length; i += INSERT_CHUNK) {
-    await db
+    const rows = await db
       .insertInto("machineStateChange")
       .values(
         changes.slice(i, i + INSERT_CHUNK).map((change) => ({
@@ -100,8 +111,30 @@ export async function syncOeeDevice({
           .columns(["workCenterDeviceId", "externalEventId", "companyId"])
           .doNothing()
       )
+      .returning("changedAt")
       .execute();
+    for (const row of rows) inserted.push(toInstant(row.changedAt));
   }
+
+  // A change stored at or before `appliedThrough` came in late: the engine
+  // has already planned past it and never reads it. History is not replanned
+  // (it may already be posted), so it is only logged.
+  const previouslyApplied = toInstant(device.appliedThrough);
+  if (previouslyApplied !== null) {
+    const late = inserted.filter(
+      (changedAt) => compareInstants(changedAt, previouslyApplied) <= 0
+    ).length;
+    if (late > 0) {
+      console.warn(
+        `OEE device ${device.id}: ${late} late state change(s) at or before appliedThrough ${previouslyApplied}, not replanned`
+      );
+    }
+  }
+
+  // The read cursor follows the newest change stored, never the clock: a
+  // change the provider stores late with an older timestamp is still inside
+  // the next sync's 10-minute overlap. With nothing stored it stays put.
+  const lastEventAt = inserted.reduce(later, toInstant(device.lastEventAt));
 
   await db.transaction().execute(async (trx) => {
     const locked = await lockWorkCenterDevice(trx, {
@@ -153,12 +186,23 @@ export async function syncOeeDevice({
           .executeTakeFirst(),
         trx
           .selectFrom("productionEvent")
-          .select(["id", "startTime"])
-          .where("workCenterId", "=", device.workCenterId)
-          .where("companyId", "=", device.companyId)
-          .where("type", "=", "Machine")
-          .where("endTime", "is", null)
-          .orderBy("startTime", "desc")
+          .leftJoin("jobOperation", (join) =>
+            join
+              .onRef("jobOperation.id", "=", "productionEvent.jobOperationId")
+              .onRef("jobOperation.companyId", "=", "productionEvent.companyId")
+          )
+          .select([
+            "productionEvent.id",
+            "productionEvent.startTime",
+            "productionEvent.createdBy",
+            "jobOperation.status as operationStatus",
+            "jobOperation.updatedAt as operationUpdatedAt"
+          ])
+          .where("productionEvent.workCenterId", "=", device.workCenterId)
+          .where("productionEvent.companyId", "=", device.companyId)
+          .where("productionEvent.type", "=", "Machine")
+          .where("productionEvent.endTime", "is", null)
+          .orderBy("productionEvent.startTime", "desc")
           .executeTakeFirst(),
         trx
           .selectFrom("unattributedMachineTime")
@@ -170,7 +214,7 @@ export async function syncOeeDevice({
           .executeTakeFirst(),
         trx
           .selectFrom("productionEvent")
-          .select((eb) => eb.fn.max("endTime").as("lastEnd"))
+          .select(sql<Date | null>`max("endTime")`.as("lastEnd"))
           .where("workCenterId", "=", device.workCenterId)
           .where("companyId", "=", device.companyId)
           .where("type", "=", "Machine")
@@ -185,6 +229,37 @@ export async function syncOeeDevice({
           .execute()
       ]);
 
+    // A sensor event on an operation that was Canceled mid-run: the unload
+    // took the operation off the work center, but nothing ended its event.
+    // End it when the operation was canceled, never before it started.
+    let openMachineEvent = openEvent
+      ? { id: openEvent.id, startTime: toInstant(openEvent.startTime) }
+      : null;
+    let lastMachineEventEndTime = toInstant(lastEnd?.lastEnd);
+    if (
+      openEvent &&
+      openMachineEvent &&
+      openEvent.createdBy === "system" &&
+      openEvent.operationStatus === "Canceled"
+    ) {
+      const canceledAt = later(
+        toInstant(openEvent.operationUpdatedAt) ?? now,
+        openMachineEvent.startTime
+      );
+      await trx
+        .updateTable("productionEvent")
+        .set({ endTime: canceledAt, updatedBy: "system", updatedAt: now })
+        .where("id", "=", openEvent.id)
+        .where("companyId", "=", device.companyId)
+        .where("endTime", "is", null)
+        .execute();
+      openMachineEvent = null;
+      lastMachineEventEndTime =
+        lastMachineEventEndTime === null
+          ? canceledAt
+          : later(lastMachineEventEndTime, canceledAt);
+    }
+
     const plan = planMachineTime({
       now,
       minimumStateSeconds,
@@ -195,18 +270,14 @@ export async function syncOeeDevice({
       loadedJobOperationId: workCenter?.loadedJobOperationId ?? null,
       loadedAt: toInstant(workCenter?.loadedAt),
       blockedSince: toInstant(blocking?.blockedSince),
-      openMachineEvent: openEvent
-        ? { id: openEvent.id, startTime: toInstant(openEvent.startTime) }
-        : null,
+      openMachineEvent,
       openUnattributed: openUnattributed
         ? {
             id: openUnattributed.id,
             startTime: toInstant(openUnattributed.startTime)
           }
         : null,
-      lastMachineEventEndTime: toInstant(
-        lastEnd?.lastEnd as Date | string | null | undefined
-      ),
+      lastMachineEventEndTime,
       changes: stored.map((row) => ({
         state: row.state,
         changedAt: toInstant(row.changedAt)
@@ -276,7 +347,7 @@ export async function syncOeeDevice({
         currentState: plan.currentState,
         currentStateAt: plan.currentStateAt,
         ...(plan.appliedThrough ? { appliedThrough: plan.appliedThrough } : {}),
-        lastEventAt: now,
+        lastEventAt,
         lastSyncedAt: now,
         lastSyncError: null
       })
