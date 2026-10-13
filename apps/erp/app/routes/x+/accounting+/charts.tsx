@@ -45,14 +45,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const startDate = searchParams.get("startDate") || null;
   const endDate = searchParams.get("endDate") || null;
-  const includeInactive = searchParams.get("inactive") === "true";
 
   const [chartOfAccounts, fiscalYearSettings] = await Promise.all([
     getChartOfAccounts(client, companyGroupId, {
       incomeBalance: null,
       startDate,
-      endDate,
-      includeInactive
+      endDate
     }),
     getFiscalYearSettings(client, companyId)
   ]);

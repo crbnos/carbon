@@ -11,7 +11,6 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
-  deactivateAccount,
   deleteAccount,
   getAccount,
   getAccountInUse
@@ -40,7 +39,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client } = await requirePermissions(request, {
     delete: "accounting"
   });
 
@@ -61,24 +60,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const formData = await request.formData();
-  if (formData.get("intent") === "deactivate") {
-    const deactivated = await deactivateAccount(client, accountId, userId);
-    if (deactivated.error) {
-      throw redirect(
-        path.to.chartOfAccounts,
-        await flash(
-          request,
-          error(deactivated.error, "Failed to deactivate account")
-        )
-      );
-    }
-    throw redirect(
-      path.to.chartOfAccounts,
-      await flash(request, success("Account deactivated"))
-    );
-  }
-
   const { error: deleteError } = await deleteAccount(client, accountId);
   if (deleteError) {
     throw redirect(
@@ -88,7 +69,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(
           deleteError,
           getDatabaseErrorMessage(deleteError, "Failed to delete account", {
-            referenced: "This account has postings. Deactivate it instead."
+            referenced:
+              "This account has journal lines, so it cannot be deleted."
           })
         )
       )
@@ -112,25 +94,16 @@ export default function DeleteAccountRoute() {
   const onCancel = () => navigate(path.to.chartOfAccounts);
   const label = `${account.name}${account.number ? ` (${account.number})` : ""}`;
 
-  if (inUse) {
-    return (
-      <ConfirmDelete
-        action={path.to.deleteAccountingCharts(accountId)}
-        name={account.name}
-        title={t`Deactivate ${account.name}`}
-        text={t`${label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers.`}
-        deleteText={t`Deactivate`}
-        fields={{ intent: "deactivate" }}
-        onCancel={onCancel}
-      />
-    );
-  }
-
   return (
     <ConfirmDelete
       action={path.to.deleteAccountingCharts(accountId)}
       name={account.name}
-      text={t`Are you sure you want to delete the account: ${label}? This cannot be undone.`}
+      text={
+        inUse
+          ? t`${label} has journal lines, so it cannot be deleted.`
+          : t`Are you sure you want to delete the account: ${label}? This cannot be undone.`
+      }
+      isDisabled={inUse}
       onCancel={onCancel}
     />
   );

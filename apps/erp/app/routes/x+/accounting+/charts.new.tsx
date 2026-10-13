@@ -94,7 +94,6 @@ export default function NewAccountRoute() {
     number: "",
     parentId,
     isGroup: false,
-    active: true,
     accountType: undefined,
     class: "Asset" as AccountClass,
     incomeBalance: "Balance Sheet" as AccountIncomeBalance,
