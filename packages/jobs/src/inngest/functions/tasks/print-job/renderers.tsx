@@ -232,6 +232,7 @@ async function renderKanbanCardPDF(
           fromStorageUnitName: item.fromStorageUnitName,
           supplierName: item.supplierName,
           quantity: item.quantity,
+          replenishmentLevel: item.replenishmentLevel,
           unitOfMeasureCode: item.unitOfMeasureCode,
           thumbnail
         }

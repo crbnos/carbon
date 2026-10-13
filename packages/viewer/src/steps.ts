@@ -13,6 +13,7 @@ import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION
 } from "./plan";
+import { hasCustomMotion, isPlanFlagged, isSavedView } from "./step-flags";
 import {
   buildSubAssemblyPlan,
   displayOrder,
@@ -28,7 +29,10 @@ export {
   buildSubAssemblyPlan,
   CURRENT_PLAN_VERSION,
   displayOrder,
+  hasCustomMotion,
   indexAssemblyGraph,
+  isPlanFlagged,
+  isSavedView,
   isSubAssemblyHeader,
   subAssemblyPartIds,
   usableSubAssemblies,

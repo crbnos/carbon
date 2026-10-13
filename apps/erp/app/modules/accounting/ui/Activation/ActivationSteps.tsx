@@ -13,6 +13,7 @@ import { path } from "~/utils/path";
 import type { AccountListItem } from "../../types";
 
 export const activationSteps = [
+  "chart",
   "readiness",
   "inventory",
   "fixed-assets",
@@ -62,7 +63,7 @@ type ActivationStepsProps = {
   cutoverDate: string;
 };
 
-/** The five steps of setting up accounting. */
+/** The six steps of setting up accounting. */
 const ActivationSteps = ({ current, cutoverDate }: ActivationStepsProps) => {
   const { t } = useLingui();
   return (
@@ -71,6 +72,7 @@ const ActivationSteps = ({ current, cutoverDate }: ActivationStepsProps) => {
       current={current}
       label={t`Accounting setup`}
       labels={{
+        chart: t`Chart of Accounts`,
         readiness: t`Readiness`,
         inventory: t`Inventory`,
         "fixed-assets": t`Fixed Assets`,

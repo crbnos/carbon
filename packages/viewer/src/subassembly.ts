@@ -15,7 +15,7 @@
  * (step list, which actions to offer) and the ERP service (write validation),
  * so all three answer the same question the same way.
  */
-import type { AssemblyStep } from "./types";
+import type { AssemblyStep, Motion } from "./types";
 
 type StructureStep = Pick<
   AssemblyStep,
@@ -33,6 +33,8 @@ export type SubAssemblyInfo = {
   plays: boolean;
   /** Members: every part of their sub-assembly (shown on its own). Otherwise null. */
   isolatePartIds: string[] | null;
+  /** Headers: every part of the finished unit. Otherwise null. */
+  unitPartIds: string[] | null;
   /** Headers whose finished parts arrive at this step. */
   carriesIn: string[];
 };
@@ -70,14 +72,21 @@ export function subAssemblyPartIds(
 }
 
 /**
- * The build a step happens in: its sub-assembly's header id, or `null` for the
- * main build. Headers themselves are main-build steps (an unused one is where
- * its unit joins the main build).
+ * The build each step happens in, keyed by step id: its sub-assembly's header
+ * id, or `null` for the main build. Headers themselves are main-build steps
+ * (an unused one is where its unit joins the main build).
  */
-export function worldOf(steps: StructureStep[], stepId: string): string | null {
-  const step = steps.find((s) => s.id === stepId);
-  if (!step?.parentStepId || isSubAssemblyHeader(step)) return null;
-  const header = steps.find((s) => s.id === step.parentStepId);
+export function stepWorlds(steps: StructureStep[]): Map<string, string | null> {
+  const byId = new Map(steps.map((step) => [step.id, step]));
+  return new Map(steps.map((step) => [step.id, worldIn(byId, step)]));
+}
+
+function worldIn(
+  byId: ReadonlyMap<string, StructureStep>,
+  step: StructureStep
+): string | null {
+  if (!step.parentStepId || isSubAssemblyHeader(step)) return null;
+  const header = byId.get(step.parentStepId);
   return header && isSubAssemblyHeader(header) ? header.id : null;
 }
 
@@ -94,9 +103,7 @@ export function arrivalIndexByNode(
 ): Map<string, number> {
   const indexById = new Map(steps.map((step, index) => [step.id, index]));
   const byId = new Map(steps.map((step) => [step.id, step]));
-  const worlds = new Map(
-    steps.map((step) => [step.id, worldOf(steps, step.id)])
-  );
+  const worlds = stepWorlds(steps);
   const arrival = new Map<string, number>();
 
   steps.forEach((installer) => {
@@ -193,10 +200,72 @@ export function buildSubAssemblyPlan(
       number: depth === 0 ? String(top) : `${top}.${child}`,
       plays: !(isHeader && step.usedInStepId),
       isolatePartIds: depth === 1 && headerId ? partsOf(headerId) : null,
+      unitPartIds: isHeader ? partsOf(step.id) : null,
       carriesIn
     });
   }
   return plan;
+}
+
+/** A finished sub-assembly that joins on a path of its own (its header's motion). */
+export type PathUnit = { headerId: string; nodeIds: string[]; motion: Motion };
+
+/**
+ * How a step's parts move. The finished sub-assemblies it carries in either
+ * fly their own path (`pathUnits`) or glide in beside the build; everything
+ * else rides the step's own insertion.
+ */
+export type CarryPlan = {
+  /** The units with a path of their own, in sub-assembly order: they fly in first. */
+  pathUnits: PathUnit[];
+  /** Carried parts with no path of their own: they glide in beside the build. */
+  glidingPartIds: string[];
+  /** What the step's own insertion moves: its own parts plus the gliding units. */
+  ownMovingPartIds: string[];
+  /**
+   * An unused header whose unit joins the main build on its own path: that
+   * path IS the header's motion, so the header has no insertion of its own.
+   */
+  joinsOnOwnPath: boolean;
+};
+
+export function carriesUnits(plan: CarryPlan): boolean {
+  return plan.pathUnits.length > 0 || plan.glidingPartIds.length > 0;
+}
+
+/**
+ * Per step (same order as `steps`), from the plan `buildSubAssemblyPlan`
+ * made for the same steps. A header whose `motion` is not `none` has a path
+ * of its own; the rest keep the glide from beside the build.
+ */
+export function buildCarryPlans(
+  steps: (StructureStep & Pick<AssemblyStep, "motion">)[],
+  subPlan: Map<string, SubAssemblyInfo>
+): CarryPlan[] {
+  const byId = new Map(steps.map((step) => [step.id, step]));
+  return steps.map((step) => {
+    const pathUnits: PathUnit[] = [];
+    const gliding = new Set<string>();
+    for (const headerId of subPlan.get(step.id)?.carriesIn ?? []) {
+      const nodeIds = subPlan.get(headerId)?.unitPartIds ?? [];
+      const header = byId.get(headerId);
+      if (header && header.motion.type !== "none") {
+        pathUnits.push({ headerId, nodeIds, motion: header.motion });
+      } else {
+        for (const id of nodeIds) gliding.add(id);
+      }
+    }
+    const onPath = new Set(pathUnits.flatMap((unit) => unit.nodeIds));
+    for (const id of onPath) gliding.delete(id);
+    const own = new Set([...step.componentNodeIds, ...gliding]);
+    for (const id of onPath) own.delete(id);
+    return {
+      pathUnits,
+      glidingPartIds: [...gliding],
+      ownMovingPartIds: [...own],
+      joinsOnOwnPath: pathUnits.some((unit) => unit.headerId === step.id)
+    };
+  });
 }
 
 export type SubAssemblyRule = 1 | 2 | 3;

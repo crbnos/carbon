@@ -3416,6 +3416,66 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
 
+## The three.js rotate gizmo grabs whatever sits under its center
+
+**Context:** The assembly path editor shows drei `TransformControls` (`mode="rotate"`) on a selected waypoint, whose draggable sphere sits at the gizmo's center.
+
+**Problem:** In rotate mode the gizmo adds an invisible free-rotation picker — a sphere of radius 0.7 × gizmo size (`XYZE` in three-stdlib `controls/TransformControls.js`) — centred on its object. Dragging the waypoint sphere started that free rotation as well as the drag, so one gesture moved the part and spun it at once (2026-10-08).
+
+**Rule:** Never let a rotate gizmo and another drag handle share a position. Make it a mode: either the handles drag or the rings show, never both. The path editor's Move / Rotate tool is the precedent (`MotionPathEditor.tsx`, `tool`).
+
+**Applies to:** any `TransformControls` / `PivotControls` placed on top of an existing pointer handle in `packages/viewer`.
+
+## Browser-testing the 3D assembly page: one session, restart often
+
+**Context:** Driving `/x/assembly/:id` with `agent-browser` for screenshots and drags (2026-10-08).
+
+**Problem:** After roughly 40 screenshots of the WebGL page the renderer reached 3 GB+, snapshots hung for over a minute, and a later revalidation failed with "Failed to fetch" plus "WebGL Context Lost". On a fresh dev server the login's Continue button also stays disabled until hydration finishes, which looks like a broken bot check.
+
+**Rule:** Set `AGENT_BROWSER_SESSION` to the worktree's own name, `agent-browser close` and reopen after ~40 shots, and reload the login page once if Continue stays disabled. Drive the canvas with `mouse move/down/up`, not `click`. Radix menus ignore synthetic clicks there — move the mouse off the menu and use the arrow keys plus Enter.
+
+**Applies to:** browser verification of `packages/viewer` features in the ERP editor; `.ai/playbooks/assembly-sub-assembly-motion-path.md`.
+
+## drei GizmoHelper resets camera.up after a viewcube click
+
+**Context:** The assembly player shows a step's build orientation by rolling the camera (`camera.up` = the bench's up in the model frame, `packages/viewer/src/orientation.ts`).
+
+**Problem:** drei's `GizmoHelper` writes `camera.up` on every frame of a face-click tween and resets it to the value it saw at mount when the tween ends (`core/GizmoHelper.js`). After one viewcube click the build stood upright again, and every later turn started from the wrong up.
+
+**Rule:** Do not patch drei. Anything that owns `camera.up` must re-assert it in its own frame loop whenever it drifts outside its own animation.
+
+**Applies to:** `packages/viewer/src/useBuildFrame.ts` (its `useFrame`), any code that sets `camera.up` under `GizmoHelper` or `OrbitControls`.
+
+## Re-applying demo data runs code a first apply never reaches
+
+**Context:** A new table (`customerContractInvoiceLine`) got a CHECK that needs `customerContractInvoiceId` OR `memoId`. The demo datasets seed it with only the invoice.
+
+**Problem:** Settings → Demo Data on a company that already had data failed with "new row … violates check constraint". The wipe that runs first nulls every nullable FK pointing at a table it clears, which emptied both columns. `pnpm db:check:datasets` stayed green: it applied each dataset once, to an empty scratch company, so the wipe never met a seeded row.
+
+**Rule:** A seeded table whose CHECK needs one of several nullable FKs goes in `PARENT_CHECK_TABLES` (`packages/database/src/datasets/wipe.ts`). The dataset check now re-applies each dataset over itself, so this fails before commit. When a test only exercises the first run of an idempotent operation, also run it a second time.
+
+**Applies to:** `packages/database/src/datasets/` (wipe, verify), migrations that add CHECKs over nullable FK columns.
+
+## A migration on main can carry a timestamp ahead of UTC
+
+**Context:** `supabase migration new` stamps a migration with the current UTC time. A migration merged to `main` (`20261009141827_link-custom-field-type.sql`) carried a time about 2.5 hours ahead of UTC, likely from a local clock.
+
+**Problem:** Every migration created after the pull got an older timestamp than that file. Production's `supabase db push` refuses a migration that sorts before one it already applied, so the new migrations would have failed to deploy. The clobber check and every test passed; nothing local shows it.
+
+**Rule:** After you pull `main`, compare your migrations' timestamps with the newest one on `main` (`ls packages/database/supabase/migrations | tail`). If yours sort first, rename them to sort after it, keep their order and content, and use a non-`000000` HHMMSS. Re-generate a generated `authz migration` file first, then rename it with the rest.
+
+**Applies to:** `packages/database/supabase/migrations/`; every branch that adds a migration.
+
+## The license-header fixer only sees files git tracks
+
+**Context:** `pnpm --filter @carbon/checks license-headers -- <paths>` writes the SPDX header. It walks `git ls-files --cached`.
+
+**Problem:** A new, untracked file is not in that list, so the fixer reports "0 fixed" and the file keeps no header until the `spdx-license-header` check fails at commit.
+
+**Rule:** Run `git add -N <new files>` (intent to add; it records no content) before the fixer, then run the fixer with those paths.
+
+**Applies to:** every new source file outside generated output.
+
 ## A value two layers must agree on lives once, in the client-safe pure module
 
 **Context:** The accounting enable wizard (ERP) and the `activate-accounting` server function both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
@@ -3546,3 +3606,34 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 **Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
 
 **Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.
+
+## A foreign key to `account` must be RESTRICT, and a new one needs a merge policy
+
+**Context:** The chart of accounts import (2026-10-12) re-points references when it merges accounts and deletes an account nothing uses.
+
+**Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
+
+**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
+
+**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `packages/server-functions/src/apply-account-import/`.
+
+## Committing with the hook off skips Biome too
+
+**Context:** The chart of accounts import (2026-10-12) committed with `git -c core.hooksPath=/dev/null` so the Lingui catalogs, which the hook stages into any commit with `.ts` changes, could land in their own commit.
+
+**Problem:** The hook also runs lint-staged. Bypassing it skipped Biome's formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
+
+**Rule:** Before a commit with the hook off, run `pnpm biome check --write` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
+
+**Applies to:** any commit made with `--no-verify` or `core.hooksPath=/dev/null`.
+
+## RLS does not bound an MCP tool handed `db`; its declared permission is the only gate
+
+**Context:** A 2026-10 security disclosure: an OAuth (MCP connector) token for a user with no accounting permission could create draft GL journals through `inventory_createInventoryReconciliationJournal`.
+
+**Problem:** Two gaps stacked. The oRPC `gate()` skipped OAuth callers on the theory that RLS bounds them, but a service whose manifest asks for `db` gets `getDatabaseClient()`, the direct connection, which bypasses RLS. And a tool's default permission is its own module plus its verb's action, so the journal tool was gated on `inventory:create` while the Reconcile screen requires `accounting:create`. Supplier and customer bank accounts (`purchasing`/`sales` vs `accounting`) and return-order credits (`purchasing`/`sales` vs `invoicing`) had the same mismatch, for API keys as well.
+
+**Rule:** Every non-session caller (API key AND OAuth) is gated per operation, OAuth on the user's live permissions in the token's company (`scopesFromPermissions`). When a tool does what an ERP route does, its permission must equal that route's `requirePermissions`: add `@mcp permission` where the default differs, regenerate, and pin it in `OVERRIDES` in `mcp-tool-permissions.test.ts`. Never reason "RLS will catch it" for a tool whose `contextParams` include `db`.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
+

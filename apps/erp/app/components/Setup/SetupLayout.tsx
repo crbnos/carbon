@@ -18,8 +18,9 @@ export const SetupFrame = ({
 }: {
   title: ReactNode;
   subtitle?: ReactNode;
-  /** The stepper (`SetupSteps`). */
-  steps: ReactNode;
+  /** The stepper (`SetupSteps`). A page with no steps draws no rule under
+   *  its header: the title sits directly above the body. */
+  steps?: ReactNode;
   /** The current step: a new one scrolls the page back to the top. */
   step: string;
   children: ReactNode;
@@ -36,7 +37,7 @@ export const SetupFrame = ({
       ref={scrollRef}
       className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] w-full flex-col overflow-y-auto bg-card scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
     >
-      <header className="w-full border-b border-border">
+      <header className={cn("w-full", steps && "border-b border-border")}>
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 pt-8 md:px-8">
           <div className="flex min-w-0 flex-col gap-1">
             <Heading size="h3" className="truncate">

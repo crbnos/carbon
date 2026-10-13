@@ -11,7 +11,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-  HStack,
   Label,
   LabelWithHelp,
   Subheading,
@@ -19,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import type { AssemblyStep, SubAssemblyInfo } from "@carbon/viewer";
-import { usableSubAssemblies } from "@carbon/viewer";
+import { isSavedView, usableSubAssemblies } from "@carbon/viewer";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuTrash, LuUngroup } from "react-icons/lu";
@@ -29,8 +28,11 @@ import { useImageUpload, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { assemblyInstructionStepValidator } from "../../production.models";
 import type { AssemblyInstructionStepRow } from "../../types";
+import AssemblyCameraRow from "./AssemblyCameraRow";
 import PlaybackRow from "./AssemblyPlaybackRow";
 import { SUB_ASSEMBLY_PARAM } from "./AssemblyStepList";
+import SubAssemblyPathRow from "./AssemblySubAssemblyPathRow";
+import type { CameraControls, MotionEditing } from "./useStepMotionEditor";
 
 type AssemblySubAssemblyPropertiesProps = {
   step: AssemblyInstructionStepRow;
@@ -41,8 +43,8 @@ type AssemblySubAssemblyPropertiesProps = {
   isDisabled: boolean;
   itemMentions: { id: string; label: string; helper?: string }[];
   onSelectStep: (stepId: string) => void;
-  onSetCamera: (stepId: string) => void;
-  onClearCamera: (stepId: string) => void;
+  camera: CameraControls;
+  motionEditing: MotionEditing;
 };
 
 /**
@@ -58,8 +60,8 @@ export default function AssemblySubAssemblyProperties({
   isDisabled,
   itemMentions,
   onSelectStep,
-  onSetCamera,
-  onClearCamera
+  camera,
+  motionEditing
 }: AssemblySubAssemblyPropertiesProps) {
   const { id: instructionId } = useParams();
   if (!instructionId) throw new Error("Could not find id");
@@ -132,7 +134,11 @@ export default function AssemblySubAssemblyProperties({
     );
 
   const cannotSave = isDisabled || !permissions.can("update", "production");
-  const hasCamera = step.camera != null;
+  // The checked motion the player plays (a malformed row reads as "none").
+  const hasOwnPath =
+    (viewerSteps.find((viewerStep) => viewerStep.id === step.id)?.motion.type ??
+      "none") !== "none";
+  const hasSavedView = isSavedView(step.camera);
   const name = step.title || t`Sub-Assembly`;
 
   return (
@@ -280,38 +286,25 @@ export default function AssemblySubAssemblyProperties({
               </DropdownMenu>
             )}
           </PlaybackRow>
+          {/* Nothing uses it: it joins the main build here, on this path. */}
           {!usedIn && (
-            <PlaybackRow
-              label={
-                <LabelWithHelp termId="assembly-step-camera" variant="inline">
-                  <Trans>Camera</Trans>
-                </LabelWithHelp>
-              }
-              value={
-                hasCamera ? <Trans>Saved view</Trans> : <Trans>Automatic</Trans>
-              }
-            >
-              {!isDisabled && (
-                <HStack spacing={1}>
-                  {hasCamera && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onClearCamera(step.id)}
-                    >
-                      <Trans>Clear</Trans>
-                    </Button>
-                  )}
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onSetCamera(step.id)}
-                  >
-                    <Trans>Use Current View</Trans>
-                  </Button>
-                </HStack>
-              )}
-            </PlaybackRow>
+            <SubAssemblyPathRow
+              name={name}
+              hasPath={hasOwnPath}
+              isEditing={motionEditing.editingUnitId === step.id}
+              isDisabled={isDisabled}
+              onEdit={() => motionEditing.onEdit(step.id, step.id)}
+              onStopEdit={motionEditing.onStop}
+              onReset={() => motionEditing.onReset(step.id)}
+            />
+          )}
+          {!usedIn && (
+            <AssemblyCameraRow
+              stepId={step.id}
+              hasSavedView={hasSavedView}
+              isDisabled={isDisabled}
+              camera={camera}
+            />
           )}
         </div>
       </VStack>

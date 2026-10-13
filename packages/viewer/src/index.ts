@@ -12,7 +12,9 @@ export {
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
 export { type FramingFit, fitFraming } from "./camera";
+export { buildStepClip, type StepClipOptions } from "./clip";
 export { describeStep, type NamedUnit } from "./describe";
+export { displayMotionForStep, naturalizeMotion } from "./display";
 export { synthesizeFallbackMotion } from "./fallback";
 export {
   type AssemblyGraphIndex,
@@ -21,23 +23,26 @@ export {
   indexAssemblyGraph
 } from "./graph";
 export {
+  type MotionKeyframeOptions,
+  type MotionKeyframes,
+  motionToKeyframes,
+  type Pose
+} from "./keyframes";
+export {
   ModelCanvas,
   type ModelCanvasProps,
   type ModelMetrics
 } from "./ModelCanvas";
 export {
-  buildStepClip,
-  displayMotionForStep,
-  type MotionKeyframeOptions,
-  type MotionKeyframes,
-  motionDuration,
-  motionToKeyframes,
-  motionTravelDistance,
-  naturalizeMotion,
-  type Pose,
-  type StepClipOptions,
-  stepClipTiming
-} from "./motion";
+  type BuildTurn,
+  describeOrientation,
+  isOrientation,
+  type OrientationPose,
+  type ResolvedOrientation,
+  resolveOrientations,
+  turnOrientation,
+  upForOrientation
+} from "./orientation";
 export {
   type AssemblyPlan,
   type AssemblyPlanComponent,
@@ -49,6 +54,8 @@ export {
   planMotionForComponents,
   type StepPhase
 } from "./plan";
+export { IDENTITY_QUAT as IDENTITY_ORIENTATION, sameOrientation } from "./quat";
+export { hasCustomMotion, isPlanFlagged, isSavedView } from "./step-flags";
 export {
   arrivalIndexByNode,
   buildSubAssemblyPlan,
@@ -62,6 +69,11 @@ export {
   usableSubAssemblies,
   validateSubAssemblies
 } from "./subassembly";
+export {
+  motionDuration,
+  motionTravelDistance,
+  stepClipTiming
+} from "./timing";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,
@@ -79,6 +91,7 @@ export type {
   Vec3
 } from "./types";
 export { type UseAssemblyResult, useAssembly } from "./useAssembly";
+export { isPlayableMotion } from "./validate-motion";
 export {
   ASSEMBLY_VIEWS,
   type ComponentVisual,
