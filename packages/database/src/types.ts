@@ -9301,6 +9301,382 @@ export type Database = {
           }
         ]
       }
+      contractFinancingRequest: {
+        Row: {
+          approvedAmount: number | null
+          companyId: string
+          costsThroughDate: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          estimateDate: string | null
+          estimateToComplete: number | null
+          financingMethod: Database["public"]["Enums"]["contractFinancingMethod"]
+          id: string
+          lines: Json
+          overrides: Json
+          paymentId: string | null
+          requestDate: string
+          requestedAmount: number
+          requestNumber: number | null
+          status: Database["public"]["Enums"]["contractFinancingRequestStatus"]
+          submittedAt: string | null
+          submittedBy: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          approvedAmount?: number | null
+          companyId: string
+          costsThroughDate: string
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          estimateDate?: string | null
+          estimateToComplete?: number | null
+          financingMethod: Database["public"]["Enums"]["contractFinancingMethod"]
+          id?: string
+          lines?: Json
+          overrides?: Json
+          paymentId?: string | null
+          requestDate: string
+          requestedAmount?: number
+          requestNumber?: number | null
+          status?: Database["public"]["Enums"]["contractFinancingRequestStatus"]
+          submittedAt?: string | null
+          submittedBy?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          approvedAmount?: number | null
+          companyId?: string
+          costsThroughDate?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          estimateDate?: string | null
+          estimateToComplete?: number | null
+          financingMethod?: Database["public"]["Enums"]["contractFinancingMethod"]
+          id?: string
+          lines?: Json
+          overrides?: Json
+          paymentId?: string | null
+          requestDate?: string
+          requestedAmount?: number
+          requestNumber?: number | null
+          status?: Database["public"]["Enums"]["contractFinancingRequestStatus"]
+          submittedAt?: string | null
+          submittedBy?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractFinancingRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_payment_fkey"
+            columns: ["paymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "payment"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_submittedBy_fkey"
+            columns: ["submittedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_submittedBy_fkey"
+            columns: ["submittedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_submittedBy_fkey"
+            columns: ["submittedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_submittedBy_fkey"
+            columns: ["submittedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_submittedBy_fkey"
+            columns: ["submittedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequest_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      contractFinancingRequestEvent: {
+        Row: {
+          amount: number
+          companyId: string
+          contractFinancingRequestId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          performanceBasedPaymentEventId: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amount: number
+          companyId: string
+          contractFinancingRequestId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          performanceBasedPaymentEventId: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amount?: number
+          companyId?: string
+          contractFinancingRequestId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          performanceBasedPaymentEventId?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contractFinancingRequestEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_event_fkey"
+            columns: ["performanceBasedPaymentEventId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "performanceBasedPaymentEvent"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_request_fkey"
+            columns: ["contractFinancingRequestId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "contractFinancingRequest"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractFinancingRequestEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       contractor: {
         Row: {
           active: boolean
@@ -11850,6 +12226,322 @@ export type Database = {
           },
           {
             foreignKeyName: "customerContractAmendment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractFinancing: {
+        Row: {
+          companyId: string
+          contractPrice: number
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          financingMethod: Database["public"]["Enums"]["contractFinancingMethod"]
+          id: string
+          initialAwardDate: string
+          isSmallBusiness: boolean
+          maximumPaymentShare: number
+          nextRequestNumber: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          contractPrice: number
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          financingMethod: Database["public"]["Enums"]["contractFinancingMethod"]
+          id?: string
+          initialAwardDate: string
+          isSmallBusiness?: boolean
+          maximumPaymentShare?: number
+          nextRequestNumber?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          contractPrice?: number
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          financingMethod?: Database["public"]["Enums"]["contractFinancingMethod"]
+          id?: string
+          initialAwardDate?: string
+          isSmallBusiness?: boolean
+          maximumPaymentShare?: number
+          nextRequestNumber?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractFinancing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancing_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      customerContractFinancingRate: {
+        Row: {
+          companyId: string
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          effectiveDate: string
+          id: string
+          liquidationRate: number
+          modificationNumber: string | null
+          progressPaymentRate: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          effectiveDate: string
+          id?: string
+          liquidationRate: number
+          modificationNumber?: string | null
+          progressPaymentRate?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          effectiveDate?: string
+          id?: string
+          liquidationRate?: number
+          modificationNumber?: string | null
+          progressPaymentRate?: number | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customerContractFinancingRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customerContractFinancingRate_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -43556,6 +44248,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           currencyCode: string
+          customerContractId: string | null
           customerId: string | null
           customFields: Json | null
           employeeId: string | null
@@ -43586,6 +44279,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           currencyCode: string
+          customerContractId?: string | null
           customerId?: string | null
           customFields?: Json | null
           employeeId?: string | null
@@ -43616,6 +44310,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           currencyCode?: string
+          customerContractId?: string | null
           customerId?: string | null
           customFields?: Json | null
           employeeId?: string | null
@@ -43724,6 +44419,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "currencyCode"
             referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "payment_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "payment_customerContract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "payment_customerId_fkey"
@@ -44674,6 +45383,224 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      performanceBasedPaymentEvent: {
+        Row: {
+          amount: number
+          companyId: string
+          completedBy: string | null
+          completedDate: string | null
+          completionCriteria: string | null
+          createdAt: string
+          createdBy: string
+          customerContractId: string
+          customerContractLineId: string | null
+          description: string
+          eventCode: string
+          eventType: Database["public"]["Enums"]["performanceBasedPaymentEventType"]
+          evidence: string | null
+          id: string
+          plannedDate: string | null
+          sequence: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amount: number
+          companyId: string
+          completedBy?: string | null
+          completedDate?: string | null
+          completionCriteria?: string | null
+          createdAt?: string
+          createdBy: string
+          customerContractId: string
+          customerContractLineId?: string | null
+          description: string
+          eventCode: string
+          eventType?: Database["public"]["Enums"]["performanceBasedPaymentEventType"]
+          evidence?: string | null
+          id?: string
+          plannedDate?: string | null
+          sequence: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amount?: number
+          companyId?: string
+          completedBy?: string | null
+          completedDate?: string | null
+          completionCriteria?: string | null
+          createdAt?: string
+          createdBy?: string
+          customerContractId?: string
+          customerContractLineId?: string | null
+          description?: string
+          eventCode?: string
+          eventType?: Database["public"]["Enums"]["performanceBasedPaymentEventType"]
+          evidence?: string | null
+          id?: string
+          plannedDate?: string | null
+          sequence?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_completedBy_fkey"
+            columns: ["completedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_completedBy_fkey"
+            columns: ["completedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_completedBy_fkey"
+            columns: ["completedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_completedBy_fkey"
+            columns: ["completedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_completedBy_fkey"
+            columns: ["completedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContract"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_contract_fkey"
+            columns: ["customerContractId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContracts"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_line_fkey"
+            columns: ["customerContractLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "customerContractLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performanceBasedPaymentEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -102460,6 +103387,15 @@ export type Database = {
       contractBillingFrequency: "Week" | "Month" | "Quarter" | "Year"
       contractBillingMethod: "Fixed" | "Time & Materials" | "Cost Plus"
       contractBillingTiming: "Advance" | "Arrears"
+      contractFinancingMethod:
+        | "Progress Payments"
+        | "Performance-Based Payments"
+      contractFinancingRequestStatus:
+        | "Draft"
+        | "Submitted"
+        | "Approved"
+        | "Paid"
+        | "Withdrawn"
       contractInvoiceStatus: "Planned" | "Invoiced" | "Billed Externally"
       contractLedgerEntryType:
         | "Opening"
@@ -103007,6 +103943,7 @@ export type Database = {
       paymentStatus: "Draft" | "Posted" | "Voided"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       paymentType: "Receipt" | "Disbursement"
+      performanceBasedPaymentEventType: "Severable" | "Cumulative"
       periodCloseStatus: "Open" | "Locked" | "Closed"
       periodType: "Week" | "Day" | "Month"
       pickingListLineStatus: "Pending" | "Picked" | "Short" | "Cancelled"
@@ -104148,6 +105085,17 @@ export const Constants = {
       contractBillingFrequency: ["Week", "Month", "Quarter", "Year"],
       contractBillingMethod: ["Fixed", "Time & Materials", "Cost Plus"],
       contractBillingTiming: ["Advance", "Arrears"],
+      contractFinancingMethod: [
+        "Progress Payments",
+        "Performance-Based Payments",
+      ],
+      contractFinancingRequestStatus: [
+        "Draft",
+        "Submitted",
+        "Approved",
+        "Paid",
+        "Withdrawn",
+      ],
       contractInvoiceStatus: ["Planned", "Invoiced", "Billed Externally"],
       contractLedgerEntryType: [
         "Opening",
@@ -104747,6 +105695,7 @@ export const Constants = {
       paymentStatus: ["Draft", "Posted", "Voided"],
       paymentTermCalculationMethod: ["Net", "End of Month", "Day of Month"],
       paymentType: ["Receipt", "Disbursement"],
+      performanceBasedPaymentEventType: ["Severable", "Cumulative"],
       periodCloseStatus: ["Open", "Locked", "Closed"],
       periodType: ["Week", "Day", "Month"],
       pickingListLineStatus: ["Pending", "Picked", "Short", "Cancelled"],

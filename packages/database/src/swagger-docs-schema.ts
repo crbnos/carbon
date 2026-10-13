@@ -4743,6 +4743,258 @@ export default {
         tags: ["trackedActivityOutput"]
       }
     },
+    "/performanceBasedPaymentEvent": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completionCriteria"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.plannedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.evidence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/performanceBasedPaymentEvent"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["performanceBasedPaymentEvent"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.performanceBasedPaymentEvent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["performanceBasedPaymentEvent"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completionCriteria"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.plannedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.evidence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["performanceBasedPaymentEvent"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.customerContractLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completionCriteria"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.plannedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.completedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.evidence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.performanceBasedPaymentEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.performanceBasedPaymentEvent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["performanceBasedPaymentEvent"]
+      }
+    },
     "/integrations": {
       get: {
         parameters: [
@@ -24163,6 +24415,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.rentalAgreementId"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.customerContractId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24306,6 +24561,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.rentalAgreementId"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.customerContractId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -24401,6 +24659,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.payment.rentalAgreementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.payment.customerContractId"
           },
           {
             $ref: "#/parameters/body.payment"
@@ -37074,6 +37335,177 @@ export default {
         tags: ["assemblyPlanJob"]
       }
     },
+    "/contractFinancingRequestEvent": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.contractFinancingRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.performanceBasedPaymentEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/contractFinancingRequestEvent"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["contractFinancingRequestEvent"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.contractFinancingRequestEvent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["contractFinancingRequestEvent"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.contractFinancingRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.performanceBasedPaymentEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["contractFinancingRequestEvent"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.contractFinancingRequestId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.performanceBasedPaymentEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequestEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.contractFinancingRequestEvent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["contractFinancingRequestEvent"]
+      }
+    },
     "/openJobMaterialLines": {
       get: {
         parameters: [
@@ -41452,6 +41884,285 @@ export default {
           }
         },
         tags: ["documentTransaction"]
+      }
+    },
+    "/contractFinancingRequest": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.costsThroughDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateToComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.lines"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.overrides"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.approvedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/contractFinancingRequest"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["contractFinancingRequest"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.contractFinancingRequest"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["contractFinancingRequest"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.costsThroughDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateToComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.lines"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.overrides"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.approvedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["contractFinancingRequest"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.costsThroughDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateToComplete"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.estimateDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.lines"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.overrides"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.requestedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.approvedAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.paymentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.submittedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.contractFinancingRequest.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.contractFinancingRequest"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["contractFinancingRequest"]
       }
     },
     "/intercompanyTransaction": {
@@ -53382,6 +54093,195 @@ export default {
         tags: ["workflowRun"]
       }
     },
+    "/customerContractFinancingRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.progressPaymentRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.liquidationRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.modificationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerContractFinancingRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerContractFinancingRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerContractFinancingRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerContractFinancingRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.progressPaymentRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.liquidationRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.modificationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractFinancingRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.progressPaymentRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.liquidationRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.modificationNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancingRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.customerContractFinancingRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractFinancingRate"]
+      }
+    },
     "/userAttribute": {
       get: {
         parameters: [
@@ -62077,6 +62977,213 @@ export default {
           }
         },
         tags: ["costCenter"]
+      }
+    },
+    "/customerContractFinancing": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.contractPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.initialAwardDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.isSmallBusiness"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.maximumPaymentShare"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.nextRequestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerContractFinancing"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerContractFinancing"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerContractFinancing"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerContractFinancing"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.contractPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.initialAwardDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.isSmallBusiness"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.maximumPaymentShare"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.nextRequestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractFinancing"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.customerContractId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.financingMethod"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.contractPrice"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.initialAwardDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.isSmallBusiness"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.maximumPaymentShare"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.nextRequestNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerContractFinancing.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.customerContractFinancing"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerContractFinancing"]
       }
     },
     "/purchaseReturnOrderLineTrackedEntity": {
@@ -129720,6 +130827,108 @@ export default {
       },
       type: "object"
     },
+    performanceBasedPaymentEvent: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractId",
+        "sequence",
+        "eventCode",
+        "description",
+        "eventType",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('pbpe'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        customerContractLineId: {
+          format: "text",
+          type: "string"
+        },
+        sequence: {
+          format: "integer",
+          type: "integer"
+        },
+        eventCode: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        completionCriteria: {
+          format: "text",
+          type: "string"
+        },
+        eventType: {
+          default: "Cumulative",
+          enum: ["Severable", "Cumulative"],
+          format: 'public."performanceBasedPaymentEventType"',
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        plannedDate: {
+          format: "date",
+          type: "string"
+        },
+        completedDate: {
+          format: "date",
+          type: "string"
+        },
+        completedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        evidence: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     integrations: {
       properties: {
         id: {
@@ -138992,6 +140201,10 @@ export default {
         rentalAgreementId: {
           format: "text",
           type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -145105,6 +146318,65 @@ export default {
       },
       type: "object"
     },
+    contractFinancingRequestEvent: {
+      required: [
+        "id",
+        "companyId",
+        "contractFinancingRequestId",
+        "performanceBasedPaymentEventId",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cfre'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        contractFinancingRequestId: {
+          format: "text",
+          type: "string"
+        },
+        performanceBasedPaymentEventId: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     openJobMaterialLines: {
       properties: {
         id: {
@@ -147034,6 +148306,122 @@ export default {
         },
         companyId: {
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    contractFinancingRequest: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "status",
+        "requestDate",
+        "costsThroughDate",
+        "lines",
+        "overrides",
+        "requestedAmount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cfr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        financingMethod: {
+          enum: ["Progress Payments", "Performance-Based Payments"],
+          format: 'public."contractFinancingMethod"',
+          type: "string"
+        },
+        requestNumber: {
+          format: "integer",
+          type: "integer"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Submitted", "Approved", "Paid", "Withdrawn"],
+          format: 'public."contractFinancingRequestStatus"',
+          type: "string"
+        },
+        requestDate: {
+          format: "date",
+          type: "string"
+        },
+        costsThroughDate: {
+          format: "date",
+          type: "string"
+        },
+        estimateToComplete: {
+          format: "numeric",
+          type: "number"
+        },
+        estimateDate: {
+          format: "date",
+          type: "string"
+        },
+        lines: {
+          format: "jsonb"
+        },
+        overrides: {
+          format: "jsonb"
+        },
+        requestedAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        approvedAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        paymentId: {
+          format: "text",
+          type: "string"
+        },
+        submittedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        submittedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -152601,6 +153989,73 @@ export default {
       },
       type: "object"
     },
+    customerContractFinancingRate: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractId",
+        "effectiveDate",
+        "liquidationRate",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ccfr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        effectiveDate: {
+          format: "date",
+          type: "string"
+        },
+        progressPaymentRate: {
+          format: "numeric",
+          type: "number"
+        },
+        liquidationRate: {
+          format: "numeric",
+          type: "number"
+        },
+        modificationNumber: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     userAttribute: {
       required: [
         "id",
@@ -156794,6 +158249,89 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    customerContractFinancing: {
+      required: [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "contractPrice",
+        "initialAwardDate",
+        "isSmallBusiness",
+        "maximumPaymentShare",
+        "nextRequestNumber",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('ccf'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerContractId: {
+          format: "text",
+          type: "string"
+        },
+        financingMethod: {
+          enum: ["Progress Payments", "Performance-Based Payments"],
+          format: 'public."contractFinancingMethod"',
+          type: "string"
+        },
+        contractPrice: {
+          format: "numeric",
+          type: "number"
+        },
+        initialAwardDate: {
+          format: "date",
+          type: "string"
+        },
+        isSmallBusiness: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        maximumPaymentShare: {
+          default: 0.9,
+          format: "numeric",
+          type: "number"
+        },
+        nextRequestNumber: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -183597,6 +185135,123 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.performanceBasedPaymentEvent": {
+      name: "performanceBasedPaymentEvent",
+      description: "performanceBasedPaymentEvent",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/performanceBasedPaymentEvent"
+      }
+    },
+    "rowFilter.performanceBasedPaymentEvent.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.customerContractLineId": {
+      name: "customerContractLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.eventCode": {
+      name: "eventCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.completionCriteria": {
+      name: "completionCriteria",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.eventType": {
+      name: "eventType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.plannedDate": {
+      name: "plannedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.completedDate": {
+      name: "completedDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.completedBy": {
+      name: "completedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.evidence": {
+      name: "evidence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.performanceBasedPaymentEvent.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.integrations": {
       name: "integrations",
       description: "integrations",
@@ -193996,6 +195651,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.payment.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.demandForecast": {
       name: "demandForecast",
       description: "demandForecast",
@@ -200876,6 +202537,69 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.contractFinancingRequestEvent": {
+      name: "contractFinancingRequestEvent",
+      description: "contractFinancingRequestEvent",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/contractFinancingRequestEvent"
+      }
+    },
+    "rowFilter.contractFinancingRequestEvent.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.contractFinancingRequestId": {
+      name: "contractFinancingRequestId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.performanceBasedPaymentEventId": {
+      name: "performanceBasedPaymentEventId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequestEvent.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.openJobMaterialLines": {
       name: "openJobMaterialLines",
       description: "openJobMaterialLines",
@@ -203038,6 +204762,141 @@ export default {
     },
     "rowFilter.documentTransaction.companyId": {
       name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.contractFinancingRequest": {
+      name: "contractFinancingRequest",
+      description: "contractFinancingRequest",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/contractFinancingRequest"
+      }
+    },
+    "rowFilter.contractFinancingRequest.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.financingMethod": {
+      name: "financingMethod",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.requestNumber": {
+      name: "requestNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.requestDate": {
+      name: "requestDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.costsThroughDate": {
+      name: "costsThroughDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.estimateToComplete": {
+      name: "estimateToComplete",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.estimateDate": {
+      name: "estimateDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.lines": {
+      name: "lines",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.overrides": {
+      name: "overrides",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.requestedAmount": {
+      name: "requestedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.approvedAmount": {
+      name: "approvedAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.paymentId": {
+      name: "paymentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.submittedAt": {
+      name: "submittedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.submittedBy": {
+      name: "submittedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.contractFinancingRequest.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -209088,6 +210947,81 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.customerContractFinancingRate": {
+      name: "customerContractFinancingRate",
+      description: "customerContractFinancingRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerContractFinancingRate"
+      }
+    },
+    "rowFilter.customerContractFinancingRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.effectiveDate": {
+      name: "effectiveDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.progressPaymentRate": {
+      name: "progressPaymentRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.liquidationRate": {
+      name: "liquidationRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.modificationNumber": {
+      name: "modificationNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancingRate.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.userAttribute": {
       name: "userAttribute",
       description: "userAttribute",
@@ -213821,6 +215755,93 @@ export default {
     },
     "rowFilter.costCenter.ownerId": {
       name: "ownerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.customerContractFinancing": {
+      name: "customerContractFinancing",
+      description: "customerContractFinancing",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerContractFinancing"
+      }
+    },
+    "rowFilter.customerContractFinancing.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.customerContractId": {
+      name: "customerContractId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.financingMethod": {
+      name: "financingMethod",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.contractPrice": {
+      name: "contractPrice",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.initialAwardDate": {
+      name: "initialAwardDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.isSmallBusiness": {
+      name: "isSmallBusiness",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.maximumPaymentShare": {
+      name: "maximumPaymentShare",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.nextRequestNumber": {
+      name: "nextRequestNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerContractFinancing.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

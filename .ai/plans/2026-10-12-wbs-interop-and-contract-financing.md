@@ -19,7 +19,7 @@ Phase A — WBS interop
 - [x] Task 9: Offer the 881F templates in New Project
 
 Phase B — contract financing
-- [ ] Task 10: Add the financing tables and the contract deposit scope
+- [x] Task 10: Add the financing tables and the contract deposit scope
 - [ ] Task 11: Scope a customer deposit to a contract
 - [ ] Task 12: Write the financing compute engine
 - [ ] Task 13: Write the financing service and its package exports

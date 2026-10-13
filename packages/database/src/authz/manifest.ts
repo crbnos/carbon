@@ -290,6 +290,8 @@ export const manifest = {
     update: inCompany("companyId", anyOf("sales_update", "purchasing_update")),
     delete: inCompany("companyId", anyOf("sales_delete", "purchasing_delete"))
   }),
+  contractFinancingRequest: company("sales", { read: "sales_view" }),
+  contractFinancingRequestEvent: company("sales", { read: "sales_view" }),
   contractor: company("resources", { read: "resources_view" }),
   contractorAbility: policies({
     select: viaParent("contractorId", "contractor", "resources_view"),
@@ -350,6 +352,8 @@ export const manifest = {
   customerContract: company("sales", { read: "sales_view" }),
   customerContractAmendment: company("sales", { read: "sales_view" }),
   // Government contracting Phase 5a: ACRN funding actions on a contract line.
+  customerContractFinancing: company("sales", { read: "sales_view" }),
+  customerContractFinancingRate: company("sales", { read: "sales_view" }),
   customerContractFunding: company("sales", { read: "sales_view" }),
   customerContractInvoice: company("sales", { read: "sales_view" }),
   customerContractInvoiceLine: company("sales", { read: "sales_view" }),
@@ -1137,6 +1141,7 @@ export const manifest = {
   // Government contracting Phase 5a: payroll totals imported from CSV.
   payrollPeriodTotal: company("people", { read: "people_view" }),
   peopleAbsence: company("production"),
+  performanceBasedPaymentEvent: company("sales", { read: "sales_view" }),
   peopleAssignment: company("production"),
   period: policies({ select: authenticated }),
   periodCloseTask: company("accounting"),
