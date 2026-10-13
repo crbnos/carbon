@@ -382,7 +382,7 @@ msgid "{0}h staffed"
 msgstr "{0}s personel kaynaklandı"
 
 msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
-msgstr ""
+msgstr "{account} muhasebeleştirmeye sahiptir ve bir kontrol hesabını desteklemektedir. Adını değiştirin, ancak birleştirmeyin veya kaldırmayın."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — bunların zaten açık iş emirleri var"
@@ -477,7 +477,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
 msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
-msgstr ""
+msgstr "{label} muhasebeleştirmeye sahiptir, bu nedenle silinemez. Bunun yerine devre dışı bırakın: raporlarda ve geçmişte kalır ve hesap seçicilerinde artık görünmez."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# gün} other {# gün}}"
@@ -566,7 +566,7 @@ msgid "{removed} planned invoices are removed."
 msgstr "{removed} planlanan fatura kaldırıldı."
 
 msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
-msgstr ""
+msgstr "{renamed} yeniden adlandırıldı · {merged} birleştirildi · {created} yeni · {retired} devre dışı · {journals} sınıflandırma muhasebe fişleri"
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} Kaynaklar · {reservationCount} rezervasyonlar · {jobCount} İş emirleri"
@@ -2868,7 +2868,7 @@ msgid "Are you sure you want to delete the {name} attribute from this operation?
 msgstr "Bu operasyondan {name} özniteliğini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
 msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
-msgstr ""
+msgstr "Hesabı silmek istediğinizden emin misiniz: {label}? Bu işlem geri alınamaz."
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3751,7 +3751,7 @@ msgid "Batching"
 msgstr "Partileme"
 
 msgid "Becomes"
-msgstr ""
+msgstr "Olur"
 
 msgid "Before cutover"
 msgstr "Devir öncesi"
@@ -4340,7 +4340,7 @@ msgid "Carbon posts the opening journal, posts every journal dated on or after t
 msgstr "Carbon açılış muhasebe fişini muhasebeleştirir, devir tarihinin tarihli veya sonrasındaki her muhasebe fişini muhasebeleştirir ve önceki dönemleri kapatır."
 
 msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
-msgstr ""
+msgstr "Carbon her şirketi varsayılan hesap planıyla başlatır. Hesapları numaraya göre eşleştiren deneme bakiyesinden önce kendi hesap planınızı içe aktarın. Carbon'un hesap planını tutmak için devam edin."
 
 msgid "Carbon value"
 msgstr "Carbon değeri"
@@ -4876,7 +4876,7 @@ msgid "Companies"
 msgstr "Şirketler"
 
 msgid "Companies affected"
-msgstr ""
+msgstr "Etkilenen şirketler"
 
 msgid "Company"
 msgstr "Şirket"
@@ -6623,7 +6623,7 @@ msgid "Deactivate Work Center"
 msgstr "İş Merkezi Devre Dışı Bırak"
 
 msgid "Deactivated (has history)"
-msgstr ""
+msgstr "Devre dışı bırakıldı (geçmiş var)"
 
 msgid "Deadline type"
 msgstr "Son tarih türü"
@@ -6685,7 +6685,7 @@ msgid "Default"
 msgstr "Varsayılan"
 
 msgid "Default account"
-msgstr ""
+msgstr "Varsayılan hesap"
 
 msgid "Default Account"
 msgstr "Varsayılan Hesap"
@@ -6715,7 +6715,7 @@ msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "Satılan malın maliyeti ve dolaylı satın almalar için varsayılan hesaplar"
 
 msgid "Default accounts moved"
-msgstr ""
+msgstr "Varsayılan hesaplar taşındı"
 
 msgid "Default Approver"
 msgstr "Varsayılan Onaylayıcı"
@@ -7676,7 +7676,7 @@ msgid "Download CSV"
 msgstr "CSV İndir"
 
 msgid "Download current chart"
-msgstr ""
+msgstr "Geçerli hesap planını indir"
 
 msgid "Download Labels"
 msgstr "Etiketleri İndir"
@@ -7691,7 +7691,7 @@ msgid "Download template"
 msgstr "Şablon indir"
 
 msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
-msgstr ""
+msgstr "Geçerli hesap planını indirin ve hesap planınıza uyacak şekilde bir elektronik tabloda düzenleyin. O hesabı yeniden adlandırmak için bir satırı değiştirin. Hesabı devre dışı bırakmak için bir satırı silin. Bir hesap oluşturmak için Carbon Hesabı olmayan bir satır ekleyin. İkisini birleştirmek için bir satırda iki Carbon Hesabı adını « ; » ile ayırarak yazın."
 
 msgid "Draft"
 msgstr "Taslak"
@@ -9765,7 +9765,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "Bu iş akışının problemlerini test etmeden önce düzeltiniz"
 
 msgid "Fix these in the file, then upload it again"
-msgstr ""
+msgstr "Bunları dosyada düzeltin, sonra yeniden yükleyin"
 
 msgid "Fix these jobs before releasing"
 msgstr "Serbest bırakmadan önce bu iş emirlerini düzeltin"
@@ -10462,7 +10462,7 @@ msgid "Hours/Piece"
 msgstr "Saat/Adet"
 
 msgid "How"
-msgstr ""
+msgstr "Nasıl"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
@@ -10741,16 +10741,16 @@ msgid "Implementation Lead"
 msgstr "Uygulama Müdürü"
 
 msgid "Import"
-msgstr ""
+msgstr "İçe aktar"
 
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
 msgid "Import chart of accounts"
-msgstr ""
+msgstr "Hesap planını içe aktar"
 
 msgid "Import Chart of Accounts"
-msgstr ""
+msgstr "Hesap Planını İçe Aktar"
 
 msgid "Import CSV"
 msgstr "CSV'yi İçe Aktar"
@@ -10762,10 +10762,10 @@ msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
 
 msgid "Import your chart"
-msgstr ""
+msgstr "Hesap planınızı içe aktarın"
 
 msgid "Import your chart of accounts from a spreadsheet"
-msgstr ""
+msgstr "Hesap planınızı bir elektronik tablodan içe aktarın"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11100,7 +11100,7 @@ msgid "Internal Notes"
 msgstr "Dahili Notlar"
 
 msgid "Into"
-msgstr ""
+msgstr "İçine"
 
 msgid "inv"
 msgstr "stok"
@@ -11250,7 +11250,7 @@ msgid "Invoice schedule"
 msgstr "Fatura çizelgesi"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "Ayrı Olarak Faturala"
 
 msgid "Invoice settlement"
 msgstr "Fatura Ödeme"
@@ -11283,7 +11283,7 @@ msgid "Invoiced Amount:"
 msgstr "Faturalandı Tutarı:"
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "Ayrı olarak faturalandı"
 
 msgid "Invoiced Statuses"
 msgstr "Faturalandı Durumları"
@@ -11295,7 +11295,7 @@ msgid "Invoices"
 msgstr "Faturalar"
 
 msgid "Invoices and bills sync after you activate accounting"
-msgstr ""
+msgstr "Muhasebeleştirmeyi etkinleştirdikten sonra faturalar senkronize olur"
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Faturalar her gün vadesini gelen her şey için otomatik olarak oluşturulur. Bunu, örneğin masraf ekledikten sonra, vadesini gelen şeyi hemen faturalandırmak için kullanın. Faturalar sonra bu anlaşmanın faturalama ayarını takip eder."
@@ -11981,35 +11981,35 @@ msgstr "Satır {0}"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no group."
-msgstr ""
+msgstr "Satır {0} grup yok."
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no name."
-msgstr ""
+msgstr "Satır {0} ad yok."
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no number."
-msgstr ""
+msgstr "Satır {0} numara yok."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
-msgstr ""
+msgstr "Satır {0}: « {value} » sınıf değildir. Varlık, Pasif, Özkaynak, Hasılat veya Gider kullanın."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-msgstr ""
+msgstr "Satır {0}: {account} farklı bir sınıfa sahiptir. Varsayılan bir hesabı desteklediği için sınıfı değiştirilemez."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has postings, so its class cannot change."
-msgstr ""
+msgstr "Satır {0}: {account} muhasebeleştirmeye sahiptir, bu nedenle sınıfı değiştirilemez."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: a new account needs a class."
-msgstr ""
+msgstr "Satır {0}: yeni bir hesap bir sınıf gerekir."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: Migration Clearing must be an Equity account."
-msgstr ""
+msgstr "Satır {0}: Migration Clearing bir Özkaynak hesabı olmalıdır."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Satır {line} ({accountNumber}): alacak \"{value}\" virgül içeriyor. Tutarları ondalık için nokta kullanarak ve binlik ayırıcı olmadan yazın, örneğin 1234,56."
@@ -12027,35 +12027,35 @@ msgid "Line {line} has no account number."
 msgstr "Satır {line} hesap numarası yoktur."
 
 msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
-msgstr ""
+msgstr "Satır {line}: « {value} » Carbon hesap numarası veya rol değildir."
 
 msgid "Line {line}: \"{value}\" is not an account type."
-msgstr ""
+msgstr "Satır {line}: « {value} » hesap türü değildir."
 
 msgid "Line {line}: {account} is already named on line {firstLine}."
-msgstr ""
+msgstr "Satır {line}: {account} satır {firstLine} üzerinde zaten var."
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-msgstr ""
+msgstr "Satır {line}: {account} geçmişi olduğu için içe aktarma sonrasında bu {0} tutar. Başka bir {1} seç."
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Satır {line}: hesap {accountNumber} zaten satır {firstLine}'de var. Her hesabı bir satıra koyun."
 
 msgid "Line {line}: group \"{group}\" holds accounts of another class."
-msgstr ""
+msgstr "Satır {line}: grup « {group} » başka bir sınıfın hesaplarını tutar."
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-msgstr ""
+msgstr "Satır {line}: pasif hesap {account} bu {0} tutar. Onu yeniden etkinleştirmek için Carbon Hesabında adlandırın veya başka bir {1} seç."
 
 msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
-msgstr ""
+msgstr "Satır {line}: ad « {value} » satır {firstLine} üzerinde zaten var."
 
 msgid "Line {line}: number {value} is already on line {firstLine}."
-msgstr ""
+msgstr "Satır {line}: numara {value} satır {firstLine} üzerinde zaten var."
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
@@ -12161,7 +12161,7 @@ msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one
 msgstr "Listeler hem {0} hem de {1} öğelerine bağlıdır, bu nedenle bu adım hangisinin üzerinde tekrarlanacağını belirleyemez. Listeyi yalnızca birine bırakın."
 
 msgid "Live"
-msgstr ""
+msgstr "Canlı"
 
 msgid "Live on Carbon"
 msgstr "Carbon'da Canlı"
@@ -12831,13 +12831,13 @@ msgid "Merge {0} lots"
 msgstr "{0} lot birleştir"
 
 msgid "Merge into"
-msgstr ""
+msgstr "Birleştir"
 
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
 
 msgid "Merged"
-msgstr ""
+msgstr "Birleştirildi"
 
 msgid "MES"
 msgstr "MES"
@@ -14260,7 +14260,7 @@ msgid "No risks"
 msgstr "Risk yok"
 
 msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
-msgstr ""
+msgstr "Hiçbir satır bunları adlandırmıyor, ancak hala kullanımda. Referanslarını, varsayılan rollerini ve bakiyesini üstlenecek tablonuzdaki hesabı seçin."
 
 msgid "No rows here."
 msgstr "Burada satır yok."
@@ -15761,7 +15761,7 @@ msgid "Pick a variable…"
 msgstr "Bir değişken seçin…"
 
 msgid "Pick an account"
-msgstr ""
+msgstr "Bir hesap seçin"
 
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "Bu öğe üzerinde kontroller uygulamaya başlamak için kitaplıktan mevcut bir kural seçin veya yeni bir kural oluşturun."
@@ -16705,7 +16705,7 @@ msgid "Push to accounting"
 msgstr "Muhasebede gönder"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "Bu masrafı, muhasebeleştirilmeden önce inceleme için kendi faturasında tutun. Aksi takdirde, sözleşmenin sonraki faturasına eklenir."
 
 msgid "Putting your data back"
 msgstr "Verileriniz geri konuluyor"
@@ -17029,7 +17029,7 @@ msgid "Reactivate"
 msgstr "Yeniden etkinleştir"
 
 msgid "Reactivated"
-msgstr ""
+msgstr "Yeniden etkinleştirildi"
 
 msgid "Reactivation"
 msgstr "Yeniden Etkinleştirme"
@@ -17222,7 +17222,7 @@ msgid "Recertify Every (Days)"
 msgstr "Her (Gün) Yeniden Sertifikalandır"
 
 msgid "Reclass journals"
-msgstr ""
+msgstr "Muhasebe fişlerini yeniden sınıflandır"
 
 msgid "Recognition"
 msgstr "Tanıma"
@@ -17343,10 +17343,10 @@ msgid "Reference"
 msgstr "Referans"
 
 msgid "References"
-msgstr ""
+msgstr "Referanslar"
 
 msgid "References moved"
-msgstr ""
+msgstr "Referanslar taşındı"
 
 msgid "Refresh"
 msgstr "Yenile"
@@ -17641,7 +17641,7 @@ msgid "Rename Workflow"
 msgstr "İş Akışını Yeniden Adlandır"
 
 msgid "Renamed"
-msgstr ""
+msgstr "Yeniden adlandırıldı"
 
 msgid "Rendering label preview..."
 msgstr "Etiket önizlemesi oluşturuluyor..."
@@ -17749,7 +17749,7 @@ msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel} içindeki her öğe için bir kez tekrarlanır"
 
 msgid "Replace Carbon's default chart with your own, from a CSV"
-msgstr ""
+msgstr "Carbon'ın varsayılan tablosunu CSV'den kendi tablonuzla değiştirin"
 
 msgid "Replace drawing?"
 msgstr "Çizimi değiştir?"
@@ -18049,7 +18049,7 @@ msgid "Retained Earnings (default)"
 msgstr "Dağıtılmamış Kârlar (varsayılan)"
 
 msgid "Retired"
-msgstr ""
+msgstr "Emekliye alındı"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Bir varlığı hurdaya ayırarak veya satarak hizmetten çekmek; net defter değerine karşı oluşan kâr veya zararı kaydetmek ve durumunu Elden Çıkarıldı olarak ayarlamak."
@@ -19525,7 +19525,7 @@ msgid "Set Up Accounting"
 msgstr "Muhasebeyi Ayarlayın"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "Raporlar, muhasebe fişleri, muhasebe dönemleri, amortisman çalıştırmaları ve daha fazlasını kullanmak için muhasebeciliği ayarlayın."
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
@@ -19857,7 +19857,7 @@ msgid "Show Durations"
 msgstr "Süreleri Göster"
 
 msgid "Show inactive"
-msgstr ""
+msgstr "Pasif olanları göster"
 
 msgid "Show keyboard shortcuts"
 msgstr "Klavye kısayollarını göster"
@@ -21313,7 +21313,7 @@ msgid "The category this supplier belongs to (raw-material, services, contract-m
 msgstr "Bu tedarikçinin ait olduğu kategori (hammadde, hizmetler, sözleşmeli üretici); varsayılan GL hesaplarını ve rapor gruplandırmalarını belirler."
 
 msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
-msgstr ""
+msgstr "Tablo, gruptaki her şirket tarafından paylaşılır. Bu şirketlerin belgeler, varsayılan hesaplar veya bakiyeler taşınır."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Seçilen Hizmet Satırları, bunları kendi çizelgesine göre faturalandıran yeni bir Taslak sözleşmeye taşınır. Sipariş bunları Faturalandı olarak sayar."
@@ -21500,13 +21500,13 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı satırlar hesabı türetmek için bir envanter defter girişine sahip olmadığından gereklidir."
 
 msgid "The file could not be read"
-msgstr ""
+msgstr "Dosya okunamadı"
 
 msgid "The file has no {columns} column."
-msgstr ""
+msgstr "Dosyada {columns} sütunu yok."
 
 msgid "The file has no rows."
-msgstr ""
+msgstr "Dosyada satır yok."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
@@ -22089,7 +22089,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "Sistem, yapılandırılmış sisteminizde kapsamdaki her kabul testini geçer, verilerinizle; veriler doğrulanır; ve siz onay verirsiniz. Ardından canlı yayına geçin."
 
 msgid "The target picked for {account} is no longer in the file."
-msgstr ""
+msgstr "{account} için seçilen hedef artık dosyada yok."
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Satış RFQ'sunu, kendi alıntısını ve ortaya çıkan satış siparişini bağlayan iş parçacığı - bir birleştirme, kendi durumu olan bir belge değildir."
@@ -22239,7 +22239,7 @@ msgid "There's nothing outstanding to apply these credits to."
 msgstr "Bu kredileri uygulanacak hiçbir ödenmemiş tutar yok."
 
 msgid "These accounts need a target"
-msgstr ""
+msgstr "Bu hesaplar için bir hedef gerekli"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Bu özel alanlar yalnızca aynı etiketlere sahip varlıklar için kullanılabilir"
@@ -24973,7 +24973,7 @@ msgid "Your changes go into a new draft version released with this change notice
 msgstr "Değişiklikleriniz bu değişiklik bildirisi ile yayınlanan yeni taslak sürüme girer."
 
 msgid "Your chart"
-msgstr ""
+msgstr "Sizin tablonuz"
 
 msgid "Your Console PIN"
 msgstr "Konsol PIN'iniz"

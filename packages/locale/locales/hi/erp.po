@@ -382,7 +382,7 @@ msgid "{0}h staffed"
 msgstr "{0}h स्टाफ किया गया"
 
 msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
-msgstr ""
+msgstr "{account} के पास पोस्टिंग हैं और यह एक नियंत्रण खाते का समर्थन करता है। इसका नाम बदलें, लेकिन इसे मर्ज न करें या निकालें न करें।"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} पार्ट्स छोड़ा गया — उनके पास पहले से खुला जॉब हैं"
@@ -477,7 +477,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
 msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
-msgstr ""
+msgstr "{label} के पास पोस्टिंग हैं, इसलिए इसे हटाया नहीं जा सकता। इसके बजाय निष्क्रिय करें: यह रिपोर्ट और इतिहास में रहता है, और खाता पिकर में अब दिखाई नहीं देता।"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# दिन} other {# दिन}}"
@@ -566,7 +566,7 @@ msgid "{removed} planned invoices are removed."
 msgstr "{removed} योजनाबद्ध चालान निकाल दिए गए हैं।"
 
 msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
-msgstr ""
+msgstr "{renamed} का नाम बदला गया · {merged} मर्ज किया गया · {created} नया · {retired} सेवानिवृत्त · {journals} पुनर्वर्गीकृत जर्नल"
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} संसाधन · {reservationCount} आरक्षण · {jobCount} जॉब"
@@ -2868,7 +2868,7 @@ msgid "Are you sure you want to delete the {name} attribute from this operation?
 msgstr "क्या आप इस ऑपरेशन से {name} विशेषता को हटाना चाहते हैं? यह पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
-msgstr ""
+msgstr "क्या आप निश्चित हैं कि आप खाता हटाना चाहते हैं: {label}? यह पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3751,7 +3751,7 @@ msgid "Batching"
 msgstr "बैचिंग"
 
 msgid "Becomes"
-msgstr ""
+msgstr "बन जाता है"
 
 msgid "Before cutover"
 msgstr "कटओवर से पहले"
@@ -4340,7 +4340,7 @@ msgid "Carbon posts the opening journal, posts every journal dated on or after t
 msgstr "Carbon खुली जर्नल पोस्ट करता है, कटओवर तारीख पर या उसके बाद की तारीख वाली प्रत्येक जर्नल पोस्ट करता है, और इससे पहले की अवधि को बंद करता है।"
 
 msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
-msgstr ""
+msgstr "Carbon हर कंपनी को अपने डिफ़ॉल्ट चार्ट के साथ शुरू करता है। अब अपना चार्ट आयात करें, ट्रायल बैलेंस से पहले, जो खातों को संख्या से मेल खाता है। Carbon के चार्ट को रखने के लिए, जारी रखें।"
 
 msgid "Carbon value"
 msgstr "Carbon मान"
@@ -4876,7 +4876,7 @@ msgid "Companies"
 msgstr "कंपनियां"
 
 msgid "Companies affected"
-msgstr ""
+msgstr "प्रभावित कंपनियां"
 
 msgid "Company"
 msgstr "कंपनी"
@@ -6623,7 +6623,7 @@ msgid "Deactivate Work Center"
 msgstr "वर्क सेंटर को निष्क्रिय करें"
 
 msgid "Deactivated (has history)"
-msgstr ""
+msgstr "निष्क्रिय (इतिहास है)"
 
 msgid "Deadline type"
 msgstr "समय सीमा प्रकार"
@@ -6685,7 +6685,7 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 msgid "Default account"
-msgstr ""
+msgstr "डिफ़ॉल्ट खाता"
 
 msgid "Default Account"
 msgstr "डिफ़ॉल्ट खाता"
@@ -6715,7 +6715,7 @@ msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "बेचे गए माल की लागत और अप्रत्यक्ष खरीद के लिए डिफ़ॉल्ट खाते"
 
 msgid "Default accounts moved"
-msgstr ""
+msgstr "डिफ़ॉल्ट खातों को स्थानांतरित किया गया"
 
 msgid "Default Approver"
 msgstr "डिफ़ॉल्ट अनुमोदक"
@@ -7676,7 +7676,7 @@ msgid "Download CSV"
 msgstr "CSV डाउनलोड करें"
 
 msgid "Download current chart"
-msgstr ""
+msgstr "वर्तमान चार्ट डाउनलोड करें"
 
 msgid "Download Labels"
 msgstr "लेबल डाउनलोड करें"
@@ -7691,7 +7691,7 @@ msgid "Download template"
 msgstr "टेम्पलेट डाउनलोड करें"
 
 msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
-msgstr ""
+msgstr "वर्तमान चार्ट डाउनलोड करें और इसे अपने चार्ट से मेल खाने के लिए एक स्प्रेडशीट में संपादित करें। उस खाते का नाम बदलने के लिए एक पंक्ति बदलें। खाते को सेवानिवृत्त करने के लिए एक पंक्ति हटाएँ। एक नया बनाने के लिए Carbon खाते के बिना एक पंक्ति जोड़ें। उन्हें मर्ज करने के लिए \";\", से अलग की गई एक पंक्ति पर दो Carbon खातों को नाम दें।"
 
 msgid "Draft"
 msgstr "ड्राफ्ट"
@@ -9765,7 +9765,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
 
 msgid "Fix these in the file, then upload it again"
-msgstr ""
+msgstr "इन्हें फ़ाइल में ठीक करें, फिर इसे फिर से अपलोड करें"
 
 msgid "Fix these jobs before releasing"
 msgstr "जारी करने से पहले इन जॉब्स को ठीक करें"
@@ -10462,7 +10462,7 @@ msgid "Hours/Piece"
 msgstr "घंटे/टुकड़ा"
 
 msgid "How"
-msgstr ""
+msgstr "कैसे"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "एक बैचयोग्य प्रक्रिया अपने समूहीकृत कार्य को कैसे चलाती है: अनुक्रमिक एक मशीन (एक आरा या लेजर टेबल) पर पार्ट्स को एक के बाद एक चलाता है, जबकि समवर्ती उन्हें एक ही लोड (एक भट्टी, ओवन, या प्लेटिंग बाथ) में एक साथ चलाता है।"
@@ -10741,16 +10741,16 @@ msgid "Implementation Lead"
 msgstr "कार्यान्वयन नेता"
 
 msgid "Import"
-msgstr ""
+msgstr "आयात करें"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
 
 msgid "Import chart of accounts"
-msgstr ""
+msgstr "खातों का चार्ट आयात करें"
 
 msgid "Import Chart of Accounts"
-msgstr ""
+msgstr "खातों का चार्ट आयात करें"
 
 msgid "Import CSV"
 msgstr "CSV आयात करें"
@@ -10762,10 +10762,10 @@ msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
 
 msgid "Import your chart"
-msgstr ""
+msgstr "अपना चार्ट आयात करें"
 
 msgid "Import your chart of accounts from a spreadsheet"
-msgstr ""
+msgstr "स्प्रेडशीट से अपना खातों का चार्ट आयात करें"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11100,7 +11100,7 @@ msgid "Internal Notes"
 msgstr "आंतरिक नोट्स"
 
 msgid "Into"
-msgstr ""
+msgstr "में"
 
 msgid "inv"
 msgstr "इन्व"
@@ -11250,7 +11250,7 @@ msgid "Invoice schedule"
 msgstr "चालान शेड्यूल"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "अलग से चालान करें"
 
 msgid "Invoice settlement"
 msgstr "चालान निपटान"
@@ -11283,7 +11283,7 @@ msgid "Invoiced Amount:"
 msgstr "चालान की गई राशि:"
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "अलग से चालान किया गया"
 
 msgid "Invoiced Statuses"
 msgstr "चालान की गई स्थितियां"
@@ -11295,7 +11295,7 @@ msgid "Invoices"
 msgstr "चालान"
 
 msgid "Invoices and bills sync after you activate accounting"
-msgstr ""
+msgstr "आप लेखांकन को सक्रिय करने के बाद चालान और बिल सिंक हो जाते हैं"
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "चालान हर दिन स्वचालित रूप से जो भी देय हो उसके लिए बनाए जाते हैं। इसका उपयोग करके तुरंत देय राशि का चालान करें — उदाहरण के लिए शुल्क जोड़ने के बाद। चालान फिर इस समझौते की बिलिंग सेटिंग का पालन करते हैं।"
@@ -11981,35 +11981,35 @@ msgstr "लाइन {0}"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no group."
-msgstr ""
+msgstr "पंक्ति {0} के पास कोई समूह नहीं है।"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no name."
-msgstr ""
+msgstr "पंक्ति {0} के पास कोई नाम नहीं है।"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no number."
-msgstr ""
+msgstr "पंक्ति {0} के पास कोई संख्या नहीं है।"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
-msgstr ""
+msgstr "पंक्ति {0}: \"{value}\" एक वर्ग नहीं है। परिसंपत्ति, देयता, इक्विटी, राजस्व या व्यय का उपयोग करें।"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-msgstr ""
+msgstr "पंक्ति {0}: {account} के पास एक अलग वर्ग है। यह एक डिफ़ॉल्ट खाता का समर्थन करता है, इसलिए इसका वर्ग नहीं बदल सकता।"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has postings, so its class cannot change."
-msgstr ""
+msgstr "पंक्ति {0}: {account} के पास पोस्टिंग हैं, इसलिए इसका वर्ग नहीं बदल सकता।"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: a new account needs a class."
-msgstr ""
+msgstr "पंक्ति {0}: एक नया खाता एक वर्ग की आवश्यकता है।"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: Migration Clearing must be an Equity account."
-msgstr ""
+msgstr "पंक्ति {0}: Migration Clearing को एक इक्विटी खाता होना चाहिए।"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "पंक्ति {line} ({accountNumber}): जमा \"{value}\" में अल्पविराम है। दशमलव के लिए बिंदु के साथ और कोई हजार विभाजक नहीं, जैसे 1234.56 के साथ राशि लिखें।"
@@ -12027,35 +12027,35 @@ msgid "Line {line} has no account number."
 msgstr "पंक्ति {line} के पास कोई खाता संख्या नहीं है।"
 
 msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
-msgstr ""
+msgstr "पंक्ति {line}: \"{value}\" एक Carbon खाता संख्या या भूमिका नहीं है।"
 
 msgid "Line {line}: \"{value}\" is not an account type."
-msgstr ""
+msgstr "पंक्ति {line}: \"{value}\" एक खाता प्रकार नहीं है।"
 
 msgid "Line {line}: {account} is already named on line {firstLine}."
-msgstr ""
+msgstr "पंक्ति {line}: {account} पहले से ही पंक्ति {firstLine} पर नाम है।"
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-msgstr ""
+msgstr "पंक्ति {line}: {account} आयात के बाद इस {0} को रखता है, क्योंकि इसके पास इतिहास है। दूसरा {1} चुनें।"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "पंक्ति {line}: खाता {accountNumber} पहले से ही पंक्ति {firstLine} पर है। प्रत्येक खाता को एक पंक्ति पर रखें।"
 
 msgid "Line {line}: group \"{group}\" holds accounts of another class."
-msgstr ""
+msgstr "पंक्ति {line}: समूह \"{group}\" दूसरे वर्ग के खातों को रखता है।"
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-msgstr ""
+msgstr "पंक्ति {line}: निष्क्रिय खाता {account} इस {0} को रखता है। इसे फिर से सक्रिय करने के लिए Carbon Account में नाम दें, या दूसरा {1} चुनें।"
 
 msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
-msgstr ""
+msgstr "पंक्ति {line}: नाम \"{value}\" पहले से ही पंक्ति {firstLine} पर है।"
 
 msgid "Line {line}: number {value} is already on line {firstLine}."
-msgstr ""
+msgstr "पंक्ति {line}: संख्या {value} पहले से ही पंक्ति {firstLine} पर है।"
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
@@ -12161,7 +12161,7 @@ msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one
 msgstr "सूचियां दोनों {0} और {1} में वायर्ड हैं, इसलिए यह चरण नहीं बता सकता कि किस पर दोहराना है। एक सूची को केवल एक पर छोड़ें।"
 
 msgid "Live"
-msgstr ""
+msgstr "लाइव"
 
 msgid "Live on Carbon"
 msgstr "Carbon पर लाइव"
@@ -12831,13 +12831,13 @@ msgid "Merge {0} lots"
 msgstr "{0} लॉट मर्ज करें"
 
 msgid "Merge into"
-msgstr ""
+msgstr "में मर्ज करें"
 
 msgid "Merge output lots"
 msgstr "आउटपुट लॉट्स को मर्ज करें"
 
 msgid "Merged"
-msgstr ""
+msgstr "मर्ज किया गया"
 
 msgid "MES"
 msgstr "MES"
@@ -14260,7 +14260,7 @@ msgid "No risks"
 msgstr "कोई जोखिम नहीं है"
 
 msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
-msgstr ""
+msgstr "कोई भी पंक्ति उन्हें नाम नहीं देती, लेकिन वे अभी भी उपयोग में हैं। अपने चार्ट में वह खाता चुनें जो उनके संदर्भ, डिफ़ॉल्ट भूमिकाओं और शेष राशि को संभालेगा।"
 
 msgid "No rows here."
 msgstr "यहाँ कोई पंक्तियाँ नहीं हैं।"
@@ -15761,7 +15761,7 @@ msgid "Pick a variable…"
 msgstr "एक वेरिएबल चुनें…"
 
 msgid "Pick an account"
-msgstr ""
+msgstr "एक खाता चुनें"
 
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "इस आइटम पर जांच लागू करना शुरू करने के लिए लाइब्रेरी से एक मौजूदा नियम चुनें या एक नया नियम बनाएं।"
@@ -16705,7 +16705,7 @@ msgid "Push to accounting"
 msgstr "लेखांकन को धकेलें"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "इस शुल्क को अपने चालान पर रखें, जिसे पोस्ट होने से पहले समीक्षा के लिए रोका जाता है। अन्यथा यह समझौते के अगले चालान पर जाता है।"
 
 msgid "Putting your data back"
 msgstr "आपका डेटा वापस डाल रहे हैं"
@@ -17029,7 +17029,7 @@ msgid "Reactivate"
 msgstr "पुनः सक्रिय करें"
 
 msgid "Reactivated"
-msgstr ""
+msgstr "पुनः सक्रिय किया गया"
 
 msgid "Reactivation"
 msgstr "पुनः सक्रियण"
@@ -17222,7 +17222,7 @@ msgid "Recertify Every (Days)"
 msgstr "हर (दिन) को पुनः प्रमाणित करें"
 
 msgid "Reclass journals"
-msgstr ""
+msgstr "जर्नल को पुनः वर्गीकृत करें"
 
 msgid "Recognition"
 msgstr "मान्यता"
@@ -17343,10 +17343,10 @@ msgid "Reference"
 msgstr "संदर्भ"
 
 msgid "References"
-msgstr ""
+msgstr "संदर्भ"
 
 msgid "References moved"
-msgstr ""
+msgstr "संदर्भ स्थानांतरित किए गए"
 
 msgid "Refresh"
 msgstr "ताज़ा करें"
@@ -17641,7 +17641,7 @@ msgid "Rename Workflow"
 msgstr "वर्कफ़्लो का नाम बदलें"
 
 msgid "Renamed"
-msgstr ""
+msgstr "का नाम बदल दिया गया"
 
 msgid "Rendering label preview..."
 msgstr "लेबल पूर्वावलोकन प्रस्तुत किया जा रहा है..."
@@ -17749,7 +17749,7 @@ msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel} में प्रत्येक आइटम के लिए एक बार दोहराएं"
 
 msgid "Replace Carbon's default chart with your own, from a CSV"
-msgstr ""
+msgstr "Carbon के डिफ़ॉल्ट चार्ट को अपने स्वयं के साथ बदलें, CSV से"
 
 msgid "Replace drawing?"
 msgstr "ड्राइंग बदलें?"
@@ -18049,7 +18049,7 @@ msgid "Retained Earnings (default)"
 msgstr "प्रतिधारित आय (डिफ़ॉल्ट)"
 
 msgid "Retired"
-msgstr ""
+msgstr "सेवानिवृत्त"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "किसी संपत्ति को स्क्रैपिंग या विक्रय द्वारा सेवा से सेवामुक्त करना, किसी भी लाभ या हानि को शुद्ध बही मूल्य के विरुद्ध दर्ज करना और इसकी स्थिति को निपटाया गया पर सेट करना।"
@@ -19525,7 +19525,7 @@ msgid "Set Up Accounting"
 msgstr "लेखांकन स्थापित करें"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "लेखांकन को रिपोर्ट, जर्नल प्रविष्टियाँ, लेखा अवधि, मूल्यह्रास गणना और अन्य का उपयोग करने के लिए सेट करें।"
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
@@ -19857,7 +19857,7 @@ msgid "Show Durations"
 msgstr "अवधि दिखाएं"
 
 msgid "Show inactive"
-msgstr ""
+msgstr "निष्क्रिय दिखाएं"
 
 msgid "Show keyboard shortcuts"
 msgstr "कीबोर्ड शॉर्टकट दिखाएँ"
@@ -21313,7 +21313,7 @@ msgid "The category this supplier belongs to (raw-material, services, contract-m
 msgstr "वह श्रेणी जिससे यह आपूर्तिकर्ता संबंधित है (कच्चा माल, सेवाएं, अनुबंध निर्माता); डिफ़ॉल्ट GL खातों और रिपोर्टिंग समूहीकरण को निर्धारित करता है।"
 
 msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
-msgstr ""
+msgstr "चार्ट समूह की प्रत्येक कंपनी द्वारा साझा किया जाता है। इन कंपनियों के पास दस्तावेज़, डिफ़ॉल्ट खाते या शेष राशि है जो स्थानांतरित होती है।"
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "चुनी गई सेवा पंक्तियां एक नए ड्राफ्ट अनुबंध में जाती हैं, जो उन्हें अपने शेड्यूल पर चालान करता है। आदेश उन्हें चालान किया गया के रूप में गिनता है।"
@@ -21500,13 +21500,13 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "व्यय खाता जिस पर यह अप्रत्यक्ष-खर्च लाइन पोस्ट करता है; आवश्यक है क्योंकि अप्रत्यक्ष लाइनों के पास खाता प्राप्त करने के लिए कोई वस्तु बही प्रविष्टि नहीं है।"
 
 msgid "The file could not be read"
-msgstr ""
+msgstr "फ़ाइल को पढ़ा नहीं जा सका"
 
 msgid "The file has no {columns} column."
-msgstr ""
+msgstr "फ़ाइल में {columns} कॉलम नहीं है।"
 
 msgid "The file has no rows."
-msgstr ""
+msgstr "फ़ाइल में कोई पंक्तियां नहीं हैं।"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "आपके द्वारा अपलोड की गई फ़ाइल और की गई मैपिंग खो जाएँगी।"
@@ -22089,7 +22089,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "सिस्टम आपके कॉन्फ़िगर किए गए सिस्टम में हर इन-स्कोप स्वीकृति परीक्षा पास करता है, आपके डेटा के साथ; डेटा सत्यापित है; और आप साइन ऑफ करते हैं। फिर लाइव जाएं।"
 
 msgid "The target picked for {account} is no longer in the file."
-msgstr ""
+msgstr "{account} के लिए चुना गया लक्ष्य अब फ़ाइल में नहीं है।"
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "बिक्री RFQ, इसके कोटेशन, और परिणामी विक्रय आदेश को जोड़ने वाली श्रृंखला — एक संबंध, अपनी स्थिति के साथ एक दस्तावेज़ नहीं।"
@@ -22239,7 +22239,7 @@ msgid "There's nothing outstanding to apply these credits to."
 msgstr "इन क्रेडिट्स को लागू करने के लिए कुछ भी बकाया नहीं है।"
 
 msgid "These accounts need a target"
-msgstr ""
+msgstr "इन खातों को एक लक्ष्य की आवश्यकता है"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "ये कस्टम फ़ील्ड केवल समान टैग वाली संस्थाओं के लिए उपलब्ध होंगी"
@@ -24976,7 +24976,7 @@ msgid "Your changes go into a new draft version released with this change notice
 msgstr "आपके परिवर्तन इस परिवर्तन सूचना के साथ जारी किए गए एक नए ड्राफ्ट संस्करण में जाते हैं।"
 
 msgid "Your chart"
-msgstr ""
+msgstr "आपका चार्ट"
 
 msgid "Your Console PIN"
 msgstr "आपका कंसोल PIN"

@@ -382,7 +382,7 @@ msgid "{0}h staffed"
 msgstr "{0}時間配置"
 
 msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
-msgstr ""
+msgstr "{account}には仕訳があり、統制勘定をバックアップしています。名前を変更してください。ただし、統合または削除しないでください。"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -477,7 +477,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
 
 msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
-msgstr ""
+msgstr "{label}には仕訳があるため、削除できません。代わりに無効化してください。レポートと履歴に残り、勘定科目ピッカーに表示されなくなります。"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#日}}"
@@ -566,7 +566,7 @@ msgid "{removed} planned invoices are removed."
 msgstr "{removed} 件の計画済み請求書が削除されました。"
 
 msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
-msgstr ""
+msgstr "{renamed} 名前を変更 · {merged} 統合 · {created} 新規 · {retired} 廃止 · {journals} 振替仕訳"
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} リソース · {reservationCount} 予約 · {jobCount} 製造指図"
@@ -2868,7 +2868,7 @@ msgid "Are you sure you want to delete the {name} attribute from this operation?
 msgstr "この操作から{name}属性を削除してもよろしいですか？この操作は取り消せません。"
 
 msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
-msgstr ""
+msgstr "勘定科目{label}を削除してもよろしいですか？この操作は元に戻せません。"
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3751,7 +3751,7 @@ msgid "Batching"
 msgstr "バッチ処理"
 
 msgid "Becomes"
-msgstr ""
+msgstr "変更後"
 
 msgid "Before cutover"
 msgstr "カットオーバー前"
@@ -4340,7 +4340,7 @@ msgid "Carbon posts the opening journal, posts every journal dated on or after t
 msgstr "Carbonは開始仕訳を転記し、カットオーバー日以降のすべての仕訳を転記し、その前の期間をクローズします。"
 
 msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
-msgstr ""
+msgstr "Carbonはすべての会社をデフォルト勘定科目表で開始します。試算表の前に、今すぐあなたの勘定科目表をインポートしてください。試算表は勘定科目を番号で照合します。Carbonの勘定科目表を保持する場合は、続けてください。"
 
 msgid "Carbon value"
 msgstr "Carbon値"
@@ -4876,7 +4876,7 @@ msgid "Companies"
 msgstr "企業"
 
 msgid "Companies affected"
-msgstr ""
+msgstr "影響を受ける会社"
 
 msgid "Company"
 msgstr "会社"
@@ -6623,7 +6623,7 @@ msgid "Deactivate Work Center"
 msgstr "作業区を無効化"
 
 msgid "Deactivated (has history)"
-msgstr ""
+msgstr "無効化済み（履歴あり）"
 
 msgid "Deadline type"
 msgstr "期限のタイプ"
@@ -6685,7 +6685,7 @@ msgid "Default"
 msgstr "デフォルト"
 
 msgid "Default account"
-msgstr ""
+msgstr "デフォルト勘定科目"
 
 msgid "Default Account"
 msgstr "デフォルト勘定科目"
@@ -6715,7 +6715,7 @@ msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "売上原価と間接購買のデフォルトアカウント"
 
 msgid "Default accounts moved"
-msgstr ""
+msgstr "デフォルト勘定科目が移動されました"
 
 msgid "Default Approver"
 msgstr "デフォルト承認者"
@@ -7676,7 +7676,7 @@ msgid "Download CSV"
 msgstr "CSVをダウンロード"
 
 msgid "Download current chart"
-msgstr ""
+msgstr "現在の勘定科目表をダウンロード"
 
 msgid "Download Labels"
 msgstr "ラベルをダウンロード"
@@ -7691,7 +7691,7 @@ msgid "Download template"
 msgstr "テンプレートをダウンロード"
 
 msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
-msgstr ""
+msgstr "現在の勘定科目表をダウンロードしてスプレッドシートで編集し、あなたの勘定科目表に合わせてください。行を変更してその勘定科目の名前を変更します。行を削除して勘定科目を廃止します。Carbon勘定科目なしで行を追加して新しい勘定科目を作成します。「;」で区切られた2つのCarbon勘定科目を1行に記載して統合します。"
 
 msgid "Draft"
 msgstr "下書き"
@@ -9765,7 +9765,7 @@ msgid "Fix the problems with this workflow before testing it"
 msgstr "テストする前に、このワークフローの問題を修正してください"
 
 msgid "Fix these in the file, then upload it again"
-msgstr ""
+msgstr "ファイルでこれらを修正してから、もう一度アップロードしてください"
 
 msgid "Fix these jobs before releasing"
 msgstr "リリースする前にこれらの製造指図を修正してください"
@@ -10462,7 +10462,7 @@ msgid "Hours/Piece"
 msgstr "時間/個"
 
 msgid "How"
-msgstr ""
+msgstr "方法"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
@@ -10741,16 +10741,16 @@ msgid "Implementation Lead"
 msgstr "実施リード"
 
 msgid "Import"
-msgstr ""
+msgstr "インポート"
 
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
 msgid "Import chart of accounts"
-msgstr ""
+msgstr "勘定科目表をインポート"
 
 msgid "Import Chart of Accounts"
-msgstr ""
+msgstr "勘定科目表をインポート"
 
 msgid "Import CSV"
 msgstr "CSV インポート"
@@ -10762,10 +10762,10 @@ msgid "Import your BOM"
 msgstr "BOMをインポート"
 
 msgid "Import your chart"
-msgstr ""
+msgstr "あなたの勘定科目表をインポート"
 
 msgid "Import your chart of accounts from a spreadsheet"
-msgstr ""
+msgstr "スプレッドシートからあなたの勘定科目表をインポート"
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11100,7 +11100,7 @@ msgid "Internal Notes"
 msgstr "社内メモ"
 
 msgid "Into"
-msgstr ""
+msgstr "へ"
 
 msgid "inv"
 msgstr "在庫"
@@ -11250,7 +11250,7 @@ msgid "Invoice schedule"
 msgstr "請求スケジュール"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "請求書を別々に"
 
 msgid "Invoice settlement"
 msgstr "請求書決済"
@@ -11283,7 +11283,7 @@ msgid "Invoiced Amount:"
 msgstr "請求済み金額:"
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "別々に請求済"
 
 msgid "Invoiced Statuses"
 msgstr "請求済みステータス"
@@ -11295,7 +11295,7 @@ msgid "Invoices"
 msgstr "請求書"
 
 msgid "Invoices and bills sync after you activate accounting"
-msgstr ""
+msgstr "会計を有効化すると、請求書と買掛金請求書が同期されます"
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "請求書は毎日自動的に期日の来たものが作成されます。これを使用して期日の来たものをすぐに請求します — たとえば手数料を追加した後など。その後、請求書はこの契約の請求設定に従います。"
@@ -11981,35 +11981,35 @@ msgstr "行 {0}"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no group."
-msgstr ""
+msgstr "行{0}にグループがありません。"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no name."
-msgstr ""
+msgstr "行{0}に名前がありません。"
 
 #. placeholder {0}: error.line
 msgid "Line {0} has no number."
-msgstr ""
+msgstr "行{0}に番号がありません。"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
-msgstr ""
+msgstr "行{0}: 「{value}」はクラスではありません。資産、負債、純資産、売上高、または費用を使用してください。"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-msgstr ""
+msgstr "行{0}: {account}は異なるクラスです。デフォルト勘定科目をバックアップしているため、クラスを変更できません。"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: {account} has postings, so its class cannot change."
-msgstr ""
+msgstr "行{0}: {account}には仕訳があるため、クラスを変更できません。"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: a new account needs a class."
-msgstr ""
+msgstr "行{0}: 新しい勘定科目にはクラスが必要です。"
 
 #. placeholder {0}: error.line
 msgid "Line {0}: Migration Clearing must be an Equity account."
-msgstr ""
+msgstr "行{0}: Migration Clearingは純資産勘定である必要があります。"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Line {line} ({accountNumber}): 貸方「{value}」にはコンマが含まれています。小数点を使用し、千位区切りなしで金額を記入してください（例：1234.56）。"
@@ -12027,35 +12027,35 @@ msgid "Line {line} has no account number."
 msgstr "Line {line} には勘定科目番号がありません。"
 
 msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
-msgstr ""
+msgstr "行{line}: 「{value}」はCarbon勘定科目番号またはロールではありません。"
 
 msgid "Line {line}: \"{value}\" is not an account type."
-msgstr ""
+msgstr "行{line}: 「{value}」は勘定科目タイプではありません。"
 
 msgid "Line {line}: {account} is already named on line {firstLine}."
-msgstr ""
+msgstr "行{line}: {account}は既に行{firstLine}に記載されています。"
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-msgstr ""
+msgstr "行{line}: {account}はインポート後もこの{0}を保持します。履歴があるためです。別の{1}を選択してください。"
 
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Line {line}: 勘定科目 {accountNumber} は Line {firstLine} に既にあります。各勘定科目を1行に配置してください。"
 
 msgid "Line {line}: group \"{group}\" holds accounts of another class."
-msgstr ""
+msgstr "行{line}: グループ「{group}」は別のクラスの勘定科目を保持しています。"
 
 #. placeholder {0}: error.field
 #. placeholder {1}: error.field
 msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-msgstr ""
+msgstr "行{line}: 無効な勘定科目{account}がこの{0}を保持しています。それをCarbon勘定科目で指定して有効化するか、別の{1}を選択してください。"
 
 msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
-msgstr ""
+msgstr "行{line}: 名前「{value}」は既に行{firstLine}にあります。"
 
 msgid "Line {line}: number {value} is already on line {firstLine}."
-msgstr ""
+msgstr "行{line}: 番号{value}は既に行{firstLine}にあります。"
 
 msgid "Line description (optional)"
 msgstr "行の説明 (オプション)"
@@ -12161,7 +12161,7 @@ msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one
 msgstr "リストが{0}と{1}の両方に接続されています。そのため、このステップはどちらを繰り返すべきかを判断できません。リストはそのうちの1つにのみ残してください。"
 
 msgid "Live"
-msgstr ""
+msgstr "稼働中"
 
 msgid "Live on Carbon"
 msgstr "Carbonで稼働中"
@@ -12831,13 +12831,13 @@ msgid "Merge {0} lots"
 msgstr "{0}のロットを統合"
 
 msgid "Merge into"
-msgstr ""
+msgstr "統合する"
 
 msgid "Merge output lots"
 msgstr "出力ロットをマージ"
 
 msgid "Merged"
-msgstr ""
+msgstr "統合済"
 
 msgid "MES"
 msgstr "MES"
@@ -14260,7 +14260,7 @@ msgid "No risks"
 msgstr "リスクなし"
 
 msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
-msgstr ""
+msgstr "これらに関する行名がありませんが、まだ使用中です。チャートから、これらの参照、デフォルトロール、および残高を引き継ぐアカウントを選択してください。"
 
 msgid "No rows here."
 msgstr "ここに行はありません。"
@@ -15761,7 +15761,7 @@ msgid "Pick a variable…"
 msgstr "変数を選択..."
 
 msgid "Pick an account"
-msgstr ""
+msgstr "アカウントを選択"
 
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "ライブラリから既存のルールを選択するか、新しいルールを作成してこのアイテムのチェックを実行し始めます。"
@@ -16705,7 +16705,7 @@ msgid "Push to accounting"
 msgstr "会計にプッシュ"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "この請求項目を独自の請求書に配置し、転記前にレビューで保留します。そうでなければ、契約の次の請求書に記載されます。"
 
 msgid "Putting your data back"
 msgstr "データを復元中"
@@ -17029,7 +17029,7 @@ msgid "Reactivate"
 msgstr "再度有効化"
 
 msgid "Reactivated"
-msgstr ""
+msgstr "再有効化済"
 
 msgid "Reactivation"
 msgstr "再開"
@@ -17222,7 +17222,7 @@ msgid "Recertify Every (Days)"
 msgstr "再認定 (日)"
 
 msgid "Reclass journals"
-msgstr ""
+msgstr "仕訳を再分類"
 
 msgid "Recognition"
 msgstr "計上"
@@ -17343,10 +17343,10 @@ msgid "Reference"
 msgstr "参照"
 
 msgid "References"
-msgstr ""
+msgstr "参照"
 
 msgid "References moved"
-msgstr ""
+msgstr "参照の移動完了"
 
 msgid "Refresh"
 msgstr "更新"
@@ -17641,7 +17641,7 @@ msgid "Rename Workflow"
 msgstr "ワークフロー名を変更"
 
 msgid "Renamed"
-msgstr ""
+msgstr "名前変更済"
 
 msgid "Rendering label preview..."
 msgstr "ラベルプレビューをレンダリング中..."
@@ -17749,7 +17749,7 @@ msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel}内の各アイテムに対して1回繰り返します"
 
 msgid "Replace Carbon's default chart with your own, from a CSV"
-msgstr ""
+msgstr "CarbonのデフォルトチャートをCSVからご自身のものに置き換える"
 
 msgid "Replace drawing?"
 msgstr "図面を置き換えますか？"
@@ -18049,7 +18049,7 @@ msgid "Retained Earnings (default)"
 msgstr "利益剰余金 (既定)"
 
 msgid "Retired"
-msgstr ""
+msgstr "廃止済"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "スクラップまたは販売により資産をサービスから除却し、利益または損失を未償却残高に対して計上し、ステータスを除却済に設定します。"
@@ -19525,7 +19525,7 @@ msgid "Set Up Accounting"
 msgstr "会計を設定"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "レポート、仕訳、会計期間、減価償却実行などを使用するために会計を設定します。"
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"
@@ -19857,7 +19857,7 @@ msgid "Show Durations"
 msgstr "期間を表示"
 
 msgid "Show inactive"
-msgstr ""
+msgstr "無効を表示"
 
 msgid "Show keyboard shortcuts"
 msgstr "キーボードショートカットを表示"
@@ -21313,7 +21313,7 @@ msgid "The category this supplier belongs to (raw-material, services, contract-m
 msgstr "この仕入先が属するカテゴリ（原材料、サービス、請負製造業者）。デフォルトの勘定科目とレポートのグループ化を決定します。"
 
 msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
-msgstr ""
+msgstr "このチャートはグループ内のすべての会社で共有されています。これらの会社は、ドキュメント、デフォルトアカウント、または移動する残高を持っています。"
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "選択された外注サービス明細は新しい下書き契約に移動され、そのスケジュール通りに請求されます。注文はそれらを請求済として計算します。"
@@ -21500,13 +21500,13 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
 
 msgid "The file could not be read"
-msgstr ""
+msgstr "ファイルが読み込めませんでした。"
 
 msgid "The file has no {columns} column."
-msgstr ""
+msgstr "ファイルに{columns}列がありません。"
 
 msgid "The file has no rows."
-msgstr ""
+msgstr "ファイルに行がありません。"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
@@ -22089,7 +22089,7 @@ msgid "The system passes every in-scope acceptance test in your configured syste
 msgstr "システムは、設定されたシステム内のすべてのスコープ内受け入れテストに合格し、データが検証され、サインオフされます。その後、本番環境に移行します。"
 
 msgid "The target picked for {account} is no longer in the file."
-msgstr ""
+msgstr "{account}のために選択されたターゲットはファイルに存在しません。"
 
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "販売見積依頼、その見積、および結果の受注をリンクするスレッド — 独自ステータスを持つ文書ではなく、結合です。"
@@ -22239,7 +22239,7 @@ msgid "There's nothing outstanding to apply these credits to."
 msgstr "これらのクレジットを適用する未処理項目がありません。"
 
 msgid "These accounts need a target"
-msgstr ""
+msgstr "これらのアカウントにはターゲットが必要です。"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "これらのカスタムフィールドは、同じタグを持つエンティティでのみ利用可能です"
@@ -24973,7 +24973,7 @@ msgid "Your changes go into a new draft version released with this change notice
 msgstr "変更内容は、この変更通知とともにリリースされた新しい下書きバージョンに組み込まれます。"
 
 msgid "Your chart"
-msgstr ""
+msgstr "ご自身のチャート"
 
 msgid "Your Console PIN"
 msgstr "あなたのコンソールPIN"
