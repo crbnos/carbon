@@ -129,7 +129,7 @@ When an account is a merge source, every column that refers to it falls into one
 | `charge.*Account*`, `chargeLine.accountId` | re-point if the charge is Draft |
 | `reimbursement.payableAccountId`, `reimbursementLine.accountId` | re-point if the reimbursement is Draft |
 | `payment.bankAccount`, `memo.reasonAccount` | re-point if the document is Draft |
-| `revenueRecognitionSchedule.debitAccountId` / `creditAccountId` | re-point |
+| `revenueRecognitionSchedule.debitAccountId` / `creditAccountId` | re-point if the row is Planned |
 | `journalLine.accountId` | re-point if the journal is Draft or Provisional |
 | `intercompanyEliminationLine.accountId` (no FK) | re-point with its journal line |
 | `externalIntegrationMapping` (`entityType = 'account'`, no FK) | delete the source's row; the target keeps its own |

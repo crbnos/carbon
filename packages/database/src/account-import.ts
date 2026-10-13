@@ -221,15 +221,18 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "purchaseOrderLine", column: "accountId", policy: "repoint" },
   { table: "salesOrderLine", column: "accountId", policy: "repoint" },
   { table: "supplierQuoteLine", column: "accountId", policy: "repoint" },
+  // A Posted row's journal stays on the old account, so only Planned rows move.
   {
     table: "revenueRecognitionSchedule",
     column: "debitAccountId",
-    policy: "repoint"
+    policy: "repoint-if-draft",
+    parent: { table: null, column: null, statuses: ["Planned"] }
   },
   {
     table: "revenueRecognitionSchedule",
     column: "creditAccountId",
-    policy: "repoint"
+    policy: "repoint-if-draft",
+    parent: { table: null, column: null, statuses: ["Planned"] }
   },
   {
     table: "salesInvoiceLine",
