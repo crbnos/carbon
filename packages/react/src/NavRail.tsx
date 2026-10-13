@@ -16,10 +16,10 @@ import {
   useRef,
   useState
 } from "react";
-import { BsFillHexagonFill } from "react-icons/bs";
 import { LuPanelLeft } from "react-icons/lu";
 import type { LinkProps } from "react-router";
 import { Link, useLocation } from "react-router";
+import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
 import { useMode } from "./hooks/useMode";
 import { IconButton } from "./IconButton";
@@ -452,7 +452,7 @@ type NavRailSwitcherProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
   "children"
 > & {
-  /** The company's logo for each colour mode; a hexagon stands in for none. */
+  /** The company's logo for each colour mode; its initials stand in for none. */
   logoLight?: string | null;
   logoDark?: string | null;
   /** Also the accessible name unless `aria-label` is given. */
@@ -511,7 +511,7 @@ export const NavRailSwitcher = forwardRef<
           {logo ? (
             <img src={logo} alt="" className="size-6 rounded object-contain" />
           ) : (
-            <BsFillHexagonFill />
+            <Avatar size="xs" name={label} />
           )}
         </span>
         <span
