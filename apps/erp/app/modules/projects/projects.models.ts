@@ -14,6 +14,7 @@ import {
   type QualifiedHours,
   round,
   type Section6765Input,
+  type WbsNode,
   type WbsTemplateRow,
   wageQres,
   wbsTemplateParentCode,
@@ -4573,6 +4574,30 @@ export function buildSection6765Input(
     estimatedEmployeeCount,
     unknownCountryHours: round(unknownCountryHours)
   };
+}
+
+export type ElementWbsCode = {
+  code: string;
+  /** The code is stored on the element, not derived from the tree. */
+  pinned: boolean;
+  /** Another element has the same code. */
+  duplicate: boolean;
+};
+
+/** Each numbered element's WBS code, for the Plan page and the element page. */
+export function elementWbsCodes(
+  nodes: readonly WbsNode[]
+): Record<string, ElementWbsCode> {
+  const { codes, duplicates } = computeWbsCodes(nodes);
+  const pinned = new Set(
+    nodes.filter((node) => node.wbsCode).map((node) => node.id)
+  );
+  return Object.fromEntries(
+    [...codes].map(([id, code]) => [
+      id,
+      { code, pinned: pinned.has(id), duplicate: duplicates.has(code) }
+    ])
+  );
 }
 
 // --- WBS CSV (Phase A of the WBS interop spec) ---------------------------------

@@ -2953,6 +2953,9 @@ msgstr "租赁折扣的年费率"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
 
+msgid "Another element has this WBS code"
+msgstr ""
+
 msgid "Another spend integration is already active"
 msgstr "另一个支出集成已处于活跃状态"
 
@@ -20323,6 +20326,9 @@ msgstr "出租设备"
 msgid "Rental Utilization"
 msgstr "租赁设备利用率"
 
+msgid "Renumber WBS"
+msgstr ""
+
 msgid "Reopen"
 msgstr "重新打开"
 
@@ -27553,6 +27559,9 @@ msgstr "观看"
 
 msgid "Watch full video"
 msgstr "观看完整视频"
+
+msgid "WBS code"
+msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "我们自动匹配了每一列。继续前请查看下面的值。"

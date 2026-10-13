@@ -289,8 +289,9 @@ export function PropertyText({
   label,
   termId,
   value,
+  placeholder,
   isDisabled
-}: FieldProps & { value: string | null }) {
+}: FieldProps & { value: string | null; placeholder?: string }) {
   const { submit } = useElementField(projectId, elementId, field);
   return (
     <ValidatedForm
@@ -306,6 +307,7 @@ export function PropertyText({
         size="sm"
         inline
         isReadOnly={isDisabled}
+        placeholder={placeholder}
         value={value ?? ""}
         onBlur={(event) => {
           const next = event.target.value.trim() || null;

@@ -2953,6 +2953,9 @@ msgstr "Годовая ставка, по которой аренда диско
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
 
+msgid "Another element has this WBS code"
+msgstr ""
+
 msgid "Another spend integration is already active"
 msgstr "Другая интеграция расходов уже активна"
 
@@ -20323,6 +20326,9 @@ msgstr "Единицы в аренде"
 msgid "Rental Utilization"
 msgstr "Использование арендованного оборудования"
 
+msgid "Renumber WBS"
+msgstr ""
+
 msgid "Reopen"
 msgstr "Открыть заново"
 
@@ -27553,6 +27559,9 @@ msgstr "Смотреть"
 
 msgid "Watch full video"
 msgstr "Смотреть полное видео"
+
+msgid "WBS code"
+msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "Мы автоматически сопоставили каждый столбец. Рассмотрите значения ниже перед продолжением."

@@ -2953,6 +2953,9 @@ msgstr "렌트가 할인되는 연간 요율"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "이 원가 센터가 롤업되는 다른 원가 센터로, 계층적 원가 보고를 위해 부서를 상위 항목 아래에 중첩시킬 수 있게 함"
 
+msgid "Another element has this WBS code"
+msgstr ""
+
 msgid "Another spend integration is already active"
 msgstr "다른 지출 통합이 이미 활성화되어 있습니다"
 
@@ -20323,6 +20326,9 @@ msgstr "렌탈 장비"
 msgid "Rental Utilization"
 msgstr "임차 자산 이용률"
 
+msgid "Renumber WBS"
+msgstr ""
+
 msgid "Reopen"
 msgstr "다시 열기"
 
@@ -27553,6 +27559,9 @@ msgstr "시청"
 
 msgid "Watch full video"
 msgstr "전체 동영상 보기"
+
+msgid "WBS code"
+msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "각 열을 자동으로 매칭했습니다. 계속하기 전에 아래 값을 검토하세요."

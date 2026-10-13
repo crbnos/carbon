@@ -35,7 +35,7 @@ import type {
   ProjectElementType,
   RequirementStatus
 } from "../../projects.models";
-import { buildElementTree } from "../../projects.models";
+import { buildElementTree, type ElementWbsCode } from "../../projects.models";
 import type { ProjectElementListItem } from "../../projects.service";
 import type { ProjectLabel, ProjectState } from "../../types";
 import {
@@ -53,6 +53,7 @@ import {
 import { ElementTypeIcon } from "./ElementTypeIcon";
 import { MoveElementModal } from "./MoveElementModal";
 import { VerificationIcon } from "./VerificationStatus";
+import { WbsCode } from "./WbsCode";
 
 type ListElement = ProjectElementListItem & {
   changeOperation?: ChangeOperationMark;
@@ -61,6 +62,8 @@ type ListElement = ProjectElementListItem & {
 type ElementListProps = {
   projectId: string;
   elements: ListElement[];
+  /** Each element's WBS code, or null while the project pins none. */
+  wbsCodes?: Record<string, ElementWbsCode> | null;
   states: ProjectState[];
   labels: ProjectLabel[];
   requirementStatus: Record<string, RequirementStatus>;
@@ -87,6 +90,7 @@ type ElementListProps = {
 export function ElementList({
   projectId,
   elements,
+  wbsCodes,
   states,
   labels,
   requirementStatus,
@@ -130,6 +134,13 @@ export function ElementList({
   const idChars = useMemo(
     () => Math.max(0, ...elements.map((e) => e.readableId.length)),
     [elements]
+  );
+  const wbsChars = useMemo(
+    () =>
+      wbsCodes
+        ? Math.max(0, ...Object.values(wbsCodes).map((w) => w.code.length))
+        : 0,
+    [wbsCodes]
   );
 
   const labelsById = useMemo(
@@ -217,6 +228,8 @@ export function ElementList({
                   isHighlighted={element.id === highlightId}
                   canUpdate={canUpdate}
                   idChars={idChars}
+                  wbs={wbsCodes?.[element.id]}
+                  wbsChars={wbsChars}
                   menu={
                     <ElementRowMenu
                       readableId={element.readableId}
@@ -286,6 +299,9 @@ type ElementRowProps = {
   /** The id's minimum width in characters: the longest id in the list, so
    *  the names line up while the cluster stays tight. */
   idChars?: number;
+  /** The element's WBS code, when the project uses a contract WBS. */
+  wbs?: ElementWbsCode;
+  wbsChars?: number;
   className?: string;
 };
 
@@ -307,6 +323,8 @@ export function ElementRow({
   canUpdate,
   menu,
   idChars,
+  wbs,
+  wbsChars,
   className
 }: ElementRowProps) {
   const state = states.find((s) => s.id === element.stateId);
@@ -343,6 +361,7 @@ export function ElementRow({
         >
           {element.readableId}
         </span>
+        {wbs && <WbsCode wbs={wbs} minChars={wbsChars} />}
         {/* The picker's 24 px square, pulled in so the icon sits 8 px from
             its neighbours like the rest of the cluster. */}
         <span className="relative z-10 -mx-[5px] flex">

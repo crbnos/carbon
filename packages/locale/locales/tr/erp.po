@@ -2953,6 +2953,9 @@ msgstr "Kiranın iskonto yapıldığı yıllık oran"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Bu toplandığı başka bir maliyet merkezi, hiyerarşik maliyet raporlaması için bir alt maliyet merkezini ana kütesinin altında iç içe geçirmenizi sağlar."
 
+msgid "Another element has this WBS code"
+msgstr ""
+
 msgid "Another spend integration is already active"
 msgstr "Başka bir harcama entegrasyonu zaten etkin"
 
@@ -20323,6 +20326,9 @@ msgstr "Kiralık Üniteler"
 msgid "Rental Utilization"
 msgstr "Kiralama Kullanım Oranı"
 
+msgid "Renumber WBS"
+msgstr ""
+
 msgid "Reopen"
 msgstr "Yeniden Aç"
 
@@ -27553,6 +27559,9 @@ msgstr "İzle"
 
 msgid "Watch full video"
 msgstr "Tüm videoyu izle"
+
+msgid "WBS code"
+msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "Her sütunu otomatik olarak eşleştirdik. Devam etmeden önce aşağıdaki değerleri gözden geçirin."

@@ -1113,7 +1113,14 @@ export async function getProjectWbsNodes(
   projectId: string,
   companyId: string
 ) {
-  return fetchAll(() =>
+  return fetchAll<{
+    id: string;
+    parentId: string | null;
+    type: ProjectElementType;
+    sortOrder: number;
+    sequence: number;
+    wbsCode: string | null;
+  }>(() =>
     client
       .from("projectElement")
       .select("id, parentId, type, sortOrder, sequence, wbsCode")

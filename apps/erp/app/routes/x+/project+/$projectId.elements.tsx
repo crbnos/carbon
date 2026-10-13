@@ -8,7 +8,7 @@ import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import { toast } from "@carbon/react";
-import { redirect } from "@carbon/utils";
+import { redirect, type WbsNode } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import XYFlowStyle from "@xyflow/react/dist/style.css?url";
 import { useState } from "react";
@@ -41,9 +41,11 @@ import type {
 import {
   canonicalElementsParams,
   elementLayoutFromParams,
+  elementWbsCodes,
   getProjectElementCommentCounts,
   getProjectElementDescriptions,
   getProjectElements,
+  getProjectWbsNodes,
   isProjectPlanLocked,
   parseElementFilters,
   projectElementTypes,
@@ -216,8 +218,30 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     linkRows = overlayLinkList(overlay, linkRows);
   }
 
+  // WBS codes show once the project uses a contract WBS (a pinned code).
+  // They are computed from the whole tree: a filter would renumber them.
+  let wbsNodes: WbsNode[] = elementRows;
+  if (isQueryFiltered) {
+    const nodes = await getProjectWbsNodes(client, projectId, companyId);
+    if (nodes.error) {
+      logger.error("Failed to load the WBS", {
+        companyId,
+        projectId,
+        error: nodes.error
+      });
+    }
+    wbsNodes = (nodes.data ?? []).map((node) => ({
+      ...node,
+      sortOrder: Number(node.sortOrder)
+    }));
+  }
+  const wbsCodes = wbsNodes.some((node) => node.wbsCode)
+    ? elementWbsCodes(wbsNodes)
+    : null;
+
   return {
     elements: elementRows,
+    wbsCodes,
     changeRequest,
     links: linkRows,
     requirementStatus: verification.data?.requirementStatus ?? {},
@@ -242,6 +266,7 @@ export default function ProjectElementsRoute() {
 
   const {
     elements,
+    wbsCodes,
     changeRequest,
     links,
     requirementStatus,
@@ -454,6 +479,7 @@ export default function ProjectElementsRoute() {
           <ElementList
             projectId={projectId}
             elements={elements}
+            wbsCodes={wbsCodes}
             states={states}
             labels={labels}
             requirementStatus={requirementStatus}

@@ -17,8 +17,9 @@ import { LevelLine, TreeView, useTree } from "~/components/TreeView";
 import { useOptimisticLocation } from "~/hooks";
 import { path } from "~/utils/path";
 import type { ProjectElementType } from "../../projects.models";
-import { buildElementTree } from "../../projects.models";
+import { buildElementTree, elementWbsCodes } from "../../projects.models";
 import { ElementTypeIcon } from "../Elements/ElementTypeIcon";
+import { WbsCode } from "../Elements/WbsCode";
 
 export type ProjectTreeElement = {
   id: string;
@@ -27,6 +28,9 @@ export type ProjectTreeElement = {
   readableId: string;
   name: string;
   type: ProjectElementType;
+  sequence: number;
+  /** The pinned WBS code, or null to derive it. */
+  wbsCode: string | null;
 };
 
 const ROW_HEIGHT = 32;
@@ -84,6 +88,14 @@ export function ProjectElementTree({
     }
   }, [urlSearch, onPlanPage]);
   const tree = useMemo(() => buildElementTree(elements), [elements]);
+  // Codes show once the project uses a contract WBS (a pinned code).
+  const wbsCodes = useMemo(
+    () =>
+      elements.some((element) => element.wbsCode)
+        ? elementWbsCodes(elements)
+        : null,
+    [elements]
+  );
 
   const { nodes, getTreeProps, getNodeProps, toggleExpandNode, virtualizer } =
     useTree<ProjectTreeElement, { text: string }>({
@@ -97,7 +109,8 @@ export function ProjectElementTree({
           const text = value.text.toLowerCase();
           return (
             node.data.name.toLowerCase().includes(text) ||
-            node.data.readableId.toLowerCase().includes(text)
+            node.data.readableId.toLowerCase().includes(text) ||
+            Boolean(wbsCodes?.[node.data.id]?.code.startsWith(text))
           );
         }
       },
@@ -171,6 +184,9 @@ export function ProjectElementTree({
                 className="flex min-w-0 flex-1 items-center gap-2"
               >
                 <ElementTypeIcon type={element.type} className="size-3.5" />
+                {wbsCodes?.[element.id] && (
+                  <WbsCode wbs={wbsCodes[element.id]!} />
+                )}
                 <span className="truncate text-foreground/80">
                   {element.name}
                 </span>

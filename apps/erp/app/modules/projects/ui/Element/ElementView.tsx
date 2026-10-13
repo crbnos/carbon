@@ -22,12 +22,13 @@ import {
   LuCornerDownRight,
   LuEllipsisVertical,
   LuLink,
+  LuListOrdered,
   LuListPlus,
   LuPackageMinus,
   LuTimer,
   LuTrash
 } from "react-icons/lu";
-import { Link, useNavigate, useSearchParams } from "react-router";
+import { Link, useFetcher, useNavigate, useSearchParams } from "react-router";
 import { AuditLogFeed } from "~/components/AuditLog";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -195,6 +196,22 @@ export function ElementView({
     setAddingChild(true);
     requestAnimationFrame(() => childQuickAddRef.current?.focus());
   };
+  // Renumber WBS clears the pinned codes of the element's subtree.
+  const renumberFetcher = useFetcher();
+  const subtreeHasPinnedCode = useMemo(() => {
+    const ids = new Set([element.id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const e of elements) {
+        if (e.parentId && ids.has(e.parentId) && !ids.has(e.id)) {
+          ids.add(e.id);
+          grew = true;
+        }
+      }
+    }
+    return elements.some((e) => ids.has(e.id) && e.wbsCode);
+  }, [elements, element.id]);
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col bg-card">
@@ -278,6 +295,23 @@ export function ElementView({
                 <DropdownMenuIcon icon={<LuListPlus />} />
                 <Trans>Add plan line</Trans>
               </DropdownMenuItem>
+              {subtreeHasPinnedCode && (
+                <DropdownMenuItem
+                  disabled={!canUpdate}
+                  onClick={() =>
+                    renumberFetcher.submit(
+                      { elementId: element.id },
+                      {
+                        method: "post",
+                        action: path.to.projectWbsRenumber(projectId)
+                      }
+                    )
+                  }
+                >
+                  <DropdownMenuIcon icon={<LuListOrdered />} />
+                  <Trans>Renumber WBS</Trans>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 destructive

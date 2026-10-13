@@ -29,6 +29,7 @@ import type {
   ProjectCostTreatment
 } from "../../projects.models";
 import {
+  elementWbsCodes,
   projectElementPriorities,
   rdComponentTypes,
   rdSoftwareTypes,
@@ -58,7 +59,8 @@ import {
   PropertyGroup,
   PropertyNumber,
   PropertySelect,
-  PropertySwitch
+  PropertySwitch,
+  PropertyText
 } from "./PropertyFields";
 
 type Element = ProjectElementPage["element"];
@@ -124,6 +126,8 @@ export function ElementSidebar({
   // feature gated, only earned value's upgrade row shows.
   const isDcaa = settings.timekeepingControls === "DCAA";
   const common = { projectId, elementId: element.id, isDisabled };
+  // Blank shows the code the element derives from its place in the tree.
+  const wbsCodes = useMemo(() => elementWbsCodes(elements), [elements]);
 
   const children = elements.filter((e) => e.parentId === element.id);
   const completed = children.filter(
@@ -264,6 +268,15 @@ export function ElementSidebar({
       )}
 
       <PropertyGroup title={t`Work`}>
+        {element.type !== "Parameter" && (
+          <PropertyText
+            {...common}
+            field="wbsCode"
+            label={t`WBS code`}
+            value={element.wbsCode}
+            placeholder={wbsCodes[element.id]?.code}
+          />
+        )}
         <PropertySwitch
           {...common}
           field="isChargeable"

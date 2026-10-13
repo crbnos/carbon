@@ -2953,6 +2953,9 @@ msgstr "Annual rate the rent is discounted at"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 
+msgid "Another element has this WBS code"
+msgstr "Another element has this WBS code"
+
 msgid "Another spend integration is already active"
 msgstr "Another spend integration is already active"
 
@@ -20323,6 +20326,9 @@ msgstr "Rental Units"
 msgid "Rental Utilization"
 msgstr "Rental Utilization"
 
+msgid "Renumber WBS"
+msgstr "Renumber WBS"
+
 msgid "Reopen"
 msgstr "Reopen"
 
@@ -27553,6 +27559,9 @@ msgstr "Watch"
 
 msgid "Watch full video"
 msgstr "Watch full video"
+
+msgid "WBS code"
+msgstr "WBS code"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "We auto-matched each column. Review the values below before continuing."

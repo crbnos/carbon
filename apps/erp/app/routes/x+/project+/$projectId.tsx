@@ -184,7 +184,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     sortOrder: element.sortOrder,
     readableId: element.readableId,
     name: element.name,
-    type: element.type
+    type: element.type,
+    sequence: element.sequence,
+    wbsCode: element.wbsCode
   }));
 
   if (overdueBorrows.error) {
