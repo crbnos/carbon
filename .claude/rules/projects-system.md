@@ -597,12 +597,14 @@ There is no element panel: the old `/elements/$elementId` URL only redirects to 
 plan, job, purchase order line, comment and delete action routes stay under it), and the project
 layout hides the project header and the project sidebar on the page. The page has one header
 row: back, the project and the ancestors, a copy button for the readable id, and one ⋯ menu (Log
-time, Issue material, Add child, Add link, Add plan line, Delete). Below it are a main column of
-at most 800 px (title, description, then Children, Plan, Links and Time & materials, each only
-when it applies, then Activity) and a 300 px properties column (`ElementSidebar`, inline fields
-from `ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`,
-Work, Costs with children, and the Government contracting group, shown only with DCAA
-timekeeping). The earned value form posts to the page route's action.
+time, Issue material, Add child, Add link, Delete). Below it are a main column of at most 800 px
+(title, description, then Children, Plan, Links and Time & materials, each only when it applies,
+then Activity) and a 300 px properties column (`ElementSidebar`, inline fields from
+`ui/Element/PropertyFields.tsx`: the properties, the type's fields from `ElementTypeBlock`, Work,
+Costs with children, and the Government contracting group, shown only with DCAA timekeeping).
+Plan always applies for a user who can edit an element that is not a Parameter, so an empty Task
+shows the "Plan" heading and its Add line button. The earned value form posts to the page
+route's action.
 
 On a Contract project the Work group has a **Billing element** switch for every type but
 Parameter. It posts `field=isBilling` to the element update route
@@ -614,7 +616,23 @@ line bills the element. It is a live write, not a plan-layer field.
 All plan lines are ONE grid (`ElementPlanLines`: Type, Line, Quantity, Amount). The row ⋯ menu's
 **Edit** opens `PlanLineModal` for the whole line. A cell posts the whole line with `quiet=true`
 to the plan route (the service template element route answers the same), and a draft row from
-"Add line" saves once its item, labor category or description is set.
+"Add line" (a ghost split button: Material by default, Labor and Cost in its menu) saves once its
+item, labor category or description is set.
+
+- **Order.** `orderPlanRows` (`ui/Element/plan-rows.ts`, pure, tested): materials, labor, costs,
+  each by `createdAt` then `id`, drafts last in their own type. Drafts used to sit after every row
+  and left the drafts as soon as the save answered, so a new material vanished and came back
+  above the labor line (Brad 2026-10-13: "shouldn't reorder"). A quiet upsert now answers the
+  line's `id` (`useCellSave` returns the route's body as `data`); the draft keeps that id, so a
+  second edit updates the line, and stays in place until the revalidated line is back.
+- **Height.** The grid has no fixed height: `Table` `autoHeight` (opt-in) drops block-axis size
+  containment (`contain: inline-size`) and the empty footer row, so the box follows its rows.
+- **Item change.** Choosing an item on a material line (saved or draft) reads
+  `itemCost.unitCost` through the browser client, as `JobMaterialForm` does, and sets the line's
+  unit cost and the item's unit, so Amount (quantity × unit cost) shows at once and is saved. A
+  labor line's Amount stays empty: the grid has no labor category cost rate.
+- **Plan lock.** With the plan locked and no Draft change request, Add line is disabled with
+  `projectPlanLockedMessage` as its tooltip, as New Element is on the Plan page.
 
 The Tree layout draws one box per parent. `layoutElementTree` (`graph/tree-layout.ts`,
 pure, tested) gives a box to each parent that has matching descendants. Dagre places the
