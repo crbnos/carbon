@@ -673,6 +673,28 @@ and the per-user layout preference were removed on 2026-10-12); the tables stay.
   milestone's drawer (`?milestone=`): dates, progress, hours, cost, actions and the burn
   chart (`buildBurnSeries`), which plots Posted timesheet hours against the ideal line.
 
+## WBS codes
+
+`projectElement.wbsCode` holds a PINNED code only; every other code is derived on
+read by `computeWbsCodes` (`@carbon/utils` `wbs.ts`): siblings by `sortOrder` then
+`sequence`, a Parameter's subtree unnumbered, a child of a code ending `.0` drops
+the `.0`. A move never changes a pinned code. Codes are computed from the WHOLE tree
+(`getProjectWbsNodes` when the list is filtered). `wbsCode` is a plan-layer field.
+
+- Writes: the element field route (`wbsCode` case, unique-violation → refusal),
+  `pinProjectWbsCodes` (one UPDATE FROM VALUES, refuses duplicates),
+  `renumberWbsSubtree`, `insertElementsFromWbsTemplate` (via `createProject`'s
+  `wbsTemplateKey`; templates in `@carbon/utils` `wbs-templates.ts`, 881F
+  Appendix B, A, C, F). Build from part sets `wbsCode` null on copied elements.
+- CSV: `toWbsCsvRows` / `readWbsCsv` (pure, `projects.models.ts`) and
+  `importProjectWbs` (one transaction, refused on a locked plan, never deletes; a
+  blank cell keeps its value; a code pins only when it differs).
+- MSPDI: `buildMspdiXml` (pure; golden fixture `__fixtures__/mspdi-golden.xml`).
+- UI: `WbsCode` badge in `ElementList` and `ProjectElementTree` only once the
+  project has a pinned code; `WbsMenu` (Export CSV, Export MS Project XML, Import
+  CSV, Pin WBS codes) in `ElementsHeader`; the element page's WBS code field and
+  Renumber WBS.
+
 ## Baselines, change requests and the plan lock
 
 The **plan layer** is `PLAN_LAYER_FIELDS` (`projects.models.ts`): the plan columns of
@@ -749,7 +771,9 @@ line, an element's asset, `isFinalAsset`, the cost treatment) stay out.
   (`payload`, `baseRow`) are not rewritten by a restore into another company.
 - With the plan locked, the Plan page turns off only create and delete; the other
   plan-layer controls stay enabled and the server refuses them.
-- The demo datasets seed no baseline, change request, item, comment or view.
+- The demo datasets seed no change request, item, comment or view. The satellite
+  ORBSEC Block 2 project has baseline 1 (`ProjectSpec.baseline`, tier 09
+  `seedProjectBaseline`, written with `toPlanSnapshot` from `@carbon/database/project-plan`).
 - The demo datasets seed project stock and one Posted Transfer per Contract project
   (`seedProjectStock`, tier 09), but no borrow.
 - The satellite dataset seeds the **Star Tracker** planning group (`seedPlanningGroups`, tier

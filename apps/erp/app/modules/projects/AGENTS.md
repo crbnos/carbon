@@ -33,6 +33,10 @@ jobs, PO lines, invoices, time and issues post to, and the project ledger that s
   Min, Max, Formula, Item) and Requirement status from the loaded rows.
 - **Template** — a project with `isTemplate`; `copyProject` copies it, Build from part
   copies its elements into another project.
+- **WBS code** — `projectElement.wbsCode` stores a PINNED code only; the rest are derived
+  by `computeWbsCodes` (`@carbon/utils` `wbs.ts`) from tree position. A Parameter and its
+  subtree get no code. Shown once the project has a pinned code. See
+  `.claude/rules/projects-system.md` → *WBS codes*.
 - **Baseline** — `projectBaseline`: a read-only JSONB snapshot of the plan layer
   (`PLAN_LAYER_FIELDS`), taken by hand, on milestone completion or by a change request.
 - **Change request** — `projectChangeRequest` + `projectChangeRequestItem`: a draft of
@@ -134,6 +138,7 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 | `fixedAssetCipCost` (`projectId`, `projectElementId`, `postCapitalization`) | CIP rows of capital projects |
 | `get_project_cost_summary` (RPC) | Plan, committed and actual per element |
 | `get_element_history_by_item` (RPC) | Average hours and material cost of elements on one item |
+| `projectElement.wbsCode` | A pinned WBS code (CHECK `^[A-Za-z0-9][A-Za-z0-9.-]{0,39}$`, partial unique per project) |
 | `projectBaseline` | Plan snapshots (`snapshot` JSONB, `formatVersion`) |
 | `projectChangeRequest`, `projectChangeRequestItem` | Change requests and their row edits (`payload`, `baseRow`) |
 | `projectChangeRequestComment`, `projectChangeRequestView` | Review comments (field-level) and per-user Viewed marks |
@@ -177,6 +182,10 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
 - `parseElementFilters`, `canonicalElementsParams`, `elementLayoutFromParams`
   (models) — the Plan page's filters (`filter=type:eq:…` for the Type filter;
   the old `?type=` still reads) and its layouts (List, Tree, Reader).
+- `getProjectWbsNodes` (service); `pinProjectWbsCodes`, `renumberWbsSubtree`,
+  `insertElementsFromWbsTemplate` (via `createProject`'s `wbsTemplateKey`),
+  `importProjectWbs` (`.server`); `elementWbsCodes`, `toWbsCsvRows`, `readWbsCsv`,
+  `buildMspdiXml` (models) — WBS codes, CSV import and export, MS Project XML.
 - `loadPlanSnapshot`, `createProjectBaseline` / `insertProjectBaseline` (`.server`),
   `getProjectBaselines`, `getProjectBaseline`, `diffPlanSnapshots` (models) — baselines.
 - `createChangeRequest`, `upsertChangeRequestItems`, `loadChangeRequestOverlay`,

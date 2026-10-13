@@ -2797,6 +2797,9 @@ msgstr "카테고리, 대상 및 이를 측정하는 매개변수가 있는 요�
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "통제 계정이 켜져 있고 통제 계정 관리자가 소유한 요소입니다. 아래의 작업 패키지는 적립 가치에서 이를 상향식으로 집계합니다."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "작업 분해 구조의 요소 코드(예: 1.3.2). Carbon은 코드를 고정하지 않으면 위치로 트리 번호를 매기며, 예를 들어 계약 WBS와 일치시키기 위해 코드를 고정할 수 있고, 요소가 이동해도 고정된 코드는 그대로 유지됩니다."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "직원의 요율이 노무 범주의 요율을 우선합니다. 둘 다 없을 경우 시간당 노무 범주의 기본 청구 요율로 청구됩니다."
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places API 키가 설정되지 않았습니다"
 msgid "Government contracting"
 msgstr "정부 계약"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "비용 발생 기반의 고정가격 계약 정부 자금 지원(FAR 32.5). 계약자는 SF 1443으로 요청하며, 정부는 납품 지불에서 회수합니다."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "정해진 이벤트 완료 시 지불되는 고정가격 계약 정부 자금 지원(FAR 32.10)으로, 비용 발생 기반으로는 절대 아닙니다. 총 지불액은 가격의 일부 이내로 유지되며, 최대 90%입니다."
+
 msgid "Government-furnished"
 msgstr "정부 제공"
 
@@ -14006,6 +14015,9 @@ msgstr "연결된 구매주문"
 
 msgid "Links"
 msgstr "링크"
+
+msgid "Liquidation"
+msgstr "청산"
 
 msgid "Liquidation rate"
 msgstr "청산율"
@@ -18199,6 +18211,9 @@ msgstr "로트 비율"
 msgid "Performance"
 msgstr "성능"
 
+msgid "Performance-based payment"
+msgstr "성과 기반 지불"
+
 msgid "Period"
 msgstr "기간"
 
@@ -19013,6 +19028,9 @@ msgstr "진행 상황"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "진행률은 이 요소의 완료 시점 비용 추정을 기준으로 한 원가입니다"
+
+msgid "Progress payment"
+msgstr "기성금"
 
 msgid "Progress payment liquidation expected"
 msgstr "진행금 청산 예상"
@@ -25063,6 +25081,9 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "정부가 기성금 또는 실적금으로부터의 회수를 위해 보유하는 납기금의 일부: 송장 금액에 정산율을 곱한 금액으로, 미정산 금융액을 초과하지 않음."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "이 단계의 구성 요소가 재생 중에 제자리로 이동하는 경로; 모델에서 계산되거나 편집 경로를 사용하여 손으로 그려짐."

@@ -105,6 +105,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Project billing (T&M and Cost Plus contract lines, bill rates, billable items, funding) | `.claude/rules/project-billing.md` + `.claude/rules/projects-system.md` + `apps/erp/app/modules/sales/AGENTS.md` (Contracts) |
 | Field service (customer assets, service orders, visits, coverage, service invoicing) | `.claude/rules/field-service.md` + `apps/erp/app/modules/service/AGENTS.md` + `.claude/rules/projects-system.md` |
 | Government contracting (DCAA timekeeping, unallowable cost, labor distribution, CLIN funding) | `.claude/rules/government-contracting.md` + `.claude/rules/projects-system.md` |
+| Contract financing (progress payments, SF 1443, PBP, liquidation) | `.claude/rules/contract-financing.md` + `.claude/rules/government-contracting.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |

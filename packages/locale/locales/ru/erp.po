@@ -2797,6 +2797,9 @@ msgstr "Тип элемента с категорией, целью и пара�
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Элемент со счетом контроля включенный, принадлежащий менеджеру счета контроля. Пакеты работ ниже него выкатываются в него в заработанной стоимости."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "Код элемента в структуре разбиения работ, например 1.3.2. Carbon нумерует дерево по позиции, если только код не зафиксирован, например для соответствия WBS контракта; зафиксированный код сохраняется при перемещении элемента."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "Ставка сотрудника имеет приоритет над ставкой категории труда. Если ни одна из них не установлена, час выставляется по умолчанию ставке выставления счетов категории труда."
 
@@ -11889,6 +11892,12 @@ msgstr "API-ключ Google Places не настроен"
 msgid "Government contracting"
 msgstr "Государственные контракты"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Государственное финансирование контракта с твердой ценой на основе понесенной себестоимости (FAR 32.5). Подрядчик запрашивает его на бланке SF 1443, и правительство возмещает это из платежей по поставкам."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Государственное финансирование контракта с твердой ценой, выплачиваемое при завершении определенных событий (FAR 32.10), а не на основе понесенной себестоимости. Общие платежи не превышают долю цены - максимум 90 %."
+
 msgid "Government-furnished"
 msgstr "Предоставленный государством"
 
@@ -14006,6 +14015,9 @@ msgstr "Связанный ПО"
 
 msgid "Links"
 msgstr "Ссылки"
+
+msgid "Liquidation"
+msgstr "Ликвидация"
 
 msgid "Liquidation rate"
 msgstr "Ставка зачисления"
@@ -18199,6 +18211,9 @@ msgstr "Процент партии"
 msgid "Performance"
 msgstr "Производительность"
 
+msgid "Performance-based payment"
+msgstr "Платеж по выполнению"
+
 msgid "Period"
 msgstr "Период"
 
@@ -19013,6 +19028,9 @@ msgstr "Прогресс"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Прогресс — это стоимость этого элемента по сравнению с его расчетом при завершении"
+
+msgid "Progress payment"
+msgstr "Авансовый платеж"
 
 msgid "Progress payment liquidation expected"
 msgstr "Ожидается зачисление авансового платежа"
@@ -25063,6 +25081,9 @@ msgstr "Деталь производится как собственное за
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Деталь берется из существующего запаса при производстве ее родительского элемента — без создания нового производственного заказа или заказа поставщику."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "Часть платежа по доставке, которую правительство удерживает для возмещения авансовых платежей или платежей по выполнению: произведение ставки ликвидации и суммы счета-фактуры, но не более оставшегося неликвидированного финансирования."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Путь, по которому компоненты этого шага перемещаются на место при воспроизведении; определяется на основе модели или рисуется вручную с помощью кнопки «Изменить путь»."

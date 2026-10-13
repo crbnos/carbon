@@ -2797,6 +2797,9 @@ msgstr "Bir kategori, bir hedef ve onu ölçen Parametre ile bir öğe türü. P
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Kontrol hesabı açık olan, bir kontrol hesabı yöneticisi tarafından sahiplenilen bir öğe. Altındaki iş paketleri kazanılan değerde buna toplanır."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "İş dağılım yapısında bir öğenin kodu, örneğin 1.3.2. Carbon, kod sabitlenmişse hariç olmak üzere ağacı konuma göre numaralandırır; örneğin sözleşme WBS'si ile eşleştirmek için; sabitlenmiş bir kod, öğe taşındığında yerinde kalır."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "Bir çalışanın oranı işçilik kategorisinin oranından önce gelir. Hiçbiri olmadığında, bir saat işçilik kategorisinin varsayılan ücret tarifesinde faturalandırılır."
 
@@ -11889,6 +11892,12 @@ msgstr "Google Yerler API anahtarı yapılandırılmamış"
 msgid "Government contracting"
 msgstr "Devlet müteahhitliği"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Hükümet tarafından sabit fiyatlı bir sözleşmeye dayalı ortaya çıkan maliyete (FAR 32.5) verilen finansman. Taşeron bunu bir SF 1443 ile talep eder ve hükümet bunu teslimat ödemelerinden geri alır."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Hükümet tarafından sabit fiyatlı bir sözleşmeye, tanımlanmış olaylar tamamlandığında (FAR 32.10) ödenen finansman, ortaya çıkan maliyete dayalı hiçbir zaman değil. Toplam ödemeler fiyatın belirli bir payı içinde kalır, en fazla %90."
+
 msgid "Government-furnished"
 msgstr "Hükümet tarafından sağlanan"
 
@@ -14006,6 +14015,9 @@ msgstr "Bağlantılı Sipariş"
 
 msgid "Links"
 msgstr "Bağlantılar"
+
+msgid "Liquidation"
+msgstr "Tasfiye"
 
 msgid "Liquidation rate"
 msgstr "Tasfiye oranı"
@@ -18199,6 +18211,9 @@ msgstr "Lot Yüzdesi"
 msgid "Performance"
 msgstr "Performans"
 
+msgid "Performance-based payment"
+msgstr "Başarım tabanlı ödeme"
+
 msgid "Period"
 msgstr "Dönem"
 
@@ -19013,6 +19028,9 @@ msgstr "İlerleme"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "İlerleme, bu öğenin maliyetinin tamamlanma tahminindeki maliyete kıyasla"
+
+msgid "Progress payment"
+msgstr "İlerleme ödemesi"
 
 msgid "Progress payment liquidation expected"
 msgstr "İlerleme ödemesi tasfiyesi bekleniyor"
@@ -25063,6 +25081,9 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "Teslimat ödemesinin, hükümetin ilerleme veya performansa dayalı ödemelerini geri almak için tuttuğu kısmı: tasfiye oranı çarpı fatura, hala tasfiye edilmemiş finansmanı aşmamak üzere."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Bu adımın bileşenlerinin oynatma sırasında hareket ettiği yol; modelden hesaplanmış veya Yolu Düzenle ile elle çizilmiş."

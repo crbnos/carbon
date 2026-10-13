@@ -2797,6 +2797,9 @@ msgstr "An element type with a category, a target and the Parameter that measure
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places API key not configured"
 msgid "Government contracting"
 msgstr "Government contracting"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+
 msgid "Government-furnished"
 msgstr "Government-furnished"
 
@@ -14006,6 +14015,9 @@ msgstr "Linked PO"
 
 msgid "Links"
 msgstr "Links"
+
+msgid "Liquidation"
+msgstr "Liquidation"
 
 msgid "Liquidation rate"
 msgstr "Liquidation rate"
@@ -18199,6 +18211,9 @@ msgstr "Percentage of Lot"
 msgid "Performance"
 msgstr "Performance"
 
+msgid "Performance-based payment"
+msgstr "Performance-based payment"
+
 msgid "Period"
 msgstr "Period"
 
@@ -19013,6 +19028,9 @@ msgstr "Progress"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Progress is this element's cost against its estimate at completion"
+
+msgid "Progress payment"
+msgstr "Progress payment"
 
 msgid "Progress payment liquidation expected"
 msgstr "Progress payment liquidation expected"
@@ -25063,6 +25081,9 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."

@@ -2513,6 +2513,26 @@ export const terms = {
     definition: msg`One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions.`,
     href: "/docs/reference/government-contracting#clin-and-acrn-funding"
   },
+  "wbs-code": {
+    term: msg`WBS code`,
+    definition: msg`An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves.`,
+    href: "/docs/reference/projects#wbs-codes"
+  },
+  "progress-payment": {
+    term: msg`Progress payment`,
+    definition: msg`Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  "performance-based-payment": {
+    term: msg`Performance-based payment`,
+    definition: msg`Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  liquidation: {
+    term: msg`Liquidation`,
+    definition: msg`The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
   "business-component": {
     term: msg`Business component`,
     definition: msg`An element marked Business component (R&D) for the R&D tax reports. It holds its own cost and the cost of the elements below it, down to the next business component.`,

@@ -2797,6 +2797,9 @@ msgstr "具有类别、目标和衡量它的参数的单位类型。当参数满
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "启用了控制账户且由控制账户经理拥有的单位。其下的工作包在挣值中汇总到它。"
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "工作计划分解结构(WBS)中一个元素的编号，例如 1.3.2。Carbon 按位置对树进行编号，除非代码被固定，例如与合同 WBS 匹配；当元素移动时，固定的代码保持不变。"
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "员工费率优先于人工类别的费率。如果都没有，则按人工类别的默认计费费率计费。"
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places API密钥未配置"
 msgid "Government contracting"
 msgstr "政府承包"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "固定价格合同的政府融资，基于发生的成本(FAR 32.5)。外协人员在 SF 1443 上请求该融资，政府从交付付款中收回。"
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "固定价格合同的政府融资，在定义的事件已完成时支付(FAR 32.10)，不基于发生的成本。总付款保持在价格的一部分内，最多 90%。"
+
 msgid "Government-furnished"
 msgstr "政府提供的"
 
@@ -14006,6 +14015,9 @@ msgstr "关联采购订单"
 
 msgid "Links"
 msgstr "链接"
+
+msgid "Liquidation"
+msgstr "清算"
 
 msgid "Liquidation rate"
 msgstr "清算率"
@@ -18199,6 +18211,9 @@ msgstr "批次百分比"
 msgid "Performance"
 msgstr "绩效"
 
+msgid "Performance-based payment"
+msgstr "绩效付款"
+
 msgid "Period"
 msgstr "期间"
 
@@ -19013,6 +19028,9 @@ msgstr "进度"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "进度是该元素成本与完工时预计成本的对比。"
+
+msgid "Progress payment"
+msgstr "进度付款"
 
 msgid "Progress payment liquidation expected"
 msgstr "预期进度付款清算"
@@ -25063,6 +25081,9 @@ msgstr "当需要该零件的父级被构造时，该零件被制造为其自己
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或采购订单。"
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "交付付款中政府保留的部分，用以收回进度付款或绩效付款：清算比率乘以发票，不超过未清算的融资。"
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "此步骤的组件在回放期间进入位置的路径；从模型中计算得出，或使用「编辑路径」手绘。"

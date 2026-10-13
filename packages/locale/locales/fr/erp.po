@@ -2797,6 +2797,9 @@ msgstr "Un type d'élément avec une catégorie, une cible et le paramètre qui 
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Un élément avec le compte de contrôle activé, détenu par un gestionnaire de compte de contrôle. Les paquets de travail ci-dessous le remontent en valeur gagnée."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "Le code d'un élément dans la structure de décomposition des tâches, tel que 1.3.2. Carbon numérote l'arborescence par position sauf si le code est épinglé, par exemple pour correspondre à la WBS du contrat ; un code épinglé reste en place quand l'élément se déplace."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "Le taux d'un employé prime celui d'une catégorie de main-d'œuvre. Sans l'un ni l'autre, une heure est facturée au taux de facturation par défaut de la catégorie de main-d'œuvre."
 
@@ -11889,6 +11892,12 @@ msgstr "Clé API Google Places non configurée"
 msgid "Government contracting"
 msgstr "Marchés publics"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Financement gouvernemental d'un contrat à prix fixe basé sur le coût encouru (FAR 32.5). Le prestataire le demande sur un SF 1443, et le gouvernement le récupère des paiements de livraison."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Financement gouvernemental d'un contrat à prix fixe payé quand les événements définis sont terminés (FAR 32.10), jamais sur coût encouru. Les paiements totaux restent dans une part du prix, au maximum 90 %."
+
 msgid "Government-furnished"
 msgstr "Fourni par le gouvernement"
 
@@ -14006,6 +14015,9 @@ msgstr "Bon de commande lié"
 
 msgid "Links"
 msgstr "Liens"
+
+msgid "Liquidation"
+msgstr "Liquidation"
 
 msgid "Liquidation rate"
 msgstr "Taux de liquidation"
@@ -18199,6 +18211,9 @@ msgstr "Pourcentage du lot"
 msgid "Performance"
 msgstr "Performance"
 
+msgid "Performance-based payment"
+msgstr "Paiement basé sur le rendement"
+
 msgid "Period"
 msgstr "Période"
 
@@ -19013,6 +19028,9 @@ msgstr "Progression"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "La progression est le coût de cet élément par rapport à son estimation à la fin"
+
+msgid "Progress payment"
+msgstr "Paiement d'avancement"
 
 msgid "Progress payment liquidation expected"
 msgstr "Liquidation du paiement d'avancement prévue"
@@ -25063,6 +25081,9 @@ msgstr "La pièce est fabriquée comme son propre travail quand le parent qui en
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La pièce est prélevée du stock existant lors de la construction de son parent - aucune nouvelle tâche ou bon de commande."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "La partie d'un paiement de livraison que le gouvernement conserve pour récupérer ses paiements d'avancement ou basés sur le rendement : le taux de liquidation fois la facture, jamais plus que le financement toujours non liquidé."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Le chemin que les composants de cette étape parcourent lors de la lecture ; calculé à partir du modèle ou dessiné manuellement avec Modifier le chemin."

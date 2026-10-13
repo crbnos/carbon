@@ -19,7 +19,8 @@ an *Execution notes* entry for every deviation). 5a is community code: nothing i
 `indirect-rates.md`. Phase 5c (budget control, earned value, stop-work orders,
 commercial) has its own rule: `project-control.md`. Phase 5d (R&D tax, community; plan
 `.ai/plans/2026-10-09-government-contracting-phase-5d.md`, decisions D1–D10) is the
-*R&D tax* section below.
+*R&D tax* section below. Contract financing (progress payments, PBP, liquidation)
+has its own rule: `contract-financing.md`.
 
 ## Off by default
 

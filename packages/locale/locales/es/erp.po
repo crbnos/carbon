@@ -2797,6 +2797,9 @@ msgstr "Un tipo de elemento con una categoría, un destino y el parámetro que l
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Un elemento con control de cuenta activado, propiedad de un gerente de control de cuenta. Los paquetes de trabajo debajo se acumulan en valor ganado."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "El código de un elemento en la estructura de desglose del trabajo, como 1.3.2. Carbon numera el árbol por posición a menos que el código esté fijado, por ejemplo para coincidir con la estructura de desglose del trabajo del contrato; un código fijado se mantiene cuando el elemento se mueve."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "La tasa de un empleado prevalece sobre la de una categoría de mano de obra. Sin ninguna de las dos, una hora se factura a la tasa de facturación predeterminada de la categoría de mano de obra."
 
@@ -11889,6 +11892,12 @@ msgstr "Clave de API de Google Places no configurada"
 msgid "Government contracting"
 msgstr "Contratación gubernamental"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Financiamiento gubernamental de un contrato de precio fijo basado en el costo incurrido (FAR 32.5). El contratista lo solicita en un SF 1443, y el gobierno lo recupera de los pagos de entrega."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Financiamiento gubernamental de un contrato de precio fijo pagado cuando se completan eventos definidos (FAR 32.10), nunca según el costo incurrido. Los pagos totales se mantienen dentro de una parte del precio, como máximo el 90 %."
+
 msgid "Government-furnished"
 msgstr "Suministrado por el gobierno"
 
@@ -14006,6 +14015,9 @@ msgstr "PO vinculada"
 
 msgid "Links"
 msgstr "Enlaces"
+
+msgid "Liquidation"
+msgstr "Liquidación"
 
 msgid "Liquidation rate"
 msgstr "Tasa de Liquidación"
@@ -18199,6 +18211,9 @@ msgstr "Porcentaje del Lote"
 msgid "Performance"
 msgstr "Desempeño"
 
+msgid "Performance-based payment"
+msgstr "Pago basado en desempeño"
+
 msgid "Period"
 msgstr "Período"
 
@@ -19013,6 +19028,9 @@ msgstr "Progreso"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "El progreso es el costo de este elemento contra su estimación al completarse"
+
+msgid "Progress payment"
+msgstr "Pago de progreso"
 
 msgid "Progress payment liquidation expected"
 msgstr "Liquidación de pago de progreso esperada"
@@ -25063,6 +25081,9 @@ msgstr "La parte se fabrica como su propio trabajo cuando se construye el padre 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La parte se toma del inventario existente cuando se construye su padre - sin nuevo trabajo o orden de compra."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "La parte del pago de entrega que el gobierno retiene para recuperar sus pagos de progreso o basados en desempeño: la tasa de liquidación multiplicada por la factura, nunca más que el financiamiento aún no liquidado."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "La ruta que los componentes de este paso recorren hasta su lugar durante la reproducción; se calcula a partir del modelo o se dibuja manualmente con Editar ruta."

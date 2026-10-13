@@ -2797,6 +2797,9 @@ msgstr "Un tipo di elemento con una categoria, un target e il Parametro che lo m
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Un elemento con Conto di controllo attivato, di proprietà di un manager del conto di controllo. I pacchetti di lavoro sottostanti si sommano ad esso nel valore realizzato."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "Il codice di un elemento nella struttura di scomposizione del lavoro, ad esempio 1.3.2. Carbon numera l'albero in base alla posizione a meno che il codice non sia bloccato, ad esempio per corrispondere alla WBS del contratto; un codice bloccato rimane invariato quando l'elemento viene spostato."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "La tariffa di un dipendente ha priorità su quella di una categoria di manodopera. Senza nessuna delle due, un'ora viene fatturata alla tariffa di fatturazione predefinita della categoria di manodopera."
 
@@ -11889,6 +11892,12 @@ msgstr "Chiave API di Google Places non configurata"
 msgid "Government contracting"
 msgstr "Appalti governativi"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Finanziamento governativo di un contratto a prezzo fisso basato sul costo sostenuto (FAR 32.5). Il collaboratore esterno lo richiede su un SF 1443 e il governo lo recupera dai pagamenti di consegna."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Finanziamento governativo di un contratto a prezzo fisso pagato quando gli eventi definiti sono completati (FAR 32.10), mai sulla base del costo sostenuto. L'importo totale dei pagamenti rimane entro una quota del prezzo, al massimo il 90%."
+
 msgid "Government-furnished"
 msgstr "Fornito dal governo"
 
@@ -14006,6 +14015,9 @@ msgstr "PO collegato"
 
 msgid "Links"
 msgstr "Collegamenti"
+
+msgid "Liquidation"
+msgstr "Liquidazione"
 
 msgid "Liquidation rate"
 msgstr "Tasso di liquidazione"
@@ -18199,6 +18211,9 @@ msgstr "Percentuale del Lotto"
 msgid "Performance"
 msgstr "Prestazioni"
 
+msgid "Performance-based payment"
+msgstr "Pagamento basato sulla prestazione"
+
 msgid "Period"
 msgstr "Periodo"
 
@@ -19013,6 +19028,9 @@ msgstr "Progresso"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Il progresso è il costo di questo elemento rispetto alla sua stima al completamento"
+
+msgid "Progress payment"
+msgstr "Pagamento progressivo"
 
 msgid "Progress payment liquidation expected"
 msgstr "Liquidazione del pagamento di progresso prevista"
@@ -25063,6 +25081,9 @@ msgstr "La parte viene fabbricata come suo proprio lavoro quando il genitore che
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "La parte viene presa da scorte esistenti quando il suo genitore viene costruito - nessun nuovo lavoro o ordine di acquisto."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "La parte del pagamento di consegna che il governo trattiene per recuperare i pagamenti progressivi o i pagamenti a prestazione: il tasso di liquidazione per la fattura, mai più del finanziamento ancora non liquidato."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Il percorso che i componenti di questo passo percorrono durante la riproduzione; calcolato dal modello o disegnato manualmente con Modifica percorso."

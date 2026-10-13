@@ -2797,6 +2797,9 @@ msgstr "Um tipo de elemento com uma categoria, um destino e o Parâmetro que o m
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Um elemento com Conta de Controle ligada, possuído por um gerenciador de conta de controle. Os pacotes de trabalho abaixo rolem para ele em valor agregado."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "O código de um elemento na estrutura analítica de projeto, como 1.3.2. Carbon numera a árvore por posição, a menos que o código esteja fixado, por exemplo, para corresponder ao WBS do contrato; um código fixado permanece quando o elemento se move."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "A taxa de um funcionário ganha sobre a de uma categoria de trabalho. Sem nenhum dos dois, uma hora é faturada na taxa de faturamento padrão da categoria de trabalho."
 
@@ -11889,6 +11892,12 @@ msgstr "Chave da API do Google Places não configurada"
 msgid "Government contracting"
 msgstr "Contratação Governamental"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Financiamento do governo de um contrato de preço fixo baseado no custo incorrido (FAR 32.5). O terceirizado o solicita em um SF 1443, e o governo o recupera dos pagamentos de entrega."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Financiamento do governo de um contrato de preço fixo pago quando eventos definidos são concluídos (FAR 32.10), nunca com base no custo incorrido. O total de pagamentos permanece dentro de uma parcela do preço, no máximo 90%."
+
 msgid "Government-furnished"
 msgstr "Fornecido pelo Governo"
 
@@ -14006,6 +14015,9 @@ msgstr "PO Vinculada"
 
 msgid "Links"
 msgstr "Links"
+
+msgid "Liquidation"
+msgstr "Liquidação"
 
 msgid "Liquidation rate"
 msgstr "Taxa de liquidação"
@@ -18199,6 +18211,9 @@ msgstr "Percentagem do Lote"
 msgid "Performance"
 msgstr "Desempenho"
 
+msgid "Performance-based payment"
+msgstr "Pagamento baseado em desempenho"
+
 msgid "Period"
 msgstr "Período"
 
@@ -19013,6 +19028,9 @@ msgstr "Progresso"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "O progresso é o custo deste elemento em relação à sua estimativa na conclusão"
+
+msgid "Progress payment"
+msgstr "Pagamento de progresso"
 
 msgid "Progress payment liquidation expected"
 msgstr "Liquidação de pagamento de progresso esperada"
@@ -25063,6 +25081,9 @@ msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a neces
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "A peça é retirada do estoque existente quando seu pai é construído - nenhum novo trabalho ou pedido de compra."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "A parte de um pagamento de entrega que o governo retém para recuperar seus pagamentos de progresso ou baseados em desempenho: a taxa de liquidação vezes a fatura, nunca mais que o financiamento ainda não liquidado."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "O caminho que os componentes desta etapa percorrem até sua posição durante a reprodução; calculado a partir do modelo ou desenhado manualmente com Editar Caminho."

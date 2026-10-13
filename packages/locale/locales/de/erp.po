@@ -2797,6 +2797,9 @@ msgstr "Ein Elementtyp mit einer Kategorie, einem Ziel und dem Parameter, das es
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "Ein Element mit aktiviertem Kontrolllkonto, das von einem Kontrolllkonto-Manager verwaltet wird. Die Arbeitspakete darunter werden zu ihm in Earned-Value zusammengefasst."
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "Ein Code eines Elements in der Arbeitsaufschlüsselung, z. B. 1.3.2. Carbon nummeriert den Baum nach Position, es sei denn, der Code wird fixiert, z. B. um die Vertrags-WBS zu entsprechen; ein fixierter Code bleibt erhalten, wenn das Element verschoben wird."
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "Der Stundensatz eines Mitarbeiters hat Vorrang vor einem Personalstundensatz. Ohne beides wird eine Stunde zum Standard-Abrechnungssatz der Personalgruppe abgerechnet."
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places API-Schlüssel nicht konfiguriert"
 msgid "Government contracting"
 msgstr "Staatliche Auftragsvergabe"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "Staatsfinanzierung eines Pauschalvertrags auf Grundlage der tatsächlich angefallenen Kosten (FAR 32.5). Der Auftragnehmer fordert diese auf einem SF 1443 an, und die Regierung zieht diese von Lieferzahlungen ein."
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "Staatsfinanzierung eines Pauschalvertrags, die gezahlt wird, wenn definierte Ereignisse abgeschlossen sind (FAR 32.10), niemals auf Grundlage angefallener Kosten. Gesamtzahlungen bleiben innerhalb eines Anteils des Preises, maximal 90 %."
+
 msgid "Government-furnished"
 msgstr "Von der Regierung bereitgestellt"
 
@@ -14006,6 +14015,9 @@ msgstr "Verknüpfte Bestellung"
 
 msgid "Links"
 msgstr "Links"
+
+msgid "Liquidation"
+msgstr "Rückbehalt"
 
 msgid "Liquidation rate"
 msgstr "Liquidationssatz"
@@ -18199,6 +18211,9 @@ msgstr "Prozentsatz des Loses"
 msgid "Performance"
 msgstr "Leistung"
 
+msgid "Performance-based payment"
+msgstr "Leistungsabhängige Zahlung"
+
 msgid "Period"
 msgstr "Zeitraum"
 
@@ -19013,6 +19028,9 @@ msgstr "Fortschritt"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Fortschritt ist die Kosten dieses Elements gegen die Schätzung bei Fertigstellung"
+
+msgid "Progress payment"
+msgstr "Akontozahlung"
 
 msgid "Progress payment liquidation expected"
 msgstr "Fortschrittszahlungsliquidation erwartet"
@@ -25063,6 +25081,9 @@ msgstr "Der Teil wird als eigener Auftrag hergestellt, wenn das Elternteil, das 
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Der Teil wird dem bestehenden Bestand entnommen, wenn das übergeordnete Teil hergestellt wird – kein neuer Fertigungsauftrag oder Bestellung."
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "Der Anteil einer Lieferzahlung, den die Regierung zurückbehält, um ihre Akontozahlungen oder leistungsabhängigen Zahlungen zu sichern: der Rückbehaltssatz mal die Rechnung, nicht mehr als die noch ausstehende Finanzierung."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "Der Pfad, auf dem die Komponenten dieses Schritts während der Wiedergabe an ihren Platz fahren; aus dem Modell ermittelt oder von Hand mit Bearbeitungspfad gezeichnet."

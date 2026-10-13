@@ -2797,6 +2797,9 @@ msgstr "एक श्रेणी, एक लक्ष्य और जो प�
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "नियंत्रण खाता चालू के साथ एक तत्व, एक नियंत्रण खाता प्रबंधक के स्वामित्व में। इसके नीचे काम के पैकेज अर्जित मूल्य में इसमें रोल अप करते हैं।"
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "कार्य विभाजन संरचना में एक तत्व का कोड, जैसे 1.3.2। जब तक कोड को पिन न किया जाए, Carbon पेड़ को स्थिति के अनुसार क्रमांकित करता है, उदाहरण के लिए अनुबंध WBS से मेल खाने के लिए; एक पिन किया गया कोड रहता है जब तत्व को स्थानांतरित किया जाता है।"
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "कर्मचारी की दर श्रम श्रेणी की दर को हराती है। न ही के साथ, एक घंटा श्रम श्रेणी की डिफ़ॉल्ट बिल दर पर बिल होता है।"
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places API कुंजी कॉन्फ़िगर नही�
 msgid "Government contracting"
 msgstr "सरकारी ठेकेदारी"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "एक निश्चित-मूल्य अनुबंध की सरकारी वित्तपोषण जो खर्च की गई लागत पर आधारित है (FAR 32.5)। ठेकेदार इसे SF 1443 पर अनुरोध करता है, और सरकार इसे डिलीवरी भुगतान से वसूलती है।"
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "एक निश्चित-मूल्य अनुबंध की सरकारी वित्तपोषण जो परिभाषित घटनाएं पूर्ण होने पर भुगतान किया जाता है (FAR 32.10), कभी भी लागत के आधार पर नहीं। कुल भुगतान मूल्य के एक हिस्से के भीतर रहता है, अधिकतम 90 %।"
+
 msgid "Government-furnished"
 msgstr "सरकार द्वारा प्रदान किया गया"
 
@@ -14006,6 +14015,9 @@ msgstr "लिंक्ड PO"
 
 msgid "Links"
 msgstr "लिंक"
+
+msgid "Liquidation"
+msgstr "तरलीकरण"
 
 msgid "Liquidation rate"
 msgstr "समाशोधन दर"
@@ -18199,6 +18211,9 @@ msgstr "लॉट का प्रतिशत"
 msgid "Performance"
 msgstr "प्रदर्शन"
 
+msgid "Performance-based payment"
+msgstr "प्रदर्शन-आधारित भुगतान"
+
 msgid "Period"
 msgstr "अवधि"
 
@@ -19013,6 +19028,9 @@ msgstr "प्रगति"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "प्रगति इस तत्व की लागत है इसके पूर्ण होने पर अनुमान के विरुद्ध"
+
+msgid "Progress payment"
+msgstr "प्रगति भुगतान"
 
 msgid "Progress payment liquidation expected"
 msgstr "प्रगति भुगतान समाशोधन अपेक्षित"
@@ -25063,6 +25081,9 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "पार्ट को मौजूदा स्टॉक से लिया जाता है जब इसका मूल आइटम बनाया जाता है — कोई नया जॉब या क्रय आदेश नहीं।"
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "डिलीवरी भुगतान का वह हिस्सा जो सरकार अपने प्रगति व प्रदर्शन-आधारित भुगतान को वसूलने के लिए रखती है: तरलीकरण दर गुणा चालान, कभी भी अभी भी अतरलीकृत वित्तपोषण से अधिक नहीं।"
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "वह पथ जो इस चरण के घटक प्लेबैक के दौरान स्थान पर यात्रा करते हैं; मॉडल से प्राप्त, या पथ संपादित करें के साथ हाथ से खींचा गया।"

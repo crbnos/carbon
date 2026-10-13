@@ -159,5 +159,5 @@ menu and the MCP tool cannot bypass Resume. The header shows the order date, the
 - On an Issue project, a receipt Material row of an item that never goes through
   project stock is never recognized.
 - CPI and SPI show up to 5 decimals (`useQuantityFormatter`).
-- The demo datasets seed no baseline, so the satellite project shows "Take a
-  baseline first" until one is taken.
+- The satellite dataset seeds ORBSEC Block 2's baseline 1 with work package
+  budgets and dates; the other datasets seed no baseline.

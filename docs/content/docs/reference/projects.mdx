@@ -163,6 +163,28 @@ Mark a project as a **Template** in the header's menu. **Copy project** opens a 
 
 Choose a depth from 1 to 5. The drawer previews the elements before it creates them.
 
+## WBS codes
+
+Each element has a <Term id="wbs-code">WBS code</Term>, such as `1.3.2`. Carbon numbers the tree by position: a top-level element is `1`, `2`, and a child takes its parent's code and its own position. A Parameter and the elements below it get no code. When a code ends in `.0`, its children drop the `.0`, so the children of `1.0` are `1.1`, `1.2`, as MIL-STD-881F numbers them.
+
+- **Pin a code:** type it in **WBS code** on the element page. A pinned code stays when the element moves. Clear the field to go back to the derived code.
+- **Pin WBS codes:** in the Plan page's WBS menu, pins every derived code of the project at once. Do this when the codes match the contract WBS.
+- **Renumber WBS:** in the element page's menu, clears the pinned codes of the element and everything below it.
+
+The Plan page's list and the sidebar tree show the codes once the project has a pinned code. A warning marks a code that two elements share; the exports refuse until you change one.
+
+### Start from MIL-STD-881F
+
+**Copy from** in **New Project** lists four MIL-STD-881F starter structures, levels 1 to 3: Appendix B (Electronics/Avionics/Generic Systems), A (Aircraft Systems), C (Missile/Ordnance Systems) and F (Space Systems). The project starts with every code pinned. An element with children is a System, a leaf is a Task. Rename the "1...n (Specify)" elements for your program.
+
+### Export and import
+
+The Plan page's WBS menu has:
+
+- **Export CSV:** one row per element in tree order, with **Element ID**, **WBS Code**, **Parent WBS Code**, **Level**, **Type**, **Name**, **Start**, **Target**, **Budget** and **Predecessors** (the codes of the elements that precede it).
+- **Import CSV:** reads the same columns. A row with an **Element ID** updates that element, and a blank cell keeps its value. A row without one creates an element under its **Parent WBS Code**. The modal shows every create, update and error first; **Apply** writes nothing while a row has an error. An import never deletes an element or a link, and it is refused once the plan is locked.
+- **Export MS Project XML:** the WBS as a Microsoft Project XML file, which MS Project, Primavera P6 and Deltek Cobra import. A leaf carries its budget and a Start No Earlier Than constraint on its start date, the latest baseline is Baseline 0, and the Text1 to Text3 fields hold the element id, the control account and the work package flag.
+
 ## Baselines and change requests
 
 The plan of a project is its elements, their names, types, budgets, estimates, part links, Requirement targets and Parameters, the trace links and the plan lines. State, owner, priority, labels, dates, milestone, verdict and comments are progress. Baselines, change requests and the plan lock cover the plan only. Progress stays editable at all times.

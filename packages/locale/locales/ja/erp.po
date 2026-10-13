@@ -2797,6 +2797,9 @@ msgstr "カテゴリ、ターゲット、およびそれを測定するパラメ
 msgid "An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value."
 msgstr "統制勘定科目がオンになっており、統制勘定科目マネージャーが所有する要素。その下の作業パッケージは獲得価値に集約されます。"
 
+msgid "An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves."
+msgstr "作業分解構造内の要素のコード（例：1.3.2）。Carbonは位置に基づいて自動的にツリーに番号を付けますが、契約WBSと一致させるなど、コードを固定することで、要素が移動してもコードは変わりません。"
+
 msgid "An employee's rate wins over a labor category's. With neither, an hour bills at the labor category's default bill rate."
 msgstr "従業員のレートは労務カテゴリのレートより優先されます。どちらもない場合、1時間は労務カテゴリのデフォルトビルレートで請求されます。"
 
@@ -11889,6 +11892,12 @@ msgstr "Google Places APIキーが設定されていません"
 msgid "Government contracting"
 msgstr "政府契約"
 
+msgid "Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments."
+msgstr "発生原価に基づく固定価格契約の政府資金調達（FAR 32.5）。外部作業者がSF 1443で申請し、政府が納品支払から回収します。"
+
+msgid "Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %."
+msgstr "規定のイベント完了時に支払われる固定価格契約の政府資金調達（FAR 32.10）。発生原価に基づくことはありません。合計支払額は契約価格の最大90％までです。"
+
 msgid "Government-furnished"
 msgstr "政府支給"
 
@@ -14006,6 +14015,9 @@ msgstr "リンク済みPO"
 
 msgid "Links"
 msgstr "リンク"
+
+msgid "Liquidation"
+msgstr "清算"
 
 msgid "Liquidation rate"
 msgstr "清算率"
@@ -18199,6 +18211,9 @@ msgstr "ロットの割合"
 msgid "Performance"
 msgstr "実績"
 
+msgid "Performance-based payment"
+msgstr "成果支払"
+
 msgid "Period"
 msgstr "期間"
 
@@ -19013,6 +19028,9 @@ msgstr "進捗"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "進捗はこの要素の原価と完成時推定の対比です"
+
+msgid "Progress payment"
+msgstr "進捗支払"
 
 msgid "Progress payment liquidation expected"
 msgstr "進捗支払清算予定"
@@ -25063,6 +25081,9 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
+
+msgid "The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated."
+msgstr "政府が進捗支払または成果支払を回収するために納品支払から控除する部分。清算率 × 請求書で計算され、未清算融資額を超えません。"
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "このステップのコンポーネントが再生中に所定の位置に移動するパス。モデルから計算されるか、パスの編集で手動で描画されます"

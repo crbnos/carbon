@@ -97,6 +97,23 @@ A Time & Materials or Cost Plus line has a **Funding Actions** grid on its billi
 
 When a project billing invoice bills a numbered line, it shows a separate amount per CLIN, with how it splits across the line's ACRNs. Each CLIN draws on its oldest funds first.
 
+## Contract financing
+
+A fixed-price contract can carry <Term id="progress-payment">progress payments</Term> or <Term id="performance-based-payment">performance-based payments</Term>, never both. Open the contract's **Financing** tab. Contract financing is available on the Business plan, and it needs a contract in the company's base currency.
+
+1. **Financing Terms:** the method, the contract price (SF 1443 line 5), the initial award date and the small-business flag. For performance-based payments, the maximum share of the price, at most 90 %.
+2. **Rates:** the progress payment rate and the liquidation rate the contract clause sets. A modification adds a rate from its effective date. Carbon does not derive a rate from business size.
+3. **Payment Events** (performance-based payments): each event's code, description, completion criteria, type, CLIN and amount. **Complete** records the completion date and the evidence. A Cumulative event bills only after every event before it is complete.
+
+**New Request** creates a Draft:
+
+- **Progress payments:** Carbon computes SF 1443 lines 5 to 26 from the cost of the contract's project and its Fixed lines' projects, through the costs-through date. Unallowable cost counts in line 12a, never in line 11. When the cost to date plus the estimate to complete exceeds the price, line 13 applies the loss ratio. Section III applies once an item is delivered and invoiced. On a Draft you can override lines 12b, 14a, 14b, 14d, 20a, 21a, 21d, 23 and 26, each with a reason; the request keeps the computed value beside it.
+- **Performance-based payments:** the request bills every complete event that no earlier request billed, and shows the values 1a to 2. Its amount never reads cost.
+
+**Submit** gives the request the next number of the contract's series; a withdrawn request keeps its number. **Approve** records the amount the contracting officer approved. **Print** gives the SF 1443 or the request to enter in WAWF.
+
+**Record Payment** opens a customer payment held against the contract for the approved amount. Posting it marks the request Paid. A delivery invoice of the contract shows the <Term id="liquidation">liquidation</Term> the government will take, and the invoice stays gross. When the payment arrives, apply the contract's deposit to the invoice for the liquidation and the cash for the rest. The Financing tab shows the balance still unliquidated.
+
 ## R&D tax
 
 Carbon tags the data a US research tax filing needs and reports it by tax year. A tax year starts in the month set as **Start of Tax Year** in the fiscal year settings, and it takes the name of the calendar year it starts in.
