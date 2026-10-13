@@ -6660,6 +6660,103 @@ export async function getJobOperationBatches(
   return query;
 }
 
+// Machine run time the OEE sync could not attribute to a loaded operation.
+// `workCenterId` is NOT NULL, so the inner join drops no row; it is what lets
+// the search filter the parent rows by work-center name.
+export async function getUnattributedMachineTimes(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("unattributedMachineTime")
+    .select("*, workCenter!inner(name, location(timezone))", {
+      count: LIST_COUNT
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("workCenter.name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "startTime", ascending: false }
+  ]);
+
+  return query;
+}
+
+export async function getUnattributedMachineTime(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("unattributedMachineTime")
+    .select("*, workCenter!inner(name, location(timezone))")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+// The operations a supervisor can assign machine time on this work center to:
+// In Progress first, then the most recent production event at the work
+// center, then the description.
+export async function getMachineTimeOperationCandidates(
+  client: SupabaseClient<Database>,
+  args: { workCenterId: string; companyId: string }
+) {
+  const [operations, events] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id, description, status, job(jobId)")
+      .eq("workCenterId", args.workCenterId)
+      .eq("companyId", args.companyId)
+      .not("status", "in", "(Done,Canceled)")
+      .limit(500),
+    client
+      .from("productionEvent")
+      .select("jobOperationId, startTime")
+      .eq("workCenterId", args.workCenterId)
+      .eq("companyId", args.companyId)
+      .order("startTime", { ascending: false })
+      .limit(200)
+  ]);
+
+  if (operations.error) return { data: null, error: operations.error };
+
+  // Events arrive latest first, so the first start seen per operation is its
+  // latest. ISO timestamps from PostgREST share one format, so string order is
+  // chronological.
+  const latestEventStart = new Map<string, string>();
+  for (const event of events.data ?? []) {
+    if (!latestEventStart.has(event.jobOperationId)) {
+      latestEventStart.set(event.jobOperationId, event.startTime);
+    }
+  }
+
+  const ranked = [...(operations.data ?? [])].sort((a, b) => {
+    const aInProgress = a.status === "In Progress" ? 0 : 1;
+    const bInProgress = b.status === "In Progress" ? 0 : 1;
+    if (aInProgress !== bInProgress) return aInProgress - bInProgress;
+
+    const aStart = latestEventStart.get(a.id) ?? "";
+    const bStart = latestEventStart.get(b.id) ?? "";
+    if (aStart !== bStart) return aStart < bStart ? 1 : -1;
+
+    return (a.description ?? "").localeCompare(b.description ?? "");
+  });
+
+  return {
+    data: ranked.map((operation) => ({
+      value: operation.id,
+      label: `${operation.job?.jobId ?? ""} · ${operation.description ?? ""}`,
+      helper: operation.status as string
+    })),
+    error: null
+  };
+}
+
 // The members' shared work-center name: null when they disagree (or none are
 // set), the single distinct name when they all agree. The list stats and the
 // detail drawer both fall back to this when the batch has no header work center

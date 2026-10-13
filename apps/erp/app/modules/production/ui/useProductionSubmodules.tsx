@@ -13,6 +13,7 @@ import {
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
+  LuTimerOff,
   LuTrash,
   LuTruck
 } from "react-icons/lu";
@@ -41,6 +42,12 @@ export default function useProductionSubmodules() {
           to: path.to.operationBatches,
           icon: <LuLayers />,
           table: "jobOperationBatch"
+        },
+        {
+          name: t`Unattributed Machine Time`,
+          to: path.to.unattributedMachineTimes,
+          icon: <LuTimerOff />,
+          role: "employee"
         }
       ]
     },
