@@ -17,3 +17,21 @@ export function useGovernmentContracting(): boolean {
   const { isGated } = usePlanGate({ feature: "GOVERNMENT_CONTRACTING" });
   return settings.timekeepingControls === "DCAA" || !isGated;
 }
+
+/**
+ * The element page's Government contracting group. Its fields show only when
+ * DCAA timekeeping is on AND the company has the GOVERNMENT_CONTRACTING
+ * feature (`fields`). With DCAA on and the feature gated, only earned value's
+ * one-row upgrade entry shows (`upgrade`): the licensing rule keeps a gated
+ * feature visible. Without DCAA, nothing shows (`hidden`). Display only — the
+ * element update route and the ee earned value function keep their gates.
+ */
+export function useGovernmentContractingFields():
+  | "fields"
+  | "upgrade"
+  | "hidden" {
+  const settings = useSettings();
+  const { isGated } = usePlanGate({ feature: "GOVERNMENT_CONTRACTING" });
+  if (settings.timekeepingControls !== "DCAA") return "hidden";
+  return isGated ? "upgrade" : "fields";
+}

@@ -256,7 +256,10 @@ The screens open in layers (`.claude/rules/projects-system.md` → *Information 
 plan `.ai/plans/2026-10-12-projects-service-ui-rebuild.md`).
 - `ui/useProjectsSubmodules.tsx` — the module sidebar: Projects, My Time, Approvals (with a
   count, only while time approval or DCAA is on), Reports; Setup: Labor Categories, Planning
-  Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5).
+  Groups. `ui/useGovernmentContracting.ts` — shows the government fields (Layer 5):
+  `useGovernmentContracting` (DCAA or the feature) for most screens, and
+  `useGovernmentContractingFields` for the element page's group (DCAA and the feature; DCAA
+  alone shows only earned value's upgrade row).
 - `ui/Projects/` — the projects list (`ProjectsTable`) and `ProjectForm` (the New Project
   drawer and the project Settings page; its folded `FormSection` keeps fields mounted).
 - `ui/Project/` — the workspace: `ProjectHeader` (switcher, status, ⋯ menu with the status

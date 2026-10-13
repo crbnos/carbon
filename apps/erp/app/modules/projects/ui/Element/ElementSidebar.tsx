@@ -19,8 +19,6 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
-import { usePlanGate } from "~/hooks/usePlanGate";
-import { useSettings } from "~/hooks/useSettings";
 import FixedAssetStatus from "~/modules/accounting/ui/FixedAssets/FixedAssetStatus";
 import { path } from "~/utils/path";
 import type {
@@ -49,6 +47,7 @@ import {
   useRdComponentTypeLabels,
   useRdSoftwareTypeLabels
 } from "../RdTax/useRdTaxLabels";
+import { useGovernmentContractingFields } from "../useGovernmentContracting";
 import ElementEarnedValue from "./ElementEarnedValue.ee";
 import { PartLink } from "./PartLink";
 import { PlaceInServiceModal } from "./PlaceInServiceModal";
@@ -79,7 +78,7 @@ const NO_COST: CostTotals = {
  * The element page's right column, in the inline pattern of the app's
  * properties panels: the element's properties, each saving on its own, then
  * the fields that apply to its type, its costs, and the government
- * contracting fields (only with DCAA timekeeping, Layer 5).
+ * contracting fields (only with DCAA timekeeping and the feature, Layer 5).
  */
 export function ElementSidebar({
   projectId,
@@ -118,13 +117,9 @@ export function ElementSidebar({
   const { company } = useUser();
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);
-  const settings = useSettings();
-  const { isGated: isGovernmentGated } = usePlanGate({
-    feature: "GOVERNMENT_CONTRACTING"
-  });
-  // The government fields need DCAA timekeeping. With DCAA on and the
-  // feature gated, only earned value's upgrade row shows.
-  const isDcaa = settings.timekeepingControls === "DCAA";
+  // DCAA timekeeping AND the feature show the government fields; DCAA
+  // without the feature shows only earned value's upgrade row.
+  const governmentFields = useGovernmentContractingFields();
   const common = { projectId, elementId: element.id, isDisabled };
   // Blank shows the code the element derives from its place in the tree.
   const wbsCodes = useMemo(() => elementWbsCodes(elements), [elements]);
@@ -359,8 +354,8 @@ export function ElementSidebar({
       )}
 
       {element.type !== "Parameter" &&
-        isDcaa &&
-        (isGovernmentGated ? (
+        governmentFields !== "hidden" &&
+        (governmentFields === "upgrade" ? (
           <ElementEarnedValue
             projectId={projectId}
             element={element}
