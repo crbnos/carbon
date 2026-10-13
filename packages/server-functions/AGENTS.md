@@ -345,14 +345,16 @@ account numbers are only the fallback for a group with none.
 
 ### `apply-account-import`
 
-Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ rows,
-resolutions }`, permission `update: accounting`) in one transaction: it locks the group's
-accounts, re-plans with `planAccountImport`, and refuses a plan with errors or
-exceptions. It renames in two passes (temporary numbers first, so a swap works),
-creates accounts, re-points each merge source by `REFERENCE_POLICY` and
-`SOFT_REFERENCES`, moves default roles, posts one `Manual` reclass journal per company
-for Posted balances, deletes or deactivates retired accounts, deletes empty groups, and
-checks that the active chart equals the sheet.
+Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ chart,
+defaults, resolutions }`, permission `update: accounting`) in one transaction. It locks
+the group's accounts and every company's `companySettings`, re-plans with
+`planAccountImport`, and refuses a plan with errors or exceptions — including any company
+of the group with an accounting cutover. It updates kept accounts in two passes
+(temporary numbers and names first, so a swap works), creates groups and accounts, sets
+every company's `accountDefault` and fixed asset class accounts from the defaults file,
+re-points each merge source by `REFERENCE_POLICY` and `SOFT_REFERENCES`, deletes merged
+and unused accounts, deletes empty groups, and checks that the chart's leaves equal the
+chart file.
 
 ## Validation Commands
 

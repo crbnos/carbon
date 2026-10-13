@@ -3,15 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // Applies a chart of accounts import (.ai/specs/2026-10-12-chart-of-accounts-import.md)
-// in one transaction. The plan is computed again here from the same pure
-// planner the review page used, so the client never decides what is written.
-// The chart is group-scoped: a re-point moves references in every company of
-// the group that uses the account.
+// in one transaction: the customer's chart of accounts and their default
+// accounts. The plan is computed again here from the same pure planner the
+// review page used, so the client never decides what is written. Only before
+// accounting is activated in every company of the group, so no account has
+// Posted history: a merge re-points Draft and Provisional records and deletes
+// the source.
 
-import { getCompanyTimeZone } from "@carbon/database";
 import {
-  type AccountImportContext,
-  type AccountImportPlan,
+  ACCOUNT_TYPES,
+  type AccountDefaultColumn,
+  type AccountType,
+  FIXED_ASSET_CLASS_COLUMNS,
   incomeBalanceOf,
   isApplicable,
   planAccountImport,
@@ -20,52 +23,53 @@ import {
 } from "@carbon/database/account-import";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { sql, type Transaction, type Updateable } from "kysely";
-import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
-import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 
 const logger = getLogger("server-functions", "apply-account-import");
 
+const accountClass = z.enum([
+  "Asset",
+  "Liability",
+  "Equity",
+  "Revenue",
+  "Expense"
+]);
+
 export const applyAccountImportInput = z.object({
-  rows: z
+  chart: z
     .array(
       z.object({
         line: z.number().int(),
         number: z.string().min(1),
         name: z.string().min(1),
-        class: z
-          .enum(["Asset", "Liability", "Equity", "Revenue", "Expense"])
+        class: accountClass.nullable(),
+        accountType: z
+          .enum(ACCOUNT_TYPES as [AccountType, ...AccountType[]])
           .nullable(),
-        accountType: z.string().nullable(),
-        group: z.string().min(1),
-        carbonAccounts: z.array(z.string())
+        group: z.string().min(1)
       })
     )
     .min(1),
-  resolutions: z.object({
-    targets: z.record(z.string(), z.number().int())
-  })
+  defaults: z
+    .array(
+      z.object({
+        line: z.number().int(),
+        key: z.string().min(1),
+        number: z.string().nullable()
+      })
+    )
+    .min(1),
+  resolutions: z.object({ targets: z.record(z.string(), z.number().int()) })
 });
 
 export type ApplyAccountImportResult = {
-  counts: {
-    renamed: number;
-    reactivated: number;
-    created: number;
-    merged: number;
-    deleted: number;
-    deactivated: number;
-  };
-  reclassJournalIds: string[];
+  counts: { updated: number; created: number; merged: number; deleted: number };
 };
-
-export const RECLASS_DESCRIPTION = "Chart of accounts import";
 
 type Trx = Transaction<KyselyDatabase>;
 
@@ -131,7 +135,7 @@ async function repointReferences(
       AND t."entityId" IN (${sql.join(pairs.map((p) => p.source))})
       AND ${inCompanies}`.execute(trx);
   await sql`UPDATE "companyIntegration" AS t
-    SET "metadata" = jsonb_set(t."metadata", '{paymentFeeAccount}', to_jsonb(m.target))
+    SET "metadata" = jsonb_set(t."metadata"::jsonb, '{paymentFeeAccount}', to_jsonb(m.target::text))::json
     FROM ${m}
     WHERE t."metadata"->>'paymentFeeAccount' = m.source AND ${inCompanies}`.execute(
     trx
@@ -144,7 +148,7 @@ const applyAccountImport = defineServerFn({
   permissions: { update: "accounting" },
   async run(
     { db, companyId, userId },
-    { rows, resolutions }
+    { chart, defaults, resolutions }
   ): Promise<ApplyAccountImportResult> {
     return db.transaction().execute(async (trx) => {
       const company = await trx
@@ -157,21 +161,27 @@ const applyAccountImport = defineServerFn({
       }
       const groupId = company.companyGroupId;
 
-      // Nothing else may change the chart while the plan is applied.
+      // Nothing else may change the chart, or activate accounting, while the
+      // plan is applied.
       await sql`SELECT "id" FROM "account" WHERE "companyGroupId" = ${groupId} FOR UPDATE`.execute(
         trx
       );
+      await sql`SELECT cs."id" FROM "companySettings" cs
+        JOIN "company" c ON c."id" = cs."id"
+        WHERE c."companyGroupId" = ${groupId} FOR SHARE OF cs`.execute(trx);
 
       const ctx = await loadAccountImportContext(trx, groupId, companyId);
-      const plan = planAccountImport(rows, ctx, resolutions);
+      const plan = planAccountImport(chart, defaults, ctx, resolutions);
       if (!isApplicable(plan)) {
         logger.warn("Refused an account import that is not applicable", {
           companyId,
-          errors: plan.errors.length,
+          errors: plan.errors.map((e) => e.code),
           exceptions: plan.exceptions.length
         });
         throw new InvalidInputError(
-          `The import has ${plan.errors.length} error(s) and ${plan.exceptions.length} account(s) that need a target`
+          plan.errors.some((e) => e.code === "accounting-activated")
+            ? "Accounting is already set up, so the chart of accounts cannot be imported."
+            : `The import has ${plan.errors.length} error(s) and ${plan.exceptions.length} account(s) that need a target.`
         );
       }
 
@@ -187,27 +197,31 @@ const applyAccountImport = defineServerFn({
           .filter((a) => a.isGroup && a.isSystem && a.parentId === null)
           .map((r) => [r.incomeBalance, r.id])
       );
-      for (const group of plan.groupCreates) {
-        const incomeBalance = incomeBalanceOf(group.class);
-        const parentId = rootByBalance.get(incomeBalance);
-        if (!parentId) {
-          throw new InvalidInputError(`No ${incomeBalance} root account`);
-        }
-        const inserted = await trx
+      if (plan.groupCreates.length > 0) {
+        const created = await trx
           .insertInto("account")
-          .values({
-            name: group.name,
-            number: null,
-            isGroup: true,
-            class: group.class,
-            incomeBalance,
-            parentId,
-            companyGroupId: groupId,
-            createdBy: userId
-          })
-          .returning("id")
-          .executeTakeFirstOrThrow();
-        groupIdByName.set(key(group.name), inserted.id);
+          .values(
+            plan.groupCreates.map((g) => {
+              const incomeBalance = incomeBalanceOf(g.class);
+              const parentId = rootByBalance.get(incomeBalance);
+              if (!parentId) {
+                throw new InvalidInputError(`No ${incomeBalance} root account`);
+              }
+              return {
+                name: g.name,
+                number: null,
+                isGroup: true,
+                class: g.class,
+                incomeBalance,
+                parentId,
+                companyGroupId: groupId,
+                createdBy: userId
+              };
+            })
+          )
+          .returning(["id", "name"])
+          .execute();
+        for (const g of created) groupIdByName.set(key(g.name), g.id);
       }
       const groupIdOf = (name: string) => {
         const id = groupIdByName.get(key(name));
@@ -215,28 +229,28 @@ const applyAccountImport = defineServerFn({
         return id;
       };
 
-      // Free the numbers and names that are about to change or go: renamed
-      // accounts may swap, and a deleted account's number may be reused.
-      const freed = [
-        ...plan.renames.map((r) => r.accountId),
-        ...plan.retires
-          .filter((r) => r.mode === "delete")
-          .map((r) => r.accountId)
-      ];
+      // Free every number and name that changes or goes: two accounts may
+      // swap, and a created account may reuse a deleted one's number.
+      const freed = [...plan.updates.map((u) => u.accountId), ...plan.deletes];
       if (freed.length > 0) {
-        await sql`UPDATE "account"
-          SET "number" = '__import_' || "id", "name" = '__import_' || "id"
-          WHERE "id" IN (${sql.join(freed)}) AND "companyGroupId" = ${groupId}`.execute(
-          trx
-        );
+        await trx
+          .updateTable("account")
+          .set({
+            number: sql`'__import_' || "id"`,
+            name: sql`'__import_' || "id"`
+          })
+          .where("id", "in", freed)
+          .where("companyGroupId", "=", groupId)
+          .execute();
       }
 
-      // Renames.
-      if (plan.renames.length > 0) {
+      // Updates: the account keeps its id, so everything that points at it
+      // follows.
+      if (plan.updates.length > 0) {
         const values = sql.join(
-          plan.renames.map(
-            (r) =>
-              sql`(${r.accountId}, ${r.number}, ${r.name}, ${r.accountType}, ${r.class}, ${incomeBalanceOf(r.class)}, ${groupIdOf(r.group)}, ${r.reactivate})`
+          plan.updates.map(
+            (u) =>
+              sql`(${u.accountId}, ${u.number}, ${u.name}, ${u.accountType}, ${u.class}, ${incomeBalanceOf(u.class)}, ${groupIdOf(u.group)})`
           )
         );
         await sql`UPDATE "account" AS a SET
@@ -246,10 +260,10 @@ const applyAccountImport = defineServerFn({
             "class" = v.class::"glAccountClass",
             "incomeBalance" = v."incomeBalance"::"glIncomeBalance",
             "parentId" = v."parentId",
-            "active" = CASE WHEN v.reactivate THEN true ELSE a."active" END,
+            "active" = true,
             "updatedBy" = ${userId},
             "updatedAt" = ${now}
-          FROM (VALUES ${values}) AS v(id, number, name, "accountType", class, "incomeBalance", "parentId", reactivate)
+          FROM (VALUES ${values}) AS v(id, number, name, "accountType", class, "incomeBalance", "parentId")
           WHERE a."id" = v.id AND a."companyGroupId" = ${groupId}`.execute(trx);
       }
 
@@ -286,28 +300,15 @@ const applyAccountImport = defineServerFn({
         return id;
       };
 
-      // Merges: re-point every movable reference.
-      const pairs = plan.merges.map((m) => ({
-        source: m.sourceId,
-        target: accountOfLine(m.targetLine)
-      }));
-      if (pairs.length > 0) {
-        await repointReferences(trx, pairs, companyIds);
-      }
-
-      // Default roles, one statement per company of the group.
-      const movesByCompany = new Map<string, AccountImportPlan["roleMoves"]>();
+      // Defaults, one statement per company of the group.
+      const movesByCompany = new Map<string, Record<string, string | null>>();
       for (const move of plan.roleMoves) {
-        const list = movesByCompany.get(move.companyId) ?? [];
-        list.push(move);
-        movesByCompany.set(move.companyId, list);
+        const set = movesByCompany.get(move.companyId) ?? {};
+        set[move.role satisfies AccountDefaultColumn] =
+          move.toLine === null ? null : accountOfLine(move.toLine);
+        movesByCompany.set(move.companyId, set);
       }
-      for (const [moveCompanyId, moves] of movesByCompany) {
-        const set: Record<string, string | null> = {};
-        for (const move of moves) {
-          set[move.role] =
-            move.toLine === null ? null : accountOfLine(move.toLine);
-        }
+      for (const [moveCompanyId, set] of movesByCompany) {
         await trx
           .updateTable("accountDefault")
           .set({
@@ -318,104 +319,47 @@ const applyAccountImport = defineServerFn({
           .execute();
       }
 
-      // Reclass journals, one per company with a posted balance to move.
-      const reclassJournalIds: string[] = [];
-      const reclassesByCompany = new Map<
+      // Fixed asset class accounts, one statement per class.
+      const classSets = new Map<
         string,
-        AccountImportPlan["reclasses"]
+        { companyId: string; set: Record<string, string> }
       >();
-      for (const reclass of plan.reclasses) {
-        const list = reclassesByCompany.get(reclass.companyId) ?? [];
-        list.push(reclass);
-        reclassesByCompany.set(reclass.companyId, list);
+      for (const move of plan.assetClassMoves) {
+        const entry = classSets.get(move.classId) ?? {
+          companyId: move.companyId,
+          set: {}
+        };
+        entry.set[move.column] = accountOfLine(move.toLine);
+        classSets.set(move.classId, entry);
       }
-      const numberOf = new Map(
-        ctx.chart.map((a) => [a.id, a.number ?? a.name])
-      );
-      for (const [reclassCompanyId, reclasses] of reclassesByCompany) {
-        const today = datetime
-          .today(await getCompanyTimeZone(trx, reclassCompanyId))
-          .toString();
-        const period = await resolveAccountingPeriod(
-          trx,
-          reclassCompanyId,
-          today,
-          "current"
-        );
-        const journal = await trx
-          .insertInto("journal")
-          .values({
-            journalEntryId: await getNextSequence(
-              trx,
-              "journalEntry",
-              reclassCompanyId
-            ),
-            accountingPeriodId: period.id,
-            description: RECLASS_DESCRIPTION,
-            postingDate: period.postingDate,
-            sourceType: "Manual",
-            status: "Posted",
-            postedAt: now,
-            postedBy: userId,
-            companyId: reclassCompanyId,
-            createdBy: userId
-          })
-          .returning("id")
-          .executeTakeFirstOrThrow();
+      for (const [classId, { companyId: classCompanyId, set }] of classSets) {
         await trx
-          .insertInto("journalLine")
-          .values(
-            reclasses.flatMap((r) => {
-              const target = accountOfLine(r.targetLine);
-              const description = `${RECLASS_DESCRIPTION}: ${numberOf.get(r.sourceId)} → ${
-                rows.find((row) => row.line === r.targetLine)?.number ?? ""
-              }`;
-              // Both accounts share a class, so the stored amount moves as is.
-              return [
-                {
-                  journalId: journal.id,
-                  accountId: r.sourceId,
-                  amount: -r.amount,
-                  description,
-                  journalLineReference: nanoid(),
-                  companyId: reclassCompanyId,
-                  createdBy: userId
-                },
-                {
-                  journalId: journal.id,
-                  accountId: target,
-                  amount: r.amount,
-                  description,
-                  journalLineReference: nanoid(),
-                  companyId: reclassCompanyId,
-                  createdBy: userId
-                }
-              ];
-            })
-          )
+          .updateTable("fixedAssetClass")
+          .set({
+            ...(set as Updateable<KyselyDatabase["fixedAssetClass"]>),
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "=", classId)
+          .where("companyId", "=", classCompanyId)
           .execute();
-        reclassJournalIds.push(journal.id);
       }
 
-      // Retires.
-      const deleteIds = plan.retires
-        .filter((r) => r.mode === "delete")
-        .map((r) => r.accountId);
-      const deactivateIds = plan.retires
-        .filter((r) => r.mode === "deactivate")
-        .map((r) => r.accountId);
-      if (deleteIds.length > 0) {
+      // Merges: Draft and Provisional records follow the source to its target.
+      const pairs = plan.merges.map((m) => ({
+        source: m.sourceId,
+        target: accountOfLine(m.targetLine)
+      }));
+      if (pairs.length > 0) {
+        await repointReferences(trx, pairs, companyIds);
+      }
+
+      // Deletes. Journal and document lines refuse it (ON DELETE RESTRICT)
+      // if anything still points at an account.
+      if (plan.deletes.length > 0) {
         await trx
           .deleteFrom("account")
-          .where("id", "in", deleteIds)
-          .where("companyGroupId", "=", groupId)
-          .execute();
-      }
-      if (deactivateIds.length > 0) {
-        await trx
-          .updateTable("account")
-          .set({ active: false, updatedBy: userId, updatedAt: now })
-          .where("id", "in", deactivateIds)
+          .where("id", "in", plan.deletes)
           .where("companyGroupId", "=", groupId)
           .execute();
       }
@@ -429,50 +373,48 @@ const applyAccountImport = defineServerFn({
         if (removed.rows.length === 0) break;
       }
 
-      await assertPostcondition(trx, groupId, companyIds, rows, ctx);
+      await assertPostcondition(trx, groupId, companyIds, chart);
 
       return {
         counts: {
-          renamed: plan.renames.length,
-          reactivated: plan.renames.filter((r) => r.reactivate).length,
+          updated: plan.updates.length,
           created: plan.creates.length,
           merged: plan.merges.length,
-          deleted: deleteIds.length,
-          deactivated: deactivateIds.length
-        },
-        reclassJournalIds
+          deleted: plan.deletes.length
+        }
       };
     });
   }
 });
 
-/** The chart now equals the sheet, and every company can still post. */
+/** The chart now equals the file, and every company can still post. */
 async function assertPostcondition(
   trx: Trx,
   groupId: string,
   companyIds: string[],
-  rows: { number: string; name: string }[],
-  before: AccountImportContext
+  chart: { number: string; name: string }[]
 ) {
-  const active = await trx
+  const leaves = await trx
     .selectFrom("account")
-    .select(["id", "number", "name", "class"])
+    .select(["id", "number", "name", "class", "active"])
     .where("companyGroupId", "=", groupId)
     .where("isGroup", "=", false)
-    .where("active", "=", true)
+    .where("isSystem", "=", false)
     .execute();
-  const sheetNumbers = new Set(rows.map((r) => r.number.trim()));
-  const chartNumbers = new Set(active.map((a) => a.number ?? ""));
-  const missing = [...sheetNumbers].filter((n) => !chartNumbers.has(n));
-  const extra = [...chartNumbers].filter((n) => !sheetNumbers.has(n));
+  const expected = new Set(
+    chart.map((r) => `${r.number.trim()}|${r.name.trim()}`)
+  );
+  const actual = new Set(leaves.map((a) => `${a.number ?? ""}|${a.name}`));
+  const missing = [...expected].filter((k) => !actual.has(k));
+  const extra = [...actual].filter((k) => !expected.has(k));
   if (missing.length > 0 || extra.length > 0) {
     throw new InvalidInputError(
-      "The chart does not match the sheet after the import",
+      "The chart does not match the file after the import",
       { missing, extra }
     );
   }
 
-  const activeById = new Map(active.map((a) => [a.id, a]));
+  const byId = new Map(leaves.map((a) => [a.id, a]));
   const defaults = await trx
     .selectFrom("accountDefault")
     .selectAll()
@@ -480,20 +422,32 @@ async function assertPostcondition(
     .execute();
   for (const row of defaults) {
     for (const role of requiredRoles()) {
-      // A role that was empty before the import is readiness's to report.
-      if (!before.defaultsByCompany[row.companyId]?.[role]) continue;
       const accountId = row[role] as string | null;
-      if (!accountId || !activeById.has(accountId)) {
+      if (!accountId || !byId.has(accountId)) {
         throw new InvalidInputError(
-          `The import would leave the default "${role}" without an active account`
+          `The import would leave the default "${role}" without an account`
         );
       }
     }
-    const clearing = activeById.get(row.migrationClearingAccount ?? "");
+    const clearing = byId.get(row.migrationClearingAccount ?? "");
     if (clearing && clearing.class !== "Equity") {
       throw new InvalidInputError(
         "Migration Clearing must be an Equity account"
       );
+    }
+  }
+  const classes = await trx
+    .selectFrom("fixedAssetClass")
+    .select(["name", ...FIXED_ASSET_CLASS_COLUMNS])
+    .where("companyId", "in", companyIds)
+    .execute();
+  for (const fac of classes) {
+    for (const column of FIXED_ASSET_CLASS_COLUMNS) {
+      if (!byId.has(fac[column] as string)) {
+        throw new InvalidInputError(
+          `The import would leave fixed asset class "${fac.name}" without an account`
+        );
+      }
     }
   }
 }

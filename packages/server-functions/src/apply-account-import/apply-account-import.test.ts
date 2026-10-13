@@ -2,13 +2,17 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The chart of accounts import against a real database: re-pointing,
-// reclasses, the RESTRICT delete guard, and that REFERENCE_POLICY classifies
-// every foreign key to `account`. Skips without a local database.
+// The chart of accounts import against a real database: updates in place,
+// merges of Provisional records, deletes, the refusal after activation, and
+// that REFERENCE_POLICY classifies every foreign key to `account`. Skips
+// without a local database.
 
 import {
   ACCOUNT_DEFAULT_COLUMNS,
-  type AccountImportRow,
+  assetClassKey,
+  type ChartImportRow,
+  type DefaultImportRow,
+  FIXED_ASSET_CLASS_COLUMNS,
   REFERENCE_POLICY
 } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
@@ -23,71 +27,27 @@ import applyAccountImport from ".";
 
 const USER = "system";
 
-type Leaf = {
-  number: string;
-  name: string;
-  class: "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
-  accountType: string;
-  group: "assets" | "equity" | "revenue";
-};
+const LEAVES = [
+  ["1010", "Cash", "Asset", "Bank", "assets"],
+  ["1110", "Receivables", "Asset", "Accounts Receivable", "assets"],
+  ["1900", "Petty Cash", "Asset", "Cash", "assets"],
+  ["3400", "Migration Clearing", "Equity", "Equity - No Close", "equity"],
+  ["3900", "Retained Earnings", "Equity", "Retained Earnings", "equity"],
+  ["4010", "Sales", "Revenue", "Income", "revenue"],
+  ["4050", "Shipping Revenue", "Revenue", "Income", "revenue"]
+] as const;
 
-const LEAVES: Leaf[] = [
-  {
-    number: "1010",
-    name: "Cash",
-    class: "Asset",
-    accountType: "Bank",
-    group: "assets"
-  },
-  {
-    number: "1110",
-    name: "Receivables",
-    class: "Asset",
-    accountType: "Accounts Receivable",
-    group: "assets"
-  },
-  {
-    number: "3400",
-    name: "Migration Clearing",
-    class: "Equity",
-    accountType: "Equity - No Close",
-    group: "equity"
-  },
-  {
-    number: "3900",
-    name: "Retained Earnings",
-    class: "Equity",
-    accountType: "Retained Earnings",
-    group: "equity"
-  },
-  {
-    number: "4010",
-    name: "Sales",
-    class: "Revenue",
-    accountType: "Income",
-    group: "revenue"
-  },
-  {
-    number: "4050",
-    name: "Shipping Revenue",
-    class: "Revenue",
-    accountType: "Income",
-    group: "revenue"
-  }
-];
-
-const GROUP_NAMES = {
-  assets: "Current Assets",
-  equity: "Equity",
-  revenue: "Revenue"
+const GROUPS = {
+  assets: ["Current Assets", "Asset", "Balance Sheet", "bs"],
+  equity: ["Equity", "Equity", "Balance Sheet", "bs"],
+  revenue: ["Revenue", "Revenue", "Income Statement", "is"]
 } as const;
 
-async function fixture() {
+async function fixture({ cutover = false } = {}) {
   const db = await connectLocalTestDatabase();
   const prefix = `coa-${crypto.randomUUID().replaceAll("-", "").slice(0, 12)}`;
   const groupId = `${prefix}-group`;
-  const provisionalId = `${prefix}-provisional`;
-  const liveId = `${prefix}-live`;
+  const companies = [`${prefix}-one`, `${prefix}-two`];
   const account = (number: string) => `${prefix}-${number}`;
 
   await db.transaction().execute(async (trx) => {
@@ -96,10 +56,7 @@ async function fixture() {
       .insertInto("companyGroup")
       .values({ id: groupId, name: prefix, createdBy: USER })
       .execute();
-    for (const [id, cutover] of [
-      [provisionalId, null],
-      [liveId, "2000-01-01"]
-    ] as const) {
+    for (const [i, id] of companies.entries()) {
       await trx
         .insertInto("company")
         .values({
@@ -117,31 +74,10 @@ async function fixture() {
         .execute();
       await trx
         .updateTable("companySettings")
-        .set({ accountingCutoverDate: cutover })
+        .set({
+          accountingCutoverDate: cutover && i === 1 ? "2000-01-01" : null
+        })
         .where("id", "=", id)
-        .execute();
-      await trx
-        .insertInto("sequence")
-        .values({
-          table: "journalEntry",
-          name: "Journals",
-          prefix: "COA-",
-          companyId: id
-        })
-        .execute();
-      await trx
-        .insertInto("accountingPeriod")
-        .values({
-          id: `${id}-period`,
-          startDate: "2000-01-01",
-          endDate: "2099-12-31",
-          fiscalYear: 2099,
-          periodNumber: 1,
-          status: "Active",
-          closeStatus: "Open",
-          companyId: id,
-          createdBy: USER
-        })
         .execute();
     }
     await trx
@@ -170,21 +106,13 @@ async function fixture() {
     await trx
       .insertInto("account")
       .values(
-        (Object.keys(GROUP_NAMES) as (keyof typeof GROUP_NAMES)[]).map((g) => ({
-          id: `${prefix}-${g}`,
-          name: GROUP_NAMES[g],
+        Object.entries(GROUPS).map(([k, [name, cls, incomeBalance, root]]) => ({
+          id: `${prefix}-${k}`,
+          name,
           isGroup: true,
-          class:
-            g === "assets"
-              ? ("Asset" as const)
-              : g === "equity"
-                ? ("Equity" as const)
-                : ("Revenue" as const),
-          incomeBalance:
-            g === "revenue"
-              ? ("Income Statement" as const)
-              : ("Balance Sheet" as const),
-          parentId: g === "revenue" ? `${prefix}-is` : `${prefix}-bs`,
+          class: cls,
+          incomeBalance,
+          parentId: `${prefix}-${root}`,
           companyGroupId: groupId,
           createdBy: USER
         }))
@@ -193,23 +121,23 @@ async function fixture() {
     await trx
       .insertInto("account")
       .values(
-        LEAVES.map((l) => ({
-          id: account(l.number),
-          number: l.number,
-          name: l.name,
-          class: l.class,
-          accountType: l.accountType as never,
+        LEAVES.map(([number, name, cls, type, group]) => ({
+          id: account(number),
+          number,
+          name,
+          class: cls,
+          accountType: type,
           incomeBalance:
-            l.class === "Revenue" || l.class === "Expense"
+            cls === "Revenue"
               ? ("Income Statement" as const)
               : ("Balance Sheet" as const),
-          parentId: `${prefix}-${l.group}`,
+          parentId: `${prefix}-${group}`,
           companyGroupId: groupId,
           createdBy: USER
         }))
       )
       .execute();
-    for (const companyId of [provisionalId, liveId]) {
+    for (const companyId of companies) {
       await trx
         .insertInto("accountDefault")
         .values({
@@ -225,41 +153,40 @@ async function fixture() {
         } as unknown as Insertable<KyselyDatabase["accountDefault"]>)
         .execute();
     }
+    await trx
+      .insertInto("fixedAssetClass")
+      .values({
+        id: `${prefix}-buildings`,
+        name: "Buildings",
+        depreciationMethod: "Straight Line",
+        usefulLifeMonths: 120,
+        residualValuePercent: 0,
+        ...Object.fromEntries(
+          FIXED_ASSET_CLASS_COLUMNS.map((column) => [column, account("1010")])
+        ),
+        companyId: companies[0]!,
+        createdBy: USER
+      } as unknown as Insertable<KyselyDatabase["fixedAssetClass"]>)
+      .execute();
   });
 
-  const ctx = (companyId: string) =>
-    ServerFnContext.system({ db, companyId, userId: USER });
+  const ctx = ServerFnContext.system({
+    db,
+    companyId: companies[0]!,
+    userId: USER
+  });
 
-  /** One row per leaf, naming itself. */
-  const template = (): AccountImportRow[] =>
-    LEAVES.map((l, i) => ({
-      line: i + 2,
-      number: l.number,
-      name: l.name,
-      class: l.class,
-      accountType: l.accountType,
-      group: GROUP_NAMES[l.group],
-      carbonAccounts: [l.number]
-    }));
-
-  async function journal(
-    companyId: string,
-    status: "Provisional" | "Posted" | "Superseded",
-    accountId: string,
-    amount: number
-  ) {
+  async function provisionalLine(accountId: string, amount: number) {
     await db.transaction().execute(async (trx) => {
       await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       const j = await trx
         .insertInto("journal")
         .values({
           journalEntryId: `${prefix}-${crypto.randomUUID().slice(0, 8)}`,
-          companyId,
-          status,
+          companyId: companies[0]!,
+          status: "Provisional",
           sourceType: "Manual",
           postingDate: "2026-01-15",
-          accountingPeriodId:
-            status === "Posted" ? `${companyId}-period` : null,
           createdBy: USER
         })
         .returning("id")
@@ -272,7 +199,7 @@ async function fixture() {
             accountId,
             amount,
             journalLineReference: crypto.randomUUID(),
-            companyId,
+            companyId: companies[0]!,
             createdBy: USER
           },
           {
@@ -280,7 +207,7 @@ async function fixture() {
             accountId: account("1010"),
             amount: -amount,
             journalLineReference: crypto.randomUUID(),
-            companyId,
+            companyId: companies[0]!,
             createdBy: USER
           }
         ])
@@ -291,48 +218,81 @@ async function fixture() {
   async function cleanup() {
     await db.transaction().execute(async (trx) => {
       await sql`SET LOCAL session_replication_role = replica`.execute(trx);
-      for (const companyId of [provisionalId, liveId]) {
-        await trx
-          .deleteFrom("journalLine")
-          .where("companyId", "=", companyId)
-          .execute();
-        await trx
-          .deleteFrom("journal")
-          .where("companyId", "=", companyId)
-          .execute();
-      }
+      await trx
+        .deleteFrom("journalLine")
+        .where("companyId", "in", companies)
+        .execute();
+      await trx
+        .deleteFrom("journal")
+        .where("companyId", "in", companies)
+        .execute();
+      await trx
+        .deleteFrom("fixedAssetClass")
+        .where("companyId", "in", companies)
+        .execute();
       await trx
         .deleteFrom("accountDefault")
-        .where("companyId", "in", [provisionalId, liveId])
+        .where("companyId", "in", companies)
         .execute();
       await trx
         .deleteFrom("account")
         .where("companyGroupId", "=", groupId)
         .execute();
-      await trx
-        .deleteFrom("company")
-        .where("id", "in", [provisionalId, liveId])
-        .execute();
+      await trx.deleteFrom("company").where("id", "in", companies).execute();
       await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();
     });
     await db.destroy();
   }
 
-  return {
-    db,
-    prefix,
-    groupId,
-    provisionalId,
-    liveId,
-    account,
-    ctx,
-    template,
-    journal,
-    cleanup
-  };
+  return { db, companies, account, ctx, provisionalLine, cleanup };
 }
 
 type Fixture = Awaited<ReturnType<typeof fixture>>;
+
+/** The customer's chart. */
+function customerChart(
+  rows: [string, string, ChartImportRow["class"], string][] = [
+    ["10000", "Checking", "Asset", "Current Assets"],
+    ["11000", "Accounts Receivable", "Asset", "Current Assets"],
+    ["30000", "Opening Balance Equity", "Equity", "Equity"],
+    ["39000", "Retained Earnings", "Equity", "Equity"],
+    ["40000", "Product Sales", "Revenue", "Revenue"],
+    ["40500", "Freight", "Revenue", "Revenue"]
+  ]
+): ChartImportRow[] {
+  return rows.map(([number, name, cls, group], i) => ({
+    line: i + 2,
+    number,
+    name,
+    class: cls,
+    accountType: null,
+    group
+  }));
+}
+
+/** Every default and class account; unnamed ones go to `fallback`. */
+function defaultsFile(
+  numbers: Record<string, string>,
+  fallback: string
+): DefaultImportRow[] {
+  const keys = [
+    ...ACCOUNT_DEFAULT_COLUMNS,
+    ...FIXED_ASSET_CLASS_COLUMNS.map((c) => assetClassKey("Buildings", c))
+  ];
+  return keys.map((key, i) => ({
+    line: i + 2,
+    key,
+    number: numbers[key] ?? fallback
+  }));
+}
+
+const STANDARD = {
+  receivablesAccount: "11000",
+  migrationClearingAccount: "30000",
+  retainedEarningsAccount: "39000",
+  salesAccount: "40000",
+  salesShippingRevenueAccount: "40500"
+};
 
 async function accountRow(db: Kysely<KyselyDatabase>, id: string) {
   return db
@@ -349,141 +309,147 @@ describe("apply-account-import", () => {
     f = undefined;
   });
 
-  databaseTest("renames and swaps numbers in place", async () => {
+  databaseTest(
+    "updates the accounts behind the defaults and deletes the rest",
+    async () => {
+      f = await fixture();
+      const result = await applyAccountImport(f.ctx, {
+        chart: customerChart(),
+        defaults: defaultsFile(STANDARD, "10000"),
+        resolutions: { targets: {} }
+      });
+      expect(result.error).toBeNull();
+      expect(await accountRow(f.db, f.account("1010"))).toMatchObject({
+        number: "10000",
+        name: "Checking"
+      });
+      expect(await accountRow(f.db, f.account("4050"))).toMatchObject({
+        number: "40500",
+        name: "Freight"
+      });
+      expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
+      const defaults = await f.db
+        .selectFrom("accountDefault")
+        .select(["companyId", "receivablesAccount"])
+        .where("companyId", "in", f.companies)
+        .execute();
+      expect(defaults.map((d) => d.receivablesAccount)).toEqual([
+        f.account("1110"),
+        f.account("1110")
+      ]);
+    }
+  );
+
+  databaseTest("two accounts may swap numbers", async () => {
     f = await fixture();
-    const rows = f
-      .template()
-      .map((r) =>
-        r.number === "1010"
-          ? { ...r, number: "1110" }
-          : r.number === "1110"
-            ? { ...r, number: "1010" }
-            : r
-      );
-    const result = await applyAccountImport(f.ctx(f.provisionalId), {
-      rows,
+    const chart = customerChart([
+      ["1110", "Cash", "Asset", "Current Assets"],
+      ["1010", "Receivables", "Asset", "Current Assets"],
+      ["3400", "Migration Clearing", "Equity", "Equity"],
+      ["3900", "Retained Earnings", "Equity", "Equity"],
+      ["4010", "Sales", "Revenue", "Revenue"],
+      ["4050", "Shipping Revenue", "Revenue", "Revenue"]
+    ]);
+    const result = await applyAccountImport(f.ctx, {
+      chart,
+      defaults: defaultsFile(
+        {
+          receivablesAccount: "1010",
+          migrationClearingAccount: "3400",
+          retainedEarningsAccount: "3900",
+          salesAccount: "4010",
+          salesShippingRevenueAccount: "4050"
+        },
+        "1110"
+      ),
       resolutions: { targets: {} }
     });
     expect(result.error).toBeNull();
     expect((await accountRow(f.db, f.account("1010")))?.number).toBe("1110");
     expect((await accountRow(f.db, f.account("1110")))?.number).toBe("1010");
-    const defaults = await f.db
-      .selectFrom("accountDefault")
-      .select("receivablesAccount")
-      .where("companyId", "=", f.provisionalId)
-      .executeTakeFirstOrThrow();
-    expect(defaults.receivablesAccount).toBe(f.account("1110"));
   });
 
   databaseTest(
     "a merge moves Provisional lines and deletes the source",
     async () => {
       f = await fixture();
-      await f.journal(f.provisionalId, "Provisional", f.account("4050"), 25);
-      const rows = f
-        .template()
-        .filter((r) => r.number !== "4050")
-        .map((r) =>
-          r.number === "4010" ? { ...r, carbonAccounts: ["4010", "4050"] } : r
-        );
-      const result = await applyAccountImport(f.ctx(f.provisionalId), {
-        rows,
+      await f.provisionalLine(f.account("4050"), 25);
+      const chart = customerChart().filter((r) => r.number !== "40500");
+      const result = await applyAccountImport(f.ctx, {
+        chart,
+        defaults: defaultsFile(
+          { ...STANDARD, salesShippingRevenueAccount: "40000" },
+          "10000"
+        ),
         resolutions: { targets: {} }
       });
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("4050"))).toBeUndefined();
-      const onTarget = await f.db
+      const lines = await f.db
         .selectFrom("journalLine")
         .select("amount")
         .where("accountId", "=", f.account("4010"))
-        .where("companyId", "=", f.provisionalId)
         .execute();
-      expect(onTarget.map((l) => Number(l.amount))).toEqual([25]);
+      expect(lines.map((l) => Number(l.amount))).toEqual([25]);
     }
   );
 
   databaseTest(
-    "a removed row with Provisional lines merges into its picked target",
+    "an account still in use needs a target, then merges into it",
     async () => {
       f = await fixture();
-      await f.journal(f.provisionalId, "Provisional", f.account("4050"), 25);
-      const rows = f.template().filter((r) => r.number !== "4050");
-      const salesLine = rows.find((r) => r.number === "4010")!.line;
-      const refused = await applyAccountImport(f.ctx(f.provisionalId), {
-        rows,
-        resolutions: { targets: {} }
-      });
+      await f.provisionalLine(f.account("1900"), 10);
+      const chart = customerChart();
+      const input = {
+        chart,
+        defaults: defaultsFile(STANDARD, "10000"),
+        resolutions: { targets: {} as Record<string, number> }
+      };
+      const refused = await applyAccountImport(f.ctx, input);
       expect(refused.error).not.toBeNull();
-      const result = await applyAccountImport(f.ctx(f.provisionalId), {
-        rows,
-        resolutions: { targets: { [f.account("4050")]: salesLine } }
-      });
+      expect(await accountRow(f.db, f.account("1900"))).toBeDefined();
+
+      input.resolutions.targets[f.account("1900")] = chart[0]!.line;
+      const result = await applyAccountImport(f.ctx, input);
       expect(result.error).toBeNull();
-      expect(await accountRow(f.db, f.account("4050"))).toBeUndefined();
+      expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
     }
   );
 
-  databaseTest(
-    "a Posted balance is reclassed and the source deactivated",
-    async () => {
-      f = await fixture();
-      await f.journal(f.liveId, "Posted", f.account("4050"), 40);
-      const rows = f
-        .template()
-        .filter((r) => r.number !== "4050")
-        .map((r) =>
-          r.number === "4010" ? { ...r, carbonAccounts: ["4010", "4050"] } : r
-        );
-      const result = await applyAccountImport(f.ctx(f.liveId), {
-        rows,
-        resolutions: { targets: {} }
-      });
-      expect(result.error).toBeNull();
-      expect(result.data?.reclassJournalIds).toHaveLength(1);
-      expect((await accountRow(f.db, f.account("4050")))?.active).toBe(false);
-      const balance = await f.db
-        .selectFrom("journalLine")
-        .innerJoin("journal", "journal.id", "journalLine.journalId")
-        .select(sql<number>`SUM("journalLine"."amount")`.as("amount"))
-        .where("journalLine.accountId", "=", f.account("4050"))
-        .where("journal.status", "=", "Posted")
-        .executeTakeFirstOrThrow();
-      expect(Number(balance.amount)).toBe(0);
-    }
-  );
+  databaseTest("sets the fixed asset class accounts", async () => {
+    f = await fixture();
+    const result = await applyAccountImport(f.ctx, {
+      chart: customerChart(),
+      defaults: defaultsFile(
+        {
+          ...STANDARD,
+          [assetClassKey("Buildings", "assetAccountId")]: "11000"
+        },
+        "10000"
+      ),
+      resolutions: { targets: {} }
+    });
+    expect(result.error).toBeNull();
+    const fac = await f.db
+      .selectFrom("fixedAssetClass")
+      .select(["assetAccountId", "writeOffAccountId"])
+      .where("companyId", "=", f.companies[0]!)
+      .executeTakeFirstOrThrow();
+    expect(fac.assetAccountId).toBe(f.account("1110"));
+    expect(fac.writeOffAccountId).toBe(f.account("1010"));
+  });
 
   databaseTest(
-    "Superseded lines deactivate the source with no reclass",
+    "refuses once a company of the group has activated accounting",
     async () => {
-      f = await fixture();
-      await f.journal(f.liveId, "Superseded", f.account("4050"), 40);
-      const rows = f
-        .template()
-        .filter((r) => r.number !== "4050")
-        .map((r) =>
-          r.number === "4010" ? { ...r, carbonAccounts: ["4010", "4050"] } : r
-        );
-      const result = await applyAccountImport(f.ctx(f.liveId), {
-        rows,
+      f = await fixture({ cutover: true });
+      const result = await applyAccountImport(f.ctx, {
+        chart: customerChart(),
+        defaults: defaultsFile(STANDARD, "10000"),
         resolutions: { targets: {} }
       });
-      expect(result.error).toBeNull();
-      expect(result.data?.reclassJournalIds).toEqual([]);
-      expect((await accountRow(f.db, f.account("4050")))?.active).toBe(false);
-    }
-  );
-
-  databaseTest(
-    "a required role left without a target changes nothing",
-    async () => {
-      f = await fixture();
-      const rows = f.template().filter((r) => r.number !== "4050");
-      const result = await applyAccountImport(f.ctx(f.provisionalId), {
-        rows,
-        resolutions: { targets: {} }
-      });
-      expect(result.error).not.toBeNull();
-      expect((await accountRow(f.db, f.account("4050")))?.active).toBe(true);
+      expect(result.error?.message).toContain("Accounting is already set up");
+      expect((await accountRow(f.db, f.account("1010")))?.number).toBe("1010");
     }
   );
 
@@ -507,6 +473,7 @@ describe("apply-account-import", () => {
           (ref) =>
             !classified.has(ref) &&
             !ref.startsWith("accountDefault.") &&
+            !ref.startsWith("fixedAssetClass.") &&
             ref !== "account.parentId"
         );
       expect(unclassified).toEqual([]);
