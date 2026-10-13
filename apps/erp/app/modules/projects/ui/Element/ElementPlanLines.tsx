@@ -56,11 +56,7 @@ import {
   Supplier
 } from "~/components/Form";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
-import {
-  rowMenuColumn,
-  setupGridHeight,
-  useCellSave
-} from "~/components/Setup";
+import { rowMenuColumn, useCellSave } from "~/components/Setup";
 import {
   useCurrencyDecimals,
   useCurrencyFormatter,
@@ -650,11 +646,9 @@ export function ElementPlanLines({
   return (
     <div className="flex w-full flex-col gap-2">
       {rows.length > 0 && (
-        <div
-          className="w-full overflow-hidden rounded-lg border border-border"
-          style={{ height: setupGridHeight(rows.length, 49) - 44 }}
-        >
+        <div className="w-full overflow-hidden rounded-lg border border-border">
           <Table<PlanRow>
+            autoHeight
             compact
             columns={gridColumns}
             data={rows}

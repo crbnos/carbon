@@ -176,6 +176,11 @@ interface TableProps<T extends object> {
   mobileLayout?: "list" | "table";
   /** Phones: extra items first in the list toolbar ⋯ (e.g. Recalculate). */
   mobileMenuItems?: ReactNode;
+  // The table is as tall as its rows, for a short grid inside a page that
+  // scrolls: no inner scroll, no fixed-height parent, and no footer row
+  // unless a column has a total or a footer. By default the container is
+  // `contain: strict` and takes its height from its parent.
+  autoHeight?: boolean;
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -328,7 +333,8 @@ const Table = <T extends object>({
   canExpandRow,
   groupRowsBy,
   mobileLayout = "list",
-  mobileMenuItems
+  mobileMenuItems,
+  autoHeight = false
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -904,6 +910,10 @@ const Table = <T extends object>({
 
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
+  // A footer row has something to show: a column total or a column footer.
+  const hasFooter = visibleColumns.some(
+    (column) => column.columnDef.meta?.renderTotal || column.columnDef.footer
+  );
 
   // Row id → the rows of the group that row starts (only group starts appear).
   const groupStarts = useMemo(() => {
@@ -1196,7 +1206,7 @@ const Table = <T extends object>({
       key={view ?? tableName ?? ""}
       spacing={0}
       className={cn(
-        "h-full bg-card",
+        autoHeight ? "bg-card" : "h-full bg-card",
         !compact && "flex flex-col w-full px-0 md:px-4 lg:px-6",
         // Phones (grid mode): the toolbar spans the full width.
         "max-md:items-stretch"
@@ -1264,13 +1274,16 @@ const Table = <T extends object>({
       <div
         id="table-container"
         className={cn(
-          "w-full h-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          "w-full overflow-x-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+          !autoHeight && "h-full",
           // Phones, grids kept as grids: sideways scroll with an
           // edge fade, 16pt inset, and a sticky first column of at most 150pt.
           mobileLayout === "table" &&
             "max-md:scroll-fade-x max-md:px-4 max-md:[&_tr>*:first-child]:sticky max-md:[&_tr>*:first-child]:left-0 max-md:[&_tr>*:first-child]:z-10 max-md:[&_tr>*:first-child]:max-w-[150px] max-md:[&_tr>*:first-child]:bg-card"
         )}
-        style={{ contain: "strict" }}
+        // Auto height drops size containment on the block axis only, so a
+        // wide grid still scrolls sideways inside its own width.
+        style={{ contain: autoHeight ? "inline-size" : "strict" }}
         ref={tableContainerRef}
         onKeyDownCapture={editMode ? onKeyDown : undefined}
       >
@@ -1588,58 +1601,59 @@ const Table = <T extends object>({
                     </Fragment>
                   );
                 })}
-                {table.getFooterGroups().map((footerGroup) => (
-                  <Tr key={footerGroup.id} className="h-10">
-                    {footerGroup.headers.map((footer) => {
-                      const aggregateFn =
-                        columnAggregates[footer.column.id] ?? "sum";
-                      const total = aggregateForCol(
-                        table,
-                        footer.column.id,
-                        aggregateFn
-                      );
-                      return (
-                        <Th
-                          key={footer.id}
-                          colSpan={footer.colSpan}
-                          id={`header-${footer.id}`}
-                          className={cn(
-                            "px-4 py-3 whitespace-nowrap bg-card",
-                            editMode && "border-r-1 border-border"
-                          )}
-                          style={{
-                            ...getPinnedStyles(footer.column),
-                            width: footer.getSize()
-                          }}
-                        >
-                          {!footer.isPlaceholder &&
-                            (footer.column.columnDef.meta?.renderTotal ? (
-                              <AggregateSelector
-                                value={total}
-                                aggregateFunction={aggregateFn}
-                                onAggregateFunctionChange={(fn) => {
-                                  setColumnAggregates((prev) => ({
-                                    ...prev,
-                                    [footer.column.id]: fn
-                                  }));
-                                }}
-                                formatter={
-                                  footer.column.columnDef.meta?.formatter
-                                }
-                              />
-                            ) : footer.column.columnDef.footer ? (
-                              // A caller-defined footer (e.g. a grid's
-                              // per-column remainder), never editable.
-                              flexRender(
-                                footer.column.columnDef.footer,
-                                footer.getContext()
-                              )
-                            ) : null)}
-                        </Th>
-                      );
-                    })}
-                  </Tr>
-                ))}
+                {(!autoHeight || hasFooter) &&
+                  table.getFooterGroups().map((footerGroup) => (
+                    <Tr key={footerGroup.id} className="h-10">
+                      {footerGroup.headers.map((footer) => {
+                        const aggregateFn =
+                          columnAggregates[footer.column.id] ?? "sum";
+                        const total = aggregateForCol(
+                          table,
+                          footer.column.id,
+                          aggregateFn
+                        );
+                        return (
+                          <Th
+                            key={footer.id}
+                            colSpan={footer.colSpan}
+                            id={`header-${footer.id}`}
+                            className={cn(
+                              "px-4 py-3 whitespace-nowrap bg-card",
+                              editMode && "border-r-1 border-border"
+                            )}
+                            style={{
+                              ...getPinnedStyles(footer.column),
+                              width: footer.getSize()
+                            }}
+                          >
+                            {!footer.isPlaceholder &&
+                              (footer.column.columnDef.meta?.renderTotal ? (
+                                <AggregateSelector
+                                  value={total}
+                                  aggregateFunction={aggregateFn}
+                                  onAggregateFunctionChange={(fn) => {
+                                    setColumnAggregates((prev) => ({
+                                      ...prev,
+                                      [footer.column.id]: fn
+                                    }));
+                                  }}
+                                  formatter={
+                                    footer.column.columnDef.meta?.formatter
+                                  }
+                                />
+                              ) : footer.column.columnDef.footer ? (
+                                // A caller-defined footer (e.g. a grid's
+                                // per-column remainder), never editable.
+                                flexRender(
+                                  footer.column.columnDef.footer,
+                                  footer.getContext()
+                                )
+                              ) : null)}
+                          </Th>
+                        );
+                      })}
+                    </Tr>
+                  ))}
               </Tbody>
             </TableBase>
           )}
