@@ -102,6 +102,43 @@ export function parseCsv<Row extends Record<string, unknown>>(
   };
 }
 
+/** One record of a CSV file and the line it starts on (the first line is 1). */
+export type CsvLine = { line: number; cells: string[] };
+
+/**
+ * CSV text → its records, each with the line it starts on, for messages that
+ * name a line. The header is the first record. Records whose cells are all
+ * blank (an empty line, or only delimiters, which spreadsheets write) are
+ * left out, but still count toward the lines of the records after them.
+ */
+export function parseCsvLines(text: string): {
+  lines: CsvLine[];
+  errors: Papa.ParseError[];
+} {
+  const source = text.replace(/^\uFEFF/, "");
+  const lines: CsvLine[] = [];
+  const errors: Papa.ParseError[] = [];
+  let line = 1;
+  let consumed = 0;
+  Papa.parse<string[]>(source, {
+    header: false,
+    skipEmptyLines: false,
+    step: (record) => {
+      const start = line;
+      // The cursor is past this record and its line break, so this counts
+      // the line breaks inside quoted cells too.
+      for (let i = consumed; i < record.meta.cursor; i++) {
+        if (source[i] === "\n") line++;
+      }
+      consumed = record.meta.cursor;
+      errors.push(...record.errors);
+      const cells = record.data.map((cell) => cell.trim());
+      if (cells.some((cell) => cell !== "")) lines.push({ line: start, cells });
+    }
+  });
+  return { lines, errors };
+}
+
 /**
  * Browser File → parsed rows, streaming the file rather than buffering it as
  * a string first. Resolves with the same shape as `parseCsv`.
