@@ -204,7 +204,7 @@ const MachineTimeTable = memo(({ data, count }: MachineTimeTableProps) => {
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}
-      title={t`Unattributed Machine Time`}
+      title={t`Unattributed Time`}
     />
   );
 });

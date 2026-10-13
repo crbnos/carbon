@@ -2,10 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import type { Database } from "@carbon/database";
 import { Hidden, ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   cn,
   hasOpenDialog,
   ToggleGroup,
@@ -158,46 +156,15 @@ export function IconButtonWithTooltip({
   );
 }
 
-type MachineState = Database["public"]["Enums"]["machineState"];
-
-/** The live state an OEE device reports for its machine. */
-export function DeviceStateBadge({
-  state,
-  className
-}: {
-  state: MachineState;
-  className?: string;
-}) {
-  const { t } = useLingui();
-  const display: Record<
-    MachineState,
-    { variant: "green" | "outline" | "red"; label: string }
-  > = {
-    Running: { variant: "green", label: t`Running` },
-    Idle: { variant: "outline", label: t`Idle` },
-    Down: { variant: "red", label: t`Down` },
-    Offline: { variant: "outline", label: t`Offline` }
-  };
-  const { variant, label } = display[state];
-  return (
-    <Badge variant={variant} className={className}>
-      {label}
-    </Badge>
-  );
-}
-
 export function WorkTypeToggle({
   active,
   operation,
-  deviceState = null,
   value,
   onChange,
   className
 }: {
   active: { setup: boolean; labor: boolean; machine: boolean };
   operation: OperationWithDetails;
-  // Live state of the work center's OEE device; null when none is mapped.
-  deviceState?: MachineState | null;
   value: string;
   onChange: (type: string) => void;
   className?: string;
@@ -271,10 +238,7 @@ export function WorkTypeToggle({
       )}
       {operation.machineDuration > 0 && (
         <ToggleGroupItem
-          className={cn(
-            "flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5",
-            deviceState && "h-auto lg:h-auto min-h-12 lg:min-h-14 py-1"
-          )}
+          className="flex flex-col items-center relative justify-center text-center h-12 lg:h-14 w-full max-md:h-10 max-md:flex-row max-md:gap-1.5"
           value="Machine"
           size="lg"
           aria-label={t`Toggle machine`}
@@ -283,12 +247,6 @@ export function WorkTypeToggle({
           <span className="text-xxs max-md:text-sm lg:group-data-[collapsed=true]/dock:sr-only">
             <Trans>Machine</Trans>
           </span>
-          {deviceState && (
-            <DeviceStateBadge
-              state={deviceState}
-              className="mt-0.5 px-1.5 py-0 text-xxs max-md:mt-0 lg:group-data-[collapsed=true]/dock:hidden"
-            />
-          )}
           {active.machine && (
             <span className="absolute -top-1 -right-1 h-3 w-3 max-md:top-1.5 max-md:right-1.5 max-md:size-2 bg-emerald-500 rounded-full" />
           )}

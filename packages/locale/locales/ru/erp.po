@@ -518,6 +518,9 @@ msgstr "{load} в очереди"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (площадка аренды)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "Сопоставлено {mappedCount} из {totalCount}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} строк"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} выбрано"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · синхронизировано {0}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# месяц} few {# месяца} many {# месяцев} other {# месяцев}}"
@@ -4261,9 +4268,6 @@ msgstr "Календарь"
 msgid "Calendar Month"
 msgstr "Календарный месяц"
 
-msgid "Calibrated"
-msgstr "Откалиброван"
-
 msgid "Calibration"
 msgstr "Калибровка"
 
@@ -5939,6 +5943,9 @@ msgstr "Не удалось создать PDF. Попробуйте еще ра
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Не удалось растворить {0}: {1} — производство уже записано"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Не удалось получить список устройств поставщика. Сопоставленные устройства по-прежнему отображаются."
 
 msgid "Could not predict lead time"
 msgstr "Не удалось предсказать срок поставки"
@@ -12827,9 +12834,6 @@ msgstr "Производство заблокировано"
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "Свяжите каждый станок с рабочим центром, где он работает. Carbon читает изменения состояния станка с момента сохранения сопоставления."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Сопоставить извлеченные строки счета-фактуры"
 
@@ -12844,6 +12848,9 @@ msgstr "Сопоставьте ваш план счетов с планом сч
 
 msgid "Map your current process, systems, and data"
 msgstr "Сопоставьте ваш текущий процесс, системы и данные"
+
+msgid "Mapped devices"
+msgstr "Сопоставленные устройства"
 
 msgid "Mapped values"
 msgstr "Отображенные значения"
@@ -14216,6 +14223,9 @@ msgstr "До даты перехода не производится расче�
 msgid "No devices found"
 msgstr "Устройства не найдены"
 
+msgid "No devices match your search"
+msgstr "Нет устройств, соответствующих поиску"
+
 msgid "No dimension slots configured"
 msgstr "Слоты измерений не настроены"
 
@@ -14831,6 +14841,9 @@ msgstr "Недостаточно данных единицы"
 
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
+
+msgid "Not mapped"
+msgstr "Не сопоставлено"
 
 msgid "Not now"
 msgstr "Не сейчас"
@@ -19435,6 +19448,9 @@ msgstr "Поиск покупателей и типов..."
 msgid "Search customers or types..."
 msgstr "Поиск покупателей или типов..."
 
+msgid "Search devices"
+msgstr "Поиск устройств"
+
 msgid "Search employees..."
 msgstr "Поиск сотрудников..."
 
@@ -19755,9 +19771,6 @@ msgstr "Выберите значение"
 msgid "Select values"
 msgstr "Выберите значения"
 
-msgid "Select work center"
-msgstr "Выберите рабочий центр"
-
 msgid "Select…"
 msgstr "Выберите…"
 
@@ -19827,10 +19840,6 @@ msgstr "Отправка дефектных единиц на более ран�
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Отправляет этот документ на утверждение перед тем, как он сможет стать активным."
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Сайт датчика находится в {0}; Carbon использует {locationTimezone}"
 
 msgid "Sent at"
 msgstr "Отправлено в"
@@ -21442,10 +21451,6 @@ msgstr "Проверка синхронизации"
 msgid "Synced"
 msgstr "Синхронизировано"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "Синхронизировано {0}"
-
 msgid "System"
 msgstr "Система"
 
@@ -22016,6 +22021,10 @@ msgstr "Налоговая ставка по умолчанию, применя�
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Отдел, под который это накапливается для отчетности и иерархий подсчета; оставить пусто для отдела верхнего уровня."
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "Площадка устройства находится в {0}; Carbon использует {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Ранние часы, {name}."
@@ -23872,11 +23881,11 @@ msgstr "Отменить назначение правила"
 msgid "Unassigned"
 msgstr "Не назначено"
 
-msgid "Unattributed machine time"
-msgstr "Неотнесенное машинное время"
+msgid "Unattributed time"
+msgstr "Неучтённое время"
 
-msgid "Unattributed Machine Time"
-msgstr "Неотнесенное машинное время"
+msgid "Unattributed Time"
+msgstr "Неучтённое время"
 
 msgid "Unbalanced"
 msgstr "Не сбалансировано"
@@ -24816,6 +24825,9 @@ msgstr "Аннулирование этой отгрузки приведет к
 
 msgid "Waited"
 msgstr "Ожидание"
+
+msgid "Waiting for the first sync"
+msgstr "Ожидание первой синхронизации"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Проведите обзор каждой области вместе с вашим лидером и отключите всё, что выходит за границы проекта. Коды читаются как Модуль.Область.Номер (ACC.GL.01 = Бухгалтерия, Главная книга, элемент 1)."

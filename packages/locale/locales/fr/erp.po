@@ -518,6 +518,9 @@ msgstr "{load} en attente"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (de la location)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{mappedCount} sur {totalCount} associés"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limite"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} lignes"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} sélectionnés"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · synchronisé {0}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# mois} other {# mois}}"
@@ -4261,9 +4268,6 @@ msgstr "Calendrier"
 msgid "Calendar Month"
 msgstr "Mois Calendaire"
 
-msgid "Calibrated"
-msgstr "Étalonné"
-
 msgid "Calibration"
 msgstr "Étalonnage"
 
@@ -5939,6 +5943,9 @@ msgstr "Impossible de créer le PDF. Réessayez."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Impossible de dissoudre {0}: {1} — production déjà enregistrée"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Impossible de lister les appareils du fournisseur. Les appareils associés restent affichés."
 
 msgid "Could not predict lead time"
 msgstr "Impossible de prédire le délai d'approvisionnement"
@@ -12827,9 +12834,6 @@ msgstr "la production est bloquée"
 msgid "Map accounts"
 msgstr "Mapper les comptes"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "Mappez chaque machine au poste de travail où elle fonctionne. Carbon lit les changements d'état de la machine dès que vous enregistrez l'association."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapper les lignes de facture extraites"
 
@@ -12844,6 +12848,9 @@ msgstr "Mappez votre plan comptable au plan comptable du fournisseur. Les compte
 
 msgid "Map your current process, systems, and data"
 msgstr "Cartographiez votre processus actuel, vos systèmes et vos données"
+
+msgid "Mapped devices"
+msgstr "Appareils associés"
 
 msgid "Mapped values"
 msgstr "Valeurs mappées"
@@ -14216,6 +14223,9 @@ msgstr "Aucune exécution d'amortissement ne se produit avant le cutover. Entrez
 msgid "No devices found"
 msgstr "Aucun dispositif trouvé"
 
+msgid "No devices match your search"
+msgstr "Aucun appareil ne correspond à votre recherche"
+
 msgid "No dimension slots configured"
 msgstr "Aucun emplacement d'axe analytique configuré"
 
@@ -14831,6 +14841,9 @@ msgstr "Pas assez de données sur l'unité"
 
 msgid "Not feasible"
 msgstr "Non réalisable"
+
+msgid "Not mapped"
+msgstr "Non associé"
 
 msgid "Not now"
 msgstr "Pas maintenant"
@@ -19435,6 +19448,9 @@ msgstr "Rechercher les clients et les types..."
 msgid "Search customers or types..."
 msgstr "Rechercher des clients ou des types..."
 
+msgid "Search devices"
+msgstr "Rechercher des appareils"
+
 msgid "Search employees..."
 msgstr "Rechercher des employés..."
 
@@ -19755,9 +19771,6 @@ msgstr "Sélectionner une valeur"
 msgid "Select values"
 msgstr "Sélectionner les valeurs"
 
-msgid "Select work center"
-msgstr "Sélectionnez un poste de travail"
-
 msgid "Select…"
 msgstr "Sélectionner…"
 
@@ -19827,10 +19840,6 @@ msgstr "Renvoi des unités défectueuses à une opération antérieure pour corr
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Envoie ce document pour approbation avant qu'il ne puisse devenir actif."
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Le site de détection se trouve dans {0} ; Carbon utilise {locationTimezone}"
 
 msgid "Sent at"
 msgstr "Envoyé le"
@@ -21442,10 +21451,6 @@ msgstr "Rapprochement de synchronisation"
 msgid "Synced"
 msgstr "Synchronisé"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "Synchronisé {0}"
-
 msgid "System"
 msgstr "Système"
 
@@ -22016,6 +22021,10 @@ msgstr "Le taux de taxe par défaut appliqué aux lignes de devis et de commande
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Le département sous lequel celui-ci se cumule pour la déclaration et les hiérarchies de dénombrement; laisser vide pour un département au niveau supérieur."
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "Le site de l'appareil est en {0} ; Carbon utilise {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "Les premières heures, {name}."
@@ -23872,11 +23881,11 @@ msgstr "Retirer la règle"
 msgid "Unassigned"
 msgstr "Non assigné"
 
-msgid "Unattributed machine time"
-msgstr "Temps machine non attribué"
+msgid "Unattributed time"
+msgstr "Temps non attribué"
 
-msgid "Unattributed Machine Time"
-msgstr "Temps machine non attribué"
+msgid "Unattributed Time"
+msgstr "Temps non attribué"
 
 msgid "Unbalanced"
 msgstr "Déséquilibré"
@@ -24816,6 +24825,9 @@ msgstr "L'invalidation de cette expédition :"
 
 msgid "Waited"
 msgstr "En attente"
+
+msgid "Waiting for the first sync"
+msgstr "En attente de la première synchronisation"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Parcourez chaque domaine avec votre responsable et désactivez tout ce qui est hors du champ. Les codes se lisent Module.Domaine.Numéro (ACC.GL.01 = Comptabilité, Grand livre, article 1)."

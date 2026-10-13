@@ -10,10 +10,10 @@ import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import {
   ActiveWorkPanel,
+  DeviceStateBadge,
   DisplayFrame,
   QueueTable
 } from "~/components/Display";
-import { DeviceStateBadge } from "~/components/JobOperation/components/Controls";
 import { userContext } from "~/context";
 import {
   getDisplayLoadedOperation,
@@ -49,8 +49,8 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
   const [{ activeWork, queue, lastEventEndedAt }, loadedOperation, device] =
     await Promise.all([
       getWorkDisplayData(serviceRole, { workCenterId, companyId, locationId }),
-      // What an OEE device press loaded onto the machine, and the device's live
-      // state. Both are absent on a work center with no device mapped.
+      // The operation loaded on the machine (the last timer started here), and
+      // the OEE device's live state when a device is mapped.
       workCenter.loadedJobOperationId
         ? getDisplayLoadedOperation(serviceRole, {
             jobOperationId: workCenter.loadedJobOperationId,

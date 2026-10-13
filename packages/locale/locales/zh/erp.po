@@ -518,6 +518,9 @@ msgstr "{load} 在队列中"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（该租赁的地点）"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "已映射 {mappedCount} / {totalCount}"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} 行"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · {0} 已同步"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
@@ -4261,9 +4268,6 @@ msgstr "日历"
 msgid "Calendar Month"
 msgstr "日历 月"
 
-msgid "Calibrated"
-msgstr "已校准"
-
 msgid "Calibration"
 msgstr "校准"
 
@@ -5939,6 +5943,9 @@ msgstr "无法生成 PDF。请重试。"
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "无法解散 {0}: {1} — 生产已记录"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "无法列出提供商的设备。已映射的设备仍会显示。"
 
 msgid "Could not predict lead time"
 msgstr "无法预测提前期"
@@ -12827,9 +12834,6 @@ msgstr "生产受阻"
 msgid "Map accounts"
 msgstr "映射科目"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "将每台机器映射到其运行的工作中心。从您保存映射的那一刻起，Carbon 会读取机器的状态变化。"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
 
@@ -12844,6 +12848,9 @@ msgstr "将您的会计科目表映射到提供商的。过账默认账户和费
 
 msgid "Map your current process, systems, and data"
 msgstr "映射您当前的流程、系统和数据"
+
+msgid "Mapped devices"
+msgstr "已映射的设备"
 
 msgid "Mapped values"
 msgstr "已映射的值"
@@ -14216,6 +14223,9 @@ msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的
 msgid "No devices found"
 msgstr "未找到设备"
 
+msgid "No devices match your search"
+msgstr "没有与搜索匹配的设备"
+
 msgid "No dimension slots configured"
 msgstr "未配置维度插槽"
 
@@ -14831,6 +14841,9 @@ msgstr "单位数据不足"
 
 msgid "Not feasible"
 msgstr "不可行"
+
+msgid "Not mapped"
+msgstr "未映射"
 
 msgid "Not now"
 msgstr "暂不"
@@ -19435,6 +19448,9 @@ msgstr "搜索客户和类型..."
 msgid "Search customers or types..."
 msgstr "搜索客户或类型..."
 
+msgid "Search devices"
+msgstr "搜索设备"
+
 msgid "Search employees..."
 msgstr "搜索员工..."
 
@@ -19755,9 +19771,6 @@ msgstr "选择值"
 msgid "Select values"
 msgstr "选择值"
 
-msgid "Select work center"
-msgstr "选择工作中心"
-
 msgid "Select…"
 msgstr "选择…"
 
@@ -19827,10 +19840,6 @@ msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "传感器站点位于 {0}；Carbon 使用 {locationTimezone}"
 
 msgid "Sent at"
 msgstr "发送于"
@@ -21442,10 +21451,6 @@ msgstr "同步对账"
 msgid "Synced"
 msgstr "已同步"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "同步于 {0}"
-
 msgid "System"
 msgstr "系统"
 
@@ -22016,6 +22021,10 @@ msgstr "适用于此客户的报价和销售订单行的默认税率，在每行
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级部门，请留空。"
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "设备所在站点位于 {0}；Carbon 使用 {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
@@ -23872,11 +23881,11 @@ msgstr "取消分配规则"
 msgid "Unassigned"
 msgstr "未分配"
 
-msgid "Unattributed machine time"
-msgstr "未分配的机器工时"
+msgid "Unattributed time"
+msgstr "未归属时间"
 
-msgid "Unattributed Machine Time"
-msgstr "未分配的机器工时"
+msgid "Unattributed Time"
+msgstr "未归属时间"
 
 msgid "Unbalanced"
 msgstr "不平衡"
@@ -24816,6 +24825,9 @@ msgstr "作废此发货将："
 
 msgid "Waited"
 msgstr "已等待"
+
+msgid "Waiting for the first sync"
+msgstr "正在等待首次同步"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "与您的冠军一起查看每个区域，切换任何超出范围的内容。代码格式为 Module.Area.Number（ACC.GL.01 = 会计、总账、项目 1）。"

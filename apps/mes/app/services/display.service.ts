@@ -34,7 +34,7 @@ export type DisplayWorkCenter = {
   isBlocked: boolean;
   blockingDispatchId: string | null;
   blockingDispatchReadableId: string | null;
-  /** The operation an OEE device press loaded onto this work center, if any. */
+  /** The operation loaded on this work center (the last timer started there), if any. */
   loadedJobOperationId: string | null;
 };
 

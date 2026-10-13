@@ -75,7 +75,7 @@ export default function MachineTimeUpgradeOverlay() {
         </UpgradeOverlayIcon>
         <UpgradeOverlayContent>
           <UpgradeOverlayTitle>
-            <Trans>Unattributed machine time</Trans>
+            <Trans>Unattributed time</Trans>
           </UpgradeOverlayTitle>
           <UpgradeOverlayDescription>
             <Trans>

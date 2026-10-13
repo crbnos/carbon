@@ -518,6 +518,9 @@ msgstr "{load} kuyruğunda"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (kiralamanın)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount} cihazdan {mappedCount} eşlendi"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} satır"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} seçildi"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · {0} eşitlendi"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# ay} other {# ay}}"
@@ -4261,9 +4268,6 @@ msgstr "Takvim"
 msgid "Calendar Month"
 msgstr "Takvim Ayı"
 
-msgid "Calibrated"
-msgstr "Kalibre edildi"
-
 msgid "Calibration"
 msgstr "Kalibrasyon"
 
@@ -5939,6 +5943,9 @@ msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Sağlayıcının cihazları listelenemedi. Eşlenen cihazlar yine de gösteriliyor."
 
 msgid "Could not predict lead time"
 msgstr "Tedarik süresi tahmin edilemedi"
@@ -12827,9 +12834,6 @@ msgstr "üretim engellendi"
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "Her makineyi çalıştığı iş merkezine eşleyin. Carbon, eşlemeyi kaydettiğiniz andan itibaren makinenin durum değişikliklerini okur."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
 
@@ -12844,6 +12848,9 @@ msgstr "Hesap planınızı sağlayıcının hesap planına eşleyin. Muhasebele�
 
 msgid "Map your current process, systems, and data"
 msgstr "Mevcut sürecinizi, sistemlerinizi ve verilerinizi eşleyin"
+
+msgid "Mapped devices"
+msgstr "Eşlenen cihazlar"
 
 msgid "Mapped values"
 msgstr "Eşlenen değerler"
@@ -14216,6 +14223,9 @@ msgstr "Kesme tarihinden önce amortisman çalışması yapılmaz. Her varlığ�
 msgid "No devices found"
 msgstr "Cihaz bulunamadı"
 
+msgid "No devices match your search"
+msgstr "Aramanızla eşleşen cihaz yok"
+
 msgid "No dimension slots configured"
 msgstr "Yapılandırılmış boyut yuvası yok"
 
@@ -14831,6 +14841,9 @@ msgstr "Yetersiz adet verisi"
 
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
+
+msgid "Not mapped"
+msgstr "Eşlenmedi"
 
 msgid "Not now"
 msgstr "Şimdi değil"
@@ -19435,6 +19448,9 @@ msgstr "Müşterileri ve türleri ara..."
 msgid "Search customers or types..."
 msgstr "Müşterileri veya türleri arayın..."
 
+msgid "Search devices"
+msgstr "Cihaz ara"
+
 msgid "Search employees..."
 msgstr "Çalışanları ara..."
 
@@ -19755,9 +19771,6 @@ msgstr "Değer seçin"
 msgid "Select values"
 msgstr "Değerleri seçin"
 
-msgid "Select work center"
-msgstr "İş merkezini seçin"
-
 msgid "Select…"
 msgstr "Seç…"
 
@@ -19827,10 +19840,6 @@ msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona dü
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Sense sitesi {0}'da; Carbon {locationTimezone} kullanır"
 
 msgid "Sent at"
 msgstr "Gönderildi:"
@@ -21442,10 +21451,6 @@ msgstr "Senkronizasyon Uyumu"
 msgid "Synced"
 msgstr "Eşitlendi"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "Senkronize edildi {0}"
-
 msgid "System"
 msgstr "Sistem"
 
@@ -22016,6 +22021,10 @@ msgstr "Bu müşterinin alıntı ve satış siparişi satırlarına uygulanan va
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "Bu departmanın raporlama ve personel sayısı hiyerarşisinde bağlı olduğu departman; üst seviye bir departman için boş bırakın."
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "Cihazın sahası {0} saat diliminde; Carbon {locationTimezone} kullanıyor"
 
 msgid "The early hours, {name}."
 msgstr "Sabah saatleri, {name}."
@@ -23872,11 +23881,11 @@ msgstr "Kuralı kaldır"
 msgid "Unassigned"
 msgstr "Atanmamış"
 
-msgid "Unattributed machine time"
-msgstr "Atanmamış makine süresi"
+msgid "Unattributed time"
+msgstr "Atanmamış süre"
 
-msgid "Unattributed Machine Time"
-msgstr "Atanmamış Makine Süresi"
+msgid "Unattributed Time"
+msgstr "Atanmamış Süre"
 
 msgid "Unbalanced"
 msgstr "Dengesiz"
@@ -24816,6 +24825,9 @@ msgstr "Bu sevkiyatı geçersiz kılmak şunları yapacaktır:"
 
 msgid "Waited"
 msgstr "Beklemede"
+
+msgid "Waiting for the first sync"
+msgstr "İlk eşitleme bekleniyor"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Şampiyon ile her alanı gözden geçirin ve kapsam dışında kalan öğeleri seçin/seçimi kaldırın. Kodlar Modül.Alan.Numara olarak okunur (ACC.GL.01 = Muhasebe, Büyük defter, öğe 1)."

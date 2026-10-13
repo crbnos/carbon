@@ -518,6 +518,9 @@ msgstr "{load} in queue"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (the lease's)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{mappedCount} of {totalCount} mapped"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} lines"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · synced {0}"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# month} other {# months}}"
@@ -4261,9 +4268,6 @@ msgstr "Calendar"
 msgid "Calendar Month"
 msgstr "Calendar Month"
 
-msgid "Calibrated"
-msgstr "Calibrated"
-
 msgid "Calibration"
 msgstr "Calibration"
 
@@ -5939,6 +5943,9 @@ msgstr "Could not build PDF. Try again."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Could not dissolve {0}: {1} — production already recorded"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "Could not list the provider's devices. Mapped devices are still shown."
 
 msgid "Could not predict lead time"
 msgstr "Could not predict lead time"
@@ -12827,9 +12834,6 @@ msgstr "manufacturing is blocked"
 msgid "Map accounts"
 msgstr "Map accounts"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
 
@@ -12844,6 +12848,9 @@ msgstr "Map your chart of accounts to the provider's. Posting-default and expens
 
 msgid "Map your current process, systems, and data"
 msgstr "Map your current process, systems, and data"
+
+msgid "Mapped devices"
+msgstr "Mapped devices"
 
 msgid "Mapped values"
 msgstr "Mapped values"
@@ -14216,6 +14223,9 @@ msgstr "No depreciation run happens before the cutover. Enter each asset's accum
 msgid "No devices found"
 msgstr "No devices found"
 
+msgid "No devices match your search"
+msgstr "No devices match your search"
+
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
 
@@ -14831,6 +14841,9 @@ msgstr "Not enough unit data"
 
 msgid "Not feasible"
 msgstr "Not feasible"
+
+msgid "Not mapped"
+msgstr "Not mapped"
 
 msgid "Not now"
 msgstr "Not now"
@@ -19435,6 +19448,9 @@ msgstr "Search customers and types..."
 msgid "Search customers or types..."
 msgstr "Search customers or types..."
 
+msgid "Search devices"
+msgstr "Search devices"
+
 msgid "Search employees..."
 msgstr "Search employees..."
 
@@ -19755,9 +19771,6 @@ msgstr "Select value"
 msgid "Select values"
 msgstr "Select values"
 
-msgid "Select work center"
-msgstr "Select work center"
-
 msgid "Select…"
 msgstr "Select…"
 
@@ -19827,10 +19840,6 @@ msgstr "Sending defective units back to an earlier operation to be corrected ins
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "Sense site is in {0}; Carbon uses {locationTimezone}"
 
 msgid "Sent at"
 msgstr "Sent at"
@@ -21442,10 +21451,6 @@ msgstr "Sync Tie-Out"
 msgid "Synced"
 msgstr "Synced"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "Synced {0}"
-
 msgid "System"
 msgstr "System"
 
@@ -22016,6 +22021,10 @@ msgstr "The default tax rate applied to this customer's quote and sales-order li
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "The device's site is in {0}; Carbon uses {locationTimezone}"
 
 msgid "The early hours, {name}."
 msgstr "The early hours, {name}."
@@ -23872,11 +23881,11 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
-msgid "Unattributed machine time"
-msgstr "Unattributed machine time"
+msgid "Unattributed time"
+msgstr "Unattributed time"
 
-msgid "Unattributed Machine Time"
-msgstr "Unattributed Machine Time"
+msgid "Unattributed Time"
+msgstr "Unattributed Time"
 
 msgid "Unbalanced"
 msgstr "Unbalanced"
@@ -24816,6 +24825,9 @@ msgstr "Voiding this shipment will:"
 
 msgid "Waited"
 msgstr "Waited"
+
+msgid "Waiting for the first sync"
+msgstr "Waiting for the first sync"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."

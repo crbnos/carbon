@@ -77,7 +77,7 @@ const MachineTimeDrawer = ({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
-            <Trans>Unattributed machine time</Trans>
+            <Trans>Unattributed time</Trans>
           </DrawerTitle>
         </DrawerHeader>
         <DrawerBody>

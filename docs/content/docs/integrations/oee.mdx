@@ -55,13 +55,13 @@ You need the `settings` update permission and a company API key from Sense.
 
 ## Map devices to work centers
 
-The **Devices** tab lists every Sense station with its manufacturer, model, machine type and site. A **"Calibrated"** or **"Not calibrated"** badge shows the station's last calibration. For each station, select a work center and select **Save**. To unmap a station, clear its work center and select **Save**.
+The **Devices** tab lists every Sense station by site, with its manufacturer and model. A station that has not been calibrated says **"Not calibrated"**. Select a work center for a station and Carbon saves it at once. To unmap a station, clear its work center. The dot before each station shows its machine state; hover it to see when it last synced.
 
 Carbon reads a station's state changes from the moment you save the mapping. Carbon never charges time before the mapping. If the machine already runs when you map it, its time starts at the mapping. Mapping a station to a different work center starts again from the new mapping.
 
 After each sync, the row shows the machine state, when it last synced, and the last sync error in red. A warning icon appears when the Sense site's time zone differs from the time zone of the work center's location.
 
-<Screenshot label="Sense integration drawer on the Devices tab, with stations mapped to work centers and their machine state badges" />
+<Screenshot label="Sense integration drawer on the Devices tab, with stations mapped to work centers and their machine state dots" />
 
 ## How machine time reaches a job
 
@@ -83,11 +83,11 @@ Carbon posts a sensor event to the general ledger when its operation finishes or
 
 On a work center with a mapped device, the MES Machine timer still works. A **"Start"** or **"Pause"** press with **"Machine"** selected ends the work center's open machine time at the press. Carbon ignores any sensor change older than the press, so a late poll never undoes it.
 
-For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time stops at 10:03. It stays stopped until the station reports its next change to Running. A badge under the **"Machine"** toggle shows the live machine state. Work centers with no device work as before.
+For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time stops at 10:03. It stays stopped until the station reports its next change to Running. Work centers with no device work as before.
 
-### Unattributed machine time
+### Unattributed time
 
-Carbon cannot charge run time to an operation in three cases. Then the time goes to **Production → Unattributed Machine Time**:
+Carbon cannot charge run time to an operation in three cases. Then the time goes to **Production → Unattributed Time**, which appears once an OEE provider is installed:
 
 - No operation is loaded on the work center.
 - The work center is blocked by an In Progress [maintenance dispatch](/docs/reference/maintenance) with an OEE impact of **"Down"** or **"Planned"**.
@@ -102,7 +102,7 @@ Each row shows the work center, start, end, duration and status (**"Open"**, **"
 
 You cannot assign or dismiss a row while the machine still runs. You cannot assign time to a locked job. Assign and dismiss need the `production` update permission.
 
-<Screenshot label="Unattributed Machine Time list with an Open row selected and its drawer showing the Operation picker and the Dismiss reason" />
+<Screenshot label="Unattributed Time list with an Open row selected and its drawer showing the Operation picker and the Dismiss reason" />
 
 <AgentContext>
 Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (status `Open` / `Assigned` / `Dismissed`; `productionEventId` set on assign; `dismissReason` required on dismiss). `workCenter.loadedJobOperationId` and `workCenter.loadedAt` hold the loaded operation.

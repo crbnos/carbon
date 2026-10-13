@@ -518,6 +518,9 @@ msgstr "{load} कतार में"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (पट्टे का)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount} में से {mappedCount} मैप किए गए"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} पंक्तियाँ"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} चयनित"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · {0} सिंक हुआ"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# महीना} other {# महीने}}"
@@ -4261,9 +4268,6 @@ msgstr "कैलेंडर"
 msgid "Calendar Month"
 msgstr "कैलेंडर माह"
 
-msgid "Calibrated"
-msgstr "कैलिब्रेट किया गया"
-
 msgid "Calibration"
 msgstr "अंशांकन"
 
@@ -5939,6 +5943,9 @@ msgstr "PDF नहीं बना सके। फिर से कोशिश
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} को भंग नहीं कर सके: {1} — उत्पादन पहले से दर्ज है"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "प्रदाता के डिवाइस सूचीबद्ध नहीं किए जा सके। मैप किए गए डिवाइस अब भी दिखाए जा रहे हैं।"
 
 msgid "Could not predict lead time"
 msgstr "लीड टाइम की भविष्यवाणी नहीं कर सके"
@@ -12827,9 +12834,6 @@ msgstr "विनिर्माण अवरुद्ध है"
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "प्रत्येक मशीन को उस वर्क सेंटर से मैप करें जहां यह चलती है। Carbon जैसे ही आप मैपिंग को सहेजें, मशीन की स्थिति परिवर्तन को पढ़ता है।"
-
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
 
@@ -12844,6 +12848,9 @@ msgstr "अपने खातों का चार्ट को प्रद�
 
 msgid "Map your current process, systems, and data"
 msgstr "अपनी वर्तमान प्रक्रिया, सिस्टम और डेटा को मैप करें"
+
+msgid "Mapped devices"
+msgstr "मैप किए गए डिवाइस"
 
 msgid "Mapped values"
 msgstr "मैप किए गए मान"
@@ -14216,6 +14223,9 @@ msgstr "संक्रमण से पहले कोई मूल्यह�
 msgid "No devices found"
 msgstr "कोई डिवाइस नहीं मिला"
 
+msgid "No devices match your search"
+msgstr "आपकी खोज से कोई डिवाइस मेल नहीं खाता"
+
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
 
@@ -14831,6 +14841,9 @@ msgstr "पर्याप्त यूनिट डेटा नहीं"
 
 msgid "Not feasible"
 msgstr "संभव नहीं"
+
+msgid "Not mapped"
+msgstr "मैप नहीं किया गया"
 
 msgid "Not now"
 msgstr "अभी नहीं"
@@ -19435,6 +19448,9 @@ msgstr "ग्राहकों और प्रकारों को खो�
 msgid "Search customers or types..."
 msgstr "ग्राहकों या प्रकारों को खोजें..."
 
+msgid "Search devices"
+msgstr "डिवाइस खोजें"
+
 msgid "Search employees..."
 msgstr "कर्मचारियों को खोजें..."
 
@@ -19755,9 +19771,6 @@ msgstr "मान चुनें"
 msgid "Select values"
 msgstr "मान चुनें"
 
-msgid "Select work center"
-msgstr "वर्क सेंटर चुनें"
-
 msgid "Select…"
 msgstr "चुनें…"
 
@@ -19827,10 +19840,6 @@ msgstr "दोषपूर्ण इकाइयों को उन्हें
 
 msgid "Sends this document for approval before it can go active."
 msgstr "यह दस्तावेज़ सक्रिय होने से पहले अनुमोदन के लिए भेजता है।"
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "सेंस साइट {0} में है; Carbon {locationTimezone} का उपयोग करता है"
 
 msgid "Sent at"
 msgstr "भेजा गया:"
@@ -21442,10 +21451,6 @@ msgstr "सिंक समंजन"
 msgid "Synced"
 msgstr "सिंक किया गया"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "सिंक किया गया {0}"
-
 msgid "System"
 msgstr "सिस्टम"
 
@@ -22016,6 +22021,10 @@ msgstr "डिफ़ॉल्ट कर दर इस ग्राहक की 
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "विभाग जिसके अंतर्गत यह रिपोर्टिंग और हेडकाउंट पदानुक्रमों के लिए रोल अप करता है; शीर्ष स्तरीय विभाग के लिए खाली छोड़ें।"
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "डिवाइस की साइट {0} में है; Carbon {locationTimezone} का उपयोग करता है"
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
@@ -23872,11 +23881,11 @@ msgstr "नियम को अनअसाइन करें"
 msgid "Unassigned"
 msgstr "अनुत्तरित"
 
-msgid "Unattributed machine time"
-msgstr "अनिर्धारित मशीन समय"
+msgid "Unattributed time"
+msgstr "अनिर्दिष्ट समय"
 
-msgid "Unattributed Machine Time"
-msgstr "अनिर्धारित मशीन समय"
+msgid "Unattributed Time"
+msgstr "अनिर्दिष्ट समय"
 
 msgid "Unbalanced"
 msgstr "असंतुलित"
@@ -24816,6 +24825,9 @@ msgstr "इस शिपमेंट को रद्द करने से:"
 
 msgid "Waited"
 msgstr "प्रतीक्षा की"
+
+msgid "Waiting for the first sync"
+msgstr "पहले सिंक की प्रतीक्षा है"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "अपने चैंपियन के साथ प्रत्येक क्षेत्र पर चलें और स्कोप से बाहर कुछ भी टॉगल करें। कोड मॉड्यूल.क्षेत्र.संख्या पढ़ता है (ACC.GL.01 = लेखांकन, सामान्य खाता बही, आइटम 1)।"

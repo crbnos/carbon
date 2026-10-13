@@ -46,13 +46,16 @@ UI:
 - **Devices tab** — `apps/erp/app/modules/settings/ui/Integrations/OeeDevices.ee.tsx`,
   rendered by `x+/settings+/integrations.$id.tsx` only for an active `oee`
   integration.
-- **Production → "Unattributed Machine Time"** — `x+/production+/machine-time*.tsx`
-  and `modules/production/ui/MachineTime/`.
+- **Production → "Unattributed Time"** — `x+/production+/machine-time*.tsx`
+  and `modules/production/ui/MachineTime/`. The nav item appears only while an
+  `oee` integration is active (`useProductionSubmodules`, through
+  `getIntegrationIdsByRole("oee")` and `useIntegrations`).
 - **MES press rules** — `apps/mes/app/routes/x+/event.tsx` and
   `x+/start.$operationId.tsx`.
-- **MES machine state** — `DeviceStateBadge` in
-  `components/JobOperation/components/Controls.tsx`. The work center display
-  (`display+/$workCenterId.work.tsx`) shows the badge and "Loaded: …".
+- **MES machine state** — the work center display
+  (`display+/$workCenterId.work.tsx`) shows `DeviceStateBadge`
+  (`components/Display/`) and "Loaded: …". The operation page shows no
+  device badge: its Machine toggle's green dot already marks running time.
 
 ## The loaded operation (community)
 

@@ -19,7 +19,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: msg`Unattributed Machine Time`,
+  breadcrumb: msg`Unattributed Time`,
   to: path.to.unattributedMachineTimes
 };
 

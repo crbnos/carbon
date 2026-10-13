@@ -2,22 +2,29 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { Combobox, Submit, ValidatedForm } from "@carbon/form";
 import {
-  Badge,
+  Combobox,
+  cn,
   DrawerBody,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Table,
+  Tbody,
+  Td,
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
+  Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
-import { LuArrowRight, LuTriangleAlert } from "react-icons/lu";
+import { Fragment, useMemo, useState } from "react";
+import { LuSearch, LuTriangleAlert } from "react-icons/lu";
+import { useFetcher } from "react-router";
 import RulesUpgradeOverlay from "~/components/RulesUpgradeOverlay";
 import { useDateFormatter, usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { workCenterDeviceUpsertValidator } from "~/modules/settings/settings.models";
 
 /**
  * Local structural mirrors of @carbon/ee/oee's OeeDevice and the
@@ -72,13 +79,6 @@ type OeeDevicesProps = {
   error: string | null;
 };
 
-const STATE_BADGE_VARIANT = {
-  Running: "green",
-  Idle: "yellow",
-  Down: "red",
-  Offline: "gray"
-} as const;
-
 export function OeeDevices({
   tabs,
   devices,
@@ -87,18 +87,13 @@ export function OeeDevices({
   workCenters,
   error
 }: OeeDevicesProps) {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
 
   return (
-    <DrawerBody className="gap-6">
+    <DrawerBody className="gap-4">
       {tabs}
-      <p className="max-w-prose text-xs leading-relaxed text-muted-foreground">
-        <Trans>
-          Map each machine to the work center it runs at. Carbon reads the
-          machine's state changes from the moment you save the mapping.
-        </Trans>
-      </p>
       {isGated ? (
         <RulesUpgradeOverlay
           preview={
@@ -110,20 +105,22 @@ export function OeeDevices({
               canUpdate={false}
             />
           }
-          title={<Trans>Machine monitoring</Trans>}
-          description={
-            <Trans>
-              Connect machine monitoring devices to work centers so machine time
-              is recorded against the operation that is loaded.
-            </Trans>
-          }
+          title={t`Machine monitoring`}
+          description={t`Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded.`}
         />
       ) : (
         <>
           {error && (
-            <div className="w-full rounded-lg border border-red-500/25 bg-red-500/5 p-3 text-sm text-red-700 dark:text-red-400">
-              {error}
-            </div>
+            <p className="flex w-full items-start gap-2 text-sm text-muted-foreground">
+              <LuTriangleAlert className="mt-0.5 size-4 shrink-0 text-red-500" />
+              <span className="min-w-0">
+                <Trans>
+                  Could not list the provider's devices. Mapped devices are
+                  still shown.
+                </Trans>{" "}
+                <span className="text-xs">{error}</span>
+              </span>
+            </p>
           )}
           <OeeDeviceList
             devices={devices}
@@ -142,26 +139,33 @@ const mockDevices: OeeDeviceRow[] = [
   {
     externalDeviceId: "mock-1",
     name: "Haas VF-2",
-    externalSiteId: null,
+    externalSiteId: "mock-site",
     siteName: "Main Plant",
     siteTimezone: null,
     manufacturer: "Haas",
     model: "VF-2",
-    machineType: "Vertical Mill",
+    machineType: null,
     calibrated: true
   },
   {
     externalDeviceId: "mock-2",
     name: "Mazak QT-250",
-    externalSiteId: null,
+    externalSiteId: "mock-site",
     siteName: "Main Plant",
     siteTimezone: null,
     manufacturer: "Mazak",
     model: "QT-250",
-    machineType: "Lathe",
-    calibrated: false
+    machineType: null,
+    calibrated: true
   }
 ];
+
+type SiteGroup = {
+  key: string;
+  name: string | null;
+  timezone: string | null;
+  devices: OeeDeviceRow[];
+};
 
 function OeeDeviceList({
   devices,
@@ -176,6 +180,9 @@ function OeeDeviceList({
   workCenters: OeeWorkCenterRow[];
   canUpdate: boolean;
 }) {
+  const { t } = useLingui();
+  const [search, setSearch] = useState("");
+
   const mappedByDeviceId = useMemo(
     () =>
       new Map(mappings.map((mapping) => [mapping.externalDeviceId, mapping])),
@@ -214,44 +221,115 @@ function OeeDeviceList({
     return [...mappedOnly, ...devices];
   }, [devices, mappings]);
 
-  if (rows.length === 0) {
-    return (
-      <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
-        <Trans>No devices found</Trans>
-      </div>
-    );
-  }
+  const groups = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    const matches = term
+      ? rows.filter((device) =>
+          [device.name, device.manufacturer, device.model, device.siteName]
+            .filter((value): value is string => Boolean(value))
+            .some((value) => value.toLowerCase().includes(term))
+        )
+      : rows;
+    const bySite = new Map<string, SiteGroup>();
+    for (const device of matches) {
+      const key = device.externalSiteId ?? "";
+      const group = bySite.get(key) ?? {
+        key,
+        name: device.siteName,
+        timezone: device.siteTimezone,
+        devices: []
+      };
+      group.name ??= device.siteName;
+      group.devices.push(device);
+      bySite.set(key, group);
+    }
+    const collator = new Intl.Collator(undefined, { numeric: true });
+    return [...bySite.values()]
+      .map((group) => ({
+        ...group,
+        devices: group.devices.sort((a, b) => collator.compare(a.name, b.name))
+      }))
+      .sort((a, b) => collator.compare(a.name ?? "", b.name ?? ""));
+  }, [rows, search]);
+
+  const mappedCount = rows.filter((device) =>
+    mappedByDeviceId.has(device.externalDeviceId)
+  ).length;
+  const totalCount = rows.length;
 
   return (
-    <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
-      <div className="flex w-full flex-col divide-y divide-border">
-        {rows.map((device) => {
-          const mapping = mappedByDeviceId.get(device.externalDeviceId);
-          return (
-            // Keyed on the persisted work center so a saved change remounts
-            // the row and re-seeds its Combobox from fresh loader data (see
-            // AccountMapping.tsx).
-            <OeeDeviceRowForm
-              key={`${device.externalDeviceId}:${mapping?.workCenterId ?? ""}`}
-              device={device}
-              mapping={mapping ?? null}
-              workCenterById={workCenterById}
-              workCenterOptions={workCenterOptions}
-              canUpdate={canUpdate}
+    <div className="flex w-full flex-col gap-3">
+      <div className="flex w-full items-center justify-between gap-3">
+        <div className="w-full max-w-[280px]">
+          <InputGroup size="sm">
+            <InputLeftElement>
+              <LuSearch className="size-4 text-muted-foreground" />
+            </InputLeftElement>
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder={t`Search devices`}
             />
-          );
-        })}
+          </InputGroup>
+        </div>
+        <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
+          <Trans>
+            {mappedCount} of {totalCount} mapped
+          </Trans>
+        </span>
       </div>
+
+      {groups.length === 0 ? (
+        <p className="w-full py-8 text-center text-sm text-muted-foreground">
+          {rows.length === 0 ? (
+            <Trans>No devices found</Trans>
+          ) : (
+            <Trans>No devices match your search</Trans>
+          )}
+        </p>
+      ) : (
+        <Table full>
+          <Tbody>
+            {groups.map((group) => (
+              <Fragment key={group.key}>
+                <Tr className="border-b border-border">
+                  <Td
+                    colSpan={2}
+                    className="px-0 pb-2 pt-5 text-xs font-medium text-muted-foreground"
+                  >
+                    {group.name ?? <Trans>Mapped devices</Trans>}
+                    {group.timezone && (
+                      <span className="font-normal"> · {group.timezone}</span>
+                    )}
+                  </Td>
+                </Tr>
+                {group.devices.map((device) => {
+                  const mapping = mappedByDeviceId.get(device.externalDeviceId);
+                  return (
+                    <OeeDeviceTableRow
+                      key={`${device.externalDeviceId}:${mapping?.workCenterId ?? ""}`}
+                      device={device}
+                      mapping={mapping ?? null}
+                      workCenterById={workCenterById}
+                      workCenterOptions={workCenterOptions}
+                      canUpdate={canUpdate}
+                    />
+                  );
+                })}
+              </Fragment>
+            ))}
+          </Tbody>
+        </Table>
+      )}
     </div>
   );
 }
 
 /**
- * One provider device → Carbon work center row. Each row is its own
- * ValidatedForm posting intent=upsert-work-center-device; clearing the work
- * center unmaps the device.
+ * One provider device → Carbon work center. Picking a work center saves at
+ * once (intent upsert-work-center-device); clearing it unmaps the device.
  */
-function OeeDeviceRowForm({
+function OeeDeviceTableRow({
   device,
   mapping,
   workCenterById,
@@ -265,19 +343,100 @@ function OeeDeviceRowForm({
   canUpdate: boolean;
 }) {
   const { t } = useLingui();
-  const { formatTimeAgo } = useDateFormatter();
-  // The user's pick this session; until they edit, the saved mapping wins.
-  const [selected, setSelected] = useState<{ id: string | null } | null>(null);
-  const selectedWorkCenterId = selected
-    ? selected.id
-    : (mapping?.workCenterId ?? null);
-  const locationTimezone = selectedWorkCenterId
-    ? (workCenterById.get(selectedWorkCenterId)?.locationTimezone ?? null)
+  const fetcher = useFetcher();
+  const isSaving = fetcher.state !== "idle";
+
+  // While a save is in flight show the pick; afterwards the loader's mapping
+  // is the truth, so a refused save falls back to what is stored.
+  const pendingWorkCenterId = isSaving
+    ? String(fetcher.formData?.get("workCenterId") ?? "")
+    : null;
+  const workCenterId = pendingWorkCenterId ?? mapping?.workCenterId ?? "";
+
+  const locationTimezone = workCenterId
+    ? (workCenterById.get(workCenterId)?.locationTimezone ?? null)
     : null;
   const timezoneMismatch =
     device.siteTimezone !== null &&
     locationTimezone !== null &&
     device.siteTimezone !== locationTimezone;
+
+  const save = (nextWorkCenterId: string) => {
+    if (nextWorkCenterId === (mapping?.workCenterId ?? "")) return;
+    const formData = new FormData();
+    formData.set("intent", "upsert-work-center-device");
+    formData.set("externalDeviceId", device.externalDeviceId);
+    formData.set("deviceName", device.name);
+    formData.set("externalSiteId", device.externalSiteId ?? "");
+    formData.set("siteTimezone", device.siteTimezone ?? "");
+    formData.set("workCenterId", nextWorkCenterId);
+    fetcher.submit(formData, { method: "post" });
+  };
+
+  const machine = [device.manufacturer, device.model].filter(Boolean).join(" ");
+
+  return (
+    <Tr className="border-b border-border last:border-b-0">
+      <Td className="px-0 py-2.5">
+        <div className="flex min-w-0 items-center gap-3">
+          <DeviceStatusDot mapping={mapping} />
+          <div className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium">{device.name}</span>
+            {(machine || device.calibrated === false) && (
+              <span className="truncate text-xs text-muted-foreground">
+                {machine}
+                {machine && device.calibrated === false && " · "}
+                {device.calibrated === false && <Trans>Not calibrated</Trans>}
+              </span>
+            )}
+          </div>
+        </div>
+      </Td>
+      <Td className="w-[240px] py-2.5 pl-3 pr-0">
+        <div className="flex items-center justify-end gap-2">
+          {timezoneMismatch && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="shrink-0">
+                  <LuTriangleAlert className="size-3.5 text-amber-500" />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <Trans>
+                  The device's site is in {device.siteTimezone}; Carbon uses{" "}
+                  {locationTimezone}
+                </Trans>
+              </TooltipContent>
+            </Tooltip>
+          )}
+          <div className="w-[200px] shrink-0">
+            <Combobox
+              size="sm"
+              // Quiet until used: 55 bordered pickers read as a form, not a list.
+              className={cn(
+                "min-w-[160px] border-transparent bg-transparent shadow-none hover:border-border focus-visible:border-border data-[state=open]:border-border",
+                !isSaving &&
+                  "[&>svg]:invisible hover:[&>svg]:visible data-[state=open]:[&>svg]:visible"
+              )}
+              value={workCenterId}
+              options={workCenterOptions}
+              placeholder={t`Not mapped`}
+              isClearable
+              isLoading={isSaving}
+              isReadOnly={!canUpdate}
+              onChange={save}
+            />
+          </div>
+        </div>
+      </Td>
+    </Tr>
+  );
+}
+
+/** A status dot for the machine's state, with the details on hover. */
+function DeviceStatusDot({ mapping }: { mapping: OeeDeviceMappingRow | null }) {
+  const { t } = useLingui();
+  const { formatTimeAgo } = useDateFormatter();
 
   const stateLabels = {
     Running: t`Running`,
@@ -285,110 +444,41 @@ function OeeDeviceRowForm({
     Down: t`Down`,
     Offline: t`Offline`
   } as const;
+  const stateDots = {
+    Running: "bg-emerald-500",
+    Idle: "bg-amber-400",
+    Down: "bg-red-500",
+    Offline: "bg-muted-foreground/40"
+  } as const;
 
-  const details = [device.manufacturer, device.model, device.machineType]
-    .filter(Boolean)
-    .join(" · ");
+  let dotClassName = "border border-muted-foreground/40";
+  let label: ReactNode = <Trans>Not mapped</Trans>;
+  if (mapping?.lastSyncError) {
+    dotClassName = "bg-red-500";
+    label = mapping.lastSyncError;
+  } else if (mapping?.currentState) {
+    const state = stateLabels[mapping.currentState];
+    dotClassName = stateDots[mapping.currentState];
+    label = mapping.lastSyncedAt ? (
+      <Trans>
+        {state} · synced {formatTimeAgo(mapping.lastSyncedAt)}
+      </Trans>
+    ) : (
+      state
+    );
+  } else if (mapping) {
+    dotClassName = "bg-muted-foreground/40";
+    label = <Trans>Waiting for the first sync</Trans>;
+  }
 
   return (
-    <ValidatedForm
-      validator={workCenterDeviceUpsertValidator}
-      method="post"
-      defaultValues={{
-        intent: "upsert-work-center-device",
-        externalDeviceId: device.externalDeviceId,
-        deviceName: device.name,
-        externalSiteId: device.externalSiteId ?? undefined,
-        siteTimezone: device.siteTimezone ?? undefined,
-        workCenterId: mapping?.workCenterId ?? undefined
-      }}
-      className="flex w-full items-center gap-3 p-3"
-    >
-      <input type="hidden" name="intent" value="upsert-work-center-device" />
-      <input
-        type="hidden"
-        name="externalDeviceId"
-        value={device.externalDeviceId}
-      />
-      <input type="hidden" name="deviceName" value={device.name} />
-      <input
-        type="hidden"
-        name="externalSiteId"
-        value={device.externalSiteId ?? ""}
-      />
-      <input
-        type="hidden"
-        name="siteTimezone"
-        value={device.siteTimezone ?? ""}
-      />
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-sm font-medium">{device.name}</span>
-          {device.calibrated !== null && (
-            <Badge variant={device.calibrated ? "green" : "yellow"}>
-              {device.calibrated ? (
-                <Trans>Calibrated</Trans>
-              ) : (
-                <Trans>Not calibrated</Trans>
-              )}
-            </Badge>
-          )}
-          {mapping?.currentState && (
-            <Badge variant={STATE_BADGE_VARIANT[mapping.currentState]}>
-              {stateLabels[mapping.currentState]}
-            </Badge>
-          )}
-        </div>
-        {details && (
-          <span className="truncate text-xs text-muted-foreground">
-            {details}
-          </span>
-        )}
-        {device.siteName && (
-          <span className="truncate text-xs text-muted-foreground">
-            {device.siteName}
-          </span>
-        )}
-        {mapping?.lastSyncedAt && (
-          <span className="text-xs text-muted-foreground">
-            <Trans>Synced {formatTimeAgo(mapping.lastSyncedAt)}</Trans>
-          </span>
-        )}
-        {mapping?.lastSyncError && (
-          <span className="text-xs text-red-600 dark:text-red-400">
-            {mapping.lastSyncError}
-          </span>
-        )}
-      </div>
-      {timezoneMismatch ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <span className="shrink-0">
-              <LuTriangleAlert className="size-4 text-amber-500" />
-            </span>
-          </TooltipTrigger>
-          <TooltipContent className="max-w-xs">
-            <Trans>
-              Sense site is in {device.siteTimezone}; Carbon uses{" "}
-              {locationTimezone}
-            </Trans>
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <LuArrowRight className="size-4 shrink-0 text-muted-foreground" />
-      )}
-      <div className="w-[260px] shrink-0">
-        <Combobox
-          name="workCenterId"
-          options={workCenterOptions}
-          placeholder={t`Select work center`}
-          isOptional
-          onChange={(option) => setSelected({ id: option?.value ?? null })}
-        />
-      </div>
-      <Submit size="sm" variant="secondary" isDisabled={!canUpdate}>
-        <Trans>Save</Trans>
-      </Submit>
-    </ValidatedForm>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="flex size-4 shrink-0 items-center justify-center">
+          <span className={cn("size-2 rounded-full", dotClassName)} />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">{label}</TooltipContent>
+    </Tooltip>
   );
 }

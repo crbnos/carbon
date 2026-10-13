@@ -518,6 +518,9 @@ msgstr "큐에 {load}개 대기 중"
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (리스의 사업장)"
 
+msgid "{mappedCount} of {totalCount} mapped"
+msgstr "{totalCount}개 중 {mappedCount}개 매핑됨"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -609,6 +612,10 @@ msgstr "{sectionLineCount} 라인"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount}개 선택됨"
+
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "{state} · synced {0}"
+msgstr "{state} · {0} 동기화됨"
 
 msgid "{termMonths, plural, one {# month} other {# months}}"
 msgstr "{termMonths, plural, one {# 개월} other {# 개월}}"
@@ -4261,9 +4268,6 @@ msgstr "달력"
 msgid "Calendar Month"
 msgstr "달력 월"
 
-msgid "Calibrated"
-msgstr "보정됨"
-
 msgid "Calibration"
 msgstr "교정"
 
@@ -5939,6 +5943,9 @@ msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록됨"
+
+msgid "Could not list the provider's devices. Mapped devices are still shown."
+msgstr "공급자의 장치 목록을 가져올 수 없습니다. 매핑된 장치는 계속 표시됩니다."
 
 msgid "Could not predict lead time"
 msgstr "리드타임을 예측할 수 없습니다"
@@ -12827,9 +12834,6 @@ msgstr "제조가 차단되었습니다"
 msgid "Map accounts"
 msgstr "계정 매핑"
 
-msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr "각 기계를 작동하는 작업장에 매핑하세요. Carbon은 매핑을 저장하는 순간부터 기계의 상태 변화를 읽습니다."
-
 msgid "Map Extracted Invoice Lines"
 msgstr "추출한 송장 라인 매핑"
 
@@ -12844,6 +12848,9 @@ msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비�
 
 msgid "Map your current process, systems, and data"
 msgstr "현재 프로세스, 시스템, 데이터를 매핑하세요"
+
+msgid "Mapped devices"
+msgstr "매핑된 장치"
 
 msgid "Mapped values"
 msgstr "매핑된 값"
@@ -14216,6 +14223,9 @@ msgstr "전환 이전에는 감가상각이 실행되지 않습니다. 전환 �
 msgid "No devices found"
 msgstr "기기를 찾을 수 없음"
 
+msgid "No devices match your search"
+msgstr "검색과 일치하는 장치가 없습니다"
+
 msgid "No dimension slots configured"
 msgstr "구성된 차원 슬롯이 없습니다"
 
@@ -14831,6 +14841,9 @@ msgstr "개에 대한 데이터가 부족합니다."
 
 msgid "Not feasible"
 msgstr "불가능"
+
+msgid "Not mapped"
+msgstr "매핑되지 않음"
 
 msgid "Not now"
 msgstr "나중에"
@@ -19435,6 +19448,9 @@ msgstr "고객 및 유형 검색..."
 msgid "Search customers or types..."
 msgstr "고객 또는 유형 검색..."
 
+msgid "Search devices"
+msgstr "장치 검색"
+
 msgid "Search employees..."
 msgstr "직원 검색..."
 
@@ -19755,9 +19771,6 @@ msgstr "값 선택"
 msgid "Select values"
 msgstr "값 선택"
 
-msgid "Select work center"
-msgstr "작업장 선택"
-
 msgid "Select…"
 msgstr "선택…"
 
@@ -19827,10 +19840,6 @@ msgstr "불량 유닛을 폐기하는 대신 이전 공정작업으로 되돌려
 
 msgid "Sends this document for approval before it can go active."
 msgstr "이 문서를 활성화하기 전에 승인을 위해 전송합니다."
-
-#. placeholder {0}: device.siteTimezone
-msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr "센서 위치는 {0}이고, Carbon은 {locationTimezone}을(를) 사용합니다."
 
 msgid "Sent at"
 msgstr "전송된 시간"
@@ -21442,10 +21451,6 @@ msgstr "동기화 일치"
 msgid "Synced"
 msgstr "동기화됨"
 
-#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
-msgid "Synced {0}"
-msgstr "{0}에 동기화됨"
-
 msgid "System"
 msgstr "시스템"
 
@@ -22016,6 +22021,10 @@ msgstr "이 고객의 견적 및 판매주문 라인에 적용되는 기본 세�
 
 msgid "The department this one rolls up under for reporting and headcount hierarchies; leave empty for a top-level department."
 msgstr "보고 및 인원 계층구조에서 이 부서가 속하는 상위 부서입니다. 최상위 부서인 경우 비워두세요."
+
+#. placeholder {0}: device.siteTimezone
+msgid "The device's site is in {0}; Carbon uses {locationTimezone}"
+msgstr "장치 사이트는 {0}에 있습니다. Carbon은 {locationTimezone}을(를) 사용합니다"
 
 msgid "The early hours, {name}."
 msgstr "이른 시간, {name}."
@@ -23872,11 +23881,11 @@ msgstr "규칙 할당 해제"
 msgid "Unassigned"
 msgstr "미배정"
 
-msgid "Unattributed machine time"
-msgstr "미할당 기계 시간"
+msgid "Unattributed time"
+msgstr "미귀속 시간"
 
-msgid "Unattributed Machine Time"
-msgstr "미할당 기계 시간"
+msgid "Unattributed Time"
+msgstr "미귀속 시간"
 
 msgid "Unbalanced"
 msgstr "불균형"
@@ -24816,6 +24825,9 @@ msgstr "이 출하를 무효화하면 다음과 같은 결과가 발생합니다
 
 msgid "Waited"
 msgstr "대기함"
+
+msgid "Waiting for the first sync"
+msgstr "첫 동기화를 기다리는 중"
 
 msgid "Walk each area with your champion and toggle anything out of scope. Codes read Module.Area.Number (ACC.GL.01 = Accounting, General Ledger, item 1)."
 msgstr "담당자와 함께 각 영역을 살펴보고 범위에서 벗어난 항목은 토글로 제외하세요. 코드는 모듈.영역.번호 형식입니다(ACC.GL.01 = 회계, 총계정원장, 1번 항목)."
