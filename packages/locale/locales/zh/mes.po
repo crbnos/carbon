@@ -1505,9 +1505,6 @@ msgstr "请选择一个物料"
 msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
 
-msgid "Post"
-msgstr "过账"
-
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
 

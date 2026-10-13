@@ -1505,9 +1505,6 @@ msgstr "Please select an item"
 msgid "PM schedule lapsed"
 msgstr "PM schedule lapsed"
 
-msgid "Post"
-msgstr "Post"
-
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 

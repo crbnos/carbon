@@ -126,8 +126,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     laborCategories: laborCategories.data ?? [],
     defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
     jobLocationId: employeeJob.data?.locationId ?? null,
-    // The submit button says what submitting does, as in the ERP.
-    approvalRequired: approval.data?.timesheetApprovalRequired ?? true,
     // DCAA mode keeps a date after today (company calendar) read-only,
     // except on a leave element, as the ERP grid and the server do.
     dcaaToday:
@@ -277,7 +275,6 @@ export default function MESTimesheetPage() {
     laborCategories,
     defaultLaborCategoryId,
     jobLocationId,
-    approvalRequired,
     dcaaToday
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
@@ -394,11 +391,8 @@ export default function MESTimesheetPage() {
               isDisabled={!hasDraft || isSubmitting}
               isLoading={isSubmitting}
             >
-              {approvalRequired ? (
-                <Trans>Submit week</Trans>
-              ) : (
-                <Trans>Post</Trans>
-              )}
+              {/* With approval off the week posts too; the toast says so. */}
+              <Trans>Submit week</Trans>
             </Button>
           </submitFetcher.Form>
         </div>

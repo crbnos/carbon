@@ -1505,9 +1505,6 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
-msgid "Post"
-msgstr "전기"
-
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
 

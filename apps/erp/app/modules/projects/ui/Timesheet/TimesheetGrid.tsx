@@ -69,7 +69,6 @@ import {
   useCellSave
 } from "~/components/Setup";
 import { useDateFormatter, useQuantityFormatter } from "~/hooks";
-import { useSettings } from "~/hooks/useSettings";
 import { path } from "~/utils/path";
 import type {
   RdActivityRole,
@@ -256,7 +255,6 @@ export default function TimesheetGrid({
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
   const navigate = useNavigate();
-  const settings = useSettings();
   const chargeNumbers = useChargeNumbers();
   const submitFetcher = useFetcher();
   const [addingRow, setAddingRow] = useState(false);
@@ -731,11 +729,8 @@ export default function TimesheetGrid({
                 isDisabled={!hasDraft || isSubmitting}
                 isLoading={isSubmitting}
               >
-                {settings.timesheetApprovalRequired ? (
-                  <Trans>Submit week</Trans>
-                ) : (
-                  <Trans>Post</Trans>
-                )}
+                {/* With approval off the week posts too; the toast says so. */}
+                <Trans>Submit week</Trans>
               </Button>
             </submitFetcher.Form>
           )}

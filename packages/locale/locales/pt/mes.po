@@ -1505,9 +1505,6 @@ msgstr "Por favor, selecione um item"
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM expirou"
 
-msgid "Post"
-msgstr "Contabilizar"
-
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Pressione ? em qualquer página para abrir esta lista. Os atalhos são ignorados enquanto você digita em um campo."
 
