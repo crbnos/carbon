@@ -34,6 +34,8 @@ export const EXEMPT_COUNTERS: Record<string, string> = {
     "no form or API write takes its transferId (the transferId tools are warehouse transfers)",
   inspection: "no form or API write takes inspectionId",
   jobOperationBatch: "no form or API write takes a batch's readableId",
+  leaseRun:
+    "a lease run is a revenueRecognitionRun of type Lease; no form or API write takes runId",
   reimbursement:
     "no form or API write takes reimbursementId (reimbursement lines only reference their parent)",
   revenueRecognitionRun: "no form or API write takes runId"

@@ -26,6 +26,7 @@ BEGIN
     WHEN 'inventoryCount' THEN 'inventoryCountId'
     WHEN 'job' THEN 'jobId'
     WHEN 'journal' THEN 'journalEntryId'
+    WHEN 'lease' THEN 'leaseId'
     WHEN 'maintenanceDispatch' THEN 'maintenanceDispatchId'
     WHEN 'memo' THEN 'memoId'
     WHEN 'nonConformance' THEN 'nonConformanceId'

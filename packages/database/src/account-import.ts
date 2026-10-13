@@ -66,6 +66,9 @@ export const ROLE_NAMES = {
   accumulatedDepreciationAccount: "Accumulated Depreciation",
   accumulatedDepreciationOnDisposalAccount:
     "Accumulated Depreciation on Disposal",
+  rightOfUseAssetAccount: "Right-of-Use Assets",
+  accumulatedRightOfUseAmortizationAccount:
+    "Accumulated Amortization – Right-of-Use Assets",
   payablesAccount: "Payables",
   supplierPrepaymentAccount: "Supplier Prepayments",
   goodsReceivedNotInvoicedAccount: "GR/IR Clearing",
@@ -73,6 +76,7 @@ export const ROLE_NAMES = {
   employeeReimbursementsPayableAccount: "Employee Reimbursements Payable",
   intercompanyReceivablesAccount: "Intercompany Receivables",
   intercompanyPayablesAccount: "Intercompany Payables",
+  leaseLiabilityAccount: "Lease Liabilities",
   salesTaxPayableAccount: "Sales Tax Payable",
   purchaseTaxPayableAccount: "Purchase Tax Payable",
   reverseChargeSalesTaxPayableAccount: "Reverse Charge Sales Tax",
@@ -106,6 +110,10 @@ export const ROLE_NAMES = {
   assetDepreciationExpenseAccount: "Depreciation Expense",
   assetGainOnDisposalAccount: "Gain on Disposal",
   assetLossOnDisposalAccount: "Loss on Disposal",
+  operatingLeaseExpenseAccount: "Operating Lease Expense",
+  variableLeaseExpenseAccount: "Variable Lease Expense",
+  rightOfUseAmortizationExpenseAccount: "Amortization – Right-of-Use Assets",
+  leaseInterestExpenseAccount: "Interest Expense – Leases",
   serviceChargeAccount: "Service Charges",
   interestAccount: "Interest",
   roundingAccount: "Rounding Account",

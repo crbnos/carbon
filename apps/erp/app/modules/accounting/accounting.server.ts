@@ -22,6 +22,11 @@ import {
   type RecognitionSources,
   type RunJournal
 } from "@carbon/database/run-journals";
+import {
+  runLabelSentence,
+  runTypeFilter,
+  runTypeOfScheduleRow
+} from "@carbon/database/run-type";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import { datetime, equals, formatDate, round } from "@carbon/utils";
@@ -1080,6 +1085,8 @@ export type RevenueRecognitionDimensionIds = {
   location?: string;
   /** Contract rows only: the contract line's project, else the contract's. */
   project?: string;
+  /** Lessee lease rows only: the lease's supplier. */
+  supplier?: string;
 };
 
 type AccountClass = NonNullable<Database["public"]["Enums"]["glAccountClass"]>;
@@ -1116,14 +1123,14 @@ export async function postRevenueRecognitionRun(
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("revenueRecognitionRun")
-      .select(["id", "runId", "status", "periodEnd"])
+      .select(["id", "runId", "status", "periodEnd", "type"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
-        `Revenue recognition run ${run.runId} is already ${run.status}`
+        `${runLabelSentence(run.type)} ${run.runId} is already ${run.status}`
       );
     }
 
@@ -1147,13 +1154,17 @@ export async function postRevenueRecognitionRun(
         "s.rentalAgreementLineId",
         "s.rentalLeaseScheduleLineId",
         "s.customerContractLineId",
-        "s.customerContractRevenueId"
+        "s.customerContractRevenueId",
+        "s.leaseId",
+        "s.leaseScheduleLineId"
       ])
       .where("l.runId", "=", runId)
       .where("l.companyId", "=", companyId)
       .execute();
     if (rows.length === 0) {
-      throw new Error(`Revenue recognition run ${run.runId} has no lines`);
+      throw new Error(
+        `${runLabelSentence(run.type)} ${run.runId} has no lines`
+      );
     }
 
     // A Draft is a snapshot of the schedule when it was proposed. Posting it
@@ -1164,6 +1175,7 @@ export async function postRevenueRecognitionRun(
       .selectFrom("revenueRecognitionSchedule")
       .select("id")
       .where("companyId", "=", companyId)
+      .where(runTypeFilter(run.type))
       .where("status", "=", "Planned")
       .where("runLineId", "is", null)
       .where("scheduledDate", "<=", run.periodEnd)
@@ -1172,30 +1184,33 @@ export async function postRevenueRecognitionRun(
     // a month that fell due since (a contract confirmed later) has no row yet;
     // and a held contract row whose plan month an amendment replaced (its
     // `customerContractRevenueId` nulled) would recognize a stale amount.
-    const unsynthesizedContractRevenue = await trx
-      .selectFrom("customerContractRevenue as r")
-      .innerJoin("customerContract as c", (join) =>
-        join
-          .onRef("c.id", "=", "r.customerContractId")
-          .onRef("c.companyId", "=", "r.companyId")
-      )
-      .select("r.id")
-      .where("r.companyId", "=", companyId)
-      .where("r.status", "=", "Planned")
-      .where("r.periodStart", "<=", run.periodEnd)
-      .where("r.amount", "<>", 0)
-      .where("c.status", "<>", "Draft")
-      .where(({ not, exists, selectFrom }) =>
-        not(
-          exists(
-            selectFrom("revenueRecognitionSchedule as s")
-              .select("s.id")
-              .whereRef("s.customerContractRevenueId", "=", "r.id")
-              .where("s.companyId", "=", companyId)
-          )
-        )
-      )
-      .executeTakeFirst();
+    const unsynthesizedContractRevenue =
+      run.type !== "Revenue Recognition"
+        ? undefined
+        : await trx
+            .selectFrom("customerContractRevenue as r")
+            .innerJoin("customerContract as c", (join) =>
+              join
+                .onRef("c.id", "=", "r.customerContractId")
+                .onRef("c.companyId", "=", "r.companyId")
+            )
+            .select("r.id")
+            .where("r.companyId", "=", companyId)
+            .where("r.status", "=", "Planned")
+            .where("r.periodStart", "<=", run.periodEnd)
+            .where("r.amount", "<>", 0)
+            .where("c.status", "<>", "Draft")
+            .where(({ not, exists, selectFrom }) =>
+              not(
+                exists(
+                  selectFrom("revenueRecognitionSchedule as s")
+                    .select("s.id")
+                    .whereRef("s.customerContractRevenueId", "=", "r.id")
+                    .where("s.companyId", "=", companyId)
+                )
+              )
+            )
+            .executeTakeFirst();
     const drifted = rows.some(
       (row) =>
         row.scheduleStatus !== "Planned" ||
@@ -1204,7 +1219,7 @@ export async function postRevenueRecognitionRun(
     );
     if (unclaimed || unsynthesizedContractRevenue || drifted) {
       throw new RunOutOfDateError(
-        `Revenue recognition run ${run.runId} is out of date with the revenue schedule; recalculate it before posting`
+        `${runLabelSentence(run.type)} ${run.runId} is out of date with its schedule; recalculate it before posting`
       );
     }
 
@@ -1343,13 +1358,49 @@ export async function postRevenueRecognitionRun(
       periodIdByDate.set(period.postingDate, period.accountingPeriodId);
       return { ...row, postingDate: period.postingDate };
     });
+    // Lessee lease rows reference the lease, with its supplier and location.
+    const leaseIds = [
+      ...new Set(
+        rows.map((row) => row.leaseId).filter((id): id is string => Boolean(id))
+      )
+    ];
+    const leases =
+      leaseIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("lease")
+            .select(["id", "supplierId", "locationId"])
+            .where("id", "in", leaseIds)
+            .where("companyId", "=", companyId)
+            .execute();
+    const leaseScheduleLineIds = rows
+      .map((row) => row.leaseScheduleLineId)
+      .filter((id): id is string => Boolean(id));
+    const leaseAssets =
+      leaseScheduleLineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("leaseScheduleLine as sl")
+            .innerJoin("leaseLine as l", (join) =>
+              join
+                .onRef("l.id", "=", "sl.leaseLineId")
+                .onRef("l.companyId", "=", "sl.companyId")
+            )
+            .select(["sl.id", "sl.leaseLineId", "l.locationId"])
+            .where("sl.id", "in", leaseScheduleLineIds)
+            .where("sl.companyId", "=", companyId)
+            .execute();
+
     const sources: RecognitionSources = {
       invoiceLines: invoiceLineById,
       rentalLines: rentalLineById,
-      contractLines: contractLineById
+      contractLines: contractLineById,
+      leases: new Map(leases.map((lease) => [lease.id, lease])),
+      leaseAssets: new Map(leaseAssets.map((asset) => [asset.id, asset]))
     };
     // Throws when an account has no class.
     const { journals, runJournal } = buildRecognitionJournals({
+      runType: run.type,
       runReadableId: run.runId,
       runPeriodEnd: run.periodEnd,
       rows: scheduleRows,
@@ -1360,7 +1411,8 @@ export async function postRevenueRecognitionRun(
       Customer: dimensionIds.customer,
       Item: dimensionIds.item,
       Location: dimensionIds.location,
-      Project: dimensionIds.project
+      Project: dimensionIds.project,
+      Supplier: dimensionIds.supplier
     };
 
     const written = new Map<
@@ -1412,6 +1464,21 @@ export async function postRevenueRecognitionRun(
             updatedAt: now
           })
           .where("id", "in", journal.leaseScheduleLineIds)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+      // A lessee lease's month: its schedule line records the journal that
+      // posted it.
+      if (journal.lesseeScheduleLineIds.length > 0) {
+        await trx
+          .updateTable("leaseScheduleLine")
+          .set({
+            journalId: inserted.id,
+            postedAt: now,
+            updatedBy: userId,
+            updatedAt: now
+          })
+          .where("id", "in", journal.lesseeScheduleLineIds)
           .where("companyId", "=", companyId)
           .execute();
       }
@@ -1707,21 +1774,21 @@ export async function reverseRevenueRecognitionRun(
     companyId: string;
     userId: string;
   }
-): Promise<{ runId: string }> {
+): Promise<{ runId: string; deleted: boolean }> {
   const { runId, periods, companyId, userId } = args;
   const now = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("revenueRecognitionRun")
-      .select(["id", "runId", "status", "periodEnd"])
+      .select(["id", "runId", "status", "periodEnd", "type"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Posted") {
       throw new RunReversalError(
-        `Revenue recognition run ${run.runId} is ${run.status}; only a posted run can be reversed`
+        `${runLabelSentence(run.type)} ${run.runId} is ${run.status}; only a posted run can be reversed`
       );
     }
     // The reversed run becomes the period's Draft, and a period holds one.
@@ -1729,6 +1796,7 @@ export async function reverseRevenueRecognitionRun(
       .selectFrom("revenueRecognitionRun")
       .select("runId")
       .where("companyId", "=", companyId)
+      .where("type", "=", run.type)
       .where("periodEnd", "=", run.periodEnd)
       .where("status", "=", "Draft")
       .executeTakeFirst();
@@ -1749,7 +1817,11 @@ export async function reverseRevenueRecognitionRun(
         "s.id",
         "s.journalId",
         "s.rentalLeaseScheduleLineId",
-        "s.customerContractRevenueId"
+        "s.customerContractRevenueId",
+        "s.leaseScheduleLineId",
+        "s.rentalAgreementLineId",
+        "s.leaseId",
+        "l.id as lineId"
       ])
       .where("l.runId", "=", runId)
       .where("l.companyId", "=", companyId)
@@ -1801,6 +1873,27 @@ export async function reverseRevenueRecognitionRun(
         .execute();
     }
 
+    const lesseeScheduleLineIds = [
+      ...new Set(
+        rows
+          .map((row) => row.leaseScheduleLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (lesseeScheduleLineIds.length > 0) {
+      await trx
+        .updateTable("leaseScheduleLine")
+        .set({
+          journalId: null,
+          postedAt: null,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "in", lesseeScheduleLineIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
     const contractRevenueIds = [
       ...new Set(
         rows
@@ -1817,6 +1910,43 @@ export async function reverseRevenueRecognitionRun(
         .execute();
     }
 
+    // A run posted before lease runs existed can hold rental rows. Those now
+    // belong to the lease run: release them, so the next lease run claims
+    // them. A run left holding nothing is deleted rather than kept as an
+    // empty Draft.
+    const otherFamily = rows.filter(
+      (row) => runTypeOfScheduleRow(row) !== run.type
+    );
+    if (otherFamily.length > 0) {
+      await trx
+        .updateTable("revenueRecognitionSchedule")
+        .set({ runLineId: null, updatedBy: userId })
+        .where(
+          "id",
+          "in",
+          otherFamily.map((row) => row.id)
+        )
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .deleteFrom("revenueRecognitionRunLine")
+        .where(
+          "id",
+          "in",
+          otherFamily.map((row) => row.lineId)
+        )
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    if (otherFamily.length === rows.length) {
+      await trx
+        .deleteFrom("revenueRecognitionRun")
+        .where("id", "=", runId)
+        .where("companyId", "=", companyId)
+        .execute();
+      return { runId: run.runId, deleted: true };
+    }
+
     await trx
       .updateTable("revenueRecognitionRun")
       .set({
@@ -1831,7 +1961,7 @@ export async function reverseRevenueRecognitionRun(
       .where("companyId", "=", companyId)
       .execute();
 
-    return { runId: run.runId };
+    return { runId: run.runId, deleted: false };
   });
 }
 
@@ -2012,14 +2142,14 @@ export async function deleteRevenueRecognitionRun(
   return db.transaction().execute(async (trx) => {
     const run = await trx
       .selectFrom("revenueRecognitionRun")
-      .select(["runId", "status"])
+      .select(["runId", "status", "type"])
       .where("id", "=", runId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirstOrThrow();
     if (run.status !== "Draft") {
       throw new Error(
-        `Revenue recognition run ${run.runId} is ${run.status}; reverse the run instead of deleting it`
+        `${runLabelSentence(run.type)} ${run.runId} is ${run.status}; reverse the run instead of deleting it`
       );
     }
 

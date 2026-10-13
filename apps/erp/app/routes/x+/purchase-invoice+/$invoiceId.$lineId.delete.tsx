@@ -11,11 +11,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
-  deletePurchaseInvoiceLine,
   getPurchaseInvoice,
   getPurchaseInvoiceLine,
   isPurchaseInvoiceLocked
 } from "~/modules/invoicing";
+import { deletePurchaseInvoiceLineReleasingLeases } from "~/modules/purchasing/purchasing.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -50,7 +51,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -66,17 +67,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a confirmed purchase invoice."
   });
 
-  const { error: deleteTypeError } = await deletePurchaseInvoiceLine(
-    client,
-    lineId
-  );
-  if (deleteTypeError) {
+  // A Lease line returns the payment row it billed to Pending.
+  try {
+    await deletePurchaseInvoiceLineReleasingLeases(getDatabaseClient(), {
+      companyId,
+      invoiceId,
+      purchaseInvoiceLineId: lineId,
+      userId
+    });
+  } catch (err) {
     throw redirect(
       path.to.purchaseInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete purchase invoice line")
-      )
+      await flash(request, error(err, "Failed to delete purchase invoice line"))
     );
   }
 

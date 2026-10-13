@@ -588,6 +588,24 @@ export const sequences = [
     step: 1
   },
   {
+    table: "lease",
+    name: "Lease",
+    prefix: "LSE",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "leaseRun",
+    name: "Lease Run",
+    prefix: "LR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "customerContract",
     name: "Contract",
     prefix: "CON",
@@ -1127,6 +1145,30 @@ export const accounts = [
     consolidatedRate: "Current",
     createdBy: "system"
   },
+  {
+    key: "1450",
+    number: "1450",
+    name: "Right-of-Use Assets",
+    isGroup: false,
+    parentKey: "other-assets",
+    accountType: "Other Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "1460",
+    number: "1460",
+    name: "Accumulated Amortization – Right-of-Use Assets",
+    isGroup: false,
+    parentKey: "other-assets",
+    accountType: "Other Asset",
+    incomeBalance: "Balance Sheet",
+    class: "Asset",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
 
   // ─── 2000-2999: LIABILITIES ───
   {
@@ -1369,6 +1411,18 @@ export const accounts = [
     key: "2430",
     number: "2430",
     name: "Pension Obligations",
+    isGroup: false,
+    parentKey: "long-term-liabilities",
+    accountType: "Long Term Liability",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "2440",
+    number: "2440",
+    name: "Lease Liabilities",
     isGroup: false,
     parentKey: "long-term-liabilities",
     accountType: "Long Term Liability",
@@ -1998,6 +2052,30 @@ export const accounts = [
     consolidatedRate: "Average",
     createdBy: "system"
   },
+  {
+    key: "6130",
+    number: "6130",
+    name: "Variable Lease Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "6140",
+    number: "6140",
+    name: "Operating Lease Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
 
   // Depreciation & Amortization
   {
@@ -2036,6 +2114,18 @@ export const accounts = [
     consolidatedRate: "Average",
     createdBy: "system"
   },
+  {
+    key: "6330",
+    number: "6330",
+    name: "Amortization – Right-of-Use Assets",
+    isGroup: false,
+    parentKey: "depreciation",
+    accountType: "Other Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
 
   // ─── 7000-7999: OTHER / NON-OPERATING EXPENSES ───
   {
@@ -2054,6 +2144,18 @@ export const accounts = [
     key: "7010",
     number: "7010",
     name: "Interest Expense",
+    isGroup: false,
+    parentKey: "other-expenses",
+    accountType: "Other Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
+    key: "7020",
+    number: "7020",
+    name: "Interest Expense – Leases",
     isGroup: false,
     parentKey: "other-expenses",
     accountType: "Other Expense",
@@ -2197,7 +2299,14 @@ export const accountDefaults = {
   rentalIncomeAccount: "4060",
   leaseRevenueAccount: "4070",
   leaseInterestIncomeAccount: "4150",
-  netInvestmentInLeasesAccount: "1160"
+  netInvestmentInLeasesAccount: "1160",
+  rightOfUseAssetAccount: "1450",
+  accumulatedRightOfUseAmortizationAccount: "1460",
+  leaseLiabilityAccount: "2440",
+  operatingLeaseExpenseAccount: "6140",
+  variableLeaseExpenseAccount: "6130",
+  rightOfUseAmortizationExpenseAccount: "6330",
+  leaseInterestExpenseAccount: "7020"
 } as const;
 
 export const fixedAssetClasses = [
@@ -2334,6 +2443,16 @@ export const periodCloseTaskDefinitions = [
     name: "Recognize revenue for the period",
     taskType: "Auto",
     autoCheckKey: "unposted-revenue-schedules",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Post lease journals",
+    taskType: "Auto",
+    autoCheckKey: "unposted-lease-schedules",
     sortOrder: 5,
     required: true,
     severity: "Warning",

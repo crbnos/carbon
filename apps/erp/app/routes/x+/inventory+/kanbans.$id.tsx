@@ -36,7 +36,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "inventory"
   });
 
@@ -53,6 +53,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const updateKanban = await upsertKanban(client, {
     id,
     ...d,
+    companyId,
     updatedBy: userId
   });
 
@@ -84,6 +85,7 @@ export default function EditKanbanRoute() {
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,
+    replenishmentLevel: kanban?.replenishmentLevel ?? undefined,
     autoRelease: kanban?.autoRelease ?? false,
     autoStartJob: kanban?.autoStartJob ?? false,
     completedBarcodeOverride: kanban?.completedBarcodeOverride ?? ""

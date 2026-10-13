@@ -44,7 +44,13 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
-import { LuBox, LuChevronRight, LuLandmark, LuReceipt } from "react-icons/lu";
+import {
+  LuBox,
+  LuChevronRight,
+  LuKeyRound,
+  LuLandmark,
+  LuReceipt
+} from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -91,6 +97,7 @@ type PurchaseInvoiceLineFormProps = {
     taxPercent?: number;
     assetReadableId?: string;
     assetName?: string;
+    leaseReadableId?: string;
   };
   type?: "card" | "modal";
   onClose?: () => void;
@@ -197,9 +204,46 @@ const PurchaseInvoiceLineForm = ({
   const isEditing = initialValues.id !== undefined;
   const isGLAccount = initialValues.invoiceLineType === "G/L Account";
   const isFixedAsset = initialValues.invoiceLineType === "Fixed Asset";
-  const [activeTab, setActiveTab] = useState<"item" | "gl-account" | "asset">(
-    isFixedAsset ? "asset" : isGLAccount ? "gl-account" : "item"
+  const isLease = initialValues.invoiceLineType === "Lease";
+  // A lease payment the daily job drafted: its lease and amount come from the
+  // lease's payment row (they debit the lease liability), so they are locked.
+  const isLeasePayment = isLease && !!initialValues.leasePaymentId;
+  const [activeTab, setActiveTab] = useState<
+    "item" | "gl-account" | "asset" | "lease"
+  >(
+    isLease
+      ? "lease"
+      : isFixedAsset
+        ? "asset"
+        : isGLAccount
+          ? "gl-account"
+          : "item"
   );
+
+  // The supplier's leases a Lease line can bill: any lease that is or was
+  // in force (a final penalty or purchase price is billed after it ends).
+  const [leaseOptions, setLeaseOptions] = useState<
+    { value: string; label: string }[]
+  >([]);
+  useMount(() => {
+    const supplierId = routeData?.purchaseInvoice?.supplierId;
+    if (!supplierId) return;
+    (async () => {
+      const leases = await carbon
+        .from("lease")
+        .select("id, leaseId, name")
+        .eq("companyId", company.id)
+        .eq("supplierId", supplierId)
+        .in("status", ["Active", "Expired", "Terminated", "Purchased"])
+        .order("leaseId");
+      setLeaseOptions(
+        (leases.data ?? []).map((lease) => ({
+          value: lease.id,
+          label: `${lease.leaseId} — ${lease.name}`
+        }))
+      );
+    })();
+  });
 
   const [assetOptions, setAssetOptions] = useState<
     { value: string; label: string; locationId: string | null }[]
@@ -246,6 +290,7 @@ const PurchaseInvoiceLineForm = ({
   const [indirectData, setIndirectData] = useState<{
     accountId: string;
     assetId: string;
+    leaseId: string;
     costCenterId: string;
     description: string;
     quantity: number;
@@ -257,6 +302,7 @@ const PurchaseInvoiceLineForm = ({
   }>({
     accountId: initialValues.accountId ?? "",
     assetId: initialValues.assetId ?? "",
+    leaseId: initialValues.leaseId ?? "",
     costCenterId: initialValues.costCenterId ?? "",
     description: initialValues.description ?? "",
     quantity: initialValues.quantity ?? 1,
@@ -484,19 +530,23 @@ const PurchaseInvoiceLineForm = ({
     }));
   };
 
-  const lineSubtitle = isFixedAsset
-    ? initialValues.assetName || indirectData.description
-    : isGLAccount
-      ? "G/L Account"
-      : distinctItemText(
-          getItemReadableId(items, itemData?.itemId),
-          itemData?.description
-        );
+  const lineSubtitle = isLease
+    ? indirectData.description
+    : isFixedAsset
+      ? initialValues.assetName || indirectData.description
+      : isGLAccount
+        ? "G/L Account"
+        : distinctItemText(
+            getItemReadableId(items, itemData?.itemId),
+            itemData?.description
+          );
 
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(v) => setActiveTab(v as "item" | "gl-account" | "asset")}
+      onValueChange={(v) =>
+        setActiveTab(v as "item" | "gl-account" | "asset" | "lease")
+      }
       className="w-full"
     >
       <ModalCardProvider type={type}>
@@ -533,17 +583,20 @@ const PurchaseInvoiceLineForm = ({
                       isEditing &&
                         !isGLAccount &&
                         !isFixedAsset &&
+                        !isLease &&
                         !itemData?.itemId &&
                         "text-muted-foreground"
                     )}
                   >
                     {isEditing
-                      ? isFixedAsset
-                        ? initialValues.assetReadableId || "Fixed Asset"
-                        : isGLAccount
-                          ? indirectData.description || "G/L Account"
-                          : (getItemReadableId(items, itemData?.itemId) ??
-                            "...")
+                      ? isLease
+                        ? initialValues.leaseReadableId || "Lease"
+                        : isFixedAsset
+                          ? initialValues.assetReadableId || "Fixed Asset"
+                          : isGLAccount
+                            ? indirectData.description || "G/L Account"
+                            : (getItemReadableId(items, itemData?.itemId) ??
+                              "...")
                       : "New Purchase Invoice Line"}
                   </ModalCardTitle>
                   <ModalCardDescription>
@@ -590,6 +643,10 @@ const PurchaseInvoiceLineForm = ({
                       <TabsTrigger value="asset">
                         <LuLandmark className="mr-1" />
                         <Trans>Asset</Trans>
+                      </TabsTrigger>
+                      <TabsTrigger value="lease">
+                        <LuKeyRound className="mr-1" />
+                        <Trans>Lease</Trans>
                       </TabsTrigger>
                     </TabsList>
                   )}
@@ -833,18 +890,50 @@ const PurchaseInvoiceLineForm = ({
                   </VStack>
                 </TabsContent>
 
-                {(activeTab === "gl-account" || activeTab === "asset") && (
+                {(activeTab === "gl-account" ||
+                  activeTab === "asset" ||
+                  activeTab === "lease") && (
                   <>
                     <Hidden
                       name="invoiceLineType"
                       value={
-                        activeTab === "asset" ? "Fixed Asset" : "G/L Account"
+                        activeTab === "asset"
+                          ? "Fixed Asset"
+                          : activeTab === "lease"
+                            ? "Lease"
+                            : "G/L Account"
                       }
                     />
+                    {isLeasePayment && (
+                      <>
+                        <Hidden name="leaseId" value={indirectData.leaseId} />
+                        <Hidden
+                          name="leasePaymentId"
+                          value={initialValues.leasePaymentId}
+                        />
+                      </>
+                    )}
 
                     <VStack>
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                        {activeTab === "gl-account" ? (
+                        {activeTab === "lease" ? (
+                          // A lease line never carries a project or cost
+                          // center: it settles the lease, not a cost.
+                          <Combobox
+                            name={isLeasePayment ? "leasePicker" : "leaseId"}
+                            label={t`Lease`}
+                            isOptional={false}
+                            isReadOnly={isLeasePayment}
+                            options={leaseOptions}
+                            value={indirectData.leaseId}
+                            onChange={(selected) =>
+                              setIndirectData((d) => ({
+                                ...d,
+                                leaseId: (selected?.value as string) ?? ""
+                              }))
+                            }
+                          />
+                        ) : activeTab === "gl-account" ? (
                           <>
                             <Account
                               name="accountId"
@@ -893,7 +982,7 @@ const PurchaseInvoiceLineForm = ({
                         )}
                         <InputControlled
                           className={
-                            activeTab === "asset"
+                            activeTab === "asset" || activeTab === "lease"
                               ? "col-span-1"
                               : "col-span-3 max-md:col-span-full"
                           }
@@ -923,9 +1012,13 @@ const PurchaseInvoiceLineForm = ({
                           name="quantity"
                           label={t`Quantity`}
                           isOptional={false}
-                          isDisabled={activeTab === "asset"}
+                          isDisabled={
+                            activeTab === "asset" || activeTab === "lease"
+                          }
                           value={
-                            activeTab === "asset" ? 1 : indirectData.quantity
+                            activeTab === "asset" || activeTab === "lease"
+                              ? 1
+                              : indirectData.quantity
                           }
                           onChange={(value) =>
                             setIndirectData((d) => ({
@@ -938,6 +1031,7 @@ const PurchaseInvoiceLineForm = ({
                           name="supplierUnitPrice"
                           label={t`Unit Price`}
                           isOptional={false}
+                          isDisabled={isLeasePayment}
                           value={indirectData.supplierUnitPrice}
                           formatOptions={INPUT_FORMAT.rate(
                             invoiceCurrency,

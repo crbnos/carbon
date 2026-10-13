@@ -8,11 +8,28 @@ import {
   type InvoiceRunResult
 } from "./digest";
 
+const sale = (
+  invoiceId: string,
+  sourceId: string,
+  outcome: InvoiceRunResult["outcome"]
+): InvoiceRunResult => ({
+  invoiceId,
+  documentType: "salesInvoice",
+  sourceId,
+  outcome
+});
+const leaseDraft = (invoiceId: string, sourceId: string): InvoiceRunResult => ({
+  invoiceId,
+  documentType: "purchaseInvoice",
+  sourceId,
+  outcome: "drafted"
+});
+
 const results: InvoiceRunResult[] = [
-  { invoiceId: "inv-1", sourceId: "ra-1", outcome: "emailed" },
-  { invoiceId: "inv-2", sourceId: "ra-1", outcome: "held" },
-  { invoiceId: "inv-3", sourceId: "ra-2", outcome: "posted" },
-  { invoiceId: "inv-4", sourceId: "ra-2", outcome: "unsent" }
+  sale("inv-1", "ra-1", "emailed"),
+  sale("inv-2", "ra-1", "held"),
+  sale("inv-3", "ra-2", "posted"),
+  sale("inv-4", "ra-2", "unsent")
 ];
 const owners = new Map([
   ["ra-1", "user-ana"],
@@ -24,11 +41,13 @@ describe("buildRecurringInvoicingDigests", () => {
     expect(buildRecurringInvoicingDigests(results, owners, [])).toEqual([
       {
         recipient: { type: "user", userId: "user-ana" },
+        documentType: "salesInvoice",
         body: "1 posted, 1 emailed, 1 need review",
         documentIds: ["inv-2"]
       },
       {
         recipient: { type: "user", userId: "user-bo" },
+        documentType: "salesInvoice",
         body: "2 posted, 0 emailed, 1 need review",
         documentIds: ["inv-4"]
       }
@@ -43,11 +62,13 @@ describe("buildRecurringInvoicingDigests", () => {
     expect(digests).toEqual([
       {
         recipient: { type: "user", userId: "user-bo" },
+        documentType: "salesInvoice",
         body: "2 posted, 0 emailed, 1 need review",
         documentIds: ["inv-4"]
       },
       {
         recipient: { type: "group", groupIds: ["user-ana", "group-ar"] },
+        documentType: "salesInvoice",
         body: "3 posted, 1 emailed, 2 need review",
         documentIds: ["inv-2", "inv-4"]
       }
@@ -62,15 +83,59 @@ describe("buildRecurringInvoicingDigests", () => {
   it("links the posted invoices when nothing needs review", () => {
     expect(
       buildRecurringInvoicingDigests(
-        [{ invoiceId: "inv-9", sourceId: "ra-1", outcome: "emailed" }],
+        [sale("inv-9", "ra-1", "emailed")],
         owners,
         []
       )
     ).toEqual([
       {
         recipient: { type: "user", userId: "user-ana" },
+        documentType: "salesInvoice",
         body: "1 posted, 1 emailed, 0 need review",
         documentIds: ["inv-9"]
+      }
+    ]);
+  });
+
+  it("sends lease drafts as their own notification, linking to the purchase invoices", () => {
+    expect(
+      buildRecurringInvoicingDigests(
+        [
+          leaseDraft("pi-1", "lease-1"),
+          leaseDraft("pi-2", "lease-1"),
+          sale("inv-2", "ra-1", "held"),
+          sale("inv-9", "ra-1", "posted")
+        ],
+        new Map([...owners, ["lease-1", "user-ana"]]),
+        []
+      )
+    ).toEqual([
+      {
+        recipient: { type: "user", userId: "user-ana" },
+        documentType: "salesInvoice",
+        body: "1 posted, 0 emailed, 1 need review",
+        documentIds: ["inv-2"]
+      },
+      {
+        recipient: { type: "user", userId: "user-ana" },
+        documentType: "purchaseInvoice",
+        body: "2 lease invoices drafted",
+        documentIds: ["pi-1", "pi-2"]
+      }
+    ]);
+  });
+
+  it("sends only the lease notification when nothing else was billed", () => {
+    expect(
+      buildRecurringInvoicingDigests([leaseDraft("pi-1", "lease-1")], owners, [
+        "group-ap"
+      ])
+    ).toEqual([
+      {
+        recipient: { type: "group", groupIds: ["group-ap"] },
+        documentType: "purchaseInvoice",
+        body: "1 lease invoice drafted",
+        documentIds: ["pi-1"]
       }
     ]);
   });

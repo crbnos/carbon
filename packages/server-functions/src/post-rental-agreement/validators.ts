@@ -284,10 +284,10 @@ export function rentalShipmentVoidBlocker(
   }
   for (const unit of units) {
     if (unit.accrual === "Posted") {
-      return `A posted revenue recognition run holds accrued rent for ${unit.label}; the shipment cannot be voided`;
+      return `A posted run holds accrued rent for ${unit.label}; the shipment cannot be voided`;
     }
     if (unit.accrual === "Draft run") {
-      return `A draft revenue recognition run holds accrued rent for ${unit.label}; delete the run before voiding the shipment`;
+      return `A draft lease run holds accrued rent for ${unit.label}; delete the run before voiding the shipment`;
     }
   }
   return null;

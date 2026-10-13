@@ -32,7 +32,7 @@ export default function useSalesSubmodules() {
   const { addSavedViewsToRoutes } = useSavedViews();
   const salesRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Customers`,
       routes: [
         {
           name: t`Customers`,
@@ -40,6 +40,17 @@ export default function useSalesSubmodules() {
           icon: <LuSquareUser />,
           table: "customer"
         },
+        {
+          name: t`Portals`,
+          to: path.to.customerPortals,
+          role: "employee",
+          icon: <LuGlobe />
+        }
+      ]
+    },
+    {
+      name: t`Quoting`,
+      routes: [
         {
           name: t`RFQs`,
           to: path.to.salesRfqs,
@@ -51,7 +62,12 @@ export default function useSalesSubmodules() {
           to: path.to.quotes,
           icon: <RiProgress4Line />,
           table: "quote"
-        },
+        }
+      ]
+    },
+    {
+      name: t`Orders`,
+      routes: [
         {
           name: t`Sales Orders`,
           to: path.to.salesOrders,
@@ -67,7 +83,7 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Deals`,
+      name: t`Agreements`,
       routes: [
         {
           name: t`Service Contracts`,
@@ -84,14 +100,8 @@ export default function useSalesSubmodules() {
       ]
     },
     {
-      name: t`Configure`,
+      name: t`Pricing`,
       routes: [
-        {
-          name: t`Portals`,
-          to: path.to.customerPortals,
-          role: "employee",
-          icon: <LuGlobe />
-        },
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
@@ -103,7 +113,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesPricingRules,
           role: "employee",
           icon: <LuPercent />
-        },
+        }
+      ]
+    },
+    {
+      name: t`Configure`,
+      routes: [
         {
           name: t`Sales Rules`,
           to: path.to.salesRules,
@@ -122,7 +137,6 @@ export default function useSalesSubmodules() {
           role: "employee",
           icon: <LuUndo2 />
         },
-
         {
           name: t`Statuses`,
           to: path.to.customerStatuses,

@@ -121,6 +121,10 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "create": "invoicing",
     "update": "sales",
   },
+  "create-lease-invoices": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",
@@ -289,6 +293,15 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "journal-legacy-documents": {
     "update": "accounting",
   },
+  "kanban-replenish": {
+    "by": "mode",
+    "rules": {
+      "level": "system",
+      "scan": {
+        "create": "inventory",
+      },
+    },
+  },
   "post-asset-transfer": {
     "by": "type",
     "rules": {
@@ -320,6 +333,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "post-inventory-count": {
     "update": "inventory",
+  },
+  "post-lease": {
+    "update": "purchasing",
   },
   "post-maintenance-event": {
     "update": "resources",

@@ -91,29 +91,6 @@ export async function lockAgreement(
   };
 }
 
-// Billing periods are invoiced, so they are priced at the agreement
-// currency's settlement precision — the group's `currency.decimalPlaces`,
-// never a literal.
-export async function currencyDecimals(
-  trx: Trx,
-  companyId: string,
-  currencyCode: string
-): Promise<number> {
-  const currency = await trx
-    .selectFrom("currency")
-    .innerJoin("company", "company.companyGroupId", "currency.companyGroupId")
-    .select("currency.decimalPlaces")
-    .where("company.id", "=", companyId)
-    .where("currency.code", "=", currencyCode)
-    .executeTakeFirst();
-  if (!currency || currency.decimalPlaces === null) {
-    throw new InvalidInputError(
-      `Currency ${currencyCode} is not set up for this company`
-    );
-  }
-  return currency.decimalPlaces;
-}
-
 export function billingPeriodRow(
   spec: PeriodSpec,
   rentalAgreementLineId: string,

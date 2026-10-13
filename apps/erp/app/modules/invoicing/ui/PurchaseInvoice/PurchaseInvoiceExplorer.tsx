@@ -259,10 +259,12 @@ function PurchaseInvoiceLineBody({
   const subtitle =
     line.invoiceLineType === "G/L Account"
       ? "G/L Account"
-      : distinctItemText(
-          getItemReadableId(items, line.itemId),
-          line.description
-        );
+      : line.invoiceLineType === "Lease"
+        ? line.description
+        : distinctItemText(
+            getItemReadableId(items, line.itemId),
+            line.description
+          );
   return (
     <ReorderableRow dragHandle={dragHandle} isOverlay={isOverlay}>
       <HStack spacing={2} className="flex-grow min-w-0 p-2 pr-10">
@@ -271,7 +273,9 @@ function PurchaseInvoiceLineBody({
           <span className="font-semibold line-clamp-1">
             {line.invoiceLineType === "G/L Account"
               ? line.description || "Indirect Expense"
-              : getItemReadableId(items, line.itemId)}
+              : line.invoiceLineType === "Lease"
+                ? line.leaseReadableId || "Lease"
+                : getItemReadableId(items, line.itemId)}
           </span>
           {subtitle && (
             <span className="text-muted-foreground text-xs truncate line-clamp-1">
@@ -310,10 +314,12 @@ function PurchaseInvoiceLineItem({
       ? "G/L Account"
       : line.invoiceLineType === "Fixed Asset"
         ? line.assetName || line.description
-        : distinctItemText(
-            getItemReadableId(items, line.itemId),
-            line.description
-          );
+        : line.invoiceLineType === "Lease"
+          ? line.description
+          : distinctItemText(
+              getItemReadableId(items, line.itemId),
+              line.description
+            );
 
   return (
     <VStack spacing={0} className="border-b">
@@ -335,7 +341,9 @@ function PurchaseInvoiceLineItem({
                   ? line.description || "G/L Account"
                   : line.invoiceLineType === "Fixed Asset"
                     ? (line as any).assetReadableId || "Fixed Asset"
-                    : getItemReadableId(items, line.itemId)}
+                    : line.invoiceLineType === "Lease"
+                      ? line.leaseReadableId || "Lease"
+                      : getItemReadableId(items, line.itemId)}
               </span>
               {subtitle && (
                 <span className="text-muted-foreground text-xs truncate line-clamp-1">

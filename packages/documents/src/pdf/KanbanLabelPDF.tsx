@@ -18,6 +18,7 @@ interface KanbanLabel {
   storageUnitName?: string | null;
   fromStorageUnitName?: string | null;
   quantity: number;
+  replenishmentLevel?: number | null;
   unitOfMeasureCode?: string | null;
   thumbnail?: string | null;
 }
@@ -224,6 +225,20 @@ const KanbanLabelPDF = ({
                               ? ` ${label.unitOfMeasureCode}`
                               : ""}
                           </Text>
+                          {label.replenishmentLevel != null && (
+                            <Text
+                              style={{
+                                ...tw("text-center"),
+                                fontSize: "16pt",
+                                fontWeight: "bold"
+                              }}
+                            >
+                              {/* The level is in stock units at the To
+                                  storage unit; unitOfMeasureCode is the
+                                  purchase unit, so MIN prints no unit. */}
+                              MIN: {label.replenishmentLevel}
+                            </Text>
+                          )}
                         </View>
                       </View>
 

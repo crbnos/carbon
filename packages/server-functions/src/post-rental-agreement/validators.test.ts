@@ -436,7 +436,7 @@ it("a rental shipment does not void over a posted accrual", () => {
       { label: "FA-2", status: "On Rent", accrual: "Posted" }
     ])
   ).toEqual(
-    "A posted revenue recognition run holds accrued rent for FA-2; the shipment cannot be voided"
+    "A posted run holds accrued rent for FA-2; the shipment cannot be voided"
   );
 });
 
@@ -447,7 +447,7 @@ it("a rental shipment does not void over a draft run's accrual", () => {
       { label: "FA-2", status: "On Rent", accrual: "Posted" }
     ])
   ).toEqual(
-    "A draft revenue recognition run holds accrued rent for FA-1; delete the run before voiding the shipment"
+    "A draft lease run holds accrued rent for FA-1; delete the run before voiding the shipment"
   );
 });
 

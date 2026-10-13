@@ -64,6 +64,7 @@ import type { ChartPlannedOrder } from "./planningSupplyDemand";
 import {
   demandSourceTypes,
   mergePlannedOrders,
+  projectedChange,
   type SourceType,
   supplySourceTypes
 } from "./planningSupplyDemand";
@@ -282,7 +283,7 @@ export const ItemPlanningChart = ({
       ) {
         const sourceType = curr.sourceType as keyof ChartDataPoint;
         if (sourceType === "Sales Order" || sourceType === "Job Material") {
-          groupedData[curr.periodId][sourceType] = -(curr.actualQuantity ?? 0);
+          groupedData[curr.periodId][sourceType] -= curr.actualQuantity ?? 0;
         }
       }
     });
@@ -299,7 +300,7 @@ export const ItemPlanningChart = ({
           sourceType === "Purchase Order" ||
           sourceType === "Production Order"
         ) {
-          groupedData[curr.periodId][sourceType] = curr.actualQuantity ?? 0;
+          groupedData[curr.periodId][sourceType] += curr.actualQuantity ?? 0;
         }
       }
     });
@@ -327,13 +328,7 @@ export const ItemPlanningChart = ({
 
     const data = sortedData.map((period) => {
       // Add supply (positive), then subtract demand (already stored negative).
-      const supplyUp =
-        period["Purchase Order"] + period["Production Order"] + period.Planned;
-      const demandDown =
-        period["Sales Order"] +
-        period["Job Material"] +
-        period["Demand Forecast"];
-      runningProjection += supplyUp + demandDown;
+      runningProjection += projectedChange(period, hiddenSeries);
       period.Projection = runningProjection;
 
       if (stockoutDate === null && runningProjection < 0)
@@ -369,7 +364,8 @@ export const ItemPlanningChart = ({
     plannedOrders,
     conversionFactor,
     hasSafetyStock,
-    safetyStockValue
+    safetyStockValue,
+    hiddenSeries
   ]);
 
   const axis = useMemo(() => {

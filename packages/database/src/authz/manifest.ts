@@ -900,6 +900,23 @@ export const manifest = {
     update: false
   }),
   kanban: company("inventory"),
+  lease: company("purchasing", { read: "purchasing_view" }),
+  // Written only by post-lease and the lease run (Kysely); read-only over the API.
+  leaseEvent: company("purchasing", {
+    read: "purchasing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
+  leaseLine: company("purchasing", { read: "purchasing_view" }),
+  leasePayment: company("purchasing", { read: "purchasing_view" }),
+  // Written only by post-lease and the lease run (Kysely); read-only over the API.
+  leaseScheduleLine: company("purchasing", {
+    read: "purchasing_view",
+    create: false,
+    update: false,
+    delete: false
+  }),
   lessonCompletion: policies({
     select: owner("userId"),
     insert: owner("userId")
