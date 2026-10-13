@@ -142,6 +142,10 @@ msgstr "{0, plural, one {# परीक्षण} other {# परीक्षण
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# सप्ताह} other {# सप्ताह}}"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "{0, plural, one {Aggregate of # business component} other {Aggregate of # business components}}"
+msgstr "{0, plural, one {# व्यावसायिक घटक का समुच्चय} other {# व्यावसायिक घटकों का समुच्चय}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {# जॉब को पूर्ण करें या रद्द करें जिस पर Carbon के लागत दर्ज करने से पहले लागत लगी थी।} other {# जॉबें को पूर्ण करें या रद्द करें जिन पर Carbon के लागत दर्ज करने से पहले लागत लगी थी।}}"
@@ -2518,10 +2522,6 @@ msgstr "बाद में (गणना विधि)"
 
 msgid "Afternoon, {name}."
 msgstr "दोपहर, {name}।"
-
-#. placeholder {0}: row.original.aggregateCount
-msgid "Aggregate of {0} business components"
-msgstr "{0} व्यावसायिक घटकों का समुच्चय"
 
 msgid "Aging"
 msgstr "उम्र"

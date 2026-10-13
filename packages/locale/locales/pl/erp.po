@@ -142,6 +142,10 @@ msgstr "{0, plural, one {# test} other {# testy}}"
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# tydzień} few {# tygodnie} many {# tygodni} other {# tygodnia}}"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "{0, plural, one {Aggregate of # business component} other {Aggregate of # business components}}"
+msgstr "{0, plural, one {Agregacja # komponentu biznesowego} other {Agregacja # komponentów biznesowych}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Ukończ lub anuluj # zlecenie produkcyjne, które poniosło koszty przed ich zarejestrowaniem przez Carbon.} other {Ukończ lub anuluj # zleceń produkcyjnych, które poniosły koszty przed ich zarejestrowaniem przez Carbon.}}"
@@ -2518,10 +2522,6 @@ msgstr "Po (metoda obliczenia)"
 
 msgid "Afternoon, {name}."
 msgstr "Popołudnie, {name}."
-
-#. placeholder {0}: row.original.aggregateCount
-msgid "Aggregate of {0} business components"
-msgstr "Agregacja {0} komponentów biznesowych"
 
 msgid "Aging"
 msgstr "Wiekowanie"

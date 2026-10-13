@@ -142,6 +142,10 @@ msgstr "{0, plural, one {# 테스트} other {# 테스트}}"
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#주}}"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "{0, plural, one {Aggregate of # business component} other {Aggregate of # business components}}"
+msgstr "{0, plural, one {# 비즈니스 구성요소의 집계} other {# 비즈니스 구성요소의 집계}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon이 원가를 기록하기 전에 원가가 발생한 # 작업 지시를 완료 처리하거나 취소하세요.} other {Carbon이 원가를 기록하기 전에 원가가 발생한 # 작업 지시를 완료 처리하거나 취소하세요.}}"
@@ -2518,10 +2522,6 @@ msgstr "이후(계산 방법)"
 
 msgid "Afternoon, {name}."
 msgstr "{name}님, 좋은 오후입니다."
-
-#. placeholder {0}: row.original.aggregateCount
-msgid "Aggregate of {0} business components"
-msgstr "{0}개 사업 요소의 집계"
 
 msgid "Aging"
 msgstr "연령 분석"

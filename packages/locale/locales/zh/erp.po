@@ -142,6 +142,10 @@ msgstr "{0, plural, one {# 测试} other {# 测试}}"
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "{0, plural, one {Aggregate of # business component} other {Aggregate of # business components}}"
+msgstr "{0, plural, one {# 个业务组件的聚合} other {# 个业务组件的聚合}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。} other {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。}}"
@@ -2518,10 +2522,6 @@ msgstr "之后（计算方法）"
 
 msgid "Afternoon, {name}."
 msgstr "下午，{name}。"
-
-#. placeholder {0}: row.original.aggregateCount
-msgid "Aggregate of {0} business components"
-msgstr "合计 {0} 个业务组件"
 
 msgid "Aging"
 msgstr "账龄分析"

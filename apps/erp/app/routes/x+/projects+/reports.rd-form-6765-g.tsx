@@ -9,7 +9,7 @@ import {
   section6765OfficerWages
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { useLingui } from "@lingui/react/macro";
+import { Plural, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import type { LoaderFunctionArgs } from "react-router";
@@ -110,7 +110,11 @@ export default function Section6765ReportRoute() {
           row.original.isTotal ? (
             <span className="font-semibold">{t`Total`}</span>
           ) : row.original.isAggregate ? (
-            t`Aggregate of ${row.original.aggregateCount} business components`
+            <Plural
+              value={row.original.aggregateCount}
+              one="Aggregate of # business component"
+              other="Aggregate of # business components"
+            />
           ) : (
             row.original.name
           )

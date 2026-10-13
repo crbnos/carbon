@@ -266,6 +266,7 @@ async function save(
   const mode = settings?.timekeepingControls ?? "Standard";
 
   if (input.mode === "add") {
+    await assertProjectTakesTime(trx, input);
     return addEntry(trx, input, settings, actorIsOwner);
   }
 
@@ -298,6 +299,10 @@ async function save(
     : existingQuery.where("rdActivityRole", "is", null);
   const rows = await existingQuery.orderBy("id").forUpdate().execute();
   const current = currentEntry(rows);
+  // Fewer hours on a held project is a correction; more is a new charge.
+  if (input.hours > Number(current?.hours ?? 0)) {
+    await assertProjectTakesTime(trx, input);
+  }
 
   if (mode === "Standard") {
     return saveStandard(trx, input, rows, actorIsOwner);
@@ -408,6 +413,28 @@ async function save(
     after: revisionFields({ ...current, hours: input.hours })
   });
   return { entryId: current.id, status: next };
+}
+
+/**
+ * A project On Hold takes no new hours: the charge-number picker hides it,
+ * and this stops the rows already on a timesheet. A stop-work order sets the
+ * project On Hold (FAR 52.242-15).
+ */
+async function assertProjectTakesTime(trx: Transaction<DB>, input: SaveInput) {
+  const project = await trx
+    .selectFrom("project")
+    .select(["identifier", "name", "status", "stopWorkDate"])
+    .where("id", "=", input.projectId)
+    .where("companyId", "=", input.companyId)
+    .executeTakeFirst();
+  if (!project) throw new NotFoundError("The project does not exist");
+  if (project.status !== "On Hold") return;
+  const label = project.identifier || project.name;
+  throw new TimesheetRefusal(
+    project.stopWorkDate
+      ? `${label} has a stop-work order: it takes no new time`
+      : `${label} is On Hold: it takes no new time`
+  );
 }
 
 /**

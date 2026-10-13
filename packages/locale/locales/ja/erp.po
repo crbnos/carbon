@@ -142,6 +142,10 @@ msgstr "{0, plural, one {# テスト} other {# テスト}}"
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#週}}"
 
+#. placeholder {0}: row.original.aggregateCount
+msgid "{0, plural, one {Aggregate of # business component} other {Aggregate of # business components}}"
+msgstr "{0, plural, one {# ビジネスコンポーネントの集計} other {# ビジネスコンポーネントの集計}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Carbon が原価を記録する前に原価が発生した # 製造指図を完了またはキャンセルしてください。} other {Carbon が原価を記録する前に原価が発生した # 製造指図を完了またはキャンセルしてください。}}"
@@ -2518,10 +2522,6 @@ msgstr "後（計算方法）"
 
 msgid "Afternoon, {name}."
 msgstr "午後、{name}さん。"
-
-#. placeholder {0}: row.original.aggregateCount
-msgid "Aggregate of {0} business components"
-msgstr "{0}個のビジネスコンポーネントの集計"
 
 msgid "Aging"
 msgstr "経過日数"

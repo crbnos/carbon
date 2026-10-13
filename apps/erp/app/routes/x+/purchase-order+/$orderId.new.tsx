@@ -113,9 +113,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
     : null;
   if (budget?.status === "block") {
-    return validationError({
-      fieldErrors: { purchaseQuantity: budget.message }
-    });
+    // The add-line modal closes when it submits, so a field error would have
+    // no form to land on: refuse with a flash, as the other refusals here do.
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, budget.message))
+    );
   }
 
   const createPurchaseOrderLine = await upsertPurchaseOrderLine(client, {

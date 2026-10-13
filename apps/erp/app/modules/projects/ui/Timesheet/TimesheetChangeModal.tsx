@@ -105,10 +105,18 @@ export function TimesheetChangeModal({
                 )}
               </p>
               {requiresReason && (
-                <TextArea name="reason" label={t`Reason for change`} />
+                <TextArea
+                  name="reason"
+                  label={t`Reason for change`}
+                  isRequired
+                />
               )}
               {requiresLateReason && (
-                <TextArea name="lateReason" label={t`Reason for late entry`} />
+                <TextArea
+                  name="lateReason"
+                  label={t`Reason for late entry`}
+                  isRequired
+                />
               )}
             </VStack>
           </ModalBody>

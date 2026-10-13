@@ -155,6 +155,55 @@ databaseTest(
   }
 );
 
+databaseTest("A project On Hold takes no new hours", async () => {
+  const f = await timesheetFixture("Standard");
+  try {
+    const saved = await saveTimesheetEntry(f.ctx, {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 4
+    });
+    expect(saved.error).toBeNull();
+    await f.db
+      .updateTable("project")
+      .set({ status: "On Hold", stopWorkDate: day(-1) })
+      .where("id", "=", f.projectId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+
+    const more = await saveTimesheetEntry(f.ctx, {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 5
+    });
+    expect(more.error?.message).toMatch(/stop-work order/);
+    const added = await saveTimesheetEntry(f.ctx, {
+      ...f.cell,
+      mode: "add",
+      entryDate: day(-1),
+      hours: 1
+    });
+    expect(added.error?.message).toMatch(/stop-work order/);
+
+    // A correction down is still allowed.
+    const fewer = await saveTimesheetEntry(f.ctx, {
+      ...f.cell,
+      entryDate: day(-2),
+      hours: 3
+    });
+    expect(fewer.error).toBeNull();
+    expect(Number((await f.entry(saved.data!.entryId!)).hours)).toEqual(3);
+  } finally {
+    await f.db
+      .updateTable("project")
+      .set({ status: "Released", stopWorkDate: null })
+      .where("id", "=", f.projectId)
+      .where("companyId", "=", f.companyId)
+      .execute();
+    await f.cleanup();
+  }
+});
+
 databaseTest("DCAA: an entry for tomorrow is refused", async () => {
   const f = await timesheetFixture("DCAA");
   try {
