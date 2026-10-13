@@ -13,7 +13,7 @@
 - [x] Task 4: Tidy the engine slots, always close a slot, and merge repeated states
 - [x] Task 5: Stop a sync run when the provider is unavailable
 - [x] Task 6: Fix the sync cursor, log late events, and close Canceled operations
-- [ ] Task 7: Test `syncOeeDevice` against the local database
+- [x] Task 7: Test `syncOeeDevice` against the local database
 - [x] Task 8: Resolve an OEE provider in one place
 - [x] Task 9: Make machine time one stream per work center
 - [x] Task 10: End the MES event on its own work center
