@@ -8,13 +8,15 @@
 // account uses). The Carbon account behind a default becomes the customer
 // account it maps to, keeping its id and history; a Carbon account whose
 // number is in the chart is the same account; every other Carbon account is
-// deleted, and every chart row nobody claimed is created. Only before
+// deleted, or merged into the row the review picks while documents or
+// journals use it; every chart row nobody claimed is created. Only before
 // accounting is activated, so nothing has Posted history yet.
 // `planAccountImport` is pure, so the review page and the apply server
 // function compute the same plan. The reads live in ./account-import-reads.
 
 import type { AccountDefaultColumn } from "./accounting-cutover/shared.ts";
 import { ACCOUNT_DEFAULT_COLUMNS } from "./accounting-cutover/shared.ts";
+import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "./accounting-cutover.ts";
 import { hasDefaultFallback } from "./journal-posting-status.ts";
 import type { AccountClass } from "./ledger.ts";
 import { Constants } from "./types.ts";
@@ -28,23 +30,14 @@ export type AccountType =
 export const ACCOUNT_TYPES: readonly AccountType[] =
   Constants.public.Enums.accountType;
 
-export const ACCOUNT_CLASSES: readonly AccountClass[] = [
-  "Asset",
-  "Liability",
-  "Equity",
-  "Revenue",
-  "Expense"
-];
-
-/** The type a new row gets when the sheet leaves `Type` empty. */
-export const DEFAULT_ACCOUNT_TYPE_BY_CLASS: Record<AccountClass, AccountType> =
-  {
-    Asset: "Other Current Asset",
-    Liability: "Other Current Liability",
-    Equity: "Equity - No Close",
-    Revenue: "Income",
-    Expense: "Expense"
-  };
+/** The type a row gets when the chart file gives none. */
+const DEFAULT_ACCOUNT_TYPE_BY_CLASS: Record<AccountClass, AccountType> = {
+  Asset: "Other Current Asset",
+  Liability: "Other Current Liability",
+  Equity: "Equity - No Close",
+  Revenue: "Income",
+  Expense: "Expense"
+};
 
 export function incomeBalanceOf(
   accountClass: AccountClass
@@ -54,11 +47,7 @@ export function incomeBalanceOf(
     : "Balance Sheet";
 }
 
-/**
- * Each default role by the name the Default Accounts page shows. A sheet may
- * name a Carbon account by its role ("Accounts Receivable" works too, below).
- * Plain English: the sheet is data, not UI.
- */
+/** Each default role by the name the Default Accounts page shows. */
 export const ROLE_NAMES = {
   bankCashAccount: "Bank - Cash",
   bankLocalCurrencyAccount: "Bank - Local Currency",
@@ -124,63 +113,46 @@ export const ROLE_NAMES = {
   realizedExchangeLossAccount: "Realized Exchange Loss"
 } as const satisfies Record<AccountDefaultColumn, string>;
 
-/** Other names a sheet commonly uses for a role. */
-const ROLE_ALIASES: Record<string, AccountDefaultColumn> = {
-  "accounts receivable": "receivablesAccount",
-  "accounts payable": "payablesAccount",
-  inventory: "rawMaterialsAccount",
-  "work in progress": "workInProgressAccount",
-  wip: "workInProgressAccount",
-  "goods received not invoiced": "goodsReceivedNotInvoicedAccount",
-  cogs: "costOfGoodsSoldAccount"
-};
-
-/**
- * The roles activation readiness demands: every default with no fallback. An
- * account that holds one can only retire into a target.
- */
+/** The roles activation readiness demands: every default with no fallback. */
 export function requiredRoles(): AccountDefaultColumn[] {
   return ACCOUNT_DEFAULT_COLUMNS.filter((role) => !hasDefaultFallback(role));
 }
 
-export type ReferencePolicy =
-  | "repoint"
-  | "repoint-if-draft"
-  | "repoint-if-unposted-journal"
-  | "history";
-
-export type ReferenceParent = {
-  /** The row whose status decides; `null` means the row itself. */
-  table: string | null;
-  /** The column of the referencing row that holds the parent's id. */
-  column: string | null;
-  statuses: readonly string[];
-};
-
-export type AccountReference = {
-  table: string;
-  column: string;
-  policy: ReferencePolicy;
-  parent?: ReferenceParent;
-  /** Columns that must stay unique per group after a re-point. */
-  dedupeOn?: readonly string[];
-};
+/**
+ * How a merge treats one column that names an account:
+ * - `repoint`: every row moves to the target.
+ * - `repoint-if-status`: a row moves while its own `status` is listed.
+ * - `repoint-if-parent-status`: a row moves while its parent's is listed.
+ * - `history`: never moves; an account with such a row cannot be removed.
+ */
+export type AccountReference = { table: string; column: string } & (
+  | { policy: "repoint" | "history" }
+  | { policy: "repoint-if-status"; statuses: readonly string[] }
+  | {
+      policy: "repoint-if-parent-status";
+      parentTable: string;
+      parentColumn: string;
+      statuses: readonly string[];
+    }
+);
 
 /**
  * Every foreign key to `account` other than `accountDefault` and
  * `fixedAssetClass` (both set from the default accounts file) and
- * `account.parentId` (leaves have no children). A merge moves
- * the rows a policy allows; a row it does not move is a history reference,
- * and the plan refuses to remove an account that has one. The
- * apply-account-import live-database test compares this list with the catalog,
- * so a new account column fails that test until it is classified here.
+ * `account.parentId` (leaves have no children). The apply-account-import
+ * live-database test compares this list with the catalog, so a new account
+ * column fails that test until it is classified here. The references with no
+ * foreign key are read and moved by hand: `intercompanyEliminationLine`,
+ * `externalIntegrationMapping` and `companyIntegration.metadata`
+ * (account-import-reads.ts, apply-account-import).
  *
  * The projects branch (projects-wbs-research-spec) adds 5 more. Whichever of
  * the two branches merges second adds them here:
  *   project.costAccountId, projectElement.costAccountId: repoint
  *   indirectPool.appliedAccountId: repoint
- *   indirectPoolAccount.accountId: repoint,
- *     dedupeOn ["indirectPoolId", "accountId", "dimensionValueId", "role"]
+ *   indirectPoolAccount.accountId: repoint, and the apply must first remove
+ *     the rows that would become duplicates (same pool, account, dimension
+ *     value and role)
  *   indirectExpenseStatement.accountId: history (a period snapshot)
  */
 export const REFERENCE_POLICY: readonly AccountReference[] = [
@@ -193,14 +165,14 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   {
     table: "revenueRecognitionSchedule",
     column: "debitAccountId",
-    policy: "repoint-if-draft",
-    parent: { table: null, column: null, statuses: ["Planned"] }
+    policy: "repoint-if-status",
+    statuses: ["Planned"]
   },
   {
     table: "revenueRecognitionSchedule",
     column: "creditAccountId",
-    policy: "repoint-if-draft",
-    parent: { table: null, column: null, statuses: ["Planned"] }
+    policy: "repoint-if-status",
+    statuses: ["Planned"]
   },
   // Posted documents move with their journal lines: the import runs only
   // before the cutover, so their journals are Provisional. The charge and
@@ -218,30 +190,14 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   {
     table: "journalLine",
     column: "accountId",
-    policy: "repoint-if-unposted-journal",
-    parent: {
-      table: "journal",
-      column: "journalId",
-      statuses: ["Draft", "Provisional"]
-    }
+    policy: "repoint-if-parent-status",
+    parentTable: "journal",
+    parentColumn: "journalId",
+    statuses: ["Draft", "Provisional"]
   },
   { table: "accountingPeriodBalance", column: "accountId", policy: "history" },
   { table: "accountingSyncTieOut", column: "accountId", policy: "history" }
 ];
-
-/**
- * The references with no foreign key. The apply handles each by hand:
- * - intercompanyEliminationLine.accountId follows its journal line when that
- *   line's journal is Draft or Provisional.
- * - externalIntegrationMapping rows with entityType 'account' for the source
- *   are deleted; the target keeps its own mapping.
- * - companyIntegration.metadata.paymentFeeAccount is re-pointed.
- */
-export const SOFT_REFERENCES = [
-  "intercompanyEliminationLine.accountId",
-  "externalIntegrationMapping.entityId",
-  "companyIntegration.metadata.paymentFeeAccount"
-] as const;
 
 /** The `fixedAssetClass` columns that name an account. All NOT NULL. */
 export const FIXED_ASSET_CLASS_COLUMNS = [
@@ -255,10 +211,7 @@ export const FIXED_ASSET_CLASS_COLUMNS = [
 ] as const;
 export type FixedAssetClassColumn = (typeof FIXED_ASSET_CLASS_COLUMNS)[number];
 
-export const FIXED_ASSET_CLASS_COLUMN_NAMES: Record<
-  FixedAssetClassColumn,
-  string
-> = {
+const FIXED_ASSET_CLASS_COLUMN_NAMES: Record<FixedAssetClassColumn, string> = {
   assetAccountId: "Asset",
   accumulatedDepreciationAccountId: "Accumulated Depreciation",
   depreciationExpenseAccountId: "Depreciation Expense",
@@ -282,6 +235,20 @@ export function assetClassLabel(
   column: FixedAssetClassColumn
 ) {
   return `${className} – ${FIXED_ASSET_CLASS_COLUMN_NAMES[column]}`;
+}
+
+/** The label of any default accounts key, or the key itself if unknown. */
+export function defaultKeyLabel(key: string) {
+  if ((ACCOUNT_DEFAULT_COLUMNS as readonly string[]).includes(key)) {
+    return ROLE_NAMES[key as AccountDefaultColumn];
+  }
+  const [prefix, className, column] = key.split(":");
+  const isColumn = (FIXED_ASSET_CLASS_COLUMNS as readonly string[]).includes(
+    column ?? ""
+  );
+  return prefix === "asset-class" && className && isColumn
+    ? assetClassLabel(className, column as FixedAssetClassColumn)
+    : key;
 }
 
 const CLASS_OF_TYPE: Record<AccountType, AccountClass> = {
@@ -314,58 +281,7 @@ export function classOfAccountType(type: AccountType): AccountClass {
 
 const key = (value: string) => value.trim().toLowerCase();
 
-const CLASS_SYNONYMS: Record<string, AccountClass> = {
-  asset: "Asset",
-  assets: "Asset",
-  liability: "Liability",
-  liabilities: "Liability",
-  equity: "Equity",
-  revenue: "Revenue",
-  revenues: "Revenue",
-  income: "Revenue",
-  "other income": "Revenue",
-  expense: "Expense",
-  expenses: "Expense",
-  "other expense": "Expense",
-  "cost of goods sold": "Expense",
-  "cost of sales": "Expense"
-};
-
-/** An account class from the words a chart export uses, or null. */
-export function normalizeAccountClass(value: string): AccountClass | null {
-  return CLASS_SYNONYMS[key(value)] ?? null;
-}
-
-const TYPE_SYNONYMS: Record<string, AccountType> = {
-  "accounts receivable (a/r)": "Accounts Receivable",
-  "accounts payable (a/p)": "Accounts Payable",
-  "current asset": "Other Current Asset",
-  "current assets": "Other Current Asset",
-  "other current assets": "Other Current Asset",
-  "fixed assets": "Fixed Asset",
-  "other assets": "Other Asset",
-  "current liability": "Other Current Liability",
-  "current liabilities": "Other Current Liability",
-  "other current liabilities": "Other Current Liability",
-  "credit card": "Other Current Liability",
-  "long term liabilities": "Long Term Liability",
-  "long-term liability": "Long Term Liability",
-  equity: "Equity - No Close",
-  "cost of sales": "Cost of Goods Sold",
-  cogs: "Cost of Goods Sold",
-  expenses: "Expense",
-  "other expenses": "Other Expense",
-  revenue: "Income"
-};
-
-/** A Carbon account type from the words a chart export uses, or null. */
-export function normalizeAccountType(value: string): AccountType | null {
-  const wanted = key(value);
-  const exact = ACCOUNT_TYPES.find((t) => key(t) === wanted);
-  return exact ?? TYPE_SYNONYMS[wanted] ?? null;
-}
-
-/** One row of the customer's chart of accounts. */
+/** One row of the customer's chart of accounts. Values are trimmed. */
 export type ChartImportRow = {
   /** The file line; the header is line 1. */
   line: number;
@@ -390,7 +306,7 @@ export type ChartAccount = {
   number: string | null;
   name: string;
   class: AccountClass | null;
-  accountType: string | null;
+  accountType: AccountType | null;
   incomeBalance: "Balance Sheet" | "Income Statement";
   parentId: string | null;
   isGroup: boolean;
@@ -399,7 +315,7 @@ export type ChartAccount = {
 };
 
 export type AccountUsage = {
-  /** Rows REFERENCE_POLICY moves (Draft or Provisional), per company. */
+  /** Rows a merge moves (documents, Draft or Provisional journal lines). */
   movableReferencesByCompany: Record<string, number>;
   /** Rows it never moves (posted history). None exist before activation. */
   historyReferences: number;
@@ -417,7 +333,7 @@ export type FixedAssetClassRow = {
   id: string;
   companyId: string;
   name: string;
-  accounts: Record<FixedAssetClassColumn, string | null>;
+  accounts: Record<FixedAssetClassColumn, string>;
 };
 
 export type AccountImportContext = {
@@ -441,6 +357,12 @@ export type AccountImportError =
   | { code: "duplicate-number"; line: number; firstLine: number; value: string }
   | { code: "duplicate-name"; line: number; firstLine: number; value: string }
   | { code: "missing-class"; line: number }
+  | {
+      code: "class-type-mismatch";
+      line: number;
+      class: AccountClass;
+      accountType: AccountType;
+    }
   | { code: "group-class-mismatch"; line: number; group: string }
   | { code: "unknown-default"; line: number; value: string }
   | { code: "duplicate-default"; line: number; firstLine: number; key: string }
@@ -450,50 +372,44 @@ export type AccountImportError =
   | { code: "account-has-history"; accountId: string }
   | { code: "target-not-in-chart"; accountId: string; line: number };
 
-export type AccountImportException = {
-  code: "account-needs-target";
-  accountId: string;
-  companyIds: string[];
+type ChartChange = {
+  line: number;
+  number: string;
+  name: string;
+  class: AccountClass;
+  accountType: AccountType;
+  group: string;
 };
 
 export type AccountImportPlan = {
   /** The Carbon account each kept chart line is. */
   claims: { line: number; accountId: string }[];
-  updates: {
-    accountId: string;
-    line: number;
-    number: string;
-    name: string;
-    class: AccountClass;
-    accountType: AccountType;
-    group: string;
-  }[];
-  creates: {
-    line: number;
-    number: string;
-    name: string;
-    class: AccountClass;
-    accountType: AccountType;
-    group: string;
-  }[];
+  updates: (ChartChange & { accountId: string })[];
+  creates: ChartChange[];
+  /** A Carbon account that goes into a kept row; its references move. */
   merges: { sourceId: string; targetLine: number }[];
+  /** A Carbon account nothing uses, removed outright. */
   deletes: string[];
-  /** Every default role of every company; `toLine` null clears it. */
-  roleMoves: {
-    companyId: string;
-    role: AccountDefaultColumn;
-    toLine: number | null;
+  /**
+   * Every account no file keeps that documents or journals use. The review
+   * picks the row each one merges into; `targetLine` is null until it does.
+   */
+  replacements: {
+    accountId: string;
+    companyIds: string[];
+    targetLine: number | null;
   }[];
+  /** Every default role, the same in every company; null clears it. */
+  roleMoves: { role: AccountDefaultColumn; toLine: number | null }[];
+  /** Every fixed asset class of every company, with all its accounts. */
   assetClassMoves: {
     classId: string;
     companyId: string;
-    column: FixedAssetClassColumn;
-    toLine: number;
+    toLines: Record<FixedAssetClassColumn, number>;
   }[];
   groupCreates: { name: string; class: AccountClass }[];
   companies: { companyId: string; repointedReferences: number }[];
   errors: AccountImportError[];
-  exceptions: AccountImportException[];
 };
 
 const NO_USAGE: AccountUsage = {
@@ -502,18 +418,16 @@ const NO_USAGE: AccountUsage = {
 };
 
 /** Resolve a default accounts file key or label to its canonical key. */
-export function resolveDefaultKey(
+function resolveDefaultKey(
   value: string,
   assetClassNames: readonly string[]
 ): string | null {
-  const trimmed = value.trim();
-  const wanted = key(trimmed);
+  const wanted = key(value);
   for (const column of ACCOUNT_DEFAULT_COLUMNS) {
     if (key(column) === wanted || key(ROLE_NAMES[column]) === wanted) {
       return column;
     }
   }
-  if (ROLE_ALIASES[wanted]) return ROLE_ALIASES[wanted];
   for (const className of assetClassNames) {
     for (const column of FIXED_ASSET_CLASS_COLUMNS) {
       const k = assetClassKey(className, column);
@@ -528,74 +442,46 @@ export function resolveDefaultKey(
   return null;
 }
 
-export function planAccountImport(
-  chartRows: ChartImportRow[],
-  defaultRows: DefaultImportRow[],
-  ctx: AccountImportContext,
-  resolutions: AccountImportResolutions
-): AccountImportPlan {
-  const plan: AccountImportPlan = {
-    claims: [],
-    updates: [],
-    creates: [],
-    merges: [],
-    deletes: [],
-    roleMoves: [],
-    assetClassMoves: [],
-    groupCreates: [],
-    companies: [],
-    errors: [],
-    exceptions: []
-  };
-  const { errors } = plan;
-  const usageOf = (id: string) => ctx.usage[id] ?? NO_USAGE;
-
-  // 0. Only before accounting is activated: nothing has Posted history yet.
-  for (const company of ctx.companies) {
-    if (company.hasCutover) {
-      errors.push({ code: "accounting-activated", companyId: company.id });
-    }
-  }
-  if (errors.length > 0) return plan;
-
-  const accountById = new Map(ctx.chart.map((a) => [a.id, a]));
-  const leaves = ctx.chart.filter((a) => !a.isGroup && !a.isSystem);
-  const groups = ctx.chart.filter((a) => a.isGroup);
-  const groupByName = new Map(groups.map((g) => [key(g.name), g]));
-  const rowByLine = new Map(chartRows.map((r) => [r.line, r]));
-
-  // 1. The chart: unique numbers and names.
+/** 1. The chart: unique numbers and names. Returns the line of each number. */
+function indexChart(rows: ChartImportRow[], errors: AccountImportError[]) {
   const lineByNumber = new Map<string, number>();
   const lineByName = new Map<string, number>();
-  for (const row of chartRows) {
-    const n = key(row.number);
-    const seenNumber = lineByNumber.get(n);
-    if (seenNumber !== undefined) {
+  for (const row of rows) {
+    const firstNumber = lineByNumber.get(key(row.number));
+    if (firstNumber !== undefined) {
       errors.push({
         code: "duplicate-number",
         line: row.line,
-        firstLine: seenNumber,
+        firstLine: firstNumber,
         value: row.number
       });
-    } else lineByNumber.set(n, row.line);
-    const seenName = lineByName.get(key(row.name));
-    if (seenName !== undefined) {
+    } else lineByNumber.set(key(row.number), row.line);
+    const firstName = lineByName.get(key(row.name));
+    if (firstName !== undefined) {
       errors.push({
         code: "duplicate-name",
         line: row.line,
-        firstLine: seenName,
+        firstLine: firstName,
         value: row.name
       });
     } else lineByName.set(key(row.name), row.line);
   }
+  return lineByNumber;
+}
 
-  // 2. The defaults: every key known, once, and every number in the chart.
-  const assetClassNames = [
-    ...new Set(ctx.fixedAssetClasses.map((c) => c.name))
-  ];
+/**
+ * 2. The defaults: every key known, once, and every number in the chart.
+ * Returns the chart line each key names; null for a key left blank.
+ */
+function resolveDefaults(
+  rows: DefaultImportRow[],
+  assetClassNames: readonly string[],
+  lineByNumber: Map<string, number>,
+  errors: AccountImportError[]
+) {
   const targetByKey = new Map<string, number | null>();
   const keyLine = new Map<string, number>();
-  for (const row of defaultRows) {
+  for (const row of rows) {
     const k = resolveDefaultKey(row.key, assetClassNames);
     if (!k) {
       errors.push({ code: "unknown-default", line: row.line, value: row.key });
@@ -612,7 +498,7 @@ export function planAccountImport(
       continue;
     }
     keyLine.set(k, row.line);
-    if (!row.number || row.number.trim() === "") {
+    if (row.number === null) {
       targetByKey.set(k, null);
       continue;
     }
@@ -639,19 +525,30 @@ export function planAccountImport(
       errors.push({ code: "default-missing", key: k });
     }
   }
+  return targetByKey;
+}
 
-  // 3. Claims from the defaults: the Carbon account behind a default becomes
-  // the customer account it maps to. A second Carbon account mapped to the
-  // same customer account merges into it.
+/**
+ * 3–4. Which Carbon leaf each kept chart line is. The Carbon account behind
+ * a default becomes the line the default names; a second Carbon account named
+ * onto a claimed line merges into it. Then a leaf whose number is an unclaimed
+ * line is that line.
+ */
+function claimLines(
+  ctx: AccountImportContext,
+  leafById: Map<string, ChartAccount>,
+  targetByKey: Map<string, number | null>,
+  lineByNumber: Map<string, number>
+) {
   const claimByLine = new Map<number, string>();
   const decided = new Set<string>();
-  const merges: { sourceId: string; targetLine: number }[] = [];
+  const merges: AccountImportPlan["merges"] = [];
   const decide = (
     accountId: string | null,
     line: number | null | undefined
   ) => {
     if (!accountId || line === null || line === undefined) return;
-    if (decided.has(accountId) || !accountById.has(accountId)) return;
+    if (decided.has(accountId) || !leafById.has(accountId)) return;
     decided.add(accountId);
     if (claimByLine.has(line))
       merges.push({ sourceId: accountId, targetLine: line });
@@ -663,9 +560,8 @@ export function planAccountImport(
       decide(importing[role], targetByKey.get(role));
     }
   }
-  for (const fac of ctx.fixedAssetClasses.filter(
-    (c) => c.companyId === ctx.importingCompanyId
-  )) {
+  for (const fac of ctx.fixedAssetClasses) {
+    if (fac.companyId !== ctx.importingCompanyId) continue;
     for (const column of FIXED_ASSET_CLASS_COLUMNS) {
       decide(
         fac.accounts[column],
@@ -673,158 +569,207 @@ export function planAccountImport(
       );
     }
   }
-
-  // 4. A Carbon account whose number is in the chart is the same account.
-  for (const leaf of leaves) {
+  for (const leaf of leafById.values()) {
     if (decided.has(leaf.id) || !leaf.number) continue;
     const line = lineByNumber.get(key(leaf.number));
     if (line === undefined || claimByLine.has(line)) continue;
     decided.add(leaf.id);
     claimByLine.set(line, leaf.id);
   }
+  return { claimByLine, decided, merges };
+}
 
-  // 5. Every other Carbon account goes: deleted, or merged into the row the
-  // review picked when documents or journals still use it.
-  for (const leaf of leaves) {
+export function planAccountImport(
+  chartRows: ChartImportRow[],
+  defaultRows: DefaultImportRow[],
+  ctx: AccountImportContext,
+  resolutions: AccountImportResolutions
+): AccountImportPlan {
+  const plan: AccountImportPlan = {
+    claims: [],
+    updates: [],
+    creates: [],
+    merges: [],
+    deletes: [],
+    replacements: [],
+    roleMoves: [],
+    assetClassMoves: [],
+    groupCreates: [],
+    companies: [],
+    errors: []
+  };
+  const { errors } = plan;
+  const usageOf = (id: string) => ctx.usage[id] ?? NO_USAGE;
+
+  // 0. Only before accounting is activated: nothing has Posted history yet.
+  for (const company of ctx.companies) {
+    if (company.hasCutover) {
+      errors.push({ code: "accounting-activated", companyId: company.id });
+    }
+  }
+  if (errors.length > 0) return plan;
+
+  const accountById = new Map(ctx.chart.map((a) => [a.id, a]));
+  const leafById = new Map(
+    ctx.chart.filter((a) => !a.isGroup && !a.isSystem).map((a) => [a.id, a])
+  );
+  const groupByName = new Map(
+    ctx.chart.filter((a) => a.isGroup).map((g) => [key(g.name), g])
+  );
+  const rowByLine = new Map(chartRows.map((r) => [r.line, r]));
+
+  const lineByNumber = indexChart(chartRows, errors);
+  const assetClassNames = [
+    ...new Set(ctx.fixedAssetClasses.map((c) => c.name))
+  ];
+  const targetByKey = resolveDefaults(
+    defaultRows,
+    assetClassNames,
+    lineByNumber,
+    errors
+  );
+  const { claimByLine, decided, merges } = claimLines(
+    ctx,
+    leafById,
+    targetByKey,
+    lineByNumber
+  );
+
+  // 5. Every other Carbon leaf goes: deleted when nothing uses it, else
+  // merged into the row the review picks.
+  for (const leaf of leafById.values()) {
     if (decided.has(leaf.id)) continue;
     const usage = usageOf(leaf.id);
-    const companies = Object.entries(usage.movableReferencesByCompany)
+    const companyIds = Object.entries(usage.movableReferencesByCompany)
       .filter(([, count]) => count > 0)
       .map(([companyId]) => companyId)
       .sort();
-    if (companies.length === 0) {
+    if (companyIds.length === 0) {
       plan.deletes.push(leaf.id);
       continue;
     }
-    const targetLine = resolutions.targets[leaf.id];
-    if (targetLine === undefined) {
-      plan.exceptions.push({
-        code: "account-needs-target",
-        accountId: leaf.id,
-        companyIds: companies
-      });
-    } else if (!rowByLine.has(targetLine)) {
+    const picked = resolutions.targets[leaf.id];
+    const targetLine =
+      picked !== undefined && rowByLine.has(picked) ? picked : null;
+    if (picked !== undefined && targetLine === null) {
       errors.push({
         code: "target-not-in-chart",
         accountId: leaf.id,
-        line: targetLine
+        line: picked
       });
-    } else {
-      merges.push({ sourceId: leaf.id, targetLine });
     }
+    plan.replacements.push({ accountId: leaf.id, companyIds, targetLine });
+    if (targetLine !== null) merges.push({ sourceId: leaf.id, targetLine });
   }
-  for (const merge of merges) plan.deletes.push(merge.sourceId);
-  for (const accountId of plan.deletes) {
+  plan.merges = merges;
+  for (const accountId of [...plan.deletes, ...merges.map((m) => m.sourceId)]) {
     if (usageOf(accountId).historyReferences > 0) {
       errors.push({ code: "account-has-history", accountId });
     }
   }
-  plan.merges = merges;
 
-  // 6. Kept rows update their account; the rest are created.
-  const classOfRow = (row: ChartImportRow): AccountClass | null => {
-    if (row.class) return row.class;
-    if (row.accountType) return classOfAccountType(row.accountType);
-    const claimed = claimByLine.get(row.line);
-    return claimed ? (accountById.get(claimed)?.class ?? null) : null;
-  };
+  // 6. Each row's class: its own, its type's, or its claimed account's.
+  const classByLine = new Map<number, AccountClass>();
   for (const row of chartRows) {
-    const rowClass = classOfRow(row);
+    const claimed = claimByLine.get(row.line);
+    const rowClass =
+      row.class ??
+      (row.accountType ? classOfAccountType(row.accountType) : null) ??
+      (claimed ? (accountById.get(claimed)?.class ?? null) : null);
     if (!rowClass) {
       errors.push({ code: "missing-class", line: row.line });
       continue;
     }
-    const accountId = claimByLine.get(row.line);
-    if (!accountId) {
-      plan.creates.push({
+    if (row.accountType && classOfAccountType(row.accountType) !== rowClass) {
+      errors.push({
+        code: "class-type-mismatch",
         line: row.line,
-        number: row.number.trim(),
-        name: row.name.trim(),
         class: rowClass,
-        accountType: row.accountType ?? DEFAULT_ACCOUNT_TYPE_BY_CLASS[rowClass],
-        group: row.group.trim()
+        accountType: row.accountType
       });
       continue;
     }
-    plan.claims.push({ line: row.line, accountId });
-    const account = accountById.get(accountId)!;
+    classByLine.set(row.line, rowClass);
+  }
+
+  // 7. Kept rows update their account; the rest are created.
+  for (const row of chartRows) {
+    const rowClass = classByLine.get(row.line);
+    if (!rowClass) continue;
+    const accountId = claimByLine.get(row.line);
+    const account = accountId ? accountById.get(accountId) : undefined;
+    // A claimed account keeps its type when the row gives none and the class
+    // still fits it.
     const accountType =
       row.accountType ??
-      (account.accountType &&
-      isAccountType(account.accountType) &&
+      (account?.accountType &&
       classOfAccountType(account.accountType) === rowClass
         ? account.accountType
         : DEFAULT_ACCOUNT_TYPE_BY_CLASS[rowClass]);
+    const change: ChartChange = {
+      line: row.line,
+      number: row.number,
+      name: row.name,
+      class: rowClass,
+      accountType,
+      group: row.group
+    };
+    if (!accountId || !account) {
+      plan.creates.push(change);
+      continue;
+    }
+    plan.claims.push({ line: row.line, accountId });
     const currentGroup = account.parentId
       ? (accountById.get(account.parentId)?.name ?? "")
       : "";
     const changed =
-      (account.number ?? "") !== row.number.trim() ||
-      account.name !== row.name.trim() ||
+      (account.number ?? "") !== row.number ||
+      account.name !== row.name ||
       account.class !== rowClass ||
       account.accountType !== accountType ||
       key(currentGroup) !== key(row.group) ||
       !account.active;
-    if (changed) {
-      plan.updates.push({
-        accountId,
-        line: row.line,
-        number: row.number.trim(),
-        name: row.name.trim(),
-        class: rowClass,
-        accountType,
-        group: row.group.trim()
-      });
-    }
+    if (changed) plan.updates.push({ ...change, accountId });
   }
 
-  // 7. Defaults and fixed asset classes for every company of the group.
-  for (const companyId of Object.keys(ctx.defaultsByCompany).sort()) {
-    for (const role of ACCOUNT_DEFAULT_COLUMNS) {
-      plan.roleMoves.push({
-        companyId,
-        role,
-        toLine: targetByKey.get(role) ?? null
-      });
-    }
-  }
+  // 8. Defaults and fixed asset classes, for every company of the group.
+  plan.roleMoves = ACCOUNT_DEFAULT_COLUMNS.map((role) => ({
+    role,
+    toLine: targetByKey.get(role) ?? null
+  }));
   for (const fac of ctx.fixedAssetClasses) {
+    const toLines: Partial<Record<FixedAssetClassColumn, number>> = {};
     for (const column of FIXED_ASSET_CLASS_COLUMNS) {
       const line = targetByKey.get(assetClassKey(fac.name, column));
-      if (line === null || line === undefined) continue;
+      if (line !== null && line !== undefined) toLines[column] = line;
+    }
+    // Every column is required, so a class with a gap is already an error.
+    if (Object.keys(toLines).length === FIXED_ASSET_CLASS_COLUMNS.length) {
       plan.assetClassMoves.push({
         classId: fac.id,
         companyId: fac.companyId,
-        column,
-        toLine: line
+        toLines: toLines as Record<FixedAssetClassColumn, number>
       });
     }
   }
 
-  // 8. Groups, by name, under the root that matches the class.
+  // 9. Groups, by name: an existing group or a new one holds one class.
   const newGroupClass = new Map<string, AccountClass>();
   for (const row of chartRows) {
-    const rowClass = classOfRow(row);
+    const rowClass = classByLine.get(row.line);
     if (!rowClass) continue;
     const existing = groupByName.get(key(row.group));
-    if (existing) {
-      const fits = existing.class
-        ? existing.class === rowClass
-        : existing.incomeBalance === incomeBalanceOf(rowClass);
-      if (!fits) {
-        errors.push({
-          code: "group-class-mismatch",
-          line: row.line,
-          group: row.group
-        });
-      }
-      continue;
-    }
     const planned = newGroupClass.get(key(row.group));
-    if (planned === undefined) {
+    let groupClass = existing ? existing.class : planned;
+    if (!existing && planned === undefined) {
       newGroupClass.set(key(row.group), rowClass);
-      plan.groupCreates.push({ name: row.group.trim(), class: rowClass });
-    } else if (incomeBalanceOf(planned) !== incomeBalanceOf(rowClass)) {
+      plan.groupCreates.push({ name: row.group, class: rowClass });
+      groupClass = rowClass;
+    }
+    const fits = groupClass
+      ? groupClass === rowClass
+      : existing?.incomeBalance === incomeBalanceOf(rowClass);
+    if (!fits) {
       errors.push({
         code: "group-class-mismatch",
         line: row.line,
@@ -833,19 +778,18 @@ export function planAccountImport(
     }
   }
 
-  // 9. Migration Clearing must be Equity.
+  // 10. Migration Clearing must be Equity.
   const clearingLine = targetByKey.get("migrationClearingAccount");
-  if (clearingLine !== null && clearingLine !== undefined) {
-    const row = rowByLine.get(clearingLine);
-    if (row && classOfRow(row) !== "Equity") {
-      errors.push({
-        code: "migration-clearing-not-equity",
-        line: clearingLine
-      });
-    }
+  if (
+    clearingLine !== null &&
+    clearingLine !== undefined &&
+    classByLine.has(clearingLine) &&
+    classByLine.get(clearingLine) !== MIGRATION_CLEARING_ACCOUNT_CLASS
+  ) {
+    errors.push({ code: "migration-clearing-not-equity", line: clearingLine });
   }
 
-  // 10. The companies whose documents or journals move.
+  // 11. The companies whose documents or journals move.
   for (const company of ctx.companies) {
     let repointedReferences = 0;
     for (const merge of merges) {
@@ -864,16 +808,16 @@ export function planAccountImport(
       numberOf(a.sourceId).localeCompare(numberOf(b.sourceId))
   );
   plan.deletes.sort((a, b) => numberOf(a).localeCompare(numberOf(b)));
-  plan.exceptions.sort((a, b) =>
+  plan.replacements.sort((a, b) =>
     numberOf(a.accountId).localeCompare(numberOf(b.accountId))
   );
   return plan;
 }
 
-const isAccountType = (value: string): value is AccountType =>
-  (ACCOUNT_TYPES as readonly string[]).includes(value);
-
 /** True when the plan can be applied. */
 export function isApplicable(plan: AccountImportPlan): boolean {
-  return plan.errors.length === 0 && plan.exceptions.length === 0;
+  return (
+    plan.errors.length === 0 &&
+    plan.replacements.every((r) => r.targetLine !== null)
+  );
 }

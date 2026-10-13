@@ -6,14 +6,16 @@ import { describe, expect, it } from "vitest";
 import {
   type AccountDefaultsRow,
   type AccountImportContext,
+  type AccountType,
   type AccountUsage,
   assetClassKey,
+  assetClassLabel,
   type ChartAccount,
   type ChartImportRow,
   type DefaultImportRow,
   FIXED_ASSET_CLASS_COLUMNS,
-  normalizeAccountClass,
-  normalizeAccountType,
+  incomeBalanceOf,
+  isApplicable,
   planAccountImport,
   requiredRoles
 } from "./account-import";
@@ -44,7 +46,7 @@ const leaf = (
   name: string,
   cls: NonNullable<ChartAccount["class"]>,
   parentId: string,
-  accountType: string,
+  accountType: AccountType,
   active = true
 ): ChartAccount => ({
   id: `a${number}`,
@@ -52,8 +54,7 @@ const leaf = (
   name,
   class: cls,
   accountType,
-  incomeBalance:
-    cls === "Revenue" || cls === "Expense" ? "Income Statement" : "Balance Sheet",
+  incomeBalance: incomeBalanceOf(cls),
   parentId,
   isGroup: false,
   isSystem: false,
@@ -74,7 +75,13 @@ const CHART: ChartAccount[] = [
   leaf("1310", "Raw Materials", "Asset", "ca", "Inventory"),
   leaf("1320", "Finished Goods", "Asset", "ca", "Inventory"),
   leaf("1500", "Buildings", "Asset", "fa", "Fixed Asset"),
-  leaf("1510", "Accumulated Depreciation", "Asset", "fa", "Accumulated Depreciation"),
+  leaf(
+    "1510",
+    "Accumulated Depreciation",
+    "Asset",
+    "fa",
+    "Accumulated Depreciation"
+  ),
   leaf("1900", "Petty Cash", "Asset", "ca", "Cash"),
   leaf("3400", "Migration Clearing", "Equity", "eq", "Equity - No Close"),
   leaf("3900", "Retained Earnings", "Equity", "eq", "Retained Earnings"),
@@ -141,24 +148,30 @@ function context(
 
 /** The customer's chart of accounts. */
 function customerChart(): ChartImportRow[] {
-  return [
-    ["10000", "Checking", "Asset", "Bank", "Cash & Bank"],
-    ["11000", "Accounts Receivable", "Asset", "Accounts Receivable", "Current Assets"],
-    ["12000", "Inventory", "Asset", "Inventory", "Current Assets"],
-    ["15000", "Buildings", "Asset", "Fixed Asset", "Fixed Assets"],
-    ["15100", "Accumulated Depreciation", "Asset", "Accumulated Depreciation", "Fixed Assets"],
-    ["30000", "Opening Balance Equity", "Equity", "Equity - No Close", "Equity"],
-    ["39000", "Retained Earnings", "Equity", "Retained Earnings", "Equity"],
-    ["40000", "Product Sales", "Revenue", "Income", "Revenue"],
-    ["60000", "Depreciation", "Expense", "Expense", "Operating Expenses"],
-    ["70000", "Other Expense", "Expense", "Other Expense", "Operating Expenses"]
-  ].map(([number, name, cls, type, group], i) => ({
+  const rows: [string, string, AccountType, string][] = [
+    ["10000", "Checking", "Bank", "Cash & Bank"],
+    ["11000", "Accounts Receivable", "Accounts Receivable", "Current Assets"],
+    ["12000", "Inventory", "Inventory", "Current Assets"],
+    ["15000", "Buildings", "Fixed Asset", "Fixed Assets"],
+    [
+      "15100",
+      "Accumulated Depreciation",
+      "Accumulated Depreciation",
+      "Fixed Assets"
+    ],
+    ["30000", "Opening Balance Equity", "Equity - No Close", "Equity"],
+    ["39000", "Retained Earnings", "Retained Earnings", "Equity"],
+    ["40000", "Product Sales", "Income", "Revenue"],
+    ["60000", "Depreciation", "Expense", "Operating Expenses"],
+    ["70000", "Other Expense", "Other Expense", "Operating Expenses"]
+  ];
+  return rows.map(([number, name, accountType, group], i) => ({
     line: i + 2,
-    number: number!,
-    name: name!,
-    class: normalizeAccountClass(cls!),
-    accountType: normalizeAccountType(type!),
-    group: group!
+    number,
+    name,
+    class: null,
+    accountType,
+    group
   }));
 }
 
@@ -194,7 +207,8 @@ function defaultsFile(
     rows.push({
       line: line++,
       key: role,
-      number: role in overrides ? overrides[role]! : (NUMBER_BY_ROLE[role] ?? "70000")
+      number:
+        role in overrides ? overrides[role]! : (NUMBER_BY_ROLE[role] ?? "70000")
     });
   }
   for (const column of FIXED_ASSET_CLASS_COLUMNS) {
@@ -217,7 +231,8 @@ describe("planAccountImport", () => {
     const chart = customerChart();
     const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
     expect(plan.errors).toEqual([]);
-    expect(plan.exceptions).toEqual([]);
+    expect(plan.replacements).toEqual([]);
+    expect(isApplicable(plan)).toBe(true);
     const claimed = Object.fromEntries(
       plan.claims.map((c) => [
         chart.find((r) => r.line === c.line)!.number,
@@ -241,9 +256,8 @@ describe("planAccountImport", () => {
       { sourceId: "a4050", targetLine: lineOf(chart, "40000") },
       { sourceId: "a4140", targetLine: lineOf(chart, "40000") }
     ]);
-    expect(plan.deletes.sort()).toEqual(
-      ["a1320", "a1900", "a4050", "a4090", "a4140"].sort()
-    );
+    // A merged account is not a plain delete.
+    expect(plan.deletes.sort()).toEqual(["a1900", "a4090"]);
     expect(plan.creates).toEqual([]);
     // A kept account takes the customer number and name.
     expect(plan.updates.find((u) => u.accountId === "a3900")).toMatchObject({
@@ -255,18 +269,18 @@ describe("planAccountImport", () => {
   it("sets every default of every company from the file", () => {
     const chart = customerChart();
     const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
-    expect(plan.roleMoves).toHaveLength(ACCOUNT_DEFAULT_COLUMNS.length * 2);
+    expect(plan.roleMoves).toHaveLength(ACCOUNT_DEFAULT_COLUMNS.length);
     expect(plan.roleMoves).toContainEqual({
-      companyId: "c2",
       role: "receivablesAccount",
       toLine: lineOf(chart, "11000")
     });
-    expect(plan.assetClassMoves).toContainEqual({
-      classId: "fac-c2",
-      companyId: "c2",
-      column: "assetAccountId",
-      toLine: lineOf(chart, "15000")
-    });
+    expect(plan.assetClassMoves.map((m) => m.classId)).toEqual([
+      "fac-c1",
+      "fac-c2"
+    ]);
+    expect(plan.assetClassMoves[1]?.toLines.assetAccountId).toBe(
+      lineOf(chart, "15000")
+    );
   });
 
   it("a Carbon account behind two defaults becomes the first one's account", () => {
@@ -288,10 +302,12 @@ describe("planAccountImport", () => {
       NONE
     );
     expect(plan.errors).toEqual([]);
-    expect(plan.claims).toContainEqual({ line: lineOf(chart, "10000"), accountId: "a1010" });
+    expect(plan.claims).toContainEqual({
+      line: lineOf(chart, "10000"),
+      accountId: "a1010"
+    });
     expect(plan.creates.map((c) => c.number)).toEqual(["10010"]);
     expect(plan.roleMoves).toContainEqual({
-      companyId: "c1",
       role: "bankLocalCurrencyAccount",
       toLine: 50
     });
@@ -315,17 +331,18 @@ describe("planAccountImport", () => {
     expect(plan.creates).toEqual([]);
   });
 
-  it("an unclaimed account still in use needs a target", () => {
+  it("an unclaimed account still in use needs a replacement", () => {
     const plan = planAccountImport(
       customerChart(),
       defaultsFile(),
       context({ usage: { a1900: { movableReferencesByCompany: { c2: 3 } } } }),
       NONE
     );
-    expect(plan.exceptions).toEqual([
-      { code: "account-needs-target", accountId: "a1900", companyIds: ["c2"] }
+    expect(plan.replacements).toEqual([
+      { accountId: "a1900", companyIds: ["c2"], targetLine: null }
     ]);
     expect(plan.deletes).not.toContain("a1900");
+    expect(isApplicable(plan)).toBe(false);
   });
 
   it("a picked target merges it, and the review counts the moved records", () => {
@@ -336,12 +353,22 @@ describe("planAccountImport", () => {
       context({ usage: { a1900: { movableReferencesByCompany: { c2: 3 } } } }),
       { targets: { a1900: lineOf(chart, "10000") } }
     );
-    expect(plan.exceptions).toEqual([]);
+    // The pick stays on the list, so the review can show and change it.
+    expect(plan.replacements).toEqual([
+      {
+        accountId: "a1900",
+        companyIds: ["c2"],
+        targetLine: lineOf(chart, "10000")
+      }
+    ]);
+    expect(isApplicable(plan)).toBe(true);
     expect(plan.merges).toContainEqual({
       sourceId: "a1900",
       targetLine: lineOf(chart, "10000")
     });
-    expect(plan.companies).toEqual([{ companyId: "c2", repointedReferences: 3 }]);
+    expect(plan.companies).toEqual([
+      { companyId: "c2", repointedReferences: 3 }
+    ]);
   });
 
   it("refuses a target line that is not in the chart", () => {
@@ -428,7 +455,6 @@ describe("planAccountImport", () => {
       { code: "default-missing", key: "receivablesAccount" }
     ]);
     expect(plan.roleMoves).toContainEqual({
-      companyId: "c1",
       role: "scrapAccount",
       toLine: null
     });
@@ -459,17 +485,35 @@ describe("planAccountImport", () => {
   it("creates a chart row nobody claimed, and needs its class", () => {
     const chart = [
       ...customerChart(),
-      { line: 50, number: "80000", name: "Interest", class: null, accountType: "Other Expense" as const, group: "Operating Expenses" },
-      { line: 51, number: "81000", name: "Mystery", class: null, accountType: null, group: "Operating Expenses" }
+      {
+        line: 50,
+        number: "80000",
+        name: "Interest",
+        class: null,
+        accountType: "Other Expense" as const,
+        group: "Operating Expenses"
+      },
+      {
+        line: 51,
+        number: "81000",
+        name: "Mystery",
+        class: null,
+        accountType: null,
+        group: "Operating Expenses"
+      }
     ];
     const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
     expect(plan.creates).toContainEqual(
-      expect.objectContaining({ line: 50, class: "Expense", accountType: "Other Expense" })
+      expect.objectContaining({
+        line: 50,
+        class: "Expense",
+        accountType: "Other Expense"
+      })
     );
     expect(plan.errors).toContainEqual({ code: "missing-class", line: 51 });
   });
 
-  it("creates new groups, and refuses a row under a group of the other statement", () => {
+  it("creates new groups, and refuses a row under a group of another class", () => {
     const chart = customerChart();
     const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
     expect(plan.groupCreates).toEqual([
@@ -502,22 +546,206 @@ describe("planAccountImport", () => {
   it("reactivates a kept account that was inactive", () => {
     const chart = [
       ...customerChart(),
-      { line: 50, number: "4090", name: "Old Sales", class: "Revenue" as const, accountType: "Income" as const, group: "Revenue" }
+      {
+        line: 50,
+        number: "4090",
+        name: "Old Sales",
+        class: "Revenue" as const,
+        accountType: "Income" as const,
+        group: "Revenue"
+      }
     ];
     const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
     expect(plan.updates).toContainEqual(
       expect.objectContaining({ accountId: "a4090", number: "4090" })
     );
   });
-});
 
-describe("normalizing a chart export", () => {
-  it("reads classes and types in the words exports use", () => {
-    expect(normalizeAccountClass("Income")).toBe("Revenue");
-    expect(normalizeAccountClass("Liabilities")).toBe("Liability");
-    expect(normalizeAccountClass("Bogus")).toBeNull();
-    expect(normalizeAccountType("accounts receivable (a/r)")).toBe("Accounts Receivable");
-    expect(normalizeAccountType("Bank")).toBe("Bank");
-    expect(normalizeAccountType("Bogus")).toBeNull();
+  it("refuses a duplicate default key", () => {
+    const rows = defaultsFile();
+    rows.push({ line: 999, key: "receivablesAccount", number: "11000" });
+    const plan = planAccountImport(customerChart(), rows, context(), NONE);
+    expect(plan.errors).toEqual([
+      {
+        code: "duplicate-default",
+        line: 999,
+        firstLine: rows.find((r) => r.key === "receivablesAccount")!.line,
+        key: "receivablesAccount"
+      }
+    ]);
+  });
+
+  it("reads a fixed asset class account by its label", () => {
+    const k = assetClassKey("Buildings", "assetAccountId");
+    const rows = defaultsFile().map((r) =>
+      r.key === k
+        ? { ...r, key: assetClassLabel("Buildings", "assetAccountId") }
+        : r
+    );
+    const plan = planAccountImport(customerChart(), rows, context(), NONE);
+    expect(plan.errors).toEqual([]);
+  });
+
+  it("keeps a claimed account's type when the row gives none", () => {
+    const chart = customerChart().map((r) =>
+      r.number === "10000" ? { ...r, accountType: null } : r
+    );
+    const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
+    expect(plan.errors).toEqual([]);
+    // 1010 is Asset / Bank: the class comes from it, and so does the type.
+    expect(plan.updates.find((u) => u.accountId === "a1010")).toMatchObject({
+      class: "Asset",
+      accountType: "Bank"
+    });
+  });
+
+  it("resets the type when the row moves a claimed account to another class", () => {
+    const chart = customerChart().map((r) =>
+      r.number === "10000"
+        ? {
+            ...r,
+            class: "Liability" as const,
+            accountType: null,
+            group: "Liabilities"
+          }
+        : r
+    );
+    const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
+    expect(plan.updates.find((u) => u.accountId === "a1010")).toMatchObject({
+      class: "Liability",
+      accountType: "Other Current Liability"
+    });
+  });
+
+  it("leaves an unchanged account out of the updates", () => {
+    const chart: ChartImportRow[] = [
+      ...customerChart(),
+      {
+        line: 50,
+        number: "1900",
+        name: "Petty Cash",
+        class: "Asset",
+        accountType: "Cash",
+        group: "Current Assets"
+      }
+    ];
+    const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
+    expect(plan.claims).toContainEqual({ line: 50, accountId: "a1900" });
+    expect(plan.updates.map((u) => u.accountId)).not.toContain("a1900");
+  });
+
+  it("refuses a row whose type belongs to another class", () => {
+    const chart = customerChart().map((r) =>
+      r.number === "60000"
+        ? { ...r, class: "Asset" as const, group: "Current Assets" }
+        : r
+    );
+    const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
+    expect(plan.errors).toContainEqual({
+      code: "class-type-mismatch",
+      line: lineOf(chart, "60000"),
+      class: "Asset",
+      accountType: "Expense"
+    });
+  });
+
+  it("refuses a row under an existing group of another class", () => {
+    const chart = customerChart().map((r) =>
+      r.number === "15000" ? { ...r, group: "Current Assets" } : r
+    );
+    expect(
+      planAccountImport(chart, defaultsFile(), context(), NONE).errors
+    ).toEqual([]);
+    const liability = customerChart().map((r) =>
+      r.number === "11000"
+        ? {
+            ...r,
+            class: "Liability" as const,
+            accountType: "Accounts Payable" as const
+          }
+        : r
+    );
+    expect(
+      planAccountImport(liability, defaultsFile(), context(), NONE).errors
+    ).toContainEqual({
+      code: "group-class-mismatch",
+      line: lineOf(liability, "11000"),
+      group: "Current Assets"
+    });
+  });
+
+  it("refuses a new group that would hold two classes", () => {
+    const chart: ChartImportRow[] = [
+      ...customerChart(),
+      {
+        line: 50,
+        number: "20000",
+        name: "Payables",
+        class: "Liability",
+        accountType: "Accounts Payable",
+        group: "Cash & Bank"
+      }
+    ];
+    const plan = planAccountImport(chart, defaultsFile(), context(), NONE);
+    expect(plan.errors).toContainEqual({
+      code: "group-class-mismatch",
+      line: 50,
+      group: "Cash & Bank"
+    });
+  });
+
+  it("deletes a leaf with no number", () => {
+    const ctx = context();
+    ctx.chart = [
+      ...CHART,
+      {
+        ...leaf("0", "Unnumbered", "Asset", "ca", "Cash"),
+        id: "a-none",
+        number: null
+      }
+    ];
+    const plan = planAccountImport(customerChart(), defaultsFile(), ctx, NONE);
+    expect(plan.deletes).toContain("a-none");
+  });
+
+  it("a replacement may merge into a created row", () => {
+    const chart: ChartImportRow[] = [
+      ...customerChart(),
+      {
+        line: 50,
+        number: "10500",
+        name: "Undeposited Funds",
+        class: "Asset",
+        accountType: "Other Current Asset",
+        group: "Cash & Bank"
+      }
+    ];
+    const plan = planAccountImport(
+      chart,
+      defaultsFile(),
+      context({ usage: { a1900: { movableReferencesByCompany: { c1: 1 } } } }),
+      { targets: { a1900: 50 } }
+    );
+    expect(plan.creates.map((c) => c.line)).toContain(50);
+    expect(plan.merges).toContainEqual({ sourceId: "a1900", targetLine: 50 });
+  });
+
+  it("counts the moved records of each company", () => {
+    const chart = customerChart();
+    const plan = planAccountImport(
+      chart,
+      defaultsFile(),
+      context({
+        usage: {
+          a4050: { movableReferencesByCompany: { c1: 2, c2: 1 } },
+          a1320: { movableReferencesByCompany: { c2: 4 } }
+        }
+      }),
+      NONE
+    );
+    expect(plan.companies).toEqual([
+      { companyId: "c1", repointedReferences: 2 },
+      { companyId: "c2", repointedReferences: 5 }
+    ]);
   });
 });
