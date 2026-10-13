@@ -4,6 +4,13 @@
 **Research:** .ai/research/chart-of-accounts-remap.md
 **Branch:** chart-of-accounts-mapping-import
 
+> Tasks 1–19 below build the first design: one sheet with a `Carbon Account`
+> column, reclass journals and inactive accounts. The user's review replaced it
+> with 2 required files and an import that runs only before the cutover. The
+> spec's changelog ("Redesign after user review") has the new design. Tasks
+> 21–27 are the redesign. Read the spec, not Tasks 10–15, for the current
+> behavior.
+
 ## Progress
 - [x] Task 1: Make account deletes refuse while lines refer to the account
 - [ ] Task 2: Regenerate the database types
@@ -25,6 +32,13 @@
 - [x] Task 18: Add the sync callout to accounting integrations
 - [x] Task 19: Update the docs, rules and AGENTS.md files
 - [ ] Task 20: Verify in the browser
+- [x] Task 21: Plan from 2 files: `planAccountImport(chartRows, defaultRows, ctx, resolutions)`, refuse on any cutover, drop reclass and deactivate
+- [x] Task 22: Apply from 2 files: set every company's defaults and fixed asset class accounts, delete instead of deactivate
+- [x] Task 23: Copy a subsidiary's fixed asset class accounts from the group in `seed-company`
+- [x] Task 24: Remove the Active switch, Show inactive, Download and the deactivate intent; disable Delete for an account with journal lines
+- [x] Task 25: Add `parseChartCsv`, `parseDefaultsCsv`, `defaultAccountsTemplate` and the template route
+- [x] Task 26: Rewrite the import page for 2 uploads; no header rule on a setup page with no steps
+- [x] Task 27: Update the spec, docs and AGENTS.md files
 
 ## Dependencies
 
