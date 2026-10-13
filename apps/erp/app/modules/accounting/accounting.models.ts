@@ -333,6 +333,7 @@ export const accountValidator = z
     name: z.string().trim().min(1, { message: "Name is required" }),
     parentId: zfd.text(z.string().optional()),
     isGroup: zfd.checkbox(),
+    active: zfd.checkbox(),
     accountType: z
       .enum(accountTypes, {
         error: "Account type is required"

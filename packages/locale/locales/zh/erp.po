@@ -381,6 +381,9 @@ msgstr "{0}h 需要"
 msgid "{0}h staffed"
 msgstr "{0}小时配置人员"
 
+msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}个零件已跳过——它们已有未结的工单"
 
@@ -473,6 +476,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
+msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
+msgstr ""
+
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#天}}"
 
@@ -558,6 +564,9 @@ msgstr "{remaining, plural, one {# 个阶段剩余} other {# 个阶段剩余}}"
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} 个已计划发票已移除。"
+
+msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 个任务"
@@ -2858,10 +2867,8 @@ msgstr "你确定要从此操作中删除 {key} 参数吗？此操作无法撤�
 msgid "Are you sure you want to delete the {name} attribute from this operation? This cannot be undone."
 msgstr "你确定要从此操作中删除 {name} 属性吗？此操作无法撤销。"
 
-#. placeholder {0}: account.name
-#. placeholder {1}: account.number ? ` (${account.number})` : ""
-msgid "Are you sure you want to delete the account: {0}{1}? This cannot be undone."
-msgstr "您确定要删除账户：{0}{1}吗？此操作无法撤销。"
+msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3743,6 +3750,9 @@ msgstr "待退货的生产批次"
 msgid "Batching"
 msgstr "分批"
 
+msgid "Becomes"
+msgstr ""
+
 msgid "Before cutover"
 msgstr "过账前"
 
@@ -4329,6 +4339,9 @@ msgstr "Carbon过账所有日期在此日期或之后的文档。选择当前期
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon过账开盘凭证，过账所有日期在过账日期或之后的凭证，并关闭其前的期间。"
 
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Carbon 值"
 
@@ -4861,6 +4874,9 @@ msgstr "社区支持"
 
 msgid "Companies"
 msgstr "公司"
+
+msgid "Companies affected"
+msgstr ""
 
 msgid "Company"
 msgstr "公司"
@@ -6571,6 +6587,7 @@ msgstr "剩余天数"
 msgid "Deactivate"
 msgstr "停用"
 
+#. placeholder {0}: account.name
 #. placeholder {0}: workCenter.name
 msgid "Deactivate {0}"
 msgstr "停用 {0}"
@@ -6604,6 +6621,9 @@ msgstr "停用用户"
 
 msgid "Deactivate Work Center"
 msgstr "停用工作中心"
+
+msgid "Deactivated (has history)"
+msgstr ""
 
 msgid "Deadline type"
 msgstr "截止日期类型"
@@ -6664,6 +6684,9 @@ msgstr "深夜时分，{name}。"
 msgid "Default"
 msgstr "默认"
 
+msgid "Default account"
+msgstr ""
+
 msgid "Default Account"
 msgstr "默认账户"
 
@@ -6690,6 +6713,9 @@ msgstr "税务交易的默认账户"
 
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "销售成本和间接采购的默认科目"
+
+msgid "Default accounts moved"
+msgstr ""
 
 msgid "Default Approver"
 msgstr "默认审批人"
@@ -7649,6 +7675,9 @@ msgstr "下载{0}行进行修复"
 msgid "Download CSV"
 msgstr "下载 CSV"
 
+msgid "Download current chart"
+msgstr ""
+
 msgid "Download Labels"
 msgstr "下载标签"
 
@@ -7660,6 +7689,9 @@ msgstr "下载 PDF"
 
 msgid "Download template"
 msgstr "下载模板"
+
+msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
+msgstr ""
 
 msgid "Draft"
 msgstr "草稿"
@@ -9732,6 +9764,9 @@ msgstr "缩放到适应"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
 
+msgid "Fix these in the file, then upload it again"
+msgstr ""
+
 msgid "Fix these jobs before releasing"
 msgstr "在下达前修复这些工单"
 
@@ -10426,6 +10461,9 @@ msgstr "小时/1000件"
 msgid "Hours/Piece"
 msgstr "小时/件"
 
+msgid "How"
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
 
@@ -10702,8 +10740,17 @@ msgstr "实施中心"
 msgid "Implementation Lead"
 msgstr "实施主管"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
+
+msgid "Import chart of accounts"
+msgstr ""
+
+msgid "Import Chart of Accounts"
+msgstr ""
 
 msgid "Import CSV"
 msgstr "导入CSV"
@@ -10713,6 +10760,12 @@ msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
+
+msgid "Import your chart"
+msgstr ""
+
+msgid "Import your chart of accounts from a spreadsheet"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11046,6 +11099,9 @@ msgstr "内部备注"
 msgid "Internal Notes"
 msgstr "内部备注"
 
+msgid "Into"
+msgstr ""
+
 msgid "inv"
 msgstr "库存"
 
@@ -11237,6 +11293,9 @@ msgstr "累计已开票"
 
 msgid "Invoices"
 msgstr "发票"
+
+msgid "Invoices and bills sync after you activate accounting"
+msgstr ""
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "每天自动为到期的项目创建发票。使用此功能立即对应收项目开票——例如，在添加费用后。发票随后将遵循本协议的开票设置。"
@@ -11920,6 +11979,38 @@ msgstr "行"
 msgid "Line {0}"
 msgstr "行 {0}"
 
+#. placeholder {0}: error.line
+msgid "Line {0} has no group."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no name."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no number."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has postings, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: a new account needs a class."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: Migration Clearing must be an Equity account."
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "行 {line}（{accountNumber}）：贷方「{value}」包含逗号。使用小数点表示小数，不使用千位分隔符，例如 1234.56。"
 
@@ -11935,8 +12026,36 @@ msgstr "行 {line}（{accountNumber}）：借方「{value}」不是正数。"
 msgid "Line {line} has no account number."
 msgstr "行 {line} 没有账户编号。"
 
+msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
+msgstr ""
+
+msgid "Line {line}: \"{value}\" is not an account type."
+msgstr ""
+
+msgid "Line {line}: {account} is already named on line {firstLine}."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
+msgstr ""
+
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "行 {line}：账户 {accountNumber} 已在行 {firstLine} 上。请将每个账户放在单独的一行。"
+
+msgid "Line {line}: group \"{group}\" holds accounts of another class."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
+msgstr ""
+
+msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr ""
+
+msgid "Line {line}: number {value} is already on line {firstLine}."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -12040,6 +12159,9 @@ msgstr "列表视图"
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "列表同时连接到{0}和{1}，因此此步骤无法判断要在哪一个上重复。仅在其中一个上保留列表。"
+
+msgid "Live"
+msgstr ""
 
 msgid "Live on Carbon"
 msgstr "在 Carbon 上线"
@@ -12708,8 +12830,14 @@ msgstr "商家"
 msgid "Merge {0} lots"
 msgstr "合并{0}批次"
 
+msgid "Merge into"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "合并输出批次"
+
+msgid "Merged"
+msgstr ""
 
 msgid "MES"
 msgstr "MES"
@@ -14130,6 +14258,9 @@ msgstr "此期间无收入要确认。"
 
 msgid "No risks"
 msgstr "无风险"
+
+msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
+msgstr ""
 
 msgid "No rows here."
 msgstr "这里没有行。"
@@ -15629,6 +15760,9 @@ msgstr "从早期步骤选择一个值"
 msgid "Pick a variable…"
 msgstr "选择变量…"
 
+msgid "Pick an account"
+msgstr ""
+
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "从库中选择现有规则或创建新规则以开始对此项目强制执行检查。"
 
@@ -16894,6 +17028,9 @@ msgstr "重新发送"
 msgid "Reactivate"
 msgstr "重新激活"
 
+msgid "Reactivated"
+msgstr ""
+
 msgid "Reactivation"
 msgstr "重新激活"
 
@@ -17084,6 +17221,9 @@ msgstr "最近使用"
 msgid "Recertify Every (Days)"
 msgstr "每(天)重新认证"
 
+msgid "Reclass journals"
+msgstr ""
+
 msgid "Recognition"
 msgstr "确认"
 
@@ -17201,6 +17341,12 @@ msgstr "放宽检验"
 
 msgid "Reference"
 msgstr "参考"
+
+msgid "References"
+msgstr ""
+
+msgid "References moved"
+msgstr ""
 
 msgid "Refresh"
 msgstr "刷新"
@@ -17494,6 +17640,9 @@ msgstr "重命名"
 msgid "Rename Workflow"
 msgstr "重命名工作流"
 
+msgid "Renamed"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "正在渲染标签预览..."
 
@@ -17598,6 +17747,9 @@ msgstr "重复运行"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "为 {inputLabel} 中的每个项目重复一次"
+
+msgid "Replace Carbon's default chart with your own, from a CSV"
+msgstr ""
 
 msgid "Replace drawing?"
 msgstr "替换绘图？"
@@ -17895,6 +18047,9 @@ msgstr "未分配利润"
 
 msgid "Retained Earnings (default)"
 msgstr "未分配利润（默认）"
+
+msgid "Retired"
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "通过报废或出售将资产退出使用，将收益或损失计入账面净值，并将其状态设为已处置。"
@@ -19701,6 +19856,9 @@ msgstr "显示文档和活动"
 msgid "Show Durations"
 msgstr "显示时长"
 
+msgid "Show inactive"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "显示键盘快捷键"
 
@@ -21154,6 +21312,9 @@ msgstr "此客户所属的类别（OEM、分销商、最终用户、内部）；
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "此供应商所属的类别（原材料、服务、合同制造商）；确定默认GL账户和报告分组。"
 
+msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "所选的服务行转移到新的草稿合同，该合同将按排程为其开票。订单将其记为已开票。"
 
@@ -21337,6 +21498,15 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
+
+msgid "The file could not be read"
+msgstr ""
+
+msgid "The file has no {columns} column."
+msgstr ""
+
+msgid "The file has no rows."
+msgstr ""
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "您上传的文件和已完成的映射将会丢失。"
@@ -21918,6 +22088,9 @@ msgstr "公司用来管理员工登录的系统——Okta、Entra ID 或 Google 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "系统在您配置的系统中通过了每个范围内的验收测试,使用您的数据;数据已验证;您签署确认。然后上线。"
 
+msgid "The target picked for {account} is no longer in the file."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "连接销售询价单、其报价和生成的销售订单的线索——一个关联关系，而不是具有自己状态的文件。"
 
@@ -22064,6 +22237,9 @@ msgstr "这些工序上没有换型、人工或机器工时，因此没有任何
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "没有可应用这些贷方的未结款项。"
+
+msgid "These accounts need a target"
+msgstr ""
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
@@ -24799,6 +24975,9 @@ msgstr "您的账簿和资金流向。"
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "您的更改进入与此变更通知一起发布的新草稿版本。"
 
+msgid "Your chart"
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "您的控制台PIN"
 
@@ -24825,9 +25004,6 @@ msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 
 
 msgid "Your Email"
 msgstr "你的电子邮件"
-
-msgid "Your general-ledger accounts and their structure"
-msgstr "您的总账账户及其结构"
 
 msgid "Your GL accounts"
 msgstr "您的总账科目"

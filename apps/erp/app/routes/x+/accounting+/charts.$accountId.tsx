@@ -166,6 +166,7 @@ export default function EditChartOfAccountsRoute() {
     name: account?.name ?? "",
     parentId: account?.parentId ?? undefined,
     isGroup: account?.isGroup ?? false,
+    active: account?.active ?? true,
     accountType: account?.accountType ?? undefined,
     class: account?.class ?? "Asset",
     incomeBalance: account?.incomeBalance ?? "Balance Sheet",

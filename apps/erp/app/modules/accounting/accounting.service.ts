@@ -8,6 +8,10 @@ import {
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
+import {
+  ACCOUNT_DEFAULT_COLUMNS,
+  ROLE_NAMES
+} from "@carbon/database/account-import";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
@@ -1981,12 +1985,95 @@ export async function getCompaniesInGroup(
     .order("name", { ascending: true });
 }
 
+/** @mcp read */
+export async function getAccountImportTemplate(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string
+) {
+  // The chart of accounts import template: one row per active leaf account,
+  // naming itself in `Carbon Account`, so an unchanged upload changes nothing.
+  // `Used For` lists the default roles that point at the account.
+  const [accounts, defaults] = await Promise.all([
+    client
+      .from("account")
+      .select("id, number, name, class, accountType, parentId, isGroup, active")
+      .eq("companyGroupId", companyGroupId)
+      .order("number", { ascending: true }),
+    client
+      .from("accountDefault")
+      .select("*")
+      .eq("companyId", companyId)
+      .single()
+  ]);
+  if (accounts.error) return { data: null, error: accounts.error };
+  if (defaults.error) return { data: null, error: defaults.error };
+
+  const groupName = new Map(
+    accounts.data.filter((a) => a.isGroup).map((a) => [a.id, a.name])
+  );
+  const rolesByAccount = new Map<string, string[]>();
+  for (const role of ACCOUNT_DEFAULT_COLUMNS) {
+    const accountId = defaults.data[role] as string | null;
+    if (!accountId) continue;
+    const roles = rolesByAccount.get(accountId) ?? [];
+    roles.push(ROLE_NAMES[role]);
+    rolesByAccount.set(accountId, roles);
+  }
+
+  return {
+    data: accounts.data
+      .filter((a) => !a.isGroup && a.active)
+      .map((a) => ({
+        Number: a.number ?? "",
+        Name: a.name,
+        Class: a.class ?? "",
+        Type: a.accountType ?? "",
+        Group: a.parentId ? (groupName.get(a.parentId) ?? "") : "",
+        "Carbon Account": a.number ?? "",
+        "Used For": (rolesByAccount.get(a.id) ?? []).join("; ")
+      })),
+    error: null
+  };
+}
+
 /** @mcp delete */
 export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
 ) {
   return client.from("account").delete().eq("id", accountId);
+}
+
+/** @mcp update */
+export async function deactivateAccount(
+  client: SupabaseClient<Database>,
+  accountId: string,
+  userId: string
+) {
+  return client
+    .from("account")
+    .update({
+      active: false,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", accountId);
+}
+
+/** @mcp read */
+export async function getAccountInUse(
+  client: SupabaseClient<Database>,
+  accountId: string
+) {
+  // Journal lines refuse the account's delete (ON DELETE RESTRICT), so an
+  // account any line has used can only be deactivated.
+  const lines = await client
+    .from("journalLine")
+    .select("id")
+    .eq("accountId", accountId)
+    .limit(1);
+  return { data: (lines.data?.length ?? 0) > 0, error: lines.error };
 }
 
 /** @mcp delete */
@@ -2115,14 +2202,17 @@ export async function getChartOfAccounts(
     incomeBalance: "Income Statement" | "Balance Sheet" | null;
     startDate: string | null;
     endDate: string | null;
+    includeInactive?: boolean;
   }
 ) {
   let accountsQuery = client
     .from("accounts")
     .select("*")
     .eq("companyGroupId", companyGroupId)
-    .eq("active", true)
     .order("number", { ascending: true });
+  if (!args.includeInactive) {
+    accountsQuery = accountsQuery.eq("active", true);
+  }
 
   if (args.incomeBalance) {
     accountsQuery = accountsQuery.eq("incomeBalance", args.incomeBalance);
@@ -4428,12 +4518,14 @@ export async function updateFiscalYearSettings(
 export async function upsertAccount(
   client: SupabaseClient<Database>,
   account:
-    | (Omit<z.infer<typeof accountValidator>, "id"> & {
+    | (Omit<z.infer<typeof accountValidator>, "id" | "active"> & {
+        active?: boolean;
         companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof accountValidator>, "id"> & {
+    | (Omit<z.infer<typeof accountValidator>, "id" | "active"> & {
+        active?: boolean;
         id: string;
         companyGroupId?: string;
         updatedBy: string;

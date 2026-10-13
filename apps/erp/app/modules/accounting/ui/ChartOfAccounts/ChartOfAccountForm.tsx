@@ -21,7 +21,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, Hidden, Input, Submit } from "~/components/Form";
+import { Boolean, Combobox, Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { accountValidator } from "../../accounting.models";
@@ -139,6 +139,11 @@ const ChartOfAccountForm = ({
                 />
                 <Input name="number" label={t`Account Number`} />
                 <Input name="name" label={t`Name`} />
+                {isEditing ? (
+                  <Boolean name="active" label={t`Active`} bordered />
+                ) : (
+                  <Hidden name="active" value="on" />
+                )}
                 {selectedGroup && (
                   <>
                     {accountType && (

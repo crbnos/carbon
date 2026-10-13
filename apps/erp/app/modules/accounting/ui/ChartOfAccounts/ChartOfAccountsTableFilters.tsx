@@ -9,14 +9,16 @@ import {
   HStack,
   Input,
   InputGroup,
-  InputLeftElement
+  InputLeftElement,
+  Switch
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuPlus, LuSearch, LuX } from "react-icons/lu";
+import { LuDownload, LuFileUp, LuPlus, LuSearch, LuX } from "react-icons/lu";
 import { Link } from "react-router";
 import { New, PeriodSelector } from "~/components";
 import { AppBarAction } from "~/components/New";
 import { usePermissions, useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
 
 type ChartOfAccountsTableFiltersProps = {
   fiscalStartMonth?: number;
@@ -65,6 +67,37 @@ const ChartOfAccountsTableFilters = ({
         )}
       </HStack>
       <HStack className="max-md:ml-auto max-md:mr-4">
+        <Switch
+          variant="small"
+          className="max-md:hidden"
+          label={t`Show inactive`}
+          checked={params.get("inactive") === "true"}
+          onCheckedChange={(checked) =>
+            setParams({ inactive: checked ? "true" : undefined })
+          }
+        />
+        <Button
+          variant="secondary"
+          leftIcon={<LuDownload />}
+          className="max-md:hidden"
+          asChild
+        >
+          <Link to={path.to.api.chartOfAccountsCsv} reloadDocument>
+            <Trans>Download</Trans>
+          </Link>
+        </Button>
+        {permissions.can("update", "accounting") && (
+          <Button
+            variant="secondary"
+            leftIcon={<LuFileUp />}
+            className="max-md:hidden"
+            asChild
+          >
+            <Link to={path.to.chartOfAccountsImport}>
+              <Trans>Import</Trans>
+            </Link>
+          </Button>
+        )}
         {permissions.can("create", "accounting") && (
           // Phones: one app bar "+" opens both Add actions, instead of
           // two identical "+" icons.

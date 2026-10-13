@@ -381,6 +381,9 @@ msgstr "{0}ч требуется"
 msgid "{0}h staffed"
 msgstr "{0}ч укомплектовано"
 
+msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые производственные заказы"
 
@@ -473,6 +476,9 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
+msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
+msgstr ""
+
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
 
@@ -558,6 +564,9 @@ msgstr "{remaining, plural, one {# этап остался} other {# этапо�
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} запланированные счет-фактуры удалены."
+
+msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} ресурсов · {reservationCount} резервирований · {jobCount} производственных заказов"
@@ -2858,10 +2867,8 @@ msgstr "Вы уверены, что хотите удалить параметр
 msgid "Are you sure you want to delete the {name} attribute from this operation? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить атрибут {name} из этой операции? Это действие невозможно отменить."
 
-#. placeholder {0}: account.name
-#. placeholder {1}: account.number ? ` (${account.number})` : ""
-msgid "Are you sure you want to delete the account: {0}{1}? This cannot be undone."
-msgstr "Вы уверены, что хотите удалить счет: {0}{1}? Это действие невозможно отменить."
+msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3743,6 +3750,9 @@ msgstr "Серии для возврата"
 msgid "Batching"
 msgstr "Объединение в серии"
 
+msgid "Becomes"
+msgstr ""
+
 msgid "Before cutover"
 msgstr "До переключения"
 
@@ -4329,6 +4339,9 @@ msgstr "Carbon проводит каждый документ, датирова�
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon проводит начальную операцию, проводит каждую операцию, датированную в дату переключения или позже, и закрывает периоды перед ней."
 
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Значение Carbon"
 
@@ -4861,6 +4874,9 @@ msgstr "Поддержка сообщества"
 
 msgid "Companies"
 msgstr "Компании"
+
+msgid "Companies affected"
+msgstr ""
 
 msgid "Company"
 msgstr "Организация"
@@ -6571,6 +6587,7 @@ msgstr "Дней осталось"
 msgid "Deactivate"
 msgstr "Деактивировать"
 
+#. placeholder {0}: account.name
 #. placeholder {0}: workCenter.name
 msgid "Deactivate {0}"
 msgstr "Деактивировать {0}"
@@ -6604,6 +6621,9 @@ msgstr "Деактивировать пользователей"
 
 msgid "Deactivate Work Center"
 msgstr "Деактивировать рабочий центр"
+
+msgid "Deactivated (has history)"
+msgstr ""
 
 msgid "Deadline type"
 msgstr "Тип срока"
@@ -6664,6 +6684,9 @@ msgstr "Глубокая ночь, {name}."
 msgid "Default"
 msgstr "По умолчанию"
 
+msgid "Default account"
+msgstr ""
+
 msgid "Default Account"
 msgstr "Счет по умолчанию"
 
@@ -6690,6 +6713,9 @@ msgstr "Счета по умолчанию для налоговых опера�
 
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "Счета по умолчанию для себестоимости продаж и косвенных закупок"
+
+msgid "Default accounts moved"
+msgstr ""
 
 msgid "Default Approver"
 msgstr "Утверждающий по умолчанию"
@@ -7649,6 +7675,9 @@ msgstr "Скачать {0} строку(и) для исправления"
 msgid "Download CSV"
 msgstr "Скачать CSV"
 
+msgid "Download current chart"
+msgstr ""
+
 msgid "Download Labels"
 msgstr "Скачать этикетки"
 
@@ -7660,6 +7689,9 @@ msgstr "Скачать PDF"
 
 msgid "Download template"
 msgstr "Скачать шаблон"
+
+msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
+msgstr ""
 
 msgid "Draft"
 msgstr "Черновик"
@@ -9732,6 +9764,9 @@ msgstr "Уместить в окно"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
 
+msgid "Fix these in the file, then upload it again"
+msgstr ""
+
 msgid "Fix these jobs before releasing"
 msgstr "Исправьте эти производственные заказы перед запуском"
 
@@ -10426,6 +10461,9 @@ msgstr "Часов/1000 Деталей"
 msgid "Hours/Piece"
 msgstr "Часов/Деталь"
 
+msgid "How"
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Как процесс, допускающий батчинг, работает с сгруппированной работой: режим « Последовательный» запускает детали одну за другой на одном станке (пила или лазерный стол), а режим «Одновременный» запускает их вместе в одной загрузке (печь, духовка или гальваническая ванна)."
 
@@ -10702,8 +10740,17 @@ msgstr "Центр внедрения"
 msgid "Implementation Lead"
 msgstr "Руководитель внедрения"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
+
+msgid "Import chart of accounts"
+msgstr ""
+
+msgid "Import Chart of Accounts"
+msgstr ""
 
 msgid "Import CSV"
 msgstr "Импортировать CSV"
@@ -10713,6 +10760,12 @@ msgstr "Импортировать результаты"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+msgid "Import your chart"
+msgstr ""
+
+msgid "Import your chart of accounts from a spreadsheet"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11046,6 +11099,9 @@ msgstr "Внутренние примечания"
 msgid "Internal Notes"
 msgstr "Внутренние примечания"
 
+msgid "Into"
+msgstr ""
+
 msgid "inv"
 msgstr "инв"
 
@@ -11237,6 +11293,9 @@ msgstr "Выставлено счетом на Дату"
 
 msgid "Invoices"
 msgstr "Счета-фактуры"
+
+msgid "Invoices and bills sync after you activate accounting"
+msgstr ""
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Счет-фактуры создаются автоматически каждый день для того, что подлежит оплате. Используйте это для выставления счета за то, что подлежит оплате прямо сейчас — например после добавления платежа. Счет-фактуры затем следуют настройке выставления счетов этого соглашения."
@@ -11920,6 +11979,38 @@ msgstr "Строка"
 msgid "Line {0}"
 msgstr "Строка {0}"
 
+#. placeholder {0}: error.line
+msgid "Line {0} has no group."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no name."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no number."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has postings, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: a new account needs a class."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: Migration Clearing must be an Equity account."
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Строка {line} ({accountNumber}): кредит «{value}» содержит запятую. Введите суммы с точкой для десятичных знаков и без разделителя тысяч, например 1234.56."
 
@@ -11935,8 +12026,36 @@ msgstr "Строка {line} ({accountNumber}): дебет «{value}» не яв�
 msgid "Line {line} has no account number."
 msgstr "Строка {line} не имеет номера счета."
 
+msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
+msgstr ""
+
+msgid "Line {line}: \"{value}\" is not an account type."
+msgstr ""
+
+msgid "Line {line}: {account} is already named on line {firstLine}."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
+msgstr ""
+
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Строка {line}: счет {accountNumber} уже находится на строке {firstLine}. Поместите каждый счет на одну строку."
+
+msgid "Line {line}: group \"{group}\" holds accounts of another class."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
+msgstr ""
+
+msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr ""
+
+msgid "Line {line}: number {value} is already on line {firstLine}."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
@@ -12040,6 +12159,9 @@ msgstr "Представление списка"
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Списки привязаны к обоим {0} и {1}, поэтому этот шаг не может определить, какой из них повторить. Оставьте список только в одном из них."
+
+msgid "Live"
+msgstr ""
 
 msgid "Live on Carbon"
 msgstr "Работает на Carbon"
@@ -12708,8 +12830,14 @@ msgstr "Продавец"
 msgid "Merge {0} lots"
 msgstr "Объединить {0} партий"
 
+msgid "Merge into"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Объединить выходные партии"
+
+msgid "Merged"
+msgstr ""
 
 msgid "MES"
 msgstr "MES"
@@ -14130,6 +14258,9 @@ msgstr "Нет выручки для признания в этом период
 
 msgid "No risks"
 msgstr "Нет рисков"
+
+msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
+msgstr ""
 
 msgid "No rows here."
 msgstr "Нет строк здесь."
@@ -15629,6 +15760,9 @@ msgstr "Выберите значение из предыдущего шага"
 msgid "Pick a variable…"
 msgstr "Выберите переменную…"
 
+msgid "Pick an account"
+msgstr ""
+
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "Выберите существующее правило из библиотеки или создайте новое, чтобы начать применять проверки для этого товара."
 
@@ -16894,6 +17028,9 @@ msgstr "Отправить снова"
 msgid "Reactivate"
 msgstr "Переактивировать"
 
+msgid "Reactivated"
+msgstr ""
+
 msgid "Reactivation"
 msgstr "Повторная активация"
 
@@ -17084,6 +17221,9 @@ msgstr "Недавно используемые"
 msgid "Recertify Every (Days)"
 msgstr "Пересертификация каждые (дни)"
 
+msgid "Reclass journals"
+msgstr ""
+
 msgid "Recognition"
 msgstr "Признание"
 
@@ -17201,6 +17341,12 @@ msgstr "Ослабленный"
 
 msgid "Reference"
 msgstr "Ссылка"
+
+msgid "References"
+msgstr ""
+
+msgid "References moved"
+msgstr ""
 
 msgid "Refresh"
 msgstr "Обновить"
@@ -17494,6 +17640,9 @@ msgstr "Переименовать"
 msgid "Rename Workflow"
 msgstr "Переименовать рабочий процесс"
 
+msgid "Renamed"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "Отрисовка предпросмотра этикетки..."
 
@@ -17598,6 +17747,9 @@ msgstr "Повторный запуск"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Повторяется один раз для каждого элемента в {inputLabel}"
+
+msgid "Replace Carbon's default chart with your own, from a CSV"
+msgstr ""
 
 msgid "Replace drawing?"
 msgstr "Заменить чертёж?"
@@ -17895,6 +18047,9 @@ msgstr "Нераспределенная прибыль"
 
 msgid "Retained Earnings (default)"
 msgstr "Нераспределенная прибыль (по умолчанию)"
+
+msgid "Retired"
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Вывод активов из эксплуатации путем выбраковки или продажи, учет любой прибыли или убытка против остаточной стоимости и установка статуса на Выбыло."
@@ -19701,6 +19856,9 @@ msgstr "Показать документы и активность"
 msgid "Show Durations"
 msgstr "Показать длительность"
 
+msgid "Show inactive"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Показать сочетания клавиш"
 
@@ -21154,6 +21312,9 @@ msgstr "Категория, к которой принадлежит этот п
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Категория, к которой принадлежит этот поставщик (сырье, услуги, контрактный производитель); определяет счета GL по умолчанию и группировки отчетов."
 
+msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Выбранные строки услуг переходят в новый черновик контракта, который выставляет им счет-фактуры по своему графику. Заказ считает их как выставленные счет-фактуры."
 
@@ -21337,6 +21498,15 @@ msgstr "Ожидаемый процент выпуска этой номенкл
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Счет расходов, на который относится эта строка косвенных расходов; требуется, так как косвенные строки не имеют записи в книге товаров, из которой можно вывести счет."
+
+msgid "The file could not be read"
+msgstr ""
+
+msgid "The file has no {columns} column."
+msgstr ""
+
+msgid "The file has no rows."
+msgstr ""
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Загруженный файл и созданные сопоставления будут потеряны."
@@ -21918,6 +22088,9 @@ msgstr "Система, которую Организация используе
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Система проходит все тесты приемки в области охвата в вашей настроенной системе с вашими данными; данные проверяются; и вы подписываете акт. Затем переход в боевую эксплуатацию."
 
+msgid "The target picked for {account} is no longer in the file."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Цепь, связывающая запрос цен продаж, его коммерческое предложение и результирующий заказ покупателя — соединение, а не документ со своим собственным статусом."
 
@@ -22064,6 +22237,9 @@ msgstr "На этих операциях нет наладки, труда ил�
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Нечего применять эти кредиты."
+
+msgid "These accounts need a target"
+msgstr ""
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Эти пользовательские поля будут доступны только для объектов с одинаковыми тегами"
@@ -24796,6 +24972,9 @@ msgstr "Ваши книги и движение денежных средств.
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ваши изменения переходят в новую версию черновика, которая будет выпущена с этим извещением об изменении."
 
+msgid "Your chart"
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Ваш PIN консоли"
 
@@ -24822,9 +25001,6 @@ msgstr "Ваш поставщик DNS может автоматически до
 
 msgid "Your Email"
 msgstr "Ваша электронная почта"
-
-msgid "Your general-ledger accounts and their structure"
-msgstr "Ваши счета главной книги и их структура"
 
 msgid "Your GL accounts"
 msgstr "Ваши счета ГЛ"

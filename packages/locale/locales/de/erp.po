@@ -381,6 +381,9 @@ msgstr "{0}h erforderlich"
 msgid "{0}h staffed"
 msgstr "{0}h besetzt"
 
+msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
+msgstr ""
+
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} übersprungene Teile — sie haben bereits offene Fertigungsaufträge"
 
@@ -473,6 +476,9 @@ msgstr "{hiddenCount} weitere: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eingefügt, {updated} aktualisiert, {0} benötigen Behebung, {1} übersprungen."
 
+msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
+msgstr ""
+
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# Tag} other {# Tage}}"
 
@@ -558,6 +564,9 @@ msgstr "{remaining, plural, one {# Phase verbleibend} other {# Phasen verbleiben
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} geplante Rechnungen werden entfernt."
+
+msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
+msgstr ""
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} Ressourcen · {reservationCount} Reservierungen · {jobCount} Fertigungsaufträge"
@@ -2858,10 +2867,8 @@ msgstr "Sind Sie sicher, dass Sie den Parameter {key} aus diesem Vorgang lösche
 msgid "Are you sure you want to delete the {name} attribute from this operation? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie das Attribut {name} aus diesem Vorgang löschen möchten? Dies kann nicht rückgängig gemacht werden."
 
-#. placeholder {0}: account.name
-#. placeholder {1}: account.number ? ` (${account.number})` : ""
-msgid "Are you sure you want to delete the account: {0}{1}? This cannot be undone."
-msgstr "Sind Sie sicher, dass Sie das Konto löschen möchten: {0}{1}? Dies kann nicht rückgängig gemacht werden."
+msgid "Are you sure you want to delete the account: {label}? This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: apiKey.name
 msgid "Are you sure you want to delete the API key: {0}? This cannot be undone."
@@ -3743,6 +3750,9 @@ msgstr "Rückzugebende Lose"
 msgid "Batching"
 msgstr "Losbildung"
 
+msgid "Becomes"
+msgstr ""
+
 msgid "Before cutover"
 msgstr "Vor der Migration"
 
@@ -4329,6 +4339,9 @@ msgstr "Carbon bucht jedes Dokument, das an diesem Tag oder später datiert ist.
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon bucht den Eröffnungsbuchungssatz, bucht jeden Buchungssatz, der an oder nach dem Migrationsdatum datiert ist, und schließt die Perioden davor ab."
 
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
+msgstr ""
+
 msgid "Carbon value"
 msgstr "Carbon-Wert"
 
@@ -4861,6 +4874,9 @@ msgstr "Community-Unterstützung"
 
 msgid "Companies"
 msgstr "Unternehmen"
+
+msgid "Companies affected"
+msgstr ""
 
 msgid "Company"
 msgstr "Unternehmen"
@@ -6571,6 +6587,7 @@ msgstr "Verbleibende Tage"
 msgid "Deactivate"
 msgstr "Deaktivieren"
 
+#. placeholder {0}: account.name
 #. placeholder {0}: workCenter.name
 msgid "Deactivate {0}"
 msgstr "Deaktivieren {0}"
@@ -6604,6 +6621,9 @@ msgstr "Benutzer deaktivieren"
 
 msgid "Deactivate Work Center"
 msgstr "Arbeitsplatz deaktivieren"
+
+msgid "Deactivated (has history)"
+msgstr ""
 
 msgid "Deadline type"
 msgstr "Fristtyp"
@@ -6664,6 +6684,9 @@ msgstr "Tief in der Nacht, {name}."
 msgid "Default"
 msgstr "Standard"
 
+msgid "Default account"
+msgstr ""
+
 msgid "Default Account"
 msgstr "Standardkonto"
 
@@ -6690,6 +6713,9 @@ msgstr "Standardkonten für steuerbezogene Transaktionen"
 
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "Standardkonten für Umsatzkosten und indirekte Einkäufe"
+
+msgid "Default accounts moved"
+msgstr ""
 
 msgid "Default Approver"
 msgstr "Standardgenehmiger"
@@ -7649,6 +7675,9 @@ msgstr "Herunterladen {0} Zeile(n) zum Beheben"
 msgid "Download CSV"
 msgstr "CSV herunterladen"
 
+msgid "Download current chart"
+msgstr ""
+
 msgid "Download Labels"
 msgstr "Etiketten herunterladen"
 
@@ -7660,6 +7689,9 @@ msgstr "PDF herunterladen"
 
 msgid "Download template"
 msgstr "Vorlage herunterladen"
+
+msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
+msgstr ""
 
 msgid "Draft"
 msgstr "Entwurf"
@@ -9732,6 +9764,9 @@ msgstr "Ansicht anpassen"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Beheben Sie die Probleme mit diesem Workflow, bevor Sie ihn testen"
 
+msgid "Fix these in the file, then upload it again"
+msgstr ""
+
 msgid "Fix these jobs before releasing"
 msgstr "Beheben Sie diese Fertigungsaufträge vor der Freigabe"
 
@@ -10426,6 +10461,9 @@ msgstr "Stunden/1000 Stück"
 msgid "Hours/Piece"
 msgstr "Stunden/Stück"
 
+msgid "How"
+msgstr ""
+
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Wie ein batchfähiger Verfahren die gruppierte Arbeit abläuft: Sequenziell führt Teile nacheinander auf einer Maschine aus (z. B. Säge oder Lasertisch), während Simultan sie zusammen in einer Charge ausführt (z. B. Ofen, Backofen oder Galvanisierbad)."
 
@@ -10702,8 +10740,17 @@ msgstr "Umsetzungs-Hub"
 msgid "Implementation Lead"
 msgstr "Umsetzungsleiter"
 
+msgid "Import"
+msgstr ""
+
 msgid "Import {label} CSV"
 msgstr "Importiere {label} CSV"
+
+msgid "Import chart of accounts"
+msgstr ""
+
+msgid "Import Chart of Accounts"
+msgstr ""
 
 msgid "Import CSV"
 msgstr "CSV importieren"
@@ -10713,6 +10760,12 @@ msgstr "Importergebnisse"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre BOM"
+
+msgid "Import your chart"
+msgstr ""
+
+msgid "Import your chart of accounts from a spreadsheet"
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -11046,6 +11099,9 @@ msgstr "Interne Notizen"
 msgid "Internal Notes"
 msgstr "Interne Notizen"
 
+msgid "Into"
+msgstr ""
+
 msgid "inv"
 msgstr "Inv"
 
@@ -11237,6 +11293,9 @@ msgstr "Bis heute fakturiert"
 
 msgid "Invoices"
 msgstr "Rechnungen"
+
+msgid "Invoices and bills sync after you activate accounting"
+msgstr ""
 
 msgid "Invoices are created automatically every day for whatever is due. Use this to bill what's due right away — for example after adding a charge. Invoices then follow this agreement's invoicing setting."
 msgstr "Rechnungen werden jeden Tag automatisch für fällige Posten erstellt. Verwenden Sie dies, um fällige Posten sofort in Rechnung zu stellen — z. B. nach dem Hinzufügen einer Gebühr. Rechnungen folgen dann der Rechnungseinstellung dieser Vereinbarung."
@@ -11920,6 +11979,38 @@ msgstr "Zeile"
 msgid "Line {0}"
 msgstr "Zeile {0}"
 
+#. placeholder {0}: error.line
+msgid "Line {0} has no group."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no name."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no number."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: {account} has postings, so its class cannot change."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: a new account needs a class."
+msgstr ""
+
+#. placeholder {0}: error.line
+msgid "Line {0}: Migration Clearing must be an Equity account."
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Position {line} ({accountNumber}): das Haben „{value}” enthält ein Komma. Schreiben Sie Beträge mit einem Punkt für Dezimalstellen und keinem Tausendertrennzeichen, z. B. 1234,56."
 
@@ -11935,8 +12026,36 @@ msgstr "Position {line} ({accountNumber}): das Soll „{value}” ist keine posi
 msgid "Line {line} has no account number."
 msgstr "Position {line} hat keine Kontonummer."
 
+msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
+msgstr ""
+
+msgid "Line {line}: \"{value}\" is not an account type."
+msgstr ""
+
+msgid "Line {line}: {account} is already named on line {firstLine}."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
+msgstr ""
+
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Position {line}: Konto {accountNumber} ist bereits auf Position {firstLine}. Platzieren Sie jedes Konto auf einer Position."
+
+msgid "Line {line}: group \"{group}\" holds accounts of another class."
+msgstr ""
+
+#. placeholder {0}: error.field
+#. placeholder {1}: error.field
+msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
+msgstr ""
+
+msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr ""
+
+msgid "Line {line}: number {value} is already on line {firstLine}."
+msgstr ""
 
 msgid "Line description (optional)"
 msgstr "Zeilenbeschreibung (optional)"
@@ -12040,6 +12159,9 @@ msgstr "Listenansicht"
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Listen sind an beide {0} und {1} angebunden, daher kann dieser Schritt nicht erkennen, welche wiederholt werden soll. Behalten Sie eine Liste nur auf einer von ihnen."
+
+msgid "Live"
+msgstr ""
 
 msgid "Live on Carbon"
 msgstr "Live auf Carbon"
@@ -12708,8 +12830,14 @@ msgstr "Händler"
 msgid "Merge {0} lots"
 msgstr "{0} Chargen zusammenführen"
 
+msgid "Merge into"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Ausgangschargen zusammenführen"
+
+msgid "Merged"
+msgstr ""
 
 msgid "MES"
 msgstr "MES"
@@ -14130,6 +14258,9 @@ msgstr "Für diesen Zeitraum sind keine Umsatzerlöse zu erfassen."
 
 msgid "No risks"
 msgstr "Keine Risiken"
+
+msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
+msgstr ""
 
 msgid "No rows here."
 msgstr "Hier sind keine Zeilen."
@@ -15629,6 +15760,9 @@ msgstr "Wählen Sie einen Wert aus einem früheren Schritt"
 msgid "Pick a variable…"
 msgstr "Wählen Sie eine Variable…"
 
+msgid "Pick an account"
+msgstr ""
+
 msgid "Pick an existing rule from the library or create a new one to start enforcing checks on this item."
 msgstr "Wählen Sie eine vorhandene Regel aus der Bibliothek aus oder erstellen Sie eine neue Regel, um Kontrollen für dieses Element zu erzwingen."
 
@@ -16894,6 +17028,9 @@ msgstr "Erneut senden"
 msgid "Reactivate"
 msgstr "Reaktivieren"
 
+msgid "Reactivated"
+msgstr ""
+
 msgid "Reactivation"
 msgstr "Reaktivierung"
 
@@ -17084,6 +17221,9 @@ msgstr "Zuletzt verwendet"
 msgid "Recertify Every (Days)"
 msgstr "Alle (Tage) Wiederbeglaubigung"
 
+msgid "Reclass journals"
+msgstr ""
+
 msgid "Recognition"
 msgstr "Erfassung"
 
@@ -17201,6 +17341,12 @@ msgstr "Reduziert"
 
 msgid "Reference"
 msgstr "Referenz"
+
+msgid "References"
+msgstr ""
+
+msgid "References moved"
+msgstr ""
 
 msgid "Refresh"
 msgstr "Aktualisieren"
@@ -17494,6 +17640,9 @@ msgstr "Umbenennen"
 msgid "Rename Workflow"
 msgstr "Workflow umbenennen"
 
+msgid "Renamed"
+msgstr ""
+
 msgid "Rendering label preview..."
 msgstr "Label-Vorschau wird gerendert..."
 
@@ -17598,6 +17747,9 @@ msgstr "Wiederholter Lauf"
 
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Wiederholt einmal für jedes Element in {inputLabel}"
+
+msgid "Replace Carbon's default chart with your own, from a CSV"
+msgstr ""
 
 msgid "Replace drawing?"
 msgstr "Zeichnung ersetzen?"
@@ -17895,6 +18047,9 @@ msgstr "Gewinnvortrag"
 
 msgid "Retained Earnings (default)"
 msgstr "Gewinnvortrag (Standard)"
+
+msgid "Retired"
+msgstr ""
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Stillegung eines Vermögenswertes durch Verschrottung oder Verkauf, Buchung von Gewinn oder Verlust gegen den Restbuchwert und Festlegung des Status auf Abgegangen."
@@ -19701,6 +19856,9 @@ msgstr "Dokumente und Aktivität anzeigen"
 msgid "Show Durations"
 msgstr "Dauern anzeigen"
 
+msgid "Show inactive"
+msgstr ""
+
 msgid "Show keyboard shortcuts"
 msgstr "Tastaturkürzel anzeigen"
 
@@ -21154,6 +21312,9 @@ msgstr "Die Kategorie, zu der dieser Kunde gehört (OEM, Distributor, Endbenutze
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Die Kategorie, zu der dieser Lieferant gehört (Rohstoff, Dienstleistungen, Vertragsfertigungsunternehmen); bestimmt Standard-GL-Konten und Berichtsgruppierungen."
 
+msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
+msgstr ""
+
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Die ausgewählten Dienstleistungspositionen werden in einen neuen Entwurfsvertrag verschoben, der sie nach seinem Terminplan fakturiert. Die Bestellung zählt sie als fakturiert."
 
@@ -21337,6 +21498,15 @@ msgstr "Der erwartete Prozentsatz der Ausgabe dieses Artikels, der während der 
 
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Das Aufwandskonto, auf das diese indirekte Ausgabenzeile gebucht wird; erforderlich, da indirekte Zeilen keinen Bestandsposten haben, von dem das Konto abgeleitet werden kann."
+
+msgid "The file could not be read"
+msgstr ""
+
+msgid "The file has no {columns} column."
+msgstr ""
+
+msgid "The file has no rows."
+msgstr ""
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Die hochgeladene Datei und die vorgenommenen Zuordnungen gehen verloren."
@@ -21918,6 +22088,9 @@ msgstr "Das System, das ein Unternehmen zur Verwaltung der Anmeldungen seiner Pe
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "Das System besteht jeden relevanten Akzeptanztest in Ihrem konfigurierten System mit Ihren Daten; die Daten werden validiert; und Sie geben die Freigabe. Dann Go-live."
 
+msgid "The target picked for {account} is no longer in the file."
+msgstr ""
+
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "Der Strang, der eine Verkaufs-Anfrage, ihr Angebot und den resultierenden Kundenauftrag verbindet – ein Join, kein Dokument mit eigenem Status."
 
@@ -22064,6 +22237,9 @@ msgstr "Es gibt keine Rüstung, kein Personal oder keine Maschinenzeit auf diese
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "Es gibt nichts Ausstehende, auf das diese Gutschriften angewendet werden können."
+
+msgid "These accounts need a target"
+msgstr ""
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "Diese benutzerdefinierten Felder sind nur für Entitäten mit denselben Tags verfügbar"
@@ -24796,6 +24972,9 @@ msgstr "Ihre Bücher und wie Geld fließt."
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Ihre Änderungen werden in eine neue Entwurfsversion übernommen, die mit dieser Änderungsmitteilung freigegeben wird."
 
+msgid "Your chart"
+msgstr ""
+
 msgid "Your Console PIN"
 msgstr "Ihre Konsolen-PIN"
 
@@ -24822,9 +25001,6 @@ msgstr "Ihr DNS-Anbieter kann Ihre Domäne möglicherweise automatisch an den Ei
 
 msgid "Your Email"
 msgstr "Ihre E-Mail"
-
-msgid "Your general-ledger accounts and their structure"
-msgstr "Ihre Hauptbuchkonten und deren Struktur"
 
 msgid "Your GL accounts"
 msgstr "Ihre Sachkonten"
