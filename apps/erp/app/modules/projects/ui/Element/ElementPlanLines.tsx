@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
@@ -150,6 +151,11 @@ function draftRow(type: PlanLineType, key: string): PlanRow {
   };
 }
 
+/** A material line's amount: quantity × unit cost, unrounded (display rounds). */
+function materialAmount(quantity: number | null, unitCost: number | null) {
+  return unitCost === null ? null : (quantity ?? 0) * unitCost;
+}
+
 /** The id the plan route answers for a line it created. */
 function savedLineId(body: unknown) {
   const id = (body as { id?: unknown } | null)?.id;
@@ -260,6 +266,12 @@ export function ElementPlanLines({
     if (addRequest) addDraft("material");
   }, [addRequest]);
 
+  // A saved material line whose item just changed: its new unit and cost
+  // show at once, until the saved line is back from the server.
+  const [itemChanges, setItemChanges] = useState<
+    Record<string, Pick<PlanRow, "line" | "unitOfMeasureCode" | "unitCost">>
+  >({});
+
   const [deleting, setDeleting] = useState<PlanRow | null>(null);
   const [editing, setEditing] = useState<PlanRow | null>(null);
   const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
@@ -276,6 +288,22 @@ export function ElementPlanLines({
       ]),
     [planLines]
   );
+  const landedItemIds = useMemo(
+    () => new Map(planLines.materials.map((line) => [line.id, line.itemId])),
+    [planLines]
+  );
+  useEffect(() => {
+    const landed = Object.entries(itemChanges).filter(
+      ([id, change]) => landedItemIds.get(id) === change.line
+    );
+    if (landed.length > 0) {
+      setItemChanges((previous) => {
+        const next = { ...previous };
+        for (const [id] of landed) delete next[id];
+        return next;
+      });
+    }
+  }, [itemChanges, landedItemIds]);
   useEffect(() => {
     if (drafts.some((d) => d.id !== null && savedIds.has(d.id))) {
       setDrafts((previous) =>
@@ -287,25 +315,36 @@ export function ElementPlanLines({
   const rows = useMemo<PlanRow[]>(
     () =>
       orderPlanRows([
-        ...planLines.materials.map<PlanRow>((line) => ({
-          key: line.id,
-          id: line.id,
-          draft: false,
-          createdAt: line.createdAt ?? null,
-          type: "material",
-          line: line.itemId,
-          methodType: line.methodType,
-          quantity: Number(line.quantity),
-          unitOfMeasureCode: line.unitOfMeasureCode ?? null,
-          unitCost: line.unitCost === null ? null : Number(line.unitCost),
-          amount:
-            line.unitCost === null
+        ...planLines.materials.map<PlanRow>((line) => {
+          const change =
+            itemChanges[line.id]?.line !== line.itemId
+              ? itemChanges[line.id]
+              : undefined;
+          const quantity = Number(line.quantity);
+          const unitCost = change
+            ? change.unitCost
+            : line.unitCost === null
               ? null
-              : Number(line.quantity) * Number(line.unitCost),
-          date: line.requiredDate ?? null,
-          endDate: null,
-          material: line
-        })),
+              : Number(line.unitCost);
+          return {
+            key: line.id,
+            id: line.id,
+            draft: false,
+            createdAt: line.createdAt ?? null,
+            type: "material",
+            line: change?.line ?? line.itemId,
+            methodType: line.methodType,
+            quantity,
+            unitOfMeasureCode: change
+              ? change.unitOfMeasureCode
+              : (line.unitOfMeasureCode ?? null),
+            unitCost,
+            amount: materialAmount(quantity, unitCost),
+            date: line.requiredDate ?? null,
+            endDate: null,
+            material: line
+          };
+        }),
         ...planLines.labor.map<PlanRow>((line: LaborLine) => ({
           key: line.id,
           id: line.id,
@@ -338,7 +377,7 @@ export function ElementPlanLines({
         })),
         ...drafts.filter((d) => d.id === null || !savedIds.has(d.id))
       ]),
-    [planLines, drafts, savedIds]
+    [planLines, drafts, savedIds, itemChanges]
   );
 
   const itemsById = useMemo(
@@ -348,6 +387,24 @@ export function ElementPlanLines({
   const categoriesById = useMemo(
     () => new Map(laborCategories.map((c) => [c.id, c.name])),
     [laborCategories]
+  );
+
+  // The item's current cost (`itemCost.unitCost`), as the job and quote
+  // material forms read it; null when the item has no cost row.
+  const { carbon } = useCarbon();
+  const loadItemUnitCost = useCallback(
+    async (itemId: string) => {
+      if (!carbon) return null;
+      const cost = await carbon
+        .from("itemCost")
+        .select("unitCost")
+        .eq("itemId", itemId)
+        .eq("companyId", company.id)
+        .maybeSingle();
+      if (cost.error || cost.data?.unitCost == null) return null;
+      return Number(cost.data.unitCost);
+    },
+    [carbon, company.id]
   );
 
   // A cell edit posts the whole row with the change. A draft keeps each
@@ -364,11 +421,38 @@ export function ElementPlanLines({
       if (accessorKey === "amount") {
         next.amount = raw === null || raw === "" ? 0 : Number(raw);
       }
-      if (accessorKey === "line" && row.type === "material") {
+      // A new item brings its own unit and its current cost.
+      if (accessorKey === "line" && row.type === "material" && raw) {
+        const itemId = String(raw);
         next.unitOfMeasureCode =
-          itemsById.get(String(raw))?.unitOfMeasureCode ?? null;
+          itemsById.get(itemId)?.unitOfMeasureCode ?? null;
+        next.unitCost = await loadItemUnitCost(itemId);
       }
-      if (!row.draft) return save(action, rowFields(next));
+      if (row.type === "material") {
+        next.amount = materialAmount(next.quantity, next.unitCost);
+      }
+      if (!row.draft) {
+        const changesItem = accessorKey === "line" && row.type === "material";
+        const id = row.id;
+        if (changesItem && id) {
+          setItemChanges((previous) => ({
+            ...previous,
+            [id]: {
+              line: next.line,
+              unitOfMeasureCode: next.unitOfMeasureCode,
+              unitCost: next.unitCost
+            }
+          }));
+        }
+        const result = await save(action, rowFields(next));
+        if (result.error && changesItem && id) {
+          setItemChanges((previous) => {
+            const { [id]: _failed, ...rest } = previous;
+            return rest;
+          });
+        }
+        return result;
+      }
 
       const putDraft = (draft: PlanRow) =>
         setDrafts((previous) =>
@@ -391,7 +475,7 @@ export function ElementPlanLines({
       }
       return result;
     },
-    [action, save, itemsById]
+    [action, save, itemsById, loadItemUnitCost]
   );
 
   const stable = useStableEditableComponents(
