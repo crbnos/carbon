@@ -57,6 +57,8 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `accounting-reconciliation` | `0 3 * * 1` | Remote presence/tie-out checks |
 | `ramp-sync` | `carbon/ramp-sync` | Company-serialized Ramp family sync |
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
+| `oee-sweep` | `*/2 * * * *` | Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 `workCenterDevice`. OEE providers have no webhooks, so this poll is the only input |
+| `oee-sync` | `carbon/oee-sync` (concurrency 1 per company) | Syncs every mapped device of one OEE integration in ONE `step.run` (`syncOeeDevice`, `oee-sync-device.ts`): reads the provider's state changes from `lastEventAt − 10 minutes`, stores them in `machineStateChange`, then runs `planMachineTime` under `lockWorkCenterDevice` and writes Machine `productionEvent` / `unattributedMachineTime` rows. A failed device gets `lastSyncError` and keeps its cursor; the others continue. Never posts to the GL. See `.claude/rules/oee-provider.md` |
 | `mount-publish` | `carbon/mount-publish` | One company's push to Mount: a step per batch of 200 until nothing is stale, a batch publishes nothing, or 50 batches; progress and outcome in `companyIntegration.metadata.lastPublish.{entityType}`, which the integration page reads |
 | `mount-sweep` | `30 2 * * *` | Dispatch a scheduled `mount-publish` for every active Mount install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
