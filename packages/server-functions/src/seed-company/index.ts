@@ -357,10 +357,9 @@ const seedCompany = defineServerFn({
         let siblingDefaults:
           | Selectable<KyselyDatabase["accountDefault"]>
           | undefined;
-        const siblingAssetClasses = new Map<
-          string,
-          Selectable<KyselyDatabase["fixedAssetClass"]>
-        >();
+        let siblingAssetClasses: Selectable<
+          KyselyDatabase["fixedAssetClass"]
+        >[] = [];
         if (isNewGroup) {
           await trx
             .insertInto("currency")
@@ -414,61 +413,42 @@ const seedCompany = defineServerFn({
             .executeTakeFirst();
           if (sibling) {
             siblingDefaults = sibling;
-            const siblingClasses = await trx
+            siblingAssetClasses = await trx
               .selectFrom("fixedAssetClass")
               .selectAll()
               .where("companyId", "=", sibling.companyId)
               .execute();
-            for (const fac of siblingClasses) {
-              siblingAssetClasses.set(fac.name, fac);
+          } else {
+            const existingAccounts = await trx
+              .selectFrom("account")
+              .select([
+                "id",
+                "number",
+                "name",
+                "companyGroupId",
+                "active",
+                "isGroup",
+                "class",
+                "incomeBalance",
+                "accountType",
+                "consolidatedRate",
+                "parentId"
+              ])
+              .where("companyGroupId", "=", companyGroupId!)
+              .execute();
+            for (const acc of existingAccounts) {
+              if (acc.number) {
+                accountIdByKey[acc.number] = acc.id;
+              }
             }
+            accountIdByKey["4050"] = resolveShippingDefault({
+              parentDefaultId: null,
+              accounts: existingAccounts.filter(
+                (account) => account.id !== accountIdByKey["4010"]
+              ),
+              companyGroupId: companyGroupId!
+            });
           }
-          const existingAccounts = await trx
-            .selectFrom("account")
-            .select([
-              "id",
-              "number",
-              "name",
-              "companyGroupId",
-              "active",
-              "isGroup",
-              "class",
-              "incomeBalance",
-              "accountType",
-              "consolidatedRate",
-              "parentId"
-            ])
-            .where("companyGroupId", "=", companyGroupId!)
-            .execute();
-          for (const acc of existingAccounts) {
-            if (acc.number) {
-              accountIdByKey[acc.number] = acc.id;
-            }
-          }
-          const parentDefaults = parentCompanyId
-            ? await trx
-                .selectFrom("accountDefault")
-                .innerJoin("company", "company.id", "accountDefault.companyId")
-                .select([
-                  "accountDefault.salesShippingRevenueAccount",
-                  "accountDefault.salesAccount"
-                ])
-                .where("accountDefault.companyId", "=", parentCompanyId)
-                .where("company.companyGroupId", "=", companyGroupId!)
-                .executeTakeFirst()
-            : undefined;
-          const parentDefaultId = parentDefaults?.salesShippingRevenueAccount;
-          accountIdByKey["4050"] = resolveShippingDefault({
-            parentDefaultId:
-              parentDefaultId &&
-              parentDefaultId !== parentDefaults?.salesAccount
-                ? parentDefaultId
-                : null,
-            accounts: existingAccounts.filter(
-              (account) => account.id !== accountIdByKey["4010"]
-            ),
-            companyGroupId: companyGroupId!
-          });
         }
 
         // Resolve account numbers to IDs for account defaults
@@ -531,48 +511,41 @@ const seedCompany = defineServerFn({
         // its cutover, so the chart can be imported before anything is
         // Posted (.ai/specs/2026-10-12-chart-of-accounts-import.md).
 
-        // A subsidiary copies the group's fixed asset classes from a sibling;
-        // a new group seeds them by account number.
-        const classRows =
-          siblingAssetClasses.size > 0
-            ? [...siblingAssetClasses.values()].map((fac) => ({
-                name: fac.name,
-                depreciationMethod: fac.depreciationMethod,
-                usefulLifeMonths: fac.usefulLifeMonths,
-                residualValuePercent: fac.residualValuePercent,
-                assetAccountId: fac.assetAccountId,
-                accumulatedDepreciationAccountId:
-                  fac.accumulatedDepreciationAccountId,
-                depreciationExpenseAccountId: fac.depreciationExpenseAccountId,
-                writeOffAccountId: fac.writeOffAccountId,
-                writeDownAccountId: fac.writeDownAccountId,
-                gainOnDisposalAccountId: fac.gainOnDisposalAccountId,
-                lossOnDisposalAccountId: fac.lossOnDisposalAccountId,
-                isConstructionInProgress: fac.isConstructionInProgress,
-                companyId,
-                createdBy: userId
-              }))
-            : fixedAssetClasses.map((fac) => ({
-                name: fac.name,
-                depreciationMethod: fac.depreciationMethod,
-                usefulLifeMonths: fac.usefulLifeMonths,
-                residualValuePercent: fac.residualValuePercent,
-                assetAccountId: accountIdByKey[fac.assetAccount]!,
-                accumulatedDepreciationAccountId:
-                  accountIdByKey[fac.accumulatedDepreciationAccount]!,
-                depreciationExpenseAccountId:
-                  accountIdByKey[fac.depreciationExpenseAccount]!,
-                writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
-                writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
-                gainOnDisposalAccountId:
-                  accountIdByKey[fac.gainOnDisposalAccount]!,
-                lossOnDisposalAccountId:
-                  accountIdByKey[fac.lossOnDisposalAccount]!,
-                isConstructionInProgress: fac.isConstructionInProgress,
-                companyId,
-                createdBy: userId
-              }));
-        await trx.insertInto("fixedAssetClass").values(classRows).execute();
+        // A subsidiary copies the group's fixed asset classes from a sibling,
+        // every setting included; a new group seeds them by account number.
+        const classRows = siblingDefaults
+          ? siblingAssetClasses.map(
+              ({
+                id: _id,
+                createdAt: _createdAt,
+                updatedAt: _updatedAt,
+                updatedBy: _updatedBy,
+                ...fac
+              }) => ({ ...fac, companyId, createdBy: userId })
+            )
+          : fixedAssetClasses.map((fac) => ({
+              name: fac.name,
+              depreciationMethod: fac.depreciationMethod,
+              usefulLifeMonths: fac.usefulLifeMonths,
+              residualValuePercent: fac.residualValuePercent,
+              assetAccountId: accountIdByKey[fac.assetAccount]!,
+              accumulatedDepreciationAccountId:
+                accountIdByKey[fac.accumulatedDepreciationAccount]!,
+              depreciationExpenseAccountId:
+                accountIdByKey[fac.depreciationExpenseAccount]!,
+              writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
+              writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
+              gainOnDisposalAccountId:
+                accountIdByKey[fac.gainOnDisposalAccount]!,
+              lossOnDisposalAccountId:
+                accountIdByKey[fac.lossOnDisposalAccount]!,
+              isConstructionInProgress: fac.isConstructionInProgress,
+              companyId,
+              createdBy: userId
+            }));
+        if (classRows.length > 0) {
+          await trx.insertInto("fixedAssetClass").values(classRows).execute();
+        }
       } // end if (!identityOnly)
 
       const user = await single(

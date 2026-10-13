@@ -17,7 +17,7 @@ import {
   REFERENCE_POLICY
 } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { type Insertable, type Kysely, sql } from "kysely";
+import { type Insertable, type Kysely, sql, type Transaction } from "kysely";
 import { afterEach, describe, expect } from "vitest";
 import {
   connectLocalTestDatabase,
@@ -216,9 +216,30 @@ async function fixture({ cutover = false } = {}) {
     });
   }
 
-  /** A posted supplier payment and a posted charge on one account. */
+  /** A posted payment, charge and reimbursement on one account. */
   async function postedDocuments(accountId: string) {
     const supplierId = `${prefix}-supplier`;
+    // An employee to reimburse. Its type's group interceptors need the
+    // company's root group, which the scratch company does not have.
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL session_replication_role = replica`.execute(trx);
+      await trx
+        .insertInto("employeeType")
+        .values({
+          id: `${prefix}-type`,
+          name: `${prefix} Type`,
+          companyId: companies[0]!
+        })
+        .execute();
+      await trx
+        .insertInto("employee")
+        .values({
+          id: USER,
+          employeeTypeId: `${prefix}-type`,
+          companyId: companies[0]!
+        })
+        .execute();
+    });
     await db.transaction().execute(async (trx) => {
       await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
       await trx
@@ -260,16 +281,38 @@ async function fixture({ cutover = false } = {}) {
           createdBy: USER
         })
         .execute();
-      // A charge is created Draft; the guard lets it post.
+      await trx
+        .insertInto("reimbursement")
+        .values({
+          id: `${prefix}-reimbursement`,
+          reimbursementId: `${prefix}-RMB`,
+          employeeId: USER,
+          payableAccountId: accountId,
+          reimbursementDate: "2026-01-15",
+          currencyCode: "USD",
+          amount: 10,
+          companyId: companies[0]!,
+          createdBy: USER
+        })
+        .execute();
+      // Charges and reimbursements are created Draft; their guards let them
+      // post.
+      const posted = {
+        status: "Posted",
+        postingDate: "2026-01-15",
+        postedAt: "2026-01-15T00:00:00Z",
+        postedBy: USER
+      } as const;
       await trx
         .updateTable("charge")
-        .set({
-          status: "Posted",
-          postingDate: "2026-01-15",
-          postedAt: "2026-01-15T00:00:00Z",
-          postedBy: USER
-        })
+        .set(posted)
         .where("id", "=", `${prefix}-charge`)
+        .where("companyId", "=", companies[0]!)
+        .execute();
+      await trx
+        .updateTable("reimbursement")
+        .set(posted)
+        .where("id", "=", `${prefix}-reimbursement`)
         .where("companyId", "=", companies[0]!)
         .execute();
     });
@@ -329,6 +372,7 @@ async function fixture({ cutover = false } = {}) {
 }
 
 type Fixture = Awaited<ReturnType<typeof fixture>>;
+type Trx = Transaction<KyselyDatabase>;
 
 /** The customer's chart. */
 function customerChart(
@@ -487,7 +531,9 @@ describe("apply-account-import", () => {
         resolutions: { targets: {} as Record<string, number> }
       };
       const refused = await applyAccountImport(f.ctx, input);
-      expect(refused.error).not.toBeNull();
+      expect(refused.error?.message).toContain(
+        "0 error(s) and 1 account(s) that need a replacement"
+      );
       expect(await accountRow(f.db, f.account("1900"))).toBeDefined();
 
       input.resolutions.targets[f.account("1900")] = chart[0]!.line;
@@ -509,10 +555,12 @@ describe("apply-account-import", () => {
         defaults: defaultsFile(STANDARD, "10000"),
         resolutions: { targets: {} as Record<string, number> }
       };
-      // Posted documents are movable: the plan asks for a replacement
-      // instead of refusing the account as history.
+      // Posted documents are movable: the plan asks for a replacement and
+      // reports no error (before, they made the account history).
       const refused = await applyAccountImport(f.ctx, input);
-      expect(refused.error?.message).not.toContain("history");
+      expect(refused.error?.message).toContain(
+        "0 error(s) and 1 account(s) that need a replacement"
+      );
 
       input.resolutions.targets[f.account("1900")] = chart[0]!.line;
       const result = await applyAccountImport(f.ctx, input);
@@ -536,20 +584,81 @@ describe("apply-account-import", () => {
         cardAccountId: f.account("1010"),
         status: "Posted"
       });
+      const reimbursement = await f.db
+        .selectFrom("reimbursement")
+        .select(["payableAccountId", "status"])
+        .where("companyId", "=", f.companies[0]!)
+        .executeTakeFirstOrThrow();
+      expect(reimbursement).toEqual({
+        payableAccountId: f.account("1010"),
+        status: "Posted"
+      });
     }
   );
 
   databaseTest(
-    "the charge guard refuses a posted account change outside the import",
+    "the posted-document guards accept only the import's account change",
     async () => {
       f = await fixture();
       await f.postedDocuments(f.account("1900"));
-      await expect(
-        f.db
+      const { db, companies, account } = f;
+      /** Runs one update in a transaction, with or without the import flag. */
+      const attempt = (
+        update: (trx: Trx) => Promise<unknown>,
+        { flag = true, cutover = false } = {}
+      ) =>
+        db.transaction().execute(async (trx) => {
+          if (cutover) {
+            await trx
+              .updateTable("companySettings")
+              .set({ accountingCutoverDate: "2026-01-01" })
+              .where("id", "=", companies[0]!)
+              .execute();
+          }
+          if (flag) {
+            await sql`SELECT set_config('app.account_import', 'true', true)`.execute(
+              trx
+            );
+          }
+          await update(trx);
+          // Roll back: each attempt starts from the posted documents.
+          throw new Error("rolled back");
+        });
+      const moveCharge = (trx: Trx) =>
+        trx
           .updateTable("charge")
-          .set({ cardAccountId: f.account("1010") })
-          .where("companyId", "=", f.companies[0]!)
-          .execute()
+          .set({ cardAccountId: account("1010") })
+          .where("companyId", "=", companies[0]!)
+          .execute();
+      const moveReimbursement = (trx: Trx) =>
+        trx
+          .updateTable("reimbursement")
+          .set({ payableAccountId: account("1010") })
+          .where("companyId", "=", companies[0]!)
+          .execute();
+
+      // With the flag, the account change passes the guard.
+      await expect(attempt(moveCharge)).rejects.toThrow("rolled back");
+      await expect(attempt(moveReimbursement)).rejects.toThrow("rolled back");
+      // Without it, or once the company has a cutover, it does not.
+      await expect(attempt(moveCharge, { flag: false })).rejects.toThrow(
+        /cannot transition/
+      );
+      await expect(attempt(moveReimbursement, { flag: false })).rejects.toThrow(
+        /cannot transition/
+      );
+      await expect(attempt(moveCharge, { cutover: true })).rejects.toThrow(
+        /cannot transition/
+      );
+      // The flag never lets another column change.
+      await expect(
+        attempt((trx) =>
+          trx
+            .updateTable("charge")
+            .set({ amount: 99 })
+            .where("companyId", "=", companies[0]!)
+            .execute()
+        )
       ).rejects.toThrow(/cannot transition/);
     }
   );

@@ -346,15 +346,21 @@ account numbers are only the fallback for a group with none.
 ### `apply-account-import`
 
 Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ chart,
-defaults, resolutions }`, permission `update: accounting`) in one transaction. It locks
-the group's accounts and every company's `companySettings`, re-plans with
-`planAccountImport`, and refuses a plan with errors or exceptions — including any company
-of the group with an accounting cutover. It updates kept accounts in two passes
-(temporary numbers and names first, so a swap works), creates groups and accounts, sets
-every company's `accountDefault` and fixed asset class accounts from the defaults file,
-re-points each merge source by `REFERENCE_POLICY` and `SOFT_REFERENCES`, deletes merged
-and unused accounts, deletes empty groups, and checks that the chart's leaves equal the
-chart file.
+defaults, resolutions }`, trimmed and size-capped, permission `update: accounting`) in one
+transaction. It locks every company's `companySettings` FOR SHARE, then the group's
+accounts FOR UPDATE, re-plans with `planAccountImport`, and refuses a plan with errors or
+an open replacement — including any company of the group with an accounting cutover. It
+sets `app.account_import` (`set_config(…, true)`), which lets the charge and reimbursement
+guards accept an account-only change on a posted row (`20261013035046`). It frees the
+number and name of every updated, merged and deleted account (temporary values, so a swap
+works), creates groups and accounts, sets every company's defaults in one statement and
+every fixed asset class in one, re-points each merge source by `REFERENCE_POLICY` plus
+the references with no foreign key (`intercompanyEliminationLine`,
+`companyIntegration.metadata.paymentFeeAccount`) — posted documents included, since their
+journals are still Provisional — deletes the removed accounts and their
+`externalIntegrationMapping` rows, deletes empty groups, and checks a postcondition (every
+chart row written with its class, type and group; every required default and class
+account set). A failed postcondition is a 500: the plan and the apply disagree.
 
 ## Validation Commands
 

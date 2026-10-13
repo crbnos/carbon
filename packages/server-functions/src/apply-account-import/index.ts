@@ -7,12 +7,12 @@
 // accounts. The plan is computed again here from the same pure planner the
 // review page used, so the client never decides what is written. Only before
 // accounting is activated in every company of the group, so no account has
-// Posted history: a merge re-points Draft and Provisional records and deletes
-// the source.
+// Posted history: a merge re-points the source's documents and Draft or
+// Provisional journal lines, then deletes the source.
 
 import {
   ACCOUNT_TYPES,
-  type AccountDefaultColumn,
+  type AccountImportPlan,
   type AccountType,
   FIXED_ASSET_CLASS_COLUMNS,
   incomeBalanceOf,
@@ -22,48 +22,48 @@ import {
   requiredRoles
 } from "@carbon/database/account-import";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
+import { MIGRATION_CLEARING_ACCOUNT_CLASS } from "@carbon/database/accounting-cutover";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
-import { sql, type Transaction, type Updateable } from "kysely";
+import { sql, type Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
 
 const logger = getLogger("server-functions", "apply-account-import");
 
-const accountClass = z.enum([
-  "Asset",
-  "Liability",
-  "Equity",
-  "Revenue",
-  "Expense"
-]);
+/** A trimmed, non-empty text value. */
+const text = () => z.string().trim().min(1);
 
 export const applyAccountImportInput = z.object({
   chart: z
     .array(
       z.object({
         line: z.number().int(),
-        number: z.string().min(1),
-        name: z.string().min(1),
-        class: accountClass.nullable(),
+        number: text(),
+        name: text(),
+        class: z
+          .enum(["Asset", "Liability", "Equity", "Revenue", "Expense"])
+          .nullable(),
         accountType: z
           .enum(ACCOUNT_TYPES as [AccountType, ...AccountType[]])
           .nullable(),
-        group: z.string().min(1)
+        group: text()
       })
     )
-    .min(1),
+    .min(1)
+    .max(10000),
   defaults: z
     .array(
       z.object({
         line: z.number().int(),
-        key: z.string().min(1),
-        number: z.string().nullable()
+        key: text(),
+        number: text().nullable()
       })
     )
-    .min(1),
+    .min(1)
+    .max(2000),
   resolutions: z.object({ targets: z.record(z.string(), z.number().int()) })
 });
 
@@ -72,54 +72,47 @@ export type ApplyAccountImportResult = {
 };
 
 type Trx = Transaction<KyselyDatabase>;
+type ChartRow = z.infer<typeof applyAccountImportInput>["chart"][number];
 
 const key = (value: string) => value.trim().toLowerCase();
 
-/** `(VALUES (source, target), …)` for every merge. */
-function mergeValues(pairs: { source: string; target: string }[]) {
-  return sql`(VALUES ${sql.join(
-    pairs.map((p) => sql`(${p.source}, ${p.target})`)
-  )}) AS m(source, target)`;
-}
-
-/** Re-point every reference REFERENCE_POLICY lets a merge move. */
+/** Re-point every reference a merge moves, from each source to its target. */
 async function repointReferences(
   trx: Trx,
   pairs: { source: string; target: string }[],
   companyIds: string[]
 ) {
-  const m = mergeValues(pairs);
+  const m = sql`(VALUES ${sql.join(
+    pairs.map((p) => sql`(${p.source}, ${p.target})`)
+  )}) AS m(source, target)`;
   const inCompanies = sql`t."companyId" IN (${sql.join(companyIds)})`;
   for (const ref of REFERENCE_POLICY) {
-    if (ref.policy === "history") continue;
     const t = sql.table(ref.table);
     const col = sql.id(ref.column);
-    if (ref.policy === "repoint") {
-      await sql`UPDATE ${t} AS t SET ${col} = m.target FROM ${m}
-        WHERE t.${col} = m.source AND ${inCompanies}`.execute(trx);
-      continue;
-    }
-    const parent = ref.parent!;
-    const statuses = sql.join(parent.statuses.map((s) => sql.lit(s)));
-    if (parent.table === null) {
-      await sql`UPDATE ${t} AS t SET ${col} = m.target FROM ${m}
-        WHERE t.${col} = m.source AND ${inCompanies}
-          AND t."status"::text IN (${statuses})`.execute(trx);
-      continue;
-    }
-    const p = sql.table(parent.table);
-    const fk = sql.id(parent.column!);
-    await sql`UPDATE ${t} AS t SET ${col} = m.target FROM ${m}, ${p} AS p
-      WHERE t.${col} = m.source AND ${inCompanies}
-        AND p."id" = t.${fk} AND p."companyId" = t."companyId"
-        AND p."status"::text IN (${statuses})`.execute(trx);
-    if (ref.dedupeOn) {
-      const cols = sql.join(ref.dedupeOn.map((c) => sql.ref(`t.${c}`)));
-      await sql`DELETE FROM ${t} AS t USING (
-          SELECT id, ROW_NUMBER() OVER (
-            PARTITION BY "companyId", ${cols} ORDER BY "createdAt", id
-          ) AS n FROM ${t} AS t WHERE ${inCompanies}
-        ) AS d WHERE t.id = d.id AND d.n > 1`.execute(trx);
+    const matches = sql`t.${col} = m.source AND ${inCompanies}`;
+    switch (ref.policy) {
+      case "history":
+        continue;
+      case "repoint":
+        await sql`UPDATE ${t} AS t SET ${col} = m.target FROM ${m}
+          WHERE ${matches}`.execute(trx);
+        continue;
+      case "repoint-if-status":
+        await sql`UPDATE ${t} AS t SET ${col} = m.target FROM ${m}
+          WHERE ${matches}
+            AND t."status"::text IN (${sql.join(ref.statuses.map((x) => sql.lit(x)))})`.execute(
+          trx
+        );
+        continue;
+      case "repoint-if-parent-status":
+        await sql`UPDATE ${t} AS t SET ${col} = m.target
+          FROM ${m}, ${sql.table(ref.parentTable)} AS p
+          WHERE ${matches}
+            AND p."id" = t.${sql.id(ref.parentColumn)} AND p."companyId" = t."companyId"
+            AND p."status"::text IN (${sql.join(ref.statuses.map((x) => sql.lit(x)))})`.execute(
+          trx
+        );
+        continue;
     }
   }
 
@@ -130,10 +123,6 @@ async function repointReferences(
     WHERE t."accountId" = m.source AND ${inCompanies}
       AND jl."id" = t."journalLineId" AND j."id" = jl."journalId"
       AND j."status" IN ('Draft', 'Provisional')`.execute(trx);
-  await sql`DELETE FROM "externalIntegrationMapping" AS t
-    WHERE t."entityType" = 'account'
-      AND t."entityId" IN (${sql.join(pairs.map((p) => p.source))})
-      AND ${inCompanies}`.execute(trx);
   await sql`UPDATE "companyIntegration" AS t
     SET "metadata" = jsonb_set(t."metadata"::jsonb, '{paymentFeeAccount}', to_jsonb(m.target::text))::json
     FROM ${m}
@@ -161,14 +150,14 @@ const applyAccountImport = defineServerFn({
       }
       const groupId = company.companyGroupId;
 
-      // Nothing else may change the chart, or activate accounting, while the
-      // plan is applied.
-      await sql`SELECT "id" FROM "account" WHERE "companyGroupId" = ${groupId} FOR UPDATE`.execute(
-        trx
-      );
+      // Nothing may activate accounting, or change the chart, while the plan
+      // is applied. Settings first, in the order activation takes them.
       await sql`SELECT cs."id" FROM "companySettings" cs
         JOIN "company" c ON c."id" = cs."id"
         WHERE c."companyGroupId" = ${groupId} FOR SHARE OF cs`.execute(trx);
+      await sql`SELECT "id" FROM "account" WHERE "companyGroupId" = ${groupId} FOR UPDATE`.execute(
+        trx
+      );
       // Lets the charge and reimbursement guards accept the account change
       // of a posted row, for this transaction only (20261013035046).
       await sql`SELECT set_config('app.account_import', 'true', true)`.execute(
@@ -178,22 +167,21 @@ const applyAccountImport = defineServerFn({
       const ctx = await loadAccountImportContext(trx, groupId, companyId);
       const plan = planAccountImport(chart, defaults, ctx, resolutions);
       if (!isApplicable(plan)) {
-        logger.warn("Refused an account import that is not applicable", {
-          companyId,
-          errors: plan.errors.map((e) => e.code),
-          exceptions: plan.exceptions.length
-        });
+        const open = plan.replacements.filter((r) => r.targetLine === null);
         throw new InvalidInputError(
           plan.errors.some((e) => e.code === "accounting-activated")
             ? "Accounting is already set up, so the chart of accounts cannot be imported."
-            : `The import has ${plan.errors.length} error(s) and ${plan.exceptions.length} account(s) that need a target.`
+            : `The import has ${plan.errors.length} error(s) and ${open.length} account(s) that need a replacement.`,
+          { errors: plan.errors.map((e) => e.code) }
         );
       }
 
       const companyIds = ctx.companies.map((c) => c.id);
       const now = datetime.timestamp();
+      const removed = [...plan.deletes, ...plan.merges.map((m) => m.sourceId)];
 
-      // Groups.
+      // Groups. A group's name is unique among groups only, so a new group
+      // never meets a leaf's name.
       const groupIdByName = new Map(
         ctx.chart.filter((a) => a.isGroup).map((g) => [key(g.name), g.id])
       );
@@ -209,9 +197,8 @@ const applyAccountImport = defineServerFn({
             plan.groupCreates.map((g) => {
               const incomeBalance = incomeBalanceOf(g.class);
               const parentId = rootByBalance.get(incomeBalance);
-              if (!parentId) {
-                throw new InvalidInputError(`No ${incomeBalance} root account`);
-              }
+              if (!parentId)
+                throw new Error(`No ${incomeBalance} root account`);
               return {
                 name: g.name,
                 number: null,
@@ -230,13 +217,13 @@ const applyAccountImport = defineServerFn({
       }
       const groupIdOf = (name: string) => {
         const id = groupIdByName.get(key(name));
-        if (!id) throw new InvalidInputError(`Unknown group "${name}"`);
+        if (!id) throw new Error(`Unknown group "${name}"`);
         return id;
       };
 
-      // Free every number and name that changes or goes: two accounts may
-      // swap, and a created account may reuse a deleted one's number.
-      const freed = [...plan.updates.map((u) => u.accountId), ...plan.deletes];
+      // Free every leaf number and name that changes or goes: two accounts
+      // may swap, and a created account may reuse a removed one's.
+      const freed = [...plan.updates.map((u) => u.accountId), ...removed];
       if (freed.length > 0) {
         await trx
           .updateTable("account")
@@ -294,88 +281,61 @@ const applyAccountImport = defineServerFn({
           )
           .returning(["id", "number"])
           .execute();
-        const idByNumber = new Map(created.map((c) => [c.number, c.id]));
-        for (const c of plan.creates) {
-          accountIdByLine.set(c.line, idByNumber.get(c.number)!);
+        const lineByNumber = new Map(
+          plan.creates.map((c) => [c.number, c.line])
+        );
+        for (const c of created) {
+          const line =
+            c.number === null ? undefined : lineByNumber.get(c.number);
+          if (line !== undefined) accountIdByLine.set(line, c.id);
         }
       }
       const accountOfLine = (line: number) => {
         const id = accountIdByLine.get(line);
-        if (!id) throw new InvalidInputError(`Row ${line} has no account`);
+        if (!id) throw new Error(`Row ${line} has no account`);
         return id;
       };
 
-      // Defaults, one statement per company of the group.
-      const movesByCompany = new Map<string, Record<string, string | null>>();
-      for (const move of plan.roleMoves) {
-        const set = movesByCompany.get(move.companyId) ?? {};
-        set[move.role satisfies AccountDefaultColumn] =
-          move.toLine === null ? null : accountOfLine(move.toLine);
-        movesByCompany.set(move.companyId, set);
+      await setDefaults(trx, plan, accountOfLine, companyIds, userId);
+      await setAssetClasses(trx, plan, accountOfLine, userId, now);
+
+      // Merges: the source's documents and unposted journal lines follow it
+      // to its target.
+      if (plan.merges.length > 0) {
+        await repointReferences(
+          trx,
+          plan.merges.map((m) => ({
+            source: m.sourceId,
+            target: accountOfLine(m.targetLine)
+          })),
+          companyIds
+        );
       }
-      for (const [moveCompanyId, set] of movesByCompany) {
+
+      // Removed accounts: their integration mappings go with them. Journal
+      // and document lines refuse the delete (ON DELETE RESTRICT) if anything
+      // still points at one.
+      if (removed.length > 0) {
         await trx
-          .updateTable("accountDefault")
-          .set({
-            ...(set as Updateable<KyselyDatabase["accountDefault"]>),
-            updatedBy: userId
-          })
-          .where("companyId", "=", moveCompanyId)
+          .deleteFrom("externalIntegrationMapping")
+          .where("entityType", "=", "account")
+          .where("entityId", "in", removed)
+          .where("companyId", "in", companyIds)
           .execute();
-      }
-
-      // Fixed asset class accounts, one statement per class.
-      const classSets = new Map<
-        string,
-        { companyId: string; set: Record<string, string> }
-      >();
-      for (const move of plan.assetClassMoves) {
-        const entry = classSets.get(move.classId) ?? {
-          companyId: move.companyId,
-          set: {}
-        };
-        entry.set[move.column] = accountOfLine(move.toLine);
-        classSets.set(move.classId, entry);
-      }
-      for (const [classId, { companyId: classCompanyId, set }] of classSets) {
-        await trx
-          .updateTable("fixedAssetClass")
-          .set({
-            ...(set as Updateable<KyselyDatabase["fixedAssetClass"]>),
-            updatedBy: userId,
-            updatedAt: now
-          })
-          .where("id", "=", classId)
-          .where("companyId", "=", classCompanyId)
-          .execute();
-      }
-
-      // Merges: Draft and Provisional records follow the source to its target.
-      const pairs = plan.merges.map((m) => ({
-        source: m.sourceId,
-        target: accountOfLine(m.targetLine)
-      }));
-      if (pairs.length > 0) {
-        await repointReferences(trx, pairs, companyIds);
-      }
-
-      // Deletes. Journal and document lines refuse it (ON DELETE RESTRICT)
-      // if anything still points at an account.
-      if (plan.deletes.length > 0) {
         await trx
           .deleteFrom("account")
-          .where("id", "in", plan.deletes)
+          .where("id", "in", removed)
           .where("companyGroupId", "=", groupId)
           .execute();
       }
 
-      // Groups left with no children.
+      // Groups left with no children, deepest first.
       for (;;) {
-        const removed = await sql`DELETE FROM "account" AS g
+        const emptied = await sql`DELETE FROM "account" AS g
           WHERE g."companyGroupId" = ${groupId} AND g."isGroup" AND NOT g."isSystem"
             AND NOT EXISTS (SELECT 1 FROM "account" AS c WHERE c."parentId" = g."id")
           RETURNING g."id"`.execute(trx);
-        if (removed.rows.length === 0) break;
+        if (emptied.rows.length === 0) break;
       }
 
       await assertPostcondition(trx, groupId, companyIds, chart);
@@ -392,53 +352,151 @@ const applyAccountImport = defineServerFn({
   }
 });
 
-/** The chart now equals the file, and every company can still post. */
+/** Every company's defaults, in one statement: the file names the same
+ *  account for a role in every company. */
+async function setDefaults(
+  trx: Trx,
+  plan: AccountImportPlan,
+  accountOfLine: (line: number) => string,
+  companyIds: string[],
+  userId: string
+) {
+  const set = Object.fromEntries(
+    plan.roleMoves.map((m) => [
+      m.role,
+      m.toLine === null ? null : accountOfLine(m.toLine)
+    ])
+  );
+  await trx
+    .updateTable("accountDefault")
+    .set({ ...set, updatedBy: userId })
+    .where("companyId", "in", companyIds)
+    .execute();
+}
+
+/** Every fixed asset class's accounts, in one statement. */
+async function setAssetClasses(
+  trx: Trx,
+  plan: AccountImportPlan,
+  accountOfLine: (line: number) => string,
+  userId: string,
+  now: string
+) {
+  if (plan.assetClassMoves.length === 0) return;
+  const columns = sql.join(FIXED_ASSET_CLASS_COLUMNS.map((c) => sql.id(c)));
+  const values = sql.join(
+    plan.assetClassMoves.map(
+      (m) =>
+        sql`(${m.classId}, ${m.companyId}, ${sql.join(
+          FIXED_ASSET_CLASS_COLUMNS.map((c) => accountOfLine(m.toLines[c]))
+        )})`
+    )
+  );
+  const assignments = sql.join(
+    FIXED_ASSET_CLASS_COLUMNS.map((c) => sql`${sql.id(c)} = v.${sql.id(c)}`)
+  );
+  await sql`UPDATE "fixedAssetClass" AS t SET ${assignments},
+      "updatedBy" = ${userId}, "updatedAt" = ${now}
+    FROM (VALUES ${values}) AS v(id, "companyId", ${columns})
+    WHERE t."id" = v.id AND t."companyId" = v."companyId"`.execute(trx);
+}
+
+/**
+ * The chart now equals the file, and every company can still post. A failure
+ * means the apply and the plan disagree: a server bug, so a plain Error (500),
+ * and the transaction rolls back.
+ */
 async function assertPostcondition(
   trx: Trx,
   groupId: string,
   companyIds: string[],
-  chart: { number: string; name: string }[]
+  chart: ChartRow[]
 ) {
-  const leaves = await trx
+  const accounts = await trx
     .selectFrom("account")
-    .select(["id", "number", "name", "class", "active"])
+    .select([
+      "id",
+      "number",
+      "name",
+      "class",
+      "accountType",
+      "parentId",
+      "isGroup",
+      "isSystem"
+    ])
     .where("companyGroupId", "=", groupId)
-    .where("isGroup", "=", false)
-    .where("isSystem", "=", false)
     .execute();
-  const expected = new Set(
-    chart.map((r) => `${r.number.trim()}|${r.name.trim()}`)
+  const byId = new Map(accounts.map((a) => [a.id, a]));
+  const leaves = accounts.filter((a) => !a.isGroup && !a.isSystem);
+  const describe = (r: {
+    number: string | null;
+    name: string;
+    class: string | null;
+    accountType: string | null;
+    group: string;
+  }) =>
+    [
+      r.number ?? "",
+      r.name,
+      r.class ?? "",
+      r.accountType ?? "",
+      key(r.group)
+    ].join("|");
+  const actual = new Set(
+    leaves.map((a) =>
+      describe({ ...a, group: byId.get(a.parentId ?? "")?.name ?? "" })
+    )
   );
-  const actual = new Set(leaves.map((a) => `${a.number ?? ""}|${a.name}`));
-  const missing = [...expected].filter((k) => !actual.has(k));
-  const extra = [...actual].filter((k) => !expected.has(k));
-  if (missing.length > 0 || extra.length > 0) {
-    throw new InvalidInputError(
-      "The chart does not match the file after the import",
-      { missing, extra }
-    );
+  const failures: string[] = [];
+  // A row with no class or type takes them from the plan; compare by number,
+  // name and group for those.
+  const expected = chart.map((r) =>
+    r.class && r.accountType ? describe(r) : null
+  );
+  const loose = new Set(
+    leaves.map((a) =>
+      [
+        a.number ?? "",
+        a.name,
+        key(byId.get(a.parentId ?? "")?.name ?? "")
+      ].join("|")
+    )
+  );
+  chart.forEach((r, i) => {
+    const exact = expected[i];
+    const found = exact
+      ? actual.has(exact)
+      : loose.has([r.number, r.name, key(r.group)].join("|"));
+    if (!found)
+      failures.push(`line ${r.line} was not written as the file says`);
+  });
+  if (leaves.length !== chart.length) {
+    failures.push(`${leaves.length} accounts for ${chart.length} rows`);
+  }
+  if (
+    accounts.some(
+      (g) =>
+        g.isGroup && !g.isSystem && !accounts.some((c) => c.parentId === g.id)
+    )
+  ) {
+    failures.push("an empty group is left");
   }
 
-  const byId = new Map(leaves.map((a) => [a.id, a]));
+  const leafIds = new Set(leaves.map((a) => a.id));
   const defaults = await trx
     .selectFrom("accountDefault")
-    .selectAll()
+    .select(["companyId", ...requiredRoles(), "migrationClearingAccount"])
     .where("companyId", "in", companyIds)
     .execute();
   for (const row of defaults) {
     for (const role of requiredRoles()) {
-      const accountId = row[role] as string | null;
-      if (!accountId || !byId.has(accountId)) {
-        throw new InvalidInputError(
-          `The import would leave the default "${role}" without an account`
-        );
+      if (!leafIds.has(row[role] ?? "")) {
+        failures.push(`${row.companyId}: the default "${role}" has no account`);
       }
     }
     const clearing = byId.get(row.migrationClearingAccount ?? "");
-    if (clearing && clearing.class !== "Equity") {
-      throw new InvalidInputError(
-        "Migration Clearing must be an Equity account"
-      );
+    if (clearing && clearing.class !== MIGRATION_CLEARING_ACCOUNT_CLASS) {
+      failures.push(`${row.companyId}: Migration Clearing is not Equity`);
     }
   }
   const classes = await trx
@@ -448,12 +506,18 @@ async function assertPostcondition(
     .execute();
   for (const fac of classes) {
     for (const column of FIXED_ASSET_CLASS_COLUMNS) {
-      if (!byId.has(fac[column] as string)) {
-        throw new InvalidInputError(
-          `The import would leave fixed asset class "${fac.name}" without an account`
-        );
+      if (!leafIds.has(fac[column])) {
+        failures.push(`fixed asset class "${fac.name}" has no ${column}`);
       }
     }
+  }
+
+  if (failures.length > 0) {
+    logger.error("The chart of accounts import broke its postcondition", {
+      groupId,
+      failures
+    });
+    throw new Error("The chart of accounts import could not be applied.");
   }
 }
 
