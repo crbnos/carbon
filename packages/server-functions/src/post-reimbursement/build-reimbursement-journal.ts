@@ -40,6 +40,9 @@ import {
 
 export interface ReimbursementLineInput {
   accountId: string;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
@@ -180,8 +183,9 @@ export function buildReimbursementJournal(
   for (const line of lines) {
     const magnitude = toBase(line.amount);
     payableMagnitude += magnitude;
-    pushLine("debit", classOf(line.accountId), magnitude, {
-      accountId: line.accountId,
+    const postingAccountId = line.projectAccountId ?? line.accountId;
+    pushLine("debit", classOf(postingAccountId), magnitude, {
+      accountId: postingAccountId,
       description: line.description ?? "Employee reimbursement",
       costCenterId: line.costCenterId,
       projectId: line.projectId

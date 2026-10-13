@@ -34,6 +34,7 @@ import {
   lockContractPositions
 } from "../lib/contract-ledger";
 import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
+import { synthesizeProjectRevenue } from "../lib/project-revenue";
 import { assertAccountingCutover } from "../lib/require-accounting-cutover";
 import { RUN_SEQUENCE, type RunType, runTypeFilter } from "../lib/run-type";
 
@@ -299,6 +300,9 @@ export async function synthesizeContractRevenue(
     .select("id")
     .where("companyId", "=", companyId)
     .where("status", "=", "Planned")
+    // Only revenue rows hang off a month row. A Cost Relief or Loss Provision
+    // row has a line and no month row by design (decision R6).
+    .where("type", "in", ["Deferral", "Accrual"])
     .where("customerContractLineId", "is not", null)
     .where("customerContractRevenueId", "is", null)
     .execute();
@@ -497,11 +501,18 @@ export async function synthesizeContractRevenue(
 
 /** The synthesizers a run of `type` runs before it selects its rows. A lease
  *  run synthesizes rental accruals; a revenue recognition run synthesizes
- *  contract revenue. Neither ever runs the other's. */
-export function runRowSynthesizers(type: RunType): RunRowSynthesizer[] {
+ *  project and contract revenue. Neither ever runs the other's. `extra` comes
+ *  from the caller (the commercial project revenue synthesizer, decision R1)
+ *  and runs, in a revenue recognition run, before the Right to Invoice and
+ *  contract synthesizers: the contract synthesizer moves the month rows both
+ *  project synthesizers write through the contract position. */
+export function runRowSynthesizers(
+  type: RunType,
+  extra: RunRowSynthesizer[] = []
+): RunRowSynthesizer[] {
   return type === "Lease"
     ? [synthesizeRentalAccruals]
-    : [synthesizeContractRevenue];
+    : [...extra, synthesizeProjectRevenue, synthesizeContractRevenue];
 }
 
 export type RunProposal = { id: string; runId: string; lineCount: number };
@@ -571,12 +582,13 @@ export async function claimScheduleRows(
 async function createRevenueRecognitionRunProposal(
   db: Kysely<KyselyDatabase>,
   args: RunProposalContext,
-  type: RunType
+  type: RunType,
+  extraSynthesizers: RunRowSynthesizer[]
 ): Promise<RunProposal | null> {
   const { companyId, periodEnd, userId } = args;
 
   return db.transaction().execute(async (trx) => {
-    for (const synthesize of runRowSynthesizers(type)) {
+    for (const synthesize of runRowSynthesizers(type, extraSynthesizers)) {
       await synthesize(trx, args);
     }
 
@@ -651,7 +663,10 @@ const proposeRevenueRecognitionRun = defineServerFn({
   name: "propose-revenue-recognition-run",
   input: proposeRevenueRecognitionRunInput,
   permissions: { create: "accounting" },
-  async run({ db, companyId, userId }, { periodEnd, type }) {
+  async run(
+    { db, companyId, userId, revenueRunSynthesizers },
+    { periodEnd, type }
+  ) {
     await assertAccountingCutover(db, companyId);
     // A run may cover the current month or an earlier one, never a month that
     // has not started (the ERP's isFutureRunPeriod; this package cannot import
@@ -665,7 +680,8 @@ const proposeRevenueRecognitionRun = defineServerFn({
     return createRevenueRecognitionRunProposal(
       db,
       { companyId, periodEnd, userId },
-      type
+      type,
+      revenueRunSynthesizers
     );
   }
 });

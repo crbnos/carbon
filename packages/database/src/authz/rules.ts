@@ -121,6 +121,35 @@ export const exists = (
   });
 
 /**
+ * The module that governs a project row: a Standard project follows `projects_<action>`
+ * (or `standard`, for a read open to any employee), a Service project `service_<action>`.
+ * `column` names the row's project; on `project` itself the row's own `projectType` and
+ * company decide (`column` is "id"), so the policy never queries the table it guards.
+ * With `via: "projectElement"`, `column` names an element and its project decides.
+ * The project (and element) must be in the row's own company.
+ */
+export const projectModule = (
+  column: string,
+  action: "view" | "create" | "update" | "delete",
+  {
+    standard = `projects_${action}`,
+    via
+  }: { standard?: Who; via?: "projectElement" } = {}
+): Pred =>
+  pred((table) => {
+    const governs = (alias: string | null) => {
+      const ref = (name: string) => sql.ref(alias ? `${alias}.${name}` : name);
+      return sql`((${ref("projectType")} = ${sql.lit("Standard")} AND ${belongsTo(ref("companyId"), standard)}) OR (${ref("projectType")} = ${sql.lit("Service")} AND ${belongsTo(ref("companyId"), `service_${action}`)}))`;
+    };
+    if (table === "project") return governs(null);
+    const row = (name: string) => sql.ref(`${table}.${name}`);
+    if (via === "projectElement") {
+      return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "projectElement")} e JOIN ${sql.id("public", "project")} p ON ${sql.ref("p.id")} = ${sql.ref("e.projectId")} AND ${sql.ref("p.companyId")} = ${sql.ref("e.companyId")} WHERE ${sql.ref("e.id")} = ${row(column)} AND ${sql.ref("e.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+    }
+    return sql`EXISTS (SELECT 1 FROM ${sql.id("public", "project")} p WHERE ${sql.ref("p.id")} = ${row(column)} AND ${sql.ref("p.companyId")} = ${row("companyId")} AND ${governs("p")})`;
+  });
+
+/**
  * `local` is reachable through a link table: it is one of `linkTable.linkColumn` over the
  * link rows satisfying `condition`, whose bare columns are the link table's.
  */

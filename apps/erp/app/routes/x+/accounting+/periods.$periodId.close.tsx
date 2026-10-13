@@ -5,7 +5,14 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { runIndirectRatePeriod } from "@carbon/ee/indirect-rates.server";
+import { companyHasFeature, requireFeature } from "@carbon/ee/plan.server";
+import { closeEarnedValuePeriod } from "@carbon/ee/project-control.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { validationError, validator } from "@carbon/form";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -36,6 +43,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import {
+  LuCalculator,
   LuCheck,
   LuInfo,
   LuLock,
@@ -56,19 +64,21 @@ import {
 import { EmployeeAvatar } from "~/components";
 import { useCurrencyFormatter } from "~/hooks";
 import type {
+  PeriodCloseEntitlements,
   PeriodCloseStatus,
   PeriodCloseTaskView
 } from "~/modules/accounting";
 import {
-  closePeriodWithChecklist,
+  closeAccountingPeriod,
   closeTaskCompleteValidator,
   closeTaskSkipValidator,
   completeCloseTask,
   createDepreciationRun,
   getAccountingPeriods,
-  getPeriodCloseChecklist,
   LOCK_PERIOD_TASK_NAME,
+  loadPeriodCloseChecklist,
   lockAccountingPeriod,
+  runPreviewer,
   skipCloseTask,
   unlockAccountingPeriod
 } from "~/modules/accounting";
@@ -77,6 +87,21 @@ import { PeriodCloseUnpostedDocumentsPopover } from "~/modules/accounting/ui/Per
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting-period-close");
+
+/** The commercial features the close checks depend on (Government
+ *  Contracting 5b: the burden check; 5c: the earned value check). */
+async function closeEntitlements(
+  client: Parameters<typeof companyHasFeature>[0],
+  companyId: string
+): Promise<PeriodCloseEntitlements> {
+  return {
+    governmentContracting: await companyHasFeature(client, companyId, {
+      feature: "GOVERNMENT_CONTRACTING"
+    })
+  };
+}
 
 export const handle: Handle = {
   breadcrumb: msg`Close Period`,
@@ -93,13 +118,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { periodId } = params;
   if (!periodId) throw notFound("periodId not found");
 
+  const db = getDatabaseClient();
+  const entitlements = await closeEntitlements(client, companyId);
   const [checklist, periods] = await Promise.all([
-    getPeriodCloseChecklist(client, getDatabaseClient(), {
+    // `getPeriodCloseChecklist` with the project revenue synthesizers and the
+    // entitlements, which the browser-bundled service cannot import.
+    loadPeriodCloseChecklist(
+      client,
+      db,
       companyId,
-      companyGroupId,
-      userId,
-      periodId
-    }),
+      periodId,
+      runPreviewer(client, db, {
+        companyId,
+        companyGroupId,
+        userId,
+        revenueRunSynthesizers: projectRevenueSynthesizers
+      }),
+      entitlements
+    ),
     getAccountingPeriods(client, companyId)
   ]);
 
@@ -185,6 +221,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(result.error, "Failed to lock period"))
       );
     }
+    // The lock is the monthly trigger of the indirect rate run
+    // (Government Contracting 5b). A failed send never fails the lock.
+    try {
+      const pools = await client
+        .from("indirectPool")
+        .select("id", { count: "exact", head: true })
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .eq("appliesToProjects", true);
+      if (pools.error) throw pools.error;
+      if ((pools.count ?? 0) > 0) {
+        await trigger("indirect-rates", {
+          companyId,
+          accountingPeriodId: periodId,
+          userId
+        });
+      }
+    } catch (e) {
+      logger.warn("Failed to send the indirect rate run", {
+        companyId,
+        periodId,
+        error: e
+      });
+    }
     return data({}, await flash(request, success("Period locked")));
   }
 
@@ -261,7 +321,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       try {
         // The proposal creates nothing when nothing is due.
         proposal = await serverFns
-          .system({ db: getDatabaseClient(), companyId, userId })
+          .system({
+            db: getDatabaseClient(),
+            companyId,
+            userId,
+            revenueRunSynthesizers: projectRevenueSynthesizers
+          })
           .invokeOrThrow("propose-revenue-recognition-run", {
             periodEnd,
             type
@@ -324,13 +389,110 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (intent === "close") {
-    const result = await closePeriodWithChecklist(client, getDatabaseClient(), {
+  if (intent === "compute-burden") {
+    await requirePermissions(request, { create: "accounting" });
+    await requireFeature({
+      request,
+      client,
       companyId,
-      companyGroupId,
-      periodId,
-      userId
+      redirectTo: path.to.accountingPeriodClose(periodId),
+      feature: "GOVERNMENT_CONTRACTING"
     });
+    try {
+      const result = await runIndirectRatePeriod(getDatabaseClient(), client, {
+        companyId,
+        userId,
+        accountingPeriodId: periodId
+      });
+      if (result.error) {
+        return data(
+          {},
+          await flash(request, error(result.error, result.error.message))
+        );
+      }
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return data({}, await flash(request, error(e, e.message)));
+      }
+      logger.error("Failed to compute burden", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return data(
+        {},
+        await flash(request, error(e, "Failed to compute burden"))
+      );
+    }
+    return data({}, await flash(request, success("Burden computed")));
+  }
+
+  if (intent === "close-earned-value") {
+    await requireFeature({
+      request,
+      client,
+      companyId,
+      redirectTo: path.to.accountingPeriodClose(periodId),
+      feature: "GOVERNMENT_CONTRACTING"
+    });
+    try {
+      const result = await closeEarnedValuePeriod(getDatabaseClient(), client, {
+        companyId,
+        userId,
+        accountingPeriodId: periodId
+      });
+      if (result.error) {
+        return data(
+          {},
+          await flash(request, error(result.error, result.error.message))
+        );
+      }
+      const closed = `Earned value closed for ${result.data.projects} ${
+        result.data.projects === 1 ? "project" : "projects"
+      }`;
+      // A project without a baseline gets no snapshot: the warning says so,
+      // and the check keeps failing for it.
+      if (result.data.warnings.length > 0) {
+        return data(
+          {},
+          await flash(
+            request,
+            error(null, `${closed}. ${result.data.warnings.join(" ")}`)
+          )
+        );
+      }
+      return data({}, await flash(request, success(closed)));
+    } catch (e) {
+      if (e instanceof EntitlementError) {
+        return data({}, await flash(request, error(e, e.message)));
+      }
+      logger.error("Failed to close earned value", {
+        companyId,
+        periodId,
+        error: e
+      });
+      return data(
+        {},
+        await flash(request, error(e, "Failed to close earned value"))
+      );
+    }
+  }
+
+  if (intent === "close") {
+    // `closePeriodWithChecklist` with a previewer that holds the project
+    // revenue synthesizers, which the browser-bundled service cannot import.
+    const db = getDatabaseClient();
+    const args = { companyId, companyGroupId, periodId, userId };
+    const result = await closeAccountingPeriod(
+      client,
+      db,
+      args,
+      runPreviewer(client, db, {
+        ...args,
+        revenueRunSynthesizers: projectRevenueSynthesizers
+      }),
+      await closeEntitlements(client, companyId)
+    );
     if (result.error) {
       return data(
         {},
@@ -481,6 +643,12 @@ function PeriodCloseTaskRow({
         return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
+      case "earned-value-closed":
+        return t`Writes the earned value snapshot of every project with work packages for the period: planned value, earned value and actual cost per work package, cumulative to the period end. Lock the period first. Closing the period freezes the snapshot. Passes when no project has earned value work packages.`;
+      case "burden-computed":
+        return t`Computes the indirect rates for the period and posts the burden catch-up to each project, then bills it on Cost Plus lines. Lock the period first. Passes when the company has no indirect pool that applies to projects. Skip with a reason if burden waits for a later period.`;
+      case "timesheets-complete":
+        return t`In DCAA timekeeping, every timesheet entry dated in the period should be posted, and every scheduled work day should have time entered, so labor cost in the period is complete. Always passes in Standard timekeeping. Skip with a reason if the gaps are known.`;
     }
     switch (task.name) {
       case "Lock the period":
@@ -516,6 +684,20 @@ function PeriodCloseTaskRow({
         : task.autoCheckKey === "draft-depreciation"
           ? "create-depreciation-run"
           : null;
+  // The burden check offers to run the period's indirect rates, once the
+  // period is locked (Government Contracting 5b).
+  const canComputeBurden =
+    task.autoCheckKey === "burden-computed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
+  // The earned value check offers to write the period's snapshot, once the
+  // period is locked (Government Contracting 5c).
+  const canCloseEarnedValue =
+    task.autoCheckKey === "earned-value-closed" &&
+    status === "Open" &&
+    task.autoCheck?.failing === true &&
+    closeStatus === "Locked";
   const due = task.autoCheck?.due;
   const canCreateRun =
     createRunIntent !== null &&
@@ -695,6 +877,34 @@ function PeriodCloseTaskRow({
                   isLoading={isBusy}
                 >
                   <Trans>Create Run</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canComputeBurden && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="compute-burden" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Compute Burden</Trans>
+                </Button>
+              </fetcher.Form>
+            )}
+            {canCloseEarnedValue && (
+              <fetcher.Form method="post">
+                <input type="hidden" name="intent" value="close-earned-value" />
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="sm"
+                  leftIcon={<LuCalculator />}
+                  isLoading={isBusy}
+                >
+                  <Trans>Close Earned Value</Trans>
                 </Button>
               </fetcher.Form>
             )}

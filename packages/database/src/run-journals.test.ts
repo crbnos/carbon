@@ -423,7 +423,8 @@ describe("buildRecognitionJournals", () => {
           Customer: "cust-2",
           Item: "item-2",
           Location: "loc-2",
-          Project: null
+          Project: null,
+          ProjectElement: null
         }
       },
       {
@@ -434,7 +435,8 @@ describe("buildRecognitionJournals", () => {
           Customer: "cust-2",
           Item: "item-2",
           Location: "loc-2",
-          Project: null
+          Project: null,
+          ProjectElement: null
         }
       },
       {
@@ -445,7 +447,8 @@ describe("buildRecognitionJournals", () => {
           Customer: "cust-3",
           Item: "item-3",
           Location: null,
-          Project: "proj-3"
+          Project: "proj-3",
+          ProjectElement: null
         }
       },
       {
@@ -456,7 +459,8 @@ describe("buildRecognitionJournals", () => {
           Customer: "cust-3",
           Item: "item-3",
           Location: null,
-          Project: "proj-3"
+          Project: "proj-3",
+          ProjectElement: null
         }
       }
     ]);

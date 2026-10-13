@@ -79,9 +79,12 @@ export async function releasePlanningActionClaims(
         WHERE o."companyId" = a."companyId"
           AND o."itemId" = a."itemId"
           AND o."locationId" = a."locationId"
+          AND o."planningSegmentId" = a."planningSegmentId"
           AND o."type" = a."type"
           AND COALESCE(o."purchaseOrderLineId", o."jobId", o."periodId")
             = COALESCE(a."purchaseOrderLineId", a."jobId", a."periodId")
+          AND COALESCE(o."fromProjectId", '') = COALESCE(a."fromProjectId", '')
+          AND COALESCE(o."toProjectId", '') = COALESCE(a."toProjectId", '')
           AND o."status" <> 'Actioned'
           AND o."id" <> a."id"
       )

@@ -446,6 +446,9 @@ export const ProductionPlanningOrderDrawer = memo(
           items: [
             {
               id: id,
+              // the row's netting segment: a project segment's job is the
+              // project's ('' is common)
+              planningSegmentId: row.planningSegmentId ?? "",
               orders: ordersWithPeriods
             }
           ],
@@ -457,7 +460,7 @@ export const ProductionPlanningOrderDrawer = memo(
           encType: "application/json"
         });
       },
-      [fetcher, locationId, periods]
+      [fetcher, locationId, periods, row.planningSegmentId]
     );
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration

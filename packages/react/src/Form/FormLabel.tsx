@@ -44,7 +44,10 @@ export const FormLabel = forwardRef<
       {(isOptional || onConfigure) && (
         <div className="flex items-center gap-1 max-md:gap-2">
           {isOptional && (
-            <span className="text-muted-foreground text-xxs max-md:text-xs">
+            <span
+              data-optional-tag
+              className="text-muted-foreground text-xxs max-md:text-xs"
+            >
               <Trans>Optional</Trans>
             </span>
           )}

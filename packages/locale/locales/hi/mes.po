@@ -149,6 +149,9 @@ msgstr "जोड़ें और जारी करें"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
+msgid "Add a row for each job or task you worked on."
+msgstr "प्रत्येक जॉब या कार्य के लिए जो आपने काम किया है, एक पंक्ति जोड़ें।"
+
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
@@ -157,6 +160,9 @@ msgstr "इन्वेंटरी जोड़ें"
 
 msgid "Add Passkey"
 msgstr "पासकी जोड़ें"
+
+msgid "Add row"
+msgstr "पंक्ति जोड़ें"
 
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
@@ -333,8 +339,17 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
+msgid "Certify and submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
+msgid "Certify and Submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
 msgid "Change"
 msgstr "बदलें"
+
+msgid "Change Time"
+msgstr "समय बदलें"
 
 msgid "Changelog newsletter"
 msgstr "परिवर्तनलॉग समाचारपत्र"
@@ -344,6 +359,9 @@ msgstr "विशेषता"
 
 msgid "Characteristics"
 msgstr "विशेषताएं"
+
+msgid "Charge Number"
+msgstr "चार्ज संख्या"
 
 msgid "Chat"
 msgstr "चैट"
@@ -545,6 +563,15 @@ msgstr "विवरण"
 msgid "Details"
 msgstr "विवरण"
 
+msgid "Direct Research"
+msgstr "प्रत्यक्ष अनुसंधान"
+
+msgid "Direct Supervision"
+msgstr "प्रत्यक्ष पर्यवेक्षण"
+
+msgid "Direct Support"
+msgstr "प्रत्यक्ष सहायता"
+
 msgid "Dispatch not found"
 msgstr "रखरखाव कार्य नहीं मिला"
 
@@ -653,6 +680,9 @@ msgstr "ऑपरेशन समाप्त करें"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "प्रत्येक जॉब का मान दर्ज करें, या पहली पंक्ति से सभी जॉब्स को एक बार में भरें। खाली पंक्तियां छोड़ दी जाती हैं।"
 
+msgid "Enter hours from 0 to 24"
+msgstr "0 से 24 तक घंटे दर्ज करें"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0} के लिए PIN दर्ज करें"
@@ -730,6 +760,12 @@ msgstr "माप को सहेजने में विफल"
 msgid "Failed to save result"
 msgstr "परिणाम को सहेजने में विफल"
 
+msgid "Failed to save the hours"
+msgstr "घंटे सहेजने में विफल रहा"
+
+msgid "Failed to submit the week"
+msgstr "सप्ताह सबमिट करने में विफल रहा"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} अपलोड करने में विफल"
@@ -802,6 +838,9 @@ msgstr "शीर्षक {level}"
 msgid "Hide description"
 msgstr "विवरण छिपाएं"
 
+msgid "Hours on {label}"
+msgstr "{label} पर घंटे"
+
 msgid "How Carbon looks in this browser."
 msgstr "इस ब्राउज़र में Carbon कैसा दिखता है।"
 
@@ -810,6 +849,9 @@ msgstr "वास्तव में कितने चुने गए?"
 
 msgid "How many?"
 msgstr "कितने?"
+
+msgid "I certify this statement"
+msgstr "मैं इस विवरण को प्रमाणित करता हूं"
 
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
@@ -926,6 +968,9 @@ msgstr "किट"
 msgid "Labor"
 msgstr "श्रम"
 
+msgid "Labor category"
+msgstr "श्रम श्रेणी"
+
 msgid "Last completed"
 msgstr "अंतिम पूर्ण"
 
@@ -934,6 +979,9 @@ msgstr "अंतिम नाम"
 
 msgid "Last used"
 msgstr "अंतिम उपयोग"
+
+msgid "Late Entry"
+msgstr "देरी से प्रविष्टि"
 
 msgid "Learn more"
 msgstr "अधिक जानें"
@@ -1108,6 +1156,9 @@ msgstr "{minValue} और {maxValue} के बीच होना चाहि�
 msgid "My Hours"
 msgstr "मेरे घंटे"
 
+msgid "My Time"
+msgstr "मेरा समय"
+
 msgid "Name"
 msgstr "नाम"
 
@@ -1128,6 +1179,9 @@ msgstr "अगला"
 
 msgid "Next step"
 msgstr "अगला चरण"
+
+msgid "Next week"
+msgstr "अगला सप्ताह"
 
 msgid "No"
 msgstr "नहीं"
@@ -1155,6 +1209,9 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
 msgid "No dispatches assigned to you"
 msgstr "आपको कोई असाइन किया गया रखरखाव कार्य नहीं है"
@@ -1246,6 +1303,9 @@ msgstr "कोई स्टॉक नहीं"
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
+msgid "No time this week"
+msgstr "इस सप्ताह कोई समय नहीं"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "इस आइटम के लिए कोई गोदाम स्टॉक रिकॉर्ड पर नहीं है। आप इसे अभी भी चुन सकते हैं — ऑन-हैंड नकारात्मक हो जाएगा जब तक गिनती समेकित नहीं हो जाती।"
 
@@ -1261,8 +1321,14 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 msgid "None"
 msgstr "कोई नहीं"
 
+msgid "Not Qualified"
+msgstr "योग्य नहीं"
+
 msgid "Notes"
 msgstr "नोट्स"
+
+msgid "Nothing matches your search."
+msgstr "आपकी खोज से कुछ नहीं मिला।"
 
 msgid "Nothing running"
 msgstr "कुछ नहीं चल रहा"
@@ -1424,6 +1490,9 @@ msgstr "एक शैली और अवतार चुनें, या न�
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "उस जॉब या कार्य को चुनें जिस पर आपने काम किया, फिर श्रम श्रेणी को चुनें।"
+
 msgid "Picked"
 msgstr "उठाया गया"
 
@@ -1481,6 +1550,9 @@ msgstr "निवारक"
 msgid "Previous step"
 msgstr "पिछला चरण"
 
+msgid "Previous week"
+msgstr "पिछला सप्ताह"
+
 msgid "Print"
 msgstr "प्रिंट करें"
 
@@ -1514,6 +1586,9 @@ msgstr "प्रोफाइल"
 msgid "Progress"
 msgstr "प्रगति"
 
+msgid "Project"
+msgstr "प्रकल्प"
+
 msgid "Purchasing"
 msgstr "क्रय"
 
@@ -1537,6 +1612,12 @@ msgstr "कतार खाली"
 
 msgid "Quotes"
 msgstr "कोटेशन"
+
+msgid "Reason for change"
+msgstr "परिवर्तन का कारण"
+
+msgid "Reason for late entry"
+msgstr "देरी से प्रविष्टि का कारण"
 
 msgid "Reason for rework"
 msgstr "पुनः कार्य का कारण"
@@ -1714,6 +1795,9 @@ msgstr "गेज खोजें..."
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
 
+msgid "Search projects and tasks"
+msgstr "परियोजनाओं और कार्यों को खोजें"
+
 msgid "Search..."
 msgstr "खोजें..."
 
@@ -1861,6 +1945,9 @@ msgstr "साइन आउट"
 msgid "Sign out instead"
 msgstr "इसके बजाय साइन आउट करें"
 
+msgid "Signature pad"
+msgstr "हस्ताक्षर पैड"
+
 msgid "Signed in as {stationName}"
 msgstr "के रूप में साइन इन किया गया {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "सब-असेंबली {0} · {1} — स्वयं पर द�
 msgid "Submit anonymously"
 msgstr "गुमनाम रूप से सबमिट करें"
 
+msgid "Submit week"
+msgstr "सप्ताह सबमिट करें"
+
 msgid "Suggestion"
 msgstr "सुझाव"
 
@@ -1968,8 +2058,14 @@ msgstr "टैग"
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "परिवर्तन और इसका कारण टाइमशीट के इतिहास में रखा जाता है।"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "तारीख प्रविष्टि विंडो से पहले है। कारण प्रविष्टि के साथ रखा जाता है।"
 
 msgid "The jobs and parts that make up this run."
 msgstr "जॉब्स और पार्ट्स जो इस रन को बनाते हैं।"
@@ -2022,6 +2118,9 @@ msgstr "यह हिस्सा स्टॉक से स्क्रैप �
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "इस इकाई को स्थायी रूप से स्क्रैप किया जाएगा और एक रिप्लेसमेंट सीरियल नंबर बनाया जाएगा।"
+
+msgid "This week"
+msgstr "इस सप्ताह"
 
 msgid "Thumbnail"
 msgstr "थंबनेल"

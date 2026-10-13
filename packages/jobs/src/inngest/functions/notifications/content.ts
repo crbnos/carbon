@@ -399,7 +399,9 @@ async function buildEventContent(
     case NotificationEvent.JobAssignment: {
       const job = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -427,7 +429,9 @@ async function buildEventContent(
     case NotificationEvent.JobCompleted: {
       const completedJob = await client
         .from("job")
-        .select("*, customer(name), item(readableId, name)")
+        .select(
+          "*, customer!job_customerId_fkey(name), item!job_itemId_fkey(readableId, name)"
+        )
         .eq("id", documentId)
         .eq("companyId", opts.companyId)
         .single();
@@ -1271,6 +1275,35 @@ async function buildEventContent(
         };
       }
 
+      if (opts.documentType === "projectChangeRequest") {
+        // The document id is "<projectId>:<changeRequestId>", so the link can
+        // open the page; a bare change request id reads too.
+        const changeRequestId = documentId.split(":").pop() ?? documentId;
+        const cr = await client
+          .from("projectChangeRequest")
+          .select("readableId, title, status")
+          .eq("id", changeRequestId)
+          .eq("companyId", opts.companyId)
+          .single();
+
+        if (cr.error || !cr.data) {
+          console.error(
+            "Failed to retrieve change request for approval notification",
+            cr.error
+          );
+          return {
+            description: `Project change request ${docPhrase}`,
+            details: []
+          };
+        }
+
+        return {
+          description: `${cr.data.readableId}: ${cr.data.title} ${docPhrase}`,
+          reference: cr.data.readableId,
+          details: buildDetails([{ label: "Status", value: cr.data.status }])
+        };
+      }
+
       if (opts.documentType === "changeOrder") {
         const co = await client
           .from("changeOrder")
@@ -1435,6 +1468,34 @@ async function buildEventContent(
           ? `Recurring invoicing: ${opts.body}`
           : "Recurring invoicing",
         details: []
+      };
+    }
+
+    // Payload-carried: the recurring-billing job sends the notice as `title`
+    // and the funding figures as `body`; documentId is the contract.
+    case NotificationEvent.ContractFundingThreshold: {
+      return {
+        description: opts?.title ?? "Contract funding notice",
+        details: opts?.body ? [{ label: "Funding", value: opts.body }] : []
+      };
+    }
+
+    // Payload-carried: the daily missing-time check sends the text as `body`;
+    // documentId is the missed date, so there is nothing to read.
+    case NotificationEvent.TimesheetMissing: {
+      return {
+        description: opts?.body ?? "No time entered",
+        details: []
+      };
+    }
+
+    // Payload-carried: the timesheet budget check sends "Budget exceeded on
+    // <project>" as `title` and the overruns as `body`; documentId is the
+    // project.
+    case NotificationEvent.ProjectBudgetExceeded: {
+      return {
+        description: opts?.title ?? "Budget exceeded",
+        details: opts?.body ? [{ label: "Overrun", value: opts.body }] : []
       };
     }
 

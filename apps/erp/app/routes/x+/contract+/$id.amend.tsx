@@ -12,6 +12,7 @@ import { datetime, getErrorMessage, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { customerContractAmendmentValidator } from "~/modules/sales";
+import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -101,6 +102,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { amendmentDate, effect, contractType, reason, changes } =
     validation.data;
+
+  const upgrade = await projectRevenueRefusal(
+    client,
+    companyId,
+    changes.flatMap((change) =>
+      change.op === "add"
+        ? [change.line]
+        : change.op === "change"
+          ? [{ revenueMethod: change.revenueMethod }]
+          : []
+    )
+  );
+  if (upgrade) {
+    throw redirect(
+      path.to.contractDetails(id),
+      await flash(request, error(null, upgrade))
+    );
+  }
+
   const result = await contracts.invoke("post-customer-contract", {
     type: "amend",
     customerContractId: id,

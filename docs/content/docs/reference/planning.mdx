@@ -27,8 +27,10 @@ MRP recalculates on its own every 3 hours. To run it once a day instead, go to *
 | Customer demand | Open sales-order lines, by promised date. |
 | Production demand | Job material still to issue, offset by lead time. |
 | Forecast demand | Manually entered demand projections. |
+| Project demand | Plan-line materials of a released project's elements that are not finished yet. |
+| Borrows | An open borrow between two projects: demand on the borrower, supply on the lender, on the payback date. |
 | Open supply | Open jobs and open purchase-order lines. |
-| On hand | The item ledger balance. |
+| On hand | The item ledger balance, by stock owner. |
 
 ## Reorder policy
 
@@ -56,6 +58,7 @@ Every MRP run leaves a worklist on the planning pages. Each row's **Actions** co
 | **Expedite** / **Defer** | an open PO line or job | Moves the required date (PO line) or the due date (job) to the suggested date. |
 | **Increase** / **Decrease** | an open PO line or job | Sets the line's purchase quantity, or the job's quantity, to the suggested quantity. |
 | **Cancel** | an open PO line or job | Deletes the PO line, or cancels the job, when nothing needs it. |
+| **Transfer** | none yet | **Create transfer** makes a Draft project stock transfer from common stock to the project. See [projects with project stock](#projects-with-project-stock). |
 
 **Apply** is offered only while the target can still change from planning: a PO at **"Draft"** or **"Planned"**, a job at **"Draft"** or **"Planned"**. A PO that has been sent or is in approval, a job on the floor, or a PO line whose date the supplier has promised shows **Review** instead, and you make the change on the order itself. Select several rows and choose **Apply Suggested Changes** to apply every open action on them at once. Apply writes the suggestion as it is at that moment: if an MRP run refreshed the action after the page loaded, the refreshed quantity or date is what lands. A job that had no deadline gets a **Soft Deadline** with its new date. Cancelling a PO line deletes it, so it needs the purchasing delete permission.
 
@@ -85,7 +88,16 @@ Two kinds of open order never get a change suggestion. An order due after the pl
 
 ## Planning ownership
 
-Each action gets a <Term id="responsible-employee">responsible employee</Term>, resolved from the most specific setting that names one: the item at that location, then the item group at that location, then the location, then the company default. Set the rungs in **Settings → Planning → Planning Ownership** and on the item's planning tab (**Responsible Employee**). Filter the grid by assignee to see your own worklist.
+Each action gets a <Term id="responsible-employee">responsible employee</Term>, resolved from the most specific setting that names one: for a project's own row, the project's manager first; then the item at that location, then the item group at that location, then the location, then the company default. Set the rungs in **Settings → Planning → Planning Ownership** and on the item's planning tab (**Responsible Employee**). Filter the grid by assignee to see your own worklist.
+
+## Projects with project stock
+
+A project with [project stock](/docs/reference/projects#project-stock) is planned on its own. Its demand nets against its own stock and its own orders first, never against common stock in silence.
+
+- **Segment.** The grid has one row per item for common stock and one per project that needs the item. The **Segment** column shows **Common** or the project, and its filter shows one project or common stock only. The column shows when the company has a project with project stock.
+- **Transfer.** When common stock has more than its own demand needs within the planning window, MRP suggests a **Transfer** of that stock to the project. Only stock on hand counts, not orders still to arrive. To keep an item's common stock away from projects at a location, turn off **Common stock for projects** on the item's planning tab. Choose **Create transfer** to make a Draft transfer, then approve and post it on the transfer page.
+- **New supply.** What is still short becomes an **Order** or **Make** for the project, sized to the shortage alone. The project has no reorder point, safety stock or forecast. Ordering it creates a PO line charged to the project, or a job that receives into the project's stock.
+- **Borrows.** An open borrow is demand on the borrowing project and supply on the lending project, on its payback date. MRP never suggests changing it. A borrow past its payback date shows in **Overdue borrows** above the grid, and on the project's header.
 
 ## Planning vs scheduling
 
@@ -130,5 +142,5 @@ Another planner applied the same action after this page loaded. Reload the plann
 The target left Draft / Planned between the page load and Apply (the PO was sent or put in approval, the job was released). The action stays open as Review; make the change on the order.
 
 ### Mechanics
-Actions are rows in `planningAction` (`type` Order / Make / Expedite / Defer / Cancel / Increase / Decrease; `status` Open / Dismissed / Actioned), written by `generatePlanningActions` after every MRP run as a diff against the previous run. Purchasing actions, and job Expedite / Defer, apply as one transaction per batch: the claim (Open → Actioned) and the change commit together. Job Increase / Decrease / Cancel run one job at a time through server functions with their own transactions, each action claimed right before its own change. Every claim returns the action's suggested quantity and date as they are at the claim, and Apply writes those. A date move on a "No Deadline" job sets `deadlineType` to "Soft Deadline". The horizon is `itemPlanning.planningHorizonDays`, else `companySettings.defaultPlanningHorizonDays`; 0 at either level means no horizon. The tolerance is `companySettings.rescheduleToleranceDays`. The owner ladder is `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` → `location.responsibleEmployee` → `companySettings.defaultResponsibleEmployee`.
+Actions are rows in `planningAction` (`type` Order / Make / Expedite / Defer / Cancel / Increase / Decrease / Release / Transfer; `status` Open / Dismissed / Actioned), written by `generatePlanningActions` after every MRP run as a diff against the previous run. Every planning row and action has a netting segment, `planningSegmentId`: `''` is common, a project id is a project with project stock (`project_planning_segment`). A project segment draws only the common segment's true surplus (on-hand that common demand does not need in the window), as a Transfer action, and only for an item whose `itemPlanning.allowCommonSupplyForProjects` is true (the default; set per location by **Common stock for projects** on the item's planning tab). Applying a Transfer creates a Draft `projectStockTransfer` with `planningActionId` and sets `planningAction.projectStockTransferId`. Purchasing actions, and job Expedite / Defer, apply as one transaction per batch: the claim (Open → Actioned) and the change commit together. Job Increase / Decrease / Cancel run one job at a time through server functions with their own transactions, each action claimed right before its own change. Every claim returns the action's suggested quantity and date as they are at the claim, and Apply writes those. A date move on a "No Deadline" job sets `deadlineType` to "Soft Deadline". The horizon is `itemPlanning.planningHorizonDays`, else `companySettings.defaultPlanningHorizonDays`; 0 at either level means no horizon. The tolerance is `companySettings.rescheduleToleranceDays`. The owner ladder is `itemPlanning.responsibleEmployee` → `itemPostingGroupResponsibility` → `location.responsibleEmployee` → `companySettings.defaultResponsibleEmployee`.
 </AgentContext>

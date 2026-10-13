@@ -50,7 +50,11 @@ import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
 import { useUrlParams } from "~/hooks";
-import { getJobsByDateRange, getUnscheduledJobs } from "~/modules/production";
+import {
+  getJobProjects,
+  getJobsByDateRange,
+  getUnscheduledJobs
+} from "~/modules/production";
 import { isDateColumnSentinel } from "~/modules/production/production.models";
 import type { Column, JobItem } from "~/modules/production/ui/Schedule";
 import type { DisplaySettings } from "~/modules/production/ui/Schedule/Kanban";
@@ -181,6 +185,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
         error(unscheduledJobs.error, "Failed to fetch unscheduled jobs")
       )
     );
+  }
+
+  const jobProjects = await getJobProjects(client, companyId, [
+    ...(jobs.data ?? []).map((job) => job.id),
+    ...(unscheduledJobs.data ?? []).map((job) => job.id)
+  ]);
+  if (jobProjects.error) {
+    logger.error("Failed to load job projects", {
+      companyId,
+      error: jobProjects.error
+    });
   }
 
   // Filter jobs
@@ -400,6 +415,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       salesOrderReadableId: job.salesOrderReadableId,
       salesOrderId: job.salesOrderId,
       salesOrderLineId: job.salesOrderLineId,
+      ...jobProjects.data[job.id],
       status: job.status,
       setupDuration: 0,
       laborDuration: 0,
@@ -440,6 +456,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     salesOrderReadableId: job.salesOrderReadableId,
     salesOrderId: job.salesOrderId,
     salesOrderLineId: job.salesOrderLineId,
+    ...jobProjects.data[job.id],
     status: job.status,
     setupDuration: 0,
     laborDuration: 0,
@@ -495,6 +512,7 @@ const defaultDisplaySettings: DisplaySettings = {
   showQuantity: true,
   showStatus: true,
   showSalesOrder: true,
+  showProject: true,
   showThumbnail: true
 };
 
@@ -574,12 +592,17 @@ function DateKanbanSchedule() {
   // Phones keep their own settings and start without the product image, so
   // more than one card fits on a screen; the Thumbnail toggle still applies.
   const { isPhone } = useViewport();
-  const [displaySettings, setDisplaySettings] = useLocalStorage(
+  const [storedDisplaySettings, setDisplaySettings] = useLocalStorage(
     isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
     isPhone
       ? { ...defaultDisplaySettings, showThumbnail: false }
       : defaultDisplaySettings
   );
+  // Settings stored before a toggle existed read that toggle's default
+  const displaySettings = {
+    ...defaultDisplaySettings,
+    ...storedDisplaySettings
+  };
 
   // A reload hands over new objects for every card. Keeping the ones that did
   // not change lets their memoized cards skip the render.
@@ -845,6 +868,7 @@ function DateKanbanSchedule() {
                     { key: "showQuantity", label: t`Quantity` },
                     { key: "showStatus", label: t`Status` },
                     { key: "showSalesOrder", label: t`Sales Order` },
+                    { key: "showProject", label: t`Project` },
                     { key: "showThumbnail", label: t`Thumbnail` }
                   ].map(({ key, label }) => (
                     <Switch
@@ -892,6 +916,7 @@ function DateKanbanSchedule() {
             showQuantity={displaySettings.showQuantity}
             showStatus={displaySettings.showStatus}
             showSalesOrder={displaySettings.showSalesOrder}
+            showProject={displaySettings.showProject}
             showThumbnail={displaySettings.showThumbnail}
           />
         </div>

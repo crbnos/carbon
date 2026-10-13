@@ -23,6 +23,11 @@ import {
   settleNewSupplyPlanningActions
 } from "~/modules/production";
 import {
+  applyTransferPlanningActions,
+  getPlanningSegmentOwners,
+  moveActionPegsToSupply
+} from "~/modules/projects/projects.server";
+import {
   applyPurchasingPlanningActions,
   findPlanningPurchaseOrder,
   insertPurchaseOrder,
@@ -74,6 +79,8 @@ type PlanningLine = {
 const itemsValidator = z
   .object({
     id: z.string(),
+    // The netting segment of the grid row ('' is common).
+    planningSegmentId: z.string().default(""),
     orders: z.array(plannedOrderValidator)
   })
   .array();
@@ -225,6 +232,7 @@ export async function action({ request }: ActionFunctionArgs) {
           sourceType: "Purchase Order";
           forecastQuantity: number;
           periodId: string;
+          planningSegmentId: string;
           companyId: string;
           createdBy: string;
           updatedBy: string;
@@ -238,13 +246,20 @@ export async function action({ request }: ActionFunctionArgs) {
         // promised-date and tax-pair guards.
         type OrderEntry = {
           itemId: string;
+          planningSegmentId: string;
           order: (typeof itemsToOrder)[0]["orders"][0];
         };
         const ordersBySupplier = new Map<string, OrderEntry[]>();
         const errors: string[] = [];
-        // The (item, week) of every order that became a PO line, so the Order
-        // suggestions it answers leave the worklist now, not at the next run.
-        const ordered: { itemId: string; periodId: string }[] = [];
+        // The (item, week, segment) of every order that became a PO line, so
+        // the Order suggestions it answers leave the worklist now, not at the
+        // next run.
+        const ordered: {
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+          purchaseOrderLineId: string;
+        }[] = [];
 
         for (const item of itemsToOrder) {
           itemIds.add(item.id);
@@ -259,6 +274,7 @@ export async function action({ request }: ActionFunctionArgs) {
               }
               ordersBySupplier.get(order.supplierId)!.push({
                 itemId: item.id,
+                planningSegmentId: item.planningSegmentId,
                 order
               });
               itemHasUsableOrder = true;
@@ -285,7 +301,8 @@ export async function action({ request }: ActionFunctionArgs) {
         // bypassRls hands back the service role, and every id below comes
         // from the request body: the location and items must belong to this
         // company before anything is read or written by them
-        // (supplyForecast upserts on (itemId, locationId, periodId) alone).
+        // (supplyForecast upserts on (itemId, locationId, periodId,
+        // planningSegmentId) alone).
         await requireCompanyRecord(client, "location", companyId, {
           id: locationId
         });
@@ -307,6 +324,31 @@ export async function action({ request }: ActionFunctionArgs) {
           });
           return data(
             { success: false, message: "Item not found" },
+            { status: 404 }
+          );
+        }
+
+        // An order in a project segment is charged to that project: the PO
+        // line carries the project, and the receipt puts the stock in the
+        // project's stock. An order in a planning group segment is the
+        // group's: the line carries the group and no project, and the
+        // receipt splits by the pegs. The segment must be a project of this
+        // company with project stock, or a planning group of this company.
+        const segments = await getPlanningSegmentOwners(
+          client,
+          companyId,
+          itemsToOrder.map((item) => item.planningSegmentId)
+        );
+        if (segments.error || segments.unknownIds.length > 0) {
+          logger.error("Planning order names an unknown segment", {
+            companyId,
+            userId,
+            locationId,
+            segmentIds: segments.unknownIds,
+            error: segments.error
+          });
+          return data(
+            { success: false, message: "Project not found" },
             { status: 404 }
           );
         }
@@ -419,7 +461,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const openPurchaseOrders = await client
           .from("purchaseOrder")
           .select(
-            "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine(id, itemId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
+            "id, purchaseOrderId, supplierId, currencyCode, exchangeRate, createdFromPlanning, purchaseOrderDelivery!inner(locationId), purchaseOrderLine!purchaseOrderLine_purchaseOrderId_fkey(id, itemId, projectId, planningGroupId, requiredDate, purchaseQuantity, supplierUnitPrice, supplierShippingCost, taxPercent, supplierTaxAmount)"
           )
           .eq("companyId", companyId)
           .in("supplierId", Array.from(ordersBySupplier.keys()))
@@ -566,7 +608,7 @@ export async function action({ request }: ActionFunctionArgs) {
             });
 
             // Create one line per order for this supplier and week
-            for (const { itemId, order } of ordersInGroup) {
+            for (const { itemId, planningSegmentId, order } of ordersInGroup) {
               const supplierPart = supplierParts?.data?.find(
                 (sp) => sp.itemId === itemId && sp.supplierId === supplierId
               );
@@ -619,14 +661,21 @@ export async function action({ request }: ActionFunctionArgs) {
                 adjustedQuantity = minimumOrderQuantity;
               }
 
-              // An order for an item the PO already has on the same date adds
-              // to that line. Orders for different dates stay on separate
-              // lines so each keeps its own required date.
+              // An order for an item the PO already has on the same date, for
+              // the same project or planning group (or none), adds to that
+              // line. Orders for different dates or owners stay on separate
+              // lines so each keeps its own required date and stock owner.
               const requiredDate = order.dueDate ?? null;
+              const isGroupSegment =
+                segments.planningGroupIds.has(planningSegmentId);
               const existing = purchaseOrder.purchaseOrderLine.find(
                 (line) =>
-                  line.itemId === itemId && line.requiredDate === requiredDate
+                  line.itemId === itemId &&
+                  line.requiredDate === requiredDate &&
+                  (line.planningGroupId ?? line.projectId ?? "") ===
+                    planningSegmentId
               );
+              let purchaseOrderLineId = existing?.id;
 
               if (existing) {
                 const purchaseQuantity =
@@ -748,6 +797,14 @@ export async function action({ request }: ActionFunctionArgs) {
                   supplierTaxAmount,
                   supplierShippingCost: 0,
                   requiredDate: order.dueDate ?? undefined,
+                  // a project segment's order is the project's stock; a
+                  // planning group's order is the group's, with no project
+                  projectId: isGroupSegment
+                    ? undefined
+                    : planningSegmentId || undefined,
+                  planningGroupId: isGroupSegment
+                    ? planningSegmentId
+                    : undefined,
                   locationId,
                   companyId,
                   createdBy: userId
@@ -778,9 +835,12 @@ export async function action({ request }: ActionFunctionArgs) {
                   minimumOrderQuantityApplied:
                     adjustedQuantity !== order.quantity
                 });
+                purchaseOrderLineId = createLine.data.id;
                 purchaseOrder.purchaseOrderLine.push({
                   id: createLine.data.id,
                   itemId,
+                  projectId: isGroupSegment ? null : planningSegmentId || null,
+                  planningGroupId: isGroupSegment ? planningSegmentId : null,
                   requiredDate,
                   purchaseQuantity: adjustedQuantity,
                   supplierUnitPrice,
@@ -791,7 +851,12 @@ export async function action({ request }: ActionFunctionArgs) {
               }
 
               processedItems++;
-              ordered.push({ itemId, periodId: order.periodId });
+              ordered.push({
+                itemId,
+                periodId: order.periodId,
+                planningSegmentId,
+                purchaseOrderLineId: purchaseOrderLineId!
+              });
 
               const conversionFactor = supplierPart?.conversionFactor ?? 1;
               allSupplyForecasts.push({
@@ -800,6 +865,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 sourceType: "Purchase Order" as const,
                 forecastQuantity: order.quantity * conversionFactor,
                 periodId: order.periodId,
+                planningSegmentId,
                 companyId,
                 createdBy: userId,
                 updatedBy: userId
@@ -815,7 +881,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const insertForecasts = await client
             .from("supplyForecast")
             .upsert(uniqueSupplyForecasts, {
-              onConflict: "itemId,locationId,periodId",
+              onConflict: "itemId,locationId,periodId,planningSegmentId",
               ignoreDuplicates: false
             });
 
@@ -854,6 +920,44 @@ export async function action({ request }: ActionFunctionArgs) {
             userId,
             locationId,
             error: settled.error
+          });
+        } else if (segments.planningGroupIds.size > 0) {
+          // A grouped Order's pegs move to the PO line it created. A
+          // failure leaves them on the action; the next MRP run re-pegs.
+          const lineByOrder = new Map<string, string>();
+          for (const entry of ordered) {
+            const key = [
+              entry.itemId,
+              entry.periodId,
+              entry.planningSegmentId
+            ].join("\u0000");
+            if (!lineByOrder.has(key)) {
+              lineByOrder.set(key, entry.purchaseOrderLineId);
+            }
+          }
+          const moves = (settled.data ?? []).flatMap((action) => {
+            if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+              return [];
+            }
+            const supplyId = lineByOrder.get(
+              [action.itemId, action.periodId, action.planningSegmentId].join(
+                "\u0000"
+              )
+            );
+            return supplyId
+              ? [
+                  {
+                    planningActionId: action.id,
+                    supplyType: "Purchase Order Line" as const,
+                    supplyId
+                  }
+                ]
+              : [];
+          });
+          await moveActionPegsToSupply(getDatabaseClient(), {
+            companyId,
+            userId,
+            moves
           });
         }
 
@@ -979,7 +1083,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const target = await client
         .from("purchaseOrderLine")
         .select(
-          "id, locationId, promisedDate, purchaseOrder!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
+          "id, locationId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(id, status, purchaseOrderDelivery(receiptPromisedDate))"
         )
         .eq("id", parsedLine.data.id)
         .eq("companyId", companyId)
@@ -1153,9 +1257,32 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+      // A Transfer or a Borrow creates a Draft project stock transfer
+      // (approved and posted on the transfer pages); it is never one of the
+      // change actions below.
+      const transferIds =
+        action === "apply"
+          ? parsedIds.data.filter((id) => {
+              const row = rowById.get(id);
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
+            })
+          : [];
+      const transferOutcome = await applyTransferPlanningActions({
+        companyId,
+        userId,
+        planningActionIds: transferIds
+      });
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+      const transferIdSet = new Set(transferIds);
+
       const eligible: { planningActionId: string; row: PlanningActionRow }[] =
         [];
       for (const planningActionId of parsedIds.data) {
+        if (transferIdSet.has(planningActionId)) continue;
         const row = rowById.get(planningActionId);
         if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
@@ -1335,6 +1462,12 @@ export async function action({ request }: ActionFunctionArgs) {
       const messageParts = [
         `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
       ];
+      const transferCount = transferOutcome.transfers.length;
+      if (transferCount > 0) {
+        messageParts.push(
+          `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+        );
+      }
       if (manualCount > 0) {
         messageParts.push(
           `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
@@ -1348,6 +1481,7 @@ export async function action({ request }: ActionFunctionArgs) {
           errors.length === 0 && !(applied.length === 0 && manualCount > 0),
         message: messageParts.join("; "),
         applied,
+        transfers: transferOutcome.transfers,
         requiresManualAction,
         errors: errors.length > 0 ? errors : undefined
       };
@@ -1543,12 +1677,18 @@ function deduplicateForecasts<
     itemId: string;
     locationId: string;
     periodId: string;
+    planningSegmentId: string;
     forecastQuantity: number;
   }
 >(forecasts: T[]): T[] {
   const map = new Map<string, T>();
   for (const forecast of forecasts) {
-    const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+    const key = [
+      forecast.itemId,
+      forecast.locationId,
+      forecast.periodId,
+      forecast.planningSegmentId
+    ].join("\u001f");
     const existing = map.get(key);
     if (existing) {
       existing.forecastQuantity += forecast.forecastQuantity;

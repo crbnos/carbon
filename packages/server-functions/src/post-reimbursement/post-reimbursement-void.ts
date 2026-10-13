@@ -3,11 +3,15 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { OPEN_ITEM_JOURNAL_STATUSES } from "@carbon/database/accounting-posting";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
   REIMBURSEMENT_VOID_BEFORE_CUTOVER_ERROR,
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
-import { insertNegatedJournal } from "../lib/void-journal";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
+import { reverseProjectCipRows } from "../lib/project-cip";
+import { reverseProjectLedgerRows } from "../lib/project-posting";
 import type { ReimbursementContext } from "./post-reimbursement-post";
 
 export async function voidReimbursement(
@@ -58,6 +62,9 @@ export async function voidReimbursement(
     throw new Error("Cannot void a paid reimbursement; void its payment first");
   }
 
+  // Each original journal line → the void journal's line that negates it,
+  // for the project ledger reversal rows.
+  const reversalByOriginal = new Map<string, string>();
   if (reimbursement.journalId) {
     const originalJournal = await trx
       .selectFrom("journal")
@@ -93,18 +100,97 @@ export async function voidReimbursement(
     ) {
       throw new Error("Original reimbursement journal has invalid lines");
     }
-    await insertNegatedJournal(trx, {
-      companyId,
-      userId,
-      originalLines,
-      description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
-      sourceType: "Reimbursement",
-      postingStatus,
-      date: today,
-      periodMode: "current",
-      postedAt: timestamp
-    });
+    // A Provisional journal has no accounting period, and no posting creates a
+    // period before the cutover.
+    const period =
+      postingStatus === "Posted"
+        ? await resolveAccountingPeriod(trx, companyId, today, "current")
+        : null;
+    const reversal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+        accountingPeriodId: period?.id ?? null,
+        description: `VOID Reimbursement ${reimbursement.reimbursementId}`,
+        postingDate: period?.postingDate ?? today,
+        companyId,
+        sourceType: "Reimbursement",
+        status: postingStatus,
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    const reversalLineIds = await allocateJournalLineIds(
+      trx,
+      originalLines.length
+    );
+    await trx
+      .insertInto("journalLine")
+      .values(
+        originalLines.map((line, index) => ({
+          id: reversalLineIds[index],
+          journalId: reversal.id,
+          accountId: line.accountId,
+          amount: -Number(line.amount),
+          quantity: line.quantity,
+          description: `VOID: ${line.description ?? ""}`,
+          documentType: "Reimbursement" as const,
+          documentId: reimbursement.id,
+          documentLineReference: line.documentLineReference,
+          journalLineReference: line.journalLineReference,
+          accountDefaultRole: line.accountDefaultRole,
+          companyId
+        }))
+      )
+      .execute();
+    const dimensions = await trx
+      .selectFrom("journalLineDimension")
+      .select(["journalLineId", "dimensionId", "valueId"])
+      .where("companyId", "=", companyId)
+      .where(
+        "journalLineId",
+        "in",
+        originalLines.map((line) => line.id)
+      )
+      .execute();
+    for (const [index, line] of originalLines.entries()) {
+      reversalByOriginal.set(line.id, reversalLineIds[index]!);
+    }
+    if (dimensions.length) {
+      const reversedDimensions = dimensions.map((dimension) => {
+        const journalLineId = reversalByOriginal.get(dimension.journalLineId);
+        if (!journalLineId) {
+          throw new Error("Failed to map reversed journal line");
+        }
+        return {
+          ...dimension,
+          journalLineId,
+          companyId
+        };
+      });
+      await trx
+        .insertInto("journalLineDimension")
+        .values(reversedDimensions)
+        .execute();
+    }
   }
+
+  await reverseProjectLedgerRows(trx, {
+    companyId,
+    documentType: "Reimbursement",
+    documentId: reimbursement.id,
+    postingDate: today,
+    userId,
+    reversalLineIds: reversalByOriginal
+  });
+  await reverseProjectCipRows(trx, {
+    companyId,
+    userId,
+    sourceType: "Reimbursement",
+    sourceDocumentId: reimbursement.id
+  });
 
   await trx
     .updateTable("reimbursement")

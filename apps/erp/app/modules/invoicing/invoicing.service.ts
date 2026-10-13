@@ -1645,6 +1645,7 @@ export async function upsertReimbursementLines(
           accountId: line.accountId,
           costCenterId: line.costCenterId ?? null,
           projectId: line.projectId ?? null,
+          projectElementId: line.projectElementId ?? null,
           description: line.description ?? null,
           amount: line.amount,
           sequence: index,
@@ -2253,8 +2254,9 @@ async function getOpenInvoicesForParty(
   >;
   type DocumentLineRow = Pick<
     Database["public"]["Tables"]["salesInvoiceLine"]["Row"],
-    "invoiceId" | "rentalAgreementId" | "salesOrderId"
+    "invoiceId" | "rentalAgreementId" | "salesOrderId" | "customerContractId"
   >;
+  type ContractInvoiceRow = { id: string; customerContractId: string | null };
   const [invoices, company] = await Promise.all([
     fetchAllFromTable<OpenInvoiceRow>(
       client,
@@ -2291,79 +2293,144 @@ async function getOpenInvoicesForParty(
   const settlements: SettlementRow[] = [];
   const controls: ControlRow[] = [];
   const documentLines: DocumentLineRow[] = [];
+  const contractInvoices: ContractInvoiceRow[] = [];
   // Bound filter URLs as well as response pages. A single invoice can itself
   // have more than one response page of control lines or settlements.
   for (const batch of chunkArray(ids, 100)) {
-    const [batchSettlements, batchControls, batchDocumentLines] =
-      await Promise.all([
-        fetchAllFromTable<SettlementRow>(
-          client,
-          "invoiceSettlement",
-          "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .in(
-                isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
-                batch
-              )
-              .order("id")
-        ),
-        fetchAllFromTable<ControlRow>(
-          client,
-          "journalLine",
-          "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
-          (query) =>
-            query
-              .eq("companyId", companyId)
-              .eq("journal.companyId", companyId)
-              .eq("journal.status", "Posted")
-              .eq(
-                "journal.sourceType",
-                isAR ? "Sales Invoice" : "Purchase Invoice"
-              )
-              .eq("documentType", "Invoice")
-              .in(
-                "description",
-                isAR
-                  ? RECEIVABLE_POSTING_DESCRIPTIONS
-                  : PAYABLE_POSTING_DESCRIPTIONS
-              )
-              .in("documentId", batch)
-              .order("id")
-        ),
-        // The documents each invoice bills: a customer deposit funds only an
-        // invoice of its own rental agreement or sales order.
-        isAR
-          ? fetchAllFromTable<DocumentLineRow>(
-              client,
-              "salesInvoiceLine",
-              "invoiceId, rentalAgreementId, salesOrderId",
-              (query) =>
-                query
-                  .eq("companyId", companyId)
-                  .in("invoiceId", batch)
-                  .or("rentalAgreementId.not.is.null,salesOrderId.not.is.null")
-                  .order("id")
+    const [
+      batchSettlements,
+      batchControls,
+      batchDocumentLines,
+      batchContractInvoices
+    ] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status), memo:memo!invoiceSettlement_memoId_fkey(status), appliedViaPayment:payment!invoiceSettlement_appliedViaPaymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in(
+              isAR ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId",
+              batch
             )
-          : { data: [] as DocumentLineRow[], error: null }
-      ]);
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq(
+              "journal.sourceType",
+              isAR ? "Sales Invoice" : "Purchase Invoice"
+            )
+            .eq("documentType", "Invoice")
+            .in(
+              "description",
+              isAR
+                ? RECEIVABLE_POSTING_DESCRIPTIONS
+                : PAYABLE_POSTING_DESCRIPTIONS
+            )
+            .in("documentId", batch)
+            .order("id")
+      ),
+      // The documents each invoice bills: a customer deposit funds only an
+      // invoice of its own rental agreement, sales order or contract.
+      isAR
+        ? fetchAllFromTable<DocumentLineRow>(
+            client,
+            "salesInvoiceLine",
+            "invoiceId, rentalAgreementId, salesOrderId, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("invoiceId", batch)
+                .or(
+                  "rentalAgreementId.not.is.null,salesOrderId.not.is.null,customerContractId.not.is.null"
+                )
+                .order("id")
+          )
+        : { data: [] as DocumentLineRow[], error: null },
+      isAR
+        ? fetchAllFromTable<ContractInvoiceRow>(
+            client,
+            "salesInvoice",
+            "id, customerContractId",
+            (query) =>
+              query
+                .eq("companyId", companyId)
+                .in("id", batch)
+                .or("customerContractId.not.is.null")
+                .order("id")
+          )
+        : { data: [] as ContractInvoiceRow[], error: null }
+    ]);
     const error =
-      batchSettlements.error ?? batchControls.error ?? batchDocumentLines.error;
+      batchSettlements.error ??
+      batchControls.error ??
+      batchDocumentLines.error ??
+      batchContractInvoices.error;
     if (error) return { data: null, error };
     settlements.push(...(batchSettlements.data ?? []));
     controls.push(...(batchControls.data ?? []));
     documentLines.push(...(batchDocumentLines.data ?? []));
+    contractInvoices.push(...(batchContractInvoices.data ?? []));
+  }
+  // A delivery invoice of a contract's own sales order bills the contract.
+  const lineOrderIds = [
+    ...new Set(documentLines.map((line) => line.salesOrderId))
+  ].filter((id): id is string => Boolean(id));
+  const contractsByOrder = new Map<string, string[]>();
+  for (const batch of chunkArray(lineOrderIds, 100)) {
+    const contracts = await client
+      .from("customerContract")
+      .select("id, salesOrderId")
+      .eq("companyId", companyId)
+      .in("salesOrderId", batch);
+    if (contracts.error) return { data: null, error: contracts.error };
+    for (const contract of contracts.data ?? []) {
+      if (!contract.salesOrderId) continue;
+      const list = contractsByOrder.get(contract.salesOrderId) ?? [];
+      list.push(contract.id);
+      contractsByOrder.set(contract.salesOrderId, list);
+    }
   }
   const documentsByInvoice = new Map<
     string,
-    { rentalAgreementIds: string[]; salesOrderIds: string[] }
+    {
+      rentalAgreementIds: string[];
+      salesOrderIds: string[];
+      customerContractIds: string[];
+    }
   >();
-  for (const line of documentLines) {
-    const documents = documentsByInvoice.get(line.invoiceId) ?? {
+  const documentsOf = (invoiceId: string) => {
+    const documents = documentsByInvoice.get(invoiceId) ?? {
       rentalAgreementIds: [],
-      salesOrderIds: []
+      salesOrderIds: [],
+      customerContractIds: []
     };
+    documentsByInvoice.set(invoiceId, documents);
+    return documents;
+  };
+  const addContract = (invoiceId: string, contractId: string | null) => {
+    if (!contractId) return;
+    const documents = documentsOf(invoiceId);
+    if (!documents.customerContractIds.includes(contractId))
+      documents.customerContractIds.push(contractId);
+  };
+  for (const invoice of contractInvoices)
+    addContract(invoice.id, invoice.customerContractId);
+  for (const line of documentLines) {
+    addContract(line.invoiceId, line.customerContractId);
+    for (const contractId of contractsByOrder.get(line.salesOrderId ?? "") ??
+      [])
+      addContract(line.invoiceId, contractId);
+    const documents = documentsOf(line.invoiceId);
     if (
       line.rentalAgreementId &&
       !documents.rentalAgreementIds.includes(line.rentalAgreementId)
@@ -2418,7 +2485,9 @@ async function getOpenInvoicesForParty(
             remainingDocument: remaining.remainingDocument,
             rentalAgreementIds:
               documentsByInvoice.get(i.id)?.rentalAgreementIds ?? [],
-            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? []
+            salesOrderIds: documentsByInvoice.get(i.id)?.salesOrderIds ?? [],
+            customerContractIds:
+              documentsByInvoice.get(i.id)?.customerContractIds ?? []
           };
         })
         .filter((i) => i.remainingDocument > 0),
@@ -2681,8 +2750,10 @@ async function loadOnAccountSources(
   type OnAccountPaymentRow = FundingPaymentRow & {
     rentalAgreementId: string | null;
     salesOrderId: string | null;
+    customerContractId: string | null;
     depositAgreement: { readableId: string } | null;
     depositOrder: { readableId: string } | null;
+    depositContract: { readableId: string } | null;
   };
   const [payments, company] = await Promise.all([
     fetchAllFromTable<OnAccountPaymentRow>(
@@ -2690,7 +2761,7 @@ async function loadOnAccountSources(
       "payment",
       // A deposit's document comes along with its readable id so the composer
       // can say which document the deposit is reserved for.
-      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId)",
+      "id, totalAmount, exchangeRate, postingDate, paymentDate, currencyCode, rentalAgreementId, salesOrderId, customerContractId, depositAgreement:rentalAgreement!payment_rentalAgreementId_fkey(readableId:rentalAgreementId), depositOrder:salesOrder!payment_salesOrderId_fkey(readableId:salesOrderId), depositContract:customerContract!payment_customerContract_fkey(readableId:customerContractId)",
       (query) => {
         query = query
           .eq("companyId", companyId)
@@ -2758,7 +2829,9 @@ async function loadOnAccountSources(
             readableId:
               (scope.type === "rentalAgreement"
                 ? payment.depositAgreement?.readableId
-                : payment.depositOrder?.readableId) ?? null
+                : scope.type === "customerContract"
+                  ? payment.depositContract?.readableId
+                  : payment.depositOrder?.readableId) ?? null
           }
         };
       }),
@@ -2871,6 +2944,7 @@ export async function upsertPayment(
           supplierId: payment.supplierId ?? null,
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
+          customerContractId: payment.customerContractId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -2885,6 +2959,7 @@ export async function upsertPayment(
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
+      customerContractId: payment.customerContractId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.

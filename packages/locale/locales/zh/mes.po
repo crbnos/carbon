@@ -149,6 +149,9 @@ msgstr "添加并发放"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
 
+msgid "Add a row for each job or task you worked on."
+msgstr "为您工作过的每个工单或任务添加一行。"
+
 msgid "Add Authenticator App"
 msgstr "添加身份验证应用"
 
@@ -157,6 +160,9 @@ msgstr "添加库存管理"
 
 msgid "Add Passkey"
 msgstr "添加通行密钥"
+
+msgid "Add row"
+msgstr "添加行"
 
 msgid "Add Sample"
 msgstr "添加样本"
@@ -333,8 +339,17 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Certify and submit"
+msgstr "认证并提交"
+
+msgid "Certify and Submit"
+msgstr "认证并提交"
+
 msgid "Change"
 msgstr "更改"
+
+msgid "Change Time"
+msgstr "更改时间"
 
 msgid "Changelog newsletter"
 msgstr "更新日志通讯"
@@ -344,6 +359,9 @@ msgstr "特性"
 
 msgid "Characteristics"
 msgstr "特性"
+
+msgid "Charge Number"
+msgstr "费用代码"
 
 msgid "Chat"
 msgstr "聊天"
@@ -545,6 +563,15 @@ msgstr "描述"
 msgid "Details"
 msgstr "详情"
 
+msgid "Direct Research"
+msgstr "直接研究"
+
+msgid "Direct Supervision"
+msgstr "直接监督"
+
+msgid "Direct Support"
+msgstr "直接支持"
+
 msgid "Dispatch not found"
 msgstr "找不到维护工单"
 
@@ -653,6 +680,9 @@ msgstr "结束工序"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
 
+msgid "Enter hours from 0 to 24"
+msgstr "输入 0 到 24 之间的小时数"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "输入 {0} 的 PIN 码"
@@ -730,6 +760,12 @@ msgstr "无法保存测量"
 msgid "Failed to save result"
 msgstr "无法保存结果"
 
+msgid "Failed to save the hours"
+msgstr "工时保存失败"
+
+msgid "Failed to submit the week"
+msgstr "周提交失败"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "上传 {0} 失败"
@@ -802,6 +838,9 @@ msgstr "标题 {level}"
 msgid "Hide description"
 msgstr "隐藏描述"
 
+msgid "Hours on {label}"
+msgstr "{label}的工时"
+
 msgid "How Carbon looks in this browser."
 msgstr "Carbon 在此浏览器中的外观。"
 
@@ -810,6 +849,9 @@ msgstr "实际拣了多少？"
 
 msgid "How many?"
 msgstr "多少个？"
+
+msgid "I certify this statement"
+msgstr "我认证此声明"
 
 msgid "I understand and want to complete without issuing"
 msgstr "我理解并希望在不发放物料的情况下完成"
@@ -926,6 +968,9 @@ msgstr "套件"
 msgid "Labor"
 msgstr "人工"
 
+msgid "Labor category"
+msgstr "人工类别"
+
 msgid "Last completed"
 msgstr "最后完成"
 
@@ -934,6 +979,9 @@ msgstr "姓氏"
 
 msgid "Last used"
 msgstr "最后使用"
+
+msgid "Late Entry"
+msgstr "迟到条目"
 
 msgid "Learn more"
 msgstr "了解更多"
@@ -1108,6 +1156,9 @@ msgstr "必须在 {minValue} 到 {maxValue} {unitOfMeasureCode} 之间"
 msgid "My Hours"
 msgstr "我的工时"
 
+msgid "My Time"
+msgstr "我的工作时间"
+
 msgid "Name"
 msgstr "名称"
 
@@ -1128,6 +1179,9 @@ msgstr "下一个"
 
 msgid "Next step"
 msgstr "下一步骤"
+
+msgid "Next week"
+msgstr "下周"
 
 msgid "No"
 msgstr "否"
@@ -1155,6 +1209,9 @@ msgstr "未找到可用的序列号"
 
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
 msgid "No dispatches assigned to you"
 msgstr "没有分配给您的维护工单"
@@ -1246,6 +1303,9 @@ msgstr "无库存"
 msgid "No time entries for this week"
 msgstr "本周无考勤记录"
 
+msgid "No time this week"
+msgstr "本周没有时间"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "此物料的仓库库存无记录。您仍可拣货 — 库存将为负数，直到数量被核对。"
 
@@ -1261,8 +1321,14 @@ msgstr "无工作中心"
 msgid "None"
 msgstr "无"
 
+msgid "Not Qualified"
+msgstr "不合格"
+
 msgid "Notes"
 msgstr "备注"
+
+msgid "Nothing matches your search."
+msgstr "没有匹配您搜索的内容。"
 
 msgid "Nothing running"
 msgstr "没有运行"
@@ -1424,6 +1490,9 @@ msgstr "选择一个风格和头像，或者随机生成新的。"
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "选择您所做的工作，然后选择人工类别。"
+
 msgid "Picked"
 msgstr "已拣货"
 
@@ -1481,6 +1550,9 @@ msgstr "预防性"
 msgid "Previous step"
 msgstr "上一步骤"
 
+msgid "Previous week"
+msgstr "上周"
+
 msgid "Print"
 msgstr "打印"
 
@@ -1514,6 +1586,9 @@ msgstr "个人资料"
 msgid "Progress"
 msgstr "进度"
 
+msgid "Project"
+msgstr "项目"
+
 msgid "Purchasing"
 msgstr "采购"
 
@@ -1537,6 +1612,12 @@ msgstr "队列为空"
 
 msgid "Quotes"
 msgstr "报价单"
+
+msgid "Reason for change"
+msgstr "变更原因"
+
+msgid "Reason for late entry"
+msgstr "迟交原因"
 
 msgid "Reason for rework"
 msgstr "返工原因"
@@ -1714,6 +1795,9 @@ msgstr "搜索量具..."
 msgid "Search operators..."
 msgstr "搜索操作员..."
 
+msgid "Search projects and tasks"
+msgstr "搜索项目和任务"
+
 msgid "Search..."
 msgstr "搜索..."
 
@@ -1861,6 +1945,9 @@ msgstr "退出登录"
 msgid "Sign out instead"
 msgstr "改为登出"
 
+msgid "Signature pad"
+msgstr "签名板"
+
 msgid "Signed in as {stationName}"
 msgstr "已登录为 {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "子装配体 {0} · {1} — 单独显示"
 msgid "Submit anonymously"
 msgstr "匿名提交"
 
+msgid "Submit week"
+msgstr "提交周"
+
 msgid "Suggestion"
 msgstr "建议"
 
@@ -1968,8 +2058,14 @@ msgstr "标签"
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "更改及其原因保存在时间表的历史记录中。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "日期在输入窗口之前。原因与条目一起保存。"
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"
@@ -2022,6 +2118,9 @@ msgstr "此零件将从库存报废。其要求保持未结，以便您可以领
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "此单元将被永久报废，并将创建替换序列号。"
+
+msgid "This week"
+msgstr "本周"
 
 msgid "Thumbnail"
 msgstr "缩略图"

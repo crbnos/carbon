@@ -2070,10 +2070,46 @@ const create = defineServerFn({
         if (!locationId) throw new Error("The return order has no location");
 
         const returnLines = salesReturnOrderLines.data.filter(
-          (d) => d.disposition === "Return to Customer"
+          (d) =>
+            d.disposition === "Return to Customer" || d.disposition === "Repair"
         );
         if (returnLines.length === 0)
-          throw new Error('No lines are dispositioned "Return to Customer"');
+          throw new Error(
+            'No lines are dispositioned "Return to Customer" or "Repair"'
+          );
+
+        // A Repair line ships back one unit per Depot Repair order that is
+        // done (Completed, or Closed after its invoice) and whose unit is
+        // still at the depot. The asset leaves At Depot when the return
+        // shipment posts, so the count needs no prior-shipment netting.
+        const repairLineIds = returnLines
+          .filter((d) => d.disposition === "Repair")
+          .map((d) => d.id);
+        const readyToShipByRepairLine = new Map<string, number>();
+        if (repairLineIds.length > 0) {
+          const readyOrders = await db
+            .selectFrom("serviceOrder as so")
+            .innerJoin("customerAsset as ca", (join) =>
+              join
+                .onRef("ca.id", "=", "so.customerAssetId")
+                .on("ca.companyId", "=", companyId)
+            )
+            .select("so.salesReturnOrderLineId")
+            .where("so.type", "=", "Depot Repair")
+            .where("so.salesReturnOrderLineId", "in", repairLineIds)
+            .where("so.status", "in", ["Completed", "Closed"])
+            .where("ca.status", "=", "At Depot")
+            .where("so.companyId", "=", companyId)
+            .execute();
+          for (const order of readyOrders) {
+            if (!order.salesReturnOrderLineId) continue;
+            readyToShipByRepairLine.set(
+              order.salesReturnOrderLineId,
+              (readyToShipByRepairLine.get(order.salesReturnOrderLineId) ?? 0) +
+                1
+            );
+          }
+        }
 
         // Quantity already shipped back by earlier posted shipments
         const priorShipments = await many(
@@ -2139,10 +2175,14 @@ const create = defineServerFn({
         const shipmentLineItems = returnLines.reduce<ShipmentLineItem[]>(
           (acc, d) => {
             if (!d.itemId) return acc;
-            const outstanding = Math.max(
-              0,
-              (d.quantityReceived ?? 0) - (shippedBackByLine.get(d.id) ?? 0)
-            );
+            const outstanding =
+              d.disposition === "Repair"
+                ? (readyToShipByRepairLine.get(d.id) ?? 0)
+                : Math.max(
+                    0,
+                    (d.quantityReceived ?? 0) -
+                      (shippedBackByLine.get(d.id) ?? 0)
+                  );
             if (outstanding === 0) return acc;
 
             acc.push({

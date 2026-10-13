@@ -4,6 +4,7 @@
 
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyTimeZone } from "@carbon/database";
+import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
 import { ENDED_LEASE_STATUSES } from "@carbon/server-functions/post-purchase-invoice";
@@ -17,6 +18,7 @@ import {
   postSalesInvoiceUnattended,
   sendPostedInvoiceViaStripe
 } from "../../../invoicing/automate-invoice";
+import { checkContractFunding } from "../../../invoicing/contract-funding";
 import {
   buildRecurringInvoicingDigests,
   type InvoiceRunResult
@@ -117,47 +119,68 @@ export const recurringBillingFunction = inngest.createFunction(
       // Kysely is not subject to PostgREST's max_rows, so the list is never
       // truncated.
       const db = getJobDatabaseClient();
-      const [rentalCompanies, contractCompanies, leaseCompanies] =
-        await Promise.all([
-          db
-            .selectFrom("rentalAgreement as ra")
-            .innerJoin("company as c", "c.id", "ra.companyId")
-            .select(["c.id", "c.name"])
-            .where("ra.status", "=", "Active")
-            .distinct()
-            .execute(),
-          db
-            .selectFrom("customerContract as cc")
-            .innerJoin("company as c", "c.id", "cc.companyId")
-            .select(["c.id", "c.name"])
-            .where("cc.status", "=", "Active")
-            .distinct()
-            .execute(),
-          // An Active lease (to bill, remind or expire), or an ended one with a
-          // payment still to bill.
-          db
-            .selectFrom("lease as l")
-            .innerJoin("company as c", "c.id", "l.companyId")
-            .select(["c.id", "c.name"])
-            .where((eb) =>
-              eb.or([
-                eb("l.status", "=", "Active"),
-                eb.and([
-                  eb("l.status", "in", ENDED_LEASE_STATUSES),
-                  eb.exists(
-                    eb
-                      .selectFrom("leasePayment as p")
-                      .select("p.id")
-                      .whereRef("p.leaseId", "=", "l.id")
-                      .whereRef("p.companyId", "=", "l.companyId")
-                      .where("p.status", "=", "Pending")
-                  )
-                ])
+      const [
+        rentalCompanies,
+        contractCompanies,
+        projectBillingCompanies,
+        leaseCompanies
+      ] = await Promise.all([
+        db
+          .selectFrom("rentalAgreement as ra")
+          .innerJoin("company as c", "c.id", "ra.companyId")
+          .select(["c.id", "c.name"])
+          .where("ra.status", "=", "Active")
+          .distinct()
+          .execute(),
+        db
+          .selectFrom("customerContract as cc")
+          .innerJoin("company as c", "c.id", "cc.companyId")
+          .select(["c.id", "c.name"])
+          .where("cc.status", "=", "Active")
+          .distinct()
+          .execute(),
+        // Project billing: an Active contract with a billing line.
+        db
+          .selectFrom("customerContractLine as l")
+          .innerJoin("customerContract as cc", (join) =>
+            join
+              .onRef("cc.id", "=", "l.customerContractId")
+              .onRef("cc.companyId", "=", "l.companyId")
+          )
+          .select("l.companyId")
+          .where("cc.status", "=", "Active")
+          .where("l.billingMethod", "<>", "Fixed")
+          .where("l.projectElementId", "is not", null)
+          .distinct()
+          .execute(),
+        // An Active lease (to bill, remind or expire), or an ended one with a
+        // payment still to bill.
+        db
+          .selectFrom("lease as l")
+          .innerJoin("company as c", "c.id", "l.companyId")
+          .select(["c.id", "c.name"])
+          .where((eb) =>
+            eb.or([
+              eb("l.status", "=", "Active"),
+              eb.and([
+                eb("l.status", "in", ENDED_LEASE_STATUSES),
+                eb.exists(
+                  eb
+                    .selectFrom("leasePayment as p")
+                    .select("p.id")
+                    .whereRef("p.leaseId", "=", "l.id")
+                    .whereRef("p.companyId", "=", "l.companyId")
+                    .where("p.status", "=", "Pending")
+                )
               ])
-            )
-            .distinct()
-            .execute()
-        ]);
+            ])
+          )
+          .distinct()
+          .execute()
+      ]);
+      const projectBillingIds = new Set(
+        projectBillingCompanies.map((c) => c.companyId)
+      );
 
       // The union, noting which sources each company has to bill.
       const byId = new Map<
@@ -167,6 +190,7 @@ export const recurringBillingFunction = inngest.createFunction(
           name: string;
           hasRentals: boolean;
           hasContracts: boolean;
+          hasProjectBilling: boolean;
           hasLeases: boolean;
         }
       >();
@@ -179,6 +203,7 @@ export const recurringBillingFunction = inngest.createFunction(
             ...c,
             hasRentals: false,
             hasContracts: false,
+            hasProjectBilling: false,
             hasLeases: false
           };
           known[flag] = true;
@@ -188,6 +213,11 @@ export const recurringBillingFunction = inngest.createFunction(
       note(rentalCompanies, "hasRentals");
       note(contractCompanies, "hasContracts");
       note(leaseCompanies, "hasLeases");
+      // Project billing: a contract company with a billing line.
+      for (const known of byId.values()) {
+        known.hasProjectBilling =
+          known.hasContracts && projectBillingIds.has(known.id);
+      }
       const companies = [...byId.values()].sort((a, b) =>
         a.id < b.id ? -1 : a.id > b.id ? 1 : 0
       );
@@ -281,6 +311,105 @@ export const recurringBillingFunction = inngest.createFunction(
         }
       }
 
+      // Project billing runs before the contract step: that step ends a
+      // contract whose end date has passed, and an Ended contract's last
+      // period of project work would then never be invoiced.
+      let projectAsOf: string | undefined;
+      if (company.hasProjectBilling) {
+        try {
+          const costPlus = await step.run(
+            `cost-plus-items-${company.id}`,
+            async () => {
+              const asOf =
+                billedAsOf ??
+                datetime
+                  .today(await getCompanyTimeZone(serviceRole, company.id))
+                  .toString();
+              const result = await generateCostPlusItems(
+                getJobDatabaseClient(),
+                { companyId: company.id, userId: "system", through: asOf }
+              );
+              if (result.gated) {
+                logger.info(
+                  `Cost Plus items skipped for ${company.name}: the company does not have Project Revenue`
+                );
+              }
+              return { asOf, ...result };
+            }
+          );
+          projectAsOf = costPlus.asOf;
+        } catch (error) {
+          logger.error("Failed to generate Cost Plus items for {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+
+        try {
+          const projectBilling = await step.run(
+            `project-billing-${company.id}`,
+            async () => {
+              const asOf =
+                projectAsOf ??
+                billedAsOf ??
+                datetime
+                  .today(await getCompanyTimeZone(serviceRole, company.id))
+                  .toString();
+
+              const drafted = await serverFns
+                .system({
+                  db: getJobDatabaseClient(),
+                  companyId: company.id,
+                  userId: "system"
+                })
+                .invokeOrThrow("create-project-billing-invoices", { asOf });
+
+              for (const failure of drafted.failures) {
+                logger.error(
+                  "Failed to bill project work of contract {customerContractId} for {company}",
+                  {
+                    customerContractId: failure.customerContractId,
+                    company: company.name,
+                    companyId: company.id,
+                    error: failure.error
+                  }
+                );
+              }
+              logger.info(
+                drafted.invoices.length > 0
+                  ? `Drafted ${drafted.invoices.length} project billing invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
+                  : `No project billing invoices due for ${company.name} as of ${asOf}`
+              );
+
+              return {
+                asOf,
+                invoices: drafted.invoices,
+                failures: drafted.failures
+              };
+            }
+          );
+          projectAsOf = projectBilling.asOf;
+          for (const invoice of projectBilling.invoices) {
+            invoices.push({
+              invoiceId: invoice.invoiceId,
+              sourceId: invoice.customerContractId,
+              mode: invoice.mode,
+              holdReason: invoice.holdReason
+            });
+          }
+          if (projectBilling.failures.length > 0) companyFailed = true;
+        } catch (error) {
+          logger.error("Failed to bill project work for company {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+      }
+
       if (company.hasContracts) {
         try {
           const contracts = await step.run(
@@ -336,6 +465,51 @@ export const recurringBillingFunction = inngest.createFunction(
           if (contracts.failures.length > 0) companyFailed = true;
         } catch (error) {
           logger.error("Failed to bill contracts for company {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+      }
+
+      // The FAR 52.232-20/-22 funding notices, once a day (P12).
+      if (company.hasProjectBilling) {
+        try {
+          const notices = await step.run(
+            `contract-funding-${company.id}`,
+            async () => {
+              const asOf =
+                projectAsOf ??
+                billedAsOf ??
+                datetime
+                  .today(await getCompanyTimeZone(serviceRole, company.id))
+                  .toString();
+              return checkContractFunding(getJobDatabaseClient(), {
+                companyId: company.id,
+                asOf
+              });
+            }
+          );
+          for (const notice of notices) {
+            if (notice.userIds.length === 0) continue;
+            await step.sendEvent(
+              `notify-contract-funding-${company.id}-${notice.customerContractLineId}-${notice.kind}`,
+              {
+                name: "carbon/notify",
+                data: {
+                  event: NotificationEvent.ContractFundingThreshold,
+                  companyId: company.id,
+                  documentId: notice.customerContractId,
+                  recipient: { type: "users", userIds: notice.userIds },
+                  title: notice.title,
+                  body: notice.body
+                }
+              }
+            );
+          }
+        } catch (error) {
+          logger.error("Failed to check contract funding for {company}", {
             company: company.name,
             companyId: company.id,
             error

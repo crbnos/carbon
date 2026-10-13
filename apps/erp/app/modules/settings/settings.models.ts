@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { Database } from "@carbon/database";
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -55,6 +56,7 @@ export const apiKeyPermissionModules = {
   parts: ["view", "create", "update", "delete"],
   people: ["view", "create", "update", "delete"],
   production: ["view", "create", "update", "delete"],
+  projects: ["view", "create", "update", "delete"],
   purchasing: ["view", "create", "update", "delete"],
   quality: ["view", "create", "update", "delete"],
   resources: ["view", "create", "update", "delete"],
@@ -253,6 +255,11 @@ export const invoiceAutomationValidator = z.object({
   invoiceAutomation: z.enum(invoiceAutomations)
 });
 
+/** The service item whose sale price prices service time. */
+export const serviceLaborItemValidator = z.object({
+  serviceLaborItemId: zfd.text(z.string().optional())
+});
+
 export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
 
 // "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
@@ -299,6 +306,49 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Government Contracting 5a: Settings → Time.
+export const timekeepingControlsModes = [
+  "Standard",
+  "DCAA"
+] as const satisfies readonly Database["public"]["Enums"]["timekeepingControls"][];
+
+export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
+
+export const timekeepingSettingsValidator = z
+  .object({
+    timekeepingControls: z.enum(timekeepingControlsModes, {
+      error: "Controls are required"
+    }),
+    timesheetEntryWindowDays: zfd.numeric(
+      z.number().int().min(0, { message: "The window cannot be negative" })
+    ),
+    timesheetTimecardCheck: z.enum(timesheetTimecardChecks, {
+      error: "The timecard check is required"
+    }),
+    certificationTextExempt: zfd.text(z.string().trim().optional()),
+    certificationTextNonExempt: zfd.text(z.string().trim().optional()),
+    standardWeeklyHours: zfd.numeric(
+      z.number().gt(0, { message: "Weekly hours must be greater than 0" })
+    )
+  })
+  .superRefine((data, ctx) => {
+    if (data.timekeepingControls !== "DCAA") return;
+    if (!data.certificationTextExempt) {
+      ctx.addIssue({
+        code: "custom",
+        message: "DCAA mode needs the certification text for exempt staff",
+        path: ["certificationTextExempt"]
+      });
+    }
+    if (!data.certificationTextNonExempt) {
+      ctx.addIssue({
+        code: "custom",
+        message: "DCAA mode needs the certification text for non-exempt staff",
+        path: ["certificationTextNonExempt"]
+      });
+    }
+  });
 
 // Planning settings (MRP suggestions). Whole days / whole weekly buckets.
 export const rescheduleToleranceValidator = z.object({
@@ -800,6 +850,11 @@ export const accountsReceivableBillingAddressValidator =
 
 export const timeCardSettingsValidator = z.object({
   timeCardEnabled: zfd.checkbox()
+});
+
+export const projectSettingsValidator = z.object({
+  timesheetApprovalRequired: zfd.checkbox(),
+  requireProjectElement: zfd.checkbox()
 });
 
 // The editor submits the block list as a JSON string in a hidden field; we

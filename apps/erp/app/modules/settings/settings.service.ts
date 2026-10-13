@@ -37,9 +37,11 @@ import type {
   invoiceAutomations,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
+  projectSettingsValidator,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
-  subsidiaryValidator
+  subsidiaryValidator,
+  timekeepingSettingsValidator
 } from "./settings.models";
 import { companyValidator } from "./settings.models";
 
@@ -1065,6 +1067,22 @@ export async function updateLeasePolicySettings(
     .eq("id", companyId);
 }
 
+/**
+ * Updates the project settings: whether timesheets need approval before they
+ * post, and whether every project charge needs an element.
+ * @mcp update
+ */
+export async function updateProjectSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: Partial<z.infer<typeof projectSettingsValidator>>
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize(values))
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
@@ -1395,6 +1413,29 @@ export async function updateQuoteLineCategoryMarkups(
     .eq("id", companyId);
 }
 
+/**
+ * Sets the timekeeping controls (Standard or DCAA), the entry window, the
+ * timecard check, the certification texts and the standard weekly hours.
+ * @mcp update
+ */
+export async function updateTimekeepingSettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: z.infer<typeof timekeepingSettingsValidator>
+) {
+  return client
+    .from("companySettings")
+    .update({
+      timekeepingControls: values.timekeepingControls,
+      timesheetEntryWindowDays: values.timesheetEntryWindowDays,
+      timesheetTimecardCheck: values.timesheetTimecardCheck,
+      certificationTextExempt: values.certificationTextExempt || null,
+      certificationTextNonExempt: values.certificationTextNonExempt || null,
+      standardWeeklyHours: values.standardWeeklyHours
+    })
+    .eq("id", companyId);
+}
+
 /** @mcp update */
 export async function updateInvoiceAutomationSetting(
   client: SupabaseClient<Database>,
@@ -1404,6 +1445,22 @@ export async function updateInvoiceAutomationSetting(
   return client
     .from("companySettings")
     .update(sanitize({ invoiceAutomation }))
+    .eq("id", companyId);
+}
+
+/**
+ * Sets the service item whose sale price prices service time on a service
+ * order (and its estimate). Empty clears it.
+ * @mcp update
+ */
+export async function updateServiceLaborItemSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  serviceLaborItemId: string | null
+) {
+  return client
+    .from("companySettings")
+    .update({ serviceLaborItemId })
     .eq("id", companyId);
 }
 

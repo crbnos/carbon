@@ -7,6 +7,9 @@ import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { defaultUpgradeMessage, resolveRequirement } from "@carbon/ee/plan";
+import { requireProjectRevenueEntitlement } from "@carbon/ee/project-revenue.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -443,6 +446,8 @@ async function releaseRecurringInvoiceStamps(
   const { companyId, salesInvoiceLineIds, userId } = args;
   if (salesInvoiceLineIds.length === 0) return;
 
+  await releaseServiceOrderStamps(trx, args);
+
   await trx
     .updateTable("rentalBillingPeriod")
     .set({
@@ -518,6 +523,86 @@ async function releaseRecurringInvoiceStamps(
 }
 
 /**
+ * A service order's billable items go back to Unbilled when the Draft lines
+ * that billed them are deleted. An invoice left with no billing line loses
+ * its `serviceOrderId`, and its order goes back from Closed to Completed so
+ * it can be invoiced again.
+ */
+async function releaseServiceOrderStamps(
+  trx: KyselyTx,
+  args: { companyId: string; salesInvoiceLineIds: string[]; userId: string }
+): Promise<void> {
+  const { companyId, salesInvoiceLineIds, userId } = args;
+  const released = await trx
+    .updateTable("projectBillableItem")
+    .set({
+      salesInvoiceLineId: null,
+      status: "Unbilled",
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where("salesInvoiceLineId", "in", salesInvoiceLineIds)
+    .returning("id")
+    .execute();
+  if (released.length === 0) return;
+
+  const invoices = await trx
+    .selectFrom("salesInvoiceLine")
+    .select("invoiceId")
+    .distinct()
+    .where("companyId", "=", companyId)
+    .where("id", "in", salesInvoiceLineIds)
+    .execute();
+  const invoiceIds = invoices.map((row) => row.invoiceId);
+  if (invoiceIds.length === 0) return;
+
+  // An invoice still billing the order through another line keeps it.
+  const stillBilled = sql<boolean>`EXISTS (
+    SELECT 1 FROM "salesInvoiceLine" l
+    JOIN "projectBillableItem" b
+      ON b."salesInvoiceLineId" = l."id" AND b."companyId" = l."companyId"
+    WHERE l."invoiceId" = "salesInvoice"."id" AND l."companyId" = ${companyId}
+  )`;
+  const unstamped = await trx
+    .selectFrom("salesInvoice")
+    .select(["id", "serviceOrderId"])
+    .where("companyId", "=", companyId)
+    .where("id", "in", invoiceIds)
+    .where("serviceOrderId", "is not", null)
+    .where(sql<boolean>`NOT ${stillBilled}`)
+    .execute();
+  if (unstamped.length === 0) return;
+
+  await trx
+    .updateTable("salesInvoice")
+    .set({ serviceOrderId: null, updatedBy: userId, updatedAt: sql`now()` })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.id)
+    )
+    .execute();
+  await trx
+    .updateTable("serviceOrder")
+    .set({
+      status: "Completed",
+      salesInvoiceId: null,
+      updatedBy: userId,
+      updatedAt: sql`now()`
+    })
+    .where("companyId", "=", companyId)
+    .where(
+      "id",
+      "in",
+      unstamped.map((row) => row.serviceOrderId as string)
+    )
+    .where("status", "=", "Closed")
+    .execute();
+}
+
+/**
  * Deletes a Draft sales invoice and, in the same transaction, releases the
  * rental billing periods and charges and the contract schedule rows it
  * billed, so the next generation bills them again. `salesInvoiceLineId` on
@@ -552,7 +637,18 @@ export async function deleteSalesInvoiceReleasingRentals(
       .where((eb) =>
         eb.or([
           eb("invoiceLineType", "=", "Rental"),
-          eb("customerContractInvoiceLineId", "is not", null)
+          eb("customerContractInvoiceLineId", "is not", null),
+          eb.exists(
+            eb
+              .selectFrom("projectBillableItem")
+              .select(sql`1`.as("one"))
+              .whereRef(
+                "projectBillableItem.salesInvoiceLineId",
+                "=",
+                "salesInvoiceLine.id"
+              )
+              .where("projectBillableItem.companyId", "=", companyId)
+          )
         ])
       )
       .execute();
@@ -1271,4 +1367,39 @@ export async function draftRentalAgreementSetupPath(
     return null;
   }
   return path.to.rentalAgreementSetup(id, "units");
+}
+
+/**
+ * Cost Plus billing and Percent Complete revenue need `PROJECT_REVENUE`
+ * (plan decision P2). Returns the upgrade message when the company is not
+ * entitled and a line asks for either, else null. The lock lives in
+ * `@carbon/ee` (`requireProjectRevenueEntitlement`); this only turns its
+ * `EntitlementError` into a message a route can flash.
+ */
+export async function projectRevenueRefusal(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  lines: {
+    billingMethod?: Database["public"]["Enums"]["contractBillingMethod"];
+    revenueMethod?: Database["public"]["Enums"]["contractRevenueMethod"];
+  }[]
+): Promise<string | null> {
+  const needsEntitlement = lines.some(
+    (line) =>
+      line.billingMethod === "Cost Plus" ||
+      line.revenueMethod === "Percent Complete"
+  );
+  if (!needsEntitlement) return null;
+  try {
+    await requireProjectRevenueEntitlement(client, companyId);
+    return null;
+  } catch (err) {
+    if (!(err instanceof EntitlementError)) throw err;
+    logger.error("Project revenue is not in the company's plan", {
+      companyId
+    });
+    return defaultUpgradeMessage(
+      resolveRequirement({ feature: "PROJECT_REVENUE" })
+    );
+  }
 }

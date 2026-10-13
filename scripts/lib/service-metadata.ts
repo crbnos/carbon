@@ -81,6 +81,7 @@ export const MODULE_LIST = [
   "items",
   "people",
   "production",
+  "projects",
   "purchasing",
   "quality",
   "resources",

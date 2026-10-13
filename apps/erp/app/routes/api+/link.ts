@@ -112,6 +112,12 @@ function resolve(
         : `${path.to.invoicingSales}?filter=needsReview:eq:true`;
     case NotificationEvent.LeaseCriticalDate:
       return path.to.leaseDetails(documentId);
+    case NotificationEvent.ContractFundingThreshold:
+      return path.to.contractDetails(documentId);
+    case NotificationEvent.TimesheetMissing:
+      return path.to.timesheet;
+    case NotificationEvent.ProjectBudgetExceeded:
+      return path.to.projectCosts(documentId);
     case NotificationEvent.Workflow:
       return getRecordPath(documentType, documentId);
     case NotificationEvent.ApprovalApproved:
@@ -124,6 +130,13 @@ function resolve(
       if (documentType === "supplier") return path.to.supplier(documentId);
       if (documentType === "changeOrder")
         return path.to.changeNoticeDetails(documentId);
+      if (documentType === "projectChangeRequest") {
+        // "<projectId>:<changeRequestId>"
+        const [projectId, changeRequestId] = documentId.split(":");
+        return projectId && changeRequestId
+          ? path.to.projectChangeRequest(projectId, changeRequestId)
+          : null;
+      }
       return null;
     default:
       return null;

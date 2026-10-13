@@ -12,7 +12,9 @@ import {
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { RunType } from "@carbon/database/run-type";
+import { getTimesheetCloseReadiness } from "@carbon/database/timesheet-readiness";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
+import type { RunRowSynthesizer } from "@carbon/server-functions/propose-revenue-recognition-run";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   addDays,
@@ -62,7 +64,6 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
-  projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
 import {
@@ -2784,7 +2785,13 @@ export async function closeAccountingPeriod(
     companyGroupId: string;
     userId: string;
   },
-  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
+  // No commercial synthesizers by default: the route passes its own previewer
+  // (`runPreviewer` with `projectRevenueSynthesizers`).
+  previewRuns: PeriodRunPreviewer = runPreviewer(client, db, {
+    ...args,
+    revenueRunSynthesizers: []
+  }),
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const cutover = await requireAccountingCutover(client, args.companyId);
   if (cutover.error) return { data: null, error: cutover.error };
@@ -2833,9 +2840,11 @@ export async function closeAccountingPeriod(
   // idempotent, so this both materializes and evaluates the checklist.
   const checklist = await loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    previewRuns
+    previewRuns,
+    entitlements
   );
   if (checklist.error || !checklist.data) {
     return {
@@ -3290,6 +3299,11 @@ function previewError(error: unknown, fallback: string): string {
  * Depreciation: `buildDepreciationRunLines`, empty when a later period is
  * already posted (per-month posting put those months in their periods).
  * Never throws: a failure is returned as the preview's `error`.
+ *
+ * `revenueRunSynthesizers` are the commercial run synthesizers
+ * (`projectRevenueSynthesizers` from `@carbon/ee/project-revenue.server`). This
+ * file is bundled for the browser and cannot import a `.server` module, so a
+ * route passes them in.
  */
 export async function getPeriodRunPreview(
   client: SupabaseClient<Database>,
@@ -3299,12 +3313,18 @@ export async function getPeriodRunPreview(
     companyGroupId: string;
     userId: string;
     periodEnd: string;
+    revenueRunSynthesizers: RunRowSynthesizer[];
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
   const previewRun = (type: RunType, fallback: string): Promise<RunPreview> =>
     serverFns
-      .system({ db, companyId, userId })
+      .system({
+        db,
+        companyId,
+        userId,
+        revenueRunSynthesizers: args.revenueRunSynthesizers
+      })
       .invoke("preview-revenue-recognition-run", { periodEnd, type })
       .then(
         (result): RunPreview =>
@@ -3359,26 +3379,227 @@ export async function getPeriodRunPreview(
   return { revenue, lease, depreciation };
 }
 
-/** The previewer the close checklist uses outside tests. */
-function runPreviewer(
+/** The previewer the close checklist uses outside tests. The close route
+ *  passes `projectRevenueSynthesizers`; the MCP tools pass none. */
+export function runPreviewer(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; companyGroupId: string; userId: string }
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    revenueRunSynthesizers: RunRowSynthesizer[];
+  }
 ): PeriodRunPreviewer {
   return (periodEnd) => getPeriodRunPreview(client, db, { ...args, periodEnd });
 }
 
 /**
- * Evaluates every Auto close check for the period. `runPreview` is what new
- * revenue recognition and depreciation runs for `endDate` would hold
- * (`getPeriodRunPreview`).
+ * The "Timesheets complete" close check (Government Contracting 5a). It reads
+ * with the privileged Kysely client, so the count does not depend on the
+ * closing user's `people` or `projects` access. A failed read counts as one,
+ * so the warning shows rather than a false pass.
  */
-export async function computePeriodReadiness(
-  client: SupabaseClient<Database>,
+async function getPeriodTimesheetReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<{ failing: boolean; count: number }> {
+  try {
+    return await getTimesheetCloseReadiness(db, {
+      companyId,
+      startDate,
+      endDate
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The commercial features the close checks depend on. The close route reads
+ * them with `companyHasFeature`, which this browser-bundled service cannot
+ * import. MCP and the API pass none, so those checks are not applicable there.
+ */
+export type PeriodCloseEntitlements = {
+  /** GOVERNMENT_CONTRACTING: the "Compute burden for the period" and the
+   *  "Close earned value for the period" checks. */
+  governmentContracting?: boolean;
+};
+
+/**
+ * The "Compute burden for the period" decision (Government Contracting 5b).
+ * Not applicable, so passing, when the company lacks GOVERNMENT_CONTRACTING
+ * or has no active indirect pool that applies to projects. Otherwise it fails
+ * until the period's indirect rate run has computed burden.
+ */
+export function burdenComputedCheck({
+  entitled,
+  poolCount,
+  burdenComputedAt
+}: {
+  entitled: boolean;
+  poolCount: number;
+  burdenComputedAt: string | null;
+}): { failing: boolean; count: number } {
+  const failing = entitled && poolCount > 0 && !burdenComputedAt;
+  return { failing, count: failing ? 1 : 0 };
+}
+
+/**
+ * The "Compute burden for the period" close check. It reads with the
+ * privileged Kysely client, as the Timesheets complete check does, and only
+ * when the company has GOVERNMENT_CONTRACTING. A failed read counts as one,
+ * so the warning shows rather than a false pass.
+ */
+async function getPeriodBurdenReadiness(
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   startDate: string,
   endDate: string,
-  runPreview: PeriodRunPreview
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return burdenComputedCheck({
+      entitled,
+      poolCount: 0,
+      burdenComputedAt: null
+    });
+  }
+  try {
+    const pools = await db
+      .selectFrom("indirectPool")
+      .select((eb) => eb.fn.countAll<number>().as("count"))
+      .where("companyId", "=", companyId)
+      .where("active", "=", true)
+      .where("appliesToProjects", "=", true)
+      .executeTakeFirst();
+    const poolCount = Number(pools?.count ?? 0);
+    if (poolCount === 0) {
+      return burdenComputedCheck({
+        entitled,
+        poolCount,
+        burdenComputedAt: null
+      });
+    }
+    const run = await db
+      .selectFrom("indirectRateRun")
+      .select("burdenComputedAt")
+      .where("companyId", "=", companyId)
+      .where(
+        "accountingPeriodId",
+        "in",
+        db
+          .selectFrom("accountingPeriod")
+          .select("id")
+          .where("companyId", "=", companyId)
+          .where("startDate", "=", startDate)
+          .where("endDate", "=", endDate)
+      )
+      .executeTakeFirst();
+    return burdenComputedCheck({
+      entitled,
+      poolCount,
+      burdenComputedAt: run?.burdenComputedAt ?? null
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * The "Close earned value for the period" decision (Government Contracting
+ * 5c, C14). Not applicable, so passing, when the company lacks
+ * GOVERNMENT_CONTRACTING or no project has earned value work packages.
+ * Otherwise it fails while a project with work packages has no snapshot for
+ * the period; the count is those projects.
+ */
+export function earnedValueClosedCheck({
+  entitled,
+  projectsWithoutSnapshot
+}: {
+  entitled: boolean;
+  projectsWithoutSnapshot: number;
+}): { failing: boolean; count: number } {
+  const count = entitled ? Math.max(0, projectsWithoutSnapshot) : 0;
+  return { failing: count > 0, count };
+}
+
+/**
+ * The "Close earned value for the period" close check. It reads with the
+ * privileged Kysely client, and only when the company has
+ * GOVERNMENT_CONTRACTING. One statement counts the Released, On Hold and
+ * Technically Complete projects with a work package (an element with a
+ * technique below a control account, C7) and no `earnedValuePeriod` row for
+ * the period. A failed read counts as one, so the warning shows rather than
+ * a false pass.
+ */
+async function getPeriodEarnedValueReadiness(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  entitled: boolean
+): Promise<{ failing: boolean; count: number }> {
+  if (!entitled) {
+    return earnedValueClosedCheck({ entitled, projectsWithoutSnapshot: 0 });
+  }
+  try {
+    const result = await sql<{ count: number }>`
+      WITH RECURSIVE ancestors AS (
+        SELECT e."projectId", e."parentId" AS "ancestorId"
+        FROM "projectElement" e
+        JOIN "project" p ON p."id" = e."projectId" AND p."companyId" = e."companyId"
+        WHERE e."companyId" = ${companyId}
+          AND e."earnedValueTechnique" IS NOT NULL
+          AND p."status" IN ('Released', 'On Hold', 'Technically Complete')
+        UNION
+        SELECT a."projectId", parent."parentId"
+        FROM ancestors a
+        JOIN "projectElement" parent
+          ON parent."id" = a."ancestorId" AND parent."companyId" = ${companyId}
+      ),
+      projects AS (
+        SELECT DISTINCT a."projectId"
+        FROM ancestors a
+        JOIN "projectElement" ca
+          ON ca."id" = a."ancestorId" AND ca."companyId" = ${companyId}
+        WHERE ca."isControlAccount"
+      )
+      SELECT COUNT(*)::int AS "count"
+      FROM projects pr
+      WHERE NOT EXISTS (
+        SELECT 1 FROM "earnedValuePeriod" ev
+        JOIN "accountingPeriod" ap ON ap."id" = ev."accountingPeriodId"
+        WHERE ev."companyId" = ${companyId}
+          AND ev."projectId" = pr."projectId"
+          AND ap."startDate" = ${startDate}::date
+          AND ap."endDate" = ${endDate}::date
+      )
+    `.execute(db);
+    return earnedValueClosedCheck({
+      entitled,
+      projectsWithoutSnapshot: Number(result.rows[0]?.count ?? 0)
+    });
+  } catch {
+    return { failing: true, count: 1 };
+  }
+}
+
+/**
+ * Evaluates every Auto close check for the period. `runPreview` is what new
+ * revenue recognition and depreciation runs for `endDate` would hold
+ * (`getPeriodRunPreview`). `entitlements` gates the commercial checks.
+ */
+export async function computePeriodReadiness(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  startDate: string,
+  endDate: string,
+  runPreview: PeriodRunPreview,
+  entitlements: PeriodCloseEntitlements = {}
 ): Promise<{
   checks: PeriodReadinessCheck[];
   blockers: { key: string; label: string; count: number }[];
@@ -3567,6 +3788,31 @@ export async function computePeriodReadiness(
     runPreview.depreciation.count +
     (draftDepreciationRuns.error ? 1 : depreciationDraftRuns.length);
 
+  // Read last, and only in DCAA mode (see the helper).
+  const timesheets = await getPeriodTimesheetReadiness(
+    db,
+    companyId,
+    startDate,
+    endDate
+  );
+  // Read last, and only with GOVERNMENT_CONTRACTING (see the helpers).
+  const [burden, earnedValue] = await Promise.all([
+    getPeriodBurdenReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    ),
+    getPeriodEarnedValueReadiness(
+      db,
+      companyId,
+      startDate,
+      endDate,
+      entitlements.governmentContracting === true
+    )
+  ]);
+
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
       !isBalanced(
@@ -3717,6 +3963,36 @@ export async function computePeriodReadiness(
       label: "Unmatched intercompany transactions involving this company",
       failing: (unmatchedIC.count ?? 0) > 0,
       count: unmatchedIC.count ?? 0
+    },
+    // This evaluator MUST exist for the seeded "Timesheets complete" task
+    // (Government Contracting 5a): an Auto task with no evaluator fails closed.
+    {
+      autoCheckKey: "timesheets-complete",
+      severity: "Warning",
+      label:
+        "Timesheet entries dated in this period that are not posted, and scheduled work days with no time entered",
+      failing: timesheets.failing,
+      count: timesheets.count
+    },
+    // This evaluator MUST exist for the seeded "Compute burden for the
+    // period" task (Government Contracting 5b), and it MUST pass when the
+    // check is not applicable: the task is required for every company.
+    {
+      autoCheckKey: "burden-computed",
+      severity: "Warning",
+      label: "Burden not yet computed for this period",
+      failing: burden.failing,
+      count: burden.count
+    },
+    // The same for the seeded "Close earned value for the period" task
+    // (Government Contracting 5c): it MUST pass when not applicable.
+    {
+      autoCheckKey: "earned-value-closed",
+      severity: "Warning",
+      label:
+        "Projects with work packages that have no earned value snapshot for this period",
+      failing: earnedValue.failing,
+      count: earnedValue.count
     }
   ];
 
@@ -3751,12 +4027,16 @@ export async function getPeriodCloseReadiness(
   }
   const { checks, blockers, warnings } = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
+    // MCP and the API cannot reach commercial code: no project revenue
+    // synthesizers here.
     await getPeriodRunPreview(client, db, {
       ...args,
-      periodEnd: period.data.endDate
+      periodEnd: period.data.endDate,
+      revenueRunSynthesizers: []
     })
   );
   return { data: { checks, blockers, warnings }, error: null };
@@ -3927,20 +4207,26 @@ export async function getPeriodCloseChecklist(
     periodId: string;
   }
 ) {
+  // MCP and the API cannot reach commercial code: the close route calls
+  // `loadPeriodCloseChecklist` with the project revenue synthesizers instead.
   return loadPeriodCloseChecklist(
     client,
+    db,
     args.companyId,
     args.periodId,
-    runPreviewer(client, db, args)
+    runPreviewer(client, db, { ...args, revenueRunSynthesizers: [] })
   );
 }
 
-/** `getPeriodCloseChecklist` with the run previewer passed in. */
+/** `getPeriodCloseChecklist` with the run previewer and the entitlements
+ *  passed in. */
 export async function loadPeriodCloseChecklist(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   periodId: string,
-  previewRuns: PeriodRunPreviewer
+  previewRuns: PeriodRunPreviewer,
+  entitlements: PeriodCloseEntitlements = {}
 ) {
   const period = await getAccountingPeriodById(client, periodId, companyId);
   if (period.error || !period.data) {
@@ -4007,10 +4293,12 @@ export async function loadPeriodCloseChecklist(
 
   const readiness = await computePeriodReadiness(
     client,
+    db,
     companyId,
     period.data.startDate,
     period.data.endDate,
-    await previewRuns(period.data.endDate)
+    await previewRuns(period.data.endDate),
+    entitlements
   );
 
   const evaluated = evaluateCloseChecklist(
@@ -4478,10 +4766,18 @@ export async function upsertAccount(
   if ("createdBy" in account) {
     return client.from("account").insert([account]).select("*").single();
   }
-  const { companyGroupId: _companyGroupId, ...accountUpdate } = account;
+  // `allowability` is NOT NULL: an update without it keeps the stored value.
+  const {
+    companyGroupId: _companyGroupId,
+    allowability,
+    ...accountUpdate
+  } = account;
   return client
     .from("account")
-    .update(sanitize(accountUpdate))
+    .update({
+      ...sanitize(accountUpdate),
+      ...(allowability ? { allowability } : {})
+    })
     .eq("id", account.id)
     .select("id")
     .single();
@@ -4632,97 +4928,6 @@ export async function upsertCostCenter(
     .from("costCenter")
     .update(sanitize(costCenter))
     .eq("id", costCenter.id)
-    .select("id")
-    .single();
-}
-
-/** @mcp delete */
-export async function deleteProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string,
-  updatedBy: string
-) {
-  return client
-    .from("project")
-    .update({
-      active: false,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-/** @mcp read */
-export async function getProject(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  projectId: string
-) {
-  return client
-    .from("project")
-    .select("*")
-    .eq("id", projectId)
-    .eq("companyId", companyId)
-    .single();
-}
-
-/** @mcp read */
-export async function getProjects(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("project")
-    .select("*", { count: LIST_COUNT })
-    .eq("companyId", companyId)
-    .eq("active", true);
-
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
-
-  return query;
-}
-
-/** @mcp upsert */
-export async function upsertProject(
-  client: SupabaseClient<Database>,
-  project:
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        companyId: string;
-        createdBy: string;
-      })
-    | (Omit<z.infer<typeof projectValidator>, "id"> & {
-        id: string;
-        companyId: string;
-        updatedBy: string;
-      })
-) {
-  if ("createdBy" in project) {
-    return client
-      .from("project")
-      .insert([{ ...project, active: true }])
-      .select("id")
-      .single();
-  }
-
-  const { companyId, id, ...update } = project;
-  return client
-    .from("project")
-    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
-    .eq("id", id)
-    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -4994,15 +5199,38 @@ function getEntityDimensionValues(
         .eq("companyId", companyId)
         .order("name");
     case "Project":
-      // Only ACTIVE projects are selectable for new dimension assignments;
-      // soft-deleted (active = false) projects stay resolvable for history via
-      // getEntityValuesByIds but must not appear as new options.
+      // Only ACTIVE Standard projects are selectable for new dimension
+      // assignments; soft-deleted (active = false) projects stay resolvable
+      // for history via getEntityValuesByIds but must not appear as new
+      // options. A Service project's journal lines carry its Project value
+      // from posting, so reports still group by service order.
       return client
         .from("project")
         .select("id, name")
         .eq("companyId", companyId)
+        .eq("projectType", "Standard")
         .eq("active", true)
         .order("name");
+    case "ProjectElement":
+      // Only chargeable elements of Standard projects take a charge here, so
+      // only they are options. The label is the element's readable id and
+      // name ("ST-12 Optics").
+      return client
+        .from("projectElement")
+        .select(
+          "id, readableId, name, project:project!projectElement_project_fkey!inner(projectType)"
+        )
+        .eq("companyId", companyId)
+        .eq("isChargeable", true)
+        .eq("project.projectType", "Standard")
+        .order("readableId")
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -5132,6 +5360,18 @@ function getEntityValuesByIds(
       return client.from("scrapReason").select("id, name").in("id", ids);
     case "Project":
       return client.from("project").select("id, name").in("id", ids);
+    case "ProjectElement":
+      return client
+        .from("projectElement")
+        .select("id, readableId, name")
+        .in("id", ids)
+        .then(({ data, error }) => ({
+          data: (data ?? []).map((e) => ({
+            id: e.id,
+            name: `${e.readableId} ${e.name}`
+          })),
+          error
+        }));
     case "FixedAssetClass":
       return client.from("fixedAssetClass").select("id, name").in("id", ids);
     case "Customer":
@@ -5833,6 +6073,8 @@ export type JournalSourceDocument = {
     | "fixedAsset"
     | "inventoryCount"
     | "maintenanceDispatch"
+    | "project"
+    | "projectTime"
     | "nonConformance"
     | "inspection"
     | "charge"
@@ -6057,6 +6299,45 @@ export async function getJournalEntryRelatedItems(
               id: r.id,
               readableId: r.maintenanceDispatchId
             }))
+          )
+      : none,
+    // A "Project Issue" line holds the project's id (the itemLedger
+    // documentId of the issue).
+    idsOf("Project Issue").length > 0
+      ? client
+          .from("project")
+          .select("id, identifier, name")
+          .in("id", idsOf("Project Issue"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "project" as const,
+              id: r.id,
+              readableId: r.identifier ?? r.name
+            }))
+          )
+      : none,
+    // A "Timesheet" line holds a timesheetEntry id; list the entry's project.
+    idsOf("Timesheet").length > 0
+      ? client
+          .from("timesheetEntry")
+          .select(
+            "project:project!timesheetEntry_project_fkey(id, identifier, name)"
+          )
+          .in("id", idsOf("Timesheet"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).flatMap((r) =>
+              r.project
+                ? [
+                    {
+                      kind: "projectTime" as const,
+                      id: r.project.id,
+                      readableId: r.project.identifier ?? r.project.name
+                    }
+                  ]
+                : []
+            )
           )
       : none,
     idsOf("Non-Conformance").length > 0
@@ -7291,6 +7572,26 @@ export async function buildDepreciationRunLines(
     costAdjustments.data.map((transfer) => transfer.fixedAssetId)
   );
 
+  // An asset with a cost added after it went into service (a capital
+  // project's late cost, `postCapitalization`) depreciates Straight Line on
+  // its remaining life. Every other asset keeps its schedule unchanged.
+  const lateCosts = await fetchAllFromTable<{ fixedAssetId: string }>(
+    client,
+    "fixedAssetCipCost",
+    "id, fixedAssetId",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("postCapitalization", true)
+        .order("id", { ascending: true })
+  );
+  if (lateCosts.error || !lateCosts.data) {
+    return { data: null, error: lateCosts.error };
+  }
+  const remainingLifeAssetIds = new Set(
+    lateCosts.data.map((row) => row.fixedAssetId)
+  );
+
   const lines = buildDepreciationLines(
     assets.data
       .filter((asset) => !coveredAssetIds.has(asset.id))
@@ -7299,6 +7600,7 @@ export async function buildDepreciationRunLines(
         accumulatedTaxDepreciation: Number(
           asset.accumulatedTaxDepreciation ?? 0
         ),
+        remainingLifeBasis: remainingLifeAssetIds.has(asset.id),
         costAdjusted: costAdjustedAssetIds.has(asset.id)
       })),
     periodEnd,
@@ -7490,11 +7792,13 @@ export async function getRevenueRecognitionRunLines(
 ) {
   // The run line -> schedule FK is composite (scheduleId, companyId), so the
   // embed must name the target table and constraint; `schedule:scheduleId(...)`
-  // only resolves single-column FKs and fails with PGRST200.
+  // only resolves single-column FKs and fails with PGRST200. A contract row
+  // also brings its month's progress figures and the line's billing element
+  // (the project revenue review, Phase 4b).
   return client
     .from("revenueRecognitionRunLine")
     .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, leaseId, journalId)"
+      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, customerContractLineId, leaseId, journalId, revenue:customerContractRevenue!revenueRecognitionSchedule_customerContractRevenue_fkey(id, periodStart, amount, earnedToDate, estimateAtCompletion, transactionPrice, progress), contractLine:customerContractLine!revenueRecognitionSchedule_customerContractLine_fkey(id, description, customerContractId, contract:customerContract!customerContractLine_contract_fkey(id, customerContractId), element:projectElement!customerContractLine_projectElement_fkey(id, readableId, name)))"
     )
     .eq("runId", runId)
     .eq("companyId", companyId);
@@ -8595,7 +8899,9 @@ export async function getFixedAssetRelatedItems(
     Promise.all([
       client
         .from("purchaseOrderLine")
-        .select("id, purchaseOrder(id, purchaseOrderId, status, supplierId)")
+        .select(
+          "id, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId)"
+        )
         .eq("assetId", fixedAssetId)
         .eq("companyId", companyId),
       client

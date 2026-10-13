@@ -102,6 +102,11 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Inventory (lots, bins, adjustments) | `.claude/rules/inventory-system.md` + `modules/inventory/AGENTS.md` |
 | Production (work orders, scheduling, routings) | `.claude/rules/scheduling-data-structures.md` + `modules/production/AGENTS.md` |
 | MES (shop floor, job operations) | `.claude/rules/mes-job-operation-ui.md` |
+| Projects (elements, charge numbers, timesheets, project ledger) | `.claude/rules/projects-system.md` + `apps/erp/app/modules/projects/AGENTS.md` |
+| Project billing (T&M and Cost Plus contract lines, bill rates, billable items, funding) | `.claude/rules/project-billing.md` + `.claude/rules/projects-system.md` + `apps/erp/app/modules/sales/AGENTS.md` (Contracts) |
+| Field service (customer assets, service orders, visits, coverage, service invoicing) | `.claude/rules/field-service.md` + `apps/erp/app/modules/service/AGENTS.md` + `.claude/rules/projects-system.md` |
+| Government contracting (DCAA timekeeping, unallowable cost, labor distribution, CLIN funding) | `.claude/rules/government-contracting.md` + `.claude/rules/projects-system.md` |
+| Contract financing (progress payments, SF 1443, PBP, liquidation) | `.claude/rules/contract-financing.md` + `.claude/rules/government-contracting.md` |
 | Quality (inspections, NCRs, CAPAs) | `modules/quality/AGENTS.md` |
 | Sales (quotes, orders) | `.claude/rules/quote-discount-system.md` + `modules/sales/AGENTS.md` |
 | Accounting (GL, journal entries) | `.claude/rules/accounting-sync-handlers.md` + `modules/accounting/AGENTS.md` |

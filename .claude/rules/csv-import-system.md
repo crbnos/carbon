@@ -76,7 +76,7 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 `storageType` → `parts`;
 `workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
 `inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
-`department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+`department`, `payrollPeriodTotal` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
 
 An import's permission is the one its table's **RLS INSERT policy** requires, not
 the one that opens its list page. The server function writes through a service-role
@@ -91,8 +91,21 @@ The server function's own `table` enum (`import-csv/index.ts`) accepts: `consuma
 `workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
 `storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
 `materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
-`inventoryQuantity`, `batchQuantity`, `serialQuantity`. Note it does
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`, `payrollPeriodTotal`. Note it does
 **not** list `fixedAsset` (see Gotchas).
+
+### Payroll totals import (upsert per employee and period)
+
+`payrollPeriodTotal` (Government Contracting 5a, `government-contracting.md`) is handled
+by `import-csv/payroll-total-import.ts`. The wizard sends column names, so
+`importSchemas.payrollPeriodTotal` declares each field as a required column string; the
+pure `readPayrollTotalRow` checks the values: a real `YYYY-MM-DD` for both dates,
+`periodEnd >= periodStart`, and wages and hours of 0 or more ("4,200.00" and "$4,200.00"
+read as 4200). The employee must be an `employee` of the company (one query). A second row
+of the file for the same employee and period is skipped ("Repeats the employee and period
+of row N"), because one `INSERT … ON CONFLICT DO UPDATE` cannot touch a row twice. The
+upsert counts inserted and updated rows with `(xmax = 0)`; an update keeps `importedBy`
+and `importedAt`. Surfaced on People → Payroll Totals (`PayrollTotalsTable`).
 
 ### Service import (rides the item path)
 

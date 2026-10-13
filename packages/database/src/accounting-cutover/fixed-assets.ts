@@ -81,11 +81,68 @@ export async function getDepreciationAfterCutover(
 }
 
 /**
- * The fixed assets on the books the day before the cutover, with their class
- * accounts: registered (not Draft), acquired before the cutover, and not
- * disposed, or disposed on or
- * after it by a disposal that carries a journal after the enable (see
- * `getAssetsLeavingWithoutJournal`). `accumulatedDepreciation` is as of the
+ * Per asset, the construction-in-progress cost dated on or after the cutover.
+ * The asset's `acquisitionCost` includes it, and its journal is promoted at
+ * the enable, so the opening balance takes it out.
+ */
+async function getCipCostAfterCutover(
+  db: CutoverDb,
+  { companyId, cutoverDate }: CutoverArgs
+): Promise<Map<string, number>> {
+  const rows = await db
+    .selectFrom("fixedAssetCipCost")
+    .select(["fixedAssetId", sql<number>`sum("amount")`.as("amount")])
+    .where("companyId", "=", companyId)
+    .where("costDate", ">=", cutoverDate)
+    .groupBy("fixedAssetId")
+    .execute();
+  return new Map(
+    rows.map((row) => [row.fixedAssetId, round(Number(row.amount))])
+  );
+}
+
+/**
+ * The class an asset had at the cutover when a capitalization on or after it
+ * moved the asset out of its construction-in-progress class: the first such
+ * transfer's `fromClassId`, with that class's accounts. The capitalization's
+ * journal is promoted at the enable and moves the cost itself.
+ */
+function capitalizedOnOrAfterCutover(
+  db: CutoverDb,
+  { companyId, cutoverDate }: CutoverArgs
+) {
+  return db
+    .selectFrom("fixedAssetTransfer as transfer")
+    .innerJoin("fixedAssetClass as class", (join) =>
+      join
+        .onRef("class.id", "=", "transfer.fromClassId")
+        .onRef("class.companyId", "=", "transfer.companyId")
+    )
+    .distinctOn("transfer.fixedAssetId")
+    .select([
+      "transfer.fixedAssetId",
+      "transfer.fromClassId",
+      "class.assetAccountId",
+      "class.accumulatedDepreciationAccountId"
+    ])
+    .where("transfer.companyId", "=", companyId)
+    .where("transfer.status", "=", "Posted")
+    .where("transfer.fromClassId", "is not", null)
+    .where("transfer.transferDate", ">=", cutoverDate)
+    .orderBy("transfer.fixedAssetId")
+    .orderBy("transfer.transferDate")
+    .orderBy("transfer.createdAt")
+    .execute();
+}
+
+/**
+ * The fixed assets on the books the day before the cutover, with the
+ * accounts of their class at the cutover: registered (not Draft), acquired
+ * before the cutover (or under construction then and capitalized on or
+ * after it), and not disposed, or disposed on or after it by a disposal that
+ * carries a journal after the enable (see `getAssetsLeavingWithoutJournal`).
+ * `cost` is the asset's acquisition cost less its construction-in-progress
+ * cost dated on or after the cutover. `accumulatedDepreciation` is as of the
  * day before the cutover: the asset's own less what runs booked for months
  * on or after it.
  */
@@ -94,7 +151,13 @@ export async function getCutoverFixedAssets(
   args: CutoverArgs
 ): Promise<CutoverFixedAsset[]> {
   const { companyId, cutoverDate } = args;
-  const [rows, leavingWithoutJournal, depreciationAfter] = await Promise.all([
+  const [
+    rows,
+    leavingWithoutJournal,
+    depreciationAfter,
+    cipAfter,
+    capitalized
+  ] = await Promise.all([
     db
       .selectFrom("fixedAsset as asset")
       .innerJoin("fixedAssetClass as class", (join) =>
@@ -124,28 +187,56 @@ export async function getCutoverFixedAssets(
           eb("asset.disposalDate", ">=", cutoverDate)
         ])
       )
-      .where("asset.acquisitionDate", "<", cutoverDate)
+      // A capitalization sets the acquisition date to the in-service date,
+      // so an asset capitalized on or after the cutover was under
+      // construction at it.
+      .where((eb) =>
+        eb.or([
+          eb("asset.acquisitionDate", "<", cutoverDate),
+          eb(
+            "asset.id",
+            "in",
+            eb
+              .selectFrom("fixedAssetTransfer as transfer")
+              .select("transfer.fixedAssetId")
+              .where("transfer.companyId", "=", companyId)
+              .where("transfer.status", "=", "Posted")
+              .where("transfer.fromClassId", "is not", null)
+              .where("transfer.transferDate", ">=", cutoverDate)
+          )
+        ])
+      )
       .orderBy("asset.fixedAssetId")
       .execute(),
     getAssetsLeavingWithoutJournal(db, args),
-    getDepreciationAfterCutover(db, args)
+    getDepreciationAfterCutover(db, args),
+    getCipCostAfterCutover(db, args),
+    capitalizedOnOrAfterCutover(db, args)
   ]);
+  const classAtCutover = new Map(
+    capitalized.map((row) => [row.fixedAssetId, row])
+  );
   return rows
     .filter((row) => !leavingWithoutJournal.has(row.id))
-    .map((row) => ({
-      id: row.id,
-      fixedAssetId: row.fixedAssetId,
-      name: row.name,
-      status: row.status,
-      fixedAssetClassId: row.fixedAssetClassId,
-      cost: Number(row.acquisitionCost),
-      accumulatedDepreciation: round(
-        Number(row.accumulatedDepreciation) -
-          (depreciationAfter.get(row.id) ?? 0)
-      ),
-      assetAccountId: row.assetAccountId,
-      accumulatedDepreciationAccountId: row.accumulatedDepreciationAccountId
-    }));
+    .map((row) => {
+      const before = classAtCutover.get(row.id);
+      return {
+        id: row.id,
+        fixedAssetId: row.fixedAssetId,
+        name: row.name,
+        status: row.status,
+        fixedAssetClassId: before?.fromClassId ?? row.fixedAssetClassId,
+        cost: round(Number(row.acquisitionCost) - (cipAfter.get(row.id) ?? 0)),
+        accumulatedDepreciation: round(
+          Number(row.accumulatedDepreciation) -
+            (depreciationAfter.get(row.id) ?? 0)
+        ),
+        assetAccountId: before?.assetAccountId ?? row.assetAccountId,
+        accumulatedDepreciationAccountId:
+          before?.accumulatedDepreciationAccountId ??
+          row.accumulatedDepreciationAccountId
+      };
+    });
 }
 
 /**

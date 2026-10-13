@@ -21,8 +21,8 @@ import { INPUT_FORMAT, INPUT_STEP, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuPencil, LuPlus, LuTrash } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { LuPencil, LuPlus, LuReceipt, LuTrash } from "react-icons/lu";
+import { useFetcher, useNavigate } from "react-router";
 import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import {
@@ -47,9 +47,11 @@ import {
 import { useServices } from "~/stores";
 import { path } from "~/utils/path";
 import {
+  contractLineBillingFormValues,
   contractRateUnits,
   contractRevenueTypes,
-  customerContractLinesAddValidator
+  customerContractLinesAddValidator,
+  isProjectBillingMethod
 } from "../../sales.models";
 import ContractLineForm from "./ContractLineForm";
 import ContractMoney from "./ContractMoney";
@@ -87,6 +89,7 @@ const ContractProductsGrid = ({
 }: ContractProductsGridProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const navigate = useNavigate();
   const save = useCellSave();
   const { formatDate } = useDateFormatter();
   const formatQuantity = useQuantityFormatter();
@@ -332,6 +335,16 @@ const ContractProductsGrid = ({
             <MenuIcon icon={<LuPencil />} />
             <Trans>Edit Details</Trans>
           </MenuItem>
+          {isProjectBillingMethod(line.billingMethod) && (
+            <MenuItem
+              onClick={() =>
+                navigate(path.to.contractLineBilling(contractId, line.id))
+              }
+            >
+              <MenuIcon icon={<LuReceipt />} />
+              <Trans>Billing</Trans>
+            </MenuItem>
+          )}
           <MenuItem
             shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
@@ -344,7 +357,7 @@ const ContractProductsGrid = ({
         </>
       );
     },
-    [lines, permissions]
+    [lines, permissions, navigate, contractId]
   );
 
   const gridColumns = useMemo(
@@ -466,7 +479,10 @@ function contractLineFormValues(line: ContractLine) {
     revenueMethod: line.revenueMethod,
     revenueStartDate: line.revenueStartDate ?? undefined,
     revenueEndDate: line.revenueEndDate ?? undefined,
-    projectId: line.projectId ?? undefined
+    projectId: line.projectId ?? undefined,
+    lineItemNumber: line.lineItemNumber ?? undefined,
+    parentLineId: line.parentLineId ?? undefined,
+    ...contractLineBillingFormValues(line)
   };
 }
 

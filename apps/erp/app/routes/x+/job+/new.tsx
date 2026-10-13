@@ -2,7 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -24,6 +24,10 @@ import {
   makeToAssetItemError
 } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.server";
 import type { MethodItemType } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -81,7 +85,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "production",
     role: "employee"
   });
@@ -152,6 +156,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  const chargeError = await chargeNumberError(serviceRole, companyId, data);
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
   // A Make to Asset job is refused here, not only at release, so the form
   // says why while the item is still being chosen.
   if (data.fixedAssetClassId || data.fixedAssetId) {
@@ -170,6 +181,35 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // Budget control (Government Contracting 5c, C4 and C5). Only a job that
+  // consumes to its project charges cost to it: quantity × the item's unit
+  // cost. Block refuses the job; Warn creates it and flashes the overrun.
+  let budgetNote = "";
+  if (data.consumeToProject && data.projectId) {
+    const db = getDatabaseClient();
+    const cost = await db
+      .selectFrom("itemCost")
+      .select("unitCost")
+      .where("itemId", "=", data.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    const budget = await checkProjectBudget(db, client, {
+      companyId,
+      source: "job",
+      charges: [
+        {
+          projectId: data.projectId,
+          projectElementId: data.projectElementId || null,
+          amount: (data.quantity ?? 0) * Number(cost?.unitCost ?? 0)
+        }
+      ]
+    });
+    if (budget.status === "block") {
+      return validationError({ fieldErrors: { quantity: budget.message } });
+    }
+    if (budget.status === "warn") budgetNote = budget.message;
+  }
+
   const result = await insertJob(
     serviceRole,
     getDatabaseClient(),
@@ -178,6 +218,10 @@ export async function action({ request }: ActionFunctionArgs) {
       jobId: data.jobId || undefined,
       fixedAssetClassId: data.fixedAssetClassId || null,
       fixedAssetId: data.fixedAssetId || null,
+      projectId: data.projectId || null,
+      projectElementId: data.projectElementId || null,
+      consumeToProject: data.consumeToProject,
+      receiveToProjectStock: data.receiveToProjectStock,
       configuration,
       companyId,
       createdBy: userId,
@@ -190,6 +234,13 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(
       path.to.jobs,
       await flash(request, error(result.error, "Failed to insert job"))
+    );
+  }
+
+  if (budgetNote) {
+    throw redirect(
+      path.to.job(result.data.id),
+      await flash(request, success(`Job created. ${budgetNote}`))
     );
   }
 
@@ -212,6 +263,10 @@ export default function JobNewRoute() {
     dueDate: "",
     fixedAssetClassId: fixedAssetClassId ?? "",
     fixedAssetId: "",
+    projectId: params.get("projectId") ?? "",
+    projectElementId: params.get("projectElementId") ?? "",
+    consumeToProject: false,
+    receiveToProjectStock: false,
     itemId: "",
     itemType: "Item" as MethodItemType,
     jobId: undefined,

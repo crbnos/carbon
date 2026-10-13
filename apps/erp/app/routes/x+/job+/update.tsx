@@ -15,6 +15,7 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+import { chargeNumberError } from "~/modules/projects/projects.server";
 import { isSalesOrderClosed } from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
@@ -38,7 +39,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // Per-ID locked check
   const jobs = await client
     .from("job")
-    .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
+    .select(
+      "id, status, quantity, fixedAssetClassId, fixedAssetId, consumeToProject, receiveToProjectStock"
+    )
     .in("id", ids as string[]);
 
   const lockedError = requireUnlockedBulk({
@@ -293,6 +296,25 @@ export async function action({ request }: ActionFunctionArgs) {
           .eq("companyId", companyId);
       }
 
+      if ((jobs.data ?? []).some((job) => job.consumeToProject)) {
+        return {
+          error: {
+            message:
+              "A job that consumes to a project cannot be linked to a sales order line"
+          },
+          data: null
+        };
+      }
+      if ((jobs.data ?? []).some((job) => job.receiveToProjectStock)) {
+        return {
+          error: {
+            message:
+              "A job that receives into project stock cannot be linked to a sales order line"
+          },
+          data: null
+        };
+      }
+
       // Linking is done via the line — resolve its order + customer from it.
       if (field !== "salesOrderLineId") {
         return {
@@ -335,6 +357,55 @@ export async function action({ request }: ActionFunctionArgs) {
         })
         .in("id", ids as string[])
         .eq("companyId", companyId);
+    case "chargeNumber": {
+      // The charge number is chosen before release; after that, issued
+      // material and labor already carry it.
+      if (
+        (jobs.data ?? []).some(
+          (job) => job.status !== "Draft" && job.status !== "Planned"
+        )
+      ) {
+        return {
+          error: {
+            message: "The charge number is fixed once the job is released"
+          },
+          data: null
+        };
+      }
+      const [projectId = "", projectElementId = ""] = (value ?? "").split("|");
+      const chargeError = await chargeNumberError(client, companyId, {
+        projectId: projectId || null,
+        projectElementId: projectElementId || null
+      });
+      if (chargeError) {
+        return { error: { message: chargeError.message }, data: null };
+      }
+      const project = projectId
+        ? await client
+            .from("project")
+            .select("costTreatment, projectStock")
+            .eq("id", projectId)
+            .eq("companyId", companyId)
+            .single()
+        : null;
+      const keepsConsume =
+        !!project?.data && project.data.costTreatment !== "Statistical";
+      const keepsProjectStock = !!project?.data?.projectStock;
+      return await client
+        .from("job")
+        .update({
+          projectId: projectId || null,
+          projectElementId: projectElementId || null,
+          // No project, or one with no account: nothing to consume to.
+          ...(keepsConsume ? {} : { consumeToProject: false }),
+          // No project, or one without project stock: nothing to receive into.
+          ...(keepsProjectStock ? {} : { receiveToProjectStock: false }),
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", ids as string[])
+        .eq("companyId", companyId);
+    }
     default:
       return {
         error: { message: `Invalid field: ${field}` },

@@ -319,6 +319,16 @@ export type Events = {
     };
   };
 
+  // Indirect rate period run (Government Contracting 5b), sent when an
+  // accounting period locks.
+  "carbon/indirect-rates.compute": {
+    data: {
+      companyId: string;
+      accountingPeriodId: string;
+      userId: string;
+    };
+  };
+
   // Generate preventive-maintenance dispatches for one schedule on demand
   // (fired when a maintenance schedule is created or updated).
   "carbon/generate-maintenance": {
@@ -584,6 +594,11 @@ export type Events = {
     data: Record<string, never>;
   };
   "carbon/workflow-run-retention.process": {
+    data: Record<string, never>;
+  };
+  // `util.sweep_timesheet_missing_time`, daily while a company runs DCAA
+  // timekeeping.
+  "carbon/timesheet-missing-time.process": {
     data: Record<string, never>;
   };
   // Sent by the database (queue_kanban_level_checks, sync_kanban_level_check,

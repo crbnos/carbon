@@ -46,6 +46,9 @@ import {
 /** The descriptions a receipt and a purchase invoice write on GR/IR. */
 const GOODS_RECEIVED_NOT_INVOICED_DESCRIPTION = "Goods Received Not Invoiced";
 const GR_IR_CLEARING_DESCRIPTION = "GR/IR Clearing";
+/** The opening WIP line of project and service cost that no job holds. */
+const PROJECT_AND_SERVICE_WIP_DESCRIPTION =
+  "WIP Account (projects and service)";
 
 /**
  * An open item before its account class is known. `basis` says how its
@@ -1046,7 +1049,8 @@ async function getInvoicedNotReceivedItems(
 /**
  * Work in progress: per job, its lines on the WIP account dated before the
  * cutover, as `close-job` sums them. Every job with a balance, whatever its
- * status, so the account's opening balance is the sum of its jobs.
+ * status, plus one item for the project and service cost on the account, so
+ * the account's opening balance is all of its cost.
  */
 async function getWorkInProgressItems(
   db: CutoverDb,
@@ -1076,7 +1080,7 @@ async function getWorkInProgressItems(
     .where("journal.postingDate", "<", cutoverDate)
     .groupBy("job.id")
     .execute();
-  return rows.map((row) => ({
+  const items: DraftItem[] = rows.map((row) => ({
     openItemType: "Work in Progress",
     accountId: defaults.workInProgressAccount,
     basis: "natural",
@@ -1087,6 +1091,67 @@ async function getWorkInProgressItems(
     documentLineReference: null,
     description: "WIP Account"
   }));
+
+  // Project and service cost on the WIP account that is not a job's: a
+  // Contract project whose Project WIP is the WIP account, and a
+  // Refurbishment charge with Capitalized coverage. Its lines dated before
+  // the cutover, less the Cost Relief rows dated before it that credit the
+  // account: step 5 of the enable posts those with no journal, so their
+  // relief is in no line. One item, with no document: no job reader sums it.
+  const [nonJob, relieved] = await Promise.all([
+    db
+      .selectFrom("journalLine as line")
+      .innerJoin("journal", (join) =>
+        join
+          .onRef("journal.id", "=", "line.journalId")
+          .onRef("journal.companyId", "=", "line.companyId")
+      )
+      .leftJoin("job", (join) =>
+        join
+          .onRef("job.id", "=", "line.documentId")
+          .onRef("job.companyId", "=", "line.companyId")
+      )
+      .select(sql<number>`coalesce(sum("line"."amount"), 0)`.as("balance"))
+      .where("line.companyId", "=", companyId)
+      .where("line.accountId", "=", defaults.workInProgressAccount)
+      .where("journal.status", "in", [...DOCUMENT_JOURNAL_STATUSES])
+      .where("journal.postingDate", "<", cutoverDate)
+      .where("job.id", "is", null)
+      .executeTakeFirst(),
+    db
+      .selectFrom("revenueRecognitionSchedule")
+      .select(sql<number>`coalesce(sum("amount"), 0)`.as("amount"))
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Cost Relief")
+      .where("creditAccountId", "=", defaults.workInProgressAccount)
+      .where("scheduledDate", "<", cutoverDate)
+      // Planned until the enable's step 5 posts it with no journal.
+      .where((eb) =>
+        eb.or([
+          eb("status", "=", "Planned"),
+          eb.and([eb("status", "=", "Posted"), eb("journalId", "is", null)])
+        ])
+      )
+      .executeTakeFirst()
+  ]);
+  // Natural-signed on an Asset account: the relief is a credit.
+  const balance = round(
+    Number(nonJob?.balance ?? 0) - Number(relieved?.amount ?? 0)
+  );
+  if (Math.abs(balance) > EPSILON) {
+    items.push({
+      openItemType: "Work in Progress",
+      accountId: defaults.workInProgressAccount,
+      basis: "natural",
+      original: balance,
+      settled: 0,
+      documentType: null,
+      documentId: null,
+      documentLineReference: null,
+      description: PROJECT_AND_SERVICE_WIP_DESCRIPTION
+    });
+  }
+  return items;
 }
 
 /**

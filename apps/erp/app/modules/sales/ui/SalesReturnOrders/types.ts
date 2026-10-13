@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import type { getDepotRepairOrdersByReturnOrder } from "~/modules/service";
 import type {
   getSalesReturnOrderCredits,
   getSalesReturnOrderIssues,
@@ -35,4 +36,9 @@ export type SalesReturnOrderCredit = NonNullable<
 
 export type SalesReturnOrderIssue = NonNullable<
   Awaited<ReturnType<typeof getSalesReturnOrderIssues>>["data"]
+>[number];
+
+/** A Depot Repair order of one of the RMA's Repair lines. */
+export type DepotRepairOrder = NonNullable<
+  Awaited<ReturnType<typeof getDepotRepairOrdersByReturnOrder>>["data"]
 >[number];

@@ -109,11 +109,9 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           <span className="text-xs text-muted-foreground">{label}</span>
         )}
         <HStack spacing={0} className="w-full justify-between">
-          {value !== undefined && (
+          {value !== undefined && !isNaN(value) && (
             <span className="flex flex-grow line-clamp-1 items-center">
-              {rest.formatOptions && !isNaN(value)
-                ? formatter.format(value)
-                : value}
+              {rest.formatOptions ? formatter.format(value) : value}
             </span>
           )}
           <IconButton

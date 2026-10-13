@@ -149,6 +149,9 @@ msgstr "Ekle ve Çıkış Yap"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "Çalıştığınız her iş emri veya görev için bir satır ekleyin."
+
 msgid "Add Authenticator App"
 msgstr "Doğrulayıcı Uygulaması Ekle"
 
@@ -157,6 +160,9 @@ msgstr "Envantere Ekle"
 
 msgid "Add Passkey"
 msgstr "Geçiş Anahtarı Ekle"
+
+msgid "Add row"
+msgstr "Satır Ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
@@ -333,8 +339,17 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Certify and submit"
+msgstr "Onayla ve gönder"
+
+msgid "Certify and Submit"
+msgstr "Onayla ve Gönder"
+
 msgid "Change"
 msgstr "Değiştir"
+
+msgid "Change Time"
+msgstr "Zamanı Değiştir"
 
 msgid "Changelog newsletter"
 msgstr "Değişiklik günlüğü bülteni"
@@ -344,6 +359,9 @@ msgstr "Özellik"
 
 msgid "Characteristics"
 msgstr "Özellikler"
+
+msgid "Charge Number"
+msgstr "Yükleme Numarası"
 
 msgid "Chat"
 msgstr "Sohbet"
@@ -545,6 +563,15 @@ msgstr "Açıklama"
 msgid "Details"
 msgstr "Detaylar"
 
+msgid "Direct Research"
+msgstr "Doğrudan Araştırma"
+
+msgid "Direct Supervision"
+msgstr "Doğrudan Gözetim"
+
+msgid "Direct Support"
+msgstr "Doğrudan Destek"
+
 msgid "Dispatch not found"
 msgstr "Bakım emri bulunamadı"
 
@@ -653,6 +680,9 @@ msgstr "Operasyonları Sonlandır"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Her iş emrinin değerini girin veya ilk satırdan tüm iş emirlerini bir kez doldurun. Boş satırlar atlanır."
 
+msgid "Enter hours from 0 to 24"
+msgstr "0 ile 24 arasında saat girin"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "PIN'i {0} için girin"
@@ -730,6 +760,12 @@ msgstr "Ölçüm kaydedilemedi"
 msgid "Failed to save result"
 msgstr "Sonuç kaydedilemedi"
 
+msgid "Failed to save the hours"
+msgstr "Saatler kaydedilemedi"
+
+msgid "Failed to submit the week"
+msgstr "Hafta gönderilemedi"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} yüklenemedi"
@@ -802,6 +838,9 @@ msgstr "Başlık {level}"
 msgid "Hide description"
 msgstr "Açıklamayı gizle"
 
+msgid "Hours on {label}"
+msgstr "{label} Saatleri"
+
 msgid "How Carbon looks in this browser."
 msgstr "Bu tarayıcıda Carbon'un görünüşü."
 
@@ -810,6 +849,9 @@ msgstr "Gerçekte kaç tane alındı?"
 
 msgid "How many?"
 msgstr "Kaç tane?"
+
+msgid "I certify this statement"
+msgstr "Bu beyanı onaylarım"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
@@ -926,6 +968,9 @@ msgstr "Set"
 msgid "Labor"
 msgstr "İşçilik"
 
+msgid "Labor category"
+msgstr "İşçilik kategorisi"
+
 msgid "Last completed"
 msgstr "Son olarak tamamlanan"
 
@@ -934,6 +979,9 @@ msgstr "Soyadı"
 
 msgid "Last used"
 msgstr "Son kullanılmış"
+
+msgid "Late Entry"
+msgstr "Geç Giriş"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
@@ -1108,6 +1156,9 @@ msgstr "Aralması gereken değer {minValue} ile {maxValue} arasındadır"
 msgid "My Hours"
 msgstr "Saatlik Çalışmalarım"
 
+msgid "My Time"
+msgstr "Benim Zamanım"
+
 msgid "Name"
 msgstr "Adı"
 
@@ -1128,6 +1179,9 @@ msgstr "Sonraki"
 
 msgid "Next step"
 msgstr "Sonraki adım"
+
+msgid "Next week"
+msgstr "Sonraki hafta"
 
 msgid "No"
 msgstr "Hayır"
@@ -1155,6 +1209,9 @@ msgstr "Kullanılabilir seri numarası bulunamadı"
 
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
 msgid "No dispatches assigned to you"
 msgstr "Size atanmış bakım emri yok"
@@ -1246,6 +1303,9 @@ msgstr "Stok yok"
 msgid "No time entries for this week"
 msgstr "Bu hafta için zaman girişi yok"
 
+msgid "No time this week"
+msgstr "Bu hafta hiç zaman yok"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Bu ürün için depoda kayıtlı stok bulunmamaktadır. Sayım yeniden yapılana kadar eldeki stok negatif olabilir, ancak yine de alabilirsiniz."
 
@@ -1261,8 +1321,14 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 msgid "None"
 msgstr "Hiçbiri"
 
+msgid "Not Qualified"
+msgstr "Yeterli Değil"
+
 msgid "Notes"
 msgstr "Notlar"
+
+msgid "Nothing matches your search."
+msgstr "Aramanızla eşleşen hiçbir şey yok."
 
 msgid "Nothing running"
 msgstr "Hiçbir şey çalışmıyor"
@@ -1424,6 +1490,9 @@ msgstr "Bir stil ve avatar seçin, veya yenileri için karıştırın."
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "Çalıştığınız işi, ardından işçilik kategorisini seçin."
+
 msgid "Picked"
 msgstr "Alındı"
 
@@ -1481,6 +1550,9 @@ msgstr "Önleyici"
 msgid "Previous step"
 msgstr "Önceki adım"
 
+msgid "Previous week"
+msgstr "Önceki hafta"
+
 msgid "Print"
 msgstr "Yazdır"
 
@@ -1514,6 +1586,9 @@ msgstr "Profil"
 msgid "Progress"
 msgstr "İlerleme"
 
+msgid "Project"
+msgstr "Proje"
+
 msgid "Purchasing"
 msgstr "Satın alma"
 
@@ -1537,6 +1612,12 @@ msgstr "Kuyruk boş"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Reason for change"
+msgstr "Değişiklik Nedeni"
+
+msgid "Reason for late entry"
+msgstr "Geç Giriş Nedeni"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
@@ -1714,6 +1795,9 @@ msgstr "Ölçüm aletlerini ara..."
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
 
+msgid "Search projects and tasks"
+msgstr "Projeleri ve Görevleri Arayın"
+
 msgid "Search..."
 msgstr "Ara..."
 
@@ -1861,6 +1945,9 @@ msgstr "Oturumu Kapat"
 msgid "Sign out instead"
 msgstr "Bunun yerine oturumu kapat"
 
+msgid "Signature pad"
+msgstr "İmza Yastığı"
+
 msgid "Signed in as {stationName}"
 msgstr "Oturum açıldı olarak {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "Alt derleme {0} · {1} — kendi başına gösterilir"
 msgid "Submit anonymously"
 msgstr "Anonim olarak gönder"
 
+msgid "Submit week"
+msgstr "Haftayı Gönder"
+
 msgid "Suggestion"
 msgstr "Öneri"
 
@@ -1968,8 +2058,14 @@ msgstr "Etiket"
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Değişiklik ve nedeni zaman tablosunun geçmişinde tutulur."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."
@@ -2022,6 +2118,9 @@ msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böyl
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
+
+msgid "This week"
+msgstr "Bu hafta"
 
 msgid "Thumbnail"
 msgstr "Küçük Resim"

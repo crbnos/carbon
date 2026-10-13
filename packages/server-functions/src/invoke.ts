@@ -10,6 +10,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CreateInput, CreateResultFor } from "./create";
 import type { ServerFnResult } from "./define-server-fn";
 import type { ServerFnError } from "./errors";
+import type { RunRowSynthesizer } from "./propose-revenue-recognition-run";
 import type { ServerFnContext } from "./server-fn-context";
 
 const registry = {
@@ -18,14 +19,21 @@ const registry = {
   "assign-serial-numbers": () => import("./assign-serial-numbers"),
   "batch-operations": () => import("./batch-operations"),
   "close-job": () => import("./close-job"),
+  "complete-service-order": () => import("./complete-service-order"),
   "create-contract-invoices": () => import("./create-contract-invoices"),
   "create-lease-invoices": () => import("./create-lease-invoices"),
+  "create-project-billing-invoices": () =>
+    import("./create-project-billing-invoices"),
   "create-rental-invoices": () => import("./create-rental-invoices"),
+  "create-service-order-invoice": () =>
+    import("./create-service-order-invoice"),
   convert: () => import("./convert"),
   "correct-stock-movement": () => import("./correct-stock-movement"),
   create: () => import("./create"),
   "finalize-purchasing-rfq": () => import("./finalize-purchasing-rfq"),
   "finalize-supplier-quote": () => import("./finalize-supplier-quote"),
+  "generate-contract-billable-items": () =>
+    import("./generate-contract-billable-items"),
   "get-method": () => import("./get-method"),
   "import-csv": () => import("./import-csv"),
   issue: () => import("./issue"),
@@ -43,6 +51,10 @@ const registry = {
   "post-payment": () => import("./post-payment"),
   "post-picking": () => import("./post-picking"),
   "post-production-event": () => import("./post-production-event"),
+  "post-project-burden": () => import("./post-project-burden"),
+  "post-project-expense": () => import("./post-project-expense"),
+  "post-project-issue": () => import("./post-project-issue"),
+  "post-project-stock-transfer": () => import("./post-project-stock-transfer"),
   "post-purchase-invoice": () => import("./post-purchase-invoice"),
   "post-receipt": () => import("./post-receipt"),
   "post-reimbursement": () => import("./post-reimbursement"),
@@ -50,6 +62,7 @@ const registry = {
   "post-sales-invoice": () => import("./post-sales-invoice"),
   "post-shipment": () => import("./post-shipment"),
   "post-stock-transfer": () => import("./post-stock-transfer"),
+  "post-timesheet": () => import("./post-timesheet"),
   "preview-asset-capitalization": () =>
     import("./preview-asset-capitalization"),
   "preview-revenue-recognition-run": () =>
@@ -61,8 +74,11 @@ const registry = {
   "recost-serial-unit": () => import("./recost-serial-unit"),
   "recalculate-revenue-recognition-run": () =>
     import("./recalculate-revenue-recognition-run"),
+  "reclass-project-coverage": () => import("./reclass-project-coverage"),
   reschedule: () => import("./reschedule"),
+  "save-timesheet-entry": () => import("./save-timesheet-entry"),
   "seed-company": () => import("./seed-company"),
+  "submit-timesheet-week": () => import("./submit-timesheet-week"),
   sync: () => import("./sync"),
   "trigger-rework": () => import("./trigger-rework"),
   "update-purchased-prices": () => import("./update-purchased-prices")
@@ -82,6 +98,10 @@ type Fields = {
   companyId: string;
   /** Recorded on every write (`createdBy`, `updatedBy`). */
   userId: string;
+  /** Extra revenue recognition run synthesizers (`projectRevenueSynthesizers`
+   *  from `@carbon/ee/project-revenue.server`). Every caller of the propose,
+   *  recalculate and preview functions passes them. */
+  revenueRunSynthesizers?: RunRowSynthesizer[];
 };
 
 class Invoker {

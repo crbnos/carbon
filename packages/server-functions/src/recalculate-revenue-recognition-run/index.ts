@@ -39,7 +39,10 @@ const recalculateRevenueRecognitionRun = defineServerFn({
   name: "recalculate-revenue-recognition-run",
   input: recalculateRevenueRecognitionRunInput,
   permissions: { update: "accounting" },
-  async run({ db, companyId, userId }, { runId }): Promise<RunRecalculation> {
+  async run(
+    { db, companyId, userId, revenueRunSynthesizers },
+    { runId }
+  ): Promise<RunRecalculation> {
     await assertAccountingCutover(db, companyId);
     return db.transaction().execute(async (trx) => {
       const run = await trx
@@ -98,7 +101,10 @@ const recalculateRevenueRecognitionRun = defineServerFn({
           .execute();
       }
 
-      for (const synthesize of runRowSynthesizers(run.type)) {
+      for (const synthesize of runRowSynthesizers(
+        run.type,
+        revenueRunSynthesizers
+      )) {
         await synthesize(trx, ctx);
       }
 

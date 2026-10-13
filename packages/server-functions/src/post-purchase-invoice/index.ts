@@ -44,7 +44,18 @@ import { FixedAssetWrites } from "../lib/fixed-asset-writes";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { assertPostable } from "../lib/postable";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "../lib/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  reverseProjectLedgerRows
+} from "../lib/project-posting";
 import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
 import {
   buildPurchaseInvoicePostingLines,
@@ -53,6 +64,7 @@ import {
   type PurchaseInvoicePostingLine,
   usesReceiptLayers
 } from "./posting-lines";
+import { loadInvoiceProjectCharges } from "./project-charges";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid
@@ -473,6 +485,8 @@ const postPurchaseInvoice = defineServerFn({
             documentType: entry.documentType,
             documentId: entry.documentId,
             externalDocumentId: entry.externalDocumentId,
+            // a reversal copies the stripe of the row it reverses
+            projectId: entry.projectId,
             createdBy: userId,
             companyId
           }));
@@ -509,6 +523,7 @@ const postPurchaseInvoice = defineServerFn({
             nominalCost: -entry.nominalCost,
             cost: -entry.cost,
             supplierId: entry.supplierId,
+            projectId: entry.projectId,
             companyId,
             postingDate: today
           }));
@@ -559,6 +574,7 @@ const postPurchaseInvoice = defineServerFn({
               .execute();
           }
 
+          const reversalByOriginal = new Map<string, string>();
           if (reversingJournalLines.length > 0) {
             const voidJournalEntryId = await getNextSequence(
               trx,
@@ -586,15 +602,25 @@ const postPurchaseInvoice = defineServerFn({
             const journalId = journal[0]!.id;
             if (!journalId) throw new Error("Failed to insert journal");
 
+            // Ids allocated first, so each project ledger reversal row can
+            // name the line that negates its original line.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalLines.length
+            );
             await trx
               .insertInto("journalLine")
               .values(
-                reversingJournalLines.map((journalLine) => ({
+                reversingJournalLines.map((journalLine, index) => ({
                   ...journalLine,
+                  id: reversingLineIds[index],
                   journalId
                 }))
               )
               .execute();
+            for (const [index, line] of originalJournalLines.entries()) {
+              reversalByOriginal.set(line.id, reversingLineIds[index]!);
+            }
           }
 
           if (reversingItemLedger.length > 0) {
@@ -603,6 +629,22 @@ const postPurchaseInvoice = defineServerFn({
               .values(reversingItemLedger)
               .execute();
           }
+
+          // Reverse the project charges of this invoice.
+          await reverseProjectLedgerRows(trx, {
+            companyId,
+            documentType: "Purchase Invoice",
+            documentId: invoiceId,
+            postingDate: today,
+            userId,
+            reversalLineIds: reversalByOriginal
+          });
+          await reverseProjectCipRows(trx, {
+            companyId,
+            userId,
+            sourceType: "Purchase Invoice",
+            sourceDocumentId: invoiceId
+          });
 
           if (reversingCostLedger.length > 0) {
             await trx
@@ -643,6 +685,7 @@ const postPurchaseInvoice = defineServerFn({
                   cost: round(-child.cost),
                   remainingQuantity: round(child.remainingQuantity),
                   supplierId: child.supplierId,
+                  projectId: child.projectId,
                   companyId,
                   postingDate: today
                 })
@@ -679,6 +722,7 @@ const postPurchaseInvoice = defineServerFn({
                   cost: round(-layer.cost),
                   remainingQuantity: 0,
                   supplierId: layer.supplierId,
+                  projectId: layer.projectId,
                   companyId,
                   postingDate: today
                 })
@@ -767,6 +811,7 @@ const postPurchaseInvoice = defineServerFn({
                 "Location",
                 "CostCenter",
                 "Project",
+                "ProjectElement",
                 "Process",
                 "FixedAssetClass"
               ]
@@ -1134,7 +1179,8 @@ const postPurchaseInvoice = defineServerFn({
                   "documentId",
                   "itemId",
                   "quantity",
-                  "remainingQuantity"
+                  "remainingQuantity",
+                  "projectId"
                 ],
                 orderBy: ["postingDate", "createdAt"]
               }
@@ -1157,7 +1203,8 @@ const postPurchaseInvoice = defineServerFn({
               .map((layer) => ({
                 id: layer.id,
                 quantity: Number(layer.quantity),
-                remainingQuantity: Number(layer.remainingQuantity ?? 0)
+                remainingQuantity: Number(layer.remainingQuantity ?? 0),
+                projectId: layer.projectId
               }))
           ];
         })
@@ -1259,6 +1306,15 @@ const postPurchaseInvoice = defineServerFn({
         fixedAssets.map((asset) => [asset.id, asset])
       );
 
+      // Lines charged to a non-Statistical project debit its account. A
+      // purchase order line its receipt already charged writes only its price
+      // variance here.
+      const projectCharges = await loadInvoiceProjectCharges(db, companyId, {
+        invoiceLines: purchaseInvoiceLines.data,
+        purchaseOrderLines: purchaseOrderLines.data,
+        postingDate: today
+      });
+
       // Lease lines: the leases, payment rows and lease accounts they name.
       const leaseFacts = await loadLeasePostingFacts(db, {
         companyId,
@@ -1308,6 +1364,7 @@ const postPurchaseInvoice = defineServerFn({
                 ] ?? []
               ),
               isOutsideProcessing: !!purchaseOrderLine?.jobOperationId,
+              planningGroupId: purchaseOrderLine?.planningGroupId ?? null,
               processId: purchaseOrderLine?.jobOperationId
                 ? (processIdByJobOperationId.get(
                     purchaseOrderLine.jobOperationId
@@ -1376,7 +1433,8 @@ const postPurchaseInvoice = defineServerFn({
               purchaseOrderLineId: invoiceLine.purchaseOrderLineId,
               account,
               costCenterId: invoiceLine.costCenterId ?? null,
-              projectId: invoiceLine.projectId ?? null
+              projectId: invoiceLine.projectId ?? null,
+              projectElementId: invoiceLine.projectElementId ?? null
             });
             break;
           }
@@ -1402,7 +1460,8 @@ const postPurchaseInvoice = defineServerFn({
         supplierTypeId: supplier.data.supplierTypeId ?? null,
         accounts: accountDefaults.data,
         payables,
-        lines: postingLines
+        lines: postingLines,
+        projectCharges
       });
       const journalLineInserts = posting.lines.map(
         ({ dimensions: _dimensions, ...line }) => ({ ...line, companyId })
@@ -1436,6 +1495,12 @@ const postPurchaseInvoice = defineServerFn({
 
           // With no PO line the invoice receives the part itself.
           if (invoiceLine.purchaseOrderLineId === null) {
+            // A stocked item charged to a project with project stock enters
+            // that project's stock (Projects Phase 2a).
+            const directStockStripe =
+              itemTrackingType === "Non-Inventory"
+                ? null
+                : projectCharges.stockStripe(invoiceLine.id);
             // Services are never received, so they must not materialize a
             // receipt document — only the expense + AP entries.
             if (invoiceLine.invoiceLineType !== "Service") {
@@ -1470,6 +1535,7 @@ const postPurchaseInvoice = defineServerFn({
                 documentId: purchaseInvoice.data?.id ?? undefined,
                 externalDocumentId:
                   purchaseInvoice.data?.supplierReference ?? undefined,
+                projectId: directStockStripe,
                 createdBy: userId,
                 companyId
               });
@@ -1492,6 +1558,7 @@ const postPurchaseInvoice = defineServerFn({
                 cost: round(totalLineCostWithWeightedShipping),
                 remainingQuantity: round(invoiceLineQuantityInInventoryUnit),
                 supplierId: purchaseInvoice.data?.supplierId,
+                projectId: directStockStripe,
                 companyId,
                 postingDate: today
               });
@@ -1504,7 +1571,8 @@ const postPurchaseInvoice = defineServerFn({
           if (!received) continue;
 
           // Subledger: adjustment child rows on the covered layers, consumed
-          // alongside their parent by calculateCOGS.
+          // alongside their parent by calculateCOGS. A child carries its
+          // parent layer's stock stripe.
           for (const entry of received.allocation.perLayer) {
             costLedgerInserts.push({
               itemLedgerType: "Purchase",
@@ -1521,6 +1589,7 @@ const postPurchaseInvoice = defineServerFn({
               cost: round(entry.adjustmentCost),
               remainingQuantity: round(entry.appliedQuantity),
               supplierId: purchaseInvoice.data?.supplierId,
+              projectId: entry.projectId ?? null,
               companyId,
               postingDate: today
             });
@@ -1553,6 +1622,7 @@ const postPurchaseInvoice = defineServerFn({
               ),
               remainingQuantity: round(coveredQuantity),
               supplierId: purchaseInvoice.data?.supplierId,
+              projectId: projectCharges.stockStripe(invoiceLine.id),
               companyId,
               postingDate: today
             });
@@ -1776,6 +1846,7 @@ const postPurchaseInvoice = defineServerFn({
         }
 
         let invoiceJournalId: string | null = null;
+        let invoiceJournalLineIds: string[] = [];
         if (journalLineInserts.length > 0) {
           const journalEntryId = await getNextSequence(
             trx,
@@ -1814,6 +1885,7 @@ const postPurchaseInvoice = defineServerFn({
             )
             .returning(["id"])
             .execute();
+          invoiceJournalLineIds = journalLineResults.map((jl) => jl.id);
 
           if (dimensionMap.size > 0) {
             const journalLineDimensionInserts = journalLineDimensionRows({
@@ -2011,6 +2083,57 @@ const postPurchaseInvoice = defineServerFn({
                 .execute();
             }
           }
+        }
+
+        const projectLedgerDrafts = posting.projectDrafts;
+        if (projectLedgerDrafts.length > 0) {
+          await insertProjectLedgerRows(trx, {
+            companyId,
+            userId,
+            rows: projectLedgerDrafts.map((draft) =>
+              buildProjectLedgerRow({
+                companyId,
+                projectId: draft.projectId,
+                projectElementId: draft.projectElementId,
+                postingDate: today,
+                costType: draft.costType,
+                documentType: "Purchase Invoice",
+                documentId: invoiceId,
+                documentLineId: draft.invoiceLineId,
+                itemId: draft.itemId,
+                supplierId: purchaseInvoice.data?.supplierId ?? null,
+                quantity: draft.quantity,
+                amount: draft.amount,
+                journalLineId:
+                  draft.journalLineIndex === null
+                    ? null
+                    : (invoiceJournalLineIds[draft.journalLineIndex] ?? null),
+                unallowable: draft.unallowable,
+                createdBy: userId
+              })
+            )
+          });
+
+          // A line charged to a Capitalize project builds its asset.
+          await writeProjectCipRows(trx, {
+            companyId,
+            userId,
+            rows: projectLedgerDrafts.map((draft) =>
+              buildProjectCipRow({
+                resolved: draft,
+                companyId,
+                userId,
+                projectId: draft.projectId,
+                projectElementId: draft.projectElementId,
+                sourceType: "Purchase Invoice",
+                sourceDocumentId: invoiceId,
+                sourceDocumentLineId: draft.invoiceLineId,
+                amount: draft.amount,
+                costDate: today,
+                journalId: invoiceJournalId
+              })
+            )
+          });
         }
 
         if (cipCostInserts.length > 0) {

@@ -149,6 +149,9 @@ msgstr "追加して払出"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
+msgid "Add a row for each job or task you worked on."
+msgstr "作業した製造指図またはタスクをそれぞれ行として追加してください"
+
 msgid "Add Authenticator App"
 msgstr "認証アプリを追加"
 
@@ -157,6 +160,9 @@ msgstr "在庫追加"
 
 msgid "Add Passkey"
 msgstr "パスキーを追加"
+
+msgid "Add row"
+msgstr "行を追加"
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
@@ -333,8 +339,17 @@ msgstr "Carbonロゴ"
 msgid "Cards"
 msgstr "カード"
 
+msgid "Certify and submit"
+msgstr "認証して提出"
+
+msgid "Certify and Submit"
+msgstr "認証して提出"
+
 msgid "Change"
 msgstr "変更"
+
+msgid "Change Time"
+msgstr "時間を変更"
 
 msgid "Changelog newsletter"
 msgstr "チェンジログニュースレター"
@@ -344,6 +359,9 @@ msgstr "特性"
 
 msgid "Characteristics"
 msgstr "特性"
+
+msgid "Charge Number"
+msgstr "チャージ番号"
 
 msgid "Chat"
 msgstr "チャット"
@@ -545,6 +563,15 @@ msgstr "説明"
 msgid "Details"
 msgstr "詳細"
 
+msgid "Direct Research"
+msgstr "直接研究"
+
+msgid "Direct Supervision"
+msgstr "直接監督"
+
+msgid "Direct Support"
+msgstr "直接サポート"
+
 msgid "Dispatch not found"
 msgstr "保全指示が見つかりません"
 
@@ -653,6 +680,9 @@ msgstr "工程を終了"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
 
+msgid "Enter hours from 0 to 24"
+msgstr "0～24の時間を入力してください"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0} のPINを入力"
@@ -730,6 +760,12 @@ msgstr "測定の保存に失敗しました"
 msgid "Failed to save result"
 msgstr "結果の保存に失敗しました"
 
+msgid "Failed to save the hours"
+msgstr "時間の保存に失敗しました"
+
+msgid "Failed to submit the week"
+msgstr "週の提出に失敗しました"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0}のアップロードに失敗しました"
@@ -802,6 +838,9 @@ msgstr "見出し {level}"
 msgid "Hide description"
 msgstr "説明を非表示"
 
+msgid "Hours on {label}"
+msgstr "{label}の時間"
+
 msgid "How Carbon looks in this browser."
 msgstr "このブラウザでのCarbonの表示方法。"
 
@@ -810,6 +849,9 @@ msgstr "実際にはいくつ選ばれましたか？"
 
 msgid "How many?"
 msgstr "いくつ?"
+
+msgid "I certify this statement"
+msgstr "この声明を認証します"
 
 msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
@@ -926,6 +968,9 @@ msgstr "キット"
 msgid "Labor"
 msgstr "労務"
 
+msgid "Labor category"
+msgstr "労務カテゴリー"
+
 msgid "Last completed"
 msgstr "最後に完了"
 
@@ -934,6 +979,9 @@ msgstr "姓"
 
 msgid "Last used"
 msgstr "最後に使用"
+
+msgid "Late Entry"
+msgstr "遅延エントリ"
 
 msgid "Learn more"
 msgstr "詳細情報"
@@ -1108,6 +1156,9 @@ msgstr "{minValue} から {maxValue} {unitOfMeasureCode} の間である必要�
 msgid "My Hours"
 msgstr "勤務時間"
 
+msgid "My Time"
+msgstr "マイタイム"
+
 msgid "Name"
 msgstr "名前"
 
@@ -1128,6 +1179,9 @@ msgstr "次へ"
 
 msgid "Next step"
 msgstr "次のステップ"
+
+msgid "Next week"
+msgstr "来週"
 
 msgid "No"
 msgstr "いいえ"
@@ -1155,6 +1209,9 @@ msgstr "利用可能なシリアル番号が見つかりません"
 
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
 msgid "No dispatches assigned to you"
 msgstr "あなたに割り当てられた保全指示はありません。"
@@ -1246,6 +1303,9 @@ msgstr "在庫なし"
 msgid "No time entries for this week"
 msgstr "今週のタイムエントリーはありません"
 
+msgid "No time this week"
+msgstr "今週の時間なし"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "このアイテムの倉庫在庫は記録されていません。それでも選択できます。在庫数が負になるまで、実在庫は負のままになります。"
 
@@ -1261,8 +1321,14 @@ msgstr "作業区が存在しません。"
 msgid "None"
 msgstr "なし"
 
+msgid "Not Qualified"
+msgstr "適格でない"
+
 msgid "Notes"
 msgstr "メモ"
+
+msgid "Nothing matches your search."
+msgstr "検索に該当するものがありません。"
 
 msgid "Nothing running"
 msgstr "稼働中の作業はありません"
@@ -1424,6 +1490,9 @@ msgstr "スタイルとアバターを選択するか、新しいものにシャ
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "作業した内容を選択してから、労務カテゴリーを選択してください。"
+
 msgid "Picked"
 msgstr "ピック済み"
 
@@ -1481,6 +1550,9 @@ msgstr "予防保全"
 msgid "Previous step"
 msgstr "前のステップ"
 
+msgid "Previous week"
+msgstr "先週"
+
 msgid "Print"
 msgstr "印刷"
 
@@ -1514,6 +1586,9 @@ msgstr "プロフィール"
 msgid "Progress"
 msgstr "進捗"
 
+msgid "Project"
+msgstr "プロジェクト"
+
 msgid "Purchasing"
 msgstr "購買"
 
@@ -1537,6 +1612,12 @@ msgstr "キューが空です"
 
 msgid "Quotes"
 msgstr "見積"
+
+msgid "Reason for change"
+msgstr "変更理由"
+
+msgid "Reason for late entry"
+msgstr "遅延入力の理由"
 
 msgid "Reason for rework"
 msgstr "手直しの理由"
@@ -1714,6 +1795,9 @@ msgstr "測定器を検索..."
 msgid "Search operators..."
 msgstr "作業者を検索..."
 
+msgid "Search projects and tasks"
+msgstr "プロジェクトとタスクを検索"
+
 msgid "Search..."
 msgstr "検索..."
 
@@ -1861,6 +1945,9 @@ msgstr "サインアウト"
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
 
+msgid "Signature pad"
+msgstr "署名パッド"
+
 msgid "Signed in as {stationName}"
 msgstr "{stationName} としてサインイン中"
 
@@ -1944,6 +2031,9 @@ msgstr "サブアセンブリ {0} · {1} — 単独で表示"
 msgid "Submit anonymously"
 msgstr "匿名で提出"
 
+msgid "Submit week"
+msgstr "週を提出"
+
 msgid "Suggestion"
 msgstr "提案"
 
@@ -1968,8 +2058,14 @@ msgstr "タグ"
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "変更とその理由はタイムシートの履歴に保持されます。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "日付がエントリー期間前です。理由はエントリーと共に保持されます。"
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"
@@ -2022,6 +2118,9 @@ msgstr "この部品は在庫からスクラップされます。その要求事
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "このユニットは永久にスクラップされ、代替シリアル番号が作成されます。"
+
+msgid "This week"
+msgstr "今週"
 
 msgid "Thumbnail"
 msgstr "サムネイル"

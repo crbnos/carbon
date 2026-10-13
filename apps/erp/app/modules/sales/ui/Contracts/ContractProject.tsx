@@ -22,7 +22,7 @@ const ProjectPreview = (
   return <span>{project.label}</span>;
 };
 
-/** The company's active projects (Accounting → Projects). A contract's
+/** The company's active projects (Projects). A contract's
  *  project is carried onto every invoice line it drafts, as the Project
  *  dimension. */
 const ContractProject = (props: ContractProjectProps) => {

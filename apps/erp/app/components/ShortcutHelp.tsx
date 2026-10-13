@@ -14,6 +14,7 @@ import {
   MODULE_GO_TO,
   MODULE_GO_TO_PREFIX,
   PAGINATION_SHORTCUTS,
+  PROJECT_SHORTCUTS,
   SHORTCUTS,
   searchShortcut
 } from "~/shortcuts";
@@ -38,6 +39,7 @@ const ShortcutHelp = () => {
     const documentLines = t`Quotes, orders, invoices and RFQs`;
     const procedures = t`Procedures and training`;
     const goTo = t`Go to module`;
+    const projectElements = t`Project elements`;
     const create = t`Create`;
 
     const moduleEntries: ShortcutHelpEntry[] = (
@@ -181,6 +183,21 @@ const ShortcutHelp = () => {
         shortcut: EXPLORER_SHORTCUTS.addParameter,
         description: t`Add a parameter (procedures only)`,
         group: procedures
+      },
+      {
+        shortcut: PROJECT_SHORTCUTS.create,
+        description: t`New element`,
+        group: projectElements
+      },
+      {
+        shortcut: PROJECT_SHORTCUTS.logTime,
+        description: t`Log time (the open element)`,
+        group: projectElements
+      },
+      {
+        shortcut: PROJECT_SHORTCUTS.issueMaterial,
+        description: t`Issue material (the open element)`,
+        group: projectElements
       },
       ...moduleEntries,
       ...createLinks.map((link) => ({

@@ -58,6 +58,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateJob = await updateEmployeeJob(getDatabaseClient(), personId, {
     ...validation.data,
+    // This form always renders both switches, and an unchecked switch posts
+    // nothing — so here a missing value is "off". (The validator keeps them
+    // optional for API callers, where a missing value keeps the stored flag.)
+    isOfficer: validation.data.isOfficer ?? false,
+    timesheetRequired: validation.data.timesheetRequired ?? false,
     companyId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
@@ -92,6 +97,11 @@ export default function PersonJobRoute() {
     shiftId: job.shiftId ?? "",
     departmentId: job.departmentId ?? "",
     managerId: job.managerId ?? "",
+    laborCategoryId: job.laborCategoryId ?? "",
+    defaultStorageUnitId: job.defaultStorageUnitId ?? "",
+    flsaStatus: job.flsaStatus ?? undefined,
+    isOfficer: job.isOfficer ?? false,
+    timesheetRequired: job.timesheetRequired ?? true,
     ...getCustomFields(job.customFields)
   };
 

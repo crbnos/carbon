@@ -15,6 +15,9 @@ import {
 } from "kysely";
 import { describe, expect, it } from "vitest";
 import {
+  diffPlanningActions,
+  type ExistingPlanningAction,
+  type PlanningActionCandidate,
   type PlanningActionDiff,
   writePlanningActionDiff
 } from "./planning-actions";
@@ -152,5 +155,64 @@ describe("writePlanningActionDiff", () => {
       })
     ).rejects.toThrow(/bogus/);
     expect(driver.sent).toHaveLength(0);
+  });
+
+  // A run writes the actions it computes; the next run with the same inputs
+  // reads them back and must send nothing. The common rows written before
+  // the segment existed read back with segment '' and no owners.
+  it("writes nothing on a second run with the same inputs", async () => {
+    const base: PlanningActionCandidate = {
+      itemId: "i1",
+      locationId: "l1",
+      periodId: "p1",
+      type: "Order",
+      suggestedQuantity: 7,
+      suggestedDate: "2026-10-05",
+      horizonDate: "2026-10-05",
+      latestOrderDate: "2026-10-05",
+      isASAP: false,
+      purchaseOrderLineId: null,
+      jobId: null,
+      requiresManualAction: false,
+      supplierId: null,
+      policyName: "Lot-for-Lot",
+      reason: null,
+      triggerValues: null,
+      assignee: null
+    };
+    const candidates: PlanningActionCandidate[] = [
+      { ...base, planningSegmentId: "", policyName: "Fixed Reorder Quantity" },
+      { ...base, planningSegmentId: "prj_1" },
+      {
+        ...base,
+        type: "Transfer",
+        planningSegmentId: "prj_1",
+        suggestedQuantity: 8,
+        latestOrderDate: null,
+        policyName: null,
+        reason: "Common stock not needed within the horizon",
+        fromProjectId: null,
+        toProjectId: "prj_1"
+      }
+    ];
+    const stored: ExistingPlanningAction[] = candidates.map((c, i) => ({
+      ...c,
+      id: `a${i}`,
+      type: c.type,
+      status: "Open",
+      assigneeOverridden: false,
+      planningSegmentId: c.planningSegmentId ?? "",
+      fromProjectId: c.fromProjectId ?? null,
+      toProjectId: c.toProjectId ?? null
+    }));
+
+    const diff = diffPlanningActions({
+      existing: stored,
+      candidates,
+      toleranceDays: 7,
+      periods: [{ id: "p1" }]
+    });
+    expect(diff).toEqual(emptyDiff);
+    expect(await write(diff)).toHaveLength(0);
   });
 });

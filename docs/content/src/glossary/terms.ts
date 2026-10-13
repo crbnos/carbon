@@ -2317,5 +2317,316 @@ export const terms = {
   "swift-bic": {
     term: msg`SWIFT / BIC`,
     definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
+  },
+  // Projects (projects.models.ts, migrations 20261009*_projects-*.sql)
+  "charge-number": {
+    term: msg`Charge number`,
+    definition: msg`A project, or a project and one of its elements, that a job, a purchase order or invoice line, a timesheet entry or a material issue charges its cost to. Only Released projects and chargeable elements in an Unstarted or Started state can be picked.`,
+    href: "/docs/reference/projects#charge-numbers"
+  },
+  element: {
+    term: msg`Element`,
+    definition: msg`One item of a project's tree, typed System, Requirement, Function, Task, Test Case, Folder or Parameter, with a readable id such as ST-12: the project identifier and a sequence number.`,
+    href: "/docs/reference/projects#elements"
+  },
+  milestone: {
+    term: msg`Milestone`,
+    definition: msg`A dated window in a project, such as a design review or a phase. Each element can belong to one milestone.`,
+    href: "/docs/reference/projects#milestones"
+  },
+  timesheet: {
+    term: msg`Timesheet`,
+    definition: msg`An employee's week of project hours, one row per charge number and labor category. Entries go from Draft to Submitted, then Approved when approval is on, and Posted; posted hours change only through a correction.`,
+    href: "/docs/reference/projects#time"
+  },
+  "labor-category": {
+    term: msg`Labor category`,
+    definition: msg`The cost class of a project hour, such as Engineer II, with an effective-dated cost rate per hour that prices the time when it posts.`,
+    href: "/docs/reference/projects#labor-categories"
+  },
+  "cost-treatment": {
+    term: msg`Cost treatment`,
+    definition: msg`Set on a project, it decides where the project's cost posts: Statistical keeps each charge's own account and tags the project, Expense posts to Project Expense, and Contract posts to Project WIP.`,
+    href: "/docs/reference/projects#cost-treatment"
+  },
+  "project-ledger": {
+    term: msg`Project ledger`,
+    definition: msg`The append-only list of every cost charged to a project, one row per charge with its cost type, source document, quantity and amount. A void adds a negative row instead of deleting one.`,
+    href: "/docs/reference/projects#costs-and-the-project-ledger"
+  },
+  capitalize: {
+    term: msg`Capitalize`,
+    definition: msg`The cost treatment of a project that builds fixed assets. Its charges post to assets under construction, one for the project and one per Final asset element, until Place in Service.`,
+    href: "/docs/reference/projects#capital-projects",
+    aliases: ["cip"]
+  },
+  requirement: {
+    term: msg`Requirement`,
+    definition: msg`An element type with a category, a target and the Parameter that measures it. It passes when the Parameter meets the target and no Test Case that verifies it has failed.`,
+    href: "/docs/reference/projects#requirements-tests-and-parameters"
+  },
+  "needs-review": {
+    term: msg`Needs review`,
+    definition: msg`A trace link flagged because the element it points to changed its name, description, target or Parameter value. Mark reviewed clears the flag.`,
+    href: "/docs/reference/projects#trace-links",
+    aliases: ["suspect-link"]
+  },
+  baseline: {
+    term: msg`Baseline`,
+    definition: msg`A read-only copy of a project's plan, taken with Take Baseline or when a milestone completes, that you compare with the current plan or with another baseline.`,
+    href: "/docs/reference/projects#baselines"
+  },
+  "change-request": {
+    term: msg`Change request`,
+    definition: msg`A draft set of plan changes with a title and a reason. The current plan does not change until the request is approved, and then it applies whole, in one step.`,
+    href: "/docs/reference/projects#change-requests"
+  },
+
+  // Project stock and planning groups (projects-system.md, inventory-system.md)
+  "unassigned-stock": {
+    term: msg`Unassigned stock`,
+    definition: msg`Stock that no project owns. A project with project stock draws its own stock first and then this; every other demand, such as a sales shipment, draws only this.`,
+    href: "/docs/reference/projects#project-stock"
+  },
+  "project-stock": {
+    term: msg`Project stock`,
+    definition: msg`A project setting, chosen while the project is Draft, that makes the project own the stock received for it. Its jobs and issues draw that stock first, then unassigned stock.`,
+    href: "/docs/reference/projects#project-stock"
+  },
+  "borrow-payback": {
+    term: msg`Borrow and payback`,
+    definition: msg`A Borrow moves one project's stock to another until a payback due date, at the lender's cost; a Payback returns it, and the lender gets back the cost it lent.`,
+    href: "/docs/reference/projects#transfers-borrows-and-paybacks"
+  },
+  "payback-variance": {
+    term: msg`Payback variance`,
+    definition: msg`The difference between the borrower's current cost of the stock it pays back and the cost it borrowed at, charged to the borrower's project and to the inventory adjustment variance account.`,
+    href: "/docs/reference/projects#transfers-borrows-and-paybacks"
+  },
+  "planning-group": {
+    term: msg`Planning group`,
+    definition: msg`Projects with project stock at one location that MRP plans as one, so one order covers all their demand and each piece of it is pegged to a member. Available on the Business plan.`,
+    href: "/docs/reference/projects#planning-groups"
+  },
+  peg: {
+    term: msg`Peg`,
+    definition: msg`The link from a piece of a planning group's order to one member's demand: Soft while the order is open (MRP may move it), Hard once it is received or completed (never moved), or Manual when a planner sets it with a reason.`,
+    href: "/docs/reference/projects#planning-groups",
+    aliases: ["soft-peg", "hard-peg", "manual-peg"]
+  },
+
+  // Indirect rates (indirect-rates.md)
+  "indirect-pool": {
+    term: msg`Indirect pool`,
+    definition: msg`A fringe, overhead, material handling, G&A or service center pool. Its mapped GL accounts give its cost, and Carbon computes its rate as that cost over its base. Available on the Business plan.`,
+    href: "/docs/reference/projects#pools"
+  },
+  burden: {
+    term: msg`Burden`,
+    definition: msg`The indirect cost a pool's rate puts on a project: rate × the project's base, posted to the project ledger as Burden rows, year to date less what earlier runs posted.`,
+    href: "/docs/reference/projects#burden-on-projects-and-contracts"
+  },
+  "provisional-rate": {
+    term: msg`Provisional rate`,
+    definition: msg`A pool rate you enter for a fiscal year before the Final rate is known. The burden run applies it unless Burden Settings picks Actual, and Cost Plus lines bill at it until a Final rate exists.`,
+    href: "/docs/reference/projects#rates-and-the-period-run"
+  },
+  "final-rate": {
+    term: msg`Final rate`,
+    definition: msg`A pool's settled rate for a fiscal year. Cost Plus lines bill at it once it exists, and Run True-Up burdens the year again at the Final rates of period 12 and bills the difference.`,
+    href: "/docs/reference/projects#rates-and-the-period-run"
+  },
+  "rate-ceiling": {
+    term: msg`Rate ceiling`,
+    definition: msg`A cap on a pool's billing rate for one Cost Plus contract line, set under Rate Ceilings on the line's Billing tab.`,
+    href: "/docs/reference/projects#burden-on-projects-and-contracts"
+  },
+
+  // Project control (project-control.md)
+  "budget-control": {
+    term: msg`Budget control`,
+    definition: msg`A project setting, None, Warn or Block, that checks a purchase order line, an issue or a consume-to-project job against the budget of the nearest budgeted element. A timesheet only gets a warning, never a refusal.`,
+    href: "/docs/reference/projects#budget-control"
+  },
+  "control-account": {
+    term: msg`Control account`,
+    definition: msg`An element with Control account turned on, owned by a control account manager. The work packages below it roll up to it in earned value.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "work-package": {
+    term: msg`Work package`,
+    definition: msg`A chargeable element below a control account that has an earned value technique, such as 0/100, 50/50 or Percent Complete.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "planned-value": {
+    term: msg`Planned value (BCWS)`,
+    definition: msg`The budgeted cost of the work scheduled by a date, from the latest baseline's budgets and dates and the work package's technique.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["bcws"]
+  },
+  "earned-value": {
+    term: msg`Earned value (BCWP)`,
+    definition: msg`The budgeted cost of the work done by a date: the work package's baseline budget, earned by its technique, such as all of it when the element is completed under 0/100.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["bcwp"]
+  },
+  "actual-cost": {
+    term: msg`Actual cost (ACWP)`,
+    definition: msg`The direct cost in the project ledger of a work package and the elements below it.`,
+    href: "/docs/reference/projects#earned-value",
+    aliases: ["acwp"]
+  },
+  cpi: {
+    term: msg`CPI (cost performance index)`,
+    definition: msg`Earned value ÷ actual cost. Below 1, the work done cost more than its budget.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  spi: {
+    term: msg`SPI (schedule performance index)`,
+    definition: msg`Earned value ÷ planned value. Below 1, less work is done than the baseline planned by that date.`,
+    href: "/docs/reference/projects#earned-value"
+  },
+  "stop-work-order": {
+    term: msg`Stop-work order`,
+    definition: msg`A customer's order to stop work on a contract for 90 days (FAR 52.242-15). Stop work puts a Released Direct project On Hold, so it takes no new charges, until Resume releases it.`,
+    href: "/docs/reference/projects#stop-work-orders"
+  },
+
+  // Government contracting (government-contracting.md)
+  "cost-objective": {
+    term: msg`Cost objective`,
+    definition: msg`Set on a project, it says what its cost is for: Direct (a government contract), Commercial, Indirect, IR&D or B&P. DCAA mode requires one on every project.`,
+    href: "/docs/reference/government-contracting#cost-objectives"
+  },
+  allowability: {
+    term: msg`Allowability`,
+    definition: msg`Set on a posting account: Allowable, or Expressly, Mutually Agreed or Directly Associated Unallowable. Cost posted to an unallowable account or element is marked unallowable in the project ledger and never becomes a billable item.`,
+    href: "/docs/reference/government-contracting#unallowable-cost",
+    aliases: ["unallowable-cost"]
+  },
+  preproduction: {
+    term: msg`Preproduction`,
+    definition: msg`An element switch that shows the cost of the element and the elements below it as Preproduction in the total row of the project's Costs tab.`,
+    href: "/docs/reference/government-contracting#unallowable-cost"
+  },
+  "timekeeping-controls": {
+    term: msg`Timekeeping controls`,
+    definition: msg`The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check.`,
+    href: "/docs/reference/government-contracting#dcaa-timekeeping",
+    aliases: ["dcaa"]
+  },
+  "flsa-status": {
+    term: msg`FLSA status`,
+    definition: msg`Exempt or Non-Exempt, set on a person's Job tab. In DCAA mode it picks the certification text the employee certifies at submit, and an Exempt employee's long weeks are diluted.`,
+    href: "/docs/reference/government-contracting#dcaa-timekeeping"
+  },
+  dilution: {
+    term: msg`Dilution`,
+    definition: msg`In DCAA mode, an Exempt employee's week over the standard weekly hours posts at standard hours ÷ hours worked, so the week's cost spreads over every hour.`,
+    href: "/docs/reference/government-contracting#dilution-for-exempt-staff"
+  },
+  "labor-transfer": {
+    term: msg`Labor transfer`,
+    definition: msg`A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it.`,
+    href: "/docs/reference/government-contracting#labor-transfers"
+  },
+  clin: {
+    term: msg`CLIN`,
+    definition: msg`A contract line item number on a contract line: 4 digits, such as 0001. A project billing invoice shows a separate amount per CLIN.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  slin: {
+    term: msg`SLIN`,
+    definition: msg`A SubCLIN: the 4 digits of its parent CLIN on the same contract, plus 2 letters or digits, such as 0001AA.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  acrn: {
+    term: msg`ACRN (accounting classification reference number)`,
+    definition: msg`The funding reference that each funding action carries. A project billing invoice splits each CLIN's amount across the line's ACRNs, oldest funds first.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  "funding-action": {
+    term: msg`Funding action`,
+    definition: msg`One contract modification's funding of a Time & Materials or Cost Plus line, with modification number, date, ACRN, funded cost, funded fee and expiry. In DCAA mode the line's funded totals are the sums of its funding actions.`,
+    href: "/docs/reference/government-contracting#clin-and-acrn-funding"
+  },
+  "wbs-code": {
+    term: msg`WBS code`,
+    definition: msg`An element's code in the work breakdown structure, such as 1.3.2. Carbon numbers the tree by position unless the code is pinned, for example to match the contract WBS; a pinned code stays when the element moves.`,
+    href: "/docs/reference/projects#wbs-codes"
+  },
+  "progress-payment": {
+    term: msg`Progress payment`,
+    definition: msg`Government financing of a fixed-price contract based on the cost incurred (FAR 32.5). The contractor requests it on an SF 1443, and the government recovers it from delivery payments.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  "performance-based-payment": {
+    term: msg`Performance-based payment`,
+    definition: msg`Government financing of a fixed-price contract paid when defined events are complete (FAR 32.10), never on cost incurred. Total payments stay within a share of the price, at most 90 %.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  liquidation: {
+    term: msg`Liquidation`,
+    definition: msg`The part of a delivery payment the government keeps to recover its progress or performance-based payments: the liquidation rate times the invoice, never more than the financing still unliquidated.`,
+    href: "/docs/reference/government-contracting#contract-financing"
+  },
+  "business-component": {
+    term: msg`Business component`,
+    definition: msg`An element marked Business component (R&D) for the R&D tax reports. It holds its own cost and the cost of the elements below it, down to the next business component.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+  "research-role": {
+    term: msg`Research role`,
+    definition: msg`Direct Research, Direct Supervision, Direct Support or Not Qualified on a timesheet entry, for the R&D tax reports. New time takes the labor category's role.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+  "funded-research": {
+    term: msg`Funded research`,
+    definition: msg`A contract setting for the R&D tax reports. Cost of a Direct project under a funded contract is not a qualified research expense; on Default, a contract with a Cost Plus or Time & Materials line counts as funded.`,
+    href: "/docs/reference/government-contracting#rd-tax"
+  },
+
+  // Project billing (project-billing.md)
+  "billing-method": {
+    term: msg`Billing method`,
+    definition: msg`How a contract line bills: Fixed (its schedule), Time & Materials (hours × a bill rate, plus marked-up cost) or Cost Plus (cost × (1 + fee %)).`,
+    href: "/docs/reference/project-billing#the-billing-line"
+  },
+  "billing-element": {
+    term: msg`Billing element`,
+    definition: msg`The project element a Time & Materials or Cost Plus contract line bills. The line bills the work charged to it and to every element below it.`,
+    href: "/docs/reference/project-billing#the-billing-line"
+  },
+  "bill-rate": {
+    term: msg`Bill rate`,
+    definition: msg`The price of an hour on a Time & Materials line: the line's rate for the employee, else for the labor category, else the labor category's default Bill Rate, in effect on the day.`,
+    href: "/docs/reference/project-billing#bill-rates"
+  },
+  "billable-item": {
+    term: msg`Billable item`,
+    definition: msg`One cost to bill, made from a charge under a billing element or on a service order. It is Unbilled, On Hold, Billed or Written Off.`,
+    href: "/docs/reference/project-billing#billable-items"
+  },
+  "right-to-invoice": {
+    term: msg`Right to invoice`,
+    definition: msg`A revenue method that recognizes the billable items of the work posted by the month end, less written-off items.`,
+    href: "/docs/reference/project-billing#revenue"
+  },
+  "percent-complete": {
+    term: msg`Percent complete`,
+    definition: msg`A revenue method that recognizes price × cost to date ÷ estimate at completion. It is also an earned value technique: the budget times the element's percent complete.`,
+    href: "/docs/reference/project-billing#revenue"
+  },
+
+  // Field service (field-service.md)
+  "service-order": {
+    term: msg`Service order`,
+    definition: msg`A work order for one serial, numbered SVC…: a Field Visit for a unit at a customer, a Refurbishment of a serial in stock, or a Depot Repair from an RMA receipt. Its charges collect on a work tree.`,
+    href: "/docs/reference/service-orders#the-service-order"
+  },
+  coverage: {
+    term: msg`Coverage`,
+    definition: msg`Who pays for one service order charge, decided when it posts: Warranty, Contract, Billable, or Capitalized on a Refurbishment. Override changes it, with a reason.`,
+    href: "/docs/reference/service-orders#coverage"
   }
 } as const satisfies Record<string, GlossaryEntry>;

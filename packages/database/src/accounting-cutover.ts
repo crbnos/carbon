@@ -339,6 +339,66 @@ export type OpeningLayer = {
   cost: number;
 };
 
+/** An opening layer on one stock stripe: a project, or null for common stock. */
+export type StripedOpeningLayer = OpeningLayer & { projectId: string | null };
+
+/**
+ * Splits each item's opening layer across its stock stripes, at the item's
+ * one unit cost. Each project stripe with stock at the cutover takes its
+ * on-hand quantity (never more than the item has left); common stock takes
+ * the rest, and the rest of the cost, so the layers of an item sum exactly
+ * to its opening layer. `calculateCOGS` relieves a stripe from its own
+ * layers only, so a reset without stripes would leave project stock with no
+ * layer to relieve.
+ */
+export function splitOpeningLayersByStripe(
+  layers: readonly OpeningLayer[],
+  projectOnHand: readonly {
+    itemId: string;
+    projectId: string;
+    quantity: number;
+  }[]
+): StripedOpeningLayer[] {
+  const stripesByItem = Map.groupBy(
+    [...projectOnHand]
+      .filter((stripe) => stripe.quantity > EPSILON)
+      .sort((a, b) => a.projectId.localeCompare(b.projectId)),
+    (stripe) => stripe.itemId
+  );
+  return layers.flatMap((layer) => {
+    const unitCost = layer.quantity > 0 ? layer.cost / layer.quantity : 0;
+    let quantityLeft = layer.quantity;
+    let costLeft = layer.cost;
+    const striped: StripedOpeningLayer[] = [];
+    for (const stripe of stripesByItem.get(layer.itemId) ?? []) {
+      if (quantityLeft <= EPSILON) break;
+      const quantity = round(Math.min(stripe.quantity, quantityLeft));
+      const cost = round(quantity * unitCost);
+      striped.push({
+        itemId: layer.itemId,
+        projectId: stripe.projectId,
+        quantity,
+        cost
+      });
+      quantityLeft = round(quantityLeft - quantity);
+      costLeft = round(costLeft - cost);
+    }
+    if (quantityLeft > EPSILON) {
+      striped.push({
+        itemId: layer.itemId,
+        projectId: null,
+        quantity: quantityLeft,
+        cost: costLeft
+      });
+    } else if (striped.length > 0 && costLeft !== 0) {
+      // Rounding left a residual and no common layer to hold it.
+      const last = striped[striped.length - 1]!;
+      last.cost = round(last.cost + costLeft);
+    }
+    return striped;
+  });
+}
+
 /**
  * The inventory reset as of the cutover date: one opening layer per item with
  * stock, at the reviewed unit cost. The caller closes every layer dated
@@ -409,8 +469,12 @@ export type RecostOutbound = {
 };
 
 /** The re-cost's ledger, in order: the opening layers first, then every
- *  inbound layer and outbound movement after the cutover as it was posted. */
-export type RecostEvent = { layer: RecostLayer } | { outbound: RecostOutbound };
+ *  inbound layer and outbound movement after the cutover as it was posted.
+ *  A layer with `costOf` takes its cost from that outbound movement (stock
+ *  moved at cost between pools, see `ReliefEvent`). */
+export type RecostEvent =
+  | { layer: RecostLayer; costOf?: string }
+  | { outbound: RecostOutbound };
 
 /**
  * Re-costs the outbound movements dated on or after the cutover against the
@@ -428,15 +492,22 @@ export function recostOutbound(
 ): {
   movements: { costLedgerId: string; newCost: number; delta: number }[];
   remainingById: Map<string, number>;
+  /** The new cost of each layer that took it from a movement (`costOf`). */
+  layerCostById: Map<string, number>;
 } {
   const outbound = events.flatMap((event) =>
     "outbound" in event ? [event.outbound] : []
   );
-  const { costByKey, remainingById } = replayReliefs({
+  const { costByKey, remainingById, layerCostById } = replayReliefs({
     events: events.map(
       (event): ReliefEvent =>
         "layer" in event
-          ? { kind: "layer", itemId: event.layer.itemId, layer: event.layer }
+          ? {
+              kind: "layer",
+              itemId: event.layer.itemId,
+              layer: event.layer,
+              costOf: event.costOf
+            }
           : {
               kind: "relief",
               key: event.outbound.costLedgerId,
@@ -457,6 +528,7 @@ export function recostOutbound(
         delta: round(newCost - movement.cost)
       };
     }),
-    remainingById
+    remainingById,
+    layerCostById
   };
 }

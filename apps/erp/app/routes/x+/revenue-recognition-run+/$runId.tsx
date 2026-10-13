@@ -39,6 +39,7 @@ import {
   type RunRentalAgreement,
   type RunSalesInvoice
 } from "~/modules/accounting/ui/RevenueRecognition";
+import ProjectRevenueProgress from "~/modules/accounting/ui/RevenueRecognition/ProjectRevenueProgress.ee";
 import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -210,6 +211,8 @@ export default function RevenueRecognitionRunDetailRoute() {
     Deferral: t`Deferrals`,
     Accrual: t`Accruals`,
     Interest: t`Interest`,
+    "Cost Relief": t`Cost Relief`,
+    "Loss Provision": t`Loss Provisions`,
     Amortization: t`Amortization`
   };
 
@@ -261,6 +264,8 @@ export default function RevenueRecognitionRunDetailRoute() {
           </dd>
         </div>
       </dl>
+
+      <ProjectRevenueProgress lines={lines} />
 
       {sections.length === 0 ? (
         <Card>
@@ -317,9 +322,15 @@ export default function RevenueRecognitionRunDetailRoute() {
                           line.schedule?.salesInvoiceLineId ??
                           line.schedule?.rentalAgreementLineId ??
                           line.schedule?.leaseId;
+                        const contract = line.schedule?.contractLine?.contract;
                         const source = sourceLineId
                           ? sources[sourceLineId]
-                          : undefined;
+                          : contract
+                            ? {
+                                label: contract.customerContractId,
+                                to: path.to.contractDetails(contract.id)
+                              }
+                            : undefined;
                         return (
                           <div
                             key={line.id}

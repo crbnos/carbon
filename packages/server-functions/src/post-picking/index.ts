@@ -25,6 +25,12 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { assertNoOpenRefurbishment } from "../lib/service-orders";
+import {
+  assertEntitiesInStripes,
+  loadTrackedEntityStripe,
+  withStripe
+} from "../lib/stock-stripes";
 import { attributesContain } from "../tracked-entity-attributes";
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
@@ -227,7 +233,11 @@ const postPicking = defineServerFn({
             }
           ];
 
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .updateTable("pickingListLine")
@@ -301,7 +311,11 @@ const postPicking = defineServerFn({
             }
           ];
 
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .updateTable("pickingListLine")
@@ -335,6 +349,12 @@ const postPicking = defineServerFn({
           companyId
         } = validatedPayload;
 
+        // A serial under refurbishment is not picked (decision C6).
+        await assertNoOpenRefurbishment(db, {
+          companyId,
+          trackedEntityIds: [trackedEntityId]
+        });
+
         await db.transaction().execute(async (trx) => {
           // Lock the line: every case here read-modify-writes its picked or
           // returned counter, so two concurrent scans of the same line would
@@ -347,6 +367,23 @@ const postPicking = defineServerFn({
             .selectAll()
             .forUpdate()
             .executeTakeFirstOrThrow();
+
+          // A pick line draws one stripe: the serial must sit in it.
+          await assertEntitiesInStripes(
+            trx,
+            companyId,
+            [
+              {
+                readableId: trackedEntityId,
+                stripe: await loadTrackedEntityStripe(
+                  trx,
+                  companyId,
+                  trackedEntityId
+                )
+              }
+            ],
+            [line.projectId ?? null]
+          );
 
           const activityId = nanoid();
           await trx
@@ -406,7 +443,11 @@ const postPicking = defineServerFn({
               companyId
             }
           ];
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .updateTable("pickingListLine")
@@ -508,6 +549,23 @@ const postPicking = defineServerFn({
           // same guard post-stock-transfer's batch case takes, and it makes the
           // refusal a 400 the scan UI can show.
           assertEntityCoversPick({ entityQuantity, transferQuantity });
+
+          // A pick line draws one stripe: the lot must sit in it.
+          await assertEntitiesInStripes(
+            trx,
+            companyId,
+            [
+              {
+                readableId: trackedEntity.readableId,
+                stripe: await loadTrackedEntityStripe(
+                  trx,
+                  companyId,
+                  trackedEntityId
+                )
+              }
+            ],
+            [line.projectId ?? null]
+          );
 
           const inserts: ItemLedgerInsert[] = [];
 
@@ -652,7 +710,11 @@ const postPicking = defineServerFn({
             }
           );
 
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .updateTable("pickingListLine")
@@ -777,7 +839,11 @@ const postPicking = defineServerFn({
               companyId
             }
           ];
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .deleteFrom("trackedActivityInput")
@@ -1024,7 +1090,11 @@ const postPicking = defineServerFn({
             }
           }
 
-          await trx.insertInto("itemLedger").values(inserts).execute();
+          // Both legs carry the line's stripe: a pick moves the stock it drew.
+          await trx
+            .insertInto("itemLedger")
+            .values(withStripe(inserts, line.projectId ?? null))
+            .execute();
 
           await trx
             .deleteFrom("trackedActivityInput")
@@ -1297,6 +1367,7 @@ type ReturnSweepLine = {
   quantityReturned: number | string | null;
   storageUnitId: string | null;
   toStorageUnitId: string | null;
+  projectId: string | null;
   createdAt: string | Date | null;
 };
 
@@ -1324,6 +1395,7 @@ async function returnTrackedAllocationRemainder(
       itemId: string;
       storageUnitId: string | null;
       toStorageUnitId: string | null;
+      projectId: string | null;
     };
     trackedEntityId: string;
     locationId: string;
@@ -1550,7 +1622,11 @@ async function returnTrackedAllocationRemainder(
 
   if (totalReturned <= 0) return 0;
 
-  await trx.insertInto("itemLedger").values(inserts).execute();
+  // A return moves the line's stripe back.
+  await trx
+    .insertInto("itemLedger")
+    .values(withStripe(inserts, line.projectId ?? null))
+    .execute();
 
   // Decrement the recorded allocation by what was returned so the lot is
   // re-allocatable.
@@ -1643,6 +1719,9 @@ async function returnUntrackedMaterialRemainder(
     await getPickedBudgets(trx, { material, locationId, companyId }),
     material.itemId
   );
+  // Keyed by item AND stripe: a line returns the stripe it picked.
+  const returnableKey = (itemId: string, projectId: string | null) =>
+    `${itemId}\u0000${projectId ?? ""}`;
   const returnableByItem = new Map<string, number>();
   let owedRemaining = Math.max(0, owed);
   for (const budget of budgets) {
@@ -1651,7 +1730,10 @@ async function returnUntrackedMaterialRemainder(
         ? Math.min(budget.available, owedRemaining * budget.factor)
         : 0;
     owedRemaining -= budget.factor > 0 ? hold / budget.factor : 0;
-    returnableByItem.set(budget.itemId, Math.max(0, budget.available - hold));
+    returnableByItem.set(
+      returnableKey(budget.itemId, budget.projectId),
+      Math.max(0, budget.available - hold)
+    );
   }
   let returnable = [...returnableByItem.values()].reduce((a, b) => a + b, 0);
   if (returnable <= 0) return 0;
@@ -1682,10 +1764,11 @@ async function returnUntrackedMaterialRemainder(
   let totalReturned = 0;
   for (const line of staged) {
     if (returnable <= 0) break;
-    const itemReturnable = returnableByItem.get(line.itemId) ?? 0;
+    const key = returnableKey(line.itemId, line.projectId ?? null);
+    const itemReturnable = returnableByItem.get(key) ?? 0;
     const quantity = Math.min(line.stagedNet, itemReturnable);
     if (quantity <= 0) continue;
-    returnableByItem.set(line.itemId, itemReturnable - quantity);
+    returnableByItem.set(key, itemReturnable - quantity);
     // Return target: the line's source bin, else the item's default pick bin,
     // else location-level unassigned stock (mirrors picks from unassigned bins;
     // never strands the return).
@@ -1698,6 +1781,8 @@ async function returnUntrackedMaterialRemainder(
       entryType: "Transfer" as const,
       documentType: "Direct Transfer" as const,
       documentId: line.pickingListId,
+      // The return moves the stripe the line picked, on both legs.
+      projectId: line.projectId ?? null,
       createdBy: userId,
       companyId
     };
@@ -1766,6 +1851,7 @@ async function runReturnSweep(
       "pll.quantityReturned",
       "pll.storageUnitId",
       "pll.toStorageUnitId",
+      "pll.projectId",
       "pll.createdAt"
     ]);
   if (scope === "operation") {

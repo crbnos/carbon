@@ -568,7 +568,13 @@ const getMethod = defineServerFn({
           .execute();
         const jobRow = await db
           .selectFrom("job")
-          .select(["locationId", "quantity", "startDate", "dueDate"])
+          .select([
+            "locationId",
+            "quantity",
+            "startDate",
+            "dueDate",
+            "projectId"
+          ])
           .where("id", "=", jobId)
           .where("companyId", "=", companyId)
           .executeTakeFirst();
@@ -1801,6 +1807,7 @@ const getMethod = defineServerFn({
             jobId: jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.locationId,
+            projectId: job.projectId,
             asOfDate: jobBuildDate(job)
           });
         });
@@ -2563,6 +2570,7 @@ const getMethod = defineServerFn({
             jobId: jobMakeMethod.data.jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.data?.locationId,
+            projectId: job.data?.projectId,
             asOfDate: jobBuildDate(job.data)
           });
         });
@@ -5186,6 +5194,7 @@ const getMethod = defineServerFn({
             jobId: targetJobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: targetJob.data?.locationId,
+            projectId: targetJob.data?.projectId,
             asOfDate: jobBuildDate(targetJob.data)
           });
         });
@@ -6817,6 +6826,7 @@ const getMethod = defineServerFn({
             jobId: jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.data?.locationId,
+            projectId: job.data?.projectId,
             asOfDate: jobBuildDate(job.data)
           });
         });
@@ -7764,6 +7774,13 @@ function jobBuildDate(
   );
 }
 
+// The itemStockQuantities stripes a job's material may draw: common stock (''),
+// plus the job's own project's stock when the job is charged to a project.
+// Another project's stock needs a transfer or a borrow first.
+function jobStockStripes(projectId: string | null | undefined): string[] {
+  return projectId ? ["", projectId] : [""];
+}
+
 // Load every supersession for the company and collapse it into the redirect map
 // (chain-collapsed, mode-gated, conversion-factored) as-of the job's build date.
 // Every *-ToJob path needs the same map, so this is the single load point.
@@ -7775,6 +7792,7 @@ async function loadSupersessionRedirect(
         locationId?: string | null;
         startDate?: string | null;
         dueDate?: string | null;
+        projectId?: string | null;
       }
     | null
     | undefined
@@ -7810,6 +7828,7 @@ async function loadSupersessionRedirect(
       .select(["itemId", "quantityOnHand"])
       .where("companyId", "=", companyId)
       .where("locationId", "=", job.locationId)
+      .where("projectId", "in", jobStockStripes(job.projectId))
       .where("itemId", "in", consumeFirstItemIds)
       .execute();
     const items = await db
@@ -7901,7 +7920,12 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
+    getStorageUnitId(trx, {
+      companyId,
+      itemId,
+      locationId,
+      storageUnitId: lineStorageUnitId
+    })
   ]);
 
   if (!item) return null;
@@ -8029,9 +8053,18 @@ async function settleConsumeFirstLines(opts: {
   jobId: string;
   jobMaterialIds: string[];
   locationId: string | null | undefined;
+  projectId: string | null | undefined;
   asOfDate: string;
 }) {
-  const { trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } = opts;
+  const {
+    trx,
+    companyId,
+    jobId,
+    jobMaterialIds,
+    locationId,
+    projectId,
+    asOfDate
+  } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await trx
@@ -8089,6 +8122,7 @@ async function settleConsumeFirstLines(opts: {
     .select(["itemId", "quantityOnHand"])
     .where("companyId", "=", companyId)
     .where("locationId", "=", locationId)
+    .where("projectId", "in", jobStockStripes(projectId))
     .where("itemId", "in", [...predecessorIds])
     .execute();
   const onHandByItem = new Map<string, number>();

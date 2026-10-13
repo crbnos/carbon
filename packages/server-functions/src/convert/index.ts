@@ -425,6 +425,8 @@ const convert = defineServerFn({
               storageUnitId: line.storageUnitId,
               accountId: line.accountId,
               costCenterId: line.costCenterId,
+              projectId: line.projectId,
+              projectElementId: line.projectElementId,
               assetId: line.assetId,
               description: line.description,
               quantity: getRemainingQuantityToInvoice(line),

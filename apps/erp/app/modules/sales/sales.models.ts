@@ -11,6 +11,7 @@ import {
   isFieldAvailableOnSalesRuleSurfaces,
   isValidSwiftBic,
   RULE_SEVERITIES,
+  round,
   SALES_RULE_SURFACES
 } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -1263,12 +1264,27 @@ export const salesReturnDispositionType = [
   // "No Action Required",
   "Pending",
   // "Quarantine",
-  // "Repair",
+  "Repair",
   "Return to Customer",
   "Rework",
   "Scrap",
   "Use As Is"
 ] as const;
+
+/** Why a line's Repair disposition cannot change once it has received. */
+export const REPAIR_DISPOSITION_LOCKED_MESSAGE =
+  "A line's Repair disposition is set before receipt and cannot change after it. Void the receipt to change it.";
+
+/** Why a Repair line takes no credit memo: the unit goes back to the customer. */
+export const REPAIR_LINE_CREDIT_MESSAGE =
+  "Change the disposition before you credit a repair line.";
+
+/** Why an RMA of Repair lines only gets no replacement order. */
+export const REPAIR_ONLY_REPLACEMENT_MESSAGE =
+  "Every line is a repair. There is nothing to replace.";
+
+/** The dispositions a line can take before any quantity is received. */
+export const salesReturnPreReceiptDispositions = ["Pending", "Repair"] as const;
 
 export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
   "Completed",
@@ -1623,6 +1639,18 @@ export const customerContractTypes = [
   "Contraction"
 ] as const satisfies readonly Enums["customerContractType"][];
 
+/**
+ * The R&D tax facts of a contract (Government Contracting 5d). They stay
+ * editable in any status: they are tax facts, not terms.
+ */
+export const customerContractResearchFields = [
+  "researchFunded",
+  "paymentContingentOnSuccess",
+  "contractorRetainsRights"
+] as const;
+export type CustomerContractResearchField =
+  (typeof customerContractResearchFields)[number];
+
 export const contractRevenueTypes = [
   "One-time",
   "Recurring"
@@ -1658,10 +1686,21 @@ export const contractRenewals = [
   "Renew"
 ] as const satisfies readonly Enums["contractRenewal"][];
 
+export const contractBillingMethods = [
+  "Fixed",
+  "Time & Materials",
+  "Cost Plus"
+] as const satisfies readonly Enums["contractBillingMethod"][];
+
 export const contractRevenueMethods = [
   "Daily",
-  "Even Period"
+  "Even Period",
+  "Right to Invoice",
+  "Percent Complete"
 ] as const satisfies readonly Enums["contractRevenueMethod"][];
+
+/** Revenue methods a Fixed line plans on a schedule. */
+export const contractScheduleRevenueMethods = ["Daily", "Even Period"] as const;
 
 export const contractAmendmentEffects = [
   "Change Date",
@@ -1845,6 +1884,72 @@ function percentPoints(label: string) {
   );
 }
 
+/** An optional percent-points field (0–100); empty is absent. */
+function optionalPercentPoints(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .max(100, { message: `${label} cannot exceed 100%` })
+      .optional()
+  );
+}
+
+function optionalAmount(label: string) {
+  return zfd.numeric(
+    z
+      .number()
+      .min(0, { message: `${label} cannot be negative` })
+      .optional()
+  );
+}
+
+/** The funding of a billing line. `noticePercent` is in percent points
+ *  (75–85), as FAR 52.232-20/-22 allow. */
+const contractLineFundingFields = {
+  fundedAmount: optionalAmount("Funded amount"),
+  fundedCost: optionalAmount("Funded cost"),
+  ceilingAmount: optionalAmount("Ceiling"),
+  noticePercent: zfd.numeric(
+    z
+      .number()
+      .min(75, { message: "The notice percent is 75% to 85%" })
+      .max(85, { message: "The notice percent is 75% to 85%" })
+      .default(75)
+  ),
+  noticeWindowDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Enter whole days" })
+      .min(30, { message: "The notice window is 30 to 90 days" })
+      .max(90, { message: "The notice window is 30 to 90 days" })
+      .default(60)
+  )
+};
+
+/** The funding of one billing line, edited on an Active contract (P9). */
+export const contractLineFundingValidator = z.object({
+  id: z.string().min(1, { message: "Line is required" }),
+  ...contractLineFundingFields
+});
+
+/** One bill rate of a contract line: a labor category or an employee. */
+export const contractLaborRateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerContractLineId: z.string().min(1, { message: "Line is required" }),
+    laborCategoryId: zfd.text(z.string().optional()),
+    employeeId: zfd.text(z.string().optional()),
+    billRate: zfd.numeric(
+      z.number().min(0, { message: "The bill rate cannot be negative" })
+    ),
+    effectiveFrom: z.string().min(1, { message: "Effective from is required" })
+  })
+  .refine((rate) => !!rate.laborCategoryId !== !!rate.employeeId, {
+    message: "Choose a labor category or an employee",
+    path: ["laborCategoryId"]
+  });
+
 /** The fields of one contract line, shared by the line form and an
  *  amendment's added line. */
 const contractLineFields = {
@@ -1870,11 +1975,140 @@ const contractLineFields = {
   }),
   revenueStartDate: zfd.text(z.string().optional()),
   revenueEndDate: zfd.text(z.string().optional()),
-  projectId: zfd.text(z.string().optional())
+  projectId: zfd.text(z.string().optional()),
+  // Project billing (Phase 4a). Absent means a Fixed line.
+  billingMethod: zfd.text(z.enum(contractBillingMethods).default("Fixed")),
+  projectElementId: zfd.text(z.string().optional()),
+  materialHandlingPercent: optionalPercentPoints("Handling"),
+  feePercent: optionalPercentPoints("Fee"),
+  ...contractLineFundingFields
 };
 
+/** Revenue methods each billing method allows (plan decision P6). */
+export const contractRevenueMethodsByBillingMethod = {
+  Fixed: ["Daily", "Even Period", "Percent Complete"],
+  "Time & Materials": ["Right to Invoice"],
+  "Cost Plus": ["Percent Complete", "Right to Invoice"]
+} as const satisfies Record<
+  (typeof contractBillingMethods)[number],
+  readonly (typeof contractRevenueMethods)[number][]
+>;
+
+/** The billing fields of a new line: Fixed, with the notice defaults. */
+export const newContractLineBillingValues = {
+  billingMethod: "Fixed",
+  noticePercent: 75,
+  noticeWindowDays: 60
+} as const;
+
+/** A stored line's billing fields as the line form's values: percents in
+ *  percent points. */
+export function contractLineBillingFormValues(line: {
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId: string | null;
+  materialHandlingPercent: number | null;
+  feePercent: number | null;
+  fundedAmount: number | null;
+  fundedCost: number | null;
+  ceilingAmount: number | null;
+  noticePercent: number;
+  noticeWindowDays: number;
+}) {
+  const points = (fraction: number | null) =>
+    fraction === null ? undefined : round(Number(fraction) * 100);
+  const amount = (value: number | null) =>
+    value === null ? undefined : Number(value);
+  return {
+    billingMethod: line.billingMethod,
+    projectElementId: line.projectElementId ?? undefined,
+    materialHandlingPercent: points(line.materialHandlingPercent),
+    feePercent: points(line.feePercent),
+    fundedAmount: amount(line.fundedAmount),
+    fundedCost: amount(line.fundedCost),
+    ceilingAmount: amount(line.ceilingAmount),
+    noticePercent: round(Number(line.noticePercent) * 100),
+    noticeWindowDays: Number(line.noticeWindowDays)
+  };
+}
+
+/** A line billed from project work rather than a schedule. */
+export function isProjectBillingMethod(
+  billingMethod: (typeof contractBillingMethods)[number] | null | undefined
+) {
+  return billingMethod === "Time & Materials" || billingMethod === "Cost Plus";
+}
+
+type BillingTerms = {
+  revenueMethod: (typeof contractRevenueMethods)[number];
+  projectId?: string;
+  billingMethod: (typeof contractBillingMethods)[number];
+  projectElementId?: string;
+  feePercent?: number;
+};
+
+/** The billing rules of a line (plan decision P6 and the line CHECKs). */
+function checkBillingTerms(line: BillingTerms, ctx: z.RefinementCtx) {
+  const allowed: readonly string[] =
+    contractRevenueMethodsByBillingMethod[line.billingMethod];
+  if (!allowed.includes(line.revenueMethod)) {
+    ctx.addIssue({
+      code: "custom",
+      message: `A ${line.billingMethod} line cannot use ${line.revenueMethod}`,
+      path: ["revenueMethod"]
+    });
+  }
+  if (isProjectBillingMethod(line.billingMethod)) {
+    if (!line.projectId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a project",
+        path: ["projectId"]
+      });
+    }
+    if (!line.projectElementId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "A billing line needs a billing element",
+        path: ["projectElementId"]
+      });
+    }
+  }
+  if (line.billingMethod === "Cost Plus" && line.feePercent === undefined) {
+    ctx.addIssue({
+      code: "custom",
+      message: "A Cost Plus line needs a fee",
+      path: ["feePercent"]
+    });
+  }
+  if (
+    line.revenueMethod === "Percent Complete" &&
+    !isProjectBillingMethod(line.billingMethod) &&
+    !line.projectElementId
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Percent Complete needs a billing element",
+      path: ["projectElementId"]
+    });
+  }
+}
+
+/** The billing terms of an amendment's added line, edited apart from the
+ *  amendment grid. Percents in percent points. */
+export const contractLineBillingTermsValidator = z
+  .object({
+    billingMethod: contractLineFields.billingMethod,
+    revenueMethod: contractLineFields.revenueMethod,
+    projectId: contractLineFields.projectId,
+    projectElementId: contractLineFields.projectElementId,
+    materialHandlingPercent: contractLineFields.materialHandlingPercent,
+    feePercent: contractLineFields.feePercent,
+    ...contractLineFundingFields
+  })
+  .superRefine(checkBillingTerms);
+
 function checkContractLine(
-  line: {
+  line: BillingTerms & {
     revenueType: (typeof contractRevenueTypes)[number];
     rateUnit?: string;
     startDate: string;
@@ -1883,6 +2117,7 @@ function checkContractLine(
   },
   ctx: z.RefinementCtx
 ) {
+  checkBillingTerms(line, ctx);
   if (line.revenueType === "Recurring" && !line.rateUnit) {
     ctx.addIssue({
       code: "custom",
@@ -1920,13 +2155,51 @@ function checkContractLine(
   }
 }
 
+/** A CLIN (`0001`), or a SubCLIN (`0001AA` or `000101`). */
+export const CONTRACT_LINE_ITEM_NUMBER_PATTERN =
+  /^[0-9]{4}([A-Z]{2}|[0-9]{2})?$/;
+
 export const customerContractLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     customerContractId: z.string().min(1, { message: "Contract is required" }),
-    ...contractLineFields
+    ...contractLineFields,
+    // Government Contracting 5a: the CLIN or SubCLIN number, and the CLIN a
+    // SubCLIN belongs to.
+    lineItemNumber: zfd.text(
+      z
+        .string()
+        .trim()
+        .regex(CONTRACT_LINE_ITEM_NUMBER_PATTERN, {
+          message: "Use 4 digits, then 2 letters or 2 digits for a SubCLIN"
+        })
+        .optional()
+    ),
+    parentLineId: zfd.text(z.string().optional())
   })
   .superRefine(checkContractLine);
+
+/** One funding action (a contract modification) on a billing line. */
+export const customerContractFundingValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  customerContractLineId: z.string().min(1, { message: "Line is required" }),
+  modificationNumber: z
+    .string()
+    .trim()
+    .min(1, { message: "Modification number is required" }),
+  fundedDate: z.string().min(1, { message: "Funded date is required" }),
+  acrn: z
+    .string()
+    .trim()
+    .regex(/^[A-Z0-9]{2}$/, { message: "Use 2 capital letters or digits" }),
+  fundedCost: zfd.numeric(
+    z.number().min(0, { message: "Funded cost cannot be negative" })
+  ),
+  fundedFee: zfd.numeric(
+    z.number().min(0, { message: "Funded fee cannot be negative" })
+  ),
+  expiresOn: zfd.text(z.string().optional())
+});
 
 /** One amount per contract line, JSON-encoded: an added invoice or month.
  *  At least one must be above zero. */

@@ -93,6 +93,30 @@ export function getGenericQueryFilters(
 }
 
 /**
+ * Takes the filter on `column` out of `filters`, for a column the list
+ * computes rather than selects (a warranty status, a technician on a child
+ * row). Returns its values (`eq` gives one, `in` gives each) and the other
+ * filters, which still go to `setGenericQueryFilters`.
+ */
+export function takeQueryFilter(
+  filters: Filter[] | undefined,
+  column: string
+): { values: string[]; filters: Filter[] } {
+  const rest: Filter[] = [];
+  const values: string[] = [];
+  for (const filter of filters ?? []) {
+    if (filter.column === column && filter.value) {
+      values.push(
+        ...(filter.operator === "in" ? filter.value.split(",") : [filter.value])
+      );
+    } else {
+      rest.push(filter);
+    }
+  }
+  return { values, filters: rest };
+}
+
+/**
  * Value of a `between` filter: `from,to`, inclusive. Either side may be empty
  * for an open-ended range (`2026-10-01,` is "on or after").
  */

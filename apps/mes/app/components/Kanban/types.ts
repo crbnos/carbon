@@ -32,6 +32,7 @@ export type DisplaySettings = {
   showProgress: boolean;
   showStatus: boolean;
   showSalesOrder: boolean;
+  showProject: boolean;
   showThumbnail: boolean;
 };
 
@@ -70,6 +71,10 @@ const itemValidator = z.object({
   salesOrderReadableId: z.string().optional(),
   salesOrderId: z.string().optional(),
   salesOrderLineId: z.string().optional(),
+  projectId: z.string().optional(),
+  projectElementId: z.string().nullable().optional(),
+  projectReadableId: z.string().optional(),
+  projectName: z.string().optional(),
   tags: z.array(z.string()).optional(),
   thumbnailPath: z.string().optional(),
   batchId: z.string().nullable().optional(),

@@ -77,6 +77,28 @@ const invoiceTotal = (rows: { amount: number }[]) =>
   rows.reduce((sum, row) => sum + row.amount, 0);
 
 describe("planInvoiceSchedule", () => {
+  it("plans no rows for a Time & Materials line", () => {
+    const invoices = planInvoiceSchedule(
+      calendarMonthly(),
+      [
+        line({ id: "support", rate: 1200, rateUnit: "Year" }),
+        line({
+          id: "engineering",
+          revenueType: "One-time",
+          rate: 0,
+          rateUnit: null,
+          billingMethod: "Time & Materials"
+        })
+      ],
+      "2027-10-31"
+    );
+    const lineIds = new Set(
+      invoices.flatMap((invoice) => invoice.rows.map((row) => row.lineId))
+    );
+    expect(invoices).toHaveLength(12);
+    expect([...lineIds]).toEqual(["support"]);
+  });
+
   it("plans Acme: 60,420 on 1 Nov 2026 and 420 on 1 Dec 2026", () => {
     const lines = [
       line({

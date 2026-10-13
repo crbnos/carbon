@@ -14,6 +14,10 @@ import { type Kysely, sql } from "kysely";
 import { expect } from "vitest";
 import createContractInvoices from "../create-contract-invoices";
 import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows
+} from "../lib/project-posting";
+import {
   connectLocalTestDatabase,
   databaseTest
 } from "../local-database-test-fixture";
@@ -1932,6 +1936,269 @@ databaseTest(
         endDate: null,
         revenueEndDate: "2026-11-30"
       });
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+/** A Contract or Expense project with a billing element and a child under
+ *  it, plus a helper for a Draft contract with one Time & Materials line. */
+async function projectBillingFixture(
+  f: Awaited<ReturnType<typeof contractFixture>>
+) {
+  const { db, companyId } = f;
+  const itemId = await contractItemId(db, companyId, f.oneTimeLineId);
+  const { customerId } = await db
+    .selectFrom("customerContract")
+    .select("customerId")
+    .where("id", "=", f.contractId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirstOrThrow();
+
+  const addProject = async (
+    key: string,
+    identifier: string,
+    costTreatment: "Contract" | "Expense"
+  ) => {
+    const projectId = `${companyId}-${key}`;
+    const stateId = `${projectId}-todo`;
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto("project")
+        .values({
+          id: projectId,
+          name: key,
+          identifier,
+          status: "Released",
+          costTreatment,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("projectState")
+        .values({
+          id: stateId,
+          // States are company-wide: one per test project, none the default.
+          name: `Todo ${projectId}`,
+          group: "Unstarted",
+          color: "#000000",
+          sortOrder: 0,
+          isDefault: false,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("projectElement")
+        .values([
+          {
+            id: `${projectId}-root`,
+            projectId,
+            readableId: `${identifier}-1`,
+            sequence: 1,
+            type: "Task",
+            name: "Engineering",
+            isBilling: true,
+            stateId,
+            companyId,
+            createdBy: USER
+          },
+          {
+            id: `${projectId}-child`,
+            projectId,
+            parentId: `${projectId}-root`,
+            readableId: `${identifier}-2`,
+            sequence: 2,
+            type: "Task",
+            name: "Analysis",
+            isBilling: false,
+            stateId,
+            companyId,
+            createdBy: USER
+          }
+        ])
+        .execute();
+    });
+    return {
+      projectId,
+      rootId: `${projectId}-root`,
+      childId: `${projectId}-child`
+    };
+  };
+
+  const addTimeAndMaterialsContract = async (input: {
+    key: string;
+    projectId: string;
+    projectElementId: string;
+  }) => {
+    const contractId = `${companyId}-${input.key}`;
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .insertInto("customerContract")
+        .values({
+          id: contractId,
+          customerContractId: `CON-${input.key}`,
+          name: input.key,
+          customerId,
+          closeDate: "2026-01-01",
+          startDate: "2026-01-01",
+          endDate: "2026-12-31",
+          billingFrequency: "Month",
+          billingAlignment: "Calendar",
+          billingTiming: "Arrears",
+          currencyCode: "USD",
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("customerContractLine")
+        .values({
+          id: `${contractId}-line`,
+          customerContractId: contractId,
+          revenueType: "One-time",
+          itemId,
+          description: "Engineering T&M",
+          quantity: 1,
+          rate: 0,
+          startDate: "2026-01-01",
+          billingMethod: "Time & Materials",
+          revenueMethod: "Right to Invoice",
+          materialHandlingPercent: 0.1,
+          projectId: input.projectId,
+          projectElementId: input.projectElementId,
+          companyId,
+          createdBy: USER
+        })
+        .execute();
+    });
+    return contractId;
+  };
+
+  return { addProject, addTimeAndMaterialsContract };
+}
+
+databaseTest(
+  "confirm refuses a second billing line on one billing element and a non-Contract project",
+  async () => {
+    const f = await contractFixture();
+    const { ctx } = f;
+    try {
+      const billing = await projectBillingFixture(f);
+      const confirm = (customerContractId: string) =>
+        postCustomerContract(ctx, {
+          type: "confirm",
+          customerContractId,
+          asOf: "2026-01-01"
+        });
+
+      const contract = await billing.addProject("contract", "PB", "Contract");
+      const first = await billing.addTimeAndMaterialsContract({
+        key: "tm-first",
+        projectId: contract.projectId,
+        projectElementId: contract.rootId
+      });
+      expect((await confirm(first)).error).toBeNull();
+
+      // --- The same billing element on a second line --------------------
+      const second = await billing.addTimeAndMaterialsContract({
+        key: "tm-second",
+        projectId: contract.projectId,
+        projectElementId: contract.rootId
+      });
+      const refused = await confirm(second);
+      expect(refused.error?.message).toContain("overlaps the billing element");
+
+      // --- An element under the first line's element ----------------------
+      const nested = await billing.addTimeAndMaterialsContract({
+        key: "tm-nested",
+        projectId: contract.projectId,
+        projectElementId: contract.childId
+      });
+      const nestedResult = await confirm(nested);
+      expect(nestedResult.error?.message).toContain(
+        "overlaps the billing element"
+      );
+      expect(nestedResult.error?.message).toContain("is not a billing element");
+
+      // --- A project with treatment Expense -------------------------------
+      const expense = await billing.addProject("expense", "PE", "Expense");
+      const expensed = await billing.addTimeAndMaterialsContract({
+        key: "tm-expense",
+        projectId: expense.projectId,
+        projectElementId: expense.rootId
+      });
+      expect((await confirm(expensed)).error?.message).toContain(
+        "cost treatment must be Contract"
+      );
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "a confirmed Time & Materials line bills the element's earlier ledger rows",
+  async () => {
+    const f = await contractFixture();
+    const { ctx, db, companyId } = f;
+    try {
+      const billing = await projectBillingFixture(f);
+      const project = await billing.addProject("backfill", "PF", "Contract");
+      const contractId = await billing.addTimeAndMaterialsContract({
+        key: "tm-backfill",
+        projectId: project.projectId,
+        projectElementId: project.rootId
+      });
+
+      // Posted while the contract is a Draft: no live line, so no item.
+      await db.transaction().execute((trx) =>
+        insertProjectLedgerRows(trx, {
+          companyId,
+          userId: USER,
+          rows: [
+            buildProjectLedgerRow({
+              companyId,
+              projectId: project.projectId,
+              projectElementId: project.childId,
+              postingDate: "2026-01-01",
+              costType: "Material",
+              documentType: "Project Issue",
+              documentId: `${contractId}-issue`,
+              quantity: 4,
+              amount: 200,
+              unallowable: false,
+              createdBy: USER
+            })
+          ]
+        })
+      );
+      const itemsOf = () =>
+        db
+          .selectFrom("projectBillableItem")
+          .select(["amount", "status", "customerContractLineId"])
+          .where("projectId", "=", project.projectId)
+          .where("companyId", "=", companyId)
+          .execute();
+      expect(await itemsOf()).toEqual([]);
+
+      const confirmed = await postCustomerContract(ctx, {
+        type: "confirm",
+        customerContractId: contractId,
+        asOf: "2026-01-01"
+      });
+      expect(confirmed.error).toBeNull();
+
+      const items = await itemsOf();
+      expect(
+        items.map((item) => [
+          Number(item.amount),
+          item.status,
+          item.customerContractLineId
+        ])
+      ).toEqual([[220, "Unbilled", `${contractId}-line`]]);
     } finally {
       await f.cleanup();
     }

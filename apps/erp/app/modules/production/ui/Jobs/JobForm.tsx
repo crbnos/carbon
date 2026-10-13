@@ -28,6 +28,8 @@ import { LuDiamond, LuLayers } from "react-icons/lu";
 import type { z } from "zod";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
+  Boolean,
+  ChargeNumber,
   Combobox,
   Customer,
   CustomFormFields,
@@ -40,7 +42,8 @@ import {
   Select,
   SelectControlled,
   SequenceOrCustomId,
-  Submit
+  Submit,
+  useChargeNumbers
 } from "~/components/Form";
 import { itemTypeLabel } from "~/components/Form/itemTypeLabel";
 import { usePermissions, useUser } from "~/hooks";
@@ -184,6 +187,59 @@ const JobForm = ({
   };
   const canEditCompleteTo =
     initialValues.status === "Draft" || initialValues.status === "Planned";
+
+  // Consume to project: on by default when the picked project is Expense or
+  // Contract; never for a Statistical project (it has no account), and never
+  // with a Make to Asset target.
+  const chargeNumbers = useChargeNumbers();
+  // Undefined until the user picks: a charge number passed in by the page is
+  // looked up in the list.
+  const [pickedTreatment, setPickedTreatment] = useState<
+    string | null | undefined
+  >(undefined);
+  const chargeTreatment =
+    pickedTreatment !== undefined
+      ? pickedTreatment
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.costTreatment ?? null);
+  const [consumeToProject, setConsumeToProject] = useState<boolean>(
+    initialValues.consumeToProject ?? false
+  );
+  // A Capitalize charge number builds its asset under construction: the job
+  // sweeps its cost onto that asset (job.fixedAssetId) and never consumes to
+  // the project.
+  const isCapitalCharge = chargeTreatment === "Capitalize";
+  // Undefined until the user picks, as for the treatment above.
+  const [pickedAssetLabel, setPickedAssetLabel] = useState<
+    string | null | undefined
+  >(undefined);
+  const capitalAssetLabel =
+    pickedAssetLabel !== undefined
+      ? pickedAssetLabel
+      : fixedAssetId
+        ? (chargeNumbers.find((row) => row.targetFixedAssetId === fixedAssetId)
+            ?.targetFixedAssetLabel ?? null)
+        : null;
+  const canConsumeToProject =
+    completeTo === "inventory" &&
+    chargeTreatment !== null &&
+    chargeTreatment !== "Statistical" &&
+    !isCapitalCharge;
+  // Receive to project stock: only when the charge number's project keeps
+  // its own stock. Undefined until the user picks, as for the treatment.
+  const [pickedProjectStock, setPickedProjectStock] = useState<
+    boolean | undefined
+  >(undefined);
+  const chargeProjectStock =
+    pickedProjectStock !== undefined
+      ? pickedProjectStock
+      : (chargeNumbers.find((row) => row.projectId === initialValues.projectId)
+          ?.projectStock ?? false);
+  const [receiveToProjectStock, setReceiveToProjectStock] = useState<boolean>(
+    initialValues.receiveToProjectStock ?? false
+  );
+  const canReceiveToProjectStock =
+    completeTo === "inventory" && chargeProjectStock && !isCapitalCharge;
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
@@ -410,12 +466,13 @@ const JobForm = ({
                         name="completeTo"
                         label={t`Complete To`}
                         value={completeTo}
-                        onChange={(option) =>
-                          setCompleteTo(
+                        onChange={(option) => {
+                          const next =
                             (option?.value as CompleteTo | undefined) ??
-                              "inventory"
-                          )
-                        }
+                            "inventory";
+                          setCompleteTo(next);
+                          if (next !== "inventory") setConsumeToProject(false);
+                        }}
                         options={[
                           { value: "inventory", label: t`Inventory` },
                           { value: "class", label: t`Fixed Asset Class` },
@@ -432,7 +489,7 @@ const JobForm = ({
                               ]
                             : [])
                         ]}
-                        isDisabled={!canEditCompleteTo}
+                        isDisabled={!canEditCompleteTo || isCapitalCharge}
                       />
 
                       {completeTo === "class" && (
@@ -451,7 +508,19 @@ const JobForm = ({
                         />
                       )}
 
-                      {completeTo === "asset" && (
+                      {completeTo === "asset" && isCapitalCharge && (
+                        <div className="flex flex-col gap-1 text-sm">
+                          <span className="text-muted-foreground">
+                            <Trans>Asset Under Construction</Trans>
+                          </span>
+                          <span>
+                            {capitalAssetLabel ??
+                              t`The capital project has no asset under construction yet`}
+                          </span>
+                        </div>
+                      )}
+
+                      {completeTo === "asset" && !isCapitalCharge && (
                         <Combobox
                           name="fixedAssetSelect"
                           label={t`Asset Under Construction`}
@@ -464,6 +533,67 @@ const JobForm = ({
                             label: `${asset.fixedAssetId} — ${asset.name}`
                           }))}
                           isReadOnly={!canEditCompleteTo}
+                        />
+                      )}
+
+                      <ChargeNumber
+                        label={t`Charge Number`}
+                        isOptional
+                        isReadOnly={!canEditCompleteTo}
+                        onChange={(row) => {
+                          const treatment = row?.costTreatment ?? null;
+                          setPickedTreatment(treatment);
+                          setPickedProjectStock(row?.projectStock ?? false);
+                          if (!row?.projectStock) {
+                            setReceiveToProjectStock(false);
+                          }
+                          if (treatment === "Capitalize") {
+                            setConsumeToProject(false);
+                            setCompleteTo("asset");
+                            setFixedAssetId(row?.targetFixedAssetId ?? "");
+                            setPickedAssetLabel(
+                              row?.targetFixedAssetLabel ?? null
+                            );
+                            return;
+                          }
+                          if (isCapitalCharge) {
+                            // Leaving a capital charge number frees the
+                            // job to complete to inventory again.
+                            setCompleteTo("inventory");
+                            setFixedAssetId("");
+                            setPickedAssetLabel(null);
+                          }
+                          setConsumeToProject(
+                            (isCapitalCharge || completeTo === "inventory") &&
+                              (treatment === "Expense" ||
+                                treatment === "Contract")
+                          );
+                        }}
+                      />
+                      <Boolean
+                        bordered
+                        name="consumeToProject"
+                        label={t`Consume to project`}
+                        description={t`The job's cost goes to the project when it completes, instead of into stock`}
+                        value={consumeToProject && canConsumeToProject}
+                        onChange={(value) => {
+                          setConsumeToProject(value);
+                          if (value) setReceiveToProjectStock(false);
+                        }}
+                        isDisabled={!canConsumeToProject || !canEditCompleteTo}
+                      />
+                      {canReceiveToProjectStock && (
+                        <Boolean
+                          bordered
+                          name="receiveToProjectStock"
+                          label={t`Receive to project stock`}
+                          description={t`The job's output enters the project's stock instead of unassigned stock`}
+                          value={receiveToProjectStock && !consumeToProject}
+                          onChange={(value) => {
+                            setReceiveToProjectStock(value);
+                            if (value) setConsumeToProject(false);
+                          }}
+                          isDisabled={!canEditCompleteTo}
                         />
                       )}
 

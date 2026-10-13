@@ -149,6 +149,9 @@ msgstr "Add & Issue"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "Add a row for each job or task you worked on."
+
 msgid "Add Authenticator App"
 msgstr "Add Authenticator App"
 
@@ -157,6 +160,9 @@ msgstr "Add Inventory"
 
 msgid "Add Passkey"
 msgstr "Add Passkey"
+
+msgid "Add row"
+msgstr "Add row"
 
 msgid "Add Sample"
 msgstr "Add Sample"
@@ -333,8 +339,17 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Certify and submit"
+msgstr "Certify and submit"
+
+msgid "Certify and Submit"
+msgstr "Certify and Submit"
+
 msgid "Change"
 msgstr "Change"
+
+msgid "Change Time"
+msgstr "Change Time"
 
 msgid "Changelog newsletter"
 msgstr "Changelog newsletter"
@@ -344,6 +359,9 @@ msgstr "Characteristic"
 
 msgid "Characteristics"
 msgstr "Characteristics"
+
+msgid "Charge Number"
+msgstr "Charge Number"
 
 msgid "Chat"
 msgstr "Chat"
@@ -545,6 +563,15 @@ msgstr "Description"
 msgid "Details"
 msgstr "Details"
 
+msgid "Direct Research"
+msgstr "Direct Research"
+
+msgid "Direct Supervision"
+msgstr "Direct Supervision"
+
+msgid "Direct Support"
+msgstr "Direct Support"
+
 msgid "Dispatch not found"
 msgstr "Dispatch not found"
 
@@ -653,6 +680,9 @@ msgstr "End Operations"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 
+msgid "Enter hours from 0 to 24"
+msgstr "Enter hours from 0 to 24"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Enter PIN for {0}"
@@ -730,6 +760,12 @@ msgstr "Failed to save measurement"
 msgid "Failed to save result"
 msgstr "Failed to save result"
 
+msgid "Failed to save the hours"
+msgstr "Failed to save the hours"
+
+msgid "Failed to submit the week"
+msgstr "Failed to submit the week"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Failed to upload {0}"
@@ -802,6 +838,9 @@ msgstr "Heading {level}"
 msgid "Hide description"
 msgstr "Hide description"
 
+msgid "Hours on {label}"
+msgstr "Hours on {label}"
+
 msgid "How Carbon looks in this browser."
 msgstr "How Carbon looks in this browser."
 
@@ -810,6 +849,9 @@ msgstr "How many were actually picked?"
 
 msgid "How many?"
 msgstr "How many?"
+
+msgid "I certify this statement"
+msgstr "I certify this statement"
 
 msgid "I understand and want to complete without issuing"
 msgstr "I understand and want to complete without issuing"
@@ -926,6 +968,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Labor"
 
+msgid "Labor category"
+msgstr "Labor category"
+
 msgid "Last completed"
 msgstr "Last completed"
 
@@ -934,6 +979,9 @@ msgstr "Last Name"
 
 msgid "Last used"
 msgstr "Last used"
+
+msgid "Late Entry"
+msgstr "Late Entry"
 
 msgid "Learn more"
 msgstr "Learn more"
@@ -1108,6 +1156,9 @@ msgstr "Must be between {minValue} and {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "My Hours"
 
+msgid "My Time"
+msgstr "My Time"
+
 msgid "Name"
 msgstr "Name"
 
@@ -1128,6 +1179,9 @@ msgstr "Next"
 
 msgid "Next step"
 msgstr "Next step"
+
+msgid "Next week"
+msgstr "Next week"
 
 msgid "No"
 msgstr "No"
@@ -1155,6 +1209,9 @@ msgstr "No available serial numbers found"
 
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
@@ -1246,6 +1303,9 @@ msgstr "No stock"
 msgid "No time entries for this week"
 msgstr "No time entries for this week"
 
+msgid "No time this week"
+msgstr "No time this week"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 
@@ -1261,8 +1321,14 @@ msgstr "No work centers exist"
 msgid "None"
 msgstr "None"
 
+msgid "Not Qualified"
+msgstr "Not Qualified"
+
 msgid "Notes"
 msgstr "Notes"
+
+msgid "Nothing matches your search."
+msgstr "Nothing matches your search."
 
 msgid "Nothing running"
 msgstr "Nothing running"
@@ -1424,6 +1490,9 @@ msgstr "Pick a style and an avatar, or shuffle for new ones."
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "Pick what you worked on, then the labor category."
+
 msgid "Picked"
 msgstr "Picked"
 
@@ -1481,6 +1550,9 @@ msgstr "Preventive"
 msgid "Previous step"
 msgstr "Previous step"
 
+msgid "Previous week"
+msgstr "Previous week"
+
 msgid "Print"
 msgstr "Print"
 
@@ -1514,6 +1586,9 @@ msgstr "Profile"
 msgid "Progress"
 msgstr "Progress"
 
+msgid "Project"
+msgstr "Project"
+
 msgid "Purchasing"
 msgstr "Purchasing"
 
@@ -1537,6 +1612,12 @@ msgstr "Queue empty"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Reason for change"
+msgstr "Reason for change"
+
+msgid "Reason for late entry"
+msgstr "Reason for late entry"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -1714,6 +1795,9 @@ msgstr "Search gauges..."
 msgid "Search operators..."
 msgstr "Search operators..."
 
+msgid "Search projects and tasks"
+msgstr "Search projects and tasks"
+
 msgid "Search..."
 msgstr "Search..."
 
@@ -1861,6 +1945,9 @@ msgstr "Sign Out"
 msgid "Sign out instead"
 msgstr "Sign out instead"
 
+msgid "Signature pad"
+msgstr "Signature pad"
+
 msgid "Signed in as {stationName}"
 msgstr "Signed in as {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "Sub-Assembly {0} · {1} — shown on its own"
 msgid "Submit anonymously"
 msgstr "Submit anonymously"
 
+msgid "Submit week"
+msgstr "Submit week"
+
 msgid "Suggestion"
 msgstr "Suggestion"
 
@@ -1968,8 +2058,14 @@ msgstr "Tag"
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "The change and its reason are kept in the timesheet's history."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "The date is before the entry window. The reason is kept with the entry."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."
@@ -2022,6 +2118,9 @@ msgstr "This part will be scrapped from stock. Its requirement stays open so you
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "This unit will be permanently scrapped and a replacement serial number will be created."
+
+msgid "This week"
+msgstr "This week"
 
 msgid "Thumbnail"
 msgstr "Thumbnail"

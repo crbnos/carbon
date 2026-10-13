@@ -400,6 +400,48 @@ re-cost (`recostOutbound`), the opening layer cost (`getCutoverInventory`) and t
 movement costs all use it. A job return is not a layer: `isCostLayer` leaves out a
 positive "Job Consumption" row.
 
+Project billing (Phase 4a, `.claude/rules/project-billing.md`): `lib/project-posting.ts`
+also holds the contract billable items — `loadContractBillingContext`,
+`buildContractBillableItem` (T&M only; Cost Plus items come from `@carbon/ee`, which this
+package cannot import) and `generateTimeAndMaterialsItems`, the T&M backfill that
+`post-customer-contract` (confirm, amend `add`), `generate-contract-billable-items` and
+`create-project-billing-invoices` call. The last drafts project billing invoices through
+`create-contract-invoices/insert-invoice.ts` (`insertDraftContractInvoice`).
+
+Project revenue (Phase 4b): the 3 revenue recognition run functions
+(`propose-`, `recalculate-` and `preview-revenue-recognition-run`) run
+`runRowSynthesizers(type, ctx.revenueRunSynthesizers)`. A Revenue Recognition run
+runs the caller's synthesizers, `synthesizeProjectRevenue`, then
+`synthesizeContractRevenue`; a Lease run runs only `synthesizeRentalAccruals` and
+ignores the caller's.
+`revenueRunSynthesizers` is a field of `ServerFnContext` and of the `serverFns`
+fields (default `[]`). It is how the commercial Percent Complete synthesizer
+(`@carbon/ee/project-revenue.server`, `projectRevenueSynthesizers`) runs inside the
+run's transaction, since this package cannot import `@carbon/ee`; every caller passes
+it. The writers both synthesizers share are exported as
+`@carbon/server-functions/lib/project-revenue` (`lockProjectRevenue`,
+`loadProgressLines`, `clearProgressMonth`, `recognizedBefore`, `writeProgressMonths`,
+`selectUnrelievedCost`, `writeCostRelief`, `monthStartOf`). The project billing test
+fixture is exported as `@carbon/server-functions/lib/project-billing-test-fixture`, and
+the database test gate as `@carbon/server-functions/test-fixture`, for the ee database
+tests.
+
+Government contracting (Phase 5a, `.claude/rules/government-contracting.md`):
+`save-timesheet-entry` (a cell save, or `mode: "add"` for Log time and service time) and
+`submit-timesheet-week` hold every timesheet write of the ERP and the MES, and with it
+every DCAA rule (`checkDcaaEntry`, the revision trail, Pending Employee Review, the
+timecard check, the certification row). In Standard mode both keep Phase 1a behavior.
+`lib/project-posting.ts` stamps `projectLedger.unallowable` (`isUnallowableCharge`) and
+refuses time from a non-member of a `restrictCharging` project (`assertChargeable`,
+DCAA mode only). `post-timesheet/plan.ts` dilutes an exempt employee's week
+(`planDilution`, `planRedilutionPostings`, DCAA mode only).
+`create-project-billing-invoices/clin.ts` (`planClinSections`, `acrnPositions`) adds a
+Comment line per CLIN and the `salesInvoiceFundingAllocation` rows. The payroll totals
+import is `import-csv/payroll-total-import.ts`.
+R&D tax (Phase 5d): `save-timesheet-entry` fills an entry's `workLocationId` (the
+employee's job location) and `rdActivityRole` (the labor category's role) when the input
+leaves them out (`resolveRdDefaults`); both are part of the cell's key.
+
 Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
 (the company's expired-entity policy and expiry checks, used by `issue` and
 `post-stock-transfer`) and `tracked-entity-attributes.ts` (`attributesContain`, the

@@ -86,6 +86,8 @@ interface EditorProp {
    * options as the bubble menu — no new capabilities.
    */
   toolbar?: boolean;
+  /** The body's placeholder; "Press '/' for commands" when unset. */
+  placeholder?: string;
   /**
    * Full-screen "document" mode. When provided, the editor's first block is a
    * locked H1 title seeded from `title.value`; the title text is streamed back
@@ -118,6 +120,7 @@ const Editor = ({
   mentions,
   highlightTokens,
   toolbar,
+  placeholder,
   title
 }: EditorProp) => {
   const { t } = useLingui();
@@ -134,6 +137,7 @@ const Editor = ({
       const level = node.attrs.level;
       return t`Heading ${level}`;
     }
+    if (placeholder) return placeholder;
     return isPhone ? t`Write a note…` : t`Press '/' for commands`;
   };
   const [openNode, setOpenNode] = useState(false);

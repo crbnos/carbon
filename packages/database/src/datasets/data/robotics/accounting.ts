@@ -6,10 +6,12 @@ import type {
   AccountingData,
   FixedAssetSpec,
   JournalEntrySpec,
+  LaborCategorySpec,
   MemoSpec,
   PaymentSpec,
   PeriodCloseTaskSpec,
-  ProjectSpec
+  ProjectSpec,
+  TimesheetEntrySpec
 } from "../../types.ts";
 
 export const FIXED_ASSETS: FixedAssetSpec[] = [
@@ -418,13 +420,429 @@ export const PROJECTS: ProjectSpec[] = [
     name: "Lakeshore Weld Cell Retrofit",
     description:
       "Six-axis weld cell retrofit for Lakeshore Automotive's body shop",
-    purchaseInvoiceLine: { invoiceKey: "paid", item: "ENC-ABS-19" }
+    identifier: "LWC",
+    costTreatment: "Contract",
+    status: "Released",
+    // Phase 2a: the contract keeps its own stock — two parts received for
+    // it, and fasteners transferred in from common stock.
+    projectStock: {
+      openingStock: [
+        {
+          item: "FST-M5-SS",
+          shelf: "A1-L1",
+          qty: 100,
+          unitCost: 0.55,
+          dateOffset: -30
+        },
+        {
+          item: "MAT-CONN-M23",
+          shelf: "A1-L2",
+          qty: 10,
+          unitCost: 38,
+          dateOffset: -30
+        }
+      ],
+      transfers: [
+        {
+          item: "FST-M8-SS",
+          shelf: "A1-L1",
+          qty: 50,
+          reason: "Kit the contract cells' base fasteners",
+          dateOffset: -12
+        }
+      ]
+    },
+    purchaseInvoiceLine: { invoiceKey: "paid", item: "ENC-ABS-19" },
+    milestones: [
+      {
+        key: "fat",
+        name: "Factory Acceptance Test",
+        startOffset: -50,
+        endOffset: -8
+      },
+      {
+        key: "sat",
+        name: "Site Acceptance Test",
+        startOffset: -7,
+        endOffset: 40
+      }
+    ],
+    elements: [
+      {
+        key: "cell",
+        type: "System",
+        name: "Weld cell",
+        state: "In Progress",
+        budget: 150000
+      },
+      {
+        key: "req-cycle",
+        type: "Requirement",
+        name: "Weld cycle under 48 seconds per body side",
+        parentKey: "cell",
+        state: "In Progress",
+        milestone: "fat"
+      },
+      {
+        key: "task-path",
+        type: "Task",
+        name: "Optimize the robot weld path for the B-pillar",
+        parentKey: "req-cycle",
+        state: "Done",
+        milestone: "fat",
+        estimatedHours: 30
+      },
+      {
+        key: "tc-cycle",
+        type: "Test Case",
+        name: "Cycle time run on 20 consecutive parts",
+        parentKey: "req-cycle",
+        state: "In Review",
+        milestone: "fat",
+        estimatedHours: 8
+      },
+      {
+        key: "req-safety",
+        type: "Requirement",
+        name: "Light curtain stops the arm within 200 ms",
+        parentKey: "cell",
+        state: "Todo",
+        milestone: "sat"
+      },
+      {
+        key: "task-safety",
+        type: "Task",
+        name: "Wire the light curtain to the safety controller",
+        parentKey: "req-safety",
+        state: "In Progress",
+        milestone: "sat",
+        estimatedHours: 16
+      },
+      {
+        key: "tc-safety",
+        type: "Test Case",
+        name: "Stop-time test at full speed",
+        parentKey: "req-safety",
+        state: "Todo",
+        milestone: "sat",
+        estimatedHours: 6
+      },
+      {
+        key: "fixtures",
+        type: "System",
+        name: "Part fixtures",
+        state: "Todo",
+        milestone: "sat",
+        budget: 60000
+      },
+      {
+        key: "req-locate",
+        type: "Requirement",
+        name: "Locate the body side within 0.5 mm",
+        parentKey: "fixtures",
+        state: "Backlog"
+      },
+      {
+        key: "task-clamp",
+        type: "Task",
+        name: "Design the pneumatic clamp layout",
+        parentKey: "req-locate",
+        state: "Backlog",
+        estimatedHours: 20
+      }
+    ]
   },
   {
     key: "cobot-gen2",
     name: "Cobot Arm Gen-2 Development",
     description:
-      "Next-generation collaborative arm with integrated torque sensing"
+      "Next-generation collaborative arm with integrated torque sensing",
+    identifier: "CG2",
+    costTreatment: "Expense",
+    status: "Released",
+    milestones: [
+      {
+        key: "alpha",
+        name: "Alpha Prototype",
+        startOffset: -40,
+        endOffset: -3
+      },
+      { key: "beta", name: "Beta Build", startOffset: -2, endOffset: 70 }
+    ],
+    elements: [
+      {
+        key: "arm",
+        type: "System",
+        name: "Gen-2 arm",
+        item: "ARM-BASE-001",
+        state: "In Progress",
+        budget: 140000
+      },
+      {
+        key: "req-torque",
+        type: "Requirement",
+        name: "Detect a 50 N contact in every joint",
+        parentKey: "arm",
+        state: "In Progress",
+        milestone: "alpha"
+      },
+      {
+        key: "task-sensor",
+        type: "Task",
+        name: "Integrate the joint torque sensor",
+        parentKey: "req-torque",
+        state: "In Progress",
+        milestone: "beta",
+        estimatedHours: 36
+      },
+      {
+        key: "tc-contact",
+        type: "Test Case",
+        name: "Contact detection test per ISO/TS 15066",
+        parentKey: "req-torque",
+        state: "Todo",
+        milestone: "beta",
+        estimatedHours: 12
+      },
+      {
+        key: "req-payload",
+        type: "Requirement",
+        name: "Carry 8 kg at full reach",
+        parentKey: "arm",
+        state: "Done",
+        milestone: "alpha"
+      },
+      {
+        key: "task-gearbox",
+        type: "Task",
+        name: "Select the wrist gearbox",
+        parentKey: "req-payload",
+        state: "Done",
+        milestone: "alpha",
+        estimatedHours: 14
+      },
+      {
+        key: "tc-payload",
+        type: "Test Case",
+        name: "Payload test at full reach",
+        parentKey: "req-payload",
+        state: "Todo",
+        milestone: "beta",
+        estimatedHours: 6
+      },
+      {
+        key: "control",
+        type: "System",
+        name: "Controller",
+        state: "Backlog",
+        budget: 45000
+      },
+      {
+        key: "req-api",
+        type: "Requirement",
+        name: "Expose a REST API for motion commands",
+        parentKey: "control",
+        state: "Backlog"
+      },
+      {
+        key: "task-api",
+        type: "Task",
+        name: "Draft the motion API specification",
+        parentKey: "req-api",
+        state: "Backlog",
+        estimatedHours: 10
+      },
+      {
+        key: "p-mass",
+        type: "Parameter",
+        name: "Arm mass",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Sum", unit: "kg" }
+      },
+      {
+        key: "p-mass-a",
+        type: "Parameter",
+        name: "Link mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 9.5, unit: "kg" }
+      },
+      {
+        key: "p-mass-b",
+        type: "Parameter",
+        name: "Joint drive mass",
+        parentKey: "p-mass",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 6, unit: "kg" }
+      },
+      {
+        key: "req-mass-budget",
+        type: "Requirement",
+        name: "Arm mass at most 18 kg",
+        parentKey: "arm",
+        state: "In Review",
+        requirement: {
+          category: "Performance",
+          operator: "≤",
+          target: 18,
+          unit: "kg",
+          verificationMethod: "Test",
+          actualParameter: "p-mass"
+        }
+      },
+      {
+        key: "tc-mass",
+        type: "Test Case",
+        name: "Weigh the beta arm",
+        parentKey: "req-mass-budget",
+        state: "Done",
+        verdict: "Pass"
+      },
+      {
+        key: "p-supply",
+        type: "Parameter",
+        name: "Controller power available",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 400, unit: "W" }
+      },
+      {
+        key: "p-load",
+        type: "Parameter",
+        name: "Joint drive power draw",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: { source: "Manual", value: 340, unit: "W" }
+      },
+      {
+        key: "p-margin",
+        type: "Parameter",
+        name: "Controller power margin",
+        parentKey: "arm",
+        state: "In Progress",
+        parameter: {
+          source: "Formula",
+          formula: "= {p-supply} - {p-load}",
+          unit: "W"
+        }
+      },
+      {
+        key: "req-margin",
+        type: "Requirement",
+        name: "Controller power margin stays positive",
+        parentKey: "arm",
+        state: "Todo",
+        requirement: {
+          category: "Design Constraint",
+          operator: "≥",
+          target: 0,
+          unit: "W",
+          verificationMethod: "Analysis",
+          actualParameter: "p-margin"
+        }
+      }
+    ],
+    links: [
+      { from: "arm", to: "req-mass-budget", type: "satisfies" },
+      { from: "tc-mass", to: "req-mass-budget", type: "verifies" },
+      { from: "task-sensor", to: "tc-contact", type: "precedes" }
+    ]
+  }
+];
+
+export const LABOR_CATEGORIES: LaborCategorySpec[] = [
+  {
+    name: "Robotics Engineer",
+    description: "Designs and programs robot cells",
+    costRate: 88
+  },
+  {
+    name: "Controls Technician",
+    description: "Wires and commissions controls",
+    costRate: 62
+  },
+  {
+    name: "Mechanical Engineer",
+    description: "Designs fixtures and mechanisms",
+    costRate: 84
+  }
+];
+
+// Draft this week, Submitted last week: the timesheet and the approvals queue.
+export const TIMESHEET_ENTRIES: TimesheetEntrySpec[] = [
+  {
+    project: "lakeshore-cell",
+    element: "task-safety",
+    laborCategory: "Controls Technician",
+    week: -1,
+    weekday: 0,
+    hours: 6,
+    status: "Submitted",
+    note: "Safety controller wiring"
+  },
+  {
+    project: "lakeshore-cell",
+    element: "tc-cycle",
+    laborCategory: "Robotics Engineer",
+    week: -1,
+    weekday: 1,
+    hours: 4,
+    status: "Submitted"
+  },
+  {
+    project: "cobot-gen2",
+    element: "task-sensor",
+    laborCategory: "Robotics Engineer",
+    week: -1,
+    weekday: 2,
+    hours: 7.5,
+    status: "Submitted"
+  },
+  {
+    project: "cobot-gen2",
+    element: "task-gearbox",
+    laborCategory: "Mechanical Engineer",
+    week: -1,
+    weekday: 3,
+    hours: 3,
+    status: "Submitted"
+  },
+  {
+    project: "lakeshore-cell",
+    element: "task-safety",
+    laborCategory: "Controls Technician",
+    week: 0,
+    weekday: 0,
+    hours: 5,
+    status: "Draft"
+  },
+  {
+    project: "lakeshore-cell",
+    element: "tc-safety",
+    laborCategory: "Robotics Engineer",
+    week: 0,
+    weekday: 1,
+    hours: 2,
+    status: "Draft"
+  },
+  {
+    project: "cobot-gen2",
+    element: "task-sensor",
+    laborCategory: "Robotics Engineer",
+    week: 0,
+    weekday: 0,
+    hours: 6,
+    status: "Draft"
+  },
+  {
+    project: "cobot-gen2",
+    element: "tc-contact",
+    laborCategory: "Mechanical Engineer",
+    week: 0,
+    weekday: 2,
+    hours: 3,
+    status: "Draft"
   }
 ];
 
@@ -448,6 +866,9 @@ export const roboticsAccounting: AccountingData = {
   payments: PAYMENTS,
   memos: MEMOS,
   projects: PROJECTS,
+  indirectPools: [],
+  laborCategories: LABOR_CATEGORIES,
+  timesheetEntries: TIMESHEET_ENTRIES,
   customDimension: {
     name: "Product Line",
     values: ["Collaborative Arms", "Mobile Platforms"]

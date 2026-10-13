@@ -2,7 +2,19 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { DB } from "@carbon/database/client";
+import * as pegging from "@carbon/ee/pegging";
 import { computePlanningOrders } from "@carbon/utils";
+import {
+  type CompiledQuery,
+  type DatabaseConnection,
+  DummyDriver,
+  Kysely,
+  PostgresAdapter,
+  PostgresIntrospector,
+  PostgresQueryCompiler,
+  type QueryResult
+} from "kysely";
 import { describe, expect, it } from "vitest";
 import type {
   ExistingPlanningAction,
@@ -13,6 +25,7 @@ import {
   daysBetween,
   deriveChangeActions,
   deriveReleaseActions,
+  deriveRowActions,
   diffPlanningActions,
   earlierDate,
   earlierRelease,
@@ -20,7 +33,10 @@ import {
   isCommittedJobStatus,
   isCommittedPurchaseOrderStatus,
   isOrderFrozen,
+  itemLocationSegmentKey,
   keyPeriodFor,
+  loadSegmentOnHand,
+  memberMoveCandidates,
   naturalKey,
   projectionsWithExpedites,
   releaseByDate
@@ -1262,6 +1278,51 @@ describe("diffPlanningActions", () => {
     expect(expediteA).not.toBe(expediteB);
   });
 
+  // A project with project stock nets in its own segment, so one item and
+  // week can hold a common Order and the project's Order.
+  it("keys an action by its netting segment and its transfer owners", () => {
+    const order = {
+      itemId: "item-1",
+      locationId: "loc-1",
+      type: "Order",
+      periodId: "p1",
+      purchaseOrderLineId: null,
+      jobId: null
+    };
+    expect(naturalKey(order)).toBe(
+      naturalKey({ ...order, planningSegmentId: "" })
+    );
+    expect(naturalKey(order)).not.toBe(
+      naturalKey({ ...order, planningSegmentId: "prj_1" })
+    );
+
+    const transfer = {
+      ...order,
+      type: "Transfer",
+      planningSegmentId: "prj_1",
+      toProjectId: "prj_1"
+    };
+    expect(naturalKey({ ...transfer, fromProjectId: null })).not.toBe(
+      naturalKey({ ...transfer, fromProjectId: "prj_2" })
+    );
+  });
+
+  it("keeps matching an existing common action on the next run", () => {
+    const diff = diffPlanningActions({
+      existing: [
+        {
+          ...existing,
+          planningSegmentId: "",
+          fromProjectId: null,
+          toProjectId: null
+        }
+      ],
+      candidates: [{ ...candidate, planningSegmentId: "" }],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
   it("passes candidate fields (incl. assignee) through to inserts unchanged", () => {
     const diff = diffPlanningActions({
       existing: [],
@@ -1759,5 +1820,250 @@ describe("deriveReleaseActions", () => {
         todayDate: today
       })
     ).toHaveLength(1);
+  });
+});
+
+describe("loadSegmentOnHand", () => {
+  // One item and location with three project stock stripes: common (''), a
+  // project with project stock, and a project whose project stock was turned
+  // off (its stripe nets in common). The driver answers like Postgres for
+  // equality predicates.
+  const STOCK: Record<string, unknown>[] = [
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "",
+      companyId: "co_1",
+      quantityOnHand: 5
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_1",
+      companyId: "co_1",
+      quantityOnHand: 3
+    },
+    {
+      itemId: "itm_1",
+      locationId: "loc_1",
+      projectId: "prj_2",
+      companyId: "co_1",
+      quantityOnHand: 2
+    }
+  ];
+  const PROJECTS: Record<string, unknown>[] = [
+    { id: "prj_1", companyId: "co_1", projectStock: true },
+    { id: "prj_2", companyId: "co_1", projectStock: false }
+  ];
+
+  class StockTableDriver extends DummyDriver {
+    override async acquireConnection(): Promise<DatabaseConnection> {
+      return {
+        executeQuery: async <R>(
+          query: CompiledQuery
+        ): Promise<QueryResult<R>> => {
+          const table = query.sql.includes('from "project"') ? PROJECTS : STOCK;
+          const predicates = [...query.sql.matchAll(/"(\w+)" = \$(\d+)/g)];
+          const rows = table.filter((row) =>
+            predicates.every(
+              ([, column, n]) =>
+                row[column!] === query.parameters[Number(n) - 1]
+            )
+          );
+          return { rows: rows as R[] };
+        },
+        // biome-ignore lint/correctness/useYield: never streamed
+        streamQuery: async function* () {
+          throw new Error("not streamed");
+        }
+      };
+    }
+  }
+
+  it("sums each stripe into its netting segment", async () => {
+    const db = new Kysely<DB>({
+      dialect: {
+        createAdapter: () => new PostgresAdapter(),
+        createDriver: () => new StockTableDriver(),
+        createIntrospector: (k) => new PostgresIntrospector(k),
+        createQueryCompiler: () => new PostgresQueryCompiler()
+      }
+    });
+
+    const onHand = await loadSegmentOnHand(db, "co_1");
+
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1"))).toBe(7);
+    expect(onHand.get(itemLocationSegmentKey("itm_1", "loc_1", "prj_1"))).toBe(
+      3
+    );
+    expect(onHand.size).toBe(2);
+  });
+});
+
+describe("deriveRowActions in a project segment", () => {
+  // The spec case: P-101 needs 20 in week 1 and holds 5. The common segment
+  // has 8 it does not need within the horizon, so MRP drew 8.
+  const projectRow = (weeks: number[]) =>
+    ({
+      id: "item-1",
+      planningSegmentId: "prj_1",
+      reorderingPolicy: "Fixed Reorder Quantity",
+      reorderPoint: 10,
+      reorderQuantity: 50,
+      minimumOrderQuantity: 0,
+      maximumOrderQuantity: 0,
+      orderMultiple: 0,
+      lotSize: 0,
+      maximumInventoryQuantity: 0,
+      demandAccumulationPeriod: 1,
+      demandAccumulationSafetyStock: 0,
+      leadTime: 0,
+      quantityOnHand: 5,
+      quantityToOrder: 15,
+      preferredSupplierId: "sup-1",
+      supersessionMode: null,
+      minimumReserveQuantity: 0,
+      ...Object.fromEntries(weeks.map((value, i) => [`week${i + 1}`, value]))
+    }) as unknown as Parameters<typeof deriveRowActions>[0]["row"];
+
+  const input = (draws: { periodId: string; quantity: number }[]) => ({
+    row: projectRow([-15, -15, -15, -15, -15]),
+    kind: "Order" as const,
+    periods: PERIODS,
+    demandByPeriod: new Map([["p1", 20]]),
+    openOrders: [],
+    onHand: 5,
+    draws,
+    toleranceDays: TOLERANCE,
+    todayDate: TODAY
+  });
+
+  it("emits Transfer 8 and Order 7, both in the project's segment", () => {
+    const actions = deriveRowActions(input([{ periodId: "p1", quantity: 8 }]));
+
+    expect(
+      actions.map((a) => ({
+        type: a.type,
+        periodId: a.periodId,
+        quantity: a.suggestedQuantity,
+        segment: a.planningSegmentId,
+        from: a.fromProjectId ?? null,
+        to: a.toProjectId ?? null
+      }))
+    ).toEqual([
+      {
+        type: "Order",
+        periodId: "p1",
+        quantity: 7,
+        segment: "prj_1",
+        from: null,
+        to: null
+      },
+      {
+        type: "Transfer",
+        periodId: "p1",
+        quantity: 8,
+        segment: "prj_1",
+        from: null,
+        to: "prj_1"
+      }
+    ]);
+    const transfer = actions.find((a) => a.type === "Transfer");
+    expect(transfer?.reason).toBe("Common stock not needed within the horizon");
+    expect(transfer?.suggestedDate).toBe("2026-10-05");
+  });
+
+  // Lot-for-lot: the row's reorder point of 10 and quantity of 50 do not apply.
+  it("orders the shortfall alone, with no reorder policy", () => {
+    const actions = deriveRowActions(input([]));
+    expect(actions.map((a) => [a.type, a.suggestedQuantity])).toEqual([
+      ["Order", 15]
+    ]);
+    expect(actions[0]?.policyName).toBe("Lot-for-Lot");
+  });
+});
+
+// Projects Phase 3: a member short by 4, with a sibling that needs its 6 in 3
+// weeks, gets a Borrow action in the group's segment.
+describe("memberMoveCandidates", () => {
+  it("emits a Borrow in the group segment and moves the stock in the peg input", () => {
+    const result = memberMoveCandidates(
+      {
+        inputs: [
+          {
+            planningGroupId: "plg-1",
+            itemId: "item-1",
+            locationId: "loc-1",
+            demands: [
+              {
+                projectId: "p-101",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-1",
+                needDate: "2026-10-19",
+                quantity: 4
+              },
+              {
+                projectId: "p-102",
+                projectElementId: null,
+                priority: 100,
+                sourceType: "Project Material",
+                sourceId: "pem-2",
+                needDate: "2026-11-02",
+                quantity: 6
+              }
+            ],
+            supplies: [
+              {
+                supplyType: "Stock",
+                supplyId: "p-102",
+                ownerProjectId: "p-102",
+                availableDate: "2026-10-12",
+                quantity: 6
+              }
+            ]
+          }
+        ],
+        planningGroups: [{ id: "plg-1", memberProjectIds: ["p-101", "p-102"] }],
+        priorityRuleByGroup: { "plg-1": "Earliest Need" },
+        priorityByProject: { "p-101": 100, "p-102": 100 },
+        leadTimeByItemLocation: new Map([["item-1\x1floc-1", 5]]),
+        periods: [
+          { id: "w1", startDate: "2026-10-11" },
+          { id: "w2", startDate: "2026-10-18" },
+          { id: "w3", startDate: "2026-10-25" },
+          // the horizon ends 2026-11-07, so p-102's need is inside it
+          { id: "w4", startDate: "2026-11-01" }
+        ],
+        todayDate: "2026-10-12",
+        assigneeOf: () => "emp-1"
+      },
+      pegging
+    );
+    expect(result.candidates).toEqual([
+      expect.objectContaining({
+        type: "Borrow",
+        itemId: "item-1",
+        locationId: "loc-1",
+        periodId: "w2",
+        suggestedQuantity: 4,
+        suggestedDate: "2026-10-19",
+        planningSegmentId: "plg-1",
+        fromProjectId: "p-102",
+        toProjectId: "p-101",
+        triggerValues: { paybackDueDate: "2026-10-28" },
+        assignee: "emp-1"
+      })
+    ]);
+    expect(
+      result.inputs[0]?.supplies.map((supply) => [
+        supply.ownerProjectId,
+        supply.quantity
+      ])
+    ).toEqual([
+      ["p-102", 2],
+      ["p-101", 4]
+    ]);
   });
 });

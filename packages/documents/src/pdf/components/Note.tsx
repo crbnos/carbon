@@ -3,17 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { JSONContent } from "@carbon/react";
-import { StyleSheet, Text, View } from "@react-pdf/renderer";
+import { Link, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { ReactNode } from "react";
 import type { DocumentTheme } from "../../template";
-import { useDocTheme } from "../blocks/tw";
+import { useDocFontFamily, useDocTheme } from "../blocks/tw";
+import { fontHasItalic } from "../fonts";
 
 /**
  * Build a tiptap → react-pdf renderer bound to a theme, so the title/headings
  * pick up `theme.heading` and body text inherits `theme.text` (set on the
  * wrapper). Closure over `theme` keeps the recursive calls clean.
  */
-function makeConvert(theme: DocumentTheme) {
+function makeConvert(theme: DocumentTheme, allowItalic: boolean) {
   const convert = (
     node: JSONContent,
     args?: { index?: number; parentNodeType?: string; title?: string }
@@ -113,8 +114,34 @@ function makeConvert(theme: DocumentTheme) {
           </View>
         );
 
-      case "text":
-        return node.text;
+      case "text": {
+        const marks = node.marks ?? [];
+        if (marks.length === 0) return node.text;
+        const style: { fontWeight?: "bold"; fontStyle?: "italic" } = {};
+        if (marks.some((mark) => mark.type === "bold"))
+          style.fontWeight = "bold";
+        // Italic only with an italic face: react-pdf throws without one.
+        if (allowItalic && marks.some((mark) => mark.type === "italic")) {
+          style.fontStyle = "italic";
+        }
+        const text =
+          Object.keys(style).length > 0 ? (
+            <Text style={style}>{node.text}</Text>
+          ) : (
+            node.text
+          );
+        const href = marks.find((mark) => mark.type === "link")?.attrs?.href;
+        return typeof href === "string" && href ? (
+          <Link
+            src={href}
+            style={{ color: theme.accent, textDecoration: "underline" }}
+          >
+            {text}
+          </Link>
+        ) : (
+          text
+        );
+      }
 
       default:
         return null;
@@ -125,6 +152,7 @@ function makeConvert(theme: DocumentTheme) {
 
 const Note = ({ title, content }: { title?: string; content: JSONContent }) => {
   const theme = useDocTheme();
+  const allowItalic = fontHasItalic(useDocFontFamily());
   if (!content) return null;
   if (typeof content !== "object") return null;
   if (!("content" in content)) return null;
@@ -133,7 +161,7 @@ const Note = ({ title, content }: { title?: string; content: JSONContent }) => {
 
   return (
     <View style={{ width: "100%", color: theme.text }}>
-      {makeConvert(theme)(content, { title })}
+      {makeConvert(theme, allowItalic)(content, { title })}
     </View>
   );
 };

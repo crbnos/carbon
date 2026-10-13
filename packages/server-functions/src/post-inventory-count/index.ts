@@ -278,6 +278,8 @@ const postInventoryCount = defineServerFn({
             locationId: line.locationId,
             storageUnitId: line.storageUnitId,
             trackedEntityId: line.trackedEntityId,
+            // The variance books to the stripe the line counted.
+            projectId: line.projectId ?? null,
             entryType: delta > 0 ? "Positive Adjmt." : "Negative Adjmt.",
             documentType: "Inventory Count",
             documentId: inventoryCountId,

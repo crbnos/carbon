@@ -17,6 +17,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "close-job": {
     "update": "production",
   },
+  "complete-service-order": {
+    "update": "service",
+  },
   "convert": {
     "by": "type",
     "rules": {
@@ -125,15 +128,26 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "create": "invoicing",
     "update": "purchasing",
   },
+  "create-project-billing-invoices": {
+    "create": "invoicing",
+    "update": "sales",
+  },
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",
+  },
+  "create-service-order-invoice": {
+    "create": "invoicing",
+    "update": "service",
   },
   "finalize-purchasing-rfq": {
     "create": "purchasing",
   },
   "finalize-supplier-quote": {
     "create": "purchasing",
+  },
+  "generate-contract-billable-items": {
+    "update": "sales",
   },
   "get-method": {
     "update": "production",
@@ -199,6 +213,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
       },
       "partWithMethod": {
         "update": "parts",
+      },
+      "payrollPeriodTotal": {
+        "update": "people",
       },
       "process": {
         "update": "production",
@@ -353,6 +370,16 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "post-production-event": {
     "update": "production",
   },
+  "post-project-burden": "system",
+  "post-project-expense": {
+    "update": "projects",
+  },
+  "post-project-issue": {
+    "update": "inventory",
+  },
+  "post-project-stock-transfer": {
+    "update": "projects",
+  },
   "post-purchase-invoice": {
     "update": "invoicing",
   },
@@ -372,6 +399,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "update": "inventory",
   },
   "post-stock-transfer": {},
+  "post-timesheet": {
+    "update": "projects",
+  },
   "preview-asset-capitalization": {
     "view": "accounting",
   },
@@ -390,13 +420,22 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   "recalculate-revenue-recognition-run": {
     "update": "accounting",
   },
+  "reclass-project-coverage": {
+    "update": "projects",
+  },
   "recost-serial-unit": {
     "update": "accounting",
   },
   "reschedule": {
     "update": "production",
   },
+  "save-timesheet-entry": {
+    "update": "projects",
+  },
   "seed-company": "system",
+  "submit-timesheet-week": {
+    "update": "projects",
+  },
   "sync": {
     "update": "resources",
   },

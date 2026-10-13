@@ -101,6 +101,19 @@ export function copyLineValues(
     projectId: merged.projectId,
     sortOrder: merged.sortOrder,
     customFields: toJson(merged.customFields) ?? null,
+    billingMethod: merged.billingMethod,
+    projectElementId: merged.projectElementId,
+    materialHandlingPercent: merged.materialHandlingPercent,
+    feePercent: merged.feePercent,
+    fundedAmount: merged.fundedAmount,
+    fundedCost: merged.fundedCost,
+    noticePercent: merged.noticePercent,
+    noticeWindowDays: merged.noticeWindowDays,
+    ceilingAmount: merged.ceilingAmount,
+    thresholdNoticeFundedCost: merged.thresholdNoticeFundedCost,
+    runOutNoticeFundedCost: merged.runOutNoticeFundedCost,
+    lineItemNumber: merged.lineItemNumber,
+    parentLineId: merged.parentLineId,
     companyId: scope.companyId,
     createdBy: scope.userId
   };
@@ -307,6 +320,7 @@ export function toLineTerms(
     | "discountPercent"
     | "startDate"
     | "endDate"
+    | "billingMethod"
   >[]
 ): ContractLineTerms[] {
   return lines.map((line) => ({
@@ -317,7 +331,8 @@ export function toLineTerms(
     rateUnit: line.rateUnit,
     discountPercent: Number(line.discountPercent),
     startDate: line.startDate,
-    endDate: line.endDate
+    endDate: line.endDate,
+    billingMethod: line.billingMethod
   }));
 }
 

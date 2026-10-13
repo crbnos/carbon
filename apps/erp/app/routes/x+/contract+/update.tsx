@@ -13,12 +13,14 @@ import { z } from "zod";
 import { getExchangeRate } from "~/modules/accounting";
 import {
   customerContractInvoiceAutomationValidator,
+  customerContractResearchFields,
   customerContractTypes,
   customerContractValidator,
   getContract,
   updateContract,
   updateContractInvoiceAutomation,
   updateContractNotes,
+  updateContractResearchFlags,
   updateContractType
 } from "~/modules/sales";
 import { contractCustomerChange } from "~/modules/sales/sales.server";
@@ -180,6 +182,39 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         error: {
           message: update.error.message || "Failed to update contract type"
+        },
+        data: null
+      };
+    }
+    return { error: null, data: update.data };
+  }
+
+  // R&D tax (Government Contracting 5d): tax facts, not terms, so they
+  // change in any status. Funded research "" is the default (null).
+  if (intent === "researchFlag") {
+    const flag = customerContractResearchFields.find((name) => name === field);
+    if (!flag || (value !== "true" && value !== "false" && value !== "")) {
+      return { error: { message: "Invalid research flag" }, data: null };
+    }
+    if (value === "" && flag !== "researchFunded") {
+      return { error: { message: "Invalid research flag" }, data: null };
+    }
+    const update = await updateContractResearchFlags(client, {
+      id,
+      companyId,
+      [flag]: value === "" ? null : value === "true",
+      updatedBy: userId
+    });
+    if (update.error) {
+      logger.error("contract research flag update failed", {
+        companyId,
+        id,
+        flag,
+        error: update.error
+      });
+      return {
+        error: {
+          message: update.error.message || "Failed to update the research flag"
         },
         data: null
       };

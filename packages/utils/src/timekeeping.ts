@@ -1,0 +1,212 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+// Timekeeping controls for timesheets: the entry window, the status a saved
+// change gives, the ISO week, dilution for exempt staff and the timecard
+// check. Pure, so the timesheet server functions, posting and their tests
+// agree.
+// Spec: `.ai/specs/implemented/2026-10-09-government-contracting.md` (Phase 5a)
+
+import type { Database } from "@carbon/database";
+import { round } from "@carbon/database/precision";
+import {
+  type CalendarDate,
+  parseDate,
+  startOfWeek
+} from "@internationalized/date";
+import { datetime } from "./datetime";
+
+export type TimekeepingControls =
+  Database["public"]["Enums"]["timekeepingControls"];
+export type TimesheetEntryStatus =
+  Database["public"]["Enums"]["timesheetEntryStatus"];
+
+export const TIMESHEET_REFUSAL_NOT_DRAFT = "Only a Draft entry can change";
+export const TIMESHEET_REFUSAL_POSTED =
+  "A posted entry changes only by correction";
+
+/**
+ * Whether time can be entered for `entryDate` (all dates `YYYY-MM-DD`).
+ * A date after today is refused, except on a leave element. A date before
+ * today − `windowDays` is allowed but late, so it needs a late reason.
+ */
+export function isEntryDateAllowed(args: {
+  entryDate: string;
+  today: string;
+  windowDays: number;
+  isLeave: boolean;
+}): { allowed: true; late: boolean } | { allowed: false; reason: "future" } {
+  const { entryDate, today, windowDays, isLeave } = args;
+  if (entryDate > today && !isLeave) {
+    return { allowed: false, reason: "future" };
+  }
+  const windowStart = parseDate(today)
+    .subtract({ days: Math.max(0, windowDays) })
+    .toString();
+  return { allowed: true, late: entryDate < windowStart };
+}
+
+/**
+ * The reasons DCAA mode needs before a timesheet cell saves, so the ERP grid
+ * and the MES week ask for the same ones that `save-timesheet-entry`
+ * requires. A change to a saved entry, and every change by someone other
+ * than the owner, needs a reason (it goes into the correction trail). A
+ * value on a date before the entry window needs a late reason.
+ */
+export function timesheetCellReasons(args: {
+  entryDate: string;
+  today: string;
+  windowDays: number;
+  isLeave: boolean;
+  /** The cell already has a saved entry. */
+  hasEntry: boolean;
+  actorIsOwner: boolean;
+}): { requiresReason: boolean; requiresLateReason: boolean } {
+  const entryWindow = isEntryDateAllowed(args);
+  return {
+    requiresReason: args.hasEntry || !args.actorIsOwner,
+    requiresLateReason: entryWindow.allowed && entryWindow.late
+  };
+}
+
+/**
+ * The certification text for an employee's FLSA status: the Exempt text for
+ * an Exempt employee, else the Non-Exempt text. Null when it is not set.
+ */
+export function certificationTextFor(
+  flsaStatus: string | null | undefined,
+  settings:
+    | {
+        certificationTextExempt: string | null;
+        certificationTextNonExempt: string | null;
+      }
+    | null
+    | undefined
+): string | null {
+  const text =
+    flsaStatus === "Exempt"
+      ? settings?.certificationTextExempt
+      : settings?.certificationTextNonExempt;
+  return text || null;
+}
+
+/**
+ * The status a saved change gives an entry. `current` null means a new entry.
+ *
+ * - Standard mode keeps Phase 1a: the owner edits a new, Draft or Rejected
+ *   entry, which becomes Draft. Anything else refuses.
+ * - DCAA mode: a Posted entry refuses (it changes by correction). A change by
+ *   anyone other than the owner goes to Pending Employee Review. The owner's
+ *   change returns any other entry to Draft, so it needs approval again.
+ */
+export function nextEntryStatus(args: {
+  mode: TimekeepingControls;
+  current: TimesheetEntryStatus | null;
+  actorIsOwner: boolean;
+}): TimesheetEntryStatus | { refuse: string } {
+  const { mode, current, actorIsOwner } = args;
+  if (mode === "Standard") {
+    if (
+      actorIsOwner &&
+      (current === null || current === "Draft" || current === "Rejected")
+    ) {
+      return "Draft";
+    }
+    return { refuse: TIMESHEET_REFUSAL_NOT_DRAFT };
+  }
+  if (current === "Posted") return { refuse: TIMESHEET_REFUSAL_POSTED };
+  if (!actorIsOwner) return "Pending Employee Review";
+  return "Draft";
+}
+
+/** The ISO week's Monday of `date`, as `YYYY-MM-DD`. */
+/**
+ * Why a project takes no new hours on `entryDate`, or null when it does. A
+ * project On Hold refuses them; under a stop-work order (FAR 52.242-15) only
+ * from the order date, since work done before it is still chargeable.
+ */
+export function heldProjectRefusal(
+  project: {
+    identifier: string | null;
+    name: string;
+    status: string;
+    stopWorkDate: string | null;
+  },
+  entryDate: string
+): string | null {
+  if (project.status !== "On Hold") return null;
+  const label = project.identifier || project.name;
+  if (!project.stopWorkDate) return `${label} is On Hold: it takes no new time`;
+  if (entryDate < project.stopWorkDate) return null;
+  return `${label} has a stop-work order from ${project.stopWorkDate}: it takes no new time from that date`;
+}
+
+export function weekStartOf(date: string): string {
+  // en-GB starts the week on Monday, as ISO 8601 does.
+  return startOfWeek(parseDate(date), "en-GB").toString();
+}
+
+/** One timesheet week on a business calendar. */
+export type TimesheetWeek = {
+  /** Monday, `YYYY-MM-DD`. */
+  weekStart: string;
+  /** Sunday, `YYYY-MM-DD`. */
+  weekEnd: string;
+  /** The 7 days, Monday first, as `YYYY-MM-DD`. */
+  days: string[];
+  /** Today on the same calendar, `YYYY-MM-DD`. */
+  today: string;
+  /** The week's first instant (Monday 00:00 in `timeZone`), a UTC string. */
+  from: string;
+  /** The week's last instant (Sunday 23:59:59.999 in `timeZone`), a UTC string. */
+  to: string;
+};
+
+/**
+ * The timesheet week `offset` weeks from the week that holds today on the
+ * `timeZone` calendar (`anchor` replaces today in tests). The ERP and MES
+ * timesheets and the week certification read the same week, so a Sunday
+ * evening in the company's zone is still that week, whatever the server's
+ * zone or UTC says.
+ */
+export function timesheetWeek(
+  timeZone: string,
+  offset: number,
+  anchor?: CalendarDate
+): TimesheetWeek {
+  const today = anchor ?? datetime.today(timeZone);
+  const weeks = Number.isFinite(offset) ? offset : 0;
+  const { from, to } = datetime.weekBounds(timeZone, weeks, today);
+  const monday = datetime.businessDay(from, timeZone);
+  return {
+    weekStart: monday.toString(),
+    weekEnd: datetime.businessDay(to, timeZone).toString(),
+    days: Array.from({ length: 7 }, (_, index) =>
+      monday.add({ days: index }).toString()
+    ),
+    today: today.toString(),
+    from,
+    to
+  };
+}
+
+/**
+ * The effective-rate factor for an exempt employee's week (CAM 6-410.4a):
+ * min(1, standard ÷ recorded hours). A week with no hours keeps factor 1.
+ */
+export function dilutionFactor(
+  standardWeeklyHours: number,
+  weekHours: number
+): number {
+  if (weekHours <= 0) return 1;
+  return round(Math.min(1, standardWeeklyHours / weekHours));
+}
+
+/** The timecard hours that the timesheet entries do not account for. */
+export function timecardShortfall(
+  entryHours: number,
+  timecardHours: number
+): number {
+  return round(Math.max(0, timecardHours - entryHours));
+}

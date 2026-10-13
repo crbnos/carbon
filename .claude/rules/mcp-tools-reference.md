@@ -701,10 +701,10 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   refused). Pinned by `dispatch-parity.test.ts` (f, f2, f3, o–t) and
   `mcp-tool-metadata.test.ts`.
 
-## The 15 modules (current `tool-metadata.json`)
+## The 16 modules (current `tool-metadata.json`)
 
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
-`people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
+`people` · `production` · `projects` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
 `apps/erp/app/modules/<module>/<module>.service.ts` namespace.
 

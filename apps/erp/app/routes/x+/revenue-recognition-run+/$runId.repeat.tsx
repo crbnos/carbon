@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -85,7 +86,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const proposal = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
+      .system({
+        db: getDatabaseClient(),
+        companyId,
+        userId,
+        revenueRunSynthesizers: projectRevenueSynthesizers
+      })
       .invokeOrThrow("propose-revenue-recognition-run", {
         periodEnd,
         type: sourceRun.data.type

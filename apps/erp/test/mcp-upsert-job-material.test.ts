@@ -47,6 +47,11 @@ vi.mock("@carbon/ee/rules.server", () => ({
   evaluateLinesForSurface: vi.fn(),
   isBlocked: vi.fn()
 }));
+// `runMRP` in the same module injects the planning group functions. The real
+// module boots the server env through `@carbon/ee/plan.server`.
+vi.mock("@carbon/ee/pegging.server", () => ({
+  planningGroupMrpDeps: {}
+}));
 
 import { upsertJobMaterial } from "~/modules/production/production.mcp.server";
 

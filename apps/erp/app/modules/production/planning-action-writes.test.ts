@@ -227,7 +227,7 @@ describe("settleNewSupplyPlanningActions", () => {
       ordered: [
         { itemId: "i1", periodId: "p1" },
         { itemId: "i1", periodId: "p1" },
-        { itemId: "i2", periodId: "p2" }
+        { itemId: "i2", periodId: "p2", planningSegmentId: "prj_1" }
       ]
     });
     expect(result).toEqual({ data: [{ id: "a1" }, { id: "a2" }], error: null });
@@ -235,9 +235,9 @@ describe("settleNewSupplyPlanningActions", () => {
     const [statement] = driver.sent;
     expect(statement?.sql).toMatch(/^update "planningAction"/);
     // pairs, never a cross product: ordering i1 in p1 and i2 in p2 must not
-    // settle i1's p2 suggestion
+    // settle i1's p2 suggestion; each pair keeps its netting segment
     expect(statement?.sql).toContain(
-      '("itemId" = $9 and "periodId" = $10) or ("itemId" = $11 and "periodId" = $12)'
+      '("itemId" = $9 and "periodId" = $10 and "planningSegmentId" = $11) or ("itemId" = $12 and "periodId" = $13 and "planningSegmentId" = $14)'
     );
     expect(statement?.parameters).toEqual([
       "Actioned",
@@ -250,8 +250,10 @@ describe("settleNewSupplyPlanningActions", () => {
       "Dismissed",
       "i1",
       "p1",
+      "",
       "i2",
-      "p2"
+      "p2",
+      "prj_1"
     ]);
   });
 

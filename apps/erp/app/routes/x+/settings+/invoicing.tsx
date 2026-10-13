@@ -36,7 +36,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
-import { EmailRecipients, Users } from "~/components/Form";
+import { EmailRecipients, Item, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
 import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
@@ -48,12 +48,14 @@ import {
   invoiceAutomations,
   invoiceAutomationValidator,
   invoiceNotificationValidator,
+  serviceLaborItemValidator,
   updateAccountsReceivableAddressSetting,
   updateAccountsReceivableBillingAddress,
   updateAccountsReceivableEmail,
   updateDefaultCustomerCc,
   updateInvoiceAutomationSetting,
-  updateInvoiceNotificationSetting
+  updateInvoiceNotificationSetting,
+  updateServiceLaborItemSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -178,6 +180,36 @@ export async function action({ request }: ActionFunctionArgs) {
         success: true,
         message: "Invoice notification settings updated"
       };
+    }
+
+    case "serviceLabor": {
+      const validation = await validator(serviceLaborItemValidator).validate(
+        formData
+      );
+      if (validation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+      if (validation.data.serviceLaborItemId) {
+        const item = await client
+          .from("item")
+          .select("type")
+          .eq("id", validation.data.serviceLaborItemId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (item.data?.type !== "Service") {
+          return { success: false, message: "Choose a service item" };
+        }
+      }
+
+      const result = await updateServiceLaborItemSetting(
+        client,
+        companyId,
+        validation.data.serviceLaborItemId ?? null
+      );
+      if (result.error) {
+        return { success: false, message: result.error.message };
+      }
+      return { success: true, message: "Service labor item updated" };
     }
 
     case "accountsReceivableAddressToggle":
@@ -379,6 +411,51 @@ export default function InvoicingSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "invoiceAutomation"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={serviceLaborItemValidator}
+            defaultValues={{
+              serviceLaborItemId: companySettings.serviceLaborItemId ?? ""
+            }}
+            fetcher={fetcher}
+          >
+            <Hidden name="intent" value="serviceLabor" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>Service Labor</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  The service item whose sale price prices time on a service
+                  order, on its estimate and on its invoice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <Item
+                  name="serviceLaborItemId"
+                  label={t`Service Labor Item`}
+                  type="Service"
+                  validItemTypes={["Service"]}
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "serviceLabor"
                 }
               >
                 <Trans>Save</Trans>

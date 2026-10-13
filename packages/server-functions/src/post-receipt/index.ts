@@ -57,16 +57,39 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { assertPostable } from "../lib/postable";
+import {
+  buildProjectCipRow,
+  reverseProjectCipRows,
+  writeProjectCipRows
+} from "../lib/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  reverseProjectLedgerRows
+} from "../lib/project-posting";
+import { loadProjectStock, withStripe } from "../lib/stock-stripes";
+import {
+  hardenPegsForSupply,
+  linkPegsToItemLedger,
+  softenPegsForReturn,
+  softenPegsOfItemLedger,
+  stripeCostLedgerRows,
+  stripeItemLedgerRows
+} from "./grouped-receipt";
 import {
   buildPurchaseReceiptJournalLines,
   buildSalesReturnReceiptJournalLines,
   type FixedAssetReceiptLine,
   type PurchaseReceiptLine,
+  purchaseReceiptDebitLineIndexes,
   purchaseReceiptLineCosts,
   type SalesReturnReceiptLine
 } from "./posting-lines";
+import { loadReceiptProjectRoutes } from "./project-routes";
 import { postRentalReceipt } from "./rental-agreement";
+import { createDepotRepairOrders, voidDepotRepairOrders } from "./repair";
 import { planReceiptVoidCostLedger } from "./void-cost-ledger";
 
 const logger = getLogger("server-functions", "post-receipt");
@@ -139,7 +162,9 @@ const postReceipt = defineServerFn({
                   "Item",
                   "Location",
                   "Process",
-                  "FixedAssetClass"
+                  "FixedAssetClass",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -384,6 +409,8 @@ const postReceipt = defineServerFn({
               documentId: entry.documentId,
               externalDocumentId: entry.externalDocumentId,
               trackedEntityId: entry.trackedEntityId,
+              // a reversal copies the stripe of the row it reverses
+              projectId: entry.projectId,
               createdBy: userId,
               companyId
             })
@@ -443,6 +470,23 @@ const postReceipt = defineServerFn({
                 "Cannot void: stock received on this return was already consumed. Correct the remainder with an inventory adjustment instead."
               );
             }
+
+            // Repair lines: the receipt's Depot Repair orders are cancelled
+            // and their assets go back In Service. The serials stay Consumed
+            // (the entity reset below).
+            await voidDepotRepairOrders(trx, {
+              companyId,
+              userId,
+              salesReturnOrderLineIds: (returnLinesVoid.data ?? [])
+                .filter(
+                  (line) =>
+                    line.disposition === "Repair" && receivedByLine.has(line.id)
+                )
+                .map((line) => line.id),
+              trackedEntityIds: (receiptLineTracking.data ?? []).map(
+                (entity) => entity.id
+              )
+            });
 
             if (reversingItemLedger.length > 0) {
               await trx
@@ -599,9 +643,11 @@ const postReceipt = defineServerFn({
           purchaseOrderLinesVoid
         ] = await inOrder([
           () =>
+            // A line consumed by its project at receipt also wrote a
+            // Project Issue row against the receipt.
             many(db, "itemLedger", {
               documentId: receiptId,
-              documentType: "Purchase Receipt",
+              documentType: ["Purchase Receipt", "Project Issue"],
               companyId
             }),
           () =>
@@ -637,6 +683,8 @@ const postReceipt = defineServerFn({
             documentType: entry.documentType,
             documentId: entry.documentId,
             externalDocumentId: entry.externalDocumentId,
+            // a reversal copies the stripe of the row it reverses
+            projectId: entry.projectId,
             createdBy: userId,
             companyId
           }));
@@ -936,7 +984,8 @@ const postReceipt = defineServerFn({
               "remainingQuantity",
               "cost",
               "supplierId",
-              "trackedEntityId"
+              "trackedEntityId",
+              "projectId"
             ])
             .where("documentId", "=", receiptId)
             .where("documentType", "=", "Purchase Receipt")
@@ -983,6 +1032,7 @@ const postReceipt = defineServerFn({
                   cost: layer.cost,
                   remainingQuantity: layer.quantity,
                   supplierId: layer.supplierId,
+                  projectId: layer.projectId,
                   companyId,
                   postingDate: today
                 }))
@@ -1024,6 +1074,7 @@ const postReceipt = defineServerFn({
               .execute();
           }
 
+          const reversalByOriginal = new Map<string, string>();
           if (reversingJournalLines.length > 0) {
             const voidJournalEntryId = await getNextSequence(
               trx,
@@ -1051,15 +1102,25 @@ const postReceipt = defineServerFn({
             const journalId = journal[0]!.id;
             if (!journalId) throw new Error("Failed to insert journal");
 
+            // Ids allocated first, so each project ledger reversal row can
+            // name the line that negates its original line.
+            const reversingLineIds = await allocateJournalLineIds(
+              trx,
+              reversingJournalLines.length
+            );
             await trx
               .insertInto("journalLine")
               .values(
-                reversingJournalLines.map((journalLine) => ({
+                reversingJournalLines.map((journalLine, index) => ({
                   ...journalLine,
+                  id: reversingLineIds[index],
                   journalId
                 }))
               )
               .execute();
+            for (const [index, line] of originalJournalLines.entries()) {
+              reversalByOriginal.set(line.id, reversingLineIds[index]!);
+            }
           }
 
           if (reversingItemLedger.length > 0) {
@@ -1068,6 +1129,34 @@ const postReceipt = defineServerFn({
               .values(reversingItemLedger)
               .execute();
           }
+
+          // A grouped PO line's receipt hardened its pegs: the void turns
+          // them Soft again, so the next MRP run can re-peg the open supply.
+          if (
+            purchaseOrderLinesVoid.data.some((line) => line.planningGroupId)
+          ) {
+            await softenPegsOfItemLedger(trx, {
+              companyId,
+              userId,
+              itemLedgerIds: originalItemLedger.data.map((entry) => entry.id)
+            });
+          }
+
+          // Reverse the project charges of this receipt.
+          await reverseProjectLedgerRows(trx, {
+            companyId,
+            documentType: "Purchase Receipt",
+            documentId: receiptId,
+            postingDate: today,
+            userId,
+            reversalLineIds: reversalByOriginal
+          });
+          await reverseProjectCipRows(trx, {
+            companyId,
+            userId,
+            sourceType: "Receipt",
+            sourceDocumentId: receiptId
+          });
 
           if (Object.keys(trackedEntityUpdatesVoid).length > 0) {
             const voidActivity = await trx
@@ -1196,18 +1285,87 @@ const postReceipt = defineServerFn({
           const costLedgerInserts: (Database["public"]["Tables"]["costLedger"]["Insert"] & {
             isInvoiceFirst?: boolean;
             poLineId?: string;
+            // a layer of a grouped PO line, split into member stripes in
+            // the transaction (Projects Phase 3)
+            groupedReceiptLineId?: string;
           })[] = [];
+          // Receipt lines of PO lines made for a planning group: their item
+          // ledger rows and cost layers split into member stripes by the
+          // line's pegs (harden_pegs_for_supply) inside the transaction.
+          const groupedReceiptLines: {
+            receiptLineId: string;
+            purchaseOrderLineId: string;
+            quantity: number;
+            itemLedgerRows: Database["public"]["Tables"]["itemLedger"]["Insert"][];
+          }[] = [];
           // Negative receipt lines (by index) consume layers at layer cost
           // inside the transaction (calculateCOGS), and book what they
-          // relieved. The PO cost is used when no layers yield a cost.
+          // relieved. `fallbackCost` (the PO cost) is used when no layers
+          // yield a cost.
           const negativeReceiptConsumptions: {
             index: number;
             itemId: string;
+            // the stock stripe the returned units leave
+            projectId: string | null;
             quantity: number;
+            fallbackCost: number;
+            // a return on a grouped PO line, split into member stripes in
+            // the transaction (Projects Phase 3)
+            groupedReceiptLineId?: string;
+          }[] = [];
+          // Negative receipt lines of PO lines made for a planning group:
+          // the returned units leave the member stripes in the reverse of the
+          // distribution (soften_pegs_for_return), inside the transaction.
+          const groupedReturnLines: {
+            receiptLineId: string;
+            purchaseOrderLineId: string;
+            quantity: number;
+            itemLedgerRows: Database["public"]["Tables"]["itemLedger"]["Insert"][];
           }[] = [];
 
           const isOutsideProcessing =
             purchaseOrder.data.purchaseOrderType === "Outside Processing";
+
+          // Lines that charge a project debit its account. A Statistical
+          // project keeps today's posting.
+          const projectRouteByPoLineId = await loadReceiptProjectRoutes(
+            db,
+            companyId,
+            {
+              purchaseOrderLines: purchaseOrderLines.data,
+              isOutsideProcessing,
+              postingDate: today
+            }
+          );
+          // Lines charged to a project with project stock receive into that
+          // project's stock (Projects Phase 2a): striped item ledger rows and
+          // cost layers, an inventory debit, and no project charge unless the
+          // project charges at receipt. Outside processing never stocks.
+          const projectStockByProjectId = isOutsideProcessing
+            ? new Map<string, { chargeAtReceipt: boolean }>()
+            : await loadProjectStock(
+                db,
+                companyId,
+                purchaseOrderLines.data.map((line) => line.projectId)
+              );
+          // One projectLedger row per routed receipt line, written in the
+          // transaction once the journal line ids exist.
+          const projectLedgerDrafts: {
+            receiptLineId: string;
+            projectId: string;
+            projectElementId: string | null;
+            jobId: string | null;
+            costType: "Outside Processing" | "Purchased Service" | "Material";
+            itemId: string | null;
+            quantity: number;
+            amount: number;
+            journalLineIndex: number | null;
+            fixedAssetId: string | null;
+            postCapitalization: boolean;
+            unallowable: boolean;
+          }[] = [];
+          // Tracked units consumed by their project at receipt.
+          const projectConsumedEntityIds: string[] = [];
 
           const processIdByJobOperationId = new Map<string, string>();
           if (isOutsideProcessing) {
@@ -1610,14 +1768,67 @@ const postReceipt = defineServerFn({
           const purchaseOrderLineById = new Map(
             purchaseOrderLines.data.map((line) => [line.id, line])
           );
+          // What a project does with each receipt line: the project route
+          // (the account it debits), its project stock, and whether the
+          // project consumes the goods at receipt.
+          const receiptLineProjects = receiptLines.data.map((receiptLine) => {
+            const item = receiptLine.itemId
+              ? itemById.get(receiptLine.itemId)
+              : undefined;
+            const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+            const poLine = receiptLine.lineId
+              ? purchaseOrderLineById.get(receiptLine.lineId)
+              : undefined;
+            const projectRoute = receiptLine.lineId
+              ? projectRouteByPoLineId.get(receiptLine.lineId)
+              : undefined;
+            // An inventory item charged to a project with project stock
+            // enters that project's stock: the stripe of every row below.
+            const poLineProjectId = poLine?.projectId ?? null;
+            const projectStock =
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory" &&
+              poLineProjectId
+                ? projectStockByProjectId.get(poLineProjectId)
+                : undefined;
+            const stockStripe = projectStock ? poLineProjectId : null;
+            // A stocked item on a PO line made for a planning group: the
+            // receipt splits into the group's member stripes.
+            const isGroupedLine =
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory" &&
+              !!poLine?.planningGroupId;
+            // An inventory item charged to a project without project stock is
+            // consumed by the project at receipt: it is received and issued
+            // at once, so on-hand does not change and no cost layer stays in
+            // stock.
+            const consumedByProject =
+              !!projectRoute &&
+              !isOutsideProcessing &&
+              itemTrackingType !== "Non-Inventory" &&
+              !projectStock;
+            // The receipt debits the project account only when the project
+            // consumes the goods; project stock is inventory.
+            const debitsProject = !!projectRoute && !projectStock;
+            return {
+              projectRoute,
+              projectStock,
+              stockStripe,
+              isGroupedLine,
+              consumedByProject,
+              debitsProject
+            };
+          });
           const receiptJournalLines: PurchaseReceiptLine[] =
-            receiptLines.data.map((receiptLine) => {
+            receiptLines.data.map((receiptLine, index) => {
               const item = receiptLine.itemId
                 ? itemById.get(receiptLine.itemId)
                 : undefined;
               const jobOperationId = receiptLine.lineId
                 ? purchaseOrderLineById.get(receiptLine.lineId)?.jobOperationId
                 : null;
+              const { projectRoute, debitsProject, consumedByProject } =
+                receiptLineProjects[index]!;
               return {
                 purchaseOrderLineId: receiptLine.lineId,
                 itemId: receiptLine.itemId,
@@ -1635,7 +1846,16 @@ const postReceipt = defineServerFn({
                 locationId: receiptLine.locationId ?? null,
                 processId: jobOperationId
                   ? (processIdByJobOperationId.get(jobOperationId) ?? null)
-                  : null
+                  : null,
+                projectDebit:
+                  projectRoute && debitsProject
+                    ? {
+                        accountId: projectRoute.accountId,
+                        projectId: projectRoute.projectId,
+                        projectElementId: projectRoute.projectElementId
+                      }
+                    : null,
+                consumedByProject
               };
             });
           // Line cost at PO price + proportional shipping. The portion of a
@@ -1654,6 +1874,11 @@ const postReceipt = defineServerFn({
             }
           );
 
+          // Where each line's debit-side journal line lands, for its project
+          // ledger row.
+          const debitLineIndexes =
+            purchaseReceiptDebitLineIndexes(receiptJournalLines);
+
           for (const [index, receiptLine] of receiptLines.data.entries()) {
             const {
               quantity: receivedQuantity,
@@ -1661,18 +1886,34 @@ const postReceipt = defineServerFn({
               invoiceFirstQuantity: invoiceFirstQty,
               invoiceFirstCost: invoiceFirstPortionCost,
               normalQuantity: normalQty,
-              normalCost: normalPortionCost
+              normalCost: normalPortionCost,
+              cost: lineCost
             } = receiptLineCosts[index]!;
             const itemTrackingType =
               receiptJournalLines[index]!.itemTrackingType ?? "Inventory";
             const isNegativeReceipt = receivedQuantity < 0;
+            const absReceivedQuantity = Math.abs(receivedQuantity);
             const poLineId = receiptLine.lineId;
+            const {
+              projectRoute,
+              projectStock,
+              stockStripe,
+              isGroupedLine,
+              consumedByProject
+            } = receiptLineProjects[index]!;
+            const groupedReceipt = isGroupedLine && receivedQuantity > 0;
+            // A return on such a line takes the units back from the member
+            // stripes, not from common stock.
+            const groupedReturn = isGroupedLine && isNegativeReceipt;
 
             if (createsLayers && isNegativeReceipt) {
               negativeReceiptConsumptions.push({
                 index,
                 itemId: receiptLine.itemId!,
-                quantity: Math.abs(receivedQuantity)
+                projectId: stockStripe,
+                quantity: absReceivedQuantity,
+                fallbackCost: lineCost,
+                groupedReceiptLineId: groupedReturn ? receiptLine.id : undefined
               });
             }
 
@@ -1696,10 +1937,14 @@ const postReceipt = defineServerFn({
                   cost: round(invoiceFirstPortionCost),
                   remainingQuantity: round(invoiceFirstQty),
                   supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  projectId: stockStripe,
                   companyId,
                   postingDate: today,
                   isInvoiceFirst: true,
-                  poLineId: poLineId ?? undefined
+                  poLineId: poLineId ?? undefined,
+                  groupedReceiptLineId: groupedReceipt
+                    ? receiptLine.id
+                    : undefined
                 });
               }
               if (normalQty > 0) {
@@ -1717,11 +1962,17 @@ const postReceipt = defineServerFn({
                   cost: round(normalPortionCost),
                   remainingQuantity: round(normalQty),
                   supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                  projectId: stockStripe,
                   companyId,
-                  postingDate: today
+                  postingDate: today,
+                  groupedReceiptLineId: groupedReceipt
+                    ? receiptLine.id
+                    : undefined
                 });
               }
             }
+
+            const itemLedgerStartIdx = itemLedgerInserts.length;
 
             if (itemTrackingType === "Inventory" && !isOutsideProcessing) {
               // For inventory entries, use the appropriate entry type based on quantity sign
@@ -1739,6 +1990,7 @@ const postReceipt = defineServerFn({
                 documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
                   receiptHeader.externalDocumentId ?? undefined,
+                projectId: stockStripe,
                 createdBy: userId,
                 companyId
               });
@@ -1765,6 +2017,7 @@ const postReceipt = defineServerFn({
                 )?.id,
                 externalDocumentId:
                   receiptHeader.externalDocumentId ?? undefined,
+                projectId: stockStripe,
                 createdBy: userId,
                 companyId
               });
@@ -1808,10 +2061,84 @@ const postReceipt = defineServerFn({
                   trackedEntityId: trackingWithIndex?.id,
                   externalDocumentId:
                     receiptHeader.externalDocumentId ?? undefined,
+                  projectId: stockStripe,
                   createdBy: userId,
                   companyId
                 });
               }
+            }
+
+            if (groupedReceipt) {
+              groupedReceiptLines.push({
+                receiptLineId: receiptLine.id,
+                purchaseOrderLineId: receiptLine.lineId!,
+                quantity: receivedQuantity,
+                itemLedgerRows: itemLedgerInserts.slice(itemLedgerStartIdx)
+              });
+            }
+            if (groupedReturn) {
+              groupedReturnLines.push({
+                receiptLineId: receiptLine.id,
+                purchaseOrderLineId: receiptLine.lineId!,
+                quantity: absReceivedQuantity,
+                itemLedgerRows: itemLedgerInserts.slice(itemLedgerStartIdx)
+              });
+            }
+
+            if (consumedByProject) {
+              // Issue what was received to the project: one Project Issue row
+              // per receipt row, same quantity, opposite sign. A negative
+              // receipt returns the units from the project first.
+              const receiptRows = itemLedgerInserts.slice(itemLedgerStartIdx);
+              const issueRows = receiptRows.map((row) => ({
+                ...row,
+                quantity: round(-Number(row.quantity)),
+                entryType:
+                  Number(row.quantity) < 0
+                    ? ("Positive Adjmt." as const)
+                    : ("Negative Adjmt." as const),
+                documentType: "Project Issue" as const
+              }));
+              if (isNegativeReceipt) {
+                itemLedgerInserts.splice(itemLedgerStartIdx, 0, ...issueRows);
+              } else {
+                itemLedgerInserts.push(...issueRows);
+                for (const row of receiptRows) {
+                  if (row.trackedEntityId) {
+                    projectConsumedEntityIds.push(row.trackedEntityId);
+                  }
+                }
+              }
+            }
+
+            // Project stock is the project's inventory, not its cost: only a
+            // project that charges at receipt gets a row here.
+            if (
+              projectRoute &&
+              absReceivedQuantity > 0 &&
+              (!projectStock || projectStock.chargeAtReceipt)
+            ) {
+              projectLedgerDrafts.push({
+                receiptLineId: receiptLine.id,
+                projectId: projectRoute.projectId,
+                projectElementId: projectRoute.projectElementId,
+                jobId: projectRoute.jobId,
+                costType: isOutsideProcessing
+                  ? "Outside Processing"
+                  : itemTrackingType === "Non-Inventory"
+                    ? "Purchased Service"
+                    : "Material",
+                itemId: receiptLine.itemId ?? null,
+                quantity: receivedQuantity,
+                amount: isNegativeReceipt ? -lineCost : lineCost,
+                journalLineIndex: debitLineIndexes[index] ?? null,
+                // Stock builds no asset: it is capitalized when it is issued.
+                fixedAssetId: projectStock ? null : projectRoute.fixedAssetId,
+                postCapitalization: projectStock
+                  ? false
+                  : projectRoute.postCapitalization,
+                unallowable: projectRoute.unallowable
+              });
             }
           }
 
@@ -1988,18 +2315,142 @@ const postReceipt = defineServerFn({
               ? await getCurrentAccountingPeriod(companyId, db, today)
               : null;
 
+          // What each PO line received before this receipt, in inventory
+          // units: a grouped return takes the excess beyond the Hard pegs
+          // first.
+          const receivedByPoLine = new Map(
+            purchaseOrderLines.data.map((line) => [
+              line.id,
+              (line.quantityReceived ?? 0) * (line.conversionFactor ?? 1)
+            ])
+          );
+
           await db.transaction().execute(async (trx) => {
             await assertPostingStatusUnchanged(trx, companyId, postingStatus);
             await fixedAssetWrites.apply(trx, companyId);
+            // Grouped PO lines (Projects Phase 3): harden the line's pegs and
+            // split its item ledger rows and cost layers into the returned
+            // member stripes. The journal is unchanged: one inventory debit.
+            const pegIdByItemLedgerRow = new Map<object, string | null>();
+            for (const grouped of groupedReceiptLines) {
+              const stripes = await hardenPegsForSupply(trx, {
+                companyId,
+                userId,
+                supplyType: "Purchase Order Line",
+                supplyId: grouped.purchaseOrderLineId,
+                quantity: grouped.quantity
+              });
+              if (stripes.length === 0) continue;
+              const ledgerStart = itemLedgerInserts.indexOf(
+                grouped.itemLedgerRows[0]!
+              );
+              if (ledgerStart >= 0) {
+                const striped = stripeItemLedgerRows(
+                  grouped.itemLedgerRows.map((row) => ({
+                    ...row,
+                    quantity: Number(row.quantity)
+                  })),
+                  stripes
+                );
+                itemLedgerInserts.splice(
+                  ledgerStart,
+                  grouped.itemLedgerRows.length,
+                  ...striped.rows
+                );
+                striped.rows.forEach((row, index) => {
+                  pegIdByItemLedgerRow.set(row, striped.pegIds[index] ?? null);
+                });
+              }
+              const layerStart = costLedgerInserts.findIndex(
+                (row) => row.groupedReceiptLineId === grouped.receiptLineId
+              );
+              if (layerStart >= 0) {
+                const layers = costLedgerInserts.filter(
+                  (row) => row.groupedReceiptLineId === grouped.receiptLineId
+                );
+                costLedgerInserts.splice(
+                  layerStart,
+                  layers.length,
+                  ...stripeCostLedgerRows(layers, stripes)
+                );
+              }
+            }
+            // Returns on grouped PO lines: take the units back from the
+            // excess, then from the Hard pegs latest first, and turn those
+            // pegs Soft again. The item ledger rows and the layer consumption
+            // split into the returned stripes.
+            for (const grouped of groupedReturnLines) {
+              const receivedBefore =
+                receivedByPoLine.get(grouped.purchaseOrderLineId) ?? 0;
+              const stripes = await softenPegsForReturn(trx, {
+                companyId,
+                userId,
+                supplyType: "Purchase Order Line",
+                supplyId: grouped.purchaseOrderLineId,
+                quantity: grouped.quantity,
+                receivedQuantity: receivedBefore
+              });
+              // A second return line of the same PO line sees this one.
+              receivedByPoLine.set(
+                grouped.purchaseOrderLineId,
+                receivedBefore - grouped.quantity
+              );
+              if (stripes.length === 0) continue;
+              const ledgerStart = itemLedgerInserts.indexOf(
+                grouped.itemLedgerRows[0]!
+              );
+              if (ledgerStart >= 0) {
+                const striped = stripeItemLedgerRows(
+                  grouped.itemLedgerRows.map((row) => ({
+                    ...row,
+                    quantity: Math.abs(Number(row.quantity))
+                  })),
+                  stripes
+                );
+                itemLedgerInserts.splice(
+                  ledgerStart,
+                  grouped.itemLedgerRows.length,
+                  ...striped.rows.map((row) => ({
+                    ...row,
+                    quantity: round(-row.quantity)
+                  }))
+                );
+              }
+              const consumptionIndex = negativeReceiptConsumptions.findIndex(
+                (row) => row.groupedReceiptLineId === grouped.receiptLineId
+              );
+              if (consumptionIndex >= 0) {
+                const consumption =
+                  negativeReceiptConsumptions[consumptionIndex]!;
+                negativeReceiptConsumptions.splice(
+                  consumptionIndex,
+                  1,
+                  ...stripes.map((stripe) => ({
+                    ...consumption,
+                    projectId: stripe.projectId,
+                    quantity: stripe.quantity,
+                    fallbackCost:
+                      consumption.quantity === 0
+                        ? 0
+                        : (consumption.fallbackCost * stripe.quantity) /
+                          consumption.quantity
+                  }))
+                );
+              }
+            }
+
             // Negative receipts: consume layers at layer cost (FIFO/LIFO with
             // adjustment children), and the journal books what was relieved so
-            // the GL credit matches what actually left the subledger.
+            // the GL credit matches what actually left the subledger. A
+            // grouped return has one consumption per stripe on the same line,
+            // so the relieved costs add up per line.
             const relievedCostByLine = new Map<number, number>();
             for (const consumption of negativeReceiptConsumptions) {
               const cogsResult = await calculateCOGS(trx, {
                 itemId: consumption.itemId,
                 quantity: consumption.quantity,
-                companyId
+                companyId,
+                projectId: consumption.projectId
               });
               // A consumed layer's total is authoritative even at zero or
               // negative (free goods, credit-adjusted layers): the GL credit
@@ -2009,8 +2460,11 @@ const postReceipt = defineServerFn({
               const consumedCost =
                 cogsResult.layersConsumed.length > 0 || cogsResult.totalCost > 0
                   ? cogsResult.totalCost
-                  : receiptLineCosts[consumption.index]!.cost;
-              relievedCostByLine.set(consumption.index, consumedCost);
+                  : consumption.fallbackCost;
+              relievedCostByLine.set(
+                consumption.index,
+                (relievedCostByLine.get(consumption.index) ?? 0) + consumedCost
+              );
               costLedgerInserts.push({
                 itemLedgerType: "Purchase",
                 costLedgerType: "Direct Cost",
@@ -2022,6 +2476,7 @@ const postReceipt = defineServerFn({
                 cost: round(-consumedCost),
                 remainingQuantity: 0,
                 supplierId: purchaseOrder.data?.supplierId ?? undefined,
+                projectId: consumption.projectId,
                 companyId,
                 postingDate: today
               });
@@ -2108,6 +2563,7 @@ const postReceipt = defineServerFn({
                 const {
                   isInvoiceFirst,
                   poLineId: rowPoLineId,
+                  groupedReceiptLineId: _groupedReceiptLineId,
                   ...insertRow
                 } = row;
                 if (isInvoiceFirst && rowPoLineId) {
@@ -2239,6 +2695,7 @@ const postReceipt = defineServerFn({
               fixedAssets: fixedAssetJournalLines
             });
             let receiptJournalId: string | null = null;
+            let receiptJournalLineIds: string[] = [];
             if (journalLines.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
@@ -2275,6 +2732,7 @@ const postReceipt = defineServerFn({
                 )
                 .returning(["id"])
                 .execute();
+              receiptJournalLineIds = journalLineResults.map((jl) => jl.id);
 
               const journalLineDimensionInserts = journalLineDimensionRows({
                 journalLineIds: journalLineResults.map((jl) => jl.id),
@@ -2290,6 +2748,59 @@ const postReceipt = defineServerFn({
               }
             }
 
+            if (projectLedgerDrafts.length > 0) {
+              await insertProjectLedgerRows(trx, {
+                companyId,
+                userId,
+                rows: projectLedgerDrafts.map((draft) =>
+                  buildProjectLedgerRow({
+                    companyId,
+                    projectId: draft.projectId,
+                    projectElementId: draft.projectElementId,
+                    postingDate: today,
+                    costType: draft.costType,
+                    documentType: "Purchase Receipt",
+                    documentId: receiptId,
+                    documentLineId: draft.receiptLineId,
+                    jobId: draft.jobId,
+                    itemId: draft.itemId,
+                    supplierId: purchaseOrder.data.supplierId ?? null,
+                    quantity: draft.quantity,
+                    amount: draft.amount,
+                    journalLineId:
+                      draft.journalLineIndex === null
+                        ? null
+                        : (receiptJournalLineIds[draft.journalLineIndex] ??
+                          null),
+                    unallowable: draft.unallowable,
+                    createdBy: userId
+                  })
+                )
+              });
+
+              // A line charged to a Capitalize project builds its asset.
+              await writeProjectCipRows(trx, {
+                companyId,
+                userId,
+                rows: projectLedgerDrafts.map((draft) =>
+                  buildProjectCipRow({
+                    resolved: draft,
+                    companyId,
+                    userId,
+                    projectId: draft.projectId,
+                    projectElementId: draft.projectElementId,
+                    sourceType: "Receipt",
+                    sourceDocumentId: receiptId,
+                    sourceDocumentLineId: draft.receiptLineId,
+                    jobId: draft.jobId,
+                    amount: draft.amount,
+                    costDate: today,
+                    journalId: receiptJournalId
+                  })
+                )
+              });
+            }
+
             if (cipCostInserts.length > 0) {
               await trx
                 .insertInto("fixedAssetCipCost")
@@ -2303,11 +2814,30 @@ const postReceipt = defineServerFn({
             }
 
             if (itemLedgerInserts.length > 0) {
-              await trx
+              const insertedItemLedger = await trx
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .returning(["id"])
                 .execute();
+              // Each Hard peg points at the first row written for it.
+              if (pegIdByItemLedgerRow.size > 0) {
+                const links = new Map<string, string>();
+                itemLedgerInserts.forEach((row, index) => {
+                  const pegId = pegIdByItemLedgerRow.get(row);
+                  const itemLedgerId = insertedItemLedger[index]?.id;
+                  if (pegId && itemLedgerId && !links.has(pegId)) {
+                    links.set(pegId, itemLedgerId);
+                  }
+                });
+                await linkPegsToItemLedger(
+                  trx,
+                  companyId,
+                  [...links].map(([pegId, itemLedgerId]) => ({
+                    pegId,
+                    itemLedgerId
+                  }))
+                );
+              }
             }
 
             await trx
@@ -2367,6 +2897,16 @@ const postReceipt = defineServerFn({
                     .execute();
                 }
               }
+            }
+
+            // Units consumed by their project at receipt hold nothing.
+            if (projectConsumedEntityIds.length > 0) {
+              await trx
+                .updateTable("trackedEntity")
+                .set({ quantity: 0, status: "Consumed" })
+                .where("id", "in", projectConsumedEntityIds)
+                .where("companyId", "=", companyId)
+                .execute();
             }
 
             if (inspectionInserts.length > 0) {
@@ -2584,6 +3124,16 @@ const postReceipt = defineServerFn({
               quantity: number;
             }
           > = {};
+          // Repair lines: the serials received for repair, and the lines,
+          // whose disposition is re-checked under the return order's lock.
+          const repairSerials: {
+            trackedEntityId: string;
+            serial: string;
+            itemId: string;
+            salesReturnOrderLineId: string;
+            locationId: string | null;
+          }[] = [];
+          const repairLineIds = new Set<string>();
 
           for (const receiptLine of receiptLines.data ?? []) {
             if (!receiptLine.itemId || !receiptLine.lineId) continue;
@@ -2604,6 +3154,52 @@ const postReceipt = defineServerFn({
 
             const item = itemById.get(receiptLine.itemId);
             const itemTrackingType = item?.itemTrackingType ?? "Inventory";
+
+            // Repair: the unit comes in to be repaired and shipped back. It
+            // never enters company stock or stock value, so the line writes
+            // no stock ledger, no cost layer and no journal, and its serials
+            // stay Consumed (the customer's). One Depot Repair order per
+            // serial is created in the transaction below.
+            if (returnLine.disposition === "Repair") {
+              if (itemTrackingType !== "Serial") {
+                throw new Error(
+                  "Only a serialized item can be received for repair"
+                );
+              }
+              const serials = (receiptLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Receipt Line"] === receiptLine.id
+              );
+              if (serials.length < receivedQuantity) {
+                throw new Error(
+                  "Assign the serial before posting a repair receipt"
+                );
+              }
+              for (const serial of serials) {
+                repairSerials.push({
+                  trackedEntityId: serial.id,
+                  serial: serial.readableId ?? serial.id,
+                  itemId: receiptLine.itemId,
+                  salesReturnOrderLineId: returnLine.id,
+                  locationId:
+                    receiptLine.locationId ??
+                    salesReturnOrder.data.locationId ??
+                    receiptHeader.locationId
+                });
+              }
+              repairLineIds.add(returnLine.id);
+              const existingRepairUpdate = returnLineUpdates[returnLine.id];
+              returnLineUpdates[returnLine.id] = {
+                quantityReceived:
+                  (existingRepairUpdate?.quantityReceived ??
+                    Number(returnLine.quantityReceived ?? 0)) +
+                  receivedQuantity,
+                updatedBy: userId
+              };
+              continue;
+            }
 
             // Cost resolution: zero-value reason -> 0; linked -> original
             // outbound cost from the shipment's consumption rows; else current.
@@ -2825,10 +3421,46 @@ const postReceipt = defineServerFn({
               );
             }
 
+            // A disposition change to or from Repair takes this same lock. Re-read
+            // the dispositions under it, so a line is never posted by the rule
+            // of a disposition it no longer has.
+            const receivedLineIds = Object.keys(returnLineUpdates);
+            if (receivedLineIds.length > 0) {
+              const lockedLines = await trx
+                .selectFrom("salesReturnOrderLine")
+                .select(["id", "disposition"])
+                .where("id", "in", receivedLineIds)
+                .where("companyId", "=", companyId)
+                .execute();
+              const changed = lockedLines.some(
+                (line) =>
+                  (line.disposition === "Repair") !== repairLineIds.has(line.id)
+              );
+              if (changed) {
+                throw new Error(
+                  "A line's disposition changed while the receipt was posting. Post the receipt again."
+                );
+              }
+            }
+
+            if (repairSerials.length > 0) {
+              await createDepotRepairOrders(trx, {
+                companyId,
+                userId,
+                receiptId,
+                receiptReadableId: receiptHeader.receiptId,
+                today,
+                salesReturnOrder: salesReturnOrder.data,
+                serials: repairSerials
+              });
+            }
+
+            // A customer return copies the sales shipment it reverses, which
+            // drew common stock (Projects Phase 2a): its layers are common.
             if (costLedgerInserts.length > 0) {
               await trx
                 .insertInto("costLedger")
-                .values(costLedgerInserts)
+                .values(withStripe(costLedgerInserts, null))
                 .execute();
             }
 
@@ -2918,10 +3550,11 @@ const postReceipt = defineServerFn({
               }
             }
 
+            // Returned stock enters common stock, as its shipment left it.
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .execute();
             }
 
@@ -3316,11 +3949,12 @@ const postReceipt = defineServerFn({
               }
             }
 
-            // Create item ledger entries
+            // A warehouse transfer moves common stock: the inbound leg copies
+            // the outbound one (post-shipment).
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                .values(withStripe(itemLedgerInserts, null))
                 .returning(["id"])
                 .execute();
             }

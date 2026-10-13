@@ -139,6 +139,9 @@ function account(
     updatedBy: null,
     customFields: {},
     tags: null,
+    allowability: "Allowable",
+    unallowableReason: null,
+    elementOfCost: null,
     periods: Object.fromEntries(
       keys.map((key, index) => [
         key,

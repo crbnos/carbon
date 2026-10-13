@@ -7,16 +7,17 @@ AS $function$
 BEGIN
   IF TG_OP = 'INSERT' THEN
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand")
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand")
     SELECT
       "itemId",
       "companyId",
       COALESCE("locationId", ''),
+      COALESCE("projectId", ''),
       SUM(item_ledger_on_hand_contribution("quantity", "trackedEntityStatus"))
     FROM batched_new
-    GROUP BY "itemId", "companyId", COALESCE("locationId", '')
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    GROUP BY "itemId", "companyId", COALESCE("locationId", ''), COALESCE("projectId", '')
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand";
 
   ELSIF TG_OP = 'UPDATE' THEN
@@ -25,13 +26,14 @@ BEGIN
     -- trackedEntityStatus flip) and any future quantity/location/item edit
     -- without special-casing.
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand")
-    SELECT "itemId", "companyId", "locationId", SUM(delta)
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand")
+    SELECT "itemId", "companyId", "locationId", "projectId", SUM(delta)
     FROM (
       SELECT
         "itemId",
         "companyId",
         COALESCE("locationId", '') AS "locationId",
+        COALESCE("projectId", '') AS "projectId",
         -item_ledger_on_hand_contribution("quantity", "trackedEntityStatus") AS delta
       FROM batched_old
       UNION ALL
@@ -39,15 +41,16 @@ BEGIN
         "itemId",
         "companyId",
         COALESCE("locationId", ''),
+        COALESCE("projectId", ''),
         item_ledger_on_hand_contribution("quantity", "trackedEntityStatus")
       FROM batched_new
     ) d
-    GROUP BY "itemId", "companyId", "locationId"
+    GROUP BY "itemId", "companyId", "locationId", "projectId"
     -- A key whose net delta is zero already holds the right number; skipping it
     -- avoids taking a lock on every row a wide UPDATE happened to touch.
     HAVING SUM(delta) <> 0
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand";
 
   ELSIF TG_OP = 'DELETE' THEN
@@ -55,16 +58,17 @@ BEGIN
     -- at zero with no backing ledger rows is removed by the nightly
     -- reconciliation.
     INSERT INTO "itemStockQuantities" AS isq
-      ("itemId", "companyId", "locationId", "quantityOnHand")
+      ("itemId", "companyId", "locationId", "projectId", "quantityOnHand")
     SELECT
       "itemId",
       "companyId",
       COALESCE("locationId", ''),
+      COALESCE("projectId", ''),
       -SUM(item_ledger_on_hand_contribution("quantity", "trackedEntityStatus"))
     FROM batched_old
-    GROUP BY "itemId", "companyId", COALESCE("locationId", '')
-    ORDER BY 1, 2, 3
-    ON CONFLICT ("itemId", "companyId", "locationId")
+    GROUP BY "itemId", "companyId", COALESCE("locationId", ''), COALESCE("projectId", '')
+    ORDER BY 1, 2, 3, 4
+    ON CONFLICT ("itemId", "companyId", "locationId", "projectId")
     DO UPDATE SET "quantityOnHand" = isq."quantityOnHand" + EXCLUDED."quantityOnHand";
   END IF;
 

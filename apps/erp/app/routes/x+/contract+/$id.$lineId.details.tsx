@@ -11,13 +11,18 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
+  contractLineBillingFormValues,
   customerContractLineValidator,
   getContract,
   getContractLine,
   upsertContractLine
 } from "~/modules/sales";
+import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
-import { ContractLineForm } from "~/modules/sales/ui/Contracts";
+import {
+  ContractLineForm,
+  ContractLineSummary
+} from "~/modules/sales/ui/Contracts";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -73,6 +78,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...line } = validation.data;
 
+  // Back to where the form was opened: the line's page, or the setup grid
+  // that opened it as a modal.
+  const back = requestReferrer(request) ?? path.to.contractLine(id, lineId);
+
+  const upgrade = await projectRevenueRefusal(client, companyId, [line]);
+  if (upgrade) {
+    throw redirect(back, await flash(request, error(null, upgrade)));
+  }
+
   // `upsertContractLine` refuses a line of another contract, a contract that
   // is not a Draft and an item that is not a Service.
   const update = await upsertContractLine(client, {
@@ -81,10 +95,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id: lineId,
     updatedBy: userId
   });
-
-  // Back to where the form was opened: the line's page, or the setup grid
-  // that opened it as a modal.
-  const back = requestReferrer(request) ?? path.to.contractLine(id, lineId);
   if (update.error) {
     throw redirect(
       back,
@@ -110,6 +120,13 @@ export default function ContractLineRoute() {
 
   const { contract } = routeData;
 
+  // Only a Draft's lines change; a locked line reads as text.
+  if (contract.status !== "Draft") {
+    return (
+      <ContractLineSummary line={line} currencyCode={contract.currencyCode} />
+    );
+  }
+
   return (
     <ContractLineForm
       key={`${line.id}-${line.updatedAt ?? ""}`}
@@ -133,10 +150,12 @@ export default function ContractLineRoute() {
         revenueMethod: line.revenueMethod,
         revenueStartDate: line.revenueStartDate ?? undefined,
         revenueEndDate: line.revenueEndDate ?? undefined,
-        projectId: line.projectId ?? undefined
+        projectId: line.projectId ?? undefined,
+        lineItemNumber: line.lineItemNumber ?? undefined,
+        parentLineId: line.parentLineId ?? undefined,
+        ...contractLineBillingFormValues(line)
       }}
       currencyCode={contract.currencyCode}
-      isLocked={contract.status !== "Draft"}
     />
   );
 }

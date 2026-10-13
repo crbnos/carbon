@@ -24,7 +24,8 @@ export async function calculateCOGS(
     itemId,
     quantity,
     companyId,
-    trackedEntityIds
+    trackedEntityIds,
+    projectId
   }: {
     itemId: string;
     quantity: number;
@@ -33,6 +34,10 @@ export async function calculateCOGS(
     // from the layer booked for it (specific identification) before the
     // FIFO / LIFO layers (`orderLayersForConsumption`).
     trackedEntityIds?: readonly string[];
+    // The stock stripe the quantity is drawn from: a project id for that
+    // project's stock, or null / undefined for common stock. Layers of any
+    // other stripe are never relieved.
+    projectId?: string | null;
   }
 ): Promise<COGSResult> {
   const itemCost = await trx
@@ -74,7 +79,13 @@ export async function calculateCOGS(
         .where("itemId", "=", itemId)
         .where("companyId", "=", companyId)
         .where("remainingQuantity", ">", 0)
-        .where(isCostLayer);
+        .where(isCostLayer)
+        // only the stripe the quantity leaves from
+        .where((eb) =>
+          projectId
+            ? eb("projectId", "=", projectId)
+            : eb("projectId", "is", null)
+        );
       const layers = await openLayers
         .select([
           "id",

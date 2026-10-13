@@ -8,11 +8,14 @@
 
 import type {
   ContractSpec,
+  CustomerAssetSpec,
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
   SalesReturnSpec,
   SalesStatusOrderSpec,
+  ServiceOrderSpec,
+  ServiceTemplateSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
 
@@ -1014,6 +1017,90 @@ export const CONTRACTS: ContractSpec[] = [
   }
 ];
 
+// Field service: three units at customers (one in warranty, one whose
+// labor warranty has ended, one expired), one service template, and two
+// service orders on two of the units.
+export const CUSTOMER_ASSETS: CustomerAssetSpec[] = [
+  {
+    key: "in-warranty",
+    item: "HMA-4000",
+    serial: "HMA-4000-S011",
+    customer: "Cedar Valley Hydraulics",
+    shippedOffset: -120,
+    laborWarrantyEndOffset: 245,
+    partsWarrantyEndOffset: 610
+  },
+  {
+    key: "labor-ended",
+    item: "HMA-4000",
+    serial: "HMA-4000-S012",
+    customer: "Dominion Ag Equipment",
+    shippedOffset: -500,
+    laborWarrantyEndOffset: -135,
+    partsWarrantyEndOffset: 230
+  },
+  {
+    key: "expired",
+    item: "HMA-4000",
+    serial: "HMA-4000-S013",
+    customer: "Granite State Instruments",
+    shippedOffset: -900,
+    laborWarrantyEndOffset: -535,
+    partsWarrantyEndOffset: -170
+  }
+];
+
+export const SERVICE_TEMPLATES: ServiceTemplateSpec[] = [
+  {
+    key: "standard",
+    name: "Manifold service",
+    nodes: [
+      {
+        key: "seals",
+        name: "Seal kit replacement",
+        type: "System",
+        labor: [{ laborCategory: "Machinist", hours: 2 }],
+        materials: [{ item: "SEAL-ORING-224", quantity: 6 }]
+      },
+      {
+        key: "valves",
+        name: "Valve block inspection",
+        type: "Task",
+        parentKey: "seals",
+        labor: [{ laborCategory: "Quality Engineer", hours: 1.5 }],
+        materials: [{ item: "HW-SHCS-M6", quantity: 8 }]
+      },
+      {
+        key: "test",
+        name: "Pressure test",
+        type: "Task",
+        labor: [{ laborCategory: "Machinist", hours: 1 }],
+        costs: [{ description: "Test fluid and disposal", amount: 85 }]
+      }
+    ]
+  }
+];
+
+export const SERVICE_ORDERS: ServiceOrderSpec[] = [
+  {
+    key: "scheduled",
+    asset: "labor-ended",
+    status: "Scheduled",
+    template: "standard",
+    priority: "High",
+    problem:
+      "Slow leak at the manifold block under load; customer requests a service visit.",
+    visit: { startOffset: 1, startTime: "15:00:00", endTime: "19:00:00" }
+  },
+  {
+    key: "draft",
+    asset: "in-warranty",
+    status: "Draft",
+    priority: "Medium",
+    problem: "Pressure drops overnight; customer suspects a check valve."
+  }
+];
+
 export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
@@ -1064,5 +1151,8 @@ export const precisionSales: SalesData = {
       accountNumber: "DEMO-9034-4471",
       isPrimary: true
     }
-  ]
+  ],
+  customerAssets: CUSTOMER_ASSETS,
+  serviceTemplates: SERVICE_TEMPLATES,
+  serviceOrders: SERVICE_ORDERS
 };

@@ -15,7 +15,7 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { runMRP } from "~/modules/production/production.service";
+import { runMRP } from "~/modules/production/production.mcp.server";
 import {
   getSalesOrder,
   getSalesOrderLines,

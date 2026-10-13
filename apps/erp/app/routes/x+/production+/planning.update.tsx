@@ -31,6 +31,11 @@ import {
   cancelJob,
   planDraftJob
 } from "~/modules/production/production.server";
+import {
+  applyTransferPlanningActions,
+  getPlanningSegmentOwners,
+  moveActionPegsToSupply
+} from "~/modules/projects/projects.server";
 import { isActiveCompanyEmployee } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -65,6 +70,8 @@ async function notifyScheduleChange(
 const itemsValidator = z
   .object({
     id: z.string(),
+    // The netting segment of the grid row ('' is common).
+    planningSegmentId: z.string().default(""),
     orders: z.array(productionOrderValidator)
   })
   .array();
@@ -207,6 +214,29 @@ export async function action({ request }: ActionFunctionArgs) {
         return data({ success: false, message: "Not found" }, { status: 404 });
       }
 
+      // A job in a project segment is charged to that project and receives
+      // its output into the project's stock. A job in a planning group
+      // segment is the group's: it carries the group and no project, and its
+      // output splits by the pegs. The segment must be a project of this
+      // company with project stock, or a planning group of this company.
+      const segments = await getPlanningSegmentOwners(
+        client,
+        companyId,
+        itemsToOrder.map((item) => item.planningSegmentId)
+      );
+      if (segments.error || segments.unknownIds.length > 0) {
+        logger.error("Planning order names an unknown segment", {
+          companyId,
+          locationId,
+          segmentIds: segments.unknownIds,
+          error: segments.error
+        });
+        return data(
+          { success: false, message: "Project not found" },
+          { status: 404 }
+        );
+      }
+
       try {
         const allJobIds: string[] = [];
         const createdJobs: { id: string; readableId: string }[] = [];
@@ -217,6 +247,7 @@ export async function action({ request }: ActionFunctionArgs) {
           sourceType: "Production Order";
           forecastQuantity: number;
           periodId: string;
+          planningSegmentId: string;
           companyId: string;
           createdBy: string;
           updatedBy: string;
@@ -226,7 +257,12 @@ export async function action({ request }: ActionFunctionArgs) {
         let errors: string[] = [];
         // The (item, week) of every order that became a job, so the Make
         // suggestions it answers leave the worklist now, not at the next run.
-        const ordered: { itemId: string; periodId: string }[] = [];
+        const ordered: {
+          itemId: string;
+          periodId: string;
+          planningSegmentId: string;
+          jobId: string;
+        }[] = [];
 
         // Manufacturing data for every item being ordered, in one read
         const manufacturingRows = await client
@@ -303,7 +339,15 @@ export async function action({ request }: ActionFunctionArgs) {
                 locationId,
                 companyId,
                 createdBy: userId,
-                unitOfMeasureCode: "EA"
+                unitOfMeasureCode: "EA",
+                ...(segments.planningGroupIds.has(item.planningSegmentId)
+                  ? { planningGroupId: item.planningSegmentId }
+                  : item.planningSegmentId
+                    ? {
+                        projectId: item.planningSegmentId,
+                        receiveToProjectStock: true
+                      }
+                    : {})
               },
               { skipMethod: true, skipRecalculate: true, source: "mrp" }
             );
@@ -349,7 +393,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
             // Track supply forecast by period
             const periodId = order.periodId;
-            ordered.push({ itemId: item.id, periodId });
+            ordered.push({
+              itemId: item.id,
+              periodId,
+              planningSegmentId: item.planningSegmentId,
+              jobId: id
+            });
             supplyForecastByPeriod[periodId] =
               (supplyForecastByPeriod[periodId] || 0) + order.quantity;
           }
@@ -368,6 +417,7 @@ export async function action({ request }: ActionFunctionArgs) {
                   sourceType: "Production Order" as const,
                   forecastQuantity: quantity,
                   periodId,
+                  planningSegmentId: item.planningSegmentId,
                   companyId,
                   createdBy: userId,
                   updatedBy: userId
@@ -389,6 +439,42 @@ export async function action({ request }: ActionFunctionArgs) {
             locationId,
             error: settled.error
           });
+        } else if (segments.planningGroupIds.size > 0) {
+          // A grouped Make's pegs move to the job it created. A failure
+          // leaves them on the action; the next MRP run re-pegs.
+          const jobByOrder = new Map<string, string>();
+          for (const entry of ordered) {
+            const key = [
+              entry.itemId,
+              entry.periodId,
+              entry.planningSegmentId
+            ].join("\u0000");
+            if (!jobByOrder.has(key)) jobByOrder.set(key, entry.jobId);
+          }
+          const moves = (settled.data ?? []).flatMap((action) => {
+            if (!segments.planningGroupIds.has(action.planningSegmentId)) {
+              return [];
+            }
+            const supplyId = jobByOrder.get(
+              [action.itemId, action.periodId, action.planningSegmentId].join(
+                "\u0000"
+              )
+            );
+            return supplyId
+              ? [
+                  {
+                    planningActionId: action.id,
+                    supplyType: "Job" as const,
+                    supplyId
+                  }
+                ]
+              : [];
+          });
+          await moveActionPegsToSupply(getDatabaseClient(), {
+            companyId,
+            userId,
+            moves
+          });
         }
 
         // Insert all supply forecasts using upsert to handle duplicates
@@ -397,7 +483,12 @@ export async function action({ request }: ActionFunctionArgs) {
           const forecastMap = new Map<string, (typeof allSupplyForecasts)[0]>();
 
           for (const forecast of allSupplyForecasts) {
-            const key = `${forecast.itemId}-${forecast.locationId}-${forecast.periodId}`;
+            const key = [
+              forecast.itemId,
+              forecast.locationId,
+              forecast.periodId,
+              forecast.planningSegmentId
+            ].join("\u001f");
             const existing = forecastMap.get(key);
 
             if (existing) {
@@ -413,7 +504,7 @@ export async function action({ request }: ActionFunctionArgs) {
           const insertForecasts = await client
             .from("supplyForecast")
             .upsert(uniqueSupplyForecasts, {
-              onConflict: "itemId,locationId,periodId",
+              onConflict: "itemId,locationId,periodId,planningSegmentId",
               ignoreDuplicates: false
             });
 
@@ -810,9 +901,32 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const rowById = new Map(actionRows.data.map((row) => [row.id, row]));
 
+      // A Transfer or a Borrow creates a Draft project stock transfer
+      // (approved and posted on the transfer pages); it is never one of the
+      // change actions below.
+      const transferIds =
+        action === "apply"
+          ? parsedIds.data.filter((id) => {
+              const row = rowById.get(id);
+              return (
+                (row?.type === "Transfer" || row?.type === "Borrow") &&
+                row.status === "Open"
+              );
+            })
+          : [];
+      const transferOutcome = await applyTransferPlanningActions({
+        companyId,
+        userId,
+        planningActionIds: transferIds
+      });
+      applied.push(...transferOutcome.applied);
+      errors.push(...transferOutcome.errors);
+      const transferIdSet = new Set(transferIds);
+
       const eligible: { planningActionId: string; row: PlanningActionRow }[] =
         [];
       for (const planningActionId of parsedIds.data) {
+        if (transferIdSet.has(planningActionId)) continue;
         const row = rowById.get(planningActionId);
         if (!row) {
           errors.push(`Planning action ${planningActionId} not found`);
@@ -1099,6 +1213,12 @@ export async function action({ request }: ActionFunctionArgs) {
       const messageParts = [
         `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
       ];
+      const transferCount = transferOutcome.transfers.length;
+      if (transferCount > 0) {
+        messageParts.push(
+          `created ${transferCount} Draft project stock transfer${transferCount === 1 ? "" : "s"}`
+        );
+      }
       if (manualCount > 0) {
         messageParts.push(
           `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
@@ -1117,6 +1237,7 @@ export async function action({ request }: ActionFunctionArgs) {
           !(applied.length === 0 && manualCount > 0),
         message: messageParts.join("; "),
         applied,
+        transfers: transferOutcome.transfers,
         requiresManualAction,
         warnings: warnings.length > 0 ? warnings : undefined,
         errors: errors.length > 0 ? errors : undefined

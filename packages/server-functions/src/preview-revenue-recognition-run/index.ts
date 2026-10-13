@@ -37,13 +37,16 @@ const previewRevenueRecognitionRun = defineServerFn({
   input: previewRevenueRecognitionRunInput,
   permissions: { view: "accounting" },
   async run(
-    { db, companyId, userId },
+    { db, companyId, userId, revenueRunSynthesizers },
     { periodEnd, type }
   ): Promise<RunPreview> {
     try {
       await db.transaction().execute(async (trx) => {
         const ctx = { companyId, periodEnd, userId };
-        for (const synthesize of runRowSynthesizers(type)) {
+        for (const synthesize of runRowSynthesizers(
+          type,
+          revenueRunSynthesizers
+        )) {
           await synthesize(trx, ctx);
         }
         const due = await selectDueScheduleRows(trx, ctx, type);

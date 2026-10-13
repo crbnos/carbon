@@ -6,7 +6,13 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./activate-accounting/activation-test-fixture": "./src/activate-accounting/activation-test-fixture.ts",
     "./errors": "./src/errors.ts",
+    "./lib/project-billing-test-fixture": "./src/lib/project-billing-test-fixture.ts",
+    "./lib/project-revenue": "./src/lib/project-revenue.ts",
+    "./lib/service-orders": "./src/lib/service-orders.ts",
+    "./lib/stock-stripes": "./src/lib/stock-stripes.ts",
+    "./test-fixture": "./src/local-database-test-fixture.ts",
     "./*": "./src/*/index.ts"
   },
   "scripts": {

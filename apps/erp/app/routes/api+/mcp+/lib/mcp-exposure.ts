@@ -43,6 +43,7 @@ export const MCP_MODULE_ALLOWLIST: readonly string[] = [
   "items",
   "people",
   "production",
+  "projects",
   "purchasing",
   "quality",
   "resources",

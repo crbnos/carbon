@@ -149,6 +149,9 @@ msgstr "Dodaj i wydaj"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpośrednio."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "Dodaj wiersz dla każdego zlecenia produkcyjnego lub zadania, które wykonałeś."
+
 msgid "Add Authenticator App"
 msgstr "Dodaj aplikację uwierzytelniającą"
 
@@ -157,6 +160,9 @@ msgstr "Dodaj zapasy"
 
 msgid "Add Passkey"
 msgstr "Dodaj klucz dostępu"
+
+msgid "Add row"
+msgstr "Dodaj wiersz"
 
 msgid "Add Sample"
 msgstr "Dodaj próbkę"
@@ -333,8 +339,17 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Karty"
 
+msgid "Certify and submit"
+msgstr "Zaświadcz i prześlij"
+
+msgid "Certify and Submit"
+msgstr "Zaświadcz i Prześlij"
+
 msgid "Change"
 msgstr "Zmień"
+
+msgid "Change Time"
+msgstr "Zmień czas"
 
 msgid "Changelog newsletter"
 msgstr "Newsletter zmian"
@@ -344,6 +359,9 @@ msgstr "Cecha"
 
 msgid "Characteristics"
 msgstr "Cechy"
+
+msgid "Charge Number"
+msgstr "Numer obciążenia"
 
 msgid "Chat"
 msgstr "Czat"
@@ -545,6 +563,15 @@ msgstr "Opis"
 msgid "Details"
 msgstr "Szczegóły"
 
+msgid "Direct Research"
+msgstr "Badania bezpośrednie"
+
+msgid "Direct Supervision"
+msgstr "Nadzór bezpośredni"
+
+msgid "Direct Support"
+msgstr "Wsparcie bezpośrednie"
+
 msgid "Dispatch not found"
 msgstr "Nie znaleziono zlecenia utrzymania ruchu"
 
@@ -653,6 +680,9 @@ msgstr "Zakończ operacje"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Wpisz wartość każdego zlecenia produkcyjnego lub wypełnij wszystkie zlecenia jednocześnie z pierwszego wiersza. Puste wiersze są pomijane."
 
+msgid "Enter hours from 0 to 24"
+msgstr "Wpisz godziny od 0 do 24"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Wprowadź PIN dla {0}"
@@ -730,6 +760,12 @@ msgstr "Nie udało się zapisać pomiaru"
 msgid "Failed to save result"
 msgstr "Nie udało się zapisać wyniku"
 
+msgid "Failed to save the hours"
+msgstr "Nie udało się zapisać godzin"
+
+msgid "Failed to submit the week"
+msgstr "Nie udało się przesłać tygodnia"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Nie udało się przesłać pliku {0}"
@@ -802,6 +838,9 @@ msgstr "Nagłówek {level}"
 msgid "Hide description"
 msgstr "Ukryj opis"
 
+msgid "Hours on {label}"
+msgstr "Godziny na {label}"
+
 msgid "How Carbon looks in this browser."
 msgstr "Jak wygląda Carbon w tej przeglądarce."
 
@@ -810,6 +849,9 @@ msgstr "Ile faktycznie zostało zebrane?"
 
 msgid "How many?"
 msgstr "Ile?"
+
+msgid "I certify this statement"
+msgstr "Poświadczam to oświadczenie"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Rozumiem i chcę ukończyć bez wydania"
@@ -926,6 +968,9 @@ msgstr "Zestaw"
 msgid "Labor"
 msgstr "Robocizna"
 
+msgid "Labor category"
+msgstr "Kategoria robocizny"
+
 msgid "Last completed"
 msgstr "Ostatnio ukończono"
 
@@ -934,6 +979,9 @@ msgstr "Nazwisko"
 
 msgid "Last used"
 msgstr "Ostatnio użyte"
+
+msgid "Late Entry"
+msgstr "Wpis opóźniony"
 
 msgid "Learn more"
 msgstr "Dowiedz się więcej"
@@ -1108,6 +1156,9 @@ msgstr "Musi być pomiędzy {minValue} a {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Moje godziny"
 
+msgid "My Time"
+msgstr "Moje godziny"
+
 msgid "Name"
 msgstr "Nazwa"
 
@@ -1128,6 +1179,9 @@ msgstr "Następny"
 
 msgid "Next step"
 msgstr "Następny krok"
+
+msgid "Next week"
+msgstr "Następny tydzień"
 
 msgid "No"
 msgstr "Nie"
@@ -1155,6 +1209,9 @@ msgstr "Nie znaleziono dostępnych numerów seryjnych"
 
 msgid "No available tracked entities found"
 msgstr "Nie znaleziono dostępnych śledzonych jednostek"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Brak tekstu certyfikacji. Poproś administratora, aby ustawił go w Ustawienia → Czas."
 
 msgid "No dispatches assigned to you"
 msgstr "Brak zleceń utrzymania ruchu przydzielonych Tobie"
@@ -1246,6 +1303,9 @@ msgstr "Brak zapasu"
 msgid "No time entries for this week"
 msgstr "Brak wpisów czasu pracy w tym tygodniu"
 
+msgid "No time this week"
+msgstr "Brak godzin w tym tygodniu"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Brak zapasu w magazynie dla tego artykułu. Możesz go mimo tego pobrać — dostępna ilość będzie ujemna do czasu uzgodnienia stanu."
 
@@ -1261,8 +1321,14 @@ msgstr "Brak stanowisk roboczych"
 msgid "None"
 msgstr "Brak"
 
+msgid "Not Qualified"
+msgstr "Niekwalifikowany"
+
 msgid "Notes"
 msgstr "Notatki"
+
+msgid "Nothing matches your search."
+msgstr "Nic nie pasuje do wyszukiwania."
 
 msgid "Nothing running"
 msgstr "Nic nie działa"
@@ -1424,6 +1490,9 @@ msgstr "Wybierz styl i awatar, lub tasuj, aby otrzymać nowe."
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "Wybierz to, nad czym pracowałeś, a następnie kategorię robocizny."
+
 msgid "Picked"
 msgstr "Pobrane"
 
@@ -1481,6 +1550,9 @@ msgstr "Zapobiegawcze"
 msgid "Previous step"
 msgstr "Poprzedni krok"
 
+msgid "Previous week"
+msgstr "Poprzedni tydzień"
+
 msgid "Print"
 msgstr "Drukuj"
 
@@ -1514,6 +1586,9 @@ msgstr "Profil"
 msgid "Progress"
 msgstr "Postęp"
 
+msgid "Project"
+msgstr "Projekt"
+
 msgid "Purchasing"
 msgstr "Zakupy"
 
@@ -1537,6 +1612,12 @@ msgstr "Kolejka pusta"
 
 msgid "Quotes"
 msgstr "Oferty"
+
+msgid "Reason for change"
+msgstr "Przyczyna zmiany"
+
+msgid "Reason for late entry"
+msgstr "Przyczyna opóźnionego wpisu"
 
 msgid "Reason for rework"
 msgstr "Przyczyna poprawki"
@@ -1714,6 +1795,9 @@ msgstr "Szukaj przyrządów pomiarowych..."
 msgid "Search operators..."
 msgstr "Szukaj operatorów..."
 
+msgid "Search projects and tasks"
+msgstr "Szukaj projektów i zadań"
+
 msgid "Search..."
 msgstr "Szukaj..."
 
@@ -1861,6 +1945,9 @@ msgstr "Wyloguj się"
 msgid "Sign out instead"
 msgstr "Zamiast tego wyloguj się"
 
+msgid "Signature pad"
+msgstr "Podpis"
+
 msgid "Signed in as {stationName}"
 msgstr "Zalogowany jako {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "Podzestawienie {0} · {1} — wyświetlane osobno"
 msgid "Submit anonymously"
 msgstr "Prześlij anonimowo"
 
+msgid "Submit week"
+msgstr "Prześlij tydzień"
+
 msgid "Suggestion"
 msgstr "Propozycja"
 
@@ -1968,8 +2058,14 @@ msgstr "Tag"
 msgid "The accent color used across Carbon."
 msgstr "Kolor akcentu używany w Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Zmiana i jej przyczyna są przechowywane w historii arkusza czasu."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Data jest przed oknem wpisu. Przyczyna jest przechowywana razem z wpisem."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Zlecenia produkcyjne i części, które składają się na ten przebieg."
@@ -2022,6 +2118,9 @@ msgstr "Ta część będzie skierowana do braku ze zapasów. Jej wymaganie pozos
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Ta jednostka zostanie bezpowrotnie złomowana i zostanie utworzony nowy numer seryjny zamiennika."
+
+msgid "This week"
+msgstr "Ten tydzień"
 
 msgid "Thumbnail"
 msgstr "Miniatura"

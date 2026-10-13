@@ -5,6 +5,7 @@
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { allocateJournalLineIds } from "../lib/journal-line-ids";
+import { projectPostingFixture } from "../lib/project-posting-test-fixture";
 import { databaseTest } from "../local-database-test-fixture";
 import { chargeFixture } from "./post-charge-test-fixture";
 import { postChargeTransaction } from "./post-charge-transaction";
@@ -520,6 +521,131 @@ databaseTest("void refuses a forged original journal", async () => {
     await f.cleanup();
   }
 });
+
+databaseTest(
+  "a line on an Expense project debits the project account and writes a ledger row",
+  async () => {
+    const f = await projectPostingFixture({ costTreatment: "Expense" });
+    const chargeId = `${f.prefix}-charge`;
+    try {
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx
+          .insertInto("charge")
+          .values({
+            id: chargeId,
+            chargeId: `${f.prefix}-readable`,
+            type: "Charge",
+            status: "Draft",
+            cardAccountId: f.account("payables"),
+            transactionDate: "2026-09-11",
+            currencyCode: "USD",
+            exchangeRate: 1,
+            amount: 100,
+            companyId: f.companyId,
+            createdBy: "system"
+          })
+          .execute();
+        await trx
+          .insertInto("chargeLine")
+          .values([
+            {
+              id: `${f.prefix}-charge-line-1`,
+              chargeId,
+              accountId: f.account("indirect"),
+              projectId: f.projectId,
+              projectElementId: f.elementId,
+              description: "Test rig parts",
+              amount: 60,
+              sequence: 0,
+              companyId: f.companyId,
+              createdBy: "system"
+            },
+            {
+              id: `${f.prefix}-charge-line-2`,
+              chargeId,
+              accountId: f.account("indirect"),
+              description: "Office supplies",
+              amount: 40,
+              sequence: 1,
+              companyId: f.companyId,
+              createdBy: "system"
+            }
+          ])
+          .execute();
+      });
+
+      const result = await postChargeTransaction(f.db, {
+        type: "post",
+        chargeId,
+        companyId: f.companyId,
+        userId: "system"
+      });
+
+      const lines = await f.db
+        .selectFrom("journalLine")
+        .select(["id", "accountId", "amount"])
+        .where("journalId", "=", result.journalId!)
+        .where("companyId", "=", f.companyId)
+        .execute();
+      const projectLine = lines.find(
+        (line) => line.accountId === f.account("project-expense")
+      );
+      expect(Number(projectLine?.amount)).toEqual(60);
+      expect(
+        lines
+          .filter((line) => line.accountId === f.account("indirect"))
+          .map((line) => Number(line.amount))
+      ).toEqual([40]);
+
+      const tags = await f.db
+        .selectFrom("journalLineDimension")
+        .select("valueId")
+        .where("companyId", "=", f.companyId)
+        .where("journalLineId", "=", projectLine!.id)
+        .execute();
+      expect(tags.map((tag) => tag.valueId).sort()).toEqual(
+        [f.elementId, f.projectId].sort()
+      );
+
+      const ledger = await f.db
+        .selectFrom("projectLedger")
+        .select([
+          "costType",
+          "documentType",
+          "documentId",
+          "amount",
+          "journalLineId"
+        ])
+        .where("companyId", "=", f.companyId)
+        .execute();
+      expect(
+        ledger.map((row) => [
+          row.costType,
+          row.documentType,
+          row.documentId,
+          Number(row.amount),
+          row.journalLineId
+        ])
+      ).toEqual([["Other Direct", "Charge", chargeId, 60, projectLine!.id]]);
+
+      await postChargeTransaction(f.db, {
+        type: "void",
+        chargeId,
+        companyId: f.companyId,
+        userId: "system"
+      });
+      const net = await f.db
+        .selectFrom("projectLedger")
+        .select((eb) => eb.fn.sum<number>("amount").as("amount"))
+        .where("companyId", "=", f.companyId)
+        .executeTakeFirst();
+      expect(Number(net?.amount ?? 0)).toEqual(0);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
 
 databaseTest(
   "before the cutover a charge posts and voids Provisional journals with no period",

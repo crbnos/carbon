@@ -10,7 +10,8 @@ import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
   planInventoryReset,
   type RecostEvent,
-  recostOutbound
+  recostOutbound,
+  splitOpeningLayersByStripe
 } from "@carbon/database/accounting-cutover";
 import type { getCutoverInventory } from "@carbon/database/accounting-cutover-reads";
 import type { KyselyTx } from "@carbon/database/client";
@@ -35,12 +36,31 @@ import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import { ServerFnError } from "../errors";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows
+} from "../lib/project-posting";
 import { ROWS_PER_STATEMENT, readByIds } from "./legacy/write";
 
 const RECOST_DESCRIPTION = "Cutover recost";
 
 type AccountDefaults = Database["public"]["Tables"]["accountDefault"]["Row"];
 type JournalLineInsert = Database["public"]["Tables"]["journalLine"]["Insert"];
+type ProjectLedgerRow = Database["public"]["Tables"]["projectLedger"]["Row"];
+
+/**
+ * Why the enable refuses a project stock payback whose cost the re-cost
+ * changes: a payback returns the lender's cost at the borrowed unit cost and
+ * books the difference as Payback Variance, and the re-cost cannot move that
+ * variance with it.
+ */
+export function paybackRecostRefusal(
+  transferId: string,
+  postingDate: string
+): string {
+  return `The cutover changes the cost of project stock payback ${transferId}, posted ${postingDate}. Carbon cannot re-cost a payback. Pick a cutover date after ${postingDate}.`;
+}
 
 /** Sets each row's `column` to its value, one statement per chunk. */
 async function setCostLedger(
@@ -62,8 +82,18 @@ async function setCostLedger(
 }
 
 /**
+ * The pool a cost row relieves from or opens into: its item, on its stock
+ * stripe. `calculateCOGS` relieves a project stripe from that stripe's
+ * layers only. Common stock keys on the item alone.
+ */
+function poolKey(itemId: string, projectId: string | null): string {
+  return projectId ? `${itemId}\u0000${projectId}` : itemId;
+}
+
+/**
  * Closes the cost layers dated before the cutover and opens one layer per
- * item at the reviewed unit cost. Then re-costs every outbound movement of a
+ * item and stock stripe at the reviewed unit cost
+ * (`splitOpeningLayersByStripe`). Then re-costs every outbound movement of a
  * FIFO or LIFO item dated on or after the cutover: the opening layer and
  * every layer and movement after it run again in the order they were posted
  * (`recostOutbound`), each movement relieving the layers open then as
@@ -74,6 +104,13 @@ async function setCostLedger(
  * their cost. A serial recost (`costLedgerType` "Revaluation") keeps its
  * cost: it relieves the layers in the run, but the account its difference
  * was booked against is not stored, so it is not re-costed.
+ *
+ * Each stock stripe is its own pool, as `calculateCOGS` relieves it. A
+ * project stock Transfer or Borrow moves stock at cost between two stripes
+ * of one inventory account: the layer it opens takes the re-costed cost of
+ * the stock it drew, and it books no journal. A Payback whose cost changes
+ * is refused: its lender layers, variance journal and Payback Variance
+ * ledger row would all have to move with it.
  */
 export async function resetAndRecostInventory(
   trx: KyselyTx,
@@ -113,9 +150,33 @@ export async function resetAndRecostInventory(
       ])
     )
     .execute();
-  const openingLayers = planInventoryReset(
-    inventory.map((item) => ({ itemId: item.itemId, quantity: item.quantity })),
-    new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+  // Project stock at the cutover, per item and stripe.
+  const projectOnHand = await trx
+    .selectFrom("itemLedger")
+    .select([
+      "itemId",
+      "projectId",
+      sql<number>`sum("quantity")`.as("quantity")
+    ])
+    .where("companyId", "=", companyId)
+    .where("postingDate", "<", cutoverDate)
+    .where("projectId", "is not", null)
+    .groupBy(["itemId", "projectId"])
+    .having(sql`sum("quantity")`, ">", 0)
+    .execute();
+  const openingLayers = splitOpeningLayersByStripe(
+    planInventoryReset(
+      inventory.map((item) => ({
+        itemId: item.itemId,
+        quantity: item.quantity
+      })),
+      new Map(inventory.map((item) => [item.itemId, item.unitCost]))
+    ),
+    projectOnHand.map((row) => ({
+      itemId: row.itemId,
+      projectId: row.projectId!,
+      quantity: Number(row.quantity)
+    }))
   );
 
   // The FIFO and LIFO items' layers and movements after the cutover, in the
@@ -150,7 +211,8 @@ export async function resetAndRecostInventory(
           "costLedgerType",
           "documentType",
           "documentId",
-          "postingDate"
+          "postingDate",
+          "projectId"
         ])
         .where((eb) => eb.or([isCostLayer(eb), isCostRelief(eb)]))
         .orderBy("postingDate")
@@ -203,15 +265,51 @@ export async function resetAndRecostInventory(
     (row) => `${row.documentId}:${row.itemId}`
   );
 
-  const openingKey = (itemId: string) => `opening:${itemId}`;
+  // The type of each project stock transfer after the cutover: a Transfer
+  // or a Borrow opens its layer at the cost of the stock it drew.
+  const transferIds = [
+    ...new Set(
+      ledger.flatMap((row) =>
+        row.documentType === "Project Transfer" && row.documentId
+          ? [row.documentId]
+          : []
+      )
+    )
+  ];
+  const transferById = new Map(
+    (
+      await readByIds(transferIds, (ids) =>
+        trx
+          .selectFrom("projectStockTransfer")
+          .select(["id", "type", "projectStockTransferId"])
+          .where("companyId", "=", companyId)
+          .where("id", "in", ids)
+          .execute()
+      )
+    ).map((transfer) => [transfer.id, transfer])
+  );
+  const transferType = (row: (typeof ledger)[number]) =>
+    row.documentType === "Project Transfer" && row.documentId
+      ? transferById.get(row.documentId)?.type
+      : undefined;
+  const movesAtCost = (row: (typeof ledger)[number]) => {
+    const type = transferType(row);
+    return type === "Transfer" || type === "Borrow";
+  };
+
+  const openingKey = (itemId: string, projectId: string | null) =>
+    `opening:${poolKey(itemId, projectId)}`;
+  // Each layer a Transfer or Borrow opens pairs with the relief before it
+  // of the same document and item: the one line that drew the stock.
+  const pendingReliefs = new Map<string, string[]>();
   // Every layer runs again from its full quantity.
   const events: RecostEvent[] = [
     ...openingLayers
       .filter((layer) => methodByItem.has(layer.itemId))
       .map((layer) => ({
         layer: {
-          id: openingKey(layer.itemId),
-          itemId: layer.itemId,
+          id: openingKey(layer.itemId, layer.projectId),
+          itemId: poolKey(layer.itemId, layer.projectId),
           quantity: layer.quantity,
           cost: layer.cost,
           remainingQuantity: layer.quantity,
@@ -221,46 +319,73 @@ export async function resetAndRecostInventory(
       })),
     ...ledger.map((row): RecostEvent => {
       const itemId = row.itemId!;
-      return Number(row.quantity) > 0
-        ? {
-            layer: {
-              id: row.id,
-              itemId,
-              quantity: Number(row.quantity),
-              cost: Number(row.cost),
-              remainingQuantity: Number(row.quantity),
-              trackedEntityId: row.trackedEntityId,
-              children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
-                id: child.id,
-                quantity: Number(child.quantity),
-                cost: Number(child.cost),
-                remainingQuantity: Number(child.quantity)
-              }))
-            }
-          }
-        : {
-            outbound: {
-              costLedgerId: row.id,
-              itemId,
-              quantity: -Number(row.quantity),
-              cost: -Number(row.cost),
-              trackedEntityIds: row.trackedEntityId
-                ? [row.trackedEntityId]
-                : (
-                    leavingByDocumentItem.get(`${row.documentId}:${itemId}`) ??
-                    []
-                  ).map((unit) => unit.trackedEntityId!)
-            }
-          };
+      const pool = poolKey(itemId, row.projectId);
+      const lineKey = `${row.documentId}:${itemId}`;
+      if (Number(row.quantity) > 0) {
+        const costOf = movesAtCost(row)
+          ? pendingReliefs.get(lineKey)?.shift()
+          : undefined;
+        return {
+          layer: {
+            id: row.id,
+            itemId: pool,
+            quantity: Number(row.quantity),
+            cost: Number(row.cost),
+            remainingQuantity: Number(row.quantity),
+            trackedEntityId: row.trackedEntityId,
+            children: (childrenByLayer.get(row.id) ?? []).map((child) => ({
+              id: child.id,
+              quantity: Number(child.quantity),
+              cost: Number(child.cost),
+              remainingQuantity: Number(child.quantity)
+            }))
+          },
+          ...(costOf ? { costOf } : {})
+        };
+      }
+      if (movesAtCost(row)) {
+        const pending = pendingReliefs.get(lineKey) ?? [];
+        pending.push(row.id);
+        pendingReliefs.set(lineKey, pending);
+      }
+      return {
+        outbound: {
+          costLedgerId: row.id,
+          itemId: pool,
+          quantity: -Number(row.quantity),
+          cost: -Number(row.cost),
+          trackedEntityIds: row.trackedEntityId
+            ? [row.trackedEntityId]
+            : (leavingByDocumentItem.get(lineKey) ?? []).map(
+                (unit) => unit.trackedEntityId!
+              )
+        }
+      };
     })
   ];
-  // A quantity no layer covers costs at the item's unit cost, as
-  // calculateCOGS costs negative inventory.
-  const recost = recostOutbound(
-    events,
-    methodByItem,
-    new Map(layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)]))
+  // Every pool of a FIFO or LIFO item relieves by the item's method. A
+  // quantity no layer covers costs at the item's unit cost, as calculateCOGS
+  // costs negative inventory.
+  const unitCostByItem = new Map(
+    layeredCosts.map((row) => [row.itemId, Number(row.unitCost ?? 0)])
   );
+  const poolItem = new Map<string, string>([
+    ...openingLayers.map(
+      (layer) => [poolKey(layer.itemId, layer.projectId), layer.itemId] as const
+    ),
+    ...ledger.map(
+      (row) => [poolKey(row.itemId!, row.projectId), row.itemId!] as const
+    )
+  ]);
+  const methodByPool = new Map<string, CostingMethod>();
+  const unitCostByPool = new Map<string, number>();
+  for (const [pool, itemId] of poolItem) {
+    const method = methodByItem.get(itemId);
+    if (method) methodByPool.set(pool, method);
+    const unitCost = unitCostByItem.get(itemId);
+    if (unitCost !== undefined) unitCostByPool.set(pool, unitCost);
+  }
+  const recost = recostOutbound(events, methodByPool, unitCostByPool);
 
   // The opening layers, with what the re-cost left of them.
   if (openingLayers.length > 0) {
@@ -275,12 +400,14 @@ export async function resetAndRecostInventory(
           documentType: "Purchase Receipt" as const,
           adjustment: false,
           itemId: layer.itemId,
+          projectId: layer.projectId,
           quantity: layer.quantity,
           cost: layer.cost,
           nominalCost: layer.cost,
           remainingQuantity:
-            recost.remainingById.get(openingKey(layer.itemId)) ??
-            layer.quantity,
+            recost.remainingById.get(
+              openingKey(layer.itemId, layer.projectId)
+            ) ?? layer.quantity,
           postingDate: cutoverDate,
           // Before any layer posted on the cutover day, so later relief
           // takes the opening stock first.
@@ -313,24 +440,51 @@ export async function resetAndRecostInventory(
       Math.abs(movement.delta) > EPSILON &&
       ledgerById.get(movement.costLedgerId)!.costLedgerType !== "Revaluation"
   );
-  if (changed.length === 0) return;
-  await setCostLedger(
-    trx,
-    companyId,
-    "cost",
-    changed.map((movement) => [movement.costLedgerId, -movement.newCost])
+  const payback = changed.find(
+    (movement) =>
+      transferType(ledgerById.get(movement.costLedgerId)!) === "Payback"
   );
+  if (payback) {
+    const row = ledgerById.get(payback.costLedgerId)!;
+    const transfer = transferById.get(row.documentId!);
+    throw new ServerFnError(
+      paybackRecostRefusal(
+        transfer?.projectStockTransferId ?? row.documentId!,
+        String(row.postingDate)
+      ),
+      409
+    );
+  }
+  // The layers a Transfer or Borrow opened, at the re-costed cost of the
+  // stock they drew.
+  const movedLayers = [...recost.layerCostById].filter(
+    ([id, cost]) => !equals(Number(ledgerById.get(id)?.cost ?? cost), cost)
+  );
+  await setCostLedger(trx, companyId, "cost", [
+    ...changed.map((movement): [string, number] => [
+      movement.costLedgerId,
+      -movement.newCost
+    ]),
+    ...movedLayers
+  ]);
 
-  // One Provisional journal per document and posting date.
-  await postRecostJournals(trx, {
+  // One Provisional journal per document and posting date. A Transfer or
+  // Borrow moves cost between two stripes of one inventory account, so it
+  // has no journal to adjust.
+  const journaled = changed.filter(
+    (movement) => !movesAtCost(ledgerById.get(movement.costLedgerId)!)
+  );
+  if (journaled.length === 0) return;
+  const posted = await postRecostJournals(trx, {
     companyId,
     companyGroupId,
     userId,
     cutoverDate,
     defaults,
-    deltas: changed.map((movement) => {
+    deltas: journaled.map((movement) => {
       const row = ledgerById.get(movement.costLedgerId)!;
       return {
+        costLedgerId: row.id,
         itemId: row.itemId!,
         documentId: row.documentId,
         documentType: row.documentType,
@@ -340,15 +494,159 @@ export async function resetAndRecostInventory(
       };
     })
   });
+  await recostProjectIssues(trx, {
+    companyId,
+    userId,
+    recosted: posted.filter(
+      (entry) => entry.delta.documentType === "Project Issue"
+    )
+  });
+}
+
+/**
+ * A re-costed Project Issue changes the project's cost too: one
+ * `projectLedger` adjustment row per issue (quantity 0, the cost difference,
+ * the issue's project, element and cost type, `journalLineId` the re-cost's
+ * project account line), written through `insertProjectLedgerRows` so a
+ * Time & Materials line bills it like any row, and for a Capitalize project
+ * the matching `fixedAssetCipCost` row. The issue's cost rows and its ledger
+ * row are written in one transaction, so they share `createdAt`: that and
+ * the project, item and date find the ledger row of each cost row. A
+ * Statistical issue has no ledger row and gets none.
+ */
+async function recostProjectIssues(
+  trx: KyselyTx,
+  {
+    companyId,
+    userId,
+    recosted
+  }: { companyId: string; userId: string; recosted: PostedRecost[] }
+) {
+  if (recosted.length === 0) return;
+  const recostByCostLedger = new Map(
+    recosted.map((entry) => [entry.delta.costLedgerId, entry])
+  );
+  const issues: (ProjectLedgerRow & { costLedgerId: string })[] = [];
+  for (const ids of chunkArray(
+    [...recostByCostLedger.keys()],
+    ROWS_PER_STATEMENT
+  )) {
+    const { rows } = await sql<ProjectLedgerRow & { costLedgerId: string }>`
+      SELECT c."id" AS "costLedgerId", pl.*
+      FROM "costLedger" c
+      JOIN "projectLedger" pl
+        ON pl."companyId" = c."companyId"
+       AND pl."documentType" = 'Project Issue'
+       AND pl."reversalOfId" IS NULL
+       AND pl."projectId" = c."documentId"
+       AND pl."itemId" = c."itemId"
+       AND pl."postingDate" = c."postingDate"
+       AND pl."createdAt" = c."createdAt"
+      WHERE c."companyId" = ${companyId}
+        AND c."id" = ANY(${ids}::text[])
+    `.execute(trx);
+    issues.push(...rows);
+  }
+  if (issues.length === 0) return;
+
+  // One adjustment per issue: an issue split across stock stripes has one
+  // cost row per stripe and one ledger row.
+  const byIssue = Map.groupBy(issues, (issue) => issue.id);
+  const adjustments = [...byIssue.values()].flatMap((rows) => {
+    const issue = rows[0]!;
+    const entries = rows.map(
+      (row) => recostByCostLedger.get(row.costLedgerId)!
+    );
+    const amount = round(
+      entries.reduce((sum, entry) => sum + entry.delta.delta, 0)
+    );
+    if (Math.abs(amount) <= EPSILON) return [];
+    return [{ issue, amount, recost: entries[0]! }];
+  });
+  if (adjustments.length === 0) return;
+
+  await insertProjectLedgerRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) =>
+      buildProjectLedgerRow({
+        companyId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        postingDate: String(issue.postingDate),
+        costType: issue.costType,
+        documentType: issue.documentType,
+        documentId: issue.documentId,
+        documentLineId: issue.documentLineId,
+        itemId: issue.itemId,
+        quantity: 0,
+        unitOfMeasureCode: issue.unitOfMeasureCode,
+        amount,
+        journalLineId: recost.offsetJournalLineId,
+        coverage: issue.coverage,
+        coverageReason: issue.coverageReason,
+        unallowable: issue.unallowable,
+        createdBy: userId
+      })
+    )
+  });
+
+  // A Capitalize project's issue raised its asset's cost: the difference
+  // goes on the same asset.
+  const cipRows = await readByIds(
+    adjustments.map(({ issue }) => issue.documentId),
+    (ids) =>
+      trx
+        .selectFrom("fixedAssetCipCost")
+        .select(["sourceDocumentId", "fixedAssetId", "postCapitalization"])
+        .where("companyId", "=", companyId)
+        .where("sourceType", "=", "Project Issue")
+        .where("projectId", "is not", null)
+        .where("sourceDocumentId", "in", ids)
+        .execute()
+  );
+  const cipByIssue = new Map(cipRows.map((row) => [row.sourceDocumentId, row]));
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: adjustments.map(({ issue, amount, recost }) => {
+      const cip = cipByIssue.get(issue.documentId);
+      if (!cip) return null;
+      return buildProjectCipRow({
+        resolved: {
+          fixedAssetId: cip.fixedAssetId,
+          postCapitalization: cip.postCapitalization
+        },
+        companyId,
+        userId,
+        projectId: issue.projectId,
+        projectElementId: issue.projectElementId,
+        sourceType: "Project Issue",
+        sourceDocumentId: issue.documentId,
+        amount,
+        costDate: String(issue.postingDate),
+        journalId: recost.journalId
+      });
+    })
+  });
 }
 
 type RecostDelta = {
+  costLedgerId: string;
   itemId: string;
   documentId: string | null;
   documentType: string | null;
   postingDate: string;
   quantity: number;
   delta: number;
+};
+
+/** A re-costed movement and the journal line its difference posted to on
+ *  the account its document charged (the inventory line's pair). */
+type PostedRecost = {
+  delta: RecostDelta;
+  journalId: string;
+  offsetJournalLineId: string;
 };
 
 /**
@@ -380,7 +678,7 @@ async function postRecostJournals(
     defaults: AccountDefaults;
     deltas: RecostDelta[];
   }
-) {
+): Promise<PostedRecost[]> {
   const label = (delta: RecostDelta) =>
     `${delta.documentType ?? "document"} ${delta.documentId ?? "(none)"}`;
   const missingDocument = deltas.find((delta) => !delta.documentId);
@@ -562,6 +860,12 @@ async function postRecostJournals(
     journals.map((journal) => [journal.journalEntryId, journal.id])
   );
 
+  // Each movement's pair of lines shares one reference; the offset is the
+  // line on its pair's offset account.
+  const offsetByReference = new Map<
+    string,
+    { delta: RecostDelta; journalId: string; accountId: string | null }
+  >();
   const lineInserts: JournalLineInsert[] = groups.flatMap((entries, index) => {
     const journalId = journalIdByEntry.get(entryIds[index]!)!;
     return entries.flatMap(({ delta, pair }) => {
@@ -577,6 +881,11 @@ async function postRecostJournals(
       }
       const inventoryAmount = round(credit("asset", delta.delta));
       const journalLineReference = nanoid();
+      offsetByReference.set(journalLineReference, {
+        delta,
+        journalId,
+        accountId: pair.offset.accountId
+      });
       const keys = (line: Line) => ({
         documentType: line.documentType,
         documentId: line.documentId,
@@ -609,7 +918,23 @@ async function postRecostJournals(
       ];
     });
   });
+  const posted: PostedRecost[] = [];
   for (const rows of chunkArray(lineInserts, ROWS_PER_STATEMENT)) {
-    await trx.insertInto("journalLine").values(rows).execute();
+    const inserted = await trx
+      .insertInto("journalLine")
+      .values(rows)
+      .returning(["id", "journalLineReference", "accountId"])
+      .execute();
+    for (const line of inserted) {
+      const offset = offsetByReference.get(line.journalLineReference);
+      if (offset && line.accountId === offset.accountId) {
+        posted.push({
+          delta: offset.delta,
+          journalId: offset.journalId,
+          offsetJournalLineId: line.id
+        });
+      }
+    }
   }
+  return posted;
 }

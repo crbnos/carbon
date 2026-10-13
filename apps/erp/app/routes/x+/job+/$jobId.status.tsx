@@ -16,9 +16,9 @@ import {
   jobStatus,
   makeToAssetItemError,
   recalculateJobRequirements,
-  runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { runMRP } from "~/modules/production/production.mcp.server";
 import { cancelJob, releaseJobs } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -62,7 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const { data } = await client
       .from("job")
       .select(
-        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item!job_itemId_fkey(itemTrackingType, itemReplenishment(manufacturingBlocked))"
       )
       .eq("id", id)
       .single();

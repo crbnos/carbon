@@ -161,7 +161,7 @@ goes in the index.
 
 `db:check:datasets` runs `validateDataset` first with no database (it still blocks when the
 stack is down), then applies each dataset to a scratch company, asserts the `COVERAGE_FLOORS`
-row counts, and rolls back. On failure it prints the violation list or the error plus the last
+row counts (plus that dataset's `DATASET_COVERAGE_FLOORS`), and rolls back. On failure it prints the violation list or the error plus the last
 12 tier log lines.
 
 After a real seed, diff the printed `Seeded row counts` block against

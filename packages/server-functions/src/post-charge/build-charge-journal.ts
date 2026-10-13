@@ -46,6 +46,10 @@ export interface ChargeLineInput {
   amount: number;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** The project account a line charged to a non-Statistical project posts
+   *  to in place of `accountId`. Its class must be in `accounts`. */
+  projectAccountId?: string | null;
   description?: string | null;
 }
 
@@ -80,6 +84,9 @@ export interface ChargeJournalLine {
   documentId: string;
   costCenterId?: string | null;
   projectId?: string | null;
+  projectElementId?: string | null;
+  /** Index of the coding line this journal line posts, if any. */
+  sourceLineIndex?: number;
 }
 
 export interface BuildChargeJournalResult {
@@ -135,6 +142,8 @@ export function buildChargeJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
+      projectElementId?: string | null;
+      sourceLineIndex?: number;
     }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
@@ -148,9 +157,19 @@ export function buildChargeJournal(
       documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null
+      projectId: fields.projectId ?? null,
+      ...(fields.sourceLineIndex === undefined
+        ? {}
+        : {
+            projectElementId: fields.projectElementId ?? null,
+            sourceLineIndex: fields.sourceLineIndex
+          })
     });
   };
+
+  // A line charged to a non-Statistical project posts to the project account.
+  const postingAccountOf = (line: ChargeLineInput) =>
+    line.projectAccountId ?? line.accountId;
 
   // Line-bearing types must have lines that sum to the header amount, or the
   // subledger and the GL disagree. Throw a typed error naming the mismatch.
@@ -201,16 +220,18 @@ export function buildChargeJournal(
     case "Charge": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("debit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("debit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card charge",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("credit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -222,16 +243,18 @@ export function buildChargeJournal(
     case "Credit": {
       requireLineSum();
       let cardMagnitude = 0;
-      for (const line of lines) {
+      lines.forEach((line, index) => {
         const magnitude = toBase(line.amount);
         cardMagnitude += magnitude;
-        pushLine("credit", classOf(line.accountId), magnitude, {
-          accountId: line.accountId,
+        pushLine("credit", classOf(postingAccountOf(line)), magnitude, {
+          accountId: postingAccountOf(line),
           description: line.description ?? "Card credit",
           costCenterId: line.costCenterId,
-          projectId: line.projectId
+          projectId: line.projectId,
+          projectElementId: line.projectElementId,
+          sourceLineIndex: index
         });
-      }
+      });
       pushLine("debit", "liability", cardMagnitude, {
         accountId: cardAccountId,
         description: "Card liability"
@@ -283,12 +306,19 @@ export function buildChargeJournal(
         description: "Card repayment"
       });
       lines.forEach((line, index) => {
-        pushLine("credit", classOf(line.accountId), lineMagnitudes[index]!, {
-          accountId: line.accountId,
-          description: line.description ?? "Card repayment",
-          costCenterId: line.costCenterId,
-          projectId: line.projectId
-        });
+        pushLine(
+          "credit",
+          classOf(postingAccountOf(line)),
+          lineMagnitudes[index]!,
+          {
+            accountId: postingAccountOf(line),
+            description: line.description ?? "Card repayment",
+            costCenterId: line.costCenterId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceLineIndex: index
+          }
+        );
       });
       break;
     }

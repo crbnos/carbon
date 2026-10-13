@@ -356,6 +356,7 @@ async function loadRecognitionRows(
           "contractLine.itemId",
           "contract.id as customerContractId",
           "contract.customerId",
+          "contractLine.projectElementId",
           sql<
             string | null
           >`coalesce("contractLine"."projectId", "contract"."projectId")`.as(

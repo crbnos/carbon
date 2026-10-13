@@ -23,7 +23,6 @@ import {
   renewedEndDate
 } from "@carbon/database/contract-schedule";
 import { round } from "@carbon/database/precision";
-import { getNextSequence } from "@carbon/database/sequence";
 import {
   contractInvoiceHold,
   datetime,
@@ -57,6 +56,11 @@ import {
   toLineTerms,
   toTerms
 } from "../post-customer-contract/schedule-writes";
+import {
+  contractLocationId,
+  type InvoiceLineValues,
+  insertDraftContractInvoice
+} from "./insert-invoice";
 
 type Enums = Database["public"]["Enums"];
 
@@ -619,53 +623,6 @@ async function draftDueInvoices(
   return drafted;
 }
 
-/** Where a contract's invoices are drafted: its sales order's shipping
- *  location when it came from one, else the company's first location. A
- *  contract has no location of its own. */
-async function contractLocationId(
-  trx: KyselyTx,
-  companyId: string,
-  contract: ContractRow
-): Promise<string> {
-  if (contract.salesOrderId) {
-    const shipment = await trx
-      .selectFrom("salesOrderShipment")
-      .select("locationId")
-      .where("id", "=", contract.salesOrderId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    if (shipment?.locationId) return shipment.locationId;
-  }
-  const location = await trx
-    .selectFrom("location")
-    .select("id")
-    .where("companyId", "=", companyId)
-    .orderBy("createdAt")
-    .orderBy("id")
-    .executeTakeFirst();
-  if (!location) {
-    throw new Error("The company has no location to draft the invoice at");
-  }
-  return location.id;
-}
-
-type InvoiceLineValues = {
-  itemId: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  discountPercent: number;
-  taxPercent: number;
-  serviceStartDate: string | null;
-  serviceEndDate: string | null;
-  customerContractId: string;
-  customerContractLineId: string;
-  customerContractInvoiceLineId: string;
-  projectId: string | null;
-  methodType: Enums["methodType"];
-  unitOfMeasureCode: string;
-};
-
 /** One schedule row as a Service sales-invoice line (plan decision 10). */
 function invoiceLineValues(
   row: DueRow,
@@ -732,9 +689,9 @@ function invoiceLineValues(
 }
 
 /**
- * Inserts one Draft contract invoice (opportunity, header, shipment, lines),
- * stamps the planned invoice `Invoiced` with it and each row with the line
- * that bills it. Returns the invoice id.
+ * Inserts one Draft contract invoice (`insertDraftContractInvoice`), stamps
+ * the planned invoice `Invoiced` with it and each row with the line that
+ * bills it. Returns the invoice id.
  */
 async function insertContractInvoice(
   trx: KyselyTx,
@@ -749,87 +706,15 @@ async function insertContractInvoice(
   }
 ): Promise<string> {
   const { companyId, userId } = scope;
-  const { asOf, contract, locationId, lines } = args;
-
-  // Net merchandise per line, as the schedule priced it; tax on the net.
-  const nets = lines.map((line) =>
-    round(line.quantity * line.unitPrice * (1 - line.discountPercent))
-  );
-  const subtotal = round(nets.reduce((sum, net) => sum + net, 0));
-  const totalTax = round(
-    lines.reduce((sum, line, index) => sum + nets[index]! * line.taxPercent, 0)
-  );
-
-  const readableInvoiceId = await getNextSequence(
-    trx,
-    "salesInvoice",
-    companyId
-  );
-  // Every sales invoice has an opportunity, as insertSalesInvoice makes one:
-  // its documents live under the opportunity's storage folder, and the
-  // invoice page reads it.
-  const opportunity = await trx
-    .insertInto("opportunity")
-    .values({ companyId, customerId: contract.customerId })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
-  const invoice = await trx
-    .insertInto("salesInvoice")
-    .values({
-      invoiceId: readableInvoiceId,
-      status: "Draft",
-      customerId: contract.customerId,
-      invoiceCustomerId: contract.invoiceCustomerId ?? contract.customerId,
-      invoiceCustomerContactId: contract.invoiceCustomerContactId,
-      invoiceCustomerLocationId: contract.invoiceCustomerLocationId,
-      locationId,
-      paymentTermId: contract.paymentTermId,
-      currencyCode: contract.currencyCode,
-      exchangeRate: contract.exchangeRate,
-      customerReference: contract.customerReference,
-      customerContractId: contract.id,
-      dateIssued: asOf,
-      subtotal,
-      totalDiscount: 0,
-      totalTax,
-      totalAmount: round(subtotal + totalTax),
-      opportunityId: opportunity.id,
-      automationHoldReason: args.holdReason,
-      companyId,
-      createdBy: userId
-    })
-    .returning(["id"])
-    .executeTakeFirstOrThrow();
-
-  await trx
-    .insertInto("salesInvoiceShipment")
-    .values({
-      id: invoice.id,
-      locationId,
-      // The contract's customer ship-to; sales rules evaluate the invoice's
-      // lines against it.
-      customerLocationId: contract.shipToCustomerLocationId,
-      shippingCost: 0,
-      companyId,
-      createdBy: userId
-    })
-    .execute();
-
-  await trx
-    .insertInto("salesInvoiceLine")
-    .values(
-      lines.map((line, index) => ({
-        invoiceId: invoice.id,
-        invoiceLineType: "Service" as const,
-        ...line,
-        exchangeRate: contract.exchangeRate,
-        locationId,
-        sortOrder: index + 1,
-        companyId,
-        createdBy: userId
-      }))
-    )
-    .execute();
+  const { contract } = args;
+  const { invoiceId } = await insertDraftContractInvoice(trx, scope, {
+    asOf: args.asOf,
+    contract,
+    locationId: args.locationId,
+    holdReason: args.holdReason,
+    lines: args.lines
+  });
+  const invoice = { id: invoiceId };
 
   // Stamp what was drafted with the invoice (and line) that bills it.
   await trx

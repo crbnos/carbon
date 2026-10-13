@@ -4,6 +4,7 @@
 
 import { useLingui } from "@lingui/react/macro";
 import {
+  LuBanknote,
   LuCalendarClock,
   LuCalendarHeart,
   LuClock,
@@ -13,11 +14,15 @@ import {
 } from "react-icons/lu";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import { useSettings } from "~/hooks/useSettings";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import type { RouteGroup } from "~/types";
 import { path } from "~/utils/path";
 
 export default function usePeopleSubmodules() {
   const { t } = useLingui();
+  // Payroll totals feed the labor distribution report's payroll check; a
+  // company that does no government contracting never sees them (Layer 5).
+  const isGovernmentContracting = useGovernmentContracting();
 
   const peopleRoutes: RouteGroup[] = [
     {
@@ -35,7 +40,16 @@ export default function usePeopleSubmodules() {
           icon: <LuClock />,
           setting: "timeCardEnabled",
           table: "timeCardEntry"
-        }
+        },
+        ...(isGovernmentContracting
+          ? [
+              {
+                name: t`Payroll Totals`,
+                to: path.to.payrollTotals,
+                icon: <LuBanknote />
+              }
+            ]
+          : [])
       ]
     },
     {

@@ -149,6 +149,7 @@ const settings = {
   showQuantity: false,
   showStatus: false,
   showSalesOrder: false,
+  showProject: false,
   showThumbnail: false
 };
 

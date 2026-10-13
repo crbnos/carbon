@@ -33,6 +33,11 @@ import Account, { AccountControlled } from "./Account";
 import AddressAutocomplete from "./AddressAutocomplete";
 import AssemblyInstruction from "./AssemblyInstruction";
 import AssetClass, { useAssetClasses } from "./AssetClass";
+import BillingElement from "./BillingElement";
+import ChargeNumber, {
+  ChargeNumberControlled,
+  useChargeNumbers
+} from "./ChargeNumber";
 import Color from "./Color";
 import ConversionFactor from "./ConversionFactor";
 import CostCenter from "./CostCenter";
@@ -58,6 +63,7 @@ import Item, { useConfigurableItems } from "./Item";
 import ItemPostingGroup from "./ItemPostingGroup";
 import Items from "./Items";
 import JobSalesOrderLine from "./JobSalesOrderLine";
+import LaborCategory, { useLaborCategories } from "./LaborCategory";
 import Location from "./Location";
 import LocationEmployee from "./LocationEmployee";
 import MaterialType from "./MaterialType";
@@ -107,7 +113,11 @@ export {
   Array,
   ArrayNumeric,
   AssemblyInstruction,
+  BillingElement,
   Boolean,
+  ChargeNumber,
+  ChargeNumberControlled,
+  useChargeNumbers,
   Color,
   Combobox,
   CostCenter,
@@ -143,6 +153,8 @@ export {
   ItemPostingGroup,
   Items,
   JobSalesOrderLine,
+  LaborCategory,
+  useLaborCategories,
   useConfigurableItems,
   Location,
   MaterialType,

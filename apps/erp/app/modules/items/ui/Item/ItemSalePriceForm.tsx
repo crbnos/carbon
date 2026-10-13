@@ -72,6 +72,18 @@ const ItemSalePriceForm = ({ initialValues }: ItemSalePriceFormProps) => {
               name="allowInvoiceDiscount"
               label={t`Allow Invoice Discount`}
             /> */}
+            <Number
+              name="laborWarrantyMonths"
+              label={t`Labor Warranty (months)`}
+              helperText={t`Sets the labor warranty of a serial when it ships`}
+              minValue={0}
+            />
+            <Number
+              name="partsWarrantyMonths"
+              label={t`Parts Warranty (months)`}
+              helperText={t`Sets the parts warranty of a serial when it ships`}
+              minValue={0}
+            />
             <CustomFormFields table="partUnitSalePrice" />
           </div>
         </CardContent>

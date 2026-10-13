@@ -21,6 +21,7 @@ import {
   createAdjustmentJournal
 } from "../lib/post-adjustment";
 import type { AdjustmentItemCost } from "../lib/post-adjustment-cost";
+import { loadTrackedEntityStripes } from "../lib/stock-stripes";
 
 // The GL/cost posting path for inspection-reject and NCR-disposition inventory
 // write-offs. The caller (inspection reject route / closeIssue) owns the
@@ -104,6 +105,17 @@ const postNonConformance = defineServerFn({
     );
 
     const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
+
+    // A movement of a tracked entity books in the entity's stock stripe
+    // (Projects Phase 2a); an untracked movement names no stripe and books
+    // common stock.
+    const entityStripes = await loadTrackedEntityStripes(
+      db,
+      companyId,
+      effectiveMovements
+        .map((m) => m.trackedEntityId)
+        .filter((id): id is string => Boolean(id))
+    );
 
     const [itemsResult, itemCostsResult] = await inOrder([
       () =>
@@ -294,6 +306,9 @@ const postNonConformance = defineServerFn({
             locationId: movement.locationId ?? null,
             storageUnitId: null,
             trackedEntityId: movement.trackedEntityId ?? null,
+            projectId: movement.trackedEntityId
+              ? (entityStripes.get(movement.trackedEntityId) ?? null)
+              : null,
             entryType:
               movement.quantity < 0 ? "Negative Adjmt." : "Positive Adjmt.",
             documentType,

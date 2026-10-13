@@ -140,7 +140,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const { data: purchaseOrderLines } = await serviceRole
         .from("purchaseOrderLine")
         .select(
-          "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
+          "id, purchaseQuantity, quantityReceived, item!purchaseOrderLine_itemId_fkey(readableIdWithRevision)"
         )
         .in("id", purchaseOrderLineIds)
         .eq("companyId", companyId);

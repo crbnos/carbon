@@ -24,7 +24,8 @@ export const dimensions = [
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
   { name: "Scrap Reason", entityType: "ScrapReason" },
-  { name: "Project", entityType: "Project" }
+  { name: "Project", entityType: "Project" },
+  { name: "Project Element", entityType: "ProjectElement" }
 ] as const;
 
 export const supplierStatuses = [
@@ -609,6 +610,24 @@ export const sequences = [
     table: "customerContract",
     name: "Contract",
     prefix: "CON",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "serviceOrder",
+    name: "Service Order",
+    prefix: "SVC",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "projectStockTransfer",
+    name: "Project Stock Transfer",
+    prefix: "PST",
     suffix: null,
     next: 0,
     size: 6,
@@ -1287,6 +1306,18 @@ export const accounts = [
     key: "2160",
     number: "2160",
     name: "Deferred Revenue",
+    isGroup: false,
+    parentKey: "current-liabilities",
+    accountType: "Other Current Liability",
+    incomeBalance: "Balance Sheet",
+    class: "Liability",
+    consolidatedRate: "Current",
+    createdBy: "system"
+  },
+  {
+    key: "2165",
+    number: "2165",
+    name: "Contract Loss Provision",
     isGroup: false,
     parentKey: "current-liabilities",
     accountType: "Other Current Liability",
@@ -2053,6 +2084,18 @@ export const accounts = [
     createdBy: "system"
   },
   {
+    key: "6120",
+    number: "6120",
+    name: "Warranty Expense",
+    isGroup: false,
+    parentKey: "operating-expenses",
+    accountType: "Expense",
+    incomeBalance: "Income Statement",
+    class: "Expense",
+    consolidatedRate: "Average",
+    createdBy: "system"
+  },
+  {
     key: "6130",
     number: "6130",
     name: "Variable Lease Expense",
@@ -2272,6 +2315,9 @@ export const accountDefaults = {
   rawMaterialsAccount: "1210",
   finishedGoodsAccount: "1220",
   workInProgressAccount: "1230",
+  projectWorkInProgressAccount: "1230",
+  projectExpenseAccount: "7080",
+  warrantyExpenseAccount: "6120",
   receivablesAccount: "1110",
   intercompanyReceivablesAccount: "1130",
   bankCashAccount: "1010",
@@ -2300,6 +2346,7 @@ export const accountDefaults = {
   leaseRevenueAccount: "4070",
   leaseInterestIncomeAccount: "4150",
   netInvestmentInLeasesAccount: "1160",
+  contractLossProvisionAccount: "2165",
   rightOfUseAssetAccount: "1450",
   accumulatedRightOfUseAmortizationAccount: "1460",
   leaseLiabilityAccount: "2440",
@@ -2460,6 +2507,26 @@ export const periodCloseTaskDefinitions = [
     isSystem: true
   },
   {
+    name: "Compute burden for the period",
+    taskType: "Auto",
+    autoCheckKey: "burden-computed",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Close earned value for the period",
+    taskType: "Auto",
+    autoCheckKey: "earned-value-closed",
+    sortOrder: 5,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
     name: "Match & eliminate intercompany transactions",
     taskType: "Auto",
     autoCheckKey: "unmatched-ic",
@@ -2508,6 +2575,75 @@ export const periodCloseTaskDefinitions = [
     severity: "Blocker",
     active: true,
     isSystem: true
+  },
+  // Government Contracting 5a. Passes in Standard timekeeping; in DCAA mode it
+  // warns about unposted entries and missing days in the period.
+  {
+    name: "Timesheets complete",
+    taskType: "Auto",
+    autoCheckKey: "timesheets-complete",
+    sortOrder: 9,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  }
+];
+
+/**
+ * The project states every company starts with (Settings → Projects). States
+ * are company-wide: every project and service order uses the same set. The
+ * migration `20261012164218_project-states-company-wide.sql` seeds the same
+ * rows for companies that had none.
+ */
+export const projectStates: {
+  name: string;
+  group: "Backlog" | "Unstarted" | "Started" | "Completed" | "Cancelled";
+  color: string;
+  sortOrder: number;
+  isDefault: boolean;
+}[] = [
+  {
+    name: "Backlog",
+    group: "Backlog",
+    color: "#60646C",
+    sortOrder: 1,
+    isDefault: true
+  },
+  {
+    name: "Todo",
+    group: "Unstarted",
+    color: "#60646C",
+    sortOrder: 2,
+    isDefault: true
+  },
+  {
+    name: "In Progress",
+    group: "Started",
+    color: "#F59E0B",
+    sortOrder: 3,
+    isDefault: true
+  },
+  {
+    name: "In Review",
+    group: "Started",
+    color: "#3B82F6",
+    sortOrder: 4,
+    isDefault: false
+  },
+  {
+    name: "Done",
+    group: "Completed",
+    color: "#46A758",
+    sortOrder: 5,
+    isDefault: true
+  },
+  {
+    name: "Cancelled",
+    group: "Cancelled",
+    color: "#9AA4BC",
+    sortOrder: 6,
+    isDefault: true
   }
 ];
 

@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { useCarbon } from "@carbon/auth";
 import { useRuleViolations } from "@carbon/ee/rules";
 import {
   DatePicker,
@@ -33,6 +34,7 @@ import {
   Modal,
   ModalBody,
   ModalContent,
+  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -45,7 +47,7 @@ import { groupBy, INPUT_FORMAT, round } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuBuilding2,
   LuCheck,
@@ -151,6 +153,12 @@ const InventoryStorageUnits = ({
     [storageUnits]
   );
 
+  const ownerLabels = useStockOwnerLabels(
+    itemStorageUnitQuantities
+      .map((item) => item.projectId)
+      .filter((id): id is string => Boolean(id))
+  );
+
   const [search, setSearch] = useState("");
 
   // Matches a storage unit's name or a lot/serial number.
@@ -164,57 +172,85 @@ const InventoryStorageUnits = ({
     );
   }, [visibleStorageUnitQuantities, search, storageUnitLabel]);
 
-  // Rows are grouped twice: by storage unit, then by lot within it. Fragments
-  // of the same batch in the same bin collapse into one lot row with the summed
-  // quantity, expandable to the underlying tracked entities.
-  const storageUnitGroups = useMemo(() => {
+  // Rows are grouped three times: by stock owner (common stock, then each
+  // project with project stock), by storage unit, then by lot within it.
+  // Fragments of the same batch in the same bin collapse into one lot row
+  // with the summed quantity, expandable to the underlying tracked entities.
+  const ownerGroups = useMemo(() => {
     const sumQuantity = (members: ItemStorageUnitQuantities[]) =>
       round(members.reduce((sum, m) => sum + m.quantity, 0));
 
-    const byUnit = groupBy(
+    const buildUnitGroups = (
+      ownerKey: string,
+      ownerRows: { item: ItemStorageUnitQuantities; index: number }[]
+    ) => {
+      const byUnit = groupBy(ownerRows, ({ item }) => item.storageUnitId ?? "");
+
+      return Object.entries(byUnit)
+        .map(([storageUnitId, rows]) => {
+          const byLot = groupBy(
+            rows,
+            // Untracked/unnumbered rows get a per-row key so they stay singletons.
+            ({ item, index }) =>
+              item.readableId ?? item.trackedEntityId ?? `row-${index}`
+          );
+          const lots = Object.entries(byLot)
+            .map(([lotKey, lotRows]) => {
+              const members = lotRows.map((r) => r.item);
+              return {
+                key: `${ownerKey}::${storageUnitId}::${lotKey}`,
+                members,
+                quantity: sumQuantity(members)
+              };
+            })
+            // Largest first; serials all hold one, so they fall back to number order.
+            .sort(
+              (a, b) =>
+                b.quantity - a.quantity ||
+                (a.members[0].readableId ?? "").localeCompare(
+                  b.members[0].readableId ?? ""
+                )
+            );
+          const first = rows[0].item;
+          return {
+            key: `${ownerKey}::${storageUnitId}`,
+            storageUnitId,
+            name: storageUnitId ? storageUnitLabel(first) : null,
+            quantity: sumQuantity(rows.map((r) => r.item)),
+            lots
+          };
+        })
+        .sort((a, b) => {
+          // Stock with no storage unit goes last.
+          if (!a.name || !b.name) return a.name ? -1 : b.name ? 1 : 0;
+          return a.name.localeCompare(b.name);
+        });
+    };
+
+    const byOwner = groupBy(
       matchingStorageUnitQuantities.map((item, index) => ({ item, index })),
-      ({ item }) => item.storageUnitId ?? ""
+      ({ item }) => item.projectId ?? ""
     );
 
-    return Object.entries(byUnit)
-      .map(([storageUnitId, rows]) => {
-        const byLot = groupBy(
-          rows,
-          // Untracked/unnumbered rows get a per-row key so they stay singletons.
-          ({ item, index }) =>
-            item.readableId ?? item.trackedEntityId ?? `row-${index}`
-        );
-        const lots = Object.entries(byLot)
-          .map(([lotKey, lotRows]) => {
-            const members = lotRows.map((r) => r.item);
-            return {
-              key: `${storageUnitId}::${lotKey}`,
-              members,
-              quantity: sumQuantity(members)
-            };
-          })
-          // Largest first; serials all hold one, so they fall back to number order.
-          .sort(
-            (a, b) =>
-              b.quantity - a.quantity ||
-              (a.members[0].readableId ?? "").localeCompare(
-                b.members[0].readableId ?? ""
-              )
-          );
-        const first = rows[0].item;
-        return {
-          storageUnitId,
-          name: storageUnitId ? storageUnitLabel(first) : null,
+    return (
+      Object.entries(byOwner)
+        .map(([ownerKey, rows]) => ({
+          projectId: ownerKey || null,
           quantity: sumQuantity(rows.map((r) => r.item)),
-          lots
-        };
-      })
-      .sort((a, b) => {
-        // Stock with no storage unit goes last.
-        if (!a.name || !b.name) return a.name ? -1 : b.name ? 1 : 0;
-        return a.name.localeCompare(b.name);
-      });
-  }, [matchingStorageUnitQuantities, storageUnitLabel]);
+          units: buildUnitGroups(ownerKey, rows)
+        }))
+        // Common stock first, then the projects by label.
+        .sort((a, b) => {
+          if (!a.projectId || !b.projectId) return a.projectId ? 1 : -1;
+          return (ownerLabels[a.projectId] ?? "").localeCompare(
+            ownerLabels[b.projectId] ?? ""
+          );
+        })
+    );
+  }, [matchingStorageUnitQuantities, storageUnitLabel, ownerLabels]);
+
+  // Owner headings show only when some stock belongs to a project.
+  const showOwners = ownerGroups.some((owner) => owner.projectId !== null);
 
   const formatQuantity = useQuantityFormatter();
 
@@ -242,6 +278,9 @@ const InventoryStorageUnits = ({
     string | null
   >(null);
   const [selectedReadableId, setSelectedReadableId] = useState<string | null>(
+    null
+  );
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
   const [isEditingRow, setIsEditingRow] = useState(false);
@@ -277,9 +316,11 @@ const InventoryStorageUnits = ({
     storageUnitId?: string,
     trackedEntityId?: string,
     readableId?: string,
-    currentQuantity?: number
+    currentQuantity?: number,
+    projectId?: string | null
   ) => {
     setSelectedStorageUnitId(storageUnitId || null);
+    setSelectedProjectId(projectId ?? null);
     setSelectedTrackedEntityId(trackedEntityId || null);
     setSelectedReadableId(readableId || null);
     setIsEditingRow(storageUnitId !== undefined);
@@ -501,7 +542,8 @@ const InventoryStorageUnits = ({
                 item.storageUnitId,
                 item.trackedEntityId,
                 item.readableId,
-                item.quantity
+                item.quantity,
+                item.projectId
               )
             }
           >
@@ -583,7 +625,7 @@ const InventoryStorageUnits = ({
           </CardAction>
         </HStack>
         <CardContent>
-          {storageUnitGroups.length === 0 && (
+          {ownerGroups.length === 0 && (
             <p className="py-6 text-center text-sm text-muted-foreground">
               {search.trim() ? (
                 <Trans>No storage units or tracking numbers match.</Trans>
@@ -593,100 +635,127 @@ const InventoryStorageUnits = ({
             </p>
           )}
           <div className="text-sm">
-            {storageUnitGroups.map((unit) => {
-              const unitLabel = unit.name ?? (
-                <span className="text-muted-foreground">
-                  <Trans>No storage unit</Trans>
-                </span>
-              );
-              const [onlyLot] = unit.lots;
-              // A bin holding one untracked row needs no lot rows under it.
-              const isSingleUntrackedRow =
-                unit.lots.length === 1 &&
-                onlyLot.members.length === 1 &&
-                !onlyLot.members[0].trackedEntityId;
-
-              return (
-                <div
-                  key={unit.storageUnitId}
-                  className="border-t py-1.5 first:border-t-0"
-                >
-                  <div
-                    className={cn(
-                      rowClassName,
-                      isSingleUntrackedRow && "hover:bg-muted/60"
+            {ownerGroups.map((owner) => (
+              <div
+                key={owner.projectId ?? "common"}
+                className={cn(
+                  showOwners && "border-t pt-2 first:border-t-0 first:pt-0"
+                )}
+              >
+                {showOwners && (
+                  <div className={rowClassName}>
+                    <span className="truncate text-xs font-medium text-muted-foreground">
+                      {owner.projectId ? (
+                        (ownerLabels[owner.projectId] ?? t`Project stock`)
+                      ) : (
+                        <Trans>Unassigned stock</Trans>
+                      )}
+                    </span>
+                    {renderQuantity(
+                      owner.quantity,
+                      "text-xs text-muted-foreground"
                     )}
-                  >
-                    <span className="truncate font-medium">{unitLabel}</span>
-                    {renderQuantity(unit.quantity, "font-medium")}
-                    {isSingleUntrackedRow ? (
-                      renderActions(onlyLot.members[0])
-                    ) : (
-                      // The unit sits beside the total so the digits stay in one column.
-                      <span className="truncate text-xs text-muted-foreground">
-                        {unitOfMeasureLabel}
-                      </span>
-                    )}
+                    <span />
                   </div>
-                  {!isSingleUntrackedRow &&
-                    unit.lots.map((lot) => {
-                      const first = lot.members[0];
-                      if (lot.members.length === 1) {
-                        return renderStockRow(first, lot.key, "pl-7");
-                      }
-                      const isExpanded = expandedGroupKeys.has(lot.key);
-                      const earliestExpiration = lot.members
-                        .map((m) =>
-                          m.trackedEntityId
-                            ? trackedEntityExpirations[m.trackedEntityId]
-                            : null
-                        )
-                        .filter((d): d is string => Boolean(d))
-                        .sort()[0];
-                      return (
-                        <Fragment key={lot.key}>
-                          <div className={rowClassName}>
-                            <div className="flex min-w-0 items-center">
-                              {/* The chevron sits in the gutter the other lots leave empty. */}
-                              <IconButton
-                                aria-label={
-                                  isExpanded ? t`Collapse` : t`Expand`
-                                }
-                                aria-expanded={isExpanded}
-                                variant="ghost"
-                                size="sm"
-                                className="-ml-0.5 mr-0.5 size-7 shrink-0"
-                                icon={
-                                  isExpanded ? (
-                                    <LuChevronDown />
-                                  ) : (
-                                    <LuChevronRight />
+                )}
+                {owner.units.map((unit) => {
+                  const unitLabel = unit.name ?? (
+                    <span className="text-muted-foreground">
+                      <Trans>No storage unit</Trans>
+                    </span>
+                  );
+                  const [onlyLot] = unit.lots;
+                  // A bin holding one untracked row needs no lot rows under it.
+                  const isSingleUntrackedRow =
+                    unit.lots.length === 1 &&
+                    onlyLot.members.length === 1 &&
+                    !onlyLot.members[0].trackedEntityId;
+
+                  return (
+                    <div
+                      key={unit.key}
+                      className="border-t py-1.5 first:border-t-0"
+                    >
+                      <div
+                        className={cn(
+                          rowClassName,
+                          isSingleUntrackedRow && "hover:bg-muted/60"
+                        )}
+                      >
+                        <span className="truncate font-medium">
+                          {unitLabel}
+                        </span>
+                        {renderQuantity(unit.quantity, "font-medium")}
+                        {isSingleUntrackedRow ? (
+                          renderActions(onlyLot.members[0])
+                        ) : (
+                          // The unit sits beside the total so the digits stay in one column.
+                          <span className="truncate text-xs text-muted-foreground">
+                            {unitOfMeasureLabel}
+                          </span>
+                        )}
+                      </div>
+                      {!isSingleUntrackedRow &&
+                        unit.lots.map((lot) => {
+                          const first = lot.members[0];
+                          if (lot.members.length === 1) {
+                            return renderStockRow(first, lot.key, "pl-7");
+                          }
+                          const isExpanded = expandedGroupKeys.has(lot.key);
+                          const earliestExpiration = lot.members
+                            .map((m) =>
+                              m.trackedEntityId
+                                ? trackedEntityExpirations[m.trackedEntityId]
+                                : null
+                            )
+                            .filter((d): d is string => Boolean(d))
+                            .sort()[0];
+                          return (
+                            <Fragment key={lot.key}>
+                              <div className={rowClassName}>
+                                <div className="flex min-w-0 items-center">
+                                  {/* The chevron sits in the gutter the other lots leave empty. */}
+                                  <IconButton
+                                    aria-label={
+                                      isExpanded ? t`Collapse` : t`Expand`
+                                    }
+                                    aria-expanded={isExpanded}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="-ml-0.5 mr-0.5 size-7 shrink-0"
+                                    icon={
+                                      isExpanded ? (
+                                        <LuChevronDown />
+                                      ) : (
+                                        <LuChevronRight />
+                                      )
+                                    }
+                                    onClick={() => toggleGroup(lot.key)}
+                                  />
+                                  {renderTracking(first, earliestExpiration)}
+                                  <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                                    ×{lot.members.length}
+                                  </span>
+                                </div>
+                                {renderQuantity(lot.quantity)}
+                                <span />
+                              </div>
+                              {isExpanded &&
+                                lot.members.map((item, index) =>
+                                  renderStockRow(
+                                    item,
+                                    `${lot.key}:${index}`,
+                                    "pl-14"
                                   )
-                                }
-                                onClick={() => toggleGroup(lot.key)}
-                              />
-                              {renderTracking(first, earliestExpiration)}
-                              <span className="ml-2 shrink-0 text-xs text-muted-foreground">
-                                ×{lot.members.length}
-                              </span>
-                            </div>
-                            {renderQuantity(lot.quantity)}
-                            <span />
-                          </div>
-                          {isExpanded &&
-                            lot.members.map((item, index) =>
-                              renderStockRow(
-                                item,
-                                `${lot.key}:${index}`,
-                                "pl-14"
-                              )
-                            )}
-                        </Fragment>
-                      );
-                    })}
-                </div>
-              );
-            })}
+                                )}
+                            </Fragment>
+                          );
+                        })}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -796,9 +865,17 @@ const InventoryStorageUnits = ({
                 <ModalTitle>
                   <Trans>Inventory Adjustment</Trans>
                 </ModalTitle>
+                {selectedProjectId && (
+                  <ModalDescription>
+                    {ownerLabels[selectedProjectId] ?? t`Project stock`}
+                  </ModalDescription>
+                )}
               </ModalHeader>
               <ModalBody>
                 <Hidden name="itemId" />
+                {selectedProjectId && (
+                  <Hidden name="projectId" value={selectedProjectId} />
+                )}
                 {isEditing && <Hidden name="originalStorageUnitId" />}
                 <Hidden
                   name="requiresSerialTracking"
@@ -981,5 +1058,45 @@ const InventoryStorageUnits = ({
     </>
   );
 };
+
+/**
+ * The labels of the projects that own stock in the rows (Projects Phase 2a):
+ * one read, only when some stock belongs to a project.
+ */
+function useStockOwnerLabels(projectIds: string[]) {
+  const { carbon } = useCarbon();
+  const key = [...new Set(projectIds)].sort().join(",");
+  const [labels, setLabels] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!carbon || !key) {
+      setLabels({});
+      return;
+    }
+    let cancelled = false;
+    carbon
+      .from("project")
+      .select("id, identifier, name")
+      .in("id", key.split(","))
+      .then(({ data }) => {
+        if (cancelled) return;
+        setLabels(
+          Object.fromEntries(
+            (data ?? []).map((project) => [
+              project.id,
+              project.identifier
+                ? `${project.identifier} — ${project.name}`
+                : project.name
+            ])
+          )
+        );
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, key]);
+
+  return labels;
+}
 
 export default InventoryStorageUnits;

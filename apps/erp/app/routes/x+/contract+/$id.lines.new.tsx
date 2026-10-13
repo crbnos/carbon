@@ -13,8 +13,10 @@ import { useRouteData } from "~/hooks";
 import {
   customerContractLineValidator,
   getContract,
+  newContractLineBillingValues,
   upsertContractLine
 } from "~/modules/sales";
+import { projectRevenueRefusal } from "~/modules/sales/sales.server";
 import type { ContractRouteData } from "~/modules/sales/ui/Contracts";
 import { ContractLineForm } from "~/modules/sales/ui/Contracts";
 import { path } from "~/utils/path";
@@ -46,6 +48,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...line } = validation.data;
+
+  const upgrade = await projectRevenueRefusal(client, companyId, [line]);
+  if (upgrade) {
+    throw redirect(
+      path.to.contractDetails(id),
+      await flash(request, error(null, upgrade))
+    );
+  }
 
   // `upsertContractLine` refuses a contract that is not a Draft and an item
   // that is not a Service; its refusal message is what the user reads.
@@ -98,7 +108,8 @@ export default function NewContractLineRoute() {
         taxPercent: 0,
         startDate: contract.startDate ?? "",
         revenueMethod: "Daily",
-        projectId: contract.projectId ?? undefined
+        projectId: contract.projectId ?? undefined,
+        ...newContractLineBillingValues
       }}
       currencyCode={contract.currencyCode}
       isLocked={contract.status !== "Draft"}

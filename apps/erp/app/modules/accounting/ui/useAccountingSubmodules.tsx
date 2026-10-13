@@ -9,6 +9,7 @@ import {
   LuAxis3D,
   LuBetweenHorizontalStart,
   LuBookOpen,
+  LuBoxes,
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
@@ -17,10 +18,10 @@ import {
   LuCoins,
   LuEuro,
   LuFileSpreadsheet,
-  LuFolderKanban,
   LuHandCoins,
   LuKeyRound,
   LuLayers,
+  LuPercent,
   LuScale,
   LuSheet,
   LuTruck
@@ -91,6 +92,12 @@ export default function useAccountingSubmodules() {
             to: path.to.depreciationRuns,
             role: "employee",
             icon: <LuClock />
+          },
+          {
+            name: t`Indirect Rates`,
+            to: path.to.indirectRates,
+            role: "employee",
+            icon: <LuPercent />
           },
           {
             name: t`Leases`,
@@ -171,16 +178,16 @@ export default function useAccountingSubmodules() {
             icon: <LuCalendar1 />
           },
           {
+            name: t`Indirect Pools`,
+            to: path.to.indirectPools,
+            role: "employee",
+            icon: <LuBoxes />
+          },
+          {
             name: t`Payment Terms`,
             to: path.to.paymentTerms,
             role: "employee",
             icon: <LuHandCoins />
-          },
-          {
-            name: t`Projects`,
-            to: path.to.projects,
-            role: "employee",
-            icon: <LuFolderKanban />
           }
         ]
       }

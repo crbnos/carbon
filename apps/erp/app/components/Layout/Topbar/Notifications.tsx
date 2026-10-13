@@ -36,7 +36,9 @@ import {
   LuCircleGauge,
   LuCirclePlay,
   LuClipboardCheck,
+  LuClock,
   LuDollarSign,
+  LuGauge,
   LuGitPullRequestArrow,
   LuGraduationCap,
   LuHammer,
@@ -279,6 +281,30 @@ function Notification({
   );
 }
 
+/** The page an approval notification opens, by its document type. */
+function approvalPath(
+  documentType: NotificationDocumentType | undefined,
+  id: string
+): string {
+  switch (documentType) {
+    case "qualityDocument":
+      return path.to.qualityDocument(id);
+    case "supplier":
+      return path.to.supplier(id);
+    case "changeOrder":
+      return path.to.changeNoticeDetails(id);
+    case "projectChangeRequest": {
+      // "<projectId>:<changeRequestId>"
+      const [projectId, changeRequestId] = id.split(":");
+      return projectId && changeRequestId
+        ? path.to.projectChangeRequest(projectId, changeRequestId)
+        : path.to.projects;
+    }
+    default:
+      return path.to.purchaseOrderDetails(id);
+  }
+}
+
 function GenericNotification({
   id,
   event,
@@ -302,15 +328,7 @@ function GenericNotification({
       return (
         <Notification
           icon={<LuClipboardCheck />}
-          to={
-            documentType === "qualityDocument"
-              ? path.to.qualityDocument(id)
-              : documentType === "supplier"
-                ? path.to.supplier(id)
-                : documentType === "changeOrder"
-                  ? path.to.changeNoticeDetails(id)
-                  : path.to.purchaseOrderDetails(id)
-          }
+          to={approvalPath(documentType, id)}
           {...props}
         />
       );
@@ -388,6 +406,27 @@ function GenericNotification({
         <Notification
           icon={<LuCalendarClock />}
           to={path.to.leaseDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.ContractFundingThreshold:
+      return (
+        <Notification
+          icon={<LuGauge />}
+          to={path.to.contractDetails(id)}
+          {...props}
+        />
+      );
+    case NotificationEvent.TimesheetMissing:
+      // id is the missed date; the timesheet opens on the current week.
+      return (
+        <Notification icon={<LuClock />} to={path.to.timesheet} {...props} />
+      );
+    case NotificationEvent.ProjectBudgetExceeded:
+      return (
+        <Notification
+          icon={<LuDollarSign />}
+          to={path.to.projectCosts(id)}
           {...props}
         />
       );

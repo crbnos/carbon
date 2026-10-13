@@ -150,12 +150,21 @@ export const path = {
       digitalSupplierQuote: (id: string) =>
         generatePath(`${api}/purchasing/digital-quote/${id}`),
       docs: `${api}/docs?${build}`,
+      earnedValueAcwpCsv: (periodId: string, projectId?: string) =>
+        `${api}/earned-value/acwp.csv?${new URLSearchParams(
+          projectId ? { periodId, projectId } : { periodId }
+        )}`,
       employeeTypes: `${api}/users/employee-types`,
       emptyPermissions: `${api}/users/empty-permissions`,
       failureModes: `${api}/resources/failure-modes`,
       gauges: `${api}/quality/gauges`,
       generateCsvColumns: (table: string) =>
         generatePath(`${api}/ai/csv/${table}/columns`),
+      indirectRatesIceCsv: (fiscalYear: number, schedule: string) =>
+        `${api}/indirect-rates/ice.csv?${new URLSearchParams({
+          fiscalYear: String(fiscalYear),
+          schedule
+        })}`,
       inspectionDocumentBalloonAnalyze: (inspectionDocumentId: string) =>
         generatePath(
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
@@ -209,6 +218,7 @@ export const path = {
         generatePath(`${api}/kanban/complete/${id}`),
       kanbanJobLink: (id: string) => generatePath(`${api}/kanban/link/${id}`),
       kanbanStart: (id: string) => generatePath(`${api}/kanban/start/${id}`),
+      laborCategories: `${api}/projects/labor-categories`,
       linearCreateIssue: `${api}/integrations/linear/issue/create`,
       linearLinkExistingIssue: `${api}/integrations/linear/issue/link`,
       linearSyncNotes: `${api}/integrations/linear/issue/sync-notes`,
@@ -268,6 +278,15 @@ export const path = {
       processes: `${api}/resources/processes`,
       productionKpi: (key: string) =>
         generatePath(`${api}/production/kpi/${key}`),
+      projectBillingElements: (projectId: string) =>
+        `${api}/projects/billing-elements?projectId=${encodeURIComponent(projectId)}`,
+      projectChargeNumbers: `${api}/projects/charge-numbers`,
+      projectMspdi: (projectId: string) =>
+        generatePath(`${api}/projects/${projectId}/mspdi.xml`),
+      projectReport: (reportKey: string, params: Record<string, string>) =>
+        `${generatePath(`${api}/projects/reports/${reportKey}.csv`)}?${new URLSearchParams(params)}`,
+      projectWbsCsv: (projectId: string) =>
+        generatePath(`${api}/projects/${projectId}/wbs.csv`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchaseOrderFinalize: (id: string) =>
@@ -624,15 +643,31 @@ export const path = {
     contact: `${x}/people/contact`,
     contract: (id: string) => generatePath(`${x}/contract/${id}`),
     contractAmend: (id: string) => generatePath(`${x}/contract/${id}/amend`),
+    contractBillingBackup: (id: string, invoiceId: string) =>
+      generatePath(`${x}/contract/${id}/billing-backup/${invoiceId}`),
     contractCancel: (id: string) => generatePath(`${x}/contract/${id}/cancel`),
     contractConfirm: (id: string) =>
       generatePath(`${x}/contract/${id}/confirm`),
     contractDetails: (id: string) =>
       generatePath(`${x}/contract/${id}/details`),
+    contractFinancing: (id: string) =>
+      generatePath(`${x}/contract/${id}/financing`),
+    contractFinancingRequest: (id: string, requestId: string) =>
+      generatePath(`${x}/contract/${id}/financing/${requestId}`),
     contractInvoice: (id: string) =>
       generatePath(`${x}/contract/${id}/invoice`),
     contractLine: (id: string, lineId: string) =>
       generatePath(`${x}/contract/${id}/${lineId}/details`),
+    contractLineBilling: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/billing`),
+    contractLineFunding: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/funding`),
+    contractLineFundingActions: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/funding-actions`),
+    contractLineGenerate: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/generate`),
+    contractLineLaborRates: (id: string, lineId: string) =>
+      generatePath(`${x}/contract/${id}/${lineId}/labor-rates`),
     contractLinesAdd: (id: string) =>
       generatePath(`${x}/contract/${id}/lines/add`),
     contractLineUpdate: (id: string, lineId: string) =>
@@ -646,6 +681,8 @@ export const path = {
       generatePath(`${x}/contract/${id}/revert-cancellation`),
     contractSchedule: (id: string) =>
       generatePath(`${x}/contract/${id}/schedule`),
+    contractServiceOrders: (id: string) =>
+      generatePath(`${x}/contract/${id}/service-orders`),
     contractSetup: (
       id: string,
       step: "details" | "products" | "invoicing" | "revenue" | "review"
@@ -664,6 +701,10 @@ export const path = {
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
     customerAccounts: `${x}/users/customers`,
+    customerAsset: (id: string) => generatePath(`${x}/customer-asset/${id}`),
+    customerAssets: `${x}/service-orders/assets`,
+    customerAssetsTab: (customerId: string) =>
+      generatePath(`${x}/customer/${customerId}/assets`),
     customerBankAccount: (customerId: string, id: string) =>
       generatePath(`${x}/customer/${customerId}/bank-accounts/${id}`),
     customerBankAccounts: (id: string) =>
@@ -834,6 +875,8 @@ export const path = {
     deleteGroup: (id: string) => generatePath(`${x}/users/groups/delete/${id}`),
     deleteHoliday: (id: string) =>
       generatePath(`${x}/people/holidays/delete/${id}`),
+    deleteIndirectPool: (id: string) =>
+      generatePath(`${x}/accounting/indirect-pools/delete/${id}`),
     deleteInspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}/delete`),
     deleteInvestigationType: (id: string) =>
@@ -911,6 +954,8 @@ export const path = {
       generatePath(`${x}/part/${itemId}/purchasing/${id}/delete`),
     deletePaymentTerm: (id: string) =>
       generatePath(`${x}/accounting/payment-terms/delete/${id}`),
+    deletePlanningGroup: (id: string) =>
+      generatePath(`${x}/projects/planning-groups/delete/${id}`),
     deletePriceOverride: (id: string) =>
       generatePath(`${x}/sales/price-list/delete/${id}`),
     deletePricingRule: (id: string) =>
@@ -929,8 +974,8 @@ export const path = {
       generatePath(`${x}/job/methods/event/delete/${id}`),
     deleteProductionQuantity: (id: string) =>
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
-    deleteProject: (id: string) =>
-      generatePath(`${x}/accounting/projects/delete/${id}`),
+    deleteProjectElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/delete`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -1093,6 +1138,8 @@ export const path = {
     employeeAccounts: `${x}/users/employees`,
     employeeResetMfa: (id: string) =>
       generatePath(`${x}/users/employees/reset-mfa/${id}`),
+    employeeTimesheet: (employeeId: string) =>
+      generatePath(`${x}/projects/timesheets/${employeeId}`),
     employeeType: (id: string) =>
       generatePath(`${x}/users/employee-types/${id}`),
     employeeTypes: `${x}/users/employee-types`,
@@ -1125,6 +1172,8 @@ export const path = {
     file: {
       batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      contractFinancingRequest: (requestId: string) =>
+        generatePath(`${file}/contract/financing/${requestId}.pdf`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       jobTravelerByJobId: (jobId: string) =>
         generatePath(`${file}/job/${jobId}/traveler.pdf`),
@@ -1181,6 +1230,7 @@ export const path = {
       previewFile: (path: string) => generatePath(`${file}/preview/${path}`),
       previewImage: (bucket: string, path: string) =>
         generatePath(`${file}/preview/image?file=${bucket}/${path}`),
+      projectReader: (id: string) => generatePath(`${file}/project/${id}.pdf`),
       purchaseOrder: (id: string) =>
         generatePath(`${file}/purchase-order/${id}.pdf`),
 
@@ -1380,6 +1430,23 @@ export const path = {
     incomeStatement: `${x}/reports/income-statement`,
     incomeStatementLedger: (id: string) =>
       generatePath(`${x}/reports/income-statement/${id}`),
+    indirectPool: (id: string) =>
+      generatePath(`${x}/accounting/indirect-pools/${id}`),
+    indirectPools: `${x}/accounting/indirect-pools`,
+    indirectRates: `${x}/accounting/indirect-rates`,
+    indirectRatesIce: (fiscalYear: number) =>
+      `${x}/accounting/indirect-rates/ice?${new URLSearchParams({
+        fiscalYear: String(fiscalYear)
+      })}`,
+    indirectRatesRates: (fiscalYear: number) =>
+      `${x}/accounting/indirect-rates/rates?${new URLSearchParams({
+        fiscalYear: String(fiscalYear)
+      })}`,
+    indirectRatesStatement: (fiscalYear: number, periodNumber?: number) =>
+      `${x}/accounting/indirect-rates/statement?${new URLSearchParams({
+        fiscalYear: String(fiscalYear),
+        ...(periodNumber ? { periodNumber: String(periodNumber) } : {})
+      })}`,
     inspection: (id: string) => generatePath(`${x}/inspection/${id}`),
     inspectionAccept: (id: string) =>
       generatePath(`${x}/inspection/${id}/accept`),
@@ -1522,6 +1589,9 @@ export const path = {
       `/api/accounting/journal-line-dimensions/${lineId}`,
     kanban: (id: string) => generatePath(`${x}/inventory/kanbans/${id}`),
     kanbans: `${x}/inventory/kanbans`,
+    laborCategories: `${x}/projects/labor-categories`,
+    laborCategory: (id: string) =>
+      generatePath(`${x}/projects/labor-categories/${id}`),
     lease: (id: string) => generatePath(`${x}/lease/${id}`),
     leaseActivate: (id: string) => generatePath(`${x}/lease/${id}/activate`),
     leaseDetails: (id: string) => generatePath(`${x}/lease/${id}/details`),
@@ -1663,6 +1733,7 @@ export const path = {
     mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
+    myVisits: `${x}/service-orders/my-visits`,
     newAbility: `${x}/resources/abilities/new`,
     newApiKey: `${x}/settings/api-keys/new`,
     newApprovalRule: (documentType?: string) =>
@@ -1713,6 +1784,7 @@ export const path = {
     newCostCenter: `${x}/accounting/cost-centers/new`,
     newCustomer: `${x}/customer/new`,
     newCustomerAccount: `${x}/users/customers/new`,
+    newCustomerAsset: `${x}/service-orders/assets/new`,
     newCustomerBankAccount: (id: string) =>
       generatePath(`${x}/customer/${id}/bank-accounts/new`),
     newCustomerContact: (id: string) =>
@@ -1748,6 +1820,7 @@ export const path = {
     newGaugeType: `${x}/quality/gauge-types/new`,
     newGroup: `${x}/users/groups/new`,
     newHoliday: `${x}/people/holidays/new`,
+    newIndirectPool: `${x}/accounting/indirect-pools/new`,
     newInspectionDocument: `${x}/quality/inspection-plans/new`,
     newIntercompanyTransaction: `${x}/accounting/intercompany/new`,
     newInventoryCount: `${x}/inventory/inventory-count/new`,
@@ -1769,6 +1842,7 @@ export const path = {
     newJobOperationTool: `${x}/job/methods/operation/tool/new`,
     newJournalEntry: `${x}/accounting/journals/new`,
     newKanban: `${x}/inventory/kanbans/new`,
+    newLaborCategory: `${x}/projects/labor-categories/new`,
     newLease: `${x}/lease/new`,
     newLeaseRun: `${x}/accounting/lease-runs/new`,
     newLocation: `${x}/resources/locations/new`,
@@ -1806,6 +1880,7 @@ export const path = {
     newPersonAbility: (personId: string) =>
       generatePath(`${x}/resources/person/${personId}/ability/new`),
     newPickingList: `${x}/picking-list/new`,
+    newPlanningGroup: `${x}/projects/planning-groups/new`,
     newPriceOverride: `${x}/sales/price-list/new`,
     newPricingRule: `${x}/sales/pricing-rules/new`,
     newProcedure: `${x}/production/procedures/new`,
@@ -1814,7 +1889,12 @@ export const path = {
     newProcedureStep: (id: string) =>
       generatePath(`${x}/procedure/${id}/steps/new`),
     newProcess: `${x}/resources/processes/new`,
-    newProject: `${x}/accounting/projects/new`,
+    newProject: `${x}/projects/new`,
+    newProjectChangeRequest: (id: string) =>
+      generatePath(`${x}/project/${id}/change-requests/new`),
+    newProjectElement: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/new`),
+    newProjectStockTransfer: `${x}/projects/transfers/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/new`),
@@ -1867,8 +1947,12 @@ export const path = {
     newScrapReason: `${x}/production/scrap-reasons/new`,
     newSerialNumberSequence: `${x}/settings/serial-numbers/new`,
     newService: `${x}/service/new`,
+    newServiceOrder: `${x}/service-orders/new`,
     newServiceSupplier: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing/new`),
+    newServiceTemplate: `${x}/service-orders/templates/new`,
+    newServiceVisit: (orderId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/new`),
     newShift: `${x}/people/shifts/new`,
     newShipment: `${x}/shipment/new`,
     newShippingMethod: `${x}/inventory/shipping-methods/new`,
@@ -1968,6 +2052,7 @@ export const path = {
       generatePath(`${x}/accounting/payment-terms/${id}`),
     paymentTerms: `${x}/accounting/payment-terms`,
     paymentVoid: (id: string) => generatePath(`${x}/payments/${id}/void`),
+    payrollTotals: `${x}/people/payroll-totals`,
     people: `${x}/people/employee`,
     peopleSettings: `${x}/settings/people`,
     peopleTimecard: `${x}/people/timecard`,
@@ -1995,6 +2080,9 @@ export const path = {
     pickingListTracked: (pickingListId: string, lineId: string) =>
       generatePath(`${x}/picking-list/${pickingListId}/tracked/${lineId}`),
     pickingSchedule: `${x}/picking-list/schedule`,
+    planningGroup: (id: string) =>
+      generatePath(`${x}/projects/planning-groups/${id}`),
+    planningGroups: `${x}/projects/planning-groups`,
     planningSettings: `${x}/settings/planning`,
     postJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/post`),
@@ -2032,8 +2120,85 @@ export const path = {
       generatePath(`${x}/production/planning/${itemId}`),
     productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
-    project: (id: string) => generatePath(`${x}/accounting/projects/${id}`),
-    projects: `${x}/accounting/projects`,
+    project: (id: string) => generatePath(`${x}/project/${id}`),
+    projectBaselineCompare: (id: string, from: string, to = "current") =>
+      `${generatePath(`${x}/project/${id}/baselines/compare`)}?${new URLSearchParams({ from, to })}`,
+    projectBaselines: (id: string) =>
+      generatePath(`${x}/project/${id}/baselines`),
+    projectBilling: (projectId: string) =>
+      generatePath(`${x}/project/${projectId}/billing`),
+    projectChangeRequest: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}`),
+    projectChangeRequestComments: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/comments`),
+    projectChangeRequestStatus: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/status`),
+    projectChangeRequests: (id: string) =>
+      generatePath(`${x}/project/${id}/change-requests`),
+    projectChangeRequestViewed: (id: string, crId: string) =>
+      generatePath(`${x}/project/${id}/change-requests/${crId}/viewed`),
+    projectCosts: (id: string) => generatePath(`${x}/project/${id}/costs`),
+    projectCostsElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/costs/${elementId}`),
+    projectDetails: (id: string) => generatePath(`${x}/project/${id}/details`),
+    projectElement: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/element/${elementId}`),
+    projectElementComments: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/comments`),
+    projectElementCreateJob: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/create-job`),
+    projectElementCreatePurchaseOrderLine: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/create-po-line`),
+    projectElementLinks: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/links`),
+    projectElementMove: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/move`),
+    projectElementPlan: (id: string, elementId: string) =>
+      generatePath(`${x}/project/${id}/elements/${elementId}/plan`),
+    projectElements: (id: string) =>
+      generatePath(`${x}/project/${id}/elements`),
+    projectElementsBuild: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/build`),
+    projectElementUpdate: (id: string) =>
+      generatePath(`${x}/project/${id}/elements/update`),
+    projectIssue: `${x}/projects/issue`,
+    projectLogTime: `${x}/projects/log-time`,
+    projectMilestones: (id: string) =>
+      generatePath(`${x}/project/${id}/milestones`),
+    projectPegging: (id: string) => generatePath(`${x}/project/${id}/pegging`),
+    projectPeggingManual: (id: string) =>
+      generatePath(`${x}/project/${id}/pegging/manual`),
+    projectPlaceInService: (id: string) =>
+      generatePath(`${x}/project/${id}/place-in-service`),
+    projectReport: (reportKey: string) =>
+      generatePath(`${x}/projects/reports/${reportKey}`),
+    projectReports: `${x}/projects/reports`,
+    projectSettings: (id: string) =>
+      generatePath(`${x}/project/${id}/settings`),
+    projectStatus: (id: string) => generatePath(`${x}/project/${id}/status`),
+    projectStock: (id: string) => generatePath(`${x}/project/${id}/stock`),
+    projectStockTransfer: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}`),
+    projectStockTransferLines: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}/lines`),
+    projectStockTransferStatus: (id: string) =>
+      generatePath(`${x}/project-stock-transfer/${id}/status`),
+    projectStockTransfers: `${x}/projects/transfers`,
+    projectStopWork: (id: string) =>
+      generatePath(`${x}/project/${id}/stop-work`),
+    projects: `${x}/projects`,
+    projectsBilling: `${x}/projects/billing`,
+    projectsBillingUpdate: `${x}/projects/billing/update`,
+    projectsSettings: `${x}/settings/projects`,
+    projectTemplate: (id: string) =>
+      generatePath(`${x}/project/${id}/template`),
+    projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
+    projectTimesheetApprovals: `${x}/projects/approvals`,
+    projectWbsImport: (id: string) =>
+      generatePath(`${x}/project/${id}/wbs/import`),
+    projectWbsPin: (id: string) => generatePath(`${x}/project/${id}/wbs/pin`),
+    projectWbsRenumber: (id: string) =>
+      generatePath(`${x}/project/${id}/wbs/renumber`),
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>
@@ -2409,14 +2574,50 @@ export const path = {
     serviceDetails: (id: string) => `${x}/service/${id}/details`,
     serviceMake: (id: string, makeMethodId: string) =>
       generatePath(`${x}/service/${id}/make/${makeMethodId}`),
+    serviceOrder: (id: string) => generatePath(`${x}/service-order/${id}`),
+    serviceOrderBilling: (id: string) =>
+      generatePath(`${x}/service-order/${id}/billing`),
+    serviceOrderCharge: (id: string) =>
+      generatePath(`${x}/service-order/${id}/charge`),
+    serviceOrderComplete: (id: string) =>
+      generatePath(`${x}/service-order/${id}/complete`),
+    serviceOrderDetails: (id: string) =>
+      generatePath(`${x}/service-order/${id}/details`),
+    serviceOrderEstimate: (id: string) =>
+      generatePath(`${file}/service-estimate/${id}.pdf`),
+    serviceOrderInvoice: (id: string) =>
+      generatePath(`${x}/service-order/${id}/invoice`),
+    serviceOrderStatus: (id: string) =>
+      generatePath(`${x}/service-order/${id}/status`),
+    serviceOrders: `${x}/service-orders`,
+    serviceOrderVisits: (id: string) =>
+      generatePath(`${x}/service-order/${id}/visits`),
+    serviceOrderWork: (id: string) =>
+      generatePath(`${x}/service-order/${id}/work`),
+    serviceOrderWorkBuild: (id: string) =>
+      generatePath(`${x}/service-order/${id}/work/build`),
+    serviceOrderWorkNode: (id: string, elementId: string) =>
+      generatePath(`${x}/service-order/${id}/work/${elementId}`),
     servicePurchasing: (id: string) =>
       generatePath(`${x}/service/${id}/purchasing`),
     serviceQuality: (id: string) => generatePath(`${x}/service/${id}/quality`),
     serviceRoot: `${x}/service`,
     serviceSales: (id: string) => generatePath(`${x}/service/${id}/sales`),
+    serviceSchedule: `${x}/service-orders/schedule`,
     serviceSupplier: (serviceId: string, id: string) =>
       generatePath(`${x}/service/${serviceId}/purchasing/${id}`),
     services: `${x}/items/services`,
+    serviceTemplate: (id: string) =>
+      generatePath(`${x}/service-orders/templates/${id}`),
+    serviceTemplateNode: (id: string, elementId: string) =>
+      generatePath(`${x}/service-orders/templates/${id}/${elementId}`),
+    serviceTemplates: `${x}/service-orders/templates`,
+    serviceVisit: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}`),
+    serviceVisitSignature: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/signature`),
+    serviceVisitStatus: (orderId: string, visitId: string) =>
+      generatePath(`${x}/service-order/${orderId}/visits/${visitId}/status`),
     settings: `${x}/settings`,
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
@@ -2542,6 +2743,14 @@ export const path = {
     theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
+    timeSettings: `${x}/settings/time`,
+    timesheet: `${x}/timesheet`,
+    timesheetCorrect: `${x}/timesheet/correct`,
+    timesheetReview: `${x}/timesheet/review`,
+    timesheetRevisions: (entryId: string) =>
+      generatePath(`${x}/timesheet/revisions/${entryId}`),
+    timesheetSubmit: `${x}/timesheet/submit`,
+    timesheetUpdate: `${x}/timesheet/update`,
     tool: (id: string) => generatePath(`${x}/tool/${id}`),
     toolCosting: (id: string) => generatePath(`${x}/tool/${id}/costing`),
     toolDetails: (id: string) => generatePath(`${x}/tool/${id}/details`),

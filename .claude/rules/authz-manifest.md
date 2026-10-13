@@ -60,6 +60,14 @@ note: policies({
   `isNull`/`isNotNull`, `where<"table">(eb => …)`, `or`, `and`.
 - An UPDATE that can change `companyId` needs a `check` that pins the company — without it
   Postgres reuses USING, and an owner-only USING lets the author move the row to any company.
+- `projectModule(column, action, { standard?, via? })` — the module that governs a project
+  row: a Standard project follows `projects_<action>` (or `standard`, e.g. `"employee"` for
+  reads), a Service project `service_<action>`. `column` names the row's project; on
+  `project` itself the row's own `projectType` decides (no self-query). `via:
+  "projectElement"` reaches the project through an element (comments, labels). The
+  manifest's `projectTable(column, via)` builds the four policies from it; every project
+  table uses it, so a Service order's work tree follows the Service module. See
+  `field-service.md`.
 - `serviceOnly()` — RLS on, no policy: only the service role reaches it.
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.

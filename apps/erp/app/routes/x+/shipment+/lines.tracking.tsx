@@ -41,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .single(),
       client
         .from("shipmentLine")
-        .select("itemId")
+        .select("itemId, lineId")
         .eq("id", shipmentLineId)
         .eq("shipmentId", shipmentId)
         .eq("companyId", companyId)
@@ -98,10 +98,34 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Return-to-customer shipments (source "Sales Return Order") ship returned
   // stock, which is deliberately On Hold until dispositioned/shipped back —
-  // everything else ships Available stock only.
+  // everything else ships Available stock only. A Repair line ships the
+  // customer's own unit back: it never entered stock, so it is Consumed.
   const isSalesReturnShipment =
     shipmentResponse.data?.sourceDocument === "Sales Return Order";
-  const allowedStatus = isSalesReturnShipment ? "On Hold" : "Available";
+  const returnLine =
+    isSalesReturnShipment && shipmentLineResponse.data.lineId
+      ? await client
+          .from("salesReturnOrderLine")
+          .select("disposition")
+          .eq("id", shipmentLineResponse.data.lineId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : { data: null, error: null };
+  if (returnLine.error) {
+    return data(
+      { success: false, error: "Failed to load the return line" },
+      await flash(
+        request,
+        error(returnLine.error, "Failed to load the return line")
+      )
+    );
+  }
+  const isRepairLine = returnLine.data?.disposition === "Repair";
+  const allowedStatus = isSalesReturnShipment
+    ? isRepairLine
+      ? "Consumed"
+      : "On Hold"
+    : "Available";
 
   // On Hold alone is not provenance: an entity can be On Hold for an
   // unrelated inspection or another customer's RMA. For a return-to-customer
@@ -137,6 +161,43 @@ export async function action({ request }: ActionFunctionArgs) {
         { success: false, error: message },
         await flash(request, error(message))
       );
+    }
+
+    // A repaired unit ships back once its Depot Repair order on this line is
+    // done and the unit is still at the depot.
+    if (isRepairLine) {
+      const repair = await client
+        .from("serviceOrder")
+        .select(
+          "status, customerAsset:customerAsset!serviceOrder_asset_fkey(status)"
+        )
+        .eq("trackedEntityId", trackedEntityId)
+        .eq("salesReturnOrderLineId", shipmentLineResponse.data.lineId ?? "")
+        .eq("type", "Depot Repair")
+        .eq("companyId", companyId)
+        .in("status", ["Completed", "Closed"])
+        .limit(1)
+        .maybeSingle();
+      if (repair.error) {
+        return data(
+          { success: false, error: "Failed to load the service order" },
+          await flash(
+            request,
+            error(repair.error, "Failed to load the service order")
+          )
+        );
+      }
+      const message = !repair.data
+        ? "Complete the unit's service order before you ship it back"
+        : repair.data.customerAsset?.status !== "At Depot"
+          ? "The unit is not at the depot"
+          : null;
+      if (message) {
+        return data(
+          { success: false, error: message },
+          await flash(request, error(message))
+        );
+      }
     }
   }
 

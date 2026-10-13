@@ -15,6 +15,7 @@ paths:
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
+  - "packages/server-functions/src/lib/project-cip.ts"
 ---
 
 # Fixed Asset Lifecycle
@@ -90,9 +91,13 @@ transfer enum values). Design:
   keeps the document shape open for a reviewed Draft later.
 - **`fixedAssetCipCost`** — append-only cost ledger of an asset under
   construction: `sourceType` CHECK `IN ('Purchase Invoice','Receipt','Job',
-  'Manual')`, `sourceDocumentId`, `sourceDocumentLineId`, `jobId`, `amount`,
-  `costDate`, `journalId`. Capitalization sums these rows, not the asset's
-  `acquisitionCost`.
+  'Manual','Timesheet','Project Issue','Charge','Reimbursement')` (the last
+  four from capital projects, `20261009101725_projects-capital.sql`),
+  `sourceDocumentId`, `sourceDocumentLineId`, `jobId`, `amount`, `costDate`,
+  `journalId`, plus `projectId` / `projectElementId` (composite FKs, `ON DELETE
+  SET NULL` on the column) and `postCapitalization` (a late cost booked on the
+  asset after it went into service). Capitalization sums the rows with
+  `postCapitalization` false, not the asset's `acquisitionCost`.
 - **`fleetAssets`** (view, `SECURITY_INVOKER`) — `fixedAsset` where `itemId IS
   NOT NULL`, joined to `item` (`itemReadableId`, `itemName`, `thumbnailPath`),
   `fixedAssetClass` (`className`, `isConstructionInProgress`), `trackedEntity`
@@ -390,8 +395,10 @@ job goes `Ready`.
   `packages/database/supabase/tests/job-completion-to-asset.test.sql`.
 
 **Construction in progress is hidden.** `CONSTRUCTION_IN_PROGRESS_ENABLED =
-false` (`accounting.models.ts`) keeps it out of the app until it returns with
-projects: `getFixedAssetClasses` / `getFixedAssetClassesList` drop CIP classes
+false` (`accounting.models.ts`) keeps it out of the fixed asset screens. Capital
+projects do not flip it: project screens read CIP classes with their own query
+(`getCipFixedAssetClasses`, projects module), and the capital-project paths below
+run whatever the flag says. With the flag off: `getFixedAssetClasses` / `getFixedAssetClassesList` drop CIP classes
 (so no class list or picker offers one and no asset reaches Under Construction
 from the UI), the asset page's `isCipClass` is false (no Attach Job, Capitalize
 or CIP cost card), the status filters use `visibleFixedAssetStatuses` /
@@ -412,6 +419,37 @@ the asset into an in-service class at `inServiceDate`. The asset page offers
 while Under Construction; `$fixedAssetId.attach-job` lists jobs with no
 `salesOrderLineId`, no asset target and status not in Completed / Cancelled /
 Closed; `$fixedAssetId.capitalize` offers only non-CIP classes.
+
+**Capital projects** (projects Phase 1b, `.claude/rules/projects-system.md`). A
+project with `costTreatment` Capitalize names a CIP class (`project.fixedAssetClassId`).
+`ensureCapitalAssets` (`projects.server.ts`) creates one Under Construction asset
+for the project and one per element with `isFinalAsset`, at cost 0 in that class,
+on release and when an element becomes a final asset; it is safe to call again.
+Every project cost source writes a CIP row next to its `projectLedger` row through
+`writeProjectCipRows` (`server-functions/src/lib/project-cip.ts`), which also raises
+`acquisitionCost`: `post-timesheet` (`'Timesheet'`), `post-project-issue`
+(`'Project Issue'`), `post-receipt` / `post-purchase-invoice` (`'Receipt'` /
+`'Purchase Invoice'`), charges and reimbursements. A job whose charge number
+resolves to Capitalize carries `job.fixedAssetId` and uses the job-to-CIP sweep
+above. The asset a cost lands on is the nearest final-asset ancestor's, else the
+project's (`capitalAssetId`, `lib/project-posting.ts`; SQL `project_posting_account`).
+**Place in service** (`$projectId.place-in-service.tsx`) runs `capitalizeCip` once
+per selected asset, then completes the final-asset elements and their descendants.
+A cost posted after its asset went into service debits the in-service class
+account, writes a CIP row with `postCapitalization` true and raises
+`acquisitionCost`. A void removes its document's project CIP rows with
+`reverseProjectCipRows`: it refuses a row with `postCapitalization` false whose
+asset has left Under Construction, and a late-cost row whose asset is Disposed.
+The Fixed Asset PO line guard is unchanged (its rows never set `postCapitalization`).
+
+**Remaining-life Straight Line.** `buildDepreciationRunLines` reads the asset ids
+with a `postCapitalization` CIP row and passes `remainingLifeBasis` for those assets
+only. `calculateDepreciation` / `calculateTaxDepreciation` then take each month as the
+remaining depreciable amount over the months of life left
+(`remainingLifeStraightLine`, `accounting.utils.ts`), so a late cost spreads over the
+rest of the life. Every other asset keeps the `depreciableBase / life` schedule byte
+for byte; applying the basis to all assets would shift existing schedules by rounding
+and change mid-life registrations (an open decision, see the projects Phase 1b plan).
 
 **post-asset-transfer** (`packages/server-functions/src/post-asset-transfer/index.ts`,
 `validators.ts` = the zod contract + pure helpers). One `fixedAssetTransfer`

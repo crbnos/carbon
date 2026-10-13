@@ -78,6 +78,7 @@ import {
   recurringBillingFunction,
   revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
+  timesheetMissingTimeFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
   workflowRunRetentionFunction
@@ -94,6 +95,7 @@ import {
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  indirectRatesFunction,
   invoiceAutomateFunction,
   kanbanLevelCheckFunction,
   modelCompactFunction,
@@ -153,6 +155,7 @@ export const functions = [
   modelThumbnailFunction,
   updatePermissionsFunction,
   recalculateFunction,
+  indirectRatesFunction,
   userAdminFunction,
   postTransactionFunction,
   onboardFunction,
@@ -176,6 +179,7 @@ export const functions = [
     ? [purgeInactiveCompaniesFunction]
     : []),
   workflowRunRetentionFunction,
+  timesheetMissingTimeFunction,
   revenueRecognitionProposalFunction,
   recurringBillingFunction,
   // Integrations

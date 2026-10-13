@@ -16,6 +16,7 @@ import {
 } from "@carbon/database/run-type";
 import { validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
+import type { RunRowSynthesizer } from "@carbon/server-functions/propose-revenue-recognition-run";
 import { datetime, redirect } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { getDatabaseClient } from "~/services/database.server";
@@ -77,7 +78,9 @@ export async function loadPeriodRuns(request: Request, type: RunType) {
 
 export async function proposePeriodRun(
   request: Request,
-  type: RunType
+  type: RunType,
+  /** Commercial row synthesizers (`@carbon/ee`), which community code cannot import. */
+  revenueRunSynthesizers: RunRowSynthesizer[] = []
 ): Promise<never> {
   const { client, companyId, userId } = await requirePermissions(request, {
     create: "accounting"
@@ -151,7 +154,12 @@ export async function proposePeriodRun(
 
   try {
     const proposal = await serverFns
-      .system({ db: getDatabaseClient(), companyId, userId })
+      .system({
+        db: getDatabaseClient(),
+        companyId,
+        userId,
+        revenueRunSynthesizers
+      })
       .invokeOrThrow("propose-revenue-recognition-run", { periodEnd, type });
 
     if (!proposal) {

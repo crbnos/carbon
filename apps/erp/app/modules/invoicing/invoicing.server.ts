@@ -19,33 +19,48 @@ export async function getDepositDocuments(
   companyId: string,
   keepSalesOrderIds: (string | null | undefined)[] = []
 ): Promise<DepositDocument[]> {
-  const [deposits, rentalAgreements, openOrders] = await Promise.all([
-    client
-      .from("payment")
-      .select("salesOrderId")
-      .eq("companyId", companyId)
-      .eq("paymentType", "Receipt")
-      .eq("status", "Posted")
-      .not("salesOrderId", "is", null),
-    client
-      .from("rentalAgreement")
-      .select("id, rentalAgreementId, customerId, status")
-      .eq("companyId", companyId)
-      .order("rentalAgreementId", { ascending: false }),
-    fetchAllFromTable<{
-      id: string;
-      salesOrderId: string;
-      customerId: string;
-      status: string;
-    }>(client, "salesOrder", "id, salesOrderId, customerId, status", (query) =>
-      query
+  const [deposits, rentalAgreements, openOrders, contracts] = await Promise.all(
+    [
+      client
+        .from("payment")
+        .select("salesOrderId")
         .eq("companyId", companyId)
-        .in("status", [...OPEN_SALES_ORDER_STATUSES])
-        .order("salesOrderId", { ascending: false })
-    )
-  ]);
+        .eq("paymentType", "Receipt")
+        .eq("status", "Posted")
+        .not("salesOrderId", "is", null),
+      client
+        .from("rentalAgreement")
+        .select("id, rentalAgreementId, customerId, status")
+        .eq("companyId", companyId)
+        .order("rentalAgreementId", { ascending: false }),
+      fetchAllFromTable<{
+        id: string;
+        salesOrderId: string;
+        customerId: string;
+        status: string;
+      }>(
+        client,
+        "salesOrder",
+        "id, salesOrderId, customerId, status",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in("status", [...OPEN_SALES_ORDER_STATUSES])
+            .order("salesOrderId", { ascending: false })
+      ),
+      // A contract deposit receives a progress or performance-based payment.
+      client
+        .from("customerContract")
+        .select("id, customerContractId, customerId, status")
+        .eq("companyId", companyId)
+        .order("customerContractId", { ascending: false })
+    ]
+  );
   const firstError =
-    deposits.error ?? rentalAgreements.error ?? openOrders.error;
+    deposits.error ??
+    rentalAgreements.error ??
+    openOrders.error ??
+    contracts.error;
   if (firstError) throw new Error(firstError.message);
   const listed = new Set((openOrders.data ?? []).map((order) => order.id));
   const missingOrderIds = [
@@ -72,6 +87,14 @@ export async function getDepositDocuments(
       kind: "rentalAgreement" as const,
       status: agreement.status,
       open: agreement.status === "Draft" || agreement.status === "Active"
+    })),
+    ...(contracts.data ?? []).map((contract) => ({
+      id: contract.id,
+      readableId: contract.customerContractId,
+      customerId: contract.customerId,
+      kind: "customerContract" as const,
+      status: contract.status,
+      open: contract.status === "Draft" || contract.status === "Active"
     })),
     ...[...(openOrders.data ?? []), ...(closedOrders.data ?? [])].map(
       (order) => ({
@@ -103,14 +126,17 @@ export async function checkDepositDocument(
     customerId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   } = {}
 ): Promise<string | null> {
-  const { salesOrderId, rentalAgreementId, customerId } = payment;
-  if (!salesOrderId && !rentalAgreementId) return null;
+  const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
+    payment;
+  if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
 
@@ -121,12 +147,19 @@ export async function checkDepositDocument(
         .eq("id", salesOrderId)
         .eq("companyId", companyId)
         .maybeSingle()
-    : await client
-        .from("rentalAgreement")
-        .select("customerId, status")
-        .eq("id", rentalAgreementId!)
-        .eq("companyId", companyId)
-        .maybeSingle();
+    : rentalAgreementId
+      ? await client
+          .from("rentalAgreement")
+          .select("customerId, status")
+          .eq("id", rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await client
+          .from("customerContract")
+          .select("customerId, status")
+          .eq("id", customerContractId!)
+          .eq("companyId", companyId)
+          .maybeSingle();
   if (document.error) throw new Error(document.error.message);
   if (!document.data) return "The deposit document was not found";
   if (document.data.customerId !== customerId) {
@@ -135,7 +168,9 @@ export async function checkDepositDocument(
 
   const unchanged = salesOrderId
     ? salesOrderId === saved.salesOrderId
-    : rentalAgreementId === saved.rentalAgreementId;
+    : rentalAgreementId
+      ? rentalAgreementId === saved.rentalAgreementId
+      : customerContractId === saved.customerContractId;
   if (payment.paymentType !== "Receipt" || unchanged) return null;
 
   const status = document.data.status as string;
@@ -145,5 +180,7 @@ export async function checkDepositDocument(
   if (open) return null;
   return salesOrderId
     ? `The sales order is ${status} and cannot take a new deposit`
-    : `The rental agreement is ${status} and cannot take a new deposit`;
+    : rentalAgreementId
+      ? `The rental agreement is ${status} and cannot take a new deposit`
+      : `The contract is ${status} and cannot take a new deposit`;
 }

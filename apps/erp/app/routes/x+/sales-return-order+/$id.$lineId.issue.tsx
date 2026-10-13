@@ -15,6 +15,7 @@ import {
   getSalesReturnOrder,
   getSalesReturnOrderLine,
   getSalesReturnOrderLineTrackedEntities,
+  REPAIR_DISPOSITION_LOCKED_MESSAGE,
   setSalesReturnOrderLineDisposition
 } from "~/modules/sales";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -80,6 +81,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       null,
       "Cannot set a disposition before any quantity is received"
     );
+  }
+  // A received Repair line's unit never entered stock, so it cannot be
+  // scrapped or reworked from stock.
+  if (line.data.disposition === "Repair") {
+    throw await failWith(null, REPAIR_DISPOSITION_LOCKED_MESSAGE);
   }
 
   // The line's returned entities: expected serials/batches still On Hold...

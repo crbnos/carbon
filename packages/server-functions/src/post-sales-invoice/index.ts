@@ -59,6 +59,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { withStripe } from "../lib/stock-stripes";
 import {
   netInvestmentInLeasesAccount,
   planSalesInvoiceAccounts,
@@ -690,6 +691,23 @@ const postSalesInvoice = defineServerFn({
             return byLine;
           };
 
+          // Lines that bill a service order's charges: a part issued to a
+          // service node already left stock and posted its cost, so these
+          // lines post revenue only. One query per invoice.
+          const invoiceLineIds = salesInvoiceLines.data.map((line) => line.id);
+          const billedServiceLineIds = new Set(
+            invoiceLineIds.length === 0
+              ? []
+              : (
+                  await db
+                    .selectFrom("projectBillableItem")
+                    .select("salesInvoiceLineId")
+                    .where("salesInvoiceLineId", "in", invoiceLineIds)
+                    .where("companyId", "=", companyId)
+                    .execute()
+                ).map((row) => row.salesInvoiceLineId)
+          );
+
           const journal = buildSalesInvoiceJournal({
             companyId,
             companyGroupId: companyGroupId!,
@@ -717,8 +735,10 @@ const postSalesInvoice = defineServerFn({
             accounts,
             revenue: postingLineRevenue,
             // Built at zero; the posting transaction relieves the cost and
-            // fills the pair in (fillDirectCogs).
-            directCost: () => 0,
+            // fills the pair in (fillDirectCogs). A line billing a service
+            // order's charges has no COGS pair.
+            directCost: (line) =>
+              billedServiceLineIds.has(line.id) ? null : 0,
             contract: {
               positions: contractPositionsRead,
               rate: invoiceExchangeRate
@@ -747,7 +767,11 @@ const postSalesInvoice = defineServerFn({
           // A direct item line ships on the invoice: a shipment (never for a
           // service) and, for a stocked item, the item ledger.
           for (const invoiceLine of salesInvoiceLines.data) {
-            if (!isDirectItemLine(invoiceLine)) continue;
+            if (
+              !isDirectItemLine(invoiceLine) ||
+              billedServiceLineIds.has(invoiceLine.id)
+            )
+              continue;
             if (invoiceLine.invoiceLineType !== "Service") {
               shipmentLineInserts.push({
                 itemId: invoiceLine.itemId!,
@@ -965,7 +989,8 @@ const postSalesInvoice = defineServerFn({
               (line) =>
                 line.salesOrderLineId === null &&
                 line.itemId &&
-                line.invoiceLineType !== "Rental"
+                line.invoiceLineType !== "Rental" &&
+                !billedServiceLineIds.has(line.id)
             );
 
             for (const directLine of directInvoiceItems) {
@@ -977,10 +1002,12 @@ const postSalesInvoice = defineServerFn({
 
               if (itemTrackingType !== "Inventory") continue;
 
+              // A direct invoice ships common stock only (Projects Phase 2a).
               const cogsResult = await calculateCOGS(trx, {
                 itemId: directLine.itemId,
                 quantity: directLine.quantity,
-                companyId
+                companyId,
+                projectId: null
               });
 
               // The pair the journal builder wrote at zero.
@@ -1003,6 +1030,7 @@ const postSalesInvoice = defineServerFn({
                     quantity: round(-directLine.quantity),
                     cost: round(-cogsResult.totalCost),
                     remainingQuantity: 0,
+                    projectId: null,
                     companyId,
                     postingDate: today
                   })
@@ -1198,7 +1226,8 @@ const postSalesInvoice = defineServerFn({
             if (itemLedgerInserts.length > 0) {
               await trx
                 .insertInto("itemLedger")
-                .values(itemLedgerInserts)
+                // Every row draws common stock.
+                .values(withStripe(itemLedgerInserts, null))
                 .returning(["id"])
                 .execute();
             }
@@ -1643,6 +1672,8 @@ const postSalesInvoice = defineServerFn({
                 documentType: "Sales Shipment",
                 documentId: invoiceHeader.id ?? undefined,
                 externalDocumentId: entry.externalDocumentId,
+                // A reversal copies the row it reverses.
+                projectId: entry.projectId ?? null,
                 createdBy: userId,
                 companyId
               });
@@ -1780,6 +1811,25 @@ const postSalesInvoice = defineServerFn({
               .where("companyId", "=", companyId)
               .where("salesInvoiceId", "=", invoiceId)
               .execute();
+
+            // A project billing or service order invoice: its billable items
+            // are billable again, remembering the voided invoice so a re-bill
+            // is held for review (project billing P4).
+            if (invoiceLineIds.length > 0) {
+              await trx
+                .updateTable("projectBillableItem")
+                .set({
+                  status: "Unbilled",
+                  salesInvoiceLineId: null,
+                  voidedSalesInvoiceId: invoiceId,
+                  updatedBy: userId,
+                  updatedAt: datetime.timestamp()
+                })
+                .where("companyId", "=", companyId)
+                .where("salesInvoiceLineId", "in", invoiceLineIds)
+                .where("status", "=", "Billed")
+                .execute();
+            }
 
             // Update sales order lines to reverse invoiced quantities
             for await (const [salesOrderLineId, update] of Object.entries(

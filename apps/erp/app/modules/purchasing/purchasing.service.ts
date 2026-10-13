@@ -48,6 +48,7 @@ import {
   claimPlanningActions,
   releasePlanningActionClaims
 } from "../production/planning-action-claims";
+import { planningSegmentFilter } from "../production/ui/Planning/planning-action-scope";
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
@@ -651,6 +652,9 @@ export async function getPurchasingPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_purchasing_planning: same rows and projection, plus the
@@ -679,6 +683,10 @@ export async function getPurchasingPlanning(
     );
   }
 
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
+  }
+
   // What the row's Order / Make button offers (the grid RPC's orderQuantity,
   // from MRP's open new-supply actions), then the part number so a page is
   // stable when many rows have nothing to order.
@@ -686,6 +694,9 @@ export async function getPurchasingPlanning(
     { column: "orderQuantity", ascending: false },
     { column: "readableIdWithRevision", ascending: true }
   ]);
+  // An item has one row per netting segment ('' is common, then each project
+  // with project stock), so the segment breaks the tie between its rows.
+  query = query.order("planningSegmentId");
 
   return query;
 }
@@ -2129,6 +2140,8 @@ export async function upsertPurchaseOrderLine(
         companyId: string;
         createdBy: string;
         customFields?: Json;
+        /** Projects Phase 3: a line bought for a planning group (no project). */
+        planningGroupId?: string;
       })
     | (Omit<z.infer<typeof purchaseOrderLineValidator>, "id"> & {
         id: string;
@@ -3763,7 +3776,7 @@ export async function updatePurchaseOrderLineSchedule(
     const line = await client
       .from("purchaseOrderLine")
       .select(
-        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!inner(currencyCode)"
+        "supplierUnitPrice, supplierShippingCost, purchaseQuantity, taxPercent, supplierTaxAmount, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey!inner(currencyCode)"
       )
       .eq("id", args.lineId)
       .eq("companyId", args.companyId)

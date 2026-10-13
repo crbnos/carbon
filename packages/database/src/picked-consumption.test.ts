@@ -20,6 +20,7 @@ const budget = (overrides: Partial<PickedBudget>): PickedBudget => {
   const unclaimed = overrides.unclaimed ?? 0;
   return {
     itemId: "OLD",
+    projectId: null,
     factor: 1,
     storageUnitId: "shelf",
     sharedStorageUnitId: "shelf",
@@ -42,6 +43,34 @@ it("orderOldFirst puts predecessors before the line item, then the rest", () => 
     "LINE"
   );
   expect(ordered.map((b) => b.itemId)).toEqual(["OLD", "LINE", "NEW"]);
+});
+
+it("orderOldFirst puts an item's project stock before its common stock", () => {
+  const ordered = orderOldFirst(
+    [
+      budget({ itemId: "LINE", projectId: null }),
+      budget({ itemId: "LINE", projectId: "prj_1" }),
+      budget({ itemId: "OLD", isPredecessor: true, projectId: null })
+    ],
+    "LINE"
+  );
+  expect(ordered.map((b) => [b.itemId, b.projectId])).toEqual([
+    ["OLD", null],
+    ["LINE", "prj_1"],
+    ["LINE", null]
+  ]);
+});
+
+it("recordSharedTakes keeps each stripe's shared take apart", () => {
+  const takenShared: SharedTakes = new Map();
+  const { takes } = allocateAcrossBudgets(5, [
+    budget({ itemId: "X", projectId: "prj_1", own: 0, unclaimed: 2 }),
+    budget({ itemId: "X", projectId: null, own: 0, unclaimed: 10 })
+  ]);
+  recordSharedTakes(takenShared, takes);
+  expect(takenShared.get(sharedTakeKey("X", "shelf", "prj_1"))).toEqual(2);
+  expect(takenShared.get(sharedTakeKey("X", "shelf", null))).toEqual(3);
+  expect(takes.map((t) => t.budget.projectId)).toEqual(["prj_1", null]);
 });
 
 it("allocateAcrossBudgets consumes the predecessor first, then the successor", () => {

@@ -48,6 +48,17 @@ export type PurchaseReceiptLine = {
   locationId: string | null;
   /** The process of an outside processing line's job operation. */
   processId: string | null;
+  /** The project account the line debits in place of inventory, indirect
+   *  cost or WIP: a line charged to a project that consumes the goods. Its
+   *  debit carries the project's tags. */
+  projectDebit?: {
+    accountId: string;
+    projectId: string;
+    projectElementId: string | null;
+  } | null;
+  /** The project consumes the goods at receipt: received and issued at once,
+   *  so the line keeps no cost layer. */
+  consumedByProject?: boolean;
 };
 
 /** What a purchase order line was invoiced before it was received. */
@@ -135,6 +146,7 @@ export function purchaseReceiptLineCosts(
       createsLayers:
         trackingType(line) !== "Non-Inventory" &&
         !isOutsideProcessing &&
+        !line.consumedByProject &&
         Boolean(line.itemId) &&
         absQuantity > 0,
       poCost,
@@ -217,7 +229,12 @@ export function buildPurchaseReceiptJournalLines({
     if (absQuantity <= 0) continue;
 
     let debitSide: { accountId: string; description: string };
-    if (trackingType(line) !== "Non-Inventory" && !isOutsideProcessing) {
+    if (line.projectDebit) {
+      debitSide = {
+        accountId: line.projectDebit.accountId,
+        description: "Project Account"
+      };
+    } else if (trackingType(line) !== "Non-Inventory" && !isOutsideProcessing) {
       const inventory = resolveInventoryAccount(
         line.replenishmentSystem ?? null,
         accounts
@@ -246,6 +263,17 @@ export function buildPurchaseReceiptJournalLines({
       Location: line.locationId,
       Process: line.processId
     });
+    // The project tags go on the project debit only.
+    const debitKeys = line.projectDebit
+      ? {
+          ...keys,
+          dimensions: {
+            ...keys.dimensions,
+            Project: line.projectDebit.projectId,
+            ProjectElement: line.projectDebit.projectElementId
+          }
+        }
+      : keys;
     if (line.quantity < 0) {
       journalLines.push(
         {
@@ -253,11 +281,19 @@ export function buildPurchaseReceiptJournalLines({
           ...keys,
           amount: round(debit("liability", line.cost))
         },
-        { ...debitSide, ...keys, amount: round(credit("asset", line.cost)) }
+        {
+          ...debitSide,
+          ...debitKeys,
+          amount: round(credit("asset", line.cost))
+        }
       );
     } else {
       journalLines.push(
-        { ...debitSide, ...keys, amount: round(debit("asset", line.cost)) },
+        {
+          ...debitSide,
+          ...debitKeys,
+          amount: round(debit("asset", line.cost))
+        },
         {
           ...goodsReceived,
           ...keys,
@@ -292,6 +328,24 @@ export function buildPurchaseReceiptJournalLines({
     );
   }
   return journalLines;
+}
+
+/**
+ * The index, in `buildPurchaseReceiptJournalLines`' output, of each receipt
+ * line's debit-side line (inventory, indirect cost, WIP or the project
+ * account), or null for a line with no quantity. The builder writes one pair
+ * per line with a quantity: debit first on a receipt, GR/IR first on a return.
+ */
+export function purchaseReceiptDebitLineIndexes(
+  lines: Pick<PurchaseReceiptLine, "quantity">[]
+): (number | null)[] {
+  let next = 0;
+  return lines.map((line) => {
+    if (Math.abs(line.quantity) <= 0) return null;
+    const index = line.quantity < 0 ? next + 1 : next;
+    next += 2;
+    return index;
+  });
 }
 
 /** One sales return receipt line and the value it re-enters stock at. */

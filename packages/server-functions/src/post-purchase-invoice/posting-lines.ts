@@ -46,6 +46,7 @@ import { InvalidInputError } from "../errors";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import type { JournalLineDimensionValues } from "../lib/journal-line-dimensions";
 import type { LeaseAccount } from "./lease-lines";
+import type { InvoiceProjectCharges } from "./project-charges";
 import type { PurchasePostingAmounts } from "./purchase-posting-amounts";
 
 type Enums = Database["public"]["Enums"];
@@ -113,6 +114,8 @@ export type InvoicedPurchaseOrderLine = {
   isOutsideProcessing: boolean;
   processId: string | null;
   coverage: VarianceCoverage;
+  /** A PO line made for a planning group (Projects Phase 3). */
+  planningGroupId?: string | null;
 };
 
 type LineBase = {
@@ -158,6 +161,7 @@ export type PurchaseInvoicePostingLine = LineBase &
         account: { id: string; name: string };
         costCenterId: string | null;
         projectId: string | null;
+        projectElementId?: string | null;
       }
     | {
         /** A lessee lease's line, its accounts from `resolveLeasePostingLine`.
@@ -189,6 +193,25 @@ export type BuildPurchaseInvoicePostingLinesInput = {
   };
   /** The invoice's lines in order, comments left out. */
   lines: PurchaseInvoicePostingLine[];
+  /** The project charges of the invoice's lines (`loadInvoiceProjectCharges`).
+   *  Absent: no line is charged to a project. */
+  projectCharges?: InvoiceProjectCharges | null;
+};
+
+/** One projectLedger row the posting writes once the journal line ids exist:
+ *  `journalLineIndex` is the index of its line in `lines`. */
+export type PurchaseInvoiceProjectDraft = {
+  invoiceLineId: string;
+  projectId: string;
+  projectElementId: string | null;
+  costType: "Purchased Service" | "Other Direct" | "Material Variance";
+  itemId: string | null;
+  quantity: number;
+  amount: number;
+  journalLineIndex: number | null;
+  fixedAssetId: string | null;
+  postCapitalization: boolean;
+  unallowable: boolean;
 };
 
 /** The units a line cleared from GR/IR and what their variance did. */
@@ -209,6 +232,8 @@ export type PurchaseInvoicePosting = {
   /** By invoice line id: each PO item line that cleared received units, and
    *  each fixed asset line a receipt brought in. */
   receivedVariances: Map<string, ReceivedVariance>;
+  /** The project ledger rows of the lines charged to a project. */
+  projectDrafts: PurchaseInvoiceProjectDraft[];
 };
 
 const ITEM_LINE_TYPES: ReadonlySet<Enums["payableLineType"]> = new Set([
@@ -358,6 +383,8 @@ export function buildPurchaseInvoicePostingLines(
   input: BuildPurchaseInvoicePostingLinesInput
 ): PurchaseInvoicePosting {
   const { invoice, accounts, payables, supplierTypeId } = input;
+  const projectCharges = input.projectCharges ?? null;
+  const projectDrafts: PurchaseInvoiceProjectDraft[] = [];
 
   const clearings = new Map<string, Clearing>();
   // The variance of the lines that share a stored write-up, per item.
@@ -366,6 +393,15 @@ export function buildPurchaseInvoicePostingLines(
     if (line.kind !== "ordered") continue;
     const clearing = clearReceipts(line);
     if (!clearing) continue;
+    // A line its receipt charged to a project has no layers: its whole
+    // variance goes to the account the receipt debited.
+    if (
+      projectCharges?.chargedAtReceipt(
+        line.purchaseOrderLine.purchaseOrderLineId
+      )
+    ) {
+      clearing.usesLayers = false;
+    }
     clearings.set(line.id, clearing);
     const itemId = line.item.itemId;
     if (
@@ -391,6 +427,7 @@ export function buildPurchaseInvoicePostingLines(
     locationId: string | null;
     costCenterId: string | null;
     projectId: string | null;
+    projectElementId?: string | null;
     processId: string | null;
     fixedAssetClassId: string | null;
   };
@@ -412,6 +449,7 @@ export function buildPurchaseInvoicePostingLines(
         Location: meta.locationId,
         CostCenter: meta.costCenterId,
         Project: meta.projectId,
+        ProjectElement: meta.projectElementId ?? null,
         Process: meta.processId,
         FixedAssetClass: meta.fixedAssetClassId
       }
@@ -442,6 +480,12 @@ export function buildPurchaseInvoicePostingLines(
         const trackingType = item.itemTrackingType ?? "Inventory";
         let debitAccount: string;
         let debitDescription: string;
+        // A Non-Inventory line charged to a non-Statistical project debits
+        // the project account.
+        const directProjectCharge =
+          trackingType === "Non-Inventory"
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
         if (trackingType === "Inventory" && line.receivedWithInvoice) {
           const inventory = resolveInventoryAccount(
             item.replenishmentSystem,
@@ -449,6 +493,9 @@ export function buildPurchaseInvoicePostingLines(
           );
           debitAccount = inventory.account;
           debitDescription = inventory.description;
+        } else if (directProjectCharge) {
+          debitAccount = directProjectCharge.accountId;
+          debitDescription = "Project Account";
         } else if (trackingType === "Non-Inventory") {
           debitAccount = accounts.indirectCostAccount;
           debitDescription = "Indirect Cost Account";
@@ -467,6 +514,24 @@ export function buildPurchaseInvoicePostingLines(
           processId: null,
           fixedAssetClassId: null
         };
+        if (directProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: directProjectCharge.projectId,
+            projectElementId: directProjectCharge.projectElementId,
+            fixedAssetId: directProjectCharge.fixedAssetId,
+            postCapitalization: directProjectCharge.postCapitalization,
+            unallowable: directProjectCharge.unallowable,
+            costType:
+              line.invoiceLineType === "Service"
+                ? "Purchased Service"
+                : "Other Direct",
+            itemId: item.itemId,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         push(
           {
             accountId: debitAccount,
@@ -475,7 +540,13 @@ export function buildPurchaseInvoicePostingLines(
             quantity: round(quantity),
             journalLineReference
           },
-          meta
+          directProjectCharge
+            ? {
+                ...meta,
+                projectId: directProjectCharge.projectId,
+                projectElementId: directProjectCharge.projectElementId
+              }
+            : meta
         );
         push(payable(total, quantity, { journalLineReference }), meta);
         break;
@@ -526,9 +597,15 @@ export function buildPurchaseInvoicePostingLines(
             },
             meta
           );
+          const receiptProjectCharge =
+            projectCharges?.chargedAtReceipt(
+              purchaseOrderLine.purchaseOrderLineId
+            ) ?? null;
           // The on-hand share writes up inventory; the consumed share is
           // purchase variance.
+          let inventoryVarianceLineIndex: number | null = null;
           if (Math.abs(allocation.inventoryShare) > VARIANCE_THRESHOLD) {
+            inventoryVarianceLineIndex = lines.length;
             const inventory = resolveInventoryAccount(
               item.replenishmentSystem,
               accounts
@@ -543,16 +620,128 @@ export function buildPurchaseInvoicePostingLines(
               meta
             );
           }
-          if (Math.abs(allocation.ppvShare) > VARIANCE_THRESHOLD) {
+          // A PO line made for a planning group (Projects Phase 3): the
+          // consumed share of a member stripe's layer is that member's cost.
+          // It posts to the member's project account with a Material Variance
+          // row; the rest stays in PPV.
+          let remainingPpvShare = allocation.ppvShare;
+          if (purchaseOrderLine.planningGroupId && projectCharges) {
+            const consumedByProject = new Map<
+              string,
+              { quantity: number; cost: number }
+            >();
+            for (const entry of allocation.consumed ?? []) {
+              if (!entry.projectId) continue;
+              const total = consumedByProject.get(entry.projectId) ?? {
+                quantity: 0,
+                cost: 0
+              };
+              consumedByProject.set(entry.projectId, {
+                quantity: total.quantity + entry.quantity,
+                cost: total.cost + entry.cost
+              });
+            }
+            for (const [memberProjectId, share] of consumedByProject) {
+              const amount = round(share.cost);
+              if (Math.abs(amount) <= VARIANCE_THRESHOLD) continue;
+              const memberCharge =
+                projectCharges.stripeVarianceCharge(memberProjectId);
+              if (!memberCharge) continue;
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: memberProjectId,
+                projectElementId: null,
+                fixedAssetId: memberCharge.fixedAssetId,
+                postCapitalization: memberCharge.postCapitalization,
+                unallowable: memberCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: share.quantity,
+                amount,
+                journalLineIndex: lines.length
+              });
+              push(
+                {
+                  accountId: memberCharge.accountId,
+                  description: "Project Account (Price Variance)",
+                  amount: round(debit("expense", amount)),
+                  ...keys,
+                  quantity: round(share.quantity)
+                },
+                { ...meta, projectId: memberProjectId, projectElementId: null }
+              );
+              remainingPpvShare -= amount;
+            }
+          }
+          let ppvLineIndex: number | null = null;
+          if (Math.abs(remainingPpvShare) > VARIANCE_THRESHOLD) {
+            ppvLineIndex = lines.length;
+            if (receiptProjectCharge) {
+              projectDrafts.push({
+                invoiceLineId: line.id,
+                projectId: receiptProjectCharge.projectId,
+                projectElementId: receiptProjectCharge.projectElementId,
+                fixedAssetId: receiptProjectCharge.fixedAssetId,
+                postCapitalization: receiptProjectCharge.postCapitalization,
+                unallowable: receiptProjectCharge.unallowable,
+                costType: "Material Variance",
+                itemId: item.itemId,
+                quantity: clearing.quantity,
+                amount: remainingPpvShare,
+                journalLineIndex: ppvLineIndex
+              });
+            }
             push(
               {
-                accountId: accounts.purchaseVarianceAccount,
-                description: "Purchase Price Variance",
-                amount: round(debit("expense", allocation.ppvShare)),
+                accountId:
+                  receiptProjectCharge?.accountId ??
+                  accounts.purchaseVarianceAccount,
+                description: receiptProjectCharge
+                  ? "Project Account (Price Variance)"
+                  : "Purchase Price Variance",
+                amount: round(debit("expense", remainingPpvShare)),
                 ...keys
               },
-              meta
+              receiptProjectCharge
+                ? {
+                    ...meta,
+                    projectId: receiptProjectCharge.projectId,
+                    projectElementId: receiptProjectCharge.projectElementId
+                  }
+                : meta
             );
+          }
+          // Charge at receipt into project stock (Projects Phase 2a): the
+          // receipt charged the project at receipt cost while the goods
+          // entered its stock, so the project's ledger gets the price variance
+          // too, on the line that carries it (the inventory write-up, else the
+          // PPV of consumed units).
+          const stockReceiptCharge = receiptProjectCharge
+            ? null
+            : (projectCharges?.stockChargedAtReceipt(
+                purchaseOrderLine.purchaseOrderLineId
+              ) ?? null);
+          const stockVariance = round(
+            allocation.inventoryShare + allocation.ppvShare
+          );
+          if (
+            stockReceiptCharge &&
+            Math.abs(stockVariance) > VARIANCE_THRESHOLD
+          ) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: stockReceiptCharge.projectId,
+              projectElementId: stockReceiptCharge.projectElementId,
+              // Stock builds no asset until it is issued.
+              fixedAssetId: null,
+              postCapitalization: false,
+              unallowable: stockReceiptCharge.unallowable,
+              costType: "Material Variance",
+              itemId: item.itemId,
+              quantity: clearing.quantity,
+              amount: stockVariance,
+              journalLineIndex: inventoryVarianceLineIndex ?? ppvLineIndex
+            });
           }
           push(payable(clearing.invoiceCost, clearing.quantity, keys), meta);
         }
@@ -564,16 +753,40 @@ export function buildPurchaseInvoicePostingLines(
           const quantityToAccrue = quantity - quantityCleared;
           const accrualCost = quantityToAccrue * line.amounts.inventoryUnitCost;
           const isService = line.invoiceLineType === "Service";
+          // A service charged to a non-Statistical project debits the project
+          // account instead of indirect cost.
+          const serviceProjectCharge = isService
+            ? (projectCharges?.forLine(line.id) ?? null)
+            : null;
           const keys = {
             quantity: round(quantityToAccrue),
             documentLineReference,
             journalLineReference: nanoid()
           };
+          if (serviceProjectCharge) {
+            projectDrafts.push({
+              invoiceLineId: line.id,
+              projectId: serviceProjectCharge.projectId,
+              projectElementId: serviceProjectCharge.projectElementId,
+              fixedAssetId: serviceProjectCharge.fixedAssetId,
+              postCapitalization: serviceProjectCharge.postCapitalization,
+              unallowable: serviceProjectCharge.unallowable,
+              costType: "Purchased Service",
+              itemId: item.itemId,
+              quantity: quantityToAccrue,
+              amount: accrualCost,
+              journalLineIndex: lines.length
+            });
+          }
           push(
             isService
               ? {
-                  accountId: accounts.indirectCostAccount,
-                  description: "Indirect Cost Account",
+                  accountId:
+                    serviceProjectCharge?.accountId ??
+                    accounts.indirectCostAccount,
+                  description: serviceProjectCharge
+                    ? "Project Account"
+                    : "Indirect Cost Account",
                   amount: round(debit("asset", accrualCost)),
                   ...keys
                 }
@@ -584,7 +797,13 @@ export function buildPurchaseInvoicePostingLines(
                   amount: round(debit("liability", accrualCost)),
                   ...keys
                 },
-            meta
+            serviceProjectCharge
+              ? {
+                  ...meta,
+                  projectId: serviceProjectCharge.projectId,
+                  projectElementId: serviceProjectCharge.projectElementId
+                }
+              : meta
           );
           push(
             payable(accrualCost, quantityToAccrue, {
@@ -670,16 +889,36 @@ export function buildPurchaseInvoicePostingLines(
       }
 
       case "glAccount": {
+        // A non-Statistical project replaces the line's account.
+        const glProjectCharge = projectCharges?.forLine(line.id) ?? null;
         const meta: Dimensions = {
           supplierTypeId: null,
           itemPostingGroupId: null,
           itemId: null,
           locationId: line.locationId,
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: glProjectCharge?.projectId ?? line.projectId,
+          projectElementId: glProjectCharge
+            ? glProjectCharge.projectElementId
+            : (line.projectElementId ?? null),
           processId: null,
           fixedAssetClassId: null
         };
+        if (glProjectCharge) {
+          projectDrafts.push({
+            invoiceLineId: line.id,
+            projectId: glProjectCharge.projectId,
+            projectElementId: glProjectCharge.projectElementId,
+            fixedAssetId: glProjectCharge.fixedAssetId,
+            postCapitalization: glProjectCharge.postCapitalization,
+            unallowable: glProjectCharge.unallowable,
+            costType: "Other Direct",
+            itemId: null,
+            quantity,
+            amount: total,
+            journalLineIndex: lines.length
+          });
+        }
         const keys = {
           quantity: round(quantity),
           documentLineReference: line.purchaseOrderLineId
@@ -689,8 +928,10 @@ export function buildPurchaseInvoicePostingLines(
         };
         push(
           {
-            accountId: line.account.id,
-            description: line.account.name,
+            accountId: glProjectCharge?.accountId ?? line.account.id,
+            description: glProjectCharge
+              ? "Project Account"
+              : line.account.name,
             amount: round(debit("asset", total)),
             ...keys
           },
@@ -751,5 +992,5 @@ export function buildPurchaseInvoicePostingLines(
     }
   }
 
-  return { lines, receivedVariances };
+  return { lines, receivedVariances, projectDrafts };
 }

@@ -3,16 +3,18 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { toast } from "@carbon/react";
-import { useCallback, useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { createElement, useCallback, useEffect, useMemo } from "react";
+import { Link, useFetcher } from "react-router";
 import type { PlanningAction } from "~/modules/production";
 import { actionsOfTypes } from "~/modules/production";
 import {
   type FenceRow,
   useTimeFenceOverrides
 } from "~/modules/production/ui/Planning/PlanningFence";
+import { planningRowKey } from "~/modules/production/ui/Planning/planning-action-scope";
 import { actionsInsideFence } from "~/modules/production/ui/Planning/planning-fence";
 import { isStaleRelease } from "~/modules/production/ui/Planning/planning-review";
+import { path } from "~/utils/path";
 
 /**
  * The planning grids' MRP worklist state, shared by the production and
@@ -28,7 +30,7 @@ export function usePlanningActions({
   currentUserId,
   canUpdate
 }: {
-  data: FenceRow[];
+  data: (FenceRow & { planningSegmentId?: string | null })[];
   planningActions: PlanningAction[];
   /** The Actions-column filter; null shows every type. */
   actionTypes: string[] | null;
@@ -38,27 +40,63 @@ export function usePlanningActions({
   currentUserId: string;
   canUpdate: boolean;
 }) {
-  const actionsFetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const actionsFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    /** The Draft project stock transfers an applied Transfer created. */
+    transfers?: { id: string; projectStockTransferId: string }[];
+  }>();
   const isActionsBusy = actionsFetcher.state !== "idle";
 
   useEffect(() => {
     if (actionsFetcher.state !== "idle" || !actionsFetcher.data?.message)
       return;
-    if (actionsFetcher.data.success) {
-      toast.success(actionsFetcher.data.message);
+    const { message, success, transfers } = actionsFetcher.data;
+    // An applied Transfer leaves the worklist; the toast links its transfer.
+    const content =
+      transfers && transfers.length > 0
+        ? createElement(
+            "div",
+            { className: "flex flex-col gap-1" },
+            createElement("span", null, message),
+            createElement(
+              "span",
+              { className: "flex flex-wrap gap-2 text-xs" },
+              ...transfers.map((transfer) =>
+                createElement(
+                  Link,
+                  {
+                    key: transfer.id,
+                    to: path.to.projectStockTransfer(transfer.id),
+                    className: "underline underline-offset-2 hover:opacity-80"
+                  },
+                  transfer.projectStockTransferId
+                )
+              )
+            )
+          )
+        : message;
+    if (success) {
+      toast.success(content, transfers?.length ? { duration: 8000 } : {});
     } else {
-      toast.error(actionsFetcher.data.message);
+      toast.error(content);
     }
   }, [actionsFetcher.state, actionsFetcher.data]);
 
-  const actionsByItemId = useMemo(() => {
+  // Keyed by the row (`planningRowKey`): the grid has a row per item and
+  // netting segment, and each row holds its own segment's actions only.
+  const actionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const action of planningActions) {
       // a Release whose order moved on since MRP ran no longer applies
       if (isStaleRelease(action)) continue;
-      const list = map.get(action.itemId);
+      const key = planningRowKey({
+        id: action.itemId,
+        planningSegmentId: action.planningSegmentId
+      });
+      const list = map.get(key);
       if (list) list.push(action);
-      else map.set(action.itemId, [action]);
+      else map.set(key, [action]);
     }
     return map;
   }, [planningActions]);
@@ -68,30 +106,31 @@ export function usePlanningActions({
   // re-filters what is already loaded and never touches the item.
   const timeFence = useTimeFenceOverrides();
 
-  const fencedActionsByItemId = useMemo(() => {
+  const fencedActionsByRowKey = useMemo(() => {
     const map = new Map<string, PlanningAction[]>();
     for (const row of data) {
-      const actions = actionsByItemId.get(row.id);
+      const key = planningRowKey(row);
+      const actions = actionsByRowKey.get(key);
       if (!actions) continue;
       const fenced = actionsInsideFence(actions, timeFence.fenceDateFor(row));
-      if (fenced.length > 0) map.set(row.id, fenced);
+      if (fenced.length > 0) map.set(key, fenced);
     }
     return map;
-  }, [data, actionsByItemId, timeFence]);
+  }, [data, actionsByRowKey, timeFence]);
 
   // What the GRID shows and acts on: under the Actions-column filter, only
   // the filtered types. The order drawer keeps every fenced action — it lists
   // the item's open orders, and one shown without its pending suggestion
   // would read as "nothing to do".
-  const visibleActionsByItemId = useMemo(() => {
-    if (!actionTypes) return fencedActionsByItemId;
+  const visibleActionsByRowKey = useMemo(() => {
+    if (!actionTypes) return fencedActionsByRowKey;
     const map = new Map<string, PlanningAction[]>();
-    for (const [itemId, actions] of fencedActionsByItemId) {
+    for (const [key, actions] of fencedActionsByRowKey) {
       const visible = actionsOfTypes(actions, actionTypes);
-      if (visible.length > 0) map.set(itemId, visible);
+      if (visible.length > 0) map.set(key, visible);
     }
     return map;
-  }, [fencedActionsByItemId, actionTypes]);
+  }, [fencedActionsByRowKey, actionTypes]);
 
   // ONE batched request per click: the route derives each row's behaviour
   // from its persisted type, and a fetcher holds a single in-flight submission.
@@ -136,9 +175,9 @@ export function usePlanningActions({
     actionHandlers,
     isActionsBusy,
     timeFence,
-    actionsByItemId,
-    fencedActionsByItemId,
-    visibleActionsByItemId,
+    actionsByRowKey,
+    fencedActionsByRowKey,
+    visibleActionsByRowKey,
     submitActions
   };
 }

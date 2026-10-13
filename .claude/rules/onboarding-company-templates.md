@@ -102,11 +102,14 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
-   seeded table with a CHECK that needs one of several nullable FKs set goes in
-   `PARENT_CHECK_TABLES` (today `customerContractInvoiceLine`: an invoice OR a credit
-   memo). Missing one fails every re-apply with "new row … violates check constraint",
-   while a first apply onto an empty company still works.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. The service
+   order tables (`SERVICE_ORDER_TABLES`) go first too: nulling `serviceOrder.customerId`
+   breaks `serviceOrder_customer_check`. Any other seeded table with a CHECK that needs
+   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectStockTransfer`:
+   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   re-apply with "new row … violates check constraint", while a first apply onto an
+   empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -588,7 +591,7 @@ Before that pass it dates the seeded locations one second after the bootstrap on
 same `createdAt`.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
-table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 273 tables, measured across all four
 datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
 `UNION ALL` query and fails the dataset with every shortfall listed as
 `table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most
@@ -596,6 +599,13 @@ tables are counted by `companyId`; `COVERAGE_SCOPES` counts `dimension` / `dimen
 by the scratch company's `companyGroupId` and the three favorites tables through their parent
 document; the global `period` table is not counted. Removing data on purpose means lowering
 the floor in the same change; adding a table means measuring and adding it.
+
+Content that only one dataset carries has its own floors in `DATASET_COVERAGE_FLOORS` (same
+file), which `findCoverageShortfalls` adds for that dataset's key: a shared floor would be 0.
+Today only satellite has them: the Projects Phase 3 planning group (`planningGroup`,
+`projectElementMaterial`, `projectPeg`), the Phase 5b indirect rates (`indirectPool`,
+`indirectPoolAccount`, `indirectRate`) and ORBSEC Block 2's earned value baseline
+(`projectBaseline`, `ProjectSpec.baseline`, tier 09 `seedProjectBaseline`).
 
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.

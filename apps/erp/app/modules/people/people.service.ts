@@ -658,6 +658,16 @@ export async function updateEmployeeJob(
       shiftId: sanitized.shiftId,
       departmentId: sanitized.departmentId,
       managerId: sanitized.managerId,
+      laborCategoryId: sanitized.laborCategoryId,
+      defaultStorageUnitId: sanitized.defaultStorageUnitId,
+      flsaStatus: sanitized.flsaStatus,
+      // NOT NULL: a caller that leaves it out keeps the stored flag.
+      ...(typeof sanitized.isOfficer === "boolean"
+        ? { isOfficer: sanitized.isOfficer }
+        : {}),
+      ...(typeof sanitized.timesheetRequired === "boolean"
+        ? { timesheetRequired: sanitized.timesheetRequired }
+        : {}),
       ...("customFields" in sanitized
         ? { customFields: sanitized.customFields }
         : {}),
@@ -670,47 +680,70 @@ export async function updateEmployeeJob(
       // Kysely bypasses RLS and every id below comes from the caller, so each
       // one is re-read under companyId: the single-column FKs would accept a
       // location, shift, department or manager from any company.
-      const [employee, location, shift, department, manager] =
-        await Promise.all([
-          trx
-            .selectFrom("employee")
-            .select("id")
-            .where("id", "=", employeeId)
-            .where("companyId", "=", companyId)
-            .executeTakeFirst(),
-          updatePayload.locationId
-            ? trx
-                .selectFrom("location")
-                .select("id")
-                .where("id", "=", updatePayload.locationId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : null,
-          employeeJob.shiftId
-            ? trx
-                .selectFrom("shift")
-                .select("id")
-                .where("id", "=", employeeJob.shiftId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : null,
-          employeeJob.departmentId
-            ? trx
-                .selectFrom("department")
-                .select("id")
-                .where("id", "=", employeeJob.departmentId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : null,
-          employeeJob.managerId
-            ? trx
-                .selectFrom("employee")
-                .select("id")
-                .where("id", "=", employeeJob.managerId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst()
-            : null
-        ]);
+      const [
+        employee,
+        location,
+        shift,
+        department,
+        manager,
+        laborCategory,
+        van
+      ] = await Promise.all([
+        trx
+          .selectFrom("employee")
+          .select("id")
+          .where("id", "=", employeeId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst(),
+        updatePayload.locationId
+          ? trx
+              .selectFrom("location")
+              .select("id")
+              .where("id", "=", updatePayload.locationId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null,
+        employeeJob.shiftId
+          ? trx
+              .selectFrom("shift")
+              .select("id")
+              .where("id", "=", employeeJob.shiftId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null,
+        employeeJob.departmentId
+          ? trx
+              .selectFrom("department")
+              .select("id")
+              .where("id", "=", employeeJob.departmentId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null,
+        employeeJob.managerId
+          ? trx
+              .selectFrom("employee")
+              .select("id")
+              .where("id", "=", employeeJob.managerId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null,
+        employeeJob.laborCategoryId
+          ? trx
+              .selectFrom("laborCategory")
+              .select("id")
+              .where("id", "=", employeeJob.laborCategoryId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null,
+        employeeJob.defaultStorageUnitId
+          ? trx
+              .selectFrom("storageUnit")
+              .select("locationId")
+              .where("id", "=", employeeJob.defaultStorageUnitId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          : null
+      ]);
       if (!employee) throw new Error("Employee not found");
       if (updatePayload.locationId && !location) {
         throw new Error("Location not found");
@@ -721,6 +754,27 @@ export async function updateEmployeeJob(
       }
       if (employeeJob.managerId && !manager) {
         throw new Error("Manager not found");
+      }
+      if (employeeJob.laborCategoryId && !laborCategory) {
+        throw new Error("Labor category not found");
+      }
+      if (employeeJob.defaultStorageUnitId) {
+        if (!van) throw new Error("Storage unit not found");
+        const jobLocationId =
+          updatePayload.locationId ??
+          (
+            await trx
+              .selectFrom("employeeJob")
+              .select("locationId")
+              .where("id", "=", employeeId)
+              .where("companyId", "=", companyId)
+              .executeTakeFirst()
+          )?.locationId;
+        if (van.locationId !== jobLocationId) {
+          throw new Error(
+            "The van must be a storage unit at the job's location"
+          );
+        }
       }
 
       const updated = await trx
@@ -1039,6 +1093,31 @@ export async function getTimecardEntries(
 
   query = setGenericQueryFilters(query, args, [
     { column: "clockIn", ascending: false }
+  ]);
+
+  return query;
+}
+
+/**
+ * Lists the imported payroll totals: one row per employee and pay period,
+ * newest period first.
+ * @mcp read
+ */
+export async function getPayrollPeriodTotals(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters
+) {
+  let query = client
+    .from("payrollPeriodTotal")
+    .select(
+      "id, employeeId, periodStart, periodEnd, grossWages, hoursPaid, importedAt",
+      { count: LIST_COUNT }
+    )
+    .eq("companyId", companyId);
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "periodEnd", ascending: false }
   ]);
 
   return query;

@@ -28,6 +28,11 @@ import { InvalidInputError, NotFoundError } from "../errors";
 import { TIME_ENTRY_BEFORE_CUTOVER_ERROR } from "../lib/cutover-void";
 import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  loadJobProjectCharge
+} from "../lib/project-posting";
 
 export const postProductionEventInput = z.object({
   productionEventId: z.string(),
@@ -107,7 +112,9 @@ const postProductionEvent = defineServerFn({
                   "Location",
                   "Employee",
                   "WorkCenter",
-                  "Process"
+                  "Process",
+                  "Project",
+                  "ProjectElement"
                 ]
               },
               { columns: ["id", "entityType"] }
@@ -163,6 +170,11 @@ const postProductionEvent = defineServerFn({
     }
 
     const jobId = (event.jobOperation as any).jobId as string;
+
+    // A consume-to-project job charges its project account instead of WIP.
+    const projectCharge = await loadJobProjectCharge(db, companyId, jobId);
+    const costAccount =
+      projectCharge?.accountId ?? accountDefaults.data.workInProgressAccount;
 
     let cost = 0;
     let overheadCost = 0;
@@ -373,9 +385,12 @@ const postProductionEvent = defineServerFn({
       ...(laborAbsorption
         ? [
             {
-              accountId: accountDefaults.data.workInProgressAccount,
+              accountId: costAccount,
               accountDefaultRole: null,
-              description: "WIP Account",
+              description:
+                projectCharge && !projectCharge.keepsWip
+                  ? "Project Labor"
+                  : "WIP Account",
               amount: round(debit("asset", cost)),
               quantity: 1,
               documentType: "Production Event" as const,
@@ -401,9 +416,12 @@ const postProductionEvent = defineServerFn({
       ...(overheadAbsorption
         ? [
             {
-              accountId: accountDefaults.data.workInProgressAccount,
+              accountId: costAccount,
               accountDefaultRole: null,
-              description: "WIP Account (Overhead)",
+              description:
+                projectCharge && !projectCharge.keepsWip
+                  ? "Project Overhead"
+                  : "WIP Account (Overhead)",
               amount: round(debit("asset", overheadCost)),
               quantity: 1,
               documentType: "Production Event" as const,
@@ -485,7 +503,7 @@ const postProductionEvent = defineServerFn({
           companyId: string;
         }[] = [];
 
-        journalLineResults.forEach((jl) => {
+        journalLineResults.forEach((jl, index) => {
           if (
             finishedItemCost?.data?.itemPostingGroupId &&
             dimensionMap.has("ItemPostingGroup")
@@ -540,6 +558,31 @@ const postProductionEvent = defineServerFn({
               companyId
             });
           }
+          // The project lines (new and reversing) carry the project tags.
+          if (
+            projectCharge &&
+            journalLineInserts[index]?.accountId === projectCharge.accountId
+          ) {
+            if (dimensionMap.has("Project")) {
+              dimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("Project")!,
+                valueId: projectCharge.projectId,
+                companyId
+              });
+            }
+            if (
+              projectCharge.projectElementId &&
+              dimensionMap.has("ProjectElement")
+            ) {
+              dimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("ProjectElement")!,
+                valueId: projectCharge.projectElementId,
+                companyId
+              });
+            }
+          }
         });
 
         if (dimensionInserts.length > 0) {
@@ -548,6 +591,116 @@ const postProductionEvent = defineServerFn({
             .values(dimensionInserts)
             .execute();
         }
+      }
+
+      // The project ledger mirrors the journal: reverse what this event wrote
+      // before, then write its current cost.
+      const priorProjectRows = await trx
+        .selectFrom("projectLedger")
+        .selectAll()
+        .where("documentType", "=", "Production Event")
+        .where("documentId", "=", productionEventId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const reversedIds = new Set(
+        priorProjectRows
+          .map((row) => row.reversalOfId)
+          .filter((id): id is string => Boolean(id))
+      );
+      const openProjectRows = priorProjectRows.filter(
+        (row) => !row.reversalOfId && !reversedIds.has(row.id)
+      );
+      // A reversal row names this journal's reversal line on its original
+      // line's account, so the revenue run relieves it like the original.
+      // The reversal lines net per account, so rows on one account share it.
+      const originalLineIds = openProjectRows
+        .map((row) => row.journalLineId)
+        .filter((id): id is string => Boolean(id));
+      const originalLineAccounts = new Map(
+        originalLineIds.length > 0
+          ? (
+              await trx
+                .selectFrom("journalLine")
+                .select(["id", "accountId"])
+                .where("id", "in", originalLineIds)
+                .where("companyId", "=", companyId)
+                .execute()
+            ).map((line) => [line.id, line.accountId])
+          : []
+      );
+      const reversalLineFor = (journalLineId: string | null) => {
+        const accountId = journalLineId
+          ? originalLineAccounts.get(journalLineId)
+          : undefined;
+        if (!accountId) return null;
+        const index = reversalLines.findIndex(
+          (line) => line.accountId === accountId
+        );
+        return index < 0 ? null : (journalLineResults[index]?.id ?? null);
+      };
+      const hours = (event.duration ?? 0) / 3600;
+      const projectLedgerInserts = [
+        ...openProjectRows.map((row) =>
+          buildProjectLedgerRow({
+            companyId,
+            projectId: row.projectId,
+            projectElementId: row.projectElementId,
+            postingDate: today,
+            costType: row.costType,
+            documentType: "Production Event",
+            documentId: productionEventId,
+            jobId: row.jobId,
+            employeeId: row.employeeId,
+            quantity: row.quantity === null ? null : -Number(row.quantity),
+            amount: -Number(row.amount),
+            reversalOfId: row.id,
+            journalLineId: reversalLineFor(row.journalLineId),
+            unallowable: row.unallowable,
+            createdBy: userId
+          })
+        ),
+        ...(projectCharge && !reverse
+          ? (
+              [
+                [
+                  event.type === "Machine" ? "Machine" : "Labor",
+                  cost,
+                  reversalLines.length
+                ],
+                [
+                  "Overhead",
+                  overheadCost,
+                  reversalLines.length + (cost > 0 ? 2 : 0)
+                ]
+              ] as const
+            )
+              .filter(([, amount]) => amount > 0)
+              .map(([costType, amount, lineIndex]) =>
+                buildProjectLedgerRow({
+                  companyId,
+                  projectId: projectCharge.projectId,
+                  projectElementId: projectCharge.projectElementId,
+                  postingDate: today,
+                  costType,
+                  documentType: "Production Event",
+                  documentId: productionEventId,
+                  jobId,
+                  employeeId: event.employeeId,
+                  quantity: hours,
+                  amount,
+                  journalLineId: journalLineResults[lineIndex]?.id ?? null,
+                  unallowable: projectCharge.unallowable,
+                  createdBy: userId
+                })
+              )
+          : [])
+      ];
+      if (projectLedgerInserts.length > 0) {
+        await insertProjectLedgerRows(trx, {
+          companyId,
+          userId,
+          rows: projectLedgerInserts
+        });
       }
 
       await trx

@@ -25,7 +25,7 @@ import {
 } from "@carbon/react";
 import { distinctItemText } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   LuChevronDown,
   LuCirclePlus,
@@ -37,12 +37,18 @@ import { useNavigate, useParams } from "react-router";
 import { Empty, ItemThumbnail } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
 import { useOptimisticLocation, usePermissions, useRouteData } from "~/hooks";
+import { worstServiceOrderStatus } from "~/modules/service/service.models";
+import { ServiceOrderStatus } from "~/modules/service/ui/ServiceStatus";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 import { isSalesReturnOrderLocked } from "../../sales.models";
 import ReturnableLinesModal from "./ReturnableLinesModal";
 import SalesReturnOrderLineForm from "./SalesReturnOrderLineForm";
-import type { SalesReturnOrder, SalesReturnOrderLine } from "./types";
+import type {
+  DepotRepairOrder,
+  SalesReturnOrder,
+  SalesReturnOrderLine
+} from "./types";
 
 export default function SalesReturnOrderExplorer() {
   const { t } = useLingui();
@@ -52,6 +58,7 @@ export default function SalesReturnOrderExplorer() {
   const routeData = useRouteData<{
     salesReturnOrder: SalesReturnOrder;
     lines: SalesReturnOrderLine[];
+    depotRepairOrders: DepotRepairOrder[];
   }>(path.to.salesReturnOrder(orderId));
   const permissions = usePermissions();
 
@@ -100,6 +107,17 @@ export default function SalesReturnOrderExplorer() {
   };
 
   const lines = routeData?.lines ?? [];
+  const depotRepairOrders = routeData?.depotRepairOrders;
+  const serviceOrdersByLine = useMemo(() => {
+    const byLine = new Map<string, DepotRepairOrder[]>();
+    for (const order of depotRepairOrders ?? []) {
+      if (!order.salesReturnOrderLineId) continue;
+      const orders = byLine.get(order.salesReturnOrderLineId) ?? [];
+      orders.push(order);
+      byLine.set(order.salesReturnOrderLineId, orders);
+    }
+    return byLine;
+  }, [depotRepairOrders]);
 
   return (
     <>
@@ -114,6 +132,7 @@ export default function SalesReturnOrderExplorer() {
                 key={line.id}
                 isDisabled={isDisabled}
                 line={line}
+                serviceOrders={serviceOrdersByLine.get(line.id!) ?? []}
                 onDelete={onDeleteLine}
               />
             ))
@@ -238,12 +257,15 @@ export default function SalesReturnOrderExplorer() {
 
 type SalesReturnOrderLineItemProps = {
   line: SalesReturnOrderLine;
+  /** The line's Depot Repair orders (a Repair line, after receipt) */
+  serviceOrders: DepotRepairOrder[];
   isDisabled: boolean;
   onDelete: (line: SalesReturnOrderLine) => void;
 };
 
 function SalesReturnOrderLineItem({
   line,
+  serviceOrders,
   isDisabled,
   onDelete
 }: SalesReturnOrderLineItemProps) {
@@ -362,6 +384,21 @@ function SalesReturnOrderLineItem({
                 <Trans>Disposition</Trans>
               </span>
               <Badge variant="secondary">{line.disposition}</Badge>
+            </HStack>
+          )}
+          {serviceOrders.length > 0 && (
+            <HStack className="w-full justify-between">
+              <span className="text-muted-foreground">
+                <Trans>Service Orders</Trans>
+              </span>
+              <HStack spacing={1}>
+                <span className="tabular-nums">{serviceOrders.length}</span>
+                <ServiceOrderStatus
+                  status={worstServiceOrderStatus(
+                    serviceOrders.map((order) => order.status)
+                  )}
+                />
+              </HStack>
             </HStack>
           )}
         </VStack>

@@ -145,8 +145,9 @@ A single boolean setting is a toggle card that saves on change (no footer) — e
 5. **Sections** (`Subheading variant="heavy"` between groups) only for genuinely long forms
    (WorkCenterForm: Basic Information / Costing / Scheduling). Prefer flat.
 6. **Custom fields** — include `<CustomFormFields table="…"/>` on any entity that supports them.
-7. **Boolean** in a form: `Boolean` (Switch). With `bordered` + `description` it becomes a toggle
-   card: label + description left, switch right.
+7. **Boolean** in a form: `Boolean` (Switch) **with `bordered`**, always (Brad, 2026-10-12): a
+   toggle card, label + description left, switch right. The exception is a Properties panel,
+   which draws a flag as `Boolean variant="small"` like the item properties panels.
 8. No field is wider than it needs to be in settings (`max-w-[400px]`).
 
 ## 5. Labels, optional, help, placeholders, validation
@@ -154,7 +155,7 @@ A single boolean setting is a toggle card that saves on change (no footer) — e
 | Element | Rule | Example |
 |---|---|---|
 | Label | Title Case, translated `label={t\`…\`}`, rendered `text-xs font-medium text-muted-foreground` | "Customer Status", "Unit of Measure" |
-| Optional | automatic "Optional" tag inferred from the zod schema; override with `isOptional` | — |
+| Optional | automatic "Optional" tag inferred from the zod schema; override with `isOptional` (on `Select` / `Combobox` it also turns the clear button on). The project element and service order Properties panels hide the tag with `hideOptionalTags` (`modules/projects/ui/Element/PropertyFields.tsx`); other screens keep it | — |
 | Required marker | **none** — no asterisks | — |
 | Help (domain term) | `termId="<entity>-<field>"` → `LabelWithHelp` info + HoverCard + "Learn more" | `termId="customer-status"` |
 | Help (constraint/consequence) | `helperText` sentence under the field | "Customer ID cannot be changed after creation" |

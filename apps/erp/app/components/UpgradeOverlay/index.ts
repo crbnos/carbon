@@ -12,6 +12,7 @@ export {
   UpgradeOverlayIcon,
   UpgradeOverlayInline,
   UpgradeOverlayPreview,
+  UpgradeOverlayRow,
   UpgradeOverlaySection,
   UpgradeOverlayStickyGradient,
   UpgradeOverlayTitle,

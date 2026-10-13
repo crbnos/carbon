@@ -128,6 +128,7 @@ import {
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
+import { planningSegmentFilter } from "./ui/Planning/planning-action-scope";
 
 const logger = getLogger("erp", "production");
 
@@ -781,6 +782,59 @@ export async function getUnscheduledJobs(
   });
 }
 
+export type JobProject = {
+  projectId: string;
+  projectElementId: string | null;
+  // The element's readable id when the job is charged to one, else the
+  // project's identifier
+  projectReadableId: string;
+  projectName: string;
+};
+
+/**
+ * The charge number of each job that has one, keyed by job id — what the
+ * schedule cards show beside the sales order.
+ */
+export async function getJobProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  jobIds: string[]
+): Promise<{
+  data: Record<string, JobProject>;
+  error: PostgrestError | null;
+}> {
+  if (jobIds.length === 0) return { data: {}, error: null };
+
+  const result = await fetchAllByIds(jobIds, (batch) =>
+    client
+      .from("job")
+      .select(
+        "id, projectId, projectElementId, project:project!job_project_fkey(identifier, name), projectElement:projectElement!job_projectElement_fkey(readableId, name)"
+      )
+      .in("id", batch)
+      .eq("companyId", companyId)
+      .not("projectId", "is", null)
+      .order("id")
+  );
+
+  if (result.error) return { data: {}, error: result.error };
+
+  const data: Record<string, JobProject> = {};
+  for (const job of result.data ?? []) {
+    const readableId =
+      job.projectElement?.readableId ?? job.project?.identifier;
+    if (!job.projectId || !job.project || !readableId) continue;
+    data[job.id] = {
+      projectId: job.projectId,
+      projectElementId: job.projectElementId,
+      projectReadableId: readableId,
+      projectName: job.projectElement?.name ?? job.project.name
+    };
+  }
+
+  return { data, error: null };
+}
+
 /** @mcp read */
 export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
@@ -1027,6 +1081,30 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
+/**
+ * The charge number of a job: its project and element, and whether the job
+ * consumes to the project. The `jobs` view predates these columns, so they
+ * are read from `job`.
+ */
+export async function getJobProjectCharge(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("job")
+    .select(
+      "projectId, projectElementId, consumeToProject, receiveToProjectStock, project:project!job_project_fkey(id, identifier, name, costTreatment, projectStock), element:projectElement!job_projectElement_fkey(id, readableId, name)"
+    )
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+export type JobProjectCharge = NonNullable<
+  Awaited<ReturnType<typeof getJobProjectCharge>>["data"]
+>;
+
 // The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
 // in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
 // the route action — NEVER constructed here. This module is also bundled for the
@@ -1104,7 +1182,7 @@ export async function getJobPurchaseOrderLines(
   return client
     .from("purchaseOrderLine")
     .select(
-      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation(id, description, operationQuantity)"
+      "id, itemId, purchaseQuantity, quantityReceived, quantityShipped, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(id, purchaseOrderId, status, supplierId, supplierInteractionId), jobOperation!purchaseOrderLine_jobOperationId_fkey(id, description, operationQuantity)"
     )
     .eq("jobId", jobId);
 }
@@ -2322,6 +2400,9 @@ export async function getProductionPlanning(
     /** Keep only items with such an action assigned to this user ("Assigned
      *  to me"). Combined with `actionTypes` on the SAME action. */
     actionAssignees?: string[];
+    /** Keep only the rows of these netting segments ('' is common; the
+     *  grid's Segment filter). */
+    segments?: string[];
   }
 ) {
   // The grid RPC wraps get_production_planning: same rows and projection, plus the
@@ -2350,6 +2431,10 @@ export async function getProductionPlanning(
     );
   }
 
+  if (args.segments && args.segments.length > 0) {
+    query = query.or(planningSegmentFilter(args.segments));
+  }
+
   // What the row's Order / Make button offers (the grid RPC's orderQuantity,
   // from MRP's open new-supply actions), then the part number so a page is
   // stable when many rows have nothing to order.
@@ -2357,6 +2442,9 @@ export async function getProductionPlanning(
     { column: "orderQuantity", ascending: false },
     { column: "readableIdWithRevision", ascending: true }
   ]);
+  // An item has one row per netting segment ('' is common, then each project
+  // with project stock), so the segment breaks the tie between its rows.
+  query = query.order("planningSegmentId");
 
   return query;
 }
@@ -2899,38 +2987,6 @@ export async function recalculateJobMakeMethodRequirements(
       type: "jobMakeMethodRequirements",
       ...params
     });
-}
-
-/** @mcp update */
-export async function runMRP(
-  client: SupabaseClient<Database>,
-  db: Kysely<KyselyDatabase>,
-  params: {
-    type:
-      | "company"
-      | "location"
-      | "job"
-      | "salesOrder"
-      | "item"
-      | "purchaseOrder";
-    id: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  // Run MRP IN-PROCESS (Node). The caller's service-role client does
-  // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
-  // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
-  try {
-    const { runMrp } = await import("@carbon/planning");
-    const data = await runMrp(client, db, params);
-    return { data, error: null };
-  } catch (err) {
-    return {
-      data: null,
-      error: err instanceof Error ? err : new Error("Failed to run MRP")
-    };
-  }
 }
 
 /** @mcp update */
@@ -3602,6 +3658,12 @@ export async function insertJob(
     configuration?: Record<string, unknown>;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
+    /** Projects Phase 3: a job made for a planning group (no project). */
+    planningGroupId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -3724,6 +3786,11 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
+      projectId: input.projectId ?? null,
+      projectElementId: input.projectElementId ?? null,
+      consumeToProject: input.consumeToProject ?? false,
+      receiveToProjectStock: input.receiveToProjectStock ?? false,
+      planningGroupId: input.planningGroupId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -3871,6 +3938,10 @@ export async function updateJob(
     itemId?: string;
     fixedAssetClassId?: string | null;
     fixedAssetId?: string | null;
+    projectId?: string | null;
+    projectElementId?: string | null;
+    consumeToProject?: boolean;
+    receiveToProjectStock?: boolean;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, companyId, updatedBy, ...updates } = input;
@@ -10520,7 +10591,9 @@ export async function getJobMaterialPurchaseOrderLines(
 
   const { data } = await client
     .from("purchaseOrderLine")
-    .select("itemId, purchaseQuantity, quantityReceived, purchaseOrder(status)")
+    .select(
+      "itemId, purchaseQuantity, quantityReceived, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(status)"
+    )
     .in("itemId", itemIds)
     .eq("locationId", locationId);
 
@@ -10794,7 +10867,7 @@ export async function getPlanningActions(
         const query = client
           .from("planningAction")
           .select(
-            "*, item(readableIdWithRevision, name), purchaseOrderLine(purchaseOrderId, promisedDate, purchaseOrder(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job(jobId, status)"
+            "*, item!planningAction_itemId_fkey(readableIdWithRevision, name), purchaseOrderLine!planningAction_purchaseOrderLineId_fkey(purchaseOrderId, promisedDate, purchaseOrder!purchaseOrderLine_purchaseOrderId_fkey(purchaseOrderId, status, orderDate, purchaseOrderDelivery(receiptPromisedDate))), job!planningAction_jobId_fkey(jobId, status)"
           )
           .eq("companyId", companyId)
           .eq("locationId", locationId)
@@ -10803,10 +10876,14 @@ export async function getPlanningActions(
 
         // Buy worklist = new purchase suggestions + change actions on PO lines;
         // Make worklist = new job suggestions + change actions on jobs.
+        // Transfer and Borrow move stock between owners; each page lists
+        // only its own kind's items, so they show on the item's own page.
         return (
           kind === "Buy"
-            ? query.or("type.eq.Order,purchaseOrderLineId.not.is.null")
-            : query.or("type.eq.Make,jobId.not.is.null")
+            ? query.or(
+                "type.in.(Order,Transfer,Borrow),purchaseOrderLineId.not.is.null"
+              )
+            : query.or("type.in.(Make,Transfer,Borrow),jobId.not.is.null")
         )
           .order("suggestedDate", { ascending: true })
           .order("id", { ascending: true });
@@ -10900,10 +10977,13 @@ function inPlanningWorklist(kind: PlanningActionKind) {
   return (eb: ExpressionBuilder<KyselyDatabase, "planningAction">) =>
     kind === "Buy"
       ? eb.or([
-          eb("type", "=", "Order"),
+          eb("type", "in", ["Order", "Transfer", "Borrow"]),
           eb("purchaseOrderLineId", "is not", null)
         ])
-      : eb.or([eb("type", "=", "Make"), eb("jobId", "is not", null)]);
+      : eb.or([
+          eb("type", "in", ["Make", "Transfer", "Borrow"]),
+          eb("jobId", "is not", null)
+        ]);
 }
 
 export async function dismissPlanningActions(
@@ -10967,7 +11047,7 @@ export async function markPlanningActionsActioned(
  * Order button creates PO lines (Buy) or jobs (Make) from the suggested
  * orders, which carry no action id; each one is the week of an Order / Make
  * action (both come from `computePlanningOrders`, and the natural key holds
- * one such action per item, location and week). Without this, the action
+ * one such action per item, location, segment and week). Without this, the action
  * stayed Open beside the order that answered it until the next MRP run.
  * Dismissed is settled too: the need it suppressed has now been ordered.
  * Pairs are matched as pairs, so a bulk order never settles one item's week
@@ -10980,11 +11060,15 @@ export async function settleNewSupplyPlanningActions(
     locationId: string;
     userId: string;
     type: "Order" | "Make";
-    ordered: { itemId: string; periodId: string }[];
+    /** One per order placed; the segment defaults to common (''). */
+    ordered: { itemId: string; periodId: string; planningSegmentId?: string }[];
   }
 ) {
   const byKey = new Map(
-    args.ordered.map((pair) => [`${pair.itemId}\u0000${pair.periodId}`, pair])
+    args.ordered.map((pair) => [
+      `${pair.itemId}\u0000${pair.periodId}\u0000${pair.planningSegmentId ?? ""}`,
+      pair
+    ])
   );
   const ordered = [...byKey.values()];
   return planningActionIdList([...byKey.keys()], () =>
@@ -11004,12 +11088,15 @@ export async function settleNewSupplyPlanningActions(
           ordered.map((pair) =>
             eb.and([
               eb("itemId", "=", pair.itemId),
-              eb("periodId", "=", pair.periodId)
+              eb("periodId", "=", pair.periodId),
+              eb("planningSegmentId", "=", pair.planningSegmentId ?? "")
             ])
           )
         )
       )
-      .returning("id")
+      // The key fields let a grouped order move the action's pegs to the
+      // supply it created (Projects Phase 3).
+      .returning(["id", "itemId", "periodId", "planningSegmentId"])
       .execute()
   );
 }

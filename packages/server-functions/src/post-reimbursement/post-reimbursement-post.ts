@@ -5,7 +5,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { AutomaticJournalStatus } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
-import { type AccountClass, isAccountClass } from "@carbon/utils";
+import { type AccountClass, isAccountClass, toBaseAmount } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
@@ -14,6 +14,12 @@ import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
 import { allocateJournalLineIds } from "../lib/journal-line-ids";
+import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
+import {
+  buildProjectLedgerRow,
+  insertProjectLedgerRows,
+  resolveProjectLineCharges
+} from "../lib/project-posting";
 import { buildReimbursementJournal } from "./build-reimbursement-journal";
 
 export type ReimbursementContext = {
@@ -160,6 +166,47 @@ export async function postReimbursementJournal(
     }
   }
 
+  // A line charged to a non-Statistical project posts to the project account
+  // (the cost treatment on the reimbursement's date) in place of its own.
+  const projectChargeByLineId = await resolveProjectLineCharges(
+    trx,
+    companyId,
+    lines,
+    reimbursement.postingDate ?? reimbursement.reimbursementDate
+  );
+  const projectAccountByLineId = new Map(
+    [...projectChargeByLineId].map(([lineId, projectCharge]) => [
+      lineId,
+      projectCharge.accountId
+    ])
+  );
+  const projectAccountIds = [
+    ...new Set(projectAccountByLineId.values())
+  ].filter((accountId) => !accounts[accountId]);
+  if (projectAccountIds.length) {
+    const projectAccounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", projectAccountIds)
+      .where("companyGroupId", "=", company.companyGroupId)
+      .where("active", "=", true)
+      .where("isGroup", "=", false)
+      .execute();
+    if (projectAccounts.length !== projectAccountIds.length) {
+      throw new Error(
+        "Project accounts must be active posting accounts in this company group"
+      );
+    }
+    for (const account of projectAccounts) {
+      if (!isAccountClass(account.class)) {
+        throw new Error("Project account class is missing");
+      }
+      accounts[account.id] = { class: account.class };
+    }
+  }
+  const postingAccountOf = (line: (typeof lines)[number]) =>
+    projectAccountByLineId.get(line.id) ?? line.accountId;
+
   let postingDate =
     reimbursement.postingDate ?? reimbursement.reimbursementDate;
   // A Provisional journal has no accounting period, and no posting creates a
@@ -187,6 +234,7 @@ export async function postReimbursementJournal(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
+      projectAccountId: projectAccountByLineId.get(line.id) ?? null,
       description: line.description
     })),
     accounts,
@@ -199,7 +247,8 @@ export async function postReimbursementJournal(
   if (
     built.journalLines.length !== lines.length + 1 ||
     lines.some(
-      (line, index) => built.journalLines[index]?.accountId !== line.accountId
+      (line, index) =>
+        built.journalLines[index]?.accountId !== postingAccountOf(line)
     )
   ) {
     throw new Error("Reimbursement journal lines do not match coding lines");
@@ -215,6 +264,19 @@ export async function postReimbursementJournal(
   if (projectIds.length && !projectDimensionId) {
     throw new Error("Company group has no active Project dimension");
   }
+  // The element tag is written where the group has the dimension.
+  const projectElementDimension = lines.some((line) => line.projectElementId)
+    ? await trx
+        .selectFrom("dimension")
+        .select("id")
+        .where("companyGroupId", "=", company.companyGroupId)
+        .where("active", "=", true)
+        .where("entityType", "=", "ProjectElement")
+        .orderBy("createdAt")
+        .orderBy("id")
+        .limit(1)
+        .executeTakeFirst()
+    : undefined;
 
   // The generic per-line dimension rows — where a human's edit in the line
   // editor lands.
@@ -327,6 +389,9 @@ export async function postReimbursementJournal(
     if (projectDimensionId && journalLine.projectId) {
       byDimension.set(projectDimensionId, journalLine.projectId);
     }
+    if (projectElementDimension && sourceLine.projectElementId) {
+      byDimension.set(projectElementDimension.id, sourceLine.projectElementId);
+    }
     for (const row of genericByLineId.get(sourceLine.id) ?? []) {
       byDimension.set(row.dimensionId, row.valueId);
     }
@@ -345,6 +410,68 @@ export async function postReimbursementJournal(
       .values(dimensionRows)
       .execute();
   }
+
+  // One projectLedger row per line charged to a project account. The builder
+  // emits one debit per coding line in order, so line i is journal line i.
+  const projectRows = lines.flatMap((line, index) =>
+    line.projectId && projectAccountByLineId.has(line.id)
+      ? [
+          buildProjectLedgerRow({
+            companyId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            postingDate,
+            costType: "Other Direct",
+            documentType: "Reimbursement",
+            documentId: reimbursement.id,
+            documentLineId: line.id,
+            employeeId: reimbursement.employeeId,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            journalLineId: journalLineIds[index] ?? null,
+            unallowable:
+              projectChargeByLineId.get(line.id)?.unallowable ?? false,
+            createdBy: userId
+          })
+        ]
+      : []
+  );
+  if (projectRows.length) {
+    await insertProjectLedgerRows(trx, {
+      companyId,
+      userId,
+      rows: projectRows
+    });
+  }
+
+  // A line charged to a Capitalize project builds its asset.
+  await writeProjectCipRows(trx, {
+    companyId,
+    userId,
+    rows: lines.map((line) => {
+      const projectCharge = projectChargeByLineId.get(line.id);
+      return line.projectId && projectCharge
+        ? buildProjectCipRow({
+            resolved: projectCharge,
+            companyId,
+            userId,
+            projectId: line.projectId,
+            projectElementId: line.projectElementId,
+            sourceType: "Reimbursement",
+            sourceDocumentId: reimbursement.id,
+            sourceDocumentLineId: line.id,
+            amount: toBaseAmount(
+              Number(line.amount),
+              Number(reimbursement.exchangeRate)
+            ),
+            costDate: postingDate,
+            journalId
+          })
+        : null;
+    })
+  });
 
   await trx
     .updateTable("reimbursement")

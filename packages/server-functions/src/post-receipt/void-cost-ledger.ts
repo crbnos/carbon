@@ -14,6 +14,8 @@ export type ReceiptCostLedgerRow = {
   cost: number;
   supplierId: string | null;
   trackedEntityId: string | null;
+  /** The row's stock stripe (Projects Phase 2a); null is common stock. */
+  projectId?: string | null;
 };
 
 export type RestoringLayer = {
@@ -22,6 +24,8 @@ export type RestoringLayer = {
   cost: number;
   supplierId: string | null;
   trackedEntityId: string | null;
+  /** The stripe the relieved stock came from. */
+  projectId: string | null;
 };
 
 export type ReceiptVoidCostLedgerPlan = {
@@ -52,7 +56,8 @@ export function planReceiptVoidCostLedger(
       quantity: -row.quantity,
       cost: -row.cost,
       supplierId: row.supplierId,
-      trackedEntityId: row.trackedEntityId
+      trackedEntityId: row.trackedEntityId,
+      projectId: row.projectId ?? null
     }))
   };
 }

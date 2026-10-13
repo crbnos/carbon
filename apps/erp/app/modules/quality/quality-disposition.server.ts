@@ -6,6 +6,7 @@ import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { serverFns } from "@carbon/server-functions";
+import { trackedEntityStripe } from "@carbon/server-functions/lib/stock-stripes";
 import {
   buildBatchSplitRecords,
   datetime,
@@ -440,11 +441,13 @@ async function subdivideBatchEntity(
   // against it so per-storage-unit on-hand stays consistent.
   const sourceLedgerRows = await trx
     .selectFrom("itemLedger")
-    .select(["trackedEntityId", "storageUnitId", "quantity"])
+    .select(["trackedEntityId", "storageUnitId", "quantity", "projectId"])
     .where("trackedEntityId", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
   const storageUnitId = resolveTrackedEntityBin(sourceLedgerRows, source.id);
+  // The split stays in the source lot's stock stripe (Projects Phase 2a).
+  const projectId = trackedEntityStripe(sourceLedgerRows, source.id);
 
   const split = buildBatchSplitRecords({
     parent: {
@@ -552,6 +555,7 @@ async function subdivideBatchEntity(
         ...ledger,
         // Non-null in the node Insert type; the builder types it nullable.
         itemId,
+        projectId,
         comment: `NC ${readableNc} batch split`
       }))
     )

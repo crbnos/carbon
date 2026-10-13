@@ -149,6 +149,9 @@ msgstr "추가 및 출고"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "근무한 각 작업 지시 또는 작업마다 행을 추가하세요."
+
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
@@ -157,6 +160,9 @@ msgstr "재고 추가"
 
 msgid "Add Passkey"
 msgstr "패스키 추가"
+
+msgid "Add row"
+msgstr "행 추가"
 
 msgid "Add Sample"
 msgstr "샘플 추가"
@@ -333,8 +339,17 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Certify and submit"
+msgstr "인증 및 제출"
+
+msgid "Certify and Submit"
+msgstr "인증 및 제출"
+
 msgid "Change"
 msgstr "변경"
+
+msgid "Change Time"
+msgstr "시간 변경"
 
 msgid "Changelog newsletter"
 msgstr "변경 로그 뉴스레터"
@@ -344,6 +359,9 @@ msgstr "특성"
 
 msgid "Characteristics"
 msgstr "특성"
+
+msgid "Charge Number"
+msgstr "청구 번호"
 
 msgid "Chat"
 msgstr "채팅"
@@ -545,6 +563,15 @@ msgstr "설명"
 msgid "Details"
 msgstr "상세 정보"
 
+msgid "Direct Research"
+msgstr "직접 연구"
+
+msgid "Direct Supervision"
+msgstr "직접 감독"
+
+msgid "Direct Support"
+msgstr "직접 지원"
+
 msgid "Dispatch not found"
 msgstr "유지보수 지시를 찾을 수 없습니다"
 
@@ -653,6 +680,9 @@ msgstr "공정작업 종료"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
 
+msgid "Enter hours from 0 to 24"
+msgstr "0에서 24 사이의 시간을 입력하세요"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "{0}의 PIN 입력"
@@ -730,6 +760,12 @@ msgstr "측정값 저장 실패"
 msgid "Failed to save result"
 msgstr "결과 저장 실패"
 
+msgid "Failed to save the hours"
+msgstr "시간 저장 실패"
+
+msgid "Failed to submit the week"
+msgstr "주 제출 실패"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "{0} 업로드 실패"
@@ -802,6 +838,9 @@ msgstr "{level} 제목"
 msgid "Hide description"
 msgstr "설명 숨기기"
 
+msgid "Hours on {label}"
+msgstr "{label}의 시간"
+
 msgid "How Carbon looks in this browser."
 msgstr "이 브라우저에서 Carbon이 표시되는 방식입니다."
 
@@ -810,6 +849,9 @@ msgstr "실제로 몇 개를 피킹했습니까?"
 
 msgid "How many?"
 msgstr "몇 개?"
+
+msgid "I certify this statement"
+msgstr "이 진술을 인증합니다"
 
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
@@ -926,6 +968,9 @@ msgstr "키트"
 msgid "Labor"
 msgstr "노무"
 
+msgid "Labor category"
+msgstr "노무 분류"
+
 msgid "Last completed"
 msgstr "마지막 완료"
 
@@ -934,6 +979,9 @@ msgstr "성"
 
 msgid "Last used"
 msgstr "마지막 사용"
+
+msgid "Late Entry"
+msgstr "지연 항목"
 
 msgid "Learn more"
 msgstr "자세히 알아보기"
@@ -1108,6 +1156,9 @@ msgstr "{minValue}에서 {maxValue} {unitOfMeasureCode} 사이여야 합니다"
 msgid "My Hours"
 msgstr "내 근무 시간"
 
+msgid "My Time"
+msgstr "내 시간"
+
 msgid "Name"
 msgstr "이름"
 
@@ -1128,6 +1179,9 @@ msgstr "다음"
 
 msgid "Next step"
 msgstr "다음 단계"
+
+msgid "Next week"
+msgstr "다음 주"
 
 msgid "No"
 msgstr "아니요"
@@ -1155,6 +1209,9 @@ msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 
 msgid "No available tracked entities found"
 msgstr "가용 추적 항목을 찾을 수 없습니다"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
 msgid "No dispatches assigned to you"
 msgstr "당신에게 할당된 유지보수 지시가 없습니다"
@@ -1246,6 +1303,9 @@ msgstr "재고 없음"
 msgid "No time entries for this week"
 msgstr "이번 주 시간 기록이 없습니다"
 
+msgid "No time this week"
+msgstr "이번 주 시간이 없습니다"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "이 품목에 대한 창고 재고 기록이 없습니다. 그래도 피킹할 수 있으며, 실사로 수량이 조정될 때까지 보유수량이 음수로 표시됩니다."
 
@@ -1261,8 +1321,14 @@ msgstr "존재하는 작업장이 없습니다"
 msgid "None"
 msgstr "없음"
 
+msgid "Not Qualified"
+msgstr "부적격"
+
 msgid "Notes"
 msgstr "메모"
+
+msgid "Nothing matches your search."
+msgstr "검색과 일치하는 항목이 없습니다."
 
 msgid "Nothing running"
 msgstr "실행 중인 것 없음"
@@ -1424,6 +1490,9 @@ msgstr "스타일과 아바타를 선택하거나 새로운 것으로 섞으세�
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "작업한 항목을 선택한 후 노무 분류를 선택하세요."
+
 msgid "Picked"
 msgstr "피킹됨"
 
@@ -1481,6 +1550,9 @@ msgstr "예방"
 msgid "Previous step"
 msgstr "이전 단계"
 
+msgid "Previous week"
+msgstr "지난 주"
+
 msgid "Print"
 msgstr "인쇄"
 
@@ -1514,6 +1586,9 @@ msgstr "프로필"
 msgid "Progress"
 msgstr "진행 상황"
 
+msgid "Project"
+msgstr "프로젝트"
+
 msgid "Purchasing"
 msgstr "구매"
 
@@ -1537,6 +1612,12 @@ msgstr "대기열 비었음"
 
 msgid "Quotes"
 msgstr "견적서"
+
+msgid "Reason for change"
+msgstr "변경 사유"
+
+msgid "Reason for late entry"
+msgstr "늦은 입력 사유"
 
 msgid "Reason for rework"
 msgstr "재작업 사유"
@@ -1714,6 +1795,9 @@ msgstr "계측기 검색..."
 msgid "Search operators..."
 msgstr "작업자 검색..."
 
+msgid "Search projects and tasks"
+msgstr "프로젝트 및 작업 검색"
+
 msgid "Search..."
 msgstr "검색..."
 
@@ -1861,6 +1945,9 @@ msgstr "로그아웃"
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
 
+msgid "Signature pad"
+msgstr "서명 패드"
+
 msgid "Signed in as {stationName}"
 msgstr "{stationName}(으)로 로그인됨"
 
@@ -1944,6 +2031,9 @@ msgstr "하위 조립체 {0} · {1} — 단독으로 표시됨"
 msgid "Submit anonymously"
 msgstr "익명으로 제출"
 
+msgid "Submit week"
+msgstr "주 제출"
+
 msgid "Suggestion"
 msgstr "제안"
 
@@ -1968,8 +2058,14 @@ msgstr "태그"
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "변경 사항과 그 이유는 타임시트의 이력에 보관됩니다."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
@@ -2022,6 +2118,9 @@ msgstr "이 부품은 재고에서 폐기됩니다. 요구사항은 열려있으
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "이 개가 영구적으로 스크랩되고 대체 시리얼 번호가 생성됩니다."
+
+msgid "This week"
+msgstr "이번 주"
 
 msgid "Thumbnail"
 msgstr "썸네일"

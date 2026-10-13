@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -36,7 +37,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { listPath } = RUN_PAGES[run.data?.type ?? "Revenue Recognition"];
 
   const result = await serverFns
-    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .as({
+      client,
+      db: getDatabaseClient(),
+      companyId,
+      userId,
+      revenueRunSynthesizers: projectRevenueSynthesizers
+    })
     .invoke("recalculate-revenue-recognition-run", { runId });
 
   if (result.error) {

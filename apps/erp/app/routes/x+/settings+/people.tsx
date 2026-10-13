@@ -38,7 +38,7 @@ import { useFetcher, useLoaderData } from "react-router";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
-import { getCompanySettings, updateTimeCardSetting } from "~/modules/settings";
+import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -74,12 +74,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
   const enabled = formData.get("enabled") === "true";
-
-  if (intent === "timeCard") {
-    const update = await updateTimeCardSetting(client, companyId, enabled);
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Timecard settings updated" };
-  }
 
   if (intent === "console") {
     // Enterprise: console (kiosk) mode is gated. `companyHasFeature` blocks the
@@ -163,16 +157,6 @@ export default function PeopleSettingsRoute() {
     [fetcher]
   );
 
-  const handleTimeCardToggle = useCallback(
-    (checked: boolean) => {
-      fetcher.submit(
-        { intent: "timeCard", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [fetcher]
-  );
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <SettingsPage className="gap-4">
@@ -230,48 +214,6 @@ export default function PeopleSettingsRoute() {
                   disabled={isToggling}
                 />
               )}
-            </HStack>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Trans>Timecards</Trans>
-            </CardTitle>
-            <CardDescription>
-              <Trans>Enable timecard tracking for work shifts.</Trans>
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2 max-md:flex-wrap">
-                  <span className="font-medium">
-                    {companySettings.timeCardEnabled ? (
-                      <Trans>Timecards are enabled</Trans>
-                    ) : (
-                      <Trans>Timecards are disabled</Trans>
-                    )}
-                  </span>
-                  <Badge variant="yellow" className="max-md:shrink-0">
-                    <Trans>Beta</Trans>
-                  </Badge>
-                </HStack>
-
-                <span className="text-sm text-muted-foreground">
-                  {companySettings.timeCardEnabled ? (
-                    <Trans>Work shift tracking is active.</Trans>
-                  ) : (
-                    <Trans>Enable to start tracking work shifts.</Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={companySettings.timeCardEnabled ?? false}
-                onCheckedChange={handleTimeCardToggle}
-                disabled={isToggling}
-              />
             </HStack>
           </CardContent>
         </Card>

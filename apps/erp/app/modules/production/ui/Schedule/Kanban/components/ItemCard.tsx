@@ -37,6 +37,7 @@ import {
   LuEllipsisVertical,
   LuFlashlight,
   LuFlashlightOff,
+  LuFolderKanban,
   LuGripVertical,
   LuPencil,
   LuPlay,
@@ -445,6 +446,33 @@ const OperationCardBody = memo(function OperationCardBody({
                 className="text-sm"
               >
                 {item.salesOrderReadableId}
+              </Link>
+            </HStack>
+          )}
+
+        {displaySettings.showProject &&
+          item.projectId &&
+          item.projectReadableId && (
+            <HStack className="justify-start space-x-2 min-w-0">
+              <LuFolderKanban className="text-muted-foreground shrink-0" />
+              <Link
+                to={
+                  item.projectElementId
+                    ? path.to.projectElement(
+                        item.projectId,
+                        item.projectElementId
+                      )
+                    : path.to.project(item.projectId)
+                }
+                className="text-sm truncate"
+              >
+                {item.projectReadableId}
+                {item.projectName && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    {item.projectName}
+                  </span>
+                )}
               </Link>
             </HStack>
           )}

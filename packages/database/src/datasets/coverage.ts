@@ -35,6 +35,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   costLedger: 7,
   customField: 3,
   customer: 4,
+  customerAsset: 3,
   customerBankAccount: 4,
   customerContact: 4,
   customerContract: 1,
@@ -111,6 +112,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   journalLine: 64, // min 80
   journalLineDimension: 2,
   kanban: 5,
+  laborCategory: 3,
+  laborCategoryRate: 3,
   location: 2,
   maintenanceDispatch: 11,
   maintenanceDispatchComment: 4,
@@ -171,6 +174,12 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   productionEvent: 19, // min 24
   productionQuantity: 11,
   project: 2,
+  projectElement: 23, // min 29
+  projectElementLink: 5,
+  projectMilestone: 4,
+  projectState: 6,
+  projectStockTransfer: 1,
+  projectStockTransferLine: 1,
   purchaseInvoice: 7,
   purchaseInvoiceDelivery: 7,
   purchaseInvoiceLine: 8,
@@ -219,6 +228,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   salesRfq: 4,
   salesRfqLine: 4,
   service: 1,
+  serviceOrder: 2,
+  serviceVisit: 1,
   shift: 2,
   shipment: 5,
   shipmentLine: 5,
@@ -246,6 +257,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierType: 6,
   tag: 5,
   timeCardEntry: 6,
+  timesheetEntry: 6, // min 8
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,
@@ -270,6 +282,29 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   workflowStepRun: 4,
   workflowTriggerEvent: 1,
   workflowVersion: 7
+};
+
+/**
+ * Floors for content only one dataset carries, added to `COVERAGE_FLOORS` for
+ * that dataset. The shared floors take the smallest count of any dataset, so a
+ * table only satellite seeds would floor at 0 there. Satellite's planning
+ * group (Projects Phase 3): 1 group, 4 plan-line materials, and 8 pegs (3
+ * Soft rows the receipt superseded, 3 Hard, 2 Soft on the open line).
+ * Satellite's indirect pools (Government contracting Phase 5b) likewise.
+ */
+export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
+  satellite: {
+    // Government contracting Phase 5b: 3 pools, 7 mappings, and a Provisional
+    // and a Target rate for each of the 12 periods of the current year.
+    indirectPool: 3,
+    indirectPoolAccount: 7,
+    indirectRate: 72,
+    planningGroup: 1,
+    // The ORBSEC Block 2 earned value baseline.
+    projectBaseline: 1,
+    projectElementMaterial: 4,
+    projectPeg: 8
+  }
 };
 
 /**

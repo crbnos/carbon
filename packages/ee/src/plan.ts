@@ -34,7 +34,14 @@ export const FEATURE_PLANS = {
   // Tiered document-approval rules (POs by amount, quality docs, suppliers).
   APPROVAL_RULES: [Plan.Business, Plan.Partner],
   // Company backup / restore (self-service export + restore of company data).
-  BACKUPS: [Plan.Business, Plan.Partner]
+  BACKUPS: [Plan.Business, Plan.Partner],
+  // Projects Phase 3: planning groups pool projects with project stock into
+  // one MRP netting segment, with live pegging and distribution at receipt.
+  PLANNING_GROUPS: [Plan.Business, Plan.Partner],
+  // Cost Plus billing, Percent Complete revenue and the contract loss provision.
+  PROJECT_REVENUE: [Plan.Business, Plan.Partner],
+  // Indirect rates, burden, earned value and project budget control (spec 2026-10-09, Q1).
+  GOVERNMENT_CONTRACTING: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;

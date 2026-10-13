@@ -21,6 +21,7 @@ import {
   VStack
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import { sql } from "kysely";
 import { Suspense } from "react";
 import { LuShoppingCart } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -58,6 +59,10 @@ import {
   JobRiskRegister
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
+import {
+  chargeNumberError,
+  checkProjectBudget
+} from "~/modules/projects/projects.server";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { getTagsList } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
@@ -199,6 +204,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
+  const chargeError = await chargeNumberError(
+    serviceRole,
+    companyId,
+    validation.data
+  );
+  if (chargeError) {
+    return validationError({
+      fieldErrors: { [chargeError.field]: chargeError.message }
+    });
+  }
+
   // The same Make to Asset item rule the job form, release and completion
   // apply, so a saved target or item is refused with the field it is about.
   if (validation.data.fixedAssetClassId || validation.data.fixedAssetId) {
@@ -217,6 +233,50 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  // Budget control (Government Contracting 5c, C4 and C5). Only a job that
+  // consumes to its project is checked. Its new amount is quantity × the
+  // item's unit cost less the job's cost already in the project ledger, which
+  // the check counts as actual cost. Burden rows are left out, as in the check
+  // (C3). Block refuses the save; Warn saves and flashes the overrun.
+  let budgetNote = "";
+  if (validation.data.consumeToProject && validation.data.projectId) {
+    const db = getDatabaseClient();
+    const [cost, posted] = await Promise.all([
+      db
+        .selectFrom("itemCost")
+        .select("unitCost")
+        .where("itemId", "=", validation.data.itemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      db
+        .selectFrom("projectLedger")
+        .select(sql<number>`COALESCE(SUM("amount"), 0)`.as("amount"))
+        .where("companyId", "=", companyId)
+        .where("jobId", "=", id)
+        .where("costType", "!=", "Burden")
+        .executeTakeFirst()
+    ]);
+    const budget = await checkProjectBudget(db, client, {
+      companyId,
+      source: "job",
+      charges: [
+        {
+          projectId: validation.data.projectId,
+          projectElementId: validation.data.projectElementId || null,
+          amount: Math.max(
+            0,
+            (validation.data.quantity ?? 0) * Number(cost?.unitCost ?? 0) -
+              Number(posted?.amount ?? 0)
+          )
+        }
+      ]
+    });
+    if (budget.status === "block") {
+      return validationError({ fieldErrors: { quantity: budget.message } });
+    }
+    if (budget.status === "warn") budgetNote = `. ${budget.message}`;
+  }
+
   const result = await updateJob(client, {
     id,
     companyId,
@@ -232,6 +292,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     modelUploadId: validation.data.modelUploadId || null,
     fixedAssetClassId: validation.data.fixedAssetClassId || null,
     fixedAssetId: validation.data.fixedAssetId || null,
+    projectId: validation.data.projectId || null,
+    projectElementId: validation.data.projectElementId || null,
+    consumeToProject: validation.data.consumeToProject,
+    receiveToProjectStock: validation.data.receiveToProjectStock,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
@@ -261,7 +325,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  throw redirect(path.to.job(id), await flash(request, success("Updated job")));
+  throw redirect(
+    path.to.job(id),
+    await flash(request, success(`Updated job${budgetNote}`))
+  );
 }
 
 export default function JobDetailsRoute() {

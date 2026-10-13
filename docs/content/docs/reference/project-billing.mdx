@@ -1,0 +1,84 @@
+---
+title: Project billing
+description: "Bill a customer for project work from a contract line, time and materials or cost plus a fee, and recognize its revenue by progress."
+---
+
+A contract line can bill the work charged to a project instead of a fixed schedule. Its **Billing Method** decides how:
+
+| Billing method | What the invoice bills | Price |
+|---|---|---|
+| **Fixed** | The line's schedule, as on any [contract](/docs/reference/contracts) | The line's rate |
+| **Time & Materials** | Hours and costs charged to the line's billing element and the elements below it | Hours × a bill rate; material and other direct cost × (1 + handling %) |
+| **Cost Plus** | Every cost of the billing element and the elements below it | Cost × (1 + fee %) |
+
+Time & Materials is included in every plan. Cost Plus needs the Business plan.
+
+## The billing line
+
+Open a contract line and set **Billing Method** to Time & Materials or Cost Plus. Quantity, rate and discount go away; the line bills its items instead.
+
+<FieldTable>
+  <Field name="Project" type="reference" required>A [project](/docs/reference/projects) with cost treatment **Contract**.</Field>
+  <Field name="Billing Element" type="reference" required>An element of the project marked for billing: turn on **Billing element** in the **Work** properties of the element page. The line bills the work charged to it and to every element below it. Two billing lines cannot bill the same element or one inside the other.</Field>
+  <Field name="Handling (%)" type="number">Time & Materials: the markup on material and other direct cost.</Field>
+  <Field name="Fee (%)" type="number">Cost Plus, required: the fee on cost.</Field>
+  <Field name="Funded Amount" type="number">Billing stops at this amount.</Field>
+  <Field name="Funded Cost" type="number">The funding without the fee. The funding notice compares cost with it.</Field>
+  <Field name="Ceiling" type="number">Cost Plus: the most the line can be worth.</Field>
+  <Field name="Notice At (%)" type="number">75 to 85, default 75. When cost reaches this share of the funded cost, a funding notice goes out.</Field>
+  <Field name="Notice Window (Days)" type="number">30 to 90, default 60. The days of expected cost the notice adds to cost incurred.</Field>
+  <Field name="Revenue Method" type="enum">Time & Materials: **Right to Invoice**. Cost Plus: **Percent Complete** or **Right to Invoice**. A Fixed line may use **Percent Complete** when it names a billing element.</Field>
+</FieldTable>
+
+A billing line needs the contract to be in the company's base currency. On an Active contract you add or end a billing line with **Amend** (its **Billing Terms** row action sets the method and terms); its other terms do not change there. **Edit Funding**, in the **⋯** menu of the line's billing page, changes the funding at any time.
+
+## Bill rates
+
+An hour on a Time & Materials line bills at the most specific rate in effect on the day:
+
+1. the line's rate for that employee;
+2. the line's rate for the employee's labor category;
+3. the labor category's default **Bill Rate** (**Projects → Labor Categories**).
+
+Set the line's rates in the **Labor Rates** grid on its billing page. **Add Rate** adds a row, and **Applies To** names the labor category or the employee. An hour with no rate at all waits **On Hold** with the reason "No bill rate". Machine, overhead and burden cost is not billed on a Time & Materials line: a bill rate already covers it.
+
+## Billable items
+
+Each cost charged under the billing element becomes a **billable item**: Unbilled, On Hold, Billed or Written Off.
+
+- A Time & Materials item is made when the cost posts. Cost from a job's completion or backflush gets its item at the next billing run.
+- A Cost Plus item is made by the billing run.
+- **Generate Billable Items** on the line's billing page makes the missing items now, for work posted before the line existed or not picked up yet.
+
+Review items on the **Billing** tab of **Projects → Approvals**, or on a project's **Billing** page, under **Costs** in the project sidebar. The **Billable Items** card of the line's billing page links to that tab. Select items and choose **Hold** (with a reason), **Release**, **Write Off** (with a reason) or **Edit Price** (one item). Each change is recorded in the [audit log](/docs/reference/audit-log).
+
+## Invoicing
+
+The daily billing job drafts one invoice per contract for its billing lines, for the Unbilled items posted up to the latest billing period end (from the contract's billing frequency). It groups labor by labor category and rate, and other cost by cost type, then marks the items Billed. The invoice then follows the contract's invoicing mode, as any [invoice](/docs/reference/invoices) does.
+
+- Billing stops at the funded amount. Items past it stay Unbilled with the reason "Funding limit".
+- Deleting the draft, or voiding the posted invoice, returns its items to Unbilled. An invoice that bills them again is held, so it is not posted without a review.
+- The contract's **Project Billing** card lists each billing line with its funding and every invoice that billed them. **Backup** on an invoice lists every item behind it, with the posting date, element, cost type, employee, labor category, hours and source document, and exports to CSV.
+
+## Funding notices
+
+Once a day Carbon adds the cost incurred under each billing element to the cost it expects over the notice window (the average daily cost of the last 90 days, capped by the plan's remaining cost when the element has a plan). When that reaches **Notice At** of the funded cost, the contract's sales person and the project's manager get a notice in the app and by email. A second notice goes out when the funds will run out within the window. A change to the funded cost starts a new cycle. This follows the notice clauses FAR 52.232-20 and 52.232-22.
+
+## Revenue
+
+The monthly [revenue recognition](/docs/reference/contracts#revenue) run (**Accounting → Revenue Recognition**) recognizes a billing line by its **Revenue Method**, whether or not the work is invoiced yet:
+
+| Revenue method | Revenue to date |
+|---|---|
+| **Right to Invoice** | The billable items of the work posted by the month end, less written-off items |
+| **Percent Complete** | Price × (cost to date ÷ estimate at completion) |
+
+Each month recognizes revenue to date less what earlier months recognized, so a write-off or a new estimate shows as a catch-up, negative when it has to be. Revenue billed in advance comes out of Deferred Revenue; revenue not billed yet goes into Contract Assets.
+
+For Percent Complete, the estimate at completion is the billing element's **Estimate** on the project's **Costs** page. The price of a Fixed line is its scheduled invoices; the price of a Cost Plus line is the estimate × (1 + fee %), capped at the **Ceiling**.
+
+- **Cost.** The same run moves the line's cost from Project WIP to cost of goods sold, so revenue and its cost land in the same month. It moves each cost once. A cost posted to an expense account, or with accounting off, stays where it is.
+- **Loss.** When the estimate is above the price, the run provides the whole forecast loss at once and adjusts it each month as the work progresses. It posts to the **Contract Loss Provision** account under **Accounting → Default Accounts**.
+- **Review.** A run's page lists each project line with its estimate, price, progress, earned to date, this month, cost relieved and loss provision change before you post. The project's **Billing** page shows each line's percent complete and revenue recognized, and the contract's **Project Billing** card shows revenue recognized.
+
+Percent Complete and the loss provision need the Business plan.

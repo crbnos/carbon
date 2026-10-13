@@ -37,6 +37,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import type { Shipment, ShipmentLine } from "../..";
 import { getShipmentTracking } from "../..";
+import { expectedEntityStatus } from "./ShipmentLines";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
@@ -49,6 +50,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const routeData = useRouteData<{
     shipment: Shipment;
     shipmentLines: ShipmentLine[];
+    repairLineIds?: string[];
     fixedAssetLines: {
       id: string;
       shipped: boolean;
@@ -61,12 +63,14 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
   const [postingDate, setPostingDate] = useState(companyToday);
 
   // Return-to-customer shipments (source "Sales Return Order") ship returned
-  // stock, which is deliberately On Hold until shipped back — mirror the
-  // status lines.tracking required when the entity was assigned.
-  const expectedEntityStatus =
-    routeData?.shipment?.sourceDocument === "Sales Return Order"
-      ? "On Hold"
-      : "Available";
+  // stock, which is deliberately On Hold until shipped back, and a Repair
+  // line's unit, which stays Consumed — mirror the status lines.tracking
+  // required when the entity was assigned.
+  const statusFor = (line: ShipmentLine) =>
+    expectedEntityStatus(
+      routeData?.shipment,
+      !!line.lineId && (routeData?.repairLineIds ?? []).includes(line.lineId)
+    );
 
   const navigation = useNavigation();
 
@@ -171,7 +175,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Shipment Line"] === line.id;
         });
 
-        if (trackedEntity?.status !== expectedEntityStatus) {
+        if (trackedEntity?.status !== statusFor(line)) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             shippedQuantity: line.shippedQuantity ?? 0,
@@ -210,8 +214,7 @@ const ShipmentPostModal = ({ onClose }: { onClose: () => void }) => {
           const trackingQuantity = Number(tracking.quantity);
 
           return (
-            acc +
-            (tracking.status === expectedEntityStatus ? trackingQuantity : 0)
+            acc + (tracking.status === statusFor(line) ? trackingQuantity : 0)
           );
         }, 0);
 

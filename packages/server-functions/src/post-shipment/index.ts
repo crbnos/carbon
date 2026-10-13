@@ -52,7 +52,16 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { assertNoOpenRefurbishment } from "../lib/service-orders";
+import {
+  assertEntitiesInCommonStock,
+  loadProjectStock,
+  loadTrackedEntityStripes,
+  type StockStripe,
+  withStripe
+} from "../lib/stock-stripes";
 import { getTrackedEntityBins } from "../lib/storage-units";
+import { upsertShippedCustomerAssets } from "./customer-assets";
 import {
   buildReturnShipmentJournal,
   buildSalesShipmentJournal,
@@ -64,6 +73,12 @@ import {
   shippedQuantityByItem
 } from "./posting-lines";
 import { postRentalShipment, voidRentalShipment } from "./rental-agreement";
+import {
+  loadRepairLineIds,
+  type RepairUnit,
+  shipRepairedUnits,
+  unshipRepairedUnits
+} from "./repair";
 
 const logger = getLogger("server-functions", "post-shipment");
 
@@ -200,6 +215,20 @@ const postShipment = defineServerFn({
               if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
+              // A serial under refurbishment is not sold (decision C6).
+              await assertNoOpenRefurbishment(db, {
+                companyId,
+                trackedEntityIds: (shipmentLineTracking.data ?? []).map(
+                  (tracking) => tracking.id
+                )
+              });
+              // A sales order ships common stock only (Projects Phase 2a).
+              await assertEntitiesInCommonStock(
+                db,
+                companyId,
+                shipmentLineTracking.data ?? []
+              );
+
               const [salesOrder, salesOrderLines, salesOrderDelivery] =
                 await inOrder([
                   () =>
@@ -215,7 +244,13 @@ const postShipment = defineServerFn({
                       db,
                       "salesOrderShipment",
                       { companyId, id: shipmentHeader.sourceDocumentId },
-                      { columns: ["shippingCost"] }
+                      {
+                        columns: [
+                          "shippingCost",
+                          "dropShipment",
+                          "customerLocationId"
+                        ]
+                      }
                     )
                 ]);
               if (salesOrder.error)
@@ -1122,12 +1157,26 @@ const postShipment = defineServerFn({
                 }
 
                 if (itemLedgerInserts.length > 0) {
+                  // Every row draws common stock.
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
+
+                // Each shipped serial becomes (or moves) a customer asset.
+                await upsertShippedCustomerAssets(trx, {
+                  companyId,
+                  userId,
+                  shipmentId,
+                  trackedEntityIds: serialNumbersConsumed,
+                  customerId: salesOrder.data.customerId,
+                  customerLocationId: salesOrderDelivery.data.dropShipment
+                    ? salesOrderDelivery.data.customerLocationId
+                    : salesOrder.data.customerLocationId,
+                  shippedDate: today
+                });
 
                 if (Object.keys(jobUpdates).length > 0) {
                   logger.info("Final job updates to be applied:", jobUpdates);
@@ -1153,6 +1202,7 @@ const postShipment = defineServerFn({
                     itemId,
                     quantity,
                     companyId,
+                    projectId: null,
                     trackedEntityIds: leavingTrackedEntityIds(
                       itemLedgerInserts,
                       itemId
@@ -1172,6 +1222,7 @@ const postShipment = defineServerFn({
                       quantity: round(-quantity),
                       cost: round(-cogsResult.totalCost),
                       remainingQuantity: 0,
+                      projectId: null,
                       companyId,
                       postingDate: today
                     })
@@ -1747,11 +1798,12 @@ const postShipment = defineServerFn({
                   .where("companyId", "=", companyId)
                   .execute();
 
-                // Create item ledger entries
+                // A warehouse transfer line names no stripe: it moves common
+                // stock, on both legs (post-receipt writes the inbound one).
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -1796,6 +1848,13 @@ const postShipment = defineServerFn({
                 throw new Error(
                   `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
                 );
+              // Goods shipped to a customer leave common stock only (Projects
+              // Phase 2a): the returned stock came in as common stock.
+              await assertEntitiesInCommonStock(
+                db,
+                companyId,
+                shipmentLineTracking.data ?? []
+              );
 
               // Every shipment posts its journal: Provisional before the
               // company's accounting cutover, Posted after it. Read here to
@@ -1863,6 +1922,16 @@ const postShipment = defineServerFn({
                 }
               > = {};
               const itemShipmentQuantities: Record<string, number> = {};
+              // Repair lines ship the customer's own unit back: no stock, no
+              // cost, no journal. `shipmentLine.lineId` holds the RMA line.
+              const repairLineIds = await loadRepairLineIds(
+                db,
+                companyId,
+                shipmentLines.data
+                  .map((line) => line.lineId)
+                  .filter((id): id is string => Boolean(id))
+              );
+              const repairUnits: RepairUnit[] = [];
 
               for (const shipmentLine of shipmentLines.data) {
                 if (!shipmentLine.itemId) continue;
@@ -1876,6 +1945,38 @@ const postShipment = defineServerFn({
                 const itemTrackingType =
                   items.data.find((i) => i.id === shipmentLine.itemId)
                     ?.itemTrackingType ?? "Inventory";
+
+                if (
+                  shipmentLine.lineId &&
+                  repairLineIds.has(shipmentLine.lineId)
+                ) {
+                  const repairEntities = (
+                    shipmentLineTracking.data ?? []
+                  ).filter(
+                    (tracking) =>
+                      (
+                        tracking.attributes as
+                          | TrackedEntityAttributes
+                          | undefined
+                      )?.["Shipment Line"] === shipmentLine.id
+                  );
+                  if (
+                    itemTrackingType !== "Serial" ||
+                    repairEntities.length !== shippedQuantity
+                  ) {
+                    throw new Error(
+                      `Shipment line ${shipmentLine.id}: assign the repaired unit's serial before posting`
+                    );
+                  }
+                  for (const entity of repairEntities) {
+                    repairUnits.push({
+                      trackedEntityId: entity.id,
+                      salesReturnOrderLineId: shipmentLine.lineId,
+                      quantity: Number(entity.quantity ?? 1)
+                    });
+                  }
+                  continue;
+                }
 
                 // Non-Inventory lines have no stock and no carried cost —
                 // posting them would book COGS/costLedger with zero inventory
@@ -1988,6 +2089,7 @@ const postShipment = defineServerFn({
                     itemId,
                     quantity,
                     companyId,
+                    projectId: null,
                     trackedEntityIds: leavingTrackedEntityIds(
                       itemLedgerInserts,
                       itemId
@@ -2000,6 +2102,7 @@ const postShipment = defineServerFn({
                       itemLedgerType: "Sale",
                       costLedgerType: "Direct Cost",
                       adjustment: false,
+                      projectId: null,
                       documentType: "Sales Return Shipment",
                       documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
@@ -2052,7 +2155,7 @@ const postShipment = defineServerFn({
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .execute();
                 }
 
@@ -2099,6 +2202,40 @@ const postShipment = defineServerFn({
                         .execute();
                     }
                   }
+                }
+
+                await shipRepairedUnits(trx, {
+                  companyId,
+                  userId,
+                  today,
+                  shipmentId,
+                  shipmentReadableId: shipmentHeader.shipmentId,
+                  salesReturnOrderId,
+                  customerLocationId: salesReturnOrder.data.customerLocationId,
+                  units: repairUnits
+                });
+
+                // The customer's units go back into service at the site the
+                // RMA names. Their warranty dates stay.
+                const returnedEntityIds = Object.keys(trackedEntityUpdates);
+                if (returnedEntityIds.length > 0) {
+                  await trx
+                    .updateTable("customerAsset")
+                    .set({
+                      status: "In Service",
+                      shippedDate: today,
+                      shipmentId,
+                      customerLocationId: (eb) =>
+                        eb.fn.coalesce(
+                          eb.val(salesReturnOrder.data.customerLocationId),
+                          eb.ref("customerAsset.customerLocationId")
+                        ),
+                      updatedBy: userId,
+                      updatedAt: datetime.timestamp()
+                    })
+                    .where("trackedEntityId", "in", returnedEntityIds)
+                    .where("companyId", "=", companyId)
+                    .execute();
                 }
 
                 await trx
@@ -2214,7 +2351,66 @@ const postShipment = defineServerFn({
                   quantity: number;
                 }
               > = {};
-              const itemShipmentQuantities: Record<string, number> = {};
+              // Quantity shipped per (item, stripe): each stripe relieves its
+              // own layers (Projects Phase 2a).
+              const itemShipmentQuantities = new Map<
+                string,
+                { itemId: string; stripe: StockStripe; quantity: number }
+              >();
+              const addShipped = (
+                itemId: string,
+                stripe: StockStripe,
+                quantity: number
+              ) => {
+                const key = `${itemId}\u0000${stripe ?? ""}`;
+                const existing = itemShipmentQuantities.get(key);
+                if (existing) existing.quantity += quantity;
+                else
+                  itemShipmentQuantities.set(key, { itemId, stripe, quantity });
+              };
+              // A return draws the stripe its stock came in on: a tracked
+              // entity's own stripe, else the stripe the purchase order line
+              // received into (its project's stock when the project has
+              // project stock, as post-receipt decides).
+              const entityStripes = await loadTrackedEntityStripes(
+                db,
+                companyId,
+                (shipmentLineTracking.data ?? []).map((tracking) => tracking.id)
+              );
+              const returnPoLineIds = [
+                ...new Set(
+                  (purchaseReturnOrderLines.data ?? [])
+                    .map((line) => line.purchaseOrderLineId)
+                    .filter((id): id is string => Boolean(id))
+                )
+              ];
+              const returnPoLines =
+                returnPoLineIds.length > 0
+                  ? await many(
+                      db,
+                      "purchaseOrderLine",
+                      { id: returnPoLineIds, companyId },
+                      { columns: ["id", "projectId"] }
+                    )
+                  : { data: [], error: null };
+              if (returnPoLines.error)
+                throw new Error("Failed to fetch purchase order lines");
+              const returnProjectStock = await loadProjectStock(
+                db,
+                companyId,
+                (returnPoLines.data ?? []).map((line) => line.projectId)
+              );
+              const untrackedStripe = (returnLine: {
+                purchaseOrderLineId: string | null;
+              }): StockStripe => {
+                const projectId =
+                  (returnPoLines.data ?? []).find(
+                    (line) => line.id === returnLine.purchaseOrderLineId
+                  )?.projectId ?? null;
+                return projectId && returnProjectStock.has(projectId)
+                  ? projectId
+                  : null;
+              };
               const returnLineUpdates: Record<
                 string,
                 { quantityShipped: number; updatedBy: string }
@@ -2273,9 +2469,8 @@ const postShipment = defineServerFn({
                 );
 
                 if (itemTrackingType === "Inventory") {
-                  itemShipmentQuantities[shipmentLine.itemId] =
-                    (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
-                    shippedQuantity;
+                  const stripe = untrackedStripe(returnLine);
+                  addShipped(shipmentLine.itemId, stripe, shippedQuantity);
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
@@ -2287,6 +2482,7 @@ const postShipment = defineServerFn({
                     documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId:
                       shipmentHeader.externalDocumentId ?? undefined,
+                    projectId: stripe,
                     createdBy: userId,
                     companyId
                   });
@@ -2310,8 +2506,8 @@ const postShipment = defineServerFn({
                     const entityQty = Number(entity.quantity ?? 0);
                     const draw = Math.min(entityQty, remaining);
                     remaining -= draw;
-                    itemShipmentQuantities[shipmentLine.itemId] =
-                      (itemShipmentQuantities[shipmentLine.itemId] ?? 0) + draw;
+                    const stripe = entityStripes.get(entity.id) ?? null;
+                    addShipped(shipmentLine.itemId, stripe, draw);
                     const ledgerIndex = itemLedgerInserts.length;
                     itemLedgerInserts.push({
                       postingDate: today,
@@ -2325,6 +2521,7 @@ const postShipment = defineServerFn({
                       trackedEntityId: entity.id,
                       externalDocumentId:
                         shipmentHeader.externalDocumentId ?? undefined,
+                      projectId: stripe,
                       createdBy: userId,
                       companyId
                     });
@@ -2472,10 +2669,12 @@ const postShipment = defineServerFn({
                     .where("companyId", "=", companyId)
                     .execute();
 
+                  // The split stays in the parent's stripe.
                   itemLedgerInserts.push(
                     ...(built.ledgerInserts.map((ledger) => ({
                       ...ledger,
-                      quantity: round(ledger.quantity)
+                      quantity: round(ledger.quantity),
+                      projectId: entityStripes.get(parent.id) ?? null
                     })) as typeof itemLedgerInserts)
                   );
                   itemLedgerInserts[split.ledgerIndex]!.trackedEntityId =
@@ -2487,15 +2686,20 @@ const postShipment = defineServerFn({
                 }
 
                 const returnedItems: ReturnShipmentItem[] = [];
-                for (const [itemId, quantity] of Object.entries(
-                  itemShipmentQuantities
-                )) {
+                for (const {
+                  itemId,
+                  stripe,
+                  quantity
+                } of itemShipmentQuantities.values()) {
                   const cogsResult = await calculateCOGS(trx, {
                     itemId,
                     quantity,
                     companyId,
+                    projectId: stripe,
                     trackedEntityIds: leavingTrackedEntityIds(
-                      itemLedgerInserts,
+                      itemLedgerInserts.filter(
+                        (row) => (row.projectId ?? null) === stripe
+                      ),
                       itemId
                     )
                   });
@@ -2506,6 +2710,7 @@ const postShipment = defineServerFn({
                       itemLedgerType: "Purchase",
                       costLedgerType: "Direct Cost",
                       adjustment: false,
+                      projectId: stripe,
                       documentType: "Purchase Return Shipment",
                       documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
@@ -3170,6 +3375,18 @@ const postShipment = defineServerFn({
                   .where("companyId", "=", companyId)
                   .execute();
 
+                // The units this shipment created or last moved are back.
+                await trx
+                  .updateTable("customerAsset")
+                  .set({
+                    status: "Returned",
+                    updatedBy: userId,
+                    updatedAt: datetime.timestamp()
+                  })
+                  .where("shipmentId", "=", shipmentId)
+                  .where("companyId", "=", companyId)
+                  .execute();
+
                 // Restore tracked entities to available status
                 if (Object.keys(trackedEntityUpdates).length > 0) {
                   const voidActivity = await trx
@@ -3219,11 +3436,11 @@ const postShipment = defineServerFn({
                   }
                 }
 
-                // Create reversing item ledger entries
+                // Reversing rows: a sales shipment drew common stock.
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -3738,11 +3955,11 @@ const postShipment = defineServerFn({
                   .where("companyId", "=", companyId)
                   .execute();
 
-                // Create reversing item ledger entries
+                // Reversing rows: the transfer moved common stock.
                 if (itemLedgerInserts.length > 0) {
                   await trx
                     .insertInto("itemLedger")
-                    .values(itemLedgerInserts)
+                    .values(withStripe(itemLedgerInserts, null))
                     .returning(["id"])
                     .execute();
                 }
@@ -3830,6 +4047,8 @@ const postShipment = defineServerFn({
                     documentId: entry.documentId,
                     externalDocumentId: entry.externalDocumentId,
                     trackedEntityId: entry.trackedEntityId,
+                    // A reversal copies the row it reverses.
+                    projectId: entry.projectId,
                     createdBy: userId,
                     companyId
                   })
@@ -3857,6 +4076,7 @@ const postShipment = defineServerFn({
                       documentType: "Sales Return Shipment",
                       documentId: row.documentId,
                       externalDocumentId: row.externalDocumentId ?? undefined,
+                      projectId: row.projectId,
                       itemId: row.itemId,
                       quantity: round(-Number(row.quantity)),
                       cost: round(-Number(row.cost)),
@@ -3984,13 +4204,48 @@ const postShipment = defineServerFn({
                   .execute();
                 const voidActivityId = voidActivity[0]?.id;
 
+                // A Repair line's unit never left stock, so it stays Consumed
+                // and its asset goes back At Depot.
+                const repairLineIds = await loadRepairLineIds(
+                  trx,
+                  companyId,
+                  shipmentLines.data
+                    .map((line) => line.lineId)
+                    .filter((id): id is string => Boolean(id))
+                );
+                const repairShipmentLineIds = new Set(
+                  shipmentLines.data
+                    .filter(
+                      (line) => line.lineId && repairLineIds.has(line.lineId)
+                    )
+                    .map((line) => line.id)
+                );
+                const isRepairEntity = (entity: { attributes: unknown }) => {
+                  const shipmentLineId = (
+                    entity.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"];
+                  return (
+                    typeof shipmentLineId === "string" &&
+                    repairShipmentLineIds.has(shipmentLineId)
+                  );
+                };
+                await unshipRepairedUnits(trx, {
+                  companyId,
+                  userId,
+                  trackedEntityIds: (shipmentLineTracking.data ?? [])
+                    .filter(isRepairEntity)
+                    .map((entity) => entity.id)
+                });
+
                 for await (const entity of shipmentLineTracking.data ?? []) {
-                  await trx
-                    .updateTable("trackedEntity")
-                    .set({ status: "On Hold" })
-                    .where("id", "=", entity.id)
-                    .where("companyId", "=", companyId)
-                    .execute();
+                  if (!isRepairEntity(entity)) {
+                    await trx
+                      .updateTable("trackedEntity")
+                      .set({ status: "On Hold" })
+                      .where("id", "=", entity.id)
+                      .where("companyId", "=", companyId)
+                      .execute();
+                  }
                   if (voidActivityId) {
                     await trx
                       .insertInto("trackedActivityOutput")
@@ -4128,6 +4383,8 @@ const postShipment = defineServerFn({
                     documentId: entry.documentId,
                     externalDocumentId: entry.externalDocumentId,
                     trackedEntityId: entry.trackedEntityId,
+                    // A reversal copies the row it reverses.
+                    projectId: entry.projectId,
                     createdBy: userId,
                     companyId
                   })
@@ -4155,6 +4412,7 @@ const postShipment = defineServerFn({
                       documentType: "Purchase Return Shipment",
                       documentId: row.documentId,
                       externalDocumentId: row.externalDocumentId ?? undefined,
+                      projectId: row.projectId,
                       itemId: row.itemId,
                       quantity: round(-Number(row.quantity)),
                       cost: round(-Number(row.cost)),

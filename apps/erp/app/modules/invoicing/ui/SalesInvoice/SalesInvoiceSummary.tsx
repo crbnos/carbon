@@ -400,6 +400,7 @@ const SalesInvoiceSummary = ({
     salesInvoice: SalesInvoice;
     salesInvoiceLines: SalesInvoiceLine[];
     salesInvoiceShipment: SalesInvoiceShipment;
+    expectedLiquidation: number | null;
   }>(path.to.salesInvoice(invoiceId));
 
   const { locale } = useLocale();
@@ -581,6 +582,15 @@ const SalesInvoiceSummary = ({
               )}
             </VStack>
           </HStack>
+
+          {routeData?.expectedLiquidation ? (
+            <HStack className="justify-between text-sm text-muted-foreground w-full">
+              <span>
+                <Trans>Progress payment liquidation expected</Trans>
+              </span>
+              <span>{formatter.format(routeData.expectedLiquidation)}</span>
+            </HStack>
+          ) : null}
         </VStack>
       </CardContent>
     </Card>

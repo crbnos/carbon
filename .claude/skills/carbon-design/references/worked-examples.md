@@ -92,6 +92,47 @@ transitions, `QuoteFinalizeModal` (Alert inside a modal for a blocking condition
 
 ---
 
+## Example 4 — Rebuilding a crowded module: the project workspace (2026-10-12)
+
+**Request (Brad):** "completely over the top, incoherent, and overly complicated … the ui should
+look extremely simple and unwrap like an onion to reveal necessary complexity." Plan:
+`.ai/plans/2026-10-12-projects-service-ui-rebuild.md` (its *Execution notes* hold every later
+decision); rejected screens: `.ai/scratch/ui-reference/bad-*.jpg`.
+
+**What was there:** an 8-tab strip and about 28 header controls, a type-chip row, saved views,
+four layouts, a right panel inside the workspace for an element, `NumberField` boxes in the
+timesheet, a modal per rate row, dashed empty cards, striped bars, collapsible sidebar groups.
+
+**Decisions (each names its precedent):**
+- **Layers.** Module sidebar (Projects, My Time, Approvals, Reports; Setup always open) →
+  list (`ProjectsTable`) → workspace → page → menus. Each layer shows the least it can.
+- **Project sidebar, not tabs.** The explorer slot of `ResizablePanels` holds the record's
+  links (Overview, Plan with the element tree, Schedule, Costs with Stock / Pegging / Billing
+  only when they apply, Time, Settings at the bottom), as in Flow's requirements tree.
+  `modules/projects/ui/Project/ProjectSidebar.tsx`.
+- **One-line header.** Identifier, the name as the record switcher, one status badge, copy and
+  a ⋯ menu holding the status moves (next step first). No primary button there.
+- **Full-screen child page.** An element opens on its own page (breadcrumb back, an 800 px main
+  column, a 300 px properties column in the `IssueProperties` inline pattern), never a panel in
+  a panel. `modules/projects/ui/Element/ElementView.tsx`.
+- **Linear list for work items.** Grouped by state, no grid lines, three in-place pickers.
+  `modules/projects/ui/Elements/ElementList.tsx`.
+- **Excel grids for data entry.** Timesheet, plan lines, rates, funding actions, company-wide
+  states and labels (Settings → Projects, `ProjectStatesGrid`): the inventory count grid.
+- **Schedule timeline.** Names on the left, each bar on the same row, Weekly / Monthly /
+  Quarterly, the current period tinted, details in a drawer. `MilestoneSchedule.tsx`.
+- **Quiet details.** No `Subheading` per section; `Boolean bordered` in forms; no "Optional"
+  tag in the properties panels; empty sections hidden or one muted line; `Empty` only for a
+  whole page or list.
+- **A flag lives where it is decided.** The billing element is a switch in the element's Work
+  properties (shown on a Contract project), not a field buried in the contract line form.
+
+**Rejected:** a header `DetailsTopbar` of views (too many controls at once); keeping the right
+element panel "for speed" (it duplicated the page); a global change to `Table`'s built-in empty
+state (out of scope, Open point 1 of the plan).
+
+---
+
 ## Calibration notes
 
 - Most of each design came from **existing parts** (archetypes, overlays, Status, Enumerable,

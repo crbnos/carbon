@@ -149,6 +149,9 @@ msgstr "Aggiungi e Preleva"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Aggiungi una stampante nelle impostazioni di stampa per stampare le etichette direttamente."
 
+msgid "Add a row for each job or task you worked on."
+msgstr "Aggiungi una riga per ogni ordine di produzione o attività su cui hai lavorato."
+
 msgid "Add Authenticator App"
 msgstr "Aggiungi App Autenticatore"
 
@@ -157,6 +160,9 @@ msgstr "Aggiungi Inventario"
 
 msgid "Add Passkey"
 msgstr "Aggiungi Passkey"
+
+msgid "Add row"
+msgstr "Aggiungi riga"
 
 msgid "Add Sample"
 msgstr "Aggiungi Campione"
@@ -333,8 +339,17 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Schede"
 
+msgid "Certify and submit"
+msgstr "Certifica e invia"
+
+msgid "Certify and Submit"
+msgstr "Certifica e Invia"
+
 msgid "Change"
 msgstr "Cambia"
+
+msgid "Change Time"
+msgstr "Cambia ora"
 
 msgid "Changelog newsletter"
 msgstr "Newsletter Changelog"
@@ -344,6 +359,9 @@ msgstr "Caratteristica"
 
 msgid "Characteristics"
 msgstr "Caratteristiche"
+
+msgid "Charge Number"
+msgstr "Numero di imputazione"
 
 msgid "Chat"
 msgstr "Chat"
@@ -545,6 +563,15 @@ msgstr "Descrizione"
 msgid "Details"
 msgstr "Dettagli"
 
+msgid "Direct Research"
+msgstr "Ricerca Diretta"
+
+msgid "Direct Supervision"
+msgstr "Supervisione Diretta"
+
+msgid "Direct Support"
+msgstr "Supporto Diretto"
+
 msgid "Dispatch not found"
 msgstr "Intervento di manutenzione non trovato"
 
@@ -653,6 +680,9 @@ msgstr "Termina Operazioni"
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
 msgstr "Inserisci il valore di ogni ordine di produzione, o compila ogni ordine di produzione tutto insieme dalla prima riga. Le righe vuote vengono saltate."
 
+msgid "Enter hours from 0 to 24"
+msgstr "Inserisci le ore da 0 a 24"
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Inserisci il PIN per {0}"
@@ -730,6 +760,12 @@ msgstr "Errore durante il salvataggio della misurazione"
 msgid "Failed to save result"
 msgstr "Errore durante il salvataggio del risultato"
 
+msgid "Failed to save the hours"
+msgstr "Impossibile salvare le ore"
+
+msgid "Failed to submit the week"
+msgstr "Impossibile inviare la settimana"
+
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
 msgstr "Caricamento di {0} non riuscito"
@@ -802,6 +838,9 @@ msgstr "Intestazione {level}"
 msgid "Hide description"
 msgstr "Nascondi descrizione"
 
+msgid "Hours on {label}"
+msgstr "Ore su {label}"
+
 msgid "How Carbon looks in this browser."
 msgstr "Come appare Carbon in questo browser."
 
@@ -810,6 +849,9 @@ msgstr "Quanti sono stati effettivamente prelevati?"
 
 msgid "How many?"
 msgstr "Quanti?"
+
+msgid "I certify this statement"
+msgstr "Certifico questa dichiarazione"
 
 msgid "I understand and want to complete without issuing"
 msgstr "Comprendo e desidero completare senza prelevare"
@@ -926,6 +968,9 @@ msgstr "Kit"
 msgid "Labor"
 msgstr "Manodopera"
 
+msgid "Labor category"
+msgstr "Categoria di manodopera"
+
 msgid "Last completed"
 msgstr "Ultimo completato"
 
@@ -934,6 +979,9 @@ msgstr "Cognome"
 
 msgid "Last used"
 msgstr "Ultimo utilizzo"
+
+msgid "Late Entry"
+msgstr "Voce tardiva"
 
 msgid "Learn more"
 msgstr "Per saperne di più"
@@ -1108,6 +1156,9 @@ msgstr "Deve essere compreso tra {minValue} e {maxValue} {unitOfMeasureCode}"
 msgid "My Hours"
 msgstr "Le Mie Ore"
 
+msgid "My Time"
+msgstr "Mio orario"
+
 msgid "Name"
 msgstr "Nome"
 
@@ -1128,6 +1179,9 @@ msgstr "Successivo"
 
 msgid "Next step"
 msgstr "Passo successivo"
+
+msgid "Next week"
+msgstr "Settimana prossima"
 
 msgid "No"
 msgstr "No"
@@ -1155,6 +1209,9 @@ msgstr "Nessun numero di serie disponibile trovato"
 
 msgid "No available tracked entities found"
 msgstr "Nessuna entità tracciata disponibile trovata"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
 
 msgid "No dispatches assigned to you"
 msgstr "Nessun intervento di manutenzione assegnato"
@@ -1246,6 +1303,9 @@ msgstr "Nessun stock"
 msgid "No time entries for this week"
 msgstr "Nessuna registrazione oraria per questa settimana"
 
+msgid "No time this week"
+msgstr "Nessun orario questa settimana"
+
 msgid "No warehouse stock is on record for this item. You can still pick it — on-hand will go negative until the count is reconciled."
 msgstr "Non è registrata giacenza di deposito per questo articolo. Puoi comunque effettuare il prelievo — la giacenza disponibile diventerà negativa fino al riconciliamento dell'inventario."
 
@@ -1261,8 +1321,14 @@ msgstr "Nessun centro di lavoro esistente"
 msgid "None"
 msgstr "Nessuno"
 
+msgid "Not Qualified"
+msgstr "Non qualificato"
+
 msgid "Notes"
 msgstr "Note"
+
+msgid "Nothing matches your search."
+msgstr "Niente corrisponde alla tua ricerca."
 
 msgid "Nothing running"
 msgstr "Niente in esecuzione"
@@ -1424,6 +1490,9 @@ msgstr "Scegli uno stile e un avatar, o mescola per ottenere quelli nuovi."
 msgid "Pick tracked item"
 msgstr "Seleziona articolo tracciato"
 
+msgid "Pick what you worked on, then the labor category."
+msgstr "Seleziona quello su cui hai lavorato, quindi la categoria di manodopera."
+
 msgid "Picked"
 msgstr "Prelevato"
 
@@ -1481,6 +1550,9 @@ msgstr "Preventivo"
 msgid "Previous step"
 msgstr "Passo precedente"
 
+msgid "Previous week"
+msgstr "Settimana precedente"
+
 msgid "Print"
 msgstr "Stampa"
 
@@ -1514,6 +1586,9 @@ msgstr "Profilo"
 msgid "Progress"
 msgstr "Avanzamento"
 
+msgid "Project"
+msgstr "Progetto"
+
 msgid "Purchasing"
 msgstr "Acquisti"
 
@@ -1537,6 +1612,12 @@ msgstr "Coda vuota"
 
 msgid "Quotes"
 msgstr "Offerte"
+
+msgid "Reason for change"
+msgstr "Motivo della modifica"
+
+msgid "Reason for late entry"
+msgstr "Motivo dell'inserimento tardivo"
 
 msgid "Reason for rework"
 msgstr "Motivo della rilavorazione"
@@ -1714,6 +1795,9 @@ msgstr "Cerca strumenti di misura..."
 msgid "Search operators..."
 msgstr "Cerca operatori..."
 
+msgid "Search projects and tasks"
+msgstr "Cerca progetti e attività"
+
 msgid "Search..."
 msgstr "Cerca..."
 
@@ -1861,6 +1945,9 @@ msgstr "Esci"
 msgid "Sign out instead"
 msgstr "Esci invece"
 
+msgid "Signature pad"
+msgstr "Pad firma"
+
 msgid "Signed in as {stationName}"
 msgstr "Connesso come {stationName}"
 
@@ -1944,6 +2031,9 @@ msgstr "Sottoassieme {0} · {1} — mostrato da solo"
 msgid "Submit anonymously"
 msgstr "Invia in forma anonima"
 
+msgid "Submit week"
+msgstr "Invia settimana"
+
 msgid "Suggestion"
 msgstr "Proposta"
 
@@ -1968,8 +2058,14 @@ msgstr "Etichetta"
 msgid "The accent color used across Carbon."
 msgstr "Il colore di accento utilizzato in Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Il cambiamento e il suo motivo vengono conservati nella cronologia del foglio orario."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "La data è precedente alla finestra di voce. Il motivo viene conservato con la voce."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Gli ordini di produzione e i componenti che compongono questa esecuzione."
@@ -2022,6 +2118,9 @@ msgstr "Questo componente sarà scartato dal magazzino. Il suo requisito rimane 
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Questa unità sarà permanentemente scartata e verrà creato un nuovo numero seriale."
+
+msgid "This week"
+msgstr "Questa settimana"
 
 msgid "Thumbnail"
 msgstr "Miniatura"
