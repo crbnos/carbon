@@ -2,20 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  AccountDefaultsRow,
+  AccountImportContext,
+  ChartAccount
+} from "@carbon/database/account-import";
 import { describe, expect, it } from "vitest";
-import { parseAccountImportCsv } from "./account-import-csv";
+import {
+  defaultAccountsTemplate,
+  parseChartCsv,
+  parseDefaultsCsv
+} from "./account-import-csv";
 
-const HEADER = "Number,Name,Class,Type,Group,Carbon Account,Used For";
-
-describe("parseAccountImportCsv", () => {
-  it("reads a valid file", () => {
+describe("parseChartCsv", () => {
+  it("reads Carbon's own columns", () => {
     const csv = [
-      HEADER,
-      "1200,Accounts Receivable,Asset,Accounts Receivable,Current Assets,1110,Receivables",
-      "4000,Product Sales,revenue,,Revenue,4010; 4050,",
-      "6010,Office Supplies,Expense,Expense,Operating Expenses,,"
+      "Number,Name,Class,Type,Group",
+      "1200,Accounts Receivable,Asset,Accounts Receivable,Current Assets",
+      "4000,Product Sales,revenue,,Revenue"
     ].join("\n");
-    expect(parseAccountImportCsv(csv)).toEqual({
+    expect(parseChartCsv(csv)).toEqual({
       errors: null,
       rows: [
         {
@@ -24,8 +30,7 @@ describe("parseAccountImportCsv", () => {
           name: "Accounts Receivable",
           class: "Asset",
           accountType: "Accounts Receivable",
-          group: "Current Assets",
-          carbonAccounts: ["1110"]
+          group: "Current Assets"
         },
         {
           line: 3,
@@ -33,64 +38,186 @@ describe("parseAccountImportCsv", () => {
           name: "Product Sales",
           class: "Revenue",
           accountType: null,
-          group: "Revenue",
-          carbonAccounts: ["4010", "4050"]
-        },
-        {
-          line: 4,
-          number: "6010",
-          name: "Office Supplies",
-          class: "Expense",
-          accountType: "Expense",
-          group: "Operating Expenses",
-          carbonAccounts: []
+          group: "Revenue"
         }
       ]
     });
   });
 
-  it("refuses an empty file", () => {
-    expect(parseAccountImportCsv("")).toEqual({
-      rows: null,
-      errors: [{ code: "empty-file" }]
-    });
-  });
-
-  it("refuses a file with only a header", () => {
-    expect(parseAccountImportCsv(HEADER)).toEqual({
-      rows: null,
-      errors: [{ code: "empty-file" }]
-    });
-  });
-
-  it("names the missing columns", () => {
-    expect(parseAccountImportCsv("Number,Name\n1,Cash")).toEqual({
-      rows: null,
-      errors: [
-        {
-          code: "missing-columns",
-          columns: ["Class", "Group", "Carbon Account"]
-        }
-      ]
-    });
-  });
-
-  it("reports every row problem with its line", () => {
+  it("reads an export's column names and a type in the class column", () => {
     const csv = [
-      HEADER,
-      ",Cash,Asset,,Current Assets,1010,",
-      "1020,,Asset,,Current Assets,,",
-      "1030,Petty Cash,Asset,,,,",
-      "1040,Bank,Assets,,Current Assets,,"
+      "Account Number,Account Name,Account Type,Detail Type,Parent Grouping",
+      "1010,Operating Bank,Bank,Checking,Cash",
+      "2000,Trade Payables,Accounts Payable (A/P),,Current Liabilities"
     ].join("\n");
-    expect(parseAccountImportCsv(csv)).toEqual({
-      rows: null,
-      errors: [
-        { code: "missing-number", line: 2 },
-        { code: "missing-name", line: 3 },
-        { code: "missing-group", line: 4 },
-        { code: "invalid-class", line: 5, value: "Assets" }
+    expect(parseChartCsv(csv).rows).toEqual([
+      {
+        line: 2,
+        number: "1010",
+        name: "Operating Bank",
+        class: "Asset",
+        accountType: "Bank",
+        group: "Cash"
+      },
+      {
+        line: 3,
+        number: "2000",
+        name: "Trade Payables",
+        class: "Liability",
+        accountType: "Accounts Payable",
+        group: "Current Liabilities"
+      }
+    ]);
+  });
+
+  it("leaves out inactive accounts", () => {
+    const csv = [
+      "Code,Name,Category,Group,Status",
+      "1010,Bank,Asset,Cash,Active",
+      "1020,Old Bank,Asset,Cash,Inactive"
+    ].join("\n");
+    expect(parseChartCsv(csv).rows?.map((row) => row.number)).toEqual(["1010"]);
+  });
+
+  it("refuses an empty file and a file with only a header", () => {
+    expect(parseChartCsv("").errors).toEqual([{ code: "empty-file" }]);
+    expect(parseChartCsv("Number,Name,Group").errors).toEqual([
+      { code: "empty-file" }
+    ]);
+  });
+
+  it("names the columns it cannot find", () => {
+    expect(parseChartCsv("Number,Description\n1,Cash").errors).toEqual([
+      { code: "missing-columns", columns: ["Group"] }
+    ]);
+  });
+
+  it("reports every bad row with its line", () => {
+    const csv = [
+      "Number,Name,Class,Group",
+      ",Cash,Asset,Cash",
+      "1100,,Asset,",
+      "1200,Receivables,Furniture,Current Assets"
+    ].join("\n");
+    expect(parseChartCsv(csv).errors).toEqual([
+      { code: "missing-number", line: 2 },
+      { code: "missing-name", line: 3 },
+      { code: "missing-group", line: 3 },
+      { code: "invalid-class", line: 4, value: "Furniture" }
+    ]);
+  });
+});
+
+describe("parseDefaultsCsv", () => {
+  it("reads the template, a blank number as null", () => {
+    const csv = [
+      "Key,Default,Current Account,Account Number",
+      "receivablesAccount,Receivables,1110 Accounts Receivable,1200",
+      "prepaymentAccount,Prepayments,1250 Prepayments,"
+    ].join("\n");
+    expect(parseDefaultsCsv(csv)).toEqual({
+      errors: null,
+      rows: [
+        { line: 2, key: "receivablesAccount", number: "1200" },
+        { line: 3, key: "prepaymentAccount", number: null }
       ]
+    });
+  });
+
+  it("takes the label when the file has no key column", () => {
+    const csv = ["Default,Account Number", "Receivables,1200"].join("\n");
+    expect(parseDefaultsCsv(csv).rows).toEqual([
+      { line: 2, key: "Receivables", number: "1200" }
+    ]);
+  });
+
+  it("refuses a file without the account number column", () => {
+    expect(parseDefaultsCsv("Key,Number\nreceivablesAccount,1").errors).toEqual(
+      [{ code: "missing-columns", columns: ["Account Number"] }]
+    );
+  });
+
+  it("refuses a row with no key", () => {
+    expect(parseDefaultsCsv("Key,Account Number\n,1200").errors).toEqual([
+      { code: "missing-key", line: 2 }
+    ]);
+  });
+});
+
+describe("defaultAccountsTemplate", () => {
+  const account = (id: string, number: string, name: string): ChartAccount => ({
+    id,
+    number,
+    name,
+    class: "Asset",
+    accountType: "Other Current Asset",
+    incomeBalance: "Balance Sheet",
+    parentId: null,
+    isGroup: false,
+    isSystem: false,
+    active: true
+  });
+  const classAccounts = (accountId: string) => ({
+    assetAccountId: accountId,
+    accumulatedDepreciationAccountId: accountId,
+    depreciationExpenseAccountId: accountId,
+    writeOffAccountId: accountId,
+    writeDownAccountId: accountId,
+    lossOnDisposalAccountId: accountId,
+    gainOnDisposalAccountId: accountId
+  });
+  const ctx: AccountImportContext = {
+    chart: [
+      account("a1", "1110", "Receivables"),
+      account("a2", "1500", "PP&E")
+    ],
+    companies: [
+      { id: "c1", name: "Parent", hasCutover: false },
+      { id: "c2", name: "Child", hasCutover: false }
+    ],
+    defaultsByCompany: {
+      c1: { receivablesAccount: "a1" } as AccountDefaultsRow
+    },
+    fixedAssetClasses: [
+      {
+        id: "f2",
+        companyId: "c2",
+        name: "Vehicles",
+        accounts: classAccounts("a1")
+      },
+      {
+        id: "f1",
+        companyId: "c1",
+        name: "Vehicles",
+        accounts: classAccounts("a2")
+      }
+    ],
+    usage: {},
+    importingCompanyId: "c1"
+  };
+
+  it("names the current account of each default, the number left blank", () => {
+    const rows = defaultAccountsTemplate(ctx);
+    expect(rows.find((row) => row.Key === "receivablesAccount")).toEqual({
+      Key: "receivablesAccount",
+      Default: "Receivables",
+      Required: "Yes",
+      "Current Account": "1110 Receivables",
+      "Account Number": ""
+    });
+  });
+
+  it("lists each class name once, with the importing company's accounts", () => {
+    const classRows = defaultAccountsTemplate(ctx).filter((row) =>
+      row.Key.startsWith("asset-class:")
+    );
+    expect(classRows).toHaveLength(7);
+    expect(classRows[0]).toEqual({
+      Key: "asset-class:Vehicles:assetAccountId",
+      Default: "Vehicles – Asset",
+      Required: "Yes",
+      "Current Account": "1500 PP&E",
+      "Account Number": ""
     });
   });
 });

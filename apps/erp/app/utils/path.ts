@@ -129,7 +129,7 @@ export const path = {
         generatePath(
           `${api}/items/methods/${methodId}/bom.csv?withOperations=${withOperations}`
         ),
-      chartOfAccountsCsv: `${api}/accounting/chart-of-accounts.csv`,
+      defaultAccountsCsv: `${api}/accounting/default-accounts.csv`,
       chat: `${api}/ai/chat`,
       costCenters: `${api}/accounting/cost-centers`,
       countries: `${api}/countries?${build}`,

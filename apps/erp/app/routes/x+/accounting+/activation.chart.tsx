@@ -41,7 +41,9 @@ export default function AccountingActivationChartRoute() {
             <Trans>
               Carbon starts every company on its default chart. Import your own
               chart now, before the trial balance, which matches accounts by
-              number. To keep Carbon's chart, continue.
+              number. The import needs two files: your chart, and the default
+              accounts template filled with your account numbers. To keep
+              Carbon's chart, continue.
             </Trans>
           }
           actions={
