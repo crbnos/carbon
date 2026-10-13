@@ -1,10 +1,9 @@
 ---
 title: Categories & actions
-description: The two company-scoped lookups that sit alongside change notices — the category list and the reusable action-task templates — plus linking an action task to Linear.
+description: "The company-scoped lookups beside change notices: the category list and reusable action-task templates, plus linking a task to Linear."
 ---
 
-Two configuration lists live next to change notices in the Items nav. Both are company-scoped and edited by
-employees with the `parts` permission.
+The Items navigation contains two company-scoped change-notice configuration lists. Editing either requires `parts` permission.
 
 ## Change notice categories
 
@@ -12,8 +11,7 @@ employees with the `parts` permission.
 issue types in Quality. Carbon seeds eleven to start: *Design Improvement*, *Cost Reduction*, *Quality / Reliability Improvement*, *Supplier / Sourcing Change*, *Material or Component Change*, *Obsolescence / End-of-Life*, *Regulatory / Compliance*, *Safety*, *Manufacturing / Producibility*, *Customer Request*, and *Documentation Error / Correction*. Add,
 rename, or remove them to match how your shop classifies changes.
 
-Category is descriptive: it groups and filters change notices, but it doesn't change how release behaves. That
-job belongs to the [change type](/docs/reference/change-orders/change-types) on each affected item.
+Categories support grouping and filtering but do not affect release behavior. Release behavior comes from each affected item's [change type](/docs/reference/change-orders/change-types).
 
 ## Change notice actions
 
@@ -28,8 +26,7 @@ notice commonly needs. Carbon seeds seven:
 - Inventory Disposition (rework / scrap / use-as-is)
 - Notify Affected Parties
 
-A new change notice can seed its task list from the active templates. On the change notice, each task tracks a
-status — **Pending**, **In Progress**, **Completed**, or **Skipped** — plus an assignee, due date, and notes.
+A new change notice can copy its task list from active templates. Each task records **Pending**, **In Progress**, **Completed**, or **Skipped** status, plus an assignee, due date, and notes.
 
 <Callout type="note" title="Action tasks are freeform, not gates.">
 Tasks are a coordination checklist, not an approval workflow. A task's status never blocks a stage from
@@ -44,9 +41,7 @@ content](/docs/reference/change-orders/lifecycle#implementation-freezes-the-engi
 
 ## Link a task to Linear
 
-If engineering tracks its work in Linear, an action task can point at the ticket instead of duplicating it.
-This works exactly the way it does on a [quality issue's](/docs/reference/quality) action tasks — same dialog,
-same behavior.
+An action task can link to a Linear ticket, using the same workflow as [quality issue](/docs/reference/quality) action tasks.
 
 The affordance is a Linear icon on the task row, and it only appears when your company has the [Linear
 integration](/docs/integrations/project-management) connected. Once a task is linked, the icon is replaced by

@@ -1,35 +1,35 @@
-import { ONSHAPE_CLIENT_ID, ONSHAPE_OAUTH_REDIRECT_URL } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { Onshape } from "@carbon/ee";
+import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {});
-
-  if (!ONSHAPE_CLIENT_ID || !ONSHAPE_OAUTH_REDIRECT_URL) {
-    return data({ error: "Onshape OAuth not configured" }, { status: 500 });
-  }
-
-  const state = crypto.randomUUID();
-
-  const params = new URLSearchParams({
-    client_id: ONSHAPE_CLIENT_ID,
-    redirect_uri: ONSHAPE_OAUTH_REDIRECT_URL,
-    response_type: "code",
-    state
+  const { userId, companyId } = await requirePermissions(request, {
+    update: "settings"
   });
 
-  // Read for models/revisions/documents; Write to create translation (GLTF/PDF
-  // export) jobs and manage the release webhook subscription. Both scopes must be
-  // granted to the OAuth application in the Onshape dev portal, or Onshape refuses
-  // the authorization and redirects back with `error` instead of `code`.
-  //
-  // Appended outside URLSearchParams so the delimiter is `%20`: RFC 6749 scope is
-  // space-delimited, and URLSearchParams serializes a space as `+`, which only
-  // means "space" under form-encoding rules a query string doesn't guarantee.
-  const scope = ["OAuth2Read", "OAuth2Write"].join("%20");
+  const started = await beginOnshapeAuthorization(request, {
+    integrationId: Onshape.id,
+    userId,
+    companyId
+  });
 
-  const url = `https://oauth.onshape.com/oauth/authorize?${params}&scope=${scope}`;
+  // `error` is an integration-errors code; the client sends it to the
+  // integrations page, which renders the copy.
+  if (!started.ok) {
+    return data(
+      { error: started.reason },
+      { status: started.reason === "not-configured" ? 500 : 409 }
+    );
+  }
 
-  return { url };
+  return data(
+    { url: started.url },
+    { headers: { "Set-Cookie": started.cookie } }
+  );
 }

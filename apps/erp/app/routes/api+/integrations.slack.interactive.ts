@@ -1,4 +1,9 @@
-import { ERP_URL } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { ERP_URL, SLACK_SIGNING_SECRET } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
@@ -9,6 +14,7 @@ import {
   getSlackWorkspaceByTeamId
 } from "@carbon/ee/slack.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -18,7 +24,11 @@ import {
   getIssueWorkflowsList,
   insertIssue
 } from "~/modules/quality/quality.service";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+// nodejs runtime: the Slack signature check uses node:crypto.
+export const config = { runtime: "nodejs" };
 
 const logger = getLogger("erp", "slack", "interactive");
 
@@ -54,10 +64,58 @@ const slackInteractivePayloadSchema = z.object({
   callback_id: z.string().optional()
 });
 
+const SLACK_SIGNATURE_VERSION = "v0";
+const SLACK_MAX_REQUEST_AGE_SECONDS = 5 * 60;
+
+/**
+ * Verifies Slack's `x-slack-signature` HMAC over the RAW body. The payload's
+ * `team.id` picks the company this request acts on with the service role, and a
+ * Slack team id is not a secret — without this check anyone could POST a forged
+ * payload and create issues in any company that has Slack connected.
+ */
+function isValidSlackSignature(request: Request, rawBody: string): boolean {
+  if (!SLACK_SIGNING_SECRET) return false;
+
+  const timestamp = request.headers.get("x-slack-request-timestamp");
+  const signature = request.headers.get("x-slack-signature");
+  if (!timestamp || !signature) return false;
+
+  const timestampSeconds = Number.parseInt(timestamp, 10);
+  if (
+    !Number.isFinite(timestampSeconds) ||
+    Math.abs(Date.now() / 1000 - timestampSeconds) >
+      SLACK_MAX_REQUEST_AGE_SECONDS
+  ) {
+    return false;
+  }
+
+  const expected = `${SLACK_SIGNATURE_VERSION}=${createHmac(
+    "sha256",
+    SLACK_SIGNING_SECRET
+  )
+    .update(`${SLACK_SIGNATURE_VERSION}:${timestamp}:${rawBody}`)
+    .digest("hex")}`;
+
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    const formData = await request.formData();
-    const payloadString = formData.get("payload") as string;
+    const rawBody = await request.text();
+
+    if (!isValidSlackSignature(request, rawBody)) {
+      logger.error(
+        "Rejected Slack interactive request with invalid signature",
+        {
+          hasSigningSecret: Boolean(SLACK_SIGNING_SECRET)
+        }
+      );
+      return data({ error: "Invalid signature" }, { status: 401 });
+    }
+
+    const payloadString = new URLSearchParams(rawBody).get("payload");
 
     if (!payloadString) {
       return data({ error: "Missing payload" }, { status: 400 });
@@ -455,14 +513,16 @@ async function handleViewSubmission(
           channelId: configuredChannelId
         }
       ),
-      serviceRole.functions.invoke("create", {
-        body: {
-          type: "nonConformanceTasks",
-          id: ncrId,
+      serverFns
+        .system({
+          db: getDatabaseClient(),
           companyId,
           userId: employee.data?.id ?? "system"
-        }
-      })
+        })
+        .invoke("create", {
+          type: "nonConformanceTasks",
+          id: ncrId
+        })
     ]);
 
     if (tasksResult.error) {

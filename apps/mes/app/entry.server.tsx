@@ -1,11 +1,39 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import { installFormBodyGuard } from "@carbon/auth/middleware/form-body.server";
+import {
+  getNonce,
+  setStrictContentSecurityPolicy
+} from "@carbon/auth/middleware/security.server";
+import { getProcessPool } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
+import { createTracing } from "@carbon/logger/tracing.server";
+import { async } from "@carbon/utils";
+import { attachDatabasePool, waitUntil } from "@vercel/functions";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
 
 ensureLoggingConfigured();
+installFormBodyGuard();
+
+// Vercel freezes an instance once its response is sent: keep it up until idle
+// database connections have closed and background work has finished.
+if (process.env.VERCEL) {
+  attachDatabasePool(getProcessPool());
+  async.onBackground(waitUntil);
+}
+
+export const instrumentations = createTracing({
+  serviceName: "carbon-mes",
+  // Vercel can suspend the instance once the response is sent.
+  afterRequest: process.env.VERCEL ? (flush) => waitUntil(flush()) : undefined
+});
 
 const log = getLogger("mes");
 
@@ -44,12 +72,12 @@ if (
 
 export const streamTimeout = 60_000;
 
-// Baseline security response headers (NIST 800-171 3.13.13 control-of-mobile-code
-// + SC-7/SC-8 hardening). The CSP is a deliberately SAFE SUBSET: it omits
-// default-src/script-src so it cannot break the SPA's script/style/connect
-// loading, and sets only mobile-code / injection-vector controls — object-src
-// 'none' (no plugins), base-uri 'self', frame-ancestors 'self' (no cross-origin
-// framing/clickjacking while still allowing same-origin embeds like previews).
+// The ENFORCED CSP (NIST 800-171 3.13.13 control-of-mobile-code + SC-7/SC-8
+// hardening) is still this safe subset — object-src 'none' (no plugins),
+// base-uri 'self', frame-ancestors 'self' (no cross-origin framing while still
+// allowing same-origin embeds like previews). The strict nonce policy runs
+// report-only beside it until its reports are clean
+// (.ai/plans/2026-09-28-csp-csrf.md).
 const BASELINE_CSP_DIRECTIVES = [
   "object-src 'none'",
   "base-uri 'self'",
@@ -76,18 +104,17 @@ function composeContentSecurityPolicy(existing: string | null): string {
     : existing;
 }
 
-function applySecurityHeaders(headers: Headers) {
+// nosniff, X-Frame-Options, Referrer-Policy and HSTS are set on every response
+// (resource routes included) by securityMiddleware in root.tsx.
+function applySecurityHeaders(headers: Headers, nonce: string) {
   headers.set(
     "Content-Security-Policy",
     composeContentSecurityPolicy(headers.get("Content-Security-Policy"))
   );
-  headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("X-Frame-Options", "SAMEORIGIN");
-  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains"
-  );
+  setStrictContentSecurityPolicy(headers, nonce, {
+    supabaseUrl: SUPABASE_URL,
+    posthogHost: POSTHOG_API_HOST
+  });
 }
 
 /**
@@ -130,13 +157,15 @@ export default function handleRequest(
   routerContext: EntryContext,
   _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
-  applySecurityHeaders(responseHeaders);
+  const nonce = getNonce(_loadContext);
+  applySecurityHeaders(responseHeaders, nonce);
   return vercelHandleRequest(
     request,
     responseStatusCode,
     responseHeaders,
     routerContext,
     // @ts-expect-error
-    _loadContext // Vercel's handler still expecting AppLoadContext type
+    _loadContext, // Vercel's handler still expecting AppLoadContext type
+    { nonce }
   );
 }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
 import { cn, Td } from "@carbon/react";
 import type { Cell as CellType } from "@tanstack/react-table";
@@ -5,6 +9,7 @@ import { flexRender } from "@tanstack/react-table";
 import { memo, useState } from "react";
 import { LuPencil } from "react-icons/lu";
 import type { EditableTableCellComponent } from "~/components/Editable";
+import { CellContent } from "~/components/Table/components/CellContent";
 import { useMovingCellRef } from "~/hooks";
 import { getAccessorKey } from "../utils";
 
@@ -90,7 +95,7 @@ const Cell = <T extends object>({
         </div>
       ) : (
         <div ref={ref}>
-          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          <CellContent cell={cell} />
           {showEditAffordance && (
             <LuPencil
               aria-hidden

@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableMultiSelectProps } from "@carbon/form";
 import { CreatableMultiSelect } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
+import { useMemo, useRef, useState } from "react";
 import type { getStorageTypesList } from "~/modules/inventory";
 import StorageTypeForm from "~/modules/inventory/ui/StorageTypes/StorageTypeForm";
 import { path } from "~/utils/path";
@@ -50,17 +54,9 @@ const StorageTypes = (props: StorageTypesSelectProps) => {
 };
 
 export const useStorageTypes = () => {
-  const storageTypes =
-    useFetcher<Awaited<ReturnType<typeof getStorageTypesList>>>();
-
-  useMount(() => {
-    storageTypes.load(path.to.api.storageTypes);
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    storageTypes.load(path.to.api.storageTypes);
-  }, []);
+  const storageTypes = useLoaderQuery<
+    Awaited<ReturnType<typeof getStorageTypesList>>
+  >(path.to.api.storageTypes);
 
   const options = useMemo(() => {
     return (storageTypes.data?.data ?? []).map((c) => ({

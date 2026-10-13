@@ -1,6 +1,7 @@
 ---
 paths:
   - "packages/database/supabase/migrations/*tracked*.sql"
+  - "packages/utils/src/{batch-split,batch-merge,entity-drain,pick-guards}.ts"
   - "apps/erp/app/modules/inventory/{lineage.server,inventory.service,types}.ts"
   - "apps/erp/app/routes/x+/traceability+/**"
   - "apps/mes/app/services/operations.service.ts"
@@ -62,7 +63,7 @@ RLS: SELECT/INSERT gated on `get_companies_with_employee_role()`; UPDATE/DELETE 
 
 ## How genealogy edges are written
 
-Edges are created in **Supabase edge functions** (`packages/database/supabase/functions/`)
+Edges are created in **server functions** (`packages/server-functions/src/`)
 and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
@@ -153,12 +154,30 @@ survivor self-loop), and the ledger gets exactly **two** net-zero `Batch Split` 
 (−`q` parent, +`q` child) at the parent's `resolveTrackedEntityBin` bin. The legacy pre-flip
 convention (original departs, `"Split Entity ID"` tagged on the survivor) still exists on
 historical rows — filters that isolate the live root entity exclude BOTH pointer keys. The
-shared record builder is `functions/shared/batch-split.ts` (`buildBatchSplitRecords` /
+shared record builder is `@carbon/utils` `batch-split.ts` (`buildBatchSplitRecords` /
 `buildMergeRecords`), used by every writer: `post-picking` (batch), `issue`
 (`trackedEntitiesToOperation` + `maintenanceDispatchTrackedEntities`), `post-stock-transfer`
 (batch), `post-shipment` (SO + PO — PO posts genealogy only, no ledger), and ERP
 `quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
 PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
+
+**Lot merge (the deliberate inverse; spec `.ai/specs/2026-09-16-batch-materials-and-output-lots.md`):**
+`issue` case `mergeTrackedEntities` combines N **same-item, Available** entities into ONE
+new entity via `buildBatchMergeRecords` (`@carbon/utils` `batch-merge.ts`, the mirror of
+`buildBatchSplitRecords`). Parents keep their quantity as a historical record and flip
+`Consumed`; the merged entity gets a fresh id, the SUMMED quantity, the **earliest** parent
+`expirationDate`, and only those `attributes` every parent agrees on, plus
+`"Merged From Entity IDs"` provenance. It inherits the FIRST parent's `readableId` when the
+caller supplies none — an `Available` lot with a NULL batch number is unidentifiable on the
+floor (the split child inherits `parent.readableId` for the same reason), so callers that
+care about which number wins must pass the parents in their intended order. Genealogy is one
+`trackedActivity` `type: 'Merge'` with an input edge per parent (at its quantity) and one
+output edge for the merged entity; the ledger gets net-zero `Batch Merge` rows (−q at each
+parent's `resolveTrackedEntityBin`, +Σq at the first parent's). Distinct from
+`buildMergeRecords` in `batch-split.ts`, which is the **merge-on-return** of a split child
+back into its own parent — same activity type, different operation. Reached from the MES
+batch-completion prompt and the ERP batch drawer's "Merge output lots"; both derive the
+parent ids server-side from the batch's membership (see `mes-job-operation-ui.md`).
 
 **Pick → consume → return lifecycle (batch/serial):** a **pick** (`post-picking`) is an
 `itemLedger` Transfer warehouse→lineside (the departing lineside lot is the split CHILD, and
@@ -168,7 +187,8 @@ the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
 bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
-policies) / `returnOperationRemainders` (at operation Done, only when
+policies) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
+that operation completed the job, otherwise only when
 `companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
 entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
 into its `"Split From Entity ID"` parent when the parent is Available/same-lot/same-bin (a
@@ -180,6 +200,86 @@ per jobMaterial:
 `max(0, Σ(picked − returned) − max(quantityIssued, owed))`, newest-line-first — never a bin
 sweep (the lineside bin is shared per work center). Spec:
 `.ai/specs/2026-08-04-picked-material-return-timing.md`.
+
+## Quantity integrity — the four invariants
+
+`trackedEntity.quantity` is a bare NUMERIC (no declared scale, per the DB
+conventions), so whatever float a writer hands it is what gets stored. A lot
+left holding `0.020000000000000018` after an earlier split reads "0.02" in every
+UI and behaves like 0.02 nowhere. Four rules follow, and they are shared code
+rather than convention because inlining them is how they drifted apart.
+
+**1. Round at the persist boundary.** Every write that moves a quantity rounds
+at internal scale (`round` from `@carbon/utils`). The whole settle is
+`settleQuantity({ quantity, status, refusal? })` in `@carbon/utils`
+`entity-drain.ts` — round, refuse a negative result, then apply
+rule 2 — and it takes the SETTLED figure, not a delta, so one signature serves
+the count path (snapshot delta) and the adjustment/unpick paths alike.
+`resolveCountedEntity` (post-inventory-count) is a thin wrapper that supplies
+its own recount message. Callers: `post-inventory-adjustment` (three drain
+paths), `post-inventory-count`, `create` (receipt split), `post-picking`
+(unpick child).
+
+**2. A drained lot is Consumed, not a husk.** `statusAfterQuantityChange`
+(same file) flips a lot that rounds to zero to `Consumed` — but a `Scrapped`
+lot stays `Scrapped` at zero, because it is a historical record and Unscrap is
+the only way back. **`Rejected` is NOT preserved today**; it is the other
+quality marker excluded from on-hand, and `correct-stock-movement` (which
+excludes only `Consumed`) can drive one to zero. Whether it should be preserved
+is an open question, not an oversight — see
+`.ai/plans/2026-09-22-tracked-entity-quantity-integrity.md`.
+
+**3. One split gate.** `isFullDraw(entityQuantity, drawQuantity)` in
+`@carbon/utils` `batch-split.ts` (`equals` on both rounded values) is how every
+writer decides split-or-take-whole, so a caller's decision and
+`buildBatchSplitRecords`' own refusals (`draw <= 0`, `draw >= parentQty`) can
+never disagree. A raw `===`/`<` on two stored floats can: a residue lot drawn for its
+own 0.02 read as PARTIAL, and the builder then threw `draw >= parentQty` as a
+500 on what the operator saw as a legitimate full pick — or minted a child
+entity holding 1.8e-17. Callers: `issue` (both children loops), `post-picking`,
+`post-stock-transfer`, `post-shipment` (all three split decisions, including an
+ad-hoc `draw + 0.00001 >= entityQty` epsilon that predated the helper),
+`post-inventory-adjustment` (partial scrap). A full draw also books the LOT's
+own rounded quantity, not the requested figure — the entity is flipped
+`Consumed` without its quantity being rewritten, so the ledger row has to agree
+with the lot it just emptied.
+
+**4. A pick accumulates under a lock.** `resolvePick` in
+`@carbon/utils` `pick-guards.ts` returns the NEW running total (never a
+replacement) or throws a typed `PickGuardError` — `already-picked`,
+`over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
+survives `defineServerFn`'s error mapping, so the caller gets a **400**, never a
+500, and both apps show its message with `getErrorMessage(error, fallback)`
+(`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
+the `pickingListLine` in every handler and the source lot in the batch pick,
+`post-stock-transfer` locks the line plus the entity (and, in the serial case,
+the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise
+both read "not on this transfer" and both post a Transfer pair).
+`resolveStockTransferPickForward` (`inventory.models.ts`) is the route-side
+pre-check that mirrors the same rounding so the two cannot disagree; the lock
+is what makes the server function authoritative.
+
+**The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
+upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`
+and never touched `status`, so editing a batch line down to 0 on a receipt whose lot
+had already gone Available left `0` + `Available` — the exact husk this rule forbids
+(fixed in `20260923220000_receipt-batch-tracking-settle-status.sql`, which drains to
+`Consumed` and revives a re-entered quantity to `On Hold`). Neither `settleQuantity`
+nor the `no-unrounded-tracked-quantity` check could see it: the check scans TypeScript
+only. The net that DOES cover SQL functions and triggers is the data-driven invariant
+`packages/checks/src/invariants/tracked-entity-zero-available.sql` — run it after
+touching any tracked-entity writer, in either language. The serial twin
+(`update_receipt_line_serial_tracking`) is unaffected: it always inserts quantity 1 and
+its UPDATE branch never writes quantity.
+
+The DB backstop is `trackedEntity_quantity_nonnegative`
+(`20260922191138_tracked-entity-quantity-nonnegative.sql`), a CHECK added
+**`NOT VALID`** so existing negative prod rows would not fail the deploy — so it
+guards new and updated rows only until a later migration `VALIDATE`s it. The
+static backstop is the `no-unrounded-tracked-quantity` conformance rule in
+`@carbon/checks`, which flags inline unrounded arithmetic in a
+`.updateTable("trackedEntity")` quantity set and a raw compare against a
+quantity read straight off a row. It has no baseline entries.
 
 **Gotcha:** the older `get_item_quantities_by_tracking_id` (`20260101163400`) still emits
 legacy `shelfId` / `shelfName` and joins the `shelf` table — both column sets exist; check

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Lua scripts for Redis rate limiting operations
  * These scripts ensure atomic operations for rate limiting
@@ -140,6 +144,29 @@ requestsInPreviousWindow = math.floor((1 - percentageInCurrent) * requestsInPrev
 
 local usedTokens = requestsInPreviousWindow + requestsInCurrentWindow
 return {tokens - usedTokens, tokens}
+`;
+
+/**
+ * Sliding Window Refund — give back one token a successful `limit()` consumed
+ *
+ * Decrements the first of KEYS that holds a positive count, never below zero.
+ * Current window first, then previous, so a refund that lands just after a
+ * window boundary still returns the token to the window that took it.
+ *
+ * KEYS[1] = current window key
+ * KEYS[2] = previous window key
+ *
+ * Returns: 1 when a token was returned, 0 when there was nothing to return
+ */
+export const slidingWindowRefundScript = `
+for _, key in ipairs(KEYS) do
+  local value = redis.call("GET", key)
+  if value and tonumber(value) > 0 then
+    redis.call("DECRBY", key, 1)
+    return 1
+  end
+end
+return 0
 `;
 
 /**

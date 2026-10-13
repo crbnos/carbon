@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   HStack,
@@ -12,8 +17,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect } from "react";
-import { useFetcher, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -35,18 +39,18 @@ const WorkflowForm = ({
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const fetcher = useFetcher<{ id: string } | { success: false }>();
+  const fetcher = useAction<{ id: string } | { success: false }>({
+    onSettled: (data) => {
+      if (data && "id" in data) {
+        navigate(path.to.workflow(data.id));
+      }
+    }
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
     ? !permissions.can("update", "workflows")
     : !permissions.can("create", "workflows");
-
-  useEffect(() => {
-    if (fetcher.data && "id" in fetcher.data) {
-      navigate(path.to.workflow(fetcher.data.id));
-    }
-  }, [fetcher.data, navigate]);
 
   return (
     <ModalDrawerProvider type="modal">

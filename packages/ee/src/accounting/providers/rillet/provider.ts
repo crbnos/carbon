@@ -1,4 +1,13 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { createHash } from "node:crypto";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -25,13 +34,20 @@ import {
 import type {
   Rillet,
   RilletBillCreate,
+  RilletChargeCreate,
+  RilletCreditMemoApplicationsRequest,
+  RilletCreditMemoCreate,
   RilletCustomerWrite,
   RilletInvoiceCreate,
   RilletJournalEntryCreate,
   RilletPaymentCreate,
   RilletProductWrite,
+  RilletReimbursementCreate,
+  RilletVendorCreditApplicationsRequest,
+  RilletVendorCreditCreate,
   RilletVendorWrite
 } from "./models";
+import { readCarbonExternalReference } from "./references";
 
 const RILLET_PRODUCTION_HOST = "https://api.rillet.com";
 const RILLET_SANDBOX_HOST = "https://sandbox.api.rillet.com";
@@ -230,9 +246,18 @@ export function buildRilletIdempotencyKey(args: {
 // \********************************************************/
 
 /**
- * Entities Rillet syncs in v1 — every one of them PUSH-ONLY (Carbon →
- * Rillet). Rillet is the ledger of record for what Carbon pushes; pulling
- * master data back is a follow-up.
+ * Entities whose AUTOMATIC sync is PUSH-ONLY (Carbon → Rillet). Carbon is
+ * the system of record for all of them, so no sweep, webhook or event ever
+ * pulls one on its own.
+ *
+ * `customer` and `vendor` are still pullable ON DEMAND: the "Import
+ * customers & vendors" action (`accounting-master-sync`) enqueues explicit
+ * `pull-from-accounting` ledger operations, which the drain routes to the
+ * syncer's pull path regardless of this direction — the same override the
+ * inbound webhook path uses. `owner: "carbon"` below is what keeps that
+ * safe: `BaseEntitySyncer.pullBatchFromAccounting` skips a record that is
+ * already linked, so a re-import can seed new Rillet contacts but can never
+ * overwrite a Carbon-owned one.
  */
 export const RILLET_PUSH_ONLY_ENTITIES = [
   "customer",
@@ -240,7 +265,11 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
   "item",
   "invoice",
   "bill",
-  "journalEntry"
+  "journalEntry",
+  "charge",
+  "creditMemo",
+  "supplierCredit",
+  "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -361,9 +390,19 @@ export class RilletProvider extends BaseProvider {
   static id = ProviderID.RILLET;
 
   readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
     transport: "rest",
     supportsWebhooks: true,
-    supportsJournalPush: true
+    supportsJournalPush: true,
+    // Rillet was the ONLY provider creating contacts without looking first —
+    // Xero searches by contact name, QuickBooks queries DisplayName, Ramp
+    // matches its spend vendors. Declaring these opts Rillet into the shared
+    // ladder (core/counterpart.ts), so a Carbon supplier whose Rillet twin a
+    // human typed in links instead of duplicating.
+    searchableCounterparts: ["customer", "vendor"],
+    // The same two lists back the master-data import; Rillet has no
+    // search-by-name endpoint, so listing IS how it answers both questions.
+    importableEntities: ["customer", "vendor"]
   };
 
   /** No cap: /invoice-payments `updated.gt` reaches arbitrarily far back. */
@@ -721,20 +760,103 @@ export class RilletProvider extends BaseProvider {
     });
   }
 
-  /** All Rillet customers (cursor-drained). Throws on API failure. */
+  // Memoized per provider INSTANCE. The contact import lists the full set
+  // once (to enqueue ids) and then each drained batch re-reads it through the
+  // customer/vendor syncer's fetchRemoteBatch — Rillet has no get-many
+  // endpoint, so without this a 10k-record import re-scans /customers once per
+  // 50-id batch (~200 full cursor drains). Reusing ONE provider across the
+  // whole import collapses that to a single drain per entity type. Not shared
+  // across provider instances, so an unrelated caller that wants fresh data
+  // constructs its own provider (as every sweep/webhook already does).
+  private listedCustomers?: Promise<Rillet.Customer[]>;
+  private listedVendors?: Promise<Rillet.Vendor[]>;
+
+  /** All Rillet customers (cursor-drained, memoized). Throws on API failure. */
   async listCustomers(): Promise<Rillet.Customer[]> {
-    return this.listPaginated<Rillet.Customer>(
+    this.listedCustomers ??= this.listPaginated<Rillet.Customer>(
       "/customers",
       (data) => data.customers as Rillet.Customer[] | undefined
-    );
+    ).catch((err) => {
+      // Don't cache a rejection — a retried batch must be able to list again.
+      this.listedCustomers = undefined;
+      throw err;
+    });
+    return this.listedCustomers;
   }
 
-  /** All Rillet vendors (cursor-drained). Throws on API failure. */
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`). Reuses the
+   * SAME memoized list the contact import drains, so a whole sync run costs one
+   * pass per entity type rather than one per record — Rillet has no
+   * search-by-name endpoint, so the list IS the search.
+   *
+   * `carbonReference` is read company-qualified: a Rillet record carrying
+   * ANOTHER Carbon instance's id must not look like ours.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    _keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    const carbonRef = (
+      references: Rillet.ExternalReference[] | undefined
+    ): string | null =>
+      readCarbonExternalReference(references, this.config.companyId);
+
+    if (kind === "vendor") {
+      return (await this.listVendors()).map((vendor) => ({
+        remoteId: vendor.id,
+        name: vendor.name ?? null,
+        email: vendor.email ?? null,
+        taxId: vendor.tax_id ?? null,
+        carbonReference: carbonRef(vendor.external_references)
+      }));
+    }
+
+    if (kind === "customer") {
+      // A Rillet customer carries `emails[]` (typed MAIN_SENDER/CC/BCC), not a
+      // single `email`, and has no tax id — so the ladder resolves a customer
+      // by carbonReference then name, never by tax id.
+      return (await this.listCustomers()).map((customer) => ({
+        remoteId: customer.id,
+        name: customer.name ?? null,
+        email:
+          customer.emails?.find((entry) => entry.type === "MAIN_SENDER")
+            ?.email ??
+          customer.emails?.[0]?.email ??
+          null,
+        taxId: null,
+        carbonReference: carbonRef(customer.external_references)
+      }));
+    }
+
+    return [];
+  }
+
+  /**
+   * Every remote id of a master-data kind, for the one-shot import. Reuses the
+   * SAME memoized lists the counterpart ladder drains, so an import that then
+   * pushes costs one pass per entity type rather than two.
+   */
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    if (kind === "customer") {
+      return (await this.listCustomers()).map((customer) => customer.id);
+    }
+    if (kind === "vendor") {
+      return (await this.listVendors()).map((vendor) => vendor.id);
+    }
+    return [];
+  }
+
+  /** All Rillet vendors (cursor-drained, memoized). Throws on API failure. */
   async listVendors(): Promise<Rillet.Vendor[]> {
-    return this.listPaginated<Rillet.Vendor>(
+    this.listedVendors ??= this.listPaginated<Rillet.Vendor>(
       "/vendors",
       (data) => data.vendors as Rillet.Vendor[] | undefined
-    );
+    ).catch((err) => {
+      this.listedVendors = undefined;
+      throw err;
+    });
+    return this.listedVendors;
   }
 
   // =================================================================
@@ -749,6 +871,75 @@ export class RilletProvider extends BaseProvider {
     const response = await this.request<unknown>("GET", path);
     if (response.error) return null;
     return unwrapRilletEntity<T>(response.data, envelopeKey);
+  }
+
+  private async deleteEntity(path: string, operation: string): Promise<void> {
+    const response = await this.request<unknown>("DELETE", path);
+    // The mapping survives a delete. A retry after a successful remote delete
+    // but failed local transaction must converge when the resource is absent.
+    if (response.error && response.code !== 404) {
+      throwRilletApiError(operation, response);
+    }
+  }
+
+  async deleteInvoice(id: string): Promise<void> {
+    await this.deleteEntity(`/invoices/${id}`, "void invoice");
+  }
+
+  async deleteBill(id: string): Promise<void> {
+    await this.deleteEntity(`/bills/${id}`, "void bill");
+  }
+
+  async deleteCharge(id: string): Promise<void> {
+    await this.deleteEntity(`/charges/${id}`, "void charge");
+  }
+
+  async deleteReimbursement(id: string): Promise<void> {
+    await this.deleteEntity(`/reimbursements/${id}`, "void reimbursement");
+  }
+
+  async deleteCreditMemo(id: string): Promise<void> {
+    await this.deleteEntity(`/credit-memos/${id}`, "void credit memo");
+  }
+
+  async deleteVendorCredit(id: string): Promise<void> {
+    await this.deleteEntity(`/vendor-credits/${id}`, "void vendor credit");
+  }
+
+  async deleteInvoicePayment(
+    invoiceId: string,
+    paymentId: string
+  ): Promise<void> {
+    await this.deleteEntity(
+      `/invoices/${invoiceId}/payments/${paymentId}`,
+      "void invoice payment"
+    );
+  }
+
+  async deleteBillPayment(billId: string, paymentId: string): Promise<void> {
+    await this.deleteEntity(
+      `/bills/${billId}/payments/${paymentId}`,
+      "void bill payment"
+    );
+  }
+
+  /**
+   * `DELETE /reimbursements/{reimbursement_id}/payments/{payment_id}` —
+   * VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/delete-a-reimbursement-payment,
+   * 2026-09-23), 204 on success. A Carbon payout that is voided must delete
+   * the REIMBURSEMENT payment, not a bill payment: the two id spaces are
+   * disjoint and `/bills/{reimbursementId}/payments/...` would 404 (or, worse,
+   * hit an unrelated bill).
+   */
+  async deleteReimbursementPayment(
+    reimbursementId: string,
+    paymentId: string
+  ): Promise<void> {
+    await this.deleteEntity(
+      `/reimbursements/${reimbursementId}/payments/${paymentId}`,
+      "void reimbursement payment"
+    );
   }
 
   private async writeEntity<T>(args: {
@@ -900,7 +1091,7 @@ export class RilletProvider extends BaseProvider {
     return this.readEntity<Rillet.Invoice>(`/invoices/${id}`, "invoice");
   }
 
-  /** Create an AR_ONLY invoice (Carbon invoices; Rillet carries the receivable). */
+  /** Create a native invoice (Carbon issues it; Rillet recognizes the posting). */
   async createInvoice(
     invoice: RilletInvoiceCreate,
     idempotencyKey?: string
@@ -931,6 +1122,188 @@ export class RilletProvider extends BaseProvider {
       payload: bill,
       idempotencyKey
     });
+  }
+
+  async getCharge(id: string): Promise<Rillet.Charge | null> {
+    return this.readEntity<Rillet.Charge>(`/charges/${id}`, "charge");
+  }
+
+  async getReimbursement(id: string): Promise<Rillet.Reimbursement | null> {
+    return this.readEntity<Rillet.Reimbursement>(
+      `/reimbursements/${id}`,
+      "reimbursement"
+    );
+  }
+
+  /** `POST /reimbursements` — an employee reimbursement (see `Rillet.ReimbursementSchema`). */
+  async createReimbursement(
+    reimbursement: RilletReimbursementCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.Reimbursement> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/reimbursements",
+      envelopeKey: "reimbursement",
+      operation: "create reimbursement",
+      payload: reimbursement,
+      idempotencyKey
+    });
+  }
+
+  /** `POST /charges` — a credit-card charge (see `Rillet.ChargeSchema`). */
+  async createCharge(
+    charge: RilletChargeCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.Charge> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/charges",
+      envelopeKey: "charge",
+      operation: "create charge",
+      payload: charge,
+      idempotencyKey
+    });
+  }
+
+  async getVendorCredit(id: string): Promise<Rillet.VendorCredit | null> {
+    return this.readEntity<Rillet.VendorCredit>(
+      `/vendor-credits/${id}`,
+      "vendor_credit"
+    );
+  }
+
+  /**
+   * `POST /vendor-credits` — Rillet's native AP credit document. Lines are
+   * account-coded (`line_items[].account_code`), so a supplier credit needs
+   * no product: the memo's reason account IS the GL binding.
+   */
+  async createVendorCredit(
+    vendorCredit: RilletVendorCreditCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.VendorCredit> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/vendor-credits",
+      envelopeKey: "vendor_credit",
+      operation: "create vendor credit",
+      payload: vendorCredit,
+      idempotencyKey
+    });
+  }
+
+  async getCreditMemo(id: string): Promise<Rillet.CreditMemo | null> {
+    return this.readEntity<Rillet.CreditMemo>(
+      `/credit-memos/${id}`,
+      "credit_memo"
+    );
+  }
+
+  /**
+   * `POST /credit-memos` — Rillet's native AR credit document. Every line
+   * REQUIRES `price.product_id`, `price.quantity` and `price.amount_per_unit`;
+   * there is no account-coded AR line variant anywhere in the API, which is
+   * why a customer credit resolves a reason-bound product first
+   * (`core/credit-reason-item.ts` + `createProduct`).
+   *
+   * Deliberately NOT a journal entry: a sandbox probe (2026-09-23) showed
+   * Rillet accepts a journal to the AR control account and SILENTLY DISCARDS
+   * `related_entity`, leaving the control balance moved with no subledger
+   * document behind it. Do not add a journal fallback.
+   */
+  async createCreditMemo(
+    creditMemo: RilletCreditMemoCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.CreditMemo> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/credit-memos",
+      envelopeKey: "credit_memo",
+      operation: "create credit memo",
+      payload: creditMemo,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * `POST /credit-memos/{id}/applications` — **FULL RECONCILE**. Rillet
+   * replaces the credit memo's ENTIRE application set with this body, so an
+   * entry omitted here is DELETED remotely. Callers must always pass the
+   * complete desired set (the credit memo syncer derives it from every
+   * `invoiceSettlement` row of the memo in one call), never one entry at a
+   * time.
+   *
+   * Returns nothing: the response body is not an entity envelope, so this
+   * goes through `request` directly rather than `writeEntity`.
+   */
+  async applyCreditMemo(
+    id: string,
+    applications: Rillet.CreditMemoApplication[],
+    idempotencyKey?: string
+  ): Promise<void> {
+    const body: RilletCreditMemoApplicationsRequest = { applications };
+    const response = await this.request<unknown>(
+      "POST",
+      `/credit-memos/${id}/applications`,
+      { body: JSON.stringify(body), idempotencyKey }
+    );
+    if (response.error) {
+      throwRilletApiError("apply credit memo", response);
+    }
+  }
+
+  /**
+   * `POST /vendor-credits/{id}/applications` — entries are
+   * `{ bill_id, amount }`; this side has **no `application_date`**. Carbon
+   * sends the complete set in one call, so it satisfies the AR
+   * full-reconcile rule too whatever this endpoint's own semantics are.
+   */
+  async applyVendorCredit(
+    id: string,
+    applications: Rillet.VendorCreditApplication[],
+    idempotencyKey?: string
+  ): Promise<void> {
+    const body: RilletVendorCreditApplicationsRequest = { applications };
+    const response = await this.request<unknown>(
+      "POST",
+      `/vendor-credits/${id}/applications`,
+      { body: JSON.stringify(body), idempotencyKey }
+    );
+    if (response.error) {
+      throwRilletApiError("apply vendor credit", response);
+    }
+  }
+
+  /**
+   * `POST /charges/{id}` — attach a receipt (PDF, JPEG or PNG) as multipart
+   * form data with a single file part. Bypasses `request()` because that
+   * pins `Content-Type: application/json`; fetch sets the multipart boundary
+   * itself when the body is a FormData. Throws on a non-2xx so the caller
+   * (best-effort by contract) can log and move on.
+   */
+  async uploadChargeDocument(
+    id: string,
+    file: { name: string; type: string; bytes: Uint8Array }
+  ): Promise<void> {
+    const credentials = getRilletApiKeyCredentials(this.auth.getCredentials());
+    const form = new FormData();
+    form.append(
+      "file",
+      new Blob([file.bytes as BlobPart], { type: file.type }),
+      file.name
+    );
+    const response = await this.http.request<unknown>(
+      "POST",
+      `/charges/${id}`,
+      {
+        body: form,
+        headers: {
+          Authorization: `Bearer ${credentials.apiKey}`,
+          "X-Rillet-API-Version": RILLET_API_VERSION,
+          Accept: "application/json"
+        }
+      }
+    );
+    if (response.error) throwRilletApiError("upload charge document", response);
   }
 
   /**
@@ -977,6 +1350,27 @@ export class RilletProvider extends BaseProvider {
    * [...] }` envelope are assumed to mirror `/invoices/{id}/payments`; not yet
    * confirmed against the live Rillet OpenAPI.
    */
+  /**
+   * `GET /reimbursements/{reimbursement_id}/payments` — VERIFIED against
+   * Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/list-reimbursement-payments, 2026-09-23):
+   * a `{ payments: [...] }` envelope, the same shape the bill-payment listing
+   * returns.
+   */
+  async listReimbursementPayments(
+    reimbursementId: string
+  ): Promise<Rillet.ReimbursementPayment[]> {
+    const response = await this.request<{
+      payments?: Rillet.ReimbursementPayment[];
+    }>("GET", `/reimbursements/${reimbursementId}/payments`);
+
+    if (response.error) {
+      throwRilletApiError("list reimbursement payments", response);
+    }
+
+    return response.data?.payments ?? [];
+  }
+
   async listBillPayments(billId: string): Promise<Rillet.BillPayment[]> {
     const response = await this.request<{
       payments?: Rillet.BillPayment[];
@@ -1081,6 +1475,39 @@ export class RilletProvider extends BaseProvider {
       path: `/bills/${billId}/payments`,
       envelopeKey: "payment",
       operation: "create bill payment",
+      payload: payment,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * Record a payment against one employee reimbursement.
+   *
+   * `POST /reimbursements/{id}/payments` — the AP-payout sibling of
+   * `createBillPayment`, and deliberately the same call shape: its request
+   * body is the identical required trio `{ amount, date, account_code }`
+   * (VERIFIED against Rillet's published OpenAPI,
+   * docs.api.rillet.com/reference/create-a-reimbursement-payment,
+   * 2026-09-23), and the response is flat
+   * (`{ id, status, reimbursement_id, amount, date, account_code }`), which
+   * `unwrapRilletEntity`'s flat fallback handles.
+   *
+   * `external_references` is NOT in the documented body for this endpoint —
+   * nor for `/bills/{id}/payments`, which nonetheless accepted it on the
+   * sandbox (2026-08-11). The shared `RilletPaymentCreate` therefore still
+   * carries it here; VERIFY on the sandbox before shipping, since an
+   * endpoint that rejects unknown fields would 400 the whole payout.
+   */
+  async createReimbursementPayment(
+    reimbursementId: string,
+    payment: RilletPaymentCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.ReimbursementPayment> {
+    return this.writeEntity({
+      method: "POST",
+      path: `/reimbursements/${reimbursementId}/payments`,
+      envelopeKey: "payment",
+      operation: "create reimbursement payment",
       payload: payment,
       idempotencyKey
     });

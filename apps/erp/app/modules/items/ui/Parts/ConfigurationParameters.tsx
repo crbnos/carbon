@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Array as ArrayInput,
   Combobox,
@@ -7,6 +11,7 @@ import {
   Submit,
   ValidatedForm
 } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   Card,
@@ -21,6 +26,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -57,7 +63,7 @@ import { SortableContext, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createPortal, flushSync } from "react-dom";
 import {
   LuCirclePlus,
@@ -66,7 +72,7 @@ import {
   LuGripVertical,
   LuKeySquare
 } from "react-icons/lu";
-import { useFetcher, useFetchers, useParams, useSubmit } from "react-router";
+import { useFetchers, useParams, useSubmit } from "react-router";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { ConfiguratorDataTypeIcon } from "~/components/Configurator/Icons";
 import { Enumerable } from "~/components/Enumerable";
@@ -111,13 +117,13 @@ export default function ConfigurationParametersForm({
 
   const materialShapeOptions = useShape();
   const submit = useSubmit();
-  const fetcher = useFetcher<typeof configurationParameterAction>();
-
-  useEffect(() => {
-    if (fetcher.data?.success === false) {
-      toast.error(t`Failed to update configuration parameter`);
+  const fetcher = useAction<typeof configurationParameterAction>({
+    onError: (data) => {
+      if (data?.success === false) {
+        toast.error(t`Failed to update configuration parameter`);
+      }
     }
-  }, [fetcher.data, t]);
+  });
 
   const groupDisclosure = useDisclosure();
   const deleteGroupDisclosure = useDisclosure();
@@ -171,9 +177,7 @@ export default function ConfigurationParametersForm({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter
-    })
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   return (
@@ -769,6 +773,7 @@ function ParameterGroup({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.edit}
                 onClick={() => {
                   flushSync(() => {
                     setSelectedGroup(group);
@@ -779,6 +784,7 @@ function ParameterGroup({
                 <Trans>Edit</Trans>
               </DropdownMenuItem>
               <DropdownMenuItem
+                shortcut={MENU_ITEM_SHORTCUTS.delete}
                 destructive
                 disabled={group.isUngrouped}
                 onClick={() => {
@@ -822,7 +828,14 @@ function ConfigurableParameter({
   const disclosure = useDisclosure();
   const deleteParameterDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof configurationParameterAction>();
+  const fetcher = useAction<typeof configurationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
+    }
+  });
 
   const {
     attributes,
@@ -846,13 +859,6 @@ function ConfigurableParameter({
     transform: CSS.Transform.toString(transform),
     transition
   };
-
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
-    }
-  }, [disclosure, fetcher.state]);
 
   const isUpdated = parameter.updatedBy !== null;
   const person = isUpdated ? parameter.updatedBy : parameter.createdBy;
@@ -1000,10 +1006,14 @@ function ConfigurableParameter({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     <Trans>Edit</Trans>
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteParameterDisclosure.onOpen}
                   >
@@ -1325,3 +1335,8 @@ export function hasDraggableData<T extends Active | Over>(
 
   return false;
 }
+
+// Declared after `coordinateGetter`. A module constant: a new options object
+// makes a new sensor, and with it new listeners for every draggable on every
+// render.
+const KEYBOARD_SENSOR_OPTIONS = { coordinateGetter };

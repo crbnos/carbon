@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Must load before any function module pulls in pdfjs (extract-document), whose
 // init runs `new DOMMatrix()` — undefined in the Node worker without this shim.
 import "@carbon/lib/shims";
+import { Edition } from "@carbon/utils";
 
 // Re-export the inngest client and helpers
 
@@ -21,6 +26,7 @@ export { inngest } from "./client.ts";
 import {
   auditFunction,
   embeddingFunction,
+  embeddingQueueFunction,
   eventQueueFunction,
   searchFunction,
   syncFunction,
@@ -29,16 +35,21 @@ import {
 } from "./functions/events";
 import { extractDocumentFunction } from "./functions/extraction";
 import {
-  accountingBackfillFunction,
   accountingConsolidationFunction,
+  accountingJournalBackfillFunction,
+  accountingMasterSyncFunction,
   accountingOutboundSweepFunction,
   accountingPullSweepFunction,
   accountingReconciliationFunction,
   jiraSyncFunction,
   linearSyncFunction,
+  mountPublishFunction,
+  mountSweepFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
   paperlessPartsFunction,
+  rampSweepFunction,
+  rampSyncFunction,
   slackDocumentAssignmentUpdateFunction,
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,
@@ -51,6 +62,7 @@ import {
 import {
   notifyFunction,
   sendEmailFunction,
+  sendPushFunction,
   sendSlackFunction
 } from "./functions/notifications";
 import {
@@ -62,7 +74,9 @@ import {
   mrpFunction,
   nightlyReplanFunction,
   notificationDigestFunction,
-  notificationPurgeFunction,
+  purgeInactiveCompaniesFunction,
+  recurringBillingFunction,
+  revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
@@ -71,6 +85,7 @@ import {
 import {
   assemblyConvertFunction,
   assemblyPlanFunction,
+  changelogDispatchFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFinalizeFunction,
@@ -79,6 +94,7 @@ import {
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  invoiceAutomateFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -102,6 +118,7 @@ export const functions = [
   // Notifications
   notifyFunction,
   sendEmailFunction,
+  sendPushFunction,
   sendSlackFunction,
   // Event handlers
   auditFunction,
@@ -111,6 +128,7 @@ export const functions = [
   webhookFunction,
   workflowFunction,
   embeddingFunction,
+  embeddingQueueFunction,
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,
@@ -127,6 +145,7 @@ export const functions = [
   companyTemplateFinalizeFunction,
   companyTemplateFunction,
   companyTemplateRevertFunction,
+  invoiceAutomateFunction,
   modelCompactFunction,
   modelOptimizeFunction,
   modelThumbnailFunction,
@@ -137,6 +156,7 @@ export const functions = [
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
+  changelogDispatchFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,
@@ -149,19 +169,29 @@ export const functions = [
   weeklyFunction,
   updateExchangeRatesFunction,
   notificationDigestFunction,
-  notificationPurgeFunction,
+  // Not registered off Cloud, so a self-hosted Inngest has nothing to invoke.
+  ...(process.env.CARBON_EDITION === Edition.Cloud
+    ? [purgeInactiveCompaniesFunction]
+    : []),
   workflowRunRetentionFunction,
+  revenueRecognitionProposalFunction,
+  recurringBillingFunction,
   // Integrations
   jiraSyncFunction,
   linearSyncFunction,
   paperlessPartsFunction,
-  accountingBackfillFunction,
+  accountingJournalBackfillFunction,
+  accountingMasterSyncFunction,
   accountingConsolidationFunction,
   accountingOutboundSweepFunction,
   accountingReconciliationFunction,
   accountingPullSweepFunction,
+  mountPublishFunction,
+  mountSweepFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
+  rampSyncFunction,
+  rampSweepFunction,
   syncExternalAccountingFunction,
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,

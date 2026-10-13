@@ -1,12 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { IconButton } from "@carbon/react";
+import {
+  BALLOON_CALLOUT_STROKE,
+  BALLOON_H_NORM,
+  BALLOON_W_NORM,
+  clippedBalloonToAnchorLine
+} from "@carbon/utils";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { Circle, Group, Layer, Stage, Text } from "react-konva";
-import { Document, Page } from "react-pdf";
+import { Circle, Group, Layer, Line, Stage, Text } from "react-konva";
+import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 
-const CALLOUT_STROKE = "#f97316";
+// Registered here, not in the client entry: this module is lazy, so the PDF
+// engine stays out of every page that shows no PDF.
+registerReactPdfWorker(pdfjs);
 
 export type DrawingBalloon = {
   id: string;
@@ -14,6 +27,10 @@ export type DrawingBalloon = {
   pageNumber: number;
   xCoordinate: number;
   yCoordinate: number;
+  regionX: number;
+  regionY: number;
+  regionWidth: number;
+  regionHeight: number;
   label: string;
 };
 
@@ -144,9 +161,28 @@ const InspectionDrawingPane = ({
               <Stage width={containerWidth} height={overlayHeight} listening>
                 <Layer>
                   {pageBalloons.map((balloon) => {
-                    // DB coordinates are normalized 0–1.
-                    const x = balloon.xCoordinate * containerWidth;
-                    const y = balloon.yCoordinate * overlayHeight;
+                    // DB coordinates are normalized 0–1: the balloon box's
+                    // top-left corner, and the anchor region it points at.
+                    const x =
+                      (balloon.xCoordinate + BALLOON_W_NORM / 2) *
+                      containerWidth;
+                    const y =
+                      (balloon.yCoordinate + BALLOON_H_NORM / 2) *
+                      overlayHeight;
+                    const region = {
+                      x: balloon.regionX * containerWidth,
+                      y: balloon.regionY * overlayHeight,
+                      w: balloon.regionWidth * containerWidth,
+                      h: balloon.regionHeight * overlayHeight
+                    };
+                    const linePoints = clippedBalloonToAnchorLine(
+                      x,
+                      y,
+                      balloonRadius,
+                      region.x + region.w / 2,
+                      region.y + region.h / 2,
+                      region
+                    );
                     const isActive =
                       balloon.inspectionFeatureId === activeFeatureId;
                     return (
@@ -167,11 +203,19 @@ const InspectionDrawingPane = ({
                           if (stage) stage.container().style.cursor = "";
                         }}
                       >
+                        {linePoints && (
+                          <Line
+                            points={linePoints}
+                            stroke={BALLOON_CALLOUT_STROKE}
+                            strokeWidth={2}
+                            listening={false}
+                          />
+                        )}
                         <Circle
                           x={x}
                           y={y}
                           radius={balloonRadius}
-                          stroke={CALLOUT_STROKE}
+                          stroke={BALLOON_CALLOUT_STROKE}
                           strokeWidth={isActive ? 3 : 2}
                           fill={
                             isActive
@@ -187,7 +231,7 @@ const InspectionDrawingPane = ({
                           text={balloon.label}
                           fontSize={balloonRadius}
                           fontStyle="bold"
-                          fill={CALLOUT_STROKE}
+                          fill={BALLOON_CALLOUT_STROKE}
                           listening={false}
                         />
                       </Group>

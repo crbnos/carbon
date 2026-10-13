@@ -1,0 +1,89 @@
+---
+title: API keys
+description: A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.
+---
+
+An <Term id="api-key">API key</Term> authenticates programmatic requests to Carbon. Each key belongs to one company and has explicit permission scopes independent of its creator. Manage keys under **Settings → API Keys**.
+
+<Callout type="tip" title="Connectors don't need a key">
+Claude.ai, Claude Desktop, and ChatGPT connect over **OAuth**. The connection inherits the authorizing user's role and company. Use an API key for clients without browser-based OAuth, including Claude Code, Cursor, VS Code, Codex, headless scripts, and CI. Stdio-only clients connect through `mcp-remote`. See [Authentication](/api/authentication) for both flows.
+</Callout>
+
+## Creating a key
+
+<Screenshot label="Settings → API Keys: the key list with masked previews, scopes, and rate limit, plus the one-time 'You can only see this key once' dialog" caption="The full key is shown exactly once at creation." />
+
+Select **New API Key**, enter a company-unique **Name**, optionally set **Expires At**, grant scopes, and save. A blank expiration means the key does not expire. Carbon displays the full key once and then stores only its SHA-256 hash and a five-character preview. Copy the key immediately; if it is lost, delete it and create another. The dialog also provides an MCP connection command.
+
+<Callout type="warn" title="The key is a bearer secret">
+Anyone holding the key can act as it, within its scopes. Store it in a secret manager, never commit it, and rotate (delete and recreate) if it leaks.
+</Callout>
+
+## Authenticating a request
+
+Send the key as a bearer token; the hosted Data API lives at `rest.carbon.ms`:
+
+```http
+GET /salesOrder?select=id,salesOrderId,status
+Host: rest.carbon.ms
+Authorization: Bearer crbn_your_key_here
+```
+
+API keys require no login or refresh flow. Carbon hashes each submitted key and checks its record, expiration, and rate limit before processing the request.
+
+<Callout type="note" title="Bearer at the edge, carbon-key underneath">
+`rest.carbon.ms` accepts `Authorization: Bearer crbn_…` and forwards the token internally in the `carbon-key` header. For direct PostgREST calls on a self-hosted installation, send `carbon-key: crbn_…` to `/rest/v1/<table>`. The MCP endpoint accepts the Bearer token in either deployment.
+</Callout>
+
+## Scopes and rate limit
+
+A key has only its stored `module_action` scopes, such as `sales_view` or `inventory_create`, and can access only its company. A key with no scopes can authenticate but cannot read or write data. Scope changes and deletion take effect immediately. On Carbon Cloud, API access requires the **Business** plan; Starter-plan requests return `403` regardless of scope. See [Licensing](/docs/platform/licensing).
+
+New keys allow **20 requests per minute**. Existing keys retain the rate limit shown in the **Rate Limit** column. All keys for a company share a separate limit of **60 requests per minute**. Neither limit is configurable. A rejected request returns `429` with `Retry-After` and `X-RateLimit-*` headers; retry after the specified interval.
+
+## What the key unlocks
+
+Use the **[Carbon API](/api)** by default. It validates input, updates derived data, and enforces permissions through Carbon's service layer. Each operation accepts the same arguments over HTTP at `POST /api/v1/{module}/{operation}` and through [MCP](/api/mcp). Operations are classified as `READ`, `WRITE`, or `DESTRUCTIVE` so clients can gate them by risk. The reference includes examples and an OpenAPI specification for generating [client SDKs](/api/sdks).
+
+The **[Data API](/api/data)** provides direct REST access to tables and views under the app's row-level security policies.
+
+<Callout type="warn" title="The Data API is outside the service layer">
+Data API writes bypass the service layer and do not recalculate derived values such as totals, statuses, or ledger entries. Use direct writes only when the Carbon API does not expose the required operation and you understand all affected data.
+</Callout>
+
+## Keys versus webhooks
+
+An **API key** authorizes requests to Carbon. A **[webhook](/docs/building/webhooks)** notifies your service when a subscribed record changes. They are independent: webhook payloads are not signed with an API key. A typical integration uses the webhook as a change notification, then fetches the current record with an API key.
+
+<Cards>
+  <Card title="Webhooks" href="/docs/building/webhooks">
+    Get an HTTP callback when a Carbon record changes, then pull the detail with your key.
+  </Card>
+  <Card title="Data API" href="/api/data">
+    The generated endpoint catalogue for every table and view.
+  </Card>
+</Cards>
+
+<AgentContext>
+## Internals and troubleshooting
+
+Key format is `crbn_` + random token; storage is SHA-256 hash + last-five preview. `insertApiKey`/`updateApiKey` strip rate-limit columns from any submission (`settings.service.ts:1282`). The 429 response headers come from `packages/auth/src/services/auth.server.ts:255`.
+
+### "API key lacks required permissions"
+The call needs a `module_action` scope the key doesn't carry — checked per request against the key's record (`packages/auth/src/services/auth.server.ts:295`), never the creator's permissions. Add the exact scope in the permission matrix; it applies immediately.
+
+### 403 on every call despite correct scopes
+On Carbon Cloud, API access is Business-tier: the key path blocks Starter-plan companies outright (`packages/auth/src/services/auth.server.ts:312-330`). Upgrade the plan; the key itself is fine. A 403 on a single operation is the scope problem above instead. Connectors (OAuth) hit the same plan gate through the identity they inherit.
+
+### "Rate limit exceeded"
+Over the key's per-minute limit, or over the company's 60/minute total across its keys; `X-RateLimit-Limit` carries the limit that refused it (`auth.server.ts:249`). Platform-controlled, no field to raise it. Honor `Retry-After`; if the ceiling is genuinely too tight, batch reads (PostgREST `in.(...)` filters, embedded relations) or talk to us.
+
+### "API key has expired"
+`expiresAt` is in the past (`auth.server.ts:227`). Expiry can't be extended on a used key — create a new one and swap it in.
+
+### "Invalid API key"
+The token didn't hash to a key (`auth.server.ts:217`): mistyped/truncated, or a deleted one. Verify the full value.
+
+### I lost the key / can't see it again
+Not possible by design — the full key is shown once at creation and only a hash is kept. Delete and recreate.
+</AgentContext>

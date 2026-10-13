@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateProductLabelZPL } from "@carbon/documents/zpl";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
 import {
-  getCompany,
   getCompanySettings,
   getDocumentTemplateConfig
 } from "~/modules/settings";
-import { resolveLabelLogo } from "~/modules/settings/labelLogo.server";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/modules/settings/labelLogo.server";
 
 import { path } from "~/utils/path";
 
@@ -21,7 +26,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, trackedEntities] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getTrackedEntitiesByMakeMethodId(client, id, companyId)
   ]);
 
   const url = new URL(request.url);
@@ -93,8 +98,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     "trackingLabel"
   );
 
-  const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   // Generate ZPL for each item
   const zplCommands = items.map((item) =>

@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { AsyncLocalStorage } from "node:async_hooks";
 import { configureSync, reset } from "@logtape/logtape";
 import { createLogRecorder } from "@logtape/testing";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { getLogger } from "./logger";
 import {
+  describeRequest,
   getRequestId,
   REQUEST_ID_HEADER,
   requestIdContext,
-  requestIdMiddleware
+  requestIdMiddleware,
+  requestMiddleware
 } from "./middleware.server";
 
 const recorder = createLogRecorder();
@@ -139,7 +145,9 @@ describe("requestIdMiddleware body logging", () => {
   });
 
   it("captures a form-urlencoded body and redacts sensitive fields", async () => {
-    const body = "email=a%40b.com&note=hi";
+    // email/phone/address are ordinary ERP business data and stay visible —
+    // hiding them made real request payloads unreconstructable from logs.
+    const body = "email=a%40b.com&apiToken=t0p&note=hi";
     const request = new Request("http://x/action", {
       method: "POST",
       body,
@@ -153,7 +161,8 @@ describe("requestIdMiddleware body logging", () => {
       async () => new Response("ok")
     );
     const captured = httpRecord()?.properties.body as Record<string, unknown>;
-    expect(captured.email).toBe("[REDACTED]");
+    expect(captured.email).toBe("a@b.com");
+    expect(captured.apiToken).toBe("[REDACTED]");
     expect(captured.note).toBe("hi");
   });
 
@@ -221,5 +230,53 @@ describe("requestIdMiddleware body logging", () => {
       async () => new Response("ok")
     );
     expect(httpRecord()?.properties.search).toBe("");
+  });
+});
+
+describe("describeRequest", () => {
+  it("puts what a shared route served into the access log line", async () => {
+    const request = new Request(
+      "http://x/api/inngest?fnId=carbon-event-queue",
+      {
+        method: "POST"
+      }
+    );
+    const context = makeContext();
+    const args = { request, context } as never;
+
+    await requestMiddleware(args, async () => {
+      describeRequest("carbon-event-queue");
+      return new Response("ok");
+    });
+
+    const access = recorder.records.find(
+      (record) => record.properties.pathname === "/api/inngest"
+    );
+    expect(access?.properties.detail).toBe("carbon-event-queue");
+    expect(access?.message.join("")).toContain(
+      "POST /api/inngest carbon-event-queue"
+    );
+  });
+
+  it("leaves the line alone for a request that says nothing", async () => {
+    const context = makeContext();
+    const args = {
+      request: new Request("http://x/dashboard"),
+      context
+    } as never;
+
+    // One middleware: the id is readable with no context in hand, and echoed.
+    let ambientId: string | null = null;
+    const response = (await requestMiddleware(args, async () => {
+      ambientId = getRequestId();
+      return new Response("ok");
+    })) as Response;
+    expect(ambientId).not.toBeNull();
+    expect(response.headers.get(REQUEST_ID_HEADER)).toBe(ambientId);
+
+    const access = recorder.records.find(
+      (record) => record.properties.pathname === "/dashboard"
+    );
+    expect(access?.properties).not.toHaveProperty("detail");
   });
 });

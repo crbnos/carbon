@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   TrackedEntityOption,
@@ -13,7 +17,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -36,10 +39,17 @@ import {
   TooltipTrigger,
   TrackedEntityPicker,
   toast,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import {
+  type ComponentProps,
+  Suspense,
+  useEffect,
+  useMemo,
+  useState
+} from "react";
 import {
   LuCheck,
   LuChevronDown,
@@ -53,6 +63,8 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Await, useFetcher, useLoaderData } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import ItemThumbnail from "~/components/ItemThumbnail";
+import { MesAppBar } from "~/components/MesAppBar";
+import { useMesBottomBar } from "~/components/MesBottomBar";
 import { PickingListStatus } from "~/components/PickingListStatus";
 import { ShortPickModal } from "~/components/ShortPickModal";
 import type { PickingListRecommendation } from "~/services/inventory.service";
@@ -61,7 +73,19 @@ import { isPickingListLocked } from "~/services/models";
 import type { UnresolvedPickingListLine } from "~/services/picking.service";
 import { getPickingListForExecution } from "~/services/picking.service";
 import { useItems } from "~/stores";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export const handle: Handle = {
+  realtime: [
+    { table: "pickingList", column: "id", param: "pickingListId" },
+    {
+      table: "pickingListLine",
+      column: "pickingListId",
+      param: "pickingListId"
+    }
+  ]
+};
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {});
@@ -101,6 +125,8 @@ type RecommendationsPromise = Promise<
 >;
 
 export default function PickingExecutionRoute() {
+  const bottomBarRef = useMesBottomBar();
+  const { isPhone } = useViewport();
   const { pickingList, recommendations } = useLoaderData<typeof loader>();
 
   const lines = pickingList.lines ?? [];
@@ -136,30 +162,38 @@ export default function PickingExecutionRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">{pickingList.pickingListId}</Heading>
-          <PickingListStatus status={pickingList.status} />
-        </div>
-        <div className="flex items-center gap-3 px-3">
-          <span className="text-sm text-muted-foreground tabular-nums">
-            {completedCount}/{lines.length} <Trans>lines</Trans>
-          </span>
-          <PickingListControls
-            pickingListId={pickingList.id}
-            status={pickingList.status}
-          />
-        </div>
-      </header>
+      <MesAppBar
+        title={pickingList.pickingListId}
+        subtitle={<Trans>Picking</Trans>}
+        back={{ to: path.to.picking }}
+      />
+      {!isPhone && (
+        <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center justify-between gap-2 border-b bg-card max-md:hidden">
+          <div className="flex items-center gap-2 px-2">
+            <SidebarTrigger />
+            <Heading size="h4">{pickingList.pickingListId}</Heading>
+            <PickingListStatus status={pickingList.status} />
+          </div>
+          <div className="flex items-center gap-3 px-3">
+            <span className="text-sm text-muted-foreground tabular-nums whitespace-nowrap">
+              {completedCount}/{lines.length} <Trans>lines</Trans>
+            </span>
+            <PickingListControls
+              pickingListId={pickingList.id}
+              status={pickingList.status}
+            />
+          </div>
+        </header>
+      )}
 
-      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4">
+      <main className="flex-1 min-h-0 w-full overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent p-4 max-md:pb-28">
         <div className="w-full max-w-5xl mx-auto pb-16">
           <VStack spacing={4} className="w-full">
-            {kits.map((kit) => (
+            {kits.map((kit, index) => (
               <PickingKitCard
                 key={kit.key}
                 kit={kit}
+                status={index === 0 ? pickingList.status : undefined}
                 pickingListId={pickingList.id}
                 isLocked={isLocked}
                 recommendations={recommendations}
@@ -168,6 +202,24 @@ export default function PickingExecutionRoute() {
           </VStack>
         </div>
       </main>
+      {isPhone && (
+        <div
+          ref={bottomBarRef}
+          data-mes-bottom-bar
+          className="fixed inset-x-0 bottom-0 z-20 flex items-center gap-3 border-t border-border bg-card px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] md:hidden"
+        >
+          <span className="shrink-0 whitespace-nowrap text-sm text-muted-foreground tabular-nums">
+            {completedCount}/{lines.length} <Trans>lines</Trans>
+          </span>
+          <PickingListControls
+            pickingListId={pickingList.id}
+            status={pickingList.status}
+            size="lg"
+            finishVariant="primary"
+            className="min-w-0 flex-1 [&_button]:w-full [&_button]:h-12"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -182,10 +234,16 @@ type FinishStatusResponse = {
 
 function PickingListControls({
   pickingListId,
-  status
+  status,
+  size = "md",
+  finishVariant = "secondary",
+  className
 }: {
   pickingListId: string;
   status: string;
+  size?: "md" | "lg";
+  finishVariant?: "primary" | "secondary";
+  className?: string;
 }) {
   const fetcher = useFetcher<FinishStatusResponse>();
   const isSubmitting = fetcher.state !== "idle";
@@ -232,10 +290,10 @@ function PickingListControls({
 
   return (
     <>
-      <HStack spacing={2}>
+      <HStack spacing={2} className={className}>
         {status === "Draft" && (
           <Button
-            size="md"
+            size={size}
             leftIcon={<LuPlay />}
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
@@ -246,8 +304,8 @@ function PickingListControls({
         )}
         {status === "In Progress" && (
           <Button
-            size="md"
-            variant="secondary"
+            size={size}
+            variant={finishVariant}
             leftIcon={<LuCheck />}
             isLoading={isSubmitting}
             isDisabled={isSubmitting}
@@ -355,11 +413,14 @@ function isLineResolved(line: Line) {
 
 function PickingKitCard({
   kit,
+  status,
   pickingListId,
   isLocked,
   recommendations
 }: {
   kit: Kit;
+  /** Phones: the list status, shown in the first kit's header row. */
+  status?: ComponentProps<typeof PickingListStatus>["status"];
   pickingListId: string;
   isLocked: boolean;
   recommendations: RecommendationsPromise;
@@ -379,10 +440,17 @@ function PickingKitCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>
-          {kit.jobReadableId ?? "Unknown Job"}
-          {kit.operationName ? ` · ${kit.operationName}` : ""}
-        </CardTitle>
+        <div className="max-md:flex max-md:items-start max-md:justify-between max-md:gap-2">
+          <CardTitle>
+            {kit.jobReadableId ?? "Unknown Job"}
+            {kit.operationName ? ` · ${kit.operationName}` : ""}
+          </CardTitle>
+          {status ? (
+            <span className="shrink-0 md:hidden">
+              <PickingListStatus status={status} />
+            </span>
+          ) : null}
+        </div>
         {kit.workCenterName && (
           <CardDescription>
             <Enumerable value={kit.workCenterName} />
@@ -391,7 +459,7 @@ function PickingKitCard({
       </CardHeader>
       <CardContent>
         <BarProgress progress={progress} className="mb-4" />
-        <div className="border rounded-lg">
+        <div className="border rounded-lg max-md:-mx-4 max-md:rounded-none max-md:border-x-0 max-md:border-b-0">
           {kit.lines.map((line, index) => (
             <PickLineItem
               key={line.id}
@@ -441,9 +509,57 @@ function PickLineItem({
     }
   }, [fetcher.data]);
 
-  const lineItem = line.item as { name: string; readableId: string } | null;
+  const lineItem = line.item as {
+    name: string;
+    readableId: string;
+    unitOfMeasureCode: string | null;
+  } | null;
   const item = items.find((i) => i.id === line.itemId);
   const itemName = item?.name ?? lineItem?.name ?? "";
+  // Pick quantities are in the picked item's own stock unit (a substituted
+  // line is already converted into the successor's units at generation).
+  const unitOfMeasureCode = lineItem?.unitOfMeasureCode ?? null;
+  const unitSuffix = unitOfMeasureCode ? ` ${unitOfMeasureCode}` : "";
+  const sourceMaterial = (
+    line as {
+      jobMaterial?: {
+        itemId?: string | null;
+        quantity?: number | string | null;
+        substitutionFactor?: number | string | null;
+        item?: {
+          readableId?: string | null;
+          itemSupersession?: {
+            conversionFactor?: number | string | null;
+          } | null;
+        } | null;
+      } | null;
+    }
+  ).jobMaterial;
+  const substitutedFrom =
+    sourceMaterial?.itemId && sourceMaterial.itemId !== line.itemId
+      ? (items.find((i) => i.id === sourceMaterial.itemId)
+          ?.readableIdWithRevision ??
+        sourceMaterial.item?.readableId ??
+        sourceMaterial.itemId)
+      : null;
+  const substitutedAssemblies = (() => {
+    if (!substitutedFrom || !sourceMaterial) return null;
+    const perAssembly = Number(sourceMaterial.quantity ?? 0);
+    if (!(perAssembly > 0)) return null;
+    const substitutionFactor = Number(sourceMaterial.substitutionFactor ?? 0);
+    const conversionFactor = Number(
+      sourceMaterial.item?.itemSupersession?.conversionFactor ?? 0
+    );
+    const factor =
+      substitutionFactor > 0
+        ? 1 / substitutionFactor
+        : conversionFactor > 0
+          ? conversionFactor
+          : null;
+    if (factor === null) return null;
+    const n = Number(line.quantityToPick ?? 0) / (perAssembly * factor);
+    return Number.isInteger(n) ? n : null;
+  })();
   const source = (line.storageUnit as { name?: string } | null)?.name;
   const availableQuantity = Number(
     (line as { availableQuantity?: number }).availableQuantity ?? 0
@@ -516,23 +632,26 @@ function PickLineItem({
           ? "bg-emerald-600"
           : quantityPicked > 0
             ? "bg-orange-500"
-            : "bg-red-600"
+            : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
     >
       {quantityPicked}/{quantityToPick}
+      {unitSuffix}
     </Badge>
   ) : (
-    <Count
-      count={isShort ? quantityPicked : quantityToPick}
+    <Badge
       className={cn(
         "text-white text-base tabular-nums",
         isFullyPicked
           ? "bg-emerald-600"
           : isShort
             ? "bg-orange-500"
-            : "bg-red-600"
+            : "bg-red-600 max-md:bg-muted max-md:text-foreground"
       )}
-    />
+    >
+      {isShort ? quantityPicked : quantityToPick}
+      {unitSuffix}
+    </Badge>
   );
 
   return (
@@ -546,17 +665,36 @@ function PickLineItem({
     >
       {/* Identity — item, part number, suggested lots, and (mobile) the count */}
       <div className="flex items-start justify-between gap-4 min-w-0 sm:flex-1">
-        <HStack spacing={4} className="min-w-0">
-          <ItemThumbnail
-            size="xl"
-            thumbnailPath={null}
-            type={(item?.type as "Part") ?? "Part"}
-          />
+        <HStack spacing={4} className="min-w-0 flex-1 max-md:space-x-3">
+          <div className="shrink-0 max-md:[&>*]:size-11 max-md:[&_svg]:size-7">
+            <ItemThumbnail
+              size="xl"
+              thumbnailPath={null}
+              type={(item?.type as "Part") ?? "Part"}
+            />
+          </div>
           <VStack spacing={1} className="min-w-0">
-            <p className="truncate text-base font-medium">{itemName}</p>
-            <p className="truncate font-mono text-sm text-muted-foreground">
+            <p className="w-full text-base font-medium md:truncate max-md:line-clamp-2">
+              {itemName}
+            </p>
+            <p className="w-full truncate font-mono text-sm text-muted-foreground">
               {item?.readableIdWithRevision ?? lineItem?.readableId}
             </p>
+            {substitutedFrom && (
+              <p className="truncate text-sm text-blue-700 dark:text-blue-300">
+                ↩{" "}
+                {substitutedAssemblies !== null ? (
+                  <Trans>
+                    picking in place of {substitutedFrom}, the item on the job,
+                    for {substitutedAssemblies} assemblies
+                  </Trans>
+                ) : (
+                  <Trans>
+                    picking in place of {substitutedFrom}, the item on the job
+                  </Trans>
+                )}
+              </p>
+            )}
             {isTracked && !isFullyPicked && (
               <RecommendedLots resolve={recommendations} lineId={line.id} />
             )}
@@ -600,7 +738,8 @@ function PickLineItem({
                 className="font-mono tabular-nums normal-case"
               >
                 {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
-                {isBatch && ` × ${Number(lot.quantityPicked ?? 0)}`}
+                {isBatch &&
+                  ` × ${Number(lot.quantityPicked ?? 0)}${unitSuffix}`}
               </Badge>
             ))}
           </HStack>
@@ -692,7 +831,7 @@ function PickLineItem({
               variant="secondary"
               onClick={() => setShortOpen(true)}
               isDisabled={isSubmitting}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none max-md:h-12"
             >
               <Trans>Short</Trans>
             </Button>
@@ -702,7 +841,7 @@ function PickLineItem({
               onClick={() => pick(quantityToPick)}
               isLoading={isSubmitting}
               isDisabled={isSubmitting}
-              className="flex-1 sm:flex-none"
+              className="flex-1 sm:flex-none max-md:h-12"
             >
               <Trans>Pick</Trans>
             </Button>
@@ -717,6 +856,7 @@ function PickLineItem({
           itemName={itemName}
           quantityToPick={quantityToPick}
           quantityPicked={quantityPicked}
+          unitOfMeasureCode={unitOfMeasureCode}
           onClose={() => setShortOpen(false)}
         />
       )}

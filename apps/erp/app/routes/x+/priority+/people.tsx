@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { formatDate } from "@carbon/utils";
+import { formatDate, redirect } from "@carbon/utils";
 import {
   getLocalTimeZone,
   now,
@@ -14,7 +18,7 @@ import { msg } from "@lingui/core/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useCallback, useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { useLoaderData } from "react-router";
 import {
   getEmployeeDepartments,
   getEmployeeShifts,
@@ -343,8 +347,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     weekAssignments = rangeAssignments.data ?? [];
     weekAbsences = rangeAbsences.data ?? [];
 
-    // The engine (Deno) owns the authoritative machine-availability ladder;
-    // this resolves the same rungs at day granularity for display.
+    // The engine (@carbon/planning) owns the authoritative machine-availability
+    // ladder; this resolves the same rungs at day granularity for display.
     let calendarHoursMap = new Map<string, Map<string, number>>();
     if (view === "capacity") {
       const wcShiftLinks = workCenterShiftRows.data ?? [];
@@ -440,7 +444,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     for (const row of employeeAbilities.data ?? []) {
       if (row.expiresAt && row.expiresAt.slice(0, 10) < date) continue;
       const ability = Array.isArray(row.ability) ? row.ability[0] : row.ability;
-      const name = ability?.name;
+      // The ability's name IS the linked process's name.
+      const process = Array.isArray(ability?.process)
+        ? ability?.process[0]
+        : ability?.process;
+      const name = process?.name;
       if (!name) continue;
       const set = byEmployee.get(row.employeeId) ?? new Set<string>();
       set.add(name);

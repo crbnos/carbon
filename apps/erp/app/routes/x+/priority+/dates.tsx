@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -20,8 +24,10 @@ import {
   Spinner,
   Switch,
   useLocalStorage,
+  useViewport,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import {
   endOfMonth,
   endOfWeek,
@@ -34,15 +40,11 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronLeft, LuChevronRight, LuSettings2 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useSearchParams
-} from "react-router";
+import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import { SearchFilter } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
@@ -569,13 +571,20 @@ function DateKanbanSchedule() {
   const [searchParams] = useSearchParams();
 
   const [items, setItems] = useState<JobItem[]>(initialItems);
+  // Phones keep their own settings and start without the product image, so
+  // more than one card fits on a screen; the Thumbnail toggle still applies.
+  const { isPhone } = useViewport();
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
-    defaultDisplaySettings
+    isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
+    isPhone
+      ? { ...defaultDisplaySettings, showThumbnail: false }
+      : defaultDisplaySettings
   );
 
+  // A reload hands over new objects for every card. Keeping the ones that did
+  // not change lets their memoized cards skip the render.
   useEffect(() => {
-    setItems(initialItems);
+    setItems((previous) => replaceEqualDeep(previous, initialItems));
   }, [initialItems]);
 
   const sortItems = useCallback((items: JobItem[]) => {
@@ -744,15 +753,17 @@ function DateKanbanSchedule() {
 
   return (
     <div className="flex flex-col h-full max-h-full overflow-auto relative">
-      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border">
-        <HStack>
+      <HStack className="px-4 py-2 flex justify-between bg-card border-b border-border max-md:flex-wrap max-md:gap-y-2 max-md:[&_button]:h-11 max-md:[&_button]:min-w-11">
+        <HStack className="max-md:w-full">
           <ScheduleNavigation />
-          <SearchFilter param="search" size="sm" placeholder="Search" />
+          <div className="contents max-md:block max-md:min-w-0 max-md:flex-1">
+            <SearchFilter param="search" size="sm" placeholder="Search" />
+          </div>
           <Filter filters={filters} />
         </HStack>
 
-        <HStack>
-          <HStack>
+        <HStack className="max-md:w-full">
+          <HStack className="max-md:min-w-0 max-md:flex-1">
             <Button variant="secondary" onClick={goToToday}>
               <Trans>Today</Trans>
             </Button>
@@ -764,7 +775,10 @@ function DateKanbanSchedule() {
             />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="min-w-[140px]">
+                <Button
+                  variant="secondary"
+                  className="min-w-[140px] max-md:min-w-0 max-md:flex-1"
+                >
                   {currentDateSpanLabel}
                 </Button>
               </DropdownMenuTrigger>

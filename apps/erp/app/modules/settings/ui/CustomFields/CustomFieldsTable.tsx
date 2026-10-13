@@ -1,4 +1,14 @@
-import { Button, HStack, MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Button,
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -39,6 +49,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuDatabase />
         }
       },
@@ -47,6 +58,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         header: t`Module`,
         cell: ({ row }) => <Enumerable value={row.original.module} />,
         meta: {
+          mobile: "P2",
           icon: <LuLayoutGrid />,
           filter: {
             type: "static",
@@ -59,6 +71,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
       },
       {
         header: t`Fields`,
+        meta: { mobile: "P2" },
         cell: ({ row }) => (
           <HStack className="text-xs text-muted-foreground">
             <LuList />
@@ -103,6 +116,7 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
             <Trans>New Field</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.view}
             onClick={() => {
               navigate(
                 `${path.to.customFieldList(row.table!)}?${params?.toString()}`

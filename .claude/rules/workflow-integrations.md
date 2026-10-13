@@ -133,7 +133,7 @@ as `null` — pieces branch on `undefined`.
 company. A company may connect several Google accounts, so integration connections get
 their own table.
 
-`integrationConnection` (`20260901173000_workflow-integration-connections.sql`) —
+`integrationConnection` (`20261013031247_workflow-integration-connections.sql`) —
 `id('icn')`, `companyId`, `pieceName`, `name`, `authType`, `accountLabel`, `metadata`,
 `secretRef`, `expiresAt`, `refreshingAt`, `status`, `lastError` + audit columns. Unique on
 `(companyId, pieceName, name)`. RLS is the `companyIntegration` shape: `settings_view` to
@@ -312,7 +312,7 @@ the SAME string as the piece name, so nothing has to map between the two.
   `SLACK_STATE_SECRET` are gone. `SLACK_OAUTH_REDIRECT_URL` keeps its name and may keep its
   deployed value: `api+/integrations.slack.oauth.ts` is now a 302 forwarder onto the
   connections callback, so no environment or Slack-app redirect change is needed to ship. Migration
-  `20260901173100_slack-connections-single-source.sql` backfilled existing installs. The
+  `20261013031318_slack-connections-single-source.sql` backfilled existing installs. The
   builder's "Connect …" link deep-links to `?tab=connections`.
 - `ui/Integrations/ConnectionsTab.tsx` is an `IntegrationFormTab` ("Accounts") on that card,
   listing the connected accounts with rename, Disconnect and Add account. It is the ONE place
@@ -393,7 +393,7 @@ in this path.
    NOTHING`): `companyIntegration.id` is an FK to `integration.id`, so without it
    `markIntegrationInstalled` fails the callback with a bare PostgREST error after the token
    is already in the vault. The `INSERT INTO "integration"` at the end of
-   `20260901173000_workflow-integration-connections.sql` is the shape (one row per piece).
+   `20261013031247_workflow-integration-connections.sql` is the shape (one row per piece).
 6. Check every action you expose ships an `outputSchema` — the generator refuses one
    that does not, and coverage is all-or-nothing per piece. Then run the generator and read
    its refusals: each unmappable prop is a decision — `omit` it (optional, or required with

@@ -1,11 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardAction,
   CardContent,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -13,6 +20,7 @@ import {
   File,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -21,12 +29,12 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
 import { LuAxis3D, LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Link, useFetchers, useRevalidator, useSubmit } from "react-router";
+import { Link, useFetchers, useSubmit } from "react-router";
 import {
   DocumentPreview,
   FileDropzone,
@@ -34,7 +42,7 @@ import {
   ModelOptimizedIndicator
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
@@ -108,19 +116,23 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getReadPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t]
+    [carbon, getReadPath, revalidator, t, company.id]
   );
 
   const downloadModel = useCallback(
@@ -164,16 +176,7 @@ const Documents = ({
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -182,33 +185,16 @@ const Documents = ({
     [getReadPath, t]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      for (const file of files) {
-        const fileName = getWritePath({ name: file.name });
-        toast.info(t`Uploading ${file.name}`);
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (
-          fileUpload.data?.path &&
-          sourceDocument &&
-          sourceDocumentId
-        ) {
+      await uploadFiles(files, {
+        getPath: (file) => getWritePath({ name: file.name }),
+        onSuccess: (file, uploadedPath) => {
+          if (!sourceDocument || !sourceDocumentId) return;
           toast.success(t`Uploaded: ${file.name}`);
           const formData = new FormData();
-          formData.append("path", fileUpload.data.path);
+          formData.append("path", uploadedPath);
           formData.append("name", file.name);
           formData.append("size", Math.round(file.size / 1024).toString());
           formData.append("sourceDocument", sourceDocument);
@@ -221,12 +207,12 @@ const Documents = ({
             fetcherKey: `${sourceDocument}:${file.name}`
           });
         }
-      }
+      });
       revalidator.revalidate();
     },
     [
+      uploadFiles,
       getWritePath,
-      carbon,
       revalidator,
       submit,
       sourceDocument,
@@ -250,7 +236,7 @@ const Documents = ({
             <Trans>Files</Trans>
           </CardTitle>
         </CardHeader>
-        <CardAction>
+        <CardAction className="max-md:hidden">
           <File
             isDisabled={!canUpdate}
             leftIcon={<LuUpload />}
@@ -267,7 +253,11 @@ const Documents = ({
       </HStack>
       <CardContent>
         <Table>
-          <Thead>
+          <Thead
+            className={cn(
+              allFiles.length === 0 && !modelUpload && "max-md:hidden"
+            )}
+          >
             <Tr>
               <Th>
                 <Trans>Name</Trans>
@@ -326,11 +316,15 @@ const Documents = ({
                               original (xbf rows included); only legacy rows
                               404 → surfaced as a toast. */}
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
                             onClick={() => downloadModel(modelUpload)}
                           >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.view}
+                            asChild
+                          >
                             <Link
                               to={
                                 modelUpload.modelId
@@ -381,7 +375,7 @@ const Documents = ({
                           <DocumentPreview
                             bucket="private"
                             pathToFile={getReadPath(file)}
-                            // @ts-ignore
+                            // @ts-expect-error
                             type={getDocumentType(file.name)}
                           >
                             {file.name}
@@ -415,7 +409,10 @@ const Documents = ({
                           />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                          <DropdownMenuItem onClick={() => download(file)}>
+                          <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.download}
+                            onClick={() => download(file)}
+                          >
                             <Trans>Download</Trans>
                           </DropdownMenuItem>
                           <DropdownMenuItem

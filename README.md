@@ -1,184 +1,319 @@
-<p align="center">
-   <a href="https://carbon.ms">
-      <img width="auto" height="100" alt="Carbon Logo" src="https://github.com/user-attachments/assets/177634ca-5c37-43e2-8d55-1b9f490866d5" />
-   </a>
-</p>
+<div align="center">
+  <a href="https://carbon.ms">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/carbon-word-dark.svg" />
+      <img height="72" alt="Carbon" src=".github/assets/readme/carbon-word-light.svg" />
+    </picture>
+  </a>
 
-<p align="center">
-    The open core for manufacturing
-    <br />
-    <br />
-    <a href="https://discord.gg/yGUJWhNqzy">Discord</a>
-    ·
-    <a href="https://carbon.ms">Website</a>
-    ·
-    <a href="https://docs.carbon.ms">Documentation</a>
+  <h3>Build hardware at the speed of software</h3>
+
+  <p>
+    Carbon combines ERP, MRP, MES and QMS.<br />
+    Plan materials, run the shop floor, manage quality and track actual costs in one system.
   </p>
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/Supabase-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Typescript-1a67f3?style=for-the-badge&logo=react&logoColor=white" alt="Typescript" />
-  <img src="https://img.shields.io/badge/React-23272F?style=for-the-badge&logo=react&logoColor=white" alt="React" />
-</p>
 
-![ERP Screenshot](https://github.com/user-attachments/assets/2e09b891-d5e2-4f68-b924-a1c8ea42d24d)
+  <p><strong>Hard tech unicorns build on Carbon.</strong></p>
 
-![MES Screenshot](https://github.com/user-attachments/assets/b04f3644-91aa-4f74-af8d-6f3e12116a6b)
+  <p>
+    <a href="https://app.carbon.ms"><strong>Start 30-day trial</strong></a> ·
+    <a href="https://carbon.ms/self-hosted"><strong>Self-host</strong></a> ·
+    <a href="https://docs.carbon.ms"><strong>Docs</strong></a> ·
+    <a href="https://docs.carbon.ms/api"><strong>API</strong></a> ·
+    <a href="https://docs.carbon.ms/api/mcp"><strong>MCP</strong></a> ·
+    <a href="https://discord.gg/yGUJWhNqzy"><strong>Discord</strong></a> ·
+    <a href="https://github.com/orgs/crbnos/projects/1/views/1"><strong>Roadmap</strong></a>
+  </p>
 
-## Does the world need another ERP?
+  <p>
+    <a href="https://github.com/crbnos/carbon/stargazers"><img src="https://img.shields.io/github/stars/crbnos/carbon?style=flat-square&logo=github&label=Stars&color=000000&labelColor=000000" alt="GitHub stars" /></a>
+    <a href="https://discord.gg/yGUJWhNqzy"><img src="https://img.shields.io/badge/Discord-000000?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
+    <img src="https://img.shields.io/badge/TypeScript-000000?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/React-000000?style=flat-square&logo=react&logoColor=white" alt="React" />
+    <img src="https://img.shields.io/badge/Postgres-000000?style=flat-square&logo=postgresql&logoColor=white" alt="Postgres" />
+    <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust" />
+    <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-000000?style=flat-square" alt="License: AGPL-3.0" /></a>
+  </p>
+</div>
 
-We built Carbon after years of building end-to-end manufacturing systems with off-the-shelf solutions. We realized that:
+<br />
 
-- Modern, API-first tooling didn't exist
-- Vendor lock-in bordered on extortion
-- There is no "perfect ERP" because each company is unique
+<a href="https://carbon.ms">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/assembly-dark.webp" />
+    <img alt="Carbon assembly instructions: step-by-step 3D work instructions authored from the CAD model" src=".github/assets/readme/assembly-light.webp" />
+  </picture>
+</a>
 
-We built Carbon to solve these problems ☝️
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/sales-orders-dark.webp" />
+        <img alt="Sales orders list with status, linked jobs and order totals" src=".github/assets/readme/sales-orders-light.webp" />
+      </picture>
+      <p align="center"><sub><b>One record from quote to cash.</b> Link quotes, orders, jobs and invoices.</sub></p>
+    </td>
+    <td width="33%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/bom-dark.webp" />
+        <img alt="Multi-level bill of materials with planning and supersession" src=".github/assets/readme/bom-light.webp" />
+      </picture>
+      <p align="center"><sub><b>Generate configurations from rules.</b> Control BOMs, routings and revisions.</sub></p>
+    </td>
+    <td width="33%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/traceability-dark.webp" />
+        <img alt="Lot and serial traceability graph" src=".github/assets/readme/traceability-light.webp" />
+      </picture>
+      <p align="center"><sub><b>Trace every unit to its source.</b> Follow lot and serial genealogy in both directions.</sub></p>
+    </td>
+  </tr>
+</table>
+
+<br />
+
+## Contents
+
+- [Why Carbon](#why-carbon)
+- [Features](#features)
+- [Get Carbon](#get-carbon)
+- [API & MCP](#api--mcp)
+- [Architecture](#architecture)
+- [Tech Stack](#tech-stack)
+- [Monorepo](#monorepo)
+- [Local Development](#local-development)
+- [Commands](#commands)
+- [Security](#security)
+- [Contributing](#contributing)
+- [License](#license)
+
+<br />
+
+## Why Carbon
+
+Manufacturing teams often run planning, production, quality and accounting in separate systems. That creates predictable problems:
+
+- BOMs and revisions are re-keyed between engineering and production
+- Material shortages surface after work has started
+- Job costs and quality records are reconstructed after the fact
+- Integrations depend on vendor-specific tools and consultants
+
+Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, own and extend**. Engineering, planning, production, quality and accounting update the same data, without synchronization jobs between separate product databases.
+
+Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext). It supports complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
+
+<br />
+
+## Features
+
+|                              |                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------- |
+| **ERP — Inventory & Costing** | Quotes, orders, purchasing, inventory, invoicing and actual job costs             |
+| **MRP — Planning**            | Demand, supply planning, versioned BOMs and routings, finite-capacity scheduling  |
+| **MES — Execution**           | Digital travelers, operator terminals, 3D instructions, barcode and labor capture |
+| **QMS — Quality**             | Inspections, FAI, nonconformance, CAPA, calibration and risk management           |
+| **Traceability**              | Forward and backward lot and serial genealogy                                     |
+| **Engineering**               | Multi-level BOMs, revisions, change orders, supersession and product configuration |
+| **Accounting**                | General ledger, journals, multi-entity, multi-currency and accounting integrations |
+| **Workflows**                 | Rule-based automation with triggers, actions and run history                      |
+| **Maintenance & Assets**      | Scheduled maintenance, fixed assets and kanban replenishment                      |
+| **API, Webhooks & MCP**       | Typed REST operations, event-driven webhooks and a permission-aware MCP server    |
+| **Custom Fields**             | Extend records without changing the core schema                                   |
+| **Integrations**              | Onshape, SolidWorks, Paperless Parts, Linear, Jira, Slack, Ramp, Stripe and Zebra |
+
+See the [full roadmap](https://github.com/orgs/crbnos/projects/1/views/1) for what's next.
+
+**Technical highlights**
+
+- Generated types shared by the database, application and API
+- Postgres row-level security and tenant-scoped records
+- Role- and attribute-based access for employees, customers and suppliers
+- Realtime database subscriptions
+- Shared identity and permissions across the application, API and MCP server
+- Explicit dependency graphs for manufacturing operations
+- Rust geometry services for STEP conversion and assembly motion planning
+
+<br />
+
+## Get Carbon
+
+| | |
+| --- | --- |
+| **Carbon Cloud** | Managed application, database, updates and backups. [Start a 30-day trial](https://app.carbon.ms) without a sales call. |
+| **Self-hosted** | Run Carbon in your VPC, on-prem or air-gapped. See the [self-hosting guide](https://carbon.ms/self-hosted). |
+| **Develop locally** | Run the application and supporting services from source. Follow [Local Development](#local-development). |
+
+<br />
+
+## API & MCP
+
+The [**Carbon API**](https://docs.carbon.ms/api) exposes the same manufacturing operations used by the application. Each operation validates its input, updates dependent records and enforces the authenticated identity's permissions. Operations are available through two interfaces with the same arguments:
+
+- **HTTP:** `POST https://app.carbon.ms/api/v1/{module}/{operation}`, with a published [OpenAPI spec](https://app.carbon.ms/api/v1/openapi.json) for [generating a typed client](https://docs.carbon.ms/api/sdks) in any language
+- **[MCP](https://docs.carbon.ms/api/mcp):** as tools for hosted or local AI agents, scoped to the permissions of the API key or signed-in user
+
+Create a key under **Settings → API Keys**, then:
+
+```bash
+curl -X POST https://app.carbon.ms/api/v1/sales/getSalesOrders \
+  -H "Authorization: Bearer $CARBON_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "args": { "limit": 10 } }'
+```
+
+Self-hosted deployments serve the same API at `/api/v1`. The [Data API](https://docs.carbon.ms/api/data) provides direct access to permitted tables and views when an operation is not available in the service layer.
+
+API keys and MCP are included with Business and Enterprise plans. Using them in a self-hosted deployment requires a commercial license.
+
+<br />
 
 ## Architecture
 
-Carbon is designed to make it easy for you to extend the platform by building your own apps through our API. We provide some examples to get you started in the [examples](https://github.com/crbnos/carbon/blob/main/examples) folder.
+ERP and MES are React Router apps over a single Postgres database. Permissions (row-level security), computed totals and change events live in the database itself; background work runs through Inngest, which calls back into the ERP to execute jobs. The [architecture guide](https://docs.carbon.ms/docs/building/architecture) follows one click all the way down.
+
+<a href="https://docs.carbon.ms/docs/building/architecture">
+  <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
+</a>
+
+## Building E2E Systems
+
+Carbon is intended to be the core of a bespoke end-to-end manufacturing system. We provide an `apps/starter` and allow you to build a custom sales and shop-floor engine with Carbon at the center.
 
 ![Carbon Functionality](https://github.com/user-attachments/assets/d73b3297-afb4-4bd4-a381-61b31a78aa38)
 
 ![Carbon Architecture](https://github.com/user-attachments/assets/e5532a5f-609c-4404-8706-aa9bd59e180b)
 
-Features:
+<br />
 
-- [x] ERP
-- [x] MES
-- [x] QMS
-- [x] Custom Fields
-- [x] Nested BoM
-- [x] Traceability
-- [x] MRP
-- [x] Configurator
-- [x] MCP Client/Server
-- [x] API
-- [x] Webhooks
-- [x] Accounting
-- [x] Capacity Planning
-- [ ] Simulation
-- [ ] [Full Roadmap](https://github.com/orgs/crbnos/projects/1/views/1)
+## Tech Stack
 
-Technical highlights:
+| Layer          | Technology                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| Apps           | [React Router 7](https://reactrouter.com) on [Vite](https://vite.dev), [TypeScript](https://www.typescriptlang.org/) |
+| UI             | [Tailwind 4](https://tailwindcss.com), [Radix](https://radix-ui.com), [React Aria](https://react-spectrum.adobe.com/react-aria/), [TanStack Table and Query](https://tanstack.com) |
+| Forms          | [Zod](https://zod.dev) with `@carbon/form`                                                       |
+| Database       | [Postgres](https://www.postgresql.org) with row-level security, [PostgREST](https://postgrest.org) and [Kysely](https://kysely.dev) |
+| API            | [oRPC](https://orpc.unnoq.com) with OpenAPI, [MCP](https://modelcontextprotocol.io) server       |
+| AI             | [AI SDK](https://ai-sdk.dev) (Anthropic, OpenAI)                                                  |
+| Jobs & events  | [Inngest](https://inngest.com)                                                                    |
+| Cache          | [Redis](https://redis.io)                                                                         |
+| 3D & CAD       | [three.js](https://threejs.org) / react-three-fiber; Rust with [OpenCASCADE](https://dev.opencascade.org) and [FCL](https://github.com/flexible-collision-library/fcl) |
+| Documents      | [React PDF](https://react-pdf.org), [React Email](https://react.email), [TipTap](https://tiptap.dev) |
+| i18n           | [Lingui](https://lingui.dev)                                                                      |
+| Tooling        | [pnpm](https://pnpm.io), [Turborepo](https://turbo.build), [Biome](https://biomejs.dev), [Vitest](https://vitest.dev) |
+| Docs           | [Next.js](https://nextjs.org) + [Fumadocs](https://fumadocs.dev)                                  |
+| Hosting        | [AWS](https://aws.amazon.com) via [SST](https://sst.dev), or self-hosted with Docker              |
 
-- [x] Unified auth and permissions across apps
-- [x] Full-stack type safety (Database → UI)
-- [x] Realtime database subscriptions
-- [x] Attribute-based access control (ABAC)
-- [x] Role-based access control (Customer, Supplier, Employee)
-- [x] Row-level security (RLS)
-- [x] Composable user groups
-- [x] Dependency graph for operations
-- [x] Third-party integrations
+<br />
 
-## Techstack
+## Monorepo
 
-- [React Router](https://reactrouter.com) – framework
-- [Typescript](https://www.typescriptlang.org/) – language
-- [Tailwind](https://tailwindcss.com) – styling
-- [Radix UI](https://radix-ui.com) - behavior
-- [Supabase](https://supabase.com) - database
-- [Supabase](https://supabase.com) – auth
-- [Redis](https://redis.io) - cache
-- [Inngest](https://inngest.com) - jobs
-- [Resend](https://resend.com) – email
-- [Lingui](https://lingui.dev) - i18n
-- [Vercel](https://vercel.com) – hosting
-- [Stripe](https://stripe.com) - billing
-- [Rust](https://www.rust-lang.org) – geometry service (FCL collision + OpenCASCADE CAD)
+A [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 
-
-## Codebase
-
-The monorepo follows the Turborepo convention of grouping packages into one of two folders.
-
-1. `/apps` for applications
-2. `/packages` for shared code
+```
+carbon
+├── apps         # ERP, MES and the Rust assembler
+├── packages     # shared TypeScript packages
+├── crates       # Rust crates behind the assembler (CAD conversion, collision, motion planning)
+└── docs         # docs.carbon.ms, with content and glossary as @carbon/content
+```
 
 ### `/apps`
 
-| Package Name | Description     | How to run                                          |
-| ------------ | --------------- | --------------------------------------------------- |
-| `erp`        | ERP Application | `pnpm dev` (boots stack + ERP via `crbn up` picker) |
-| `mes`        | MES             | `pnpm dev` (select MES in picker, or both)          |
-| `academy`    | Academy         | `pnpm dev:academy`                                  |
-| `starter`    | Starter         | `pnpm dev:starter`                                  |
-| `assembler`  | Geometry service (Rust): STEP → GLB + assembly motion planning | spawned by `crbn up` (needs a release binary — see [Installation](#installation)) |
-
-`pnpm dev` runs the per-worktree dev CLI (`crbn up`). ERP and MES are first-class — the CLI boots the docker stack, applies migrations, regenerates types/swagger, and spawns the selected apps behind portless. The `assembler` geometry service is spawned too when its release binary is present. Academy and starter are standalone Turborepo entries.
+| App         | Description                                                     |
+| ----------- | --------------------------------------------------------------- |
+| `erp`       | ERP: sales, purchasing, inventory, planning, quality, accounting |
+| `mes`       | MES: the shop floor app, run on tablets next to the machines    |
+| `assembler` | Rust geometry service: STEP → GLB and assembly motion planning  |
+| `academy`   | Training                                                        |
+| `starter`   | Example app built on the API                                    |
 
 ### `/packages`
 
-| Package Name        | Description                                                                |
-| ------------------- | -------------------------------------------------------------------------- |
-| `@carbon/database`  | Database schema, migrations and types                                      |
-| `@carbon/documents` | Transactional PDFs and email templates                                     |
-| `@carbon/ee`        | Integration definitions and configurations                                 |
-| `@carbon/config`    | Shared configuration (vitest, tsconfig, tailwind) across apps and packages |
-| `@carbon/jobs`      | Background jobs and workers                                                |
-| `@carbon/logger`    | Shared logger used across apps                                             |
-| `@carbon/react`     | Shared web-based UI components                                             |
-| `@carbon/kv`        | Redis cache client                                                         |
-| `@carbon/lib`       | Third-party client libraries (slack, resend)                               |
-| `@carbon/stripe`    | Stripe integration                                                         |
-| `@carbon/utils`     | Shared utility functions used across apps and packages                     |
+| Package                  | Description                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `@carbon/database`       | Schema, migrations, generated types and database clients                     |
+| `@carbon/auth`           | Authentication, RBAC, sessions, API keys and OAuth                           |
+| `@carbon/api`            | API contract: the generated operation manifest behind the Carbon API and MCP |
+| `@carbon/react`          | Shared UI components (Radix, React Aria, Tailwind)                           |
+| `@carbon/form`           | `ValidatedForm` and field components for zod + FormData                      |
+| `@carbon/jobs`           | Inngest background jobs: events, integrations, notifications, workflows      |
+| `@carbon/planning`       | MRP and scheduling engines                                                   |
+| `@carbon/server-functions` | Transactional writes shared by the apps, API and jobs (posting, issuing, converting) |
+| `@carbon/documents`      | PDFs, email templates, ZPL labels, QR and barcodes                           |
+| `@carbon/printing`       | Printer routing, label queue and ProxyBox delivery                           |
+| `@carbon/viewer`         | 3D models and animated assembly instructions (react-three-fiber)             |
+| `@carbon/files`          | File handling: images, HEIC, CAD formats                                     |
+| `@carbon/tiptap`         | Rich-text editor extensions and components                                   |
+| `@carbon/onboarding`     | Implementation Hub: guided company setup                                     |
+| `@carbon/notifications`  | Notification event taxonomy shared by apps and jobs                          |
+| `@carbon/workflows-core` | Community-licensed contracts for workflow triggers                           |
+| `@carbon/locale`         | Lingui i18n runtime for ERP and MES                                          |
+| `@carbon/lib`            | Server utilities: event system, Inngest client, SMTP, Slack                  |
+| `@carbon/kv`             | Redis client and rate limiting                                               |
+| `@carbon/env`            | Validated environment variables, secrets kept server-side                    |
+| `@carbon/logger`         | Isomorphic logger built on LogTape                                           |
+| `@carbon/utils`          | Pure shared utilities (dates, precision, BOM, formatting)                    |
+| `@carbon/stripe`         | Stripe billing (Carbon Cloud only)                                           |
+| `@carbon/ee`             | Enterprise features and integrations (commercial license)                    |
+| `@carbon/checks`         | Conformance checks that keep the codebase consistent                         |
+| `@carbon/dev`            | The `crbn` dev CLI: worktrees, Docker stacks, dev URLs                       |
+| `@carbon/harness`        | Harness for AI coding agents working on this repo                            |
+| `@carbon/config`         | Shared Vitest, TypeScript and Tailwind configuration                         |
 
-## Development
+<br />
 
-### Setup
+## Local Development
 
-1. Clone the repo into a public GitHub repository (or fork https://github.com/crbnos/carbon/fork). If want to make the repo private, you should [acquire a commercial license](https://carbon.ms/sales) to comply with the AGPL license.
-
-   ```sh
-   git clone https://github.com/crbnos/carbon.git
-   ```
-
-2. Go to the project folder
-
-   ```sh
-   cd carbon
-   ```
-
-Make sure that you have [Docker installed](https://docs.docker.com/desktop/install/mac-install/) on your system since this monorepo uses the Docker for local development.
-
-In addition you must configure the following external services:
-
-| Service | Purpose                    | URL                                                            |
-| ------- | -------------------------- | -------------------------------------------------------------- |
-| Posthog | Product analytics platform | [https://us.posthog.com/signup](https://us.posthog.com/signup) |
-| Stripe | Payments service | [https://dashboard.stripe.com/login](https://dashboard.stripe.com/login) |
-| Resend | Email service | [https://resend.com](https://resend.com) |
-
-Posthog has a free tier which should be plenty to support local development. If you're self hosting and you don't want to use Posthog, it's pretty easy to remove the analytics.
-
-### Installation
-
-First download and initialize the repository dependencies.
-
-This repo uses **pnpm** as its package manager. Enable Corepack so the correct pnpm version (pinned via `packageManager` in `package.json`) is used automatically:
+**Prerequisites:** [Docker](https://docs.docker.com/get-docker/), [Node.js](https://nodejs.org) 22 and [pnpm](https://pnpm.io) (via Corepack). On Windows, use WSL or Git Bash.
 
 ```bash
-$ corepack enable    # one-time: activates pnpm shim from packageManager field
+git clone https://github.com/crbnos/carbon.git && cd carbon
+corepack enable && pnpm install
+cp .env.example .env
+pnpm dev
 ```
 
-Then install dependencies:
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
+
+| Surface      | URL                      |
+| ------------ | ------------------------ |
+| ERP          | http://localhost:3000    |
+| MES          | http://localhost:3001    |
+| API          | http://localhost:54321   |
+
+Sign in as `test@carbon.ms`: the dev stack seeds that user and skips the magic link. To fill a company with a full demo story (items, BOMs, orders, jobs, inspections, journals), seed one of the industry datasets (`satellite`, `robotics`, `precision`, `motor`):
 
 ```bash
-$ nvm use            # use node v22
-$ pnpm install       # install dependencies
+pnpm db:seed:dev -- --email test@carbon.ms --dataset satellite
 ```
 
-#### Optional: the `assembler` geometry service
+No external accounts are needed to run locally. Email, Google/Microsoft sign-in, Stripe, PostHog and AI providers are all optional and configured in `.env`; see [environment variables](https://docs.carbon.ms/docs/platform/self-hosting/environment-variables).
+
+### Worktrees and the `crbn` CLI
+
+`pnpm dev` is shorthand for `crbn up --no-portless`. Run `source ./setup.sh` once to put `crbn` on your `PATH` and you get a separate, isolated stack per git worktree, so several branches can run side by side, each on its own HTTPS `.dev` URLs via [portless](https://github.com/vercel-labs/portless):
+
+```bash
+crbn checkout -b feat/my-thing   # new branch + worktree off HEAD
+crbn up                          # boot this worktree's stack at erp.<branch>.dev
+crbn checkout 760                # check out PR #760 into its own worktree
+crbn status | down | reset       # ports and health, stop, wipe and reboot
+```
+
+The full command reference is in the [local development guide](https://docs.carbon.ms/docs/building/local-development).
+
+<details>
+<summary><h3>Optional: the <code>assembler</code> geometry service</h3></summary>
 
 `assembler` is a Rust service (STEP → GLB + assembly motion planning) over C++ FCL and OpenCASCADE. ERP/MES run fine without it — set it up only if you need the 3D `/convert` and `/plan` endpoints.
 
 1. **Toolchain + native build deps** (macOS):
 
    ```bash
-   $ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if not already installed
-   $ brew install fcl cmake ninja draco                               # collision libs (+ libccd/eigen/octomap), build tools, Draco mesh compression
+   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh   # Rust, if not already installed
+   brew install fcl cmake ninja draco                               # collision libs (+ libccd/eigen/octomap), build tools, Draco mesh compression
    ```
 
    On Linux, install the equivalents from your package manager: `libfcl-dev libccd-dev libeigen3-dev liboctomap-dev libdraco-dev cmake ninja-build` plus a C/C++ toolchain.
@@ -188,230 +323,41 @@ $ pnpm install       # install dependencies
 2. **Build OCCT once** — a patched static OpenCASCADE, cached in `~/.cache/carbon-occt`. Slow (~15–30 min) but one-time per machine; re-running is a no-op once cached:
 
    ```bash
-   $ ./apps/assembler/scripts/build-occt.sh
+   ./apps/assembler/scripts/build-occt.sh
    ```
 
 3. **Build the service** — seconds once OCCT is cached (`build.rs` finds it automatically):
 
    ```bash
-   $ cargo build --release -p assembler
+   cargo build --release -p assembler
    ```
 
 `crbn up` spawns the binary when it's present. Verify it's up with `curl -sf "$ASSEMBLER_SERVICE_URL/health"` (the URL is in your worktree's `.env.local`) or by watching the `asm |` lines in the `crbn up` output. Without the binary the rest of the stack still runs — only `/convert` and `/plan` are unavailable.
 
-The dev stack (Postgres, GoTrue, Kong, Storage, Inngest, Inbucket, Studio, Realtime) is booted later by `crbn up` — see [Local dev CLI](#local-dev-cli-crbn) below. There is no separate "start the database" step.
+</details>
 
-### Local dev CLI (`crbn`)
+<details>
+<summary><h3>Restoring a production snapshot</h3></summary>
 
-[![](https://cdn.loom.com/sessions/thumbnails/690e6a4ec1c24216b56a22aa2667ba51-ee9275cabb59a0aa-full-play.gif#t=0.1)](https://www.loom.com/embed/690e6a4ec1c24216b56a22aa2667ba51)
+To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, fits the backup to your stack's auth/storage/realtime schemas, verifies that every index, constraint, trigger and policy landed, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types. If verification fails, it exits nonzero and applies no migrations.
 
-`crbn` is a small CLI at `packages/dev/bin/crbn` that wraps two things:
-
-- **Git worktrees** — every feature branch can live in its own checkout dir, so you can switch branches without stashing.
-- **Per-worktree docker compose stack** — each worktree gets its own Postgres / Supabase services on dynamic ports, isolated under `carbon-<slug>` compose project. Routing is handled by [portless](https://github.com/portless-dev/portless) (a local HTTPS reverse proxy that serves `*.dev` hostnames on `:443` with locally-trusted certs — installed automatically on first `crbn up`).
-
-> **Windows users:** the dev CLI (`crbn`, `setup.sh`) is POSIX-only and expects **WSL or Git Bash**. Native cmd.exe / PowerShell shells are not supported. From a WSL/Git Bash prompt, the standard flow (`./setup.sh`, `pnpm dev`, `crbn checkout …`) works the same as on macOS/Linux.
-
-Run `setup.sh` once to put `crbn` on your `$PATH` and install the `crbn` shell function (so `crbn checkout` can change cwd):
-
-```bash
-$ ./setup.sh                   # writes a sentinel block to ~/.zshrc or ~/.bashrc
-$ source ~/.zshrc              # or open a new shell
-$ crbn                         # shows commands
-```
-
-Common flows:
-
-```bash
-$ crbn checkout sid/cool-thing       # cd into worktree (creates if missing,
-                                     # auto-fetches from origin if needed)
-$ crbn checkout -b feat/new-thing    # new branch off origin/main + worktree
-$ crbn checkout sid/cool-thing --up  # …and boot the stack inside it
-$ crbn checkout 760                  # fetch GitHub PR #760 into a `pr-760`
-                                     # branch + worktree (fork PRs work too)
-$ crbn copy                          # re-sync .env from main checkout
-$ crbn up | down | reset | status    # per-worktree compose stack
-$ crbn new | list | remove           # interactive worktree management
-```
-
-`crbn up` flags:
-
-- `--no-migrate` — skip `supabase migration up` (use when schema is already current and you just want to re-boot containers fast)
-- `--no-regen` — skip regenerating `packages/database/src/types.ts` + `swagger-docs-schema.ts` (auto-skipped when `--no-migrate` is set, since no schema change implies no type drift)
-
-Files synced by `crbn copy` are listed under `package.json#crbn.copy` (defaults to `[".env"]`). To uninstall the rc block: `./setup.sh --uninstall`.
-
-Create an `.env` file and copy the contents of `.env.example` file into it
-
-```bash
-$ cp ./.env.example ./.env
-```
-
-1. **Social Sign In**: Signing in requires you to setup one of two methods:
-
-- Email requires a Resend API key (you'll set this up later on)
-- Sign-in with Google requires a Google auth client with these variables. [See the Supabase docs for instructions on how to set this up](https://supabase.com/docs/guides/auth/social-login/auth-google):
-  - Set `Authorized JavaScript origins` to `https://api.carbon.dev`
-  - Set `Authorized redirect URIs` to `https://api.carbon.dev/auth/v1/callback`
-  - **About the two API URLs you'll see:** each worktree has its own scoped Supabase URL (`https://<worktree>.api.dev`) for app traffic, **and** there is one stable alias `https://api.carbon.dev` registered on whichever worktree is currently `up`. The stable alias exists only so OAuth callbacks have a single registered redirect URI — one Google Console entry covers every worktree. Day-to-day, your app talks to its worktree-scoped URL; only the OAuth callback hits the stable alias.
-- You should set environment variables like the following.
-  - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID="******.apps.googleusercontent.com"`
-  - `SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="GOCSPX-****************"`
-
-2. **Supabase**: Backend services run inside the per-worktree docker stack — `crbn up` boots them and writes everything you need into `.env.local` automatically:
-
-- `SUPABASE_URL` — portless alias (e.g. `https://local-dev.api.dev`)
-- `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — keys minted per-worktree from a random `SUPABASE_JWT_SECRET`
-- `SUPABASE_DB_URL` — direct Postgres URL on a dynamic port
-
-`.env.local` is generated; do not commit it or hand-edit values that came from `crbn up` (they are re-derived on each boot). Put genuine secrets (OAuth client IDs, Stripe keys, Resend) in `.env` only.
-
-Run `crbn status` at any time to see the live port assignment and the URLs portless is serving.
-
-3. **Redis** (Caching): No setup needed for local dev — `crbn up` boots a shared Redis container and writes `REDIS_URL` into `.env.local` automatically (each worktree gets its own logical Redis DB). For self-hosted production, set `REDIS_URL` to any Redis-compatible endpoint (Upstash, AWS ElastiCache, etc.) in your prod environment.
-
-4. **Posthog** (Analytics): In Posthog go to [https://[region].posthog.com/project/[project-id]/settings/project-details](https://[region].posthog.com/project/[project-id]/settings/project-details) to find your Project ID and Project API key:
-
-- `POSTHOG_API_HOST=[https://[region].posthog.com]`
-- `POSTHOG_PROJECT_PUBLIC_KEY=[Project API Key starting 'phc*']`
-
-5. **Stripe** (Payment service) - [Create a stripe account](https://dashboard.stripe.com/login), add a `STRIPE_SECRET_KEY` from the Stripe `Settings > Developers` interface
-
-- `STRIPE_SECRET_KEY="sk_test_*************"`
-
-6. **Resend** (Email service) - [Create a Resend account](https://resend.com) and configure:
-
-- `RESEND_API_KEY="re_**********"`
-- `RESEND_DOMAIN="carbon.ms"` (or your domain, no trailing slashes or protocols)
-- `RESEND_AUDIENCE_ID="*****"` (Optional - required for contact management in `packages/jobs`)
-
-Resend is used for transactional emails (user invitations, email verification, onboarding). All three variables are stored in `packages/auth/src/config/env.ts`.
-
-Finally, boot the stack and the apps:
-
-```bash
-$ pnpm dev                # equivalent to `crbn up` — picker lets you choose ERP/MES
-```
-
-`crbn up` prints a summary box with the live URLs once the stack is healthy. Defaults look like:
-
-| Surface         | URL                                                            |
-| --------------- | -------------------------------------------------------------- |
-| ERP             | `https://<worktree>.erp.dev`                                   |
-| MES             | `https://<worktree>.mes.dev`                                   |
-| Supabase API    | `https://<worktree>.api.dev`                                   |
-| Supabase Studio | `https://<worktree>.studio.dev`                                |
-| Inngest         | `https://<worktree>.inngest.dev`                               |
-| Mail (Inbucket) | `https://<worktree>.mail.dev`                                  |
-| Postgres        | `postgresql://postgres:postgres@localhost:<PORT_DB>/postgres`  |
-
-`<worktree>` is derived from the branch name (e.g. `sid-local-dev` → `local-dev`). The main checkout drops the prefix and just uses `erp.dev`, `mes.dev`, etc. Ports for raw TCP services (Postgres, Inbucket, Inngest) are dynamic per-worktree — `crbn status` is the source of truth.
-
-Academy and starter still run on classic localhost ports via `pnpm dev:academy` / `pnpm dev:starter` (they are not part of the per-worktree stack).
-
-### Logging in
-
-For local development you don't need email or OAuth configured. `crbn up` seeds a
-smoke-test user (`test@carbon.ms`) and writes `DEV_BYPASS_EMAIL=test@carbon.ms`
-into `.env.local` for you. When that bypass email is set, signing in with it skips
-the magic link and logs you straight into the ERP:
-
-1. Open the ERP at the URL from the `crbn up` summary (e.g. `https://<worktree>.erp.dev/login`).
-2. Type `test@carbon.ms` into the email field.
-3. Click **Sign in with Email**.
-
-You'll land on the authenticated dashboard (`/x`) — no inbox check required. The
-same session cookie works for the MES app at `https://<worktree>.mes.dev`.
-
-> The bypass only applies to the exact address in `DEV_BYPASS_EMAIL` and only when
-> that user is active — it's a dev convenience, not present in production. Any other
-> email falls back to the normal magic-link / verification flow (which needs Resend
-> configured). To sign in as your own account instead, use the magic link and read it
-> from the local mail catcher at `https://<worktree>.mail.dev`.
-
-### Code Formatting
-
-This project uses [Biome](https://biomejs.dev/) for code formatting and linting. To set up automatic formatting on save in VS Code:
-
-1. Install the [Biome VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome)
-
-2. Add the following to your VS Code settings (`.vscode/settings.json` or global settings):
-
-```json
-"editor.codeActionsOnSave": {
-  "source.organizeImports.biome": "explicit",
-  "source.fixAll.biome": "explicit"
-},
-"editor.defaultFormatter": "biomejs.biome"
-```
-
-### Commands
-
-To add an edge function
-
-```bash
-$ pnpm run db:function:new <name>
-```
-
-To add a database migration
-
-```bash
-$ pnpm run db:migrate:new <name>
-```
-
-To add an AI agent
-
-```bash
-$ pnpm run agent:new <name>
-```
-
-To add an AI tool
-
-```bash
-$ pnpm run tool:new <name>
-```
-
-To stop the stack (keeps volumes — data preserved):
-
-```bash
-$ crbn down
-```
-
-To wipe the stack and start clean (destroys Postgres volume + flushes the redis db for this worktree):
-
-```bash
-$ crbn reset
-```
-
-To regenerate types or swagger schema manually (normally `crbn up` does this for you after applying migrations):
-
-```bash
-$ pnpm db:types          # → packages/database/src/types.ts + functions/lib/types.ts
-$ pnpm generate:swagger  # → packages/database/src/swagger-docs-schema.ts
-```
-
-To run a command against a single workspace, use `pnpm --filter`:
-
-```bash
-$ pnpm --filter @carbon/react test
-```
-
-To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types.
-
-1. Export a backup from your production Supabase project (`pg_dump` or Supabase Dashboard → Database → Backups).
+1. Export a backup of your production database with `pg_dump`.
 2. Run it from your worktree root:
+
    ```bash
-   $ crbn restore /path/to/db_cluster.backup
+   crbn restore /path/to/db_cluster.backup
    # …or for .dump archives:
-   $ crbn restore /path/to/postgres_YYYYMMDD.dump
+   crbn restore /path/to/postgres_YYYYMMDD.dump
    ```
+
    It prompts before replacing the database. The stack must already be running (`crbn up`) — a restore rewrites the `auth` and `storage` schemas, which GoTrue and Storage build through their own migrations when those containers boot, so `crbn restore` refuses rather than restore into an uninitialized stack.
 
    To also get local admin access, pass your production email — your account is upgraded to Admin in the companies it already belongs to and the password is reset locally:
+
    ```bash
-   $ crbn restore /path/to/backup.backup --admin-email you@example.com
+   crbn restore /path/to/backup.backup --admin-email you@example.com
    # Optional: set a custom local password (default: localpass)
-   $ crbn restore /path/to/backup.backup --admin-email you@example.com --admin-password mypass
+   crbn restore /path/to/backup.backup --admin-email you@example.com --admin-password mypass
    ```
 
    Useful flags: `--no-scrub-emails` keeps real addresses (see the warning below), `--mode prod` restores exactly as-is without localizing config/webhooks/integrations, `--no-migrate` / `--no-regen` skip the trailing steps, `--yes` skips the prompt.
@@ -422,91 +368,70 @@ To restore a production database snapshot locally, use `crbn restore`. It handle
 
 The underlying script, `scripts/restore-database.sh`, can still be invoked directly — it takes the same options as environment variables (`SCRUB_EMAILS`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `RESTORE_MODE`), but note it defaults to **not** scrubbing emails and leaves the trailing `pnpm db:migrate` / `pnpm db:types` to you.
 
-## API
+</details>
 
-The API documentation is located in the ERP app at `${ERP}/x/api/js/intro`. It is auto-generated based on changes to the database.
+<br />
 
-There are two ways to use the API:
+## Commands
 
-1. From another codebase using a supabase client library:
+| Command                            | Description                                                  |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `pnpm dev`                         | Boot the stack and apps on localhost                         |
+| `pnpm db:migrate:new <name>`       | Create a database migration                                  |
+| `pnpm db:migrate`                  | Apply pending migrations                                     |
+| `pnpm generate:types`              | Regenerate database types after a migration                  |
+| `pnpm db:seed:dev -- --dataset <key>` | Seed a demo company                                       |
+| `pnpm lint` / `pnpm test`          | Biome lint / unit tests                                      |
+| `pnpm exec turbo run typecheck --filter=<pkg>` | Typecheck one package                            |
+| `pnpm --filter <pkg> <cmd>`        | Run a command in one workspace                               |
 
-- [Javascript](https://supabase.com/docs/reference/javascript/introduction)
-- [Flutter](https://supabase.com/docs/reference/dart/introduction)
-- [Python](https://supabase.com/docs/reference/python/introduction)
-- [C#](https://supabase.com/docs/reference/csharp/introduction)
-- [Swift](https://supabase.com/docs/reference/swift/introduction)
-- [Kotlin](https://supabase.com/docs/reference/kotlin/introduction)
+This project uses [Biome](https://biomejs.dev/) for formatting and linting; install the [VS Code extension](https://marketplace.visualstudio.com/items?itemName=biomejs.biome) for format-on-save.
 
-2. From within the codebase using our packages.
+<br />
 
-### From another Codebase
+## Security
 
-First, set up the necessary credentials in environment variables. For the example below:
+**Found a vulnerability?** Please email [support@carbon.ms](mailto:support@carbon.ms) instead of opening a public issue. We respond within 3 business days and credit reporters once a fix ships. The full policy is in [SECURITY.md](.github/SECURITY.md).
 
-1. Navigate to settings in the ERP to generate an API key. Set this in `CARBON_API_KEY`
-2. Get the Supabase URL to call (this is `SUPABASE_URL` in your `.env` if hosting locally, e.g. http://localhost:54321). Set this as `CARBON_API_URL`.
-3. Get the `SUPABASE_ANON_KEY` e.g. from your .env file. Set this as `CARBON_PUBLIC_KEY`.
+Security is enforced by the database, not left to application code:
 
-If you're self-hosting you can also use the supabase service key instead of the public key for root access. In that case you don't need to include the `carbon-key` header.
+- **Tenant isolation in Postgres.** Every table is scoped to a company and guarded by row-level security, so a query can only see its own company's rows.
+- **Granular permissions.** Role-based access per module and action for employees, customers and suppliers, applied the same way in the app, the API and MCP.
+- **Scoped API keys.** Keys carry explicit permissions, are stored only as hashes and are rate limited per key.
+- **Sign-in.** Passkeys, SSO, and enforced two-factor authentication on the Business plan.
+- **Audit log.** A record of who changed what and when, on the Business plan.
+- **Your perimeter.** Deploy in your VPC, on-prem or air-gapped to keep CUI inside infrastructure you control while supporting ITAR and CMMC requirements.
 
-```ts
-import { Database } from "@carbon/database";
-import { createClient } from "@supabase/supabase-js";
+<br />
 
-const apiKey = process.env.CARBON_API_KEY;
-const apiUrl = process.env.CARBON_API_URL;
-const publicKey = process.env.CARBON_PUBLIC_KEY;
+## Contributing
 
-const carbon = createClient<Database>(apiUrl, publicKey, {
-  global: {
-    headers: {
-      "carbon-key": apiKey,
-    },
-  },
-});
+We welcome contributions of all sizes. Read [CONTRIBUTING.md](.github/CONTRIBUTING.md) to get started, and say hi in [Discord](https://discord.gg/yGUJWhNqzy). Good first issues are labelled [`good first issue`](https://github.com/crbnos/carbon/labels/good%20first%20issue).
 
-// returns items from the company associated with the api key
-const { data, error } = await carbon.from("item").select("*");
-```
+<a href="https://github.com/crbnos/carbon/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=crbnos/carbon&max=100" alt="Contributors" />
+</a>
 
-### From the Monorepo
+### Star history
 
-```tsx
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-const carbon = getCarbonServiceRole();
+<a href="https://star-history.com/#crbnos/carbon&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=crbnos/carbon&type=Date&theme=dark" />
+    <img alt="Star history chart" src="https://api.star-history.com/svg?repos=crbnos/carbon&type=Date" />
+  </picture>
+</a>
 
-// returns all items across companies
-const { data, error } = await carbon.from("item").select("*");
+<br />
 
-// returns items from a specific company
-const companyId = "xyz";
-const { data, error } = await carbon
-  .from("item")
-  .select("*")
-  .eq("companyId", companyId);
-```
+## License
 
+Carbon is open core. Everything in this repository is licensed under [AGPLv3](LICENSE), except the Enterprise files (`packages/ee` and any file whose name contains `.ee.`), which are under the [Carbon Commercial License](packages/ee/LICENSE). See [Licensing](https://docs.carbon.ms/docs/platform/licensing) for what that means in practice.
 
-## Migration Notes
+<br />
 
-### Trigger.dev to Inngest
-
-Background jobs have been migrated from [Trigger.dev](https://trigger.dev) to [Inngest](https://inngest.com). Key changes:
-
-- **Job definitions** moved from `packages/jobs/trigger/` to `packages/jobs/src/inngest/functions/`
-- **Triggering jobs** from app code uses `trigger()` and `batchTrigger()` from `@carbon/jobs` instead of `tasks.trigger()` from `@trigger.dev/sdk`
-- **Inngest dev server** runs via `npx inngest-cli@latest dev -u http://localhost:3000/api/inngest`
-- **Environment variables**: `TRIGGER_SECRET_KEY`, `TRIGGER_API_URL`, and `TRIGGER_PROJECT_ID` are no longer needed. Set `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` instead (not required for local dev).
-
-### Upstash to Local Redis
-
-The caching layer (`@carbon/kv`) no longer depends on Upstash. A standard Redis instance is used instead. The `REDIS_URL` environment variable still applies, but you can point it at any Redis-compatible server (including a local Docker container).
-
-### Supabase CLI to docker compose (`crbn`)
-
-Local dev no longer relies on `supabase start` / `supabase stop`. The full backend stack (Postgres 15, GoTrue, Kong, Storage, Realtime, Studio, Inngest, Inbucket, edge-runtime) runs from `packages/dev/docker/docker-compose.dev.yml` under a per-worktree compose project (`carbon-<slug>`), managed by `crbn up` / `down` / `reset`. Ports are allocated dynamically per worktree so multiple branches can run side-by-side. Key changes:
-
-- `pnpm db:start` / `db:stop` / `db:kill` / `db:build` are removed — use `crbn up` / `down` / `reset`.
-- `.env.local` is generated by `crbn up` (worktree-specific URLs, ports, JWT secret, anon/service keys). Genuine secrets stay in `.env`.
-- `pnpm db:migrate` now drives `supabase migration up --db-url $SUPABASE_DB_URL`; it falls back to the CLI's linked-project mode when `SUPABASE_DB_URL` is unset.
-- `pnpm db:types` generates types directly from `$SUPABASE_DB_URL` (no `supabase gen types --local`).
+<div align="center">
+  <sub>
+    Built by the <a href="https://carbon.ms">Carbon</a> team ·
+    <a href="https://discord.gg/yGUJWhNqzy">Join the Discord</a>
+  </sub>
+</div>

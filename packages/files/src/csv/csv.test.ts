@@ -1,0 +1,66 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { describe, expect, it } from "vitest";
+import { encodeCsv, encodeCsvTable, parseCsv } from "./csv";
+
+// stripCsvFormulaPrefix itself is pinned by apps/erp/app/utils/bom.test.ts;
+// these tests cover what the ENCODERS add on top of papaparse.
+
+describe("encodeCsv", () => {
+  it("is injection-safe and never ships [object Object]", () => {
+    const csv = encodeCsv([{ x: "=HYPERLINK()", y: { nested: true } }]);
+    expect(csv).toBe('x,y\r\nHYPERLINK(),"{""nested"":true}"');
+  });
+  it("strips formula prefixes from headers too (import-error re-exports echo uploaded headers)", () => {
+    const csv = encodeCsv([{ "=cmd|calc": "safe" }]);
+    expect(csv).toBe("cmd|calc\r\nsafe");
+  });
+  it("respects an explicit field order and empty value", () => {
+    const csv = encodeCsv([{ b: 1, a: 2 }], {
+      fields: ["a", "b", "c"],
+      emptyFieldValue: "-"
+    });
+    expect(csv).toBe("a,b,c\r\n2,1,-");
+  });
+  it("joins header-less pages into the same file as one encode", () => {
+    const fields = ["a", "b"];
+    const rows = [
+      { a: 1, b: "x" },
+      { a: 2, b: "y, z" },
+      { a: 3, b: '"q"' }
+    ];
+    const paged = [
+      encodeCsv(rows.slice(0, 2), { fields }),
+      encodeCsv(rows.slice(2), { fields, header: false })
+    ].join("\r\n");
+    expect(paged).toBe(encodeCsv(rows, { fields }));
+  });
+});
+
+describe("encodeCsvTable / parseCsv round trip", () => {
+  it("round-trips through parse, sanitizing string cells", () => {
+    const csv = encodeCsvTable(
+      ["part", "note"],
+      [
+        ["P-1", "line one\nline two"],
+        ["P-2", "=bad"]
+      ]
+    );
+    const { rows, fields } = parseCsv<{ part: string; note: string }>(csv);
+    expect(fields).toEqual(["part", "note"]);
+    expect(rows).toEqual([
+      { part: "P-1", note: "line one\nline two" },
+      { part: "P-2", note: "bad" }
+    ]);
+  });
+  it("trims headers and skips blank lines", () => {
+    const { rows, fields } = parseCsv(" a , b \n1,2\n\n3,4\n");
+    expect(fields).toEqual(["a", "b"]);
+    expect(rows).toEqual([
+      { a: "1", b: "2" },
+      { a: "3", b: "4" }
+    ]);
+  });
+});

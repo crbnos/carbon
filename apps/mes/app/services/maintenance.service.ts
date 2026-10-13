@@ -1,5 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { serverFns } from "@carbon/server-functions";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely } from "kysely";
 
 export async function getActiveMaintenanceDispatchesByLocation(
   client: SupabaseClient<Database>,
@@ -70,9 +77,13 @@ export async function getMaintenanceDispatch(
     .single();
 }
 
+// The employee's open event on ONE dispatch. Scoped to the dispatch (an open
+// event elsewhere must not hide this one) and tolerant of duplicates: a bare
+// `.maybeSingle()` errored on a second open row, the page read "not working",
+// and every Play click stacked another open event.
 export async function getActiveMaintenanceEventByEmployee(
   client: SupabaseClient<Database>,
-  employeeId: string
+  args: { dispatchId: string; employeeId: string; companyId: string }
 ) {
   return client
     .from("maintenanceDispatchEvent")
@@ -90,8 +101,12 @@ export async function getActiveMaintenanceEventByEmployee(
       )
     `
     )
-    .eq("employeeId", employeeId)
+    .eq("maintenanceDispatchId", args.dispatchId)
+    .eq("employeeId", args.employeeId)
+    .eq("companyId", args.companyId)
     .is("endTime", null)
+    .order("startTime", { ascending: false })
+    .limit(1)
     .maybeSingle();
 }
 
@@ -132,12 +147,16 @@ export async function startMaintenanceEvent(
     .single();
 }
 
+// Ends every open event the employee has on the dispatch, not just one id, so
+// a pause also closes any duplicate an earlier double-start left open.
 export async function endMaintenanceEvent(
   client: SupabaseClient<Database>,
   args: {
-    eventId: string;
+    dispatchId: string;
+    employeeId: string;
     endTime: string;
     updatedBy: string;
+    companyId: string;
   }
 ) {
   return client
@@ -146,9 +165,24 @@ export async function endMaintenanceEvent(
       endTime: args.endTime,
       updatedBy: args.updatedBy
     })
-    .eq("id", args.eventId)
-    .select("id")
-    .single();
+    .eq("maintenanceDispatchId", args.dispatchId)
+    .eq("employeeId", args.employeeId)
+    .eq("companyId", args.companyId)
+    .is("endTime", null)
+    .select("id");
+}
+
+// Reconcile the dispatches' labor postings with their time entries (the
+// post-maintenance-event server function — idempotent, so call it after any
+// entry ends or the dispatch completes).
+export async function postMaintenanceLabor(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: { maintenanceDispatchIds: string[]; companyId: string; userId: string }
+) {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-maintenance-event", args);
 }
 
 export async function updateMaintenanceDispatchStatus(
@@ -160,6 +194,7 @@ export async function updateMaintenanceDispatchStatus(
     actualStartTime?: string;
     actualEndTime?: string;
     completedAt?: string;
+    companyId: string;
   }
 ) {
   return client
@@ -172,6 +207,7 @@ export async function updateMaintenanceDispatchStatus(
       updatedBy: args.updatedBy
     })
     .eq("id", args.dispatchId)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
@@ -182,6 +218,7 @@ export async function assignMaintenanceDispatch(
     dispatchId: string;
     assignee: string;
     updatedBy: string;
+    companyId: string;
   }
 ) {
   return client
@@ -192,6 +229,7 @@ export async function assignMaintenanceDispatch(
       updatedBy: args.updatedBy
     })
     .eq("id", args.dispatchId)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
@@ -266,14 +304,19 @@ export async function addMaintenanceDispatchItem(
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
-  itemId: string
+  itemId: string,
+  companyId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceDispatchItem")
+    .delete()
+    .eq("id", itemId)
+    .eq("companyId", companyId);
 }
 
 export async function getMaintenanceDispatchItemTrackedEntities(
   client: SupabaseClient<Database>,
-  maintenanceDispatchItemId: string
+  maintenanceDispatchItemIds: string[]
 ) {
   return client
     .from("maintenanceDispatchItemTrackedEntity")
@@ -283,5 +326,5 @@ export async function getMaintenanceDispatchItemTrackedEntities(
       trackedEntity:trackedEntityId (id, quantity, status, readableId:sourceDocumentReadableId)
     `
     )
-    .eq("maintenanceDispatchItemId", maintenanceDispatchItemId);
+    .in("maintenanceDispatchItemId", maintenanceDispatchItemIds);
 }

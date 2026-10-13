@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import {
   getPurchaseOrder,
@@ -112,7 +117,9 @@ export default function NewPurchaseOrderLineRoute() {
     inventoryUnitOfMeasureCode: "",
     itemId: "",
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as MethodItemType,
+    // See PurchaseOrderExplorer — "Item" is the picker's generic mode and is
+    // not a valid line type.
+    purchaseOrderLineType: "Part" as MethodItemType,
     purchaseQuantity: 1,
     purchaseUnitOfMeasureCode: "",
     requiredDate: undefined,

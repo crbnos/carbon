@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { datetime } from "@carbon/utils";
 import {
   type ActionOutcome,
   type CatalogAction,
@@ -7,7 +10,8 @@ import {
   entityValue,
   REGISTRY_ENTRIES,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toPlainValue } from "./values";
 

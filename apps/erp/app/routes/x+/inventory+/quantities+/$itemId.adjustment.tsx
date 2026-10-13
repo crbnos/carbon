@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,14 +9,15 @@ import {
   dedupeViolations,
   evaluateLinesForSurface,
   isBlocked
-} from "@carbon/ee/storage-rules.server";
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   insertManualInventoryAdjustment,
   inventoryAdjustmentValidator
 } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -38,7 +43,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     validation.data;
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Business rule evaluation. Item rules fire on the `inventoryAdjustment`
+  // Business rule evaluation. Storage rules fire on the `inventoryAdjustment`
   // surface, and on `place` when the adjustment lands stock in a bin (positive
   // delta) or `pick` when it removes from a bin (negative delta) — so bin-level
   // rules tied to those surfaces also kick in for manual adjustments.
@@ -70,7 +75,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Pick the bin surface from `adjustmentType` only. `quantity` is a
     // positive magnitude per `inventoryAdjustmentValidator` — sign-based
     // direction detection would misclassify `Negative Adjmt.` as `place`.
-    // Item rules own the `place`/`pick` surfaces. Scrap removes from a bin
+    // Storage rules own the `place`/`pick` surfaces. Scrap removes from a bin
     // (pick); Unscrap restores to a bin (place).
     const isNegative =
       d.adjustmentType === "Negative Adjmt." || d.adjustmentType === "Scrap";
@@ -99,11 +104,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     };
   }
 
-  const itemLedger = await insertManualInventoryAdjustment(client, {
-    ...d,
-    companyId,
-    createdBy: userId
-  });
+  const itemLedger = await insertManualInventoryAdjustment(
+    client,
+    getDatabaseClient(),
+    {
+      ...d,
+      companyId,
+      createdBy: userId
+    }
+  );
 
   if (itemLedger.error) {
     // Return the error as fetcher data so the modal can toast the reason and

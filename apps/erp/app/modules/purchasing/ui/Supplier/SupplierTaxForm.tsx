@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -54,8 +59,8 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/tax-certificates/${nanoid()}.${fileExtension}`;
 
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, file);
 
       if (result.error) {
@@ -96,7 +101,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
               <div />
             )}
 
-            <div className="col-span-3">
+            <div className="col-span-3 max-md:col-span-full">
               <Boolean
                 name="taxExempt"
                 label={t`Tax Exempt`}
@@ -147,14 +152,14 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
                 onDrop={onDrop}
                 accept={{
                   "application/pdf": [".pdf"],
-                  "image/*": [".png", ".jpg", ".jpeg"]
+                  "image/*": [".png", ".jpg", ".jpeg", ".heic", ".heif"]
                 }}
                 multiple={false}
               />
             </div>
           )}
         </CardContent>
-        <CardFooter>
+        <CardFooter className="max-md:[&>*]:flex-1 max-md:[&>div>*]:flex-1 max-md:[&_button]:h-11">
           <HStack>
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>

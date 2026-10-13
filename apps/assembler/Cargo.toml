@@ -12,6 +12,7 @@ path = "src/main.rs"
 converter = { path = "../../crates/converter" }
 planner = { path = "../../crates/planner" }
 optimize = { path = "../../crates/optimize" }
+thumbnail = { path = "../../crates/thumbnail" }
 serde.workspace = true
 serde_json.workspace = true
 axum = "0.7"
@@ -37,6 +38,19 @@ tower-http = { version = "0.6", features = ["compression-zstd", "compression-gzi
 memmap2 = "0.9"
 file-format = "0.26"
 tempfile = "3"
+# Tracing (OTLP over HTTP, traces only). Inert unless OTEL_EXPORTER_OTLP_ENDPOINT
+# is set — the same switch and variables as the Node apps (`@carbon/logger`).
+opentelemetry = "0.33"
+opentelemetry_sdk = "0.33"
+# No bundled HTTP client: its reqwest 0.13 would bring a second TLS stack
+# (aws-lc) beside ours (ring). Spans are sent with the reqwest already here.
+opentelemetry-otlp = { version = "0.33", default-features = false, features = ["trace", "http-proto"] }
+opentelemetry-http = { version = "0.33", default-features = false }
+async-trait = "0.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
-tikv-jemallocator = "0.6"
+# Unprefixed: jemalloc is `malloc` for the whole process, so OCCT and FCL (C++,
+# which allocate through malloc) use it too and their freed memory is returned
+# to the OS. Prefixed, it served Rust only and the C++ side stayed on glibc,
+# whose arenas keep an idle service near its last job's peak.
+tikv-jemallocator = { version = "0.6", features = ["unprefixed_malloc_on_supported_platforms", "background_threads"] }

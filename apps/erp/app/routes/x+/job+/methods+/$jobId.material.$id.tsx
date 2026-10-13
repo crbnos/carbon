@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,6 +15,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobMaterial
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -36,6 +41,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // `client` is the service role (bypassRls): the material must belong to this
+  // job and company, and so must the make method recalculated below and the
+  // operation it is assigned to.
+  await Promise.all([
+    requireCompanyRecord(client, "jobMaterial", companyId, {
+      id,
+      jobId,
+      jobMakeMethodId: validation.data.jobMakeMethodId
+    }),
+    validation.data.jobOperationId
+      ? requireCompanyRecord(client, "jobOperation", companyId, {
+          id: validation.data.jobOperationId,
+          jobId
+        })
+      : undefined
+  ]);
 
   // Capture the previous methodType so we only pull the subassembly's method on
   // the transition INTO "Make to Order" (not on every save of a material that is
@@ -98,12 +120,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // create route. Without this the material flips to Make to Order but stays empty.
   // `client` here is already service-role (requirePermissions bypassRls).
   if (validation.data.methodType === "Make to Order" && !wasMakeToOrder) {
-    const makeMethod = await pullJobMaterialMakeMethod(client, {
-      jobMaterialId,
-      itemId: validation.data.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      client,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: validation.data.itemId,
+        companyId,
+        userId
+      }
+    );
     if (makeMethod.error) {
       return data(
         { id: jobMaterialId },
@@ -116,8 +142,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (validation.data.methodType === "Make to Order") {
-    const promises = [
-      recalculateJobMakeMethodRequirements(client, {
+    const promises: Promise<{ error: Error | null }>[] = [
+      recalculateJobMakeMethodRequirements(client, getDatabaseClient(), {
         id: validation.data.jobMakeMethodId,
         companyId,
         userId
@@ -165,6 +191,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     const recalculateResult = await recalculateJobMakeMethodRequirements(
       client,
+      getDatabaseClient(),
       {
         id: validation.data.jobMakeMethodId,
         companyId,

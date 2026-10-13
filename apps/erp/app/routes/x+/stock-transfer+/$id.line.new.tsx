@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
+import { useCloseRoute, useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useParams } from "react-router";
+import { data, useParams } from "react-router";
 import {
   getStockTransfer,
   isStockTransferLocked,
@@ -14,7 +19,6 @@ import {
 import type { StockTransfer } from "~/modules/inventory/types";
 import StockTransferLineForm from "~/modules/inventory/ui/StockTransfers/StockTransferLineForm";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
-
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -82,7 +86,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 export default function NewStockTransferLinesRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{
     stockTransfer: StockTransfer;
   }>(path.to.stockTransfer(id));
@@ -101,7 +105,7 @@ export default function NewStockTransferLinesRoute() {
   return (
     <StockTransferLineForm
       locationId={routeData?.stockTransfer.locationId}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       // @ts-expect-error TS2739 - TODO: fix type
       initialValues={initialValues}
     />

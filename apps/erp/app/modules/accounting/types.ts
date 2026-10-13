@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
+import type { periodCloseStatuses } from "./accounting.models";
 import type {
   getAccount,
   getAccountingPeriods,
@@ -14,10 +19,10 @@ import type {
   getJournalEntry,
   getPaymentTerms,
   getPeriodCloseReadiness,
+  getProjects,
   getPurchaseLinePivotLines,
   getReportViews
-} from "./accounting.ee.service";
-import type { periodCloseStatuses } from "./accounting.models";
+} from "./accounting.service";
 
 export type Account = NonNullable<
   Awaited<ReturnType<typeof getAccount>>["data"]
@@ -400,6 +405,10 @@ export type PaymentTerm = NonNullable<
   Awaited<ReturnType<typeof getPaymentTerms>>["data"]
 >[number];
 
+export type Project = NonNullable<
+  Awaited<ReturnType<typeof getProjects>>["data"]
+>[number];
+
 export type Transaction = {
   number: string;
   netChange: number;
@@ -509,8 +518,13 @@ import type {
   getFixedAssetClass,
   getFixedAssetClasses,
   getFixedAssetDisposal,
+  getFixedAssetRelatedItems,
   getFixedAssets
-} from "./accounting.ee.service";
+} from "./accounting.service";
+
+export type FixedAssetRelatedItems = Awaited<
+  ReturnType<typeof getFixedAssetRelatedItems>
+>;
 
 export type FixedAssetClass = NonNullable<
   Awaited<ReturnType<typeof getFixedAssetClass>>["data"]

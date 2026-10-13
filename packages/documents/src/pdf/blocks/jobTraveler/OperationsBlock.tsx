@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getMESUrl } from "@carbon/env";
 import type { JSONContent } from "@carbon/react";
 import { formatFactor } from "@carbon/utils";
@@ -135,25 +139,25 @@ export function OperationsBlock({
                     <Text style={tw("font-bold")}>{operation.description}</Text>
                   </View>
                   <View style={tw("w-3/12 text-left")}>
-                    {hasExpectedTimes && (
+                    {hasExpectedTimes ? (
                       <View style={tw("flex flex-col gap-1")}>
-                        {setupTimeFormatted && (
+                        {setupTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Setup: {setupTimeFormatted}
                           </Text>
-                        )}
-                        {laborTimeFormatted && (
+                        ) : null}
+                        {laborTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Labor: {laborTimeFormatted}
                           </Text>
-                        )}
-                        {machineTimeFormatted && (
+                        ) : null}
+                        {machineTimeFormatted ? (
                           <Text style={tw("text-[10px]")}>
                             Machine: {machineTimeFormatted}
                           </Text>
-                        )}
+                        ) : null}
                       </View>
-                    )}
+                    ) : null}
                   </View>
                 </View>
 
@@ -166,31 +170,31 @@ export function OperationsBlock({
                 </View>
 
                 <View style={tw("w-full flex flex-row justify-start gap-2")}>
-                  {isInside && setupQrCode && (
+                  {isInside && setupQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={setupQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Setup</Text>
                       </>
                     </View>
-                  )}
+                  ) : null}
 
-                  {isInside && laborQrCode && (
+                  {isInside && laborQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={laborQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Labor</Text>
                       </>
                     </View>
-                  )}
-                  {isInside && machiningQrCode && (
+                  ) : null}
+                  {isInside && machiningQrCode ? (
                     <View style={tw("flex flex-col items-center w-1/4")}>
                       <>
                         <Image src={machiningQrCode} style={tw("w-16 h-16")} />
                         <Text style={tw("text-[10px] mt-1")}>Machine</Text>
                       </>
                     </View>
-                  )}
+                  ) : null}
                   <View style={tw("flex flex-col items-center w-1/4")}>
                     <Image src={completeQrCode} style={tw("w-16 h-16")} />
                     <Text style={tw("text-[10px] mt-1")}>Complete</Text>
@@ -198,9 +202,9 @@ export function OperationsBlock({
                 </View>
               </View>
 
-              {(hasWorkInstruction || hasProcedureSteps) && (
+              {hasWorkInstruction || hasProcedureSteps ? (
                 <View style={tw("mt-2 ml-8")}>
-                  {hasProcedureSteps && (
+                  {hasProcedureSteps ? (
                     <View style={tw("mb-2")}>
                       <Text
                         style={{
@@ -252,23 +256,23 @@ export function OperationsBlock({
                                 <Text style={tw("text-[9px] font-bold")}>
                                   {step.name}
                                 </Text>
-                                {hasStepDescription && (
+                                {hasStepDescription ? (
                                   <Note
                                     title="Procedure Step"
                                     content={stepDescription}
                                   />
-                                )}
+                                ) : null}
                               </View>
                             </View>
                           );
                         })}
                     </View>
-                  )}
-                  {hasWorkInstruction && (
+                  ) : null}
+                  {hasWorkInstruction ? (
                     <Note title="Work Instructions" content={workInstruction} />
-                  )}
+                  ) : null}
                 </View>
-              )}
+              ) : null}
             </View>
           );
         })}

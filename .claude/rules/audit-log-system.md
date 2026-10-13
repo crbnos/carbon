@@ -1,6 +1,8 @@
 ---
 paths:
-  - packages/database/src/audit.*
+  - packages/ee/src/audit/audit.ts
+  - packages/database/src/audit.config.ts
+  - packages/database/src/audit.types.ts
   - packages/jobs/src/inngest/functions/events/audit.ts
   - packages/jobs/src/inngest/functions/scheduled/audit-archive.ts
   - apps/erp/app/components/AuditLog/**
@@ -23,7 +25,7 @@ The partition key *is the table name* — there is **no `companyId` column**. Co
 - `entityId` TEXT — business entity PK the change rolls up to
 - `recordId` TEXT — raw PK of the changed row; equals `entityId` for root tables, differs for children
 - `operation` TEXT CHECK IN (`INSERT`,`UPDATE`,`DELETE`)
-- `actorId` TEXT | null — user who made the change; null = system/service-role (captured via `auth.uid()` in `dispatch_event_batch`)
+- `actorId` TEXT | null — user who made the change; null = system/service-role. Captured via `auth.uid()` in `dispatch_event_batch`, which is NULL on a direct Kysely connection (no `request.jwt.claims` GUC). The handler therefore falls back to the row's own audit columns — `record.actorId ?? new.updatedBy ?? new.createdBy ?? old.updatedBy ?? old.createdBy` (`packages/jobs/src/inngest/functions/events/audit.ts`) — so a Kysely write is still attributed, provided it stamps `updatedBy`/`createdBy`. A write that stamps neither logs as "System"
 - `diff` JSONB | null — `{ field: { old, new, snapshot? } }`
 - `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`
 - `createdAt` TIMESTAMPTZ — original event time (handler passes `event.timestamp`; falls back to `clock_timestamp()` per row)
@@ -44,6 +46,30 @@ only the retention/archival path may delete. `delete_old_audit_logs` was forked 
 forked to attach the trigger to every new (and pre-existing) table via the idempotent helper
 `attach_audit_log_append_only(table)`. The DELETE branch of `prevent_audit_log_mutation` is what the
 `audit-archive` job relies on: it runs `delete_old_audit_logs`, so its per-day deletes carry the flag.
+
+## Access (migration `20260924171942_audit-log-company-scope.sql`)
+
+Each `auditLog_{companyId}` table has ONE policy, `"SELECT"`, true only for callers holding
+`settings_view` in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
+`secure_audit_log_table(companyId)` applies both, and `create_audit_log_table` calls it on every table it
+creates or touches, because the default privileges on `public` re-grant ALL to the API roles on each new
+table. (Before this, the policy was `audit_log_access` FOR ALL USING (true), and any holder of the anon
+key could read or append to any company's log.)
+
+The RPCs are all SECURITY DEFINER, so each one begins with
+`assert_audit_log_access(p_company_id, <permission>)`:
+
+| Permission | Functions |
+|---|---|
+| `settings_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
+| `settings_update` | `create_audit_log_table` |
+| `NULL` (service role only) | `insert_audit_log_batch`, `get_audit_logs_for_archive`, `delete_old_audit_logs`, `drop_audit_log_table` |
+
+The guard only applies when `current_setting('role')` is `anon` or `authenticated`, so the service role
+and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on supabase/postgres
+15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
+backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
+loader therefore runs as the service role, because that loader only requires `settings_view`.
 
 ## On-by-default in controlled environments (3.3.1)
 
@@ -67,8 +93,19 @@ Entity keys are **not** all bare table names — notably `salesQuote` (label "Qu
 `item`, `salesOrder`, `purchaseOrder`, `salesInvoice`, `purchaseInvoice`, `employee`, `nonConformance`, `gauge`,
 `shipment`, `receipt`, `warehouseTransfer`, `stockTransfer`, `inventoryCount` (root `inventoryCount` +
 child `inventoryCountLine`), `workCenter`, `maintenanceSchedule`,
-`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`. (~27 entities; the
-old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension table of `item`.)
+`maintenanceDispatch`, `pricingRule`, `priceOverride`, `priceOverrideBreak`, `fixedAsset`, `accountingPeriod`,
+`rentalAgreement`, and the posting documents added for the `DocumentPage` Activity tab — `journalEntry`
+(`journal` + `journalLine`), `payment` / `memo` (each with `invoiceSettlement` as a child, keyed by
+`paymentId` / `memoId`), `reimbursement` (+ `reimbursementLine`), `pickingList` (+ `pickingListLine`),
+`depreciationRun` (+ `depreciationRunLine`), `revenueRecognitionRun` (+ `revenueRecognitionRunLine`);
+each table queues its changes through `events: true` in `packages/database/src/event-system/attachments.ts`
+(shipped by `20261006221901_posting-documents-audit-events.sql`). An audited table needs that entry.
+(~36 entities; the old `quote`/`job`/`itemCost` entity keys are gone — `itemCost` is now an extension
+table of `item`.) Every table logs INSERT, UPDATE and DELETE except an extension table's INSERT
+(created 1:1 with its parent). A child's `entityIdColumn` may be a list: the row is logged once per
+distinct non-null parent it names (`invoiceSettlement` under the payment that made it, the one a memo
+was applied through, and the prior credit it draws on). `journalLine` sets `createFields` (account
+snapshotted to number + name), so an added line shows what it is.
 
 Other config knobs:
 - `tableLabels` — friendly per-`tableName` labels for diff provenance (fallback: camelCase → Title Case).
@@ -99,7 +136,7 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 
 - RPCs: `create_audit_log_table`, `insert_audit_log_batch`, `get_entity_audit_log` (optional `p_record_id`),
   `get_audit_log` (filters + `totalCount`), `get_audit_logs_for_archive`, `delete_old_audit_logs`.
-- `packages/database/src/audit.ts` wrappers: `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
+- `packages/ee/src/audit/audit.ts` wrappers (commercial — `@carbon/ee/audit.server`; `enableAuditLog` embeds `requireEntitlement("AUDIT_LOG")`, skipped under `CONTROLLED_ENVIRONMENT` where audit is mandatory): `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
   `enableAuditLog`, `disableAuditLog` (keeps data), `isAuditLogEnabled`, `syncAuditSubscriptions`
   (adds triggers for entities added to config after enable), `getAuditLogArchives`, `getArchiveDownloadUrl`,
   `getAuditLogsForArchive`, `deleteOldAuditLogs`, `recordAuditLogArchive`.
@@ -124,7 +161,10 @@ than from config.
   Unknown prefixes render as plain text.
 - `.../AuditLog/AuditLogSettings.tsx` — enable/disable + archive download list.
 - `apps/erp/app/components/AuditLog/` — per-entity history `AuditLogDrawer.tsx` + `useAuditLog.tsx` hook,
-  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. `AuditLogDrawer.tsx` also exports
+  fetching `api+/audit-log.ts` by `entityType`/`entityId`/`recordId`. The body is `AuditLogFeed` (same
+  file), also rendered inline as the Activity tab of `components/DocumentPage/DocumentSidebar.tsx`. The
+  API requires `view: settings` and answers anyone else with a redirect — which a fetcher FOLLOWS — so the
+  feed never fetches without that permission and the sidebar hides the tab. `AuditLogDrawer.tsx` also exports
   `ChangeRow`, the snapshot-aware diff-row renderer (FK name from `diff[col].snapshot`, raw id on hover)
   used by BOTH the drawer and the global `AuditLogTable` expanded rows — don't render `change.old/new`
   raw or FKs regress to bare ids.
@@ -135,7 +175,7 @@ than from config.
 
 - `apps/erp/app/routes/x+/settings+/audit-logs.tsx` — settings (enable/disable, download), syncs subscriptions.
 - `apps/erp/app/routes/x+/settings+/audit-logs.details.tsx` — full-screen filtered table (`getGlobalAuditLog`).
-- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint.
+- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint (50 newest; `all=true` pages through every live entry, capped at 10,000 with `truncated: true` when the history is longer (the download warns), for the drawer's opt-in CSV Download — `useAuditLog({ downloadable, downloadName })`, built client-side by `components/AuditLog/useAuditLogDownload.ts` with the pure row builder `buildAuditLogCsvRows` in `components/AuditLog/utils.ts`; a failed `all=true` read answers 500).
 
 ## Key migrations (newest = truth)
 
@@ -145,4 +185,5 @@ than from config.
 `20260217120000_audit_log_add_table_name.sql`, `20260218000000_expand_audit_log_entities.sql`,
 `20260418000000_audit_log_add_record_id.sql`, `20260427120000_audit-event-timestamp.sql`,
 `20260513130000_audit-item-shelf-life-history.sql`,
-`20260713095136_attach-inventory-count-audit-triggers.sql` (attaches triggers on `inventoryCount`/`inventoryCountLine`).
+`20260713095136_attach-inventory-count-audit-triggers.sql` (attaches triggers on `inventoryCount`/`inventoryCountLine`),
+`20260818014100_audit-log-append-only.sql`, `20260924171942_audit-log-company-scope.sql` (access guards).

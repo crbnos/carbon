@@ -1,14 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type LinesideClaim,
+  linesideCredit
+} from "@carbon/database/picked-consumption";
+import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { async, datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { getNextSequence } from "~/modules/settings";
+import { getNextSequence } from "~/modules/settings/settings.service";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -42,9 +53,15 @@ import {
 import {
   effectiveSuccessorId,
   type PickSupersession,
-  resolvePickTarget
+  pickSupersessionItemId,
+  resolvePickRule,
+  resolvePickTarget,
+  splitConsumeFirstPick
 } from "./supersession-pick";
 
+const logger = getLogger("erp", "inventory");
+
+/** @mcp delete */
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
   id: string
@@ -52,6 +69,7 @@ export async function deleteBatchProperty(
   return client.from("batchProperty").delete().eq("id", id);
 }
 
+/** @mcp delete */
 export async function deleteKanban(
   client: SupabaseClient<Database>,
   kanbanId: string
@@ -59,6 +77,7 @@ export async function deleteKanban(
   return client.from("kanban").delete().eq("id", kanbanId);
 }
 
+/** @mcp delete */
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -66,6 +85,7 @@ export async function deleteReceipt(
   return client.from("receipt").delete().eq("id", receiptId);
 }
 
+/** @mcp delete */
 export async function deleteReceiptLine(
   client: SupabaseClient<Database>,
   receiptLineId: string
@@ -73,6 +93,7 @@ export async function deleteReceiptLine(
   return client.from("receiptLine").delete().eq("id", receiptLineId);
 }
 
+/** @mcp delete */
 export async function deleteStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -91,6 +112,7 @@ export async function deleteStorageUnit(
  *
  * We fetch the subtree via `storageUnits_recursive` (which already returns
  * self + descendants thanks to `ancestorPath @> ARRAY[id]`).
+ * @mcp delete
  */
 export async function deleteStorageUnitCascade(
   client: SupabaseClient<Database>,
@@ -114,6 +136,7 @@ export async function deleteStorageUnitCascade(
   return client.from("storageUnit").delete().in("id", ids);
 }
 
+/** @mcp delete */
 export async function deleteShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -121,6 +144,7 @@ export async function deleteShipment(
   return client.from("shipment").delete().eq("id", shipmentId);
 }
 
+/** @mcp delete */
 export async function deleteShipmentLine(
   client: SupabaseClient<Database>,
   shipmentLineId: string
@@ -128,6 +152,7 @@ export async function deleteShipmentLine(
   return client.from("shipmentLine").delete().eq("id", shipmentLineId);
 }
 
+/** @mcp delete */
 export async function deleteShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -138,6 +163,7 @@ export async function deleteShippingMethod(
     .eq("id", shippingMethodId);
 }
 
+/** @mcp delete */
 export async function deleteStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -145,6 +171,7 @@ export async function deleteStockTransfer(
   return client.from("stockTransfer").delete().eq("id", stockTransferId);
 }
 
+/** @mcp delete */
 export async function deleteStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLineId: string
@@ -155,6 +182,7 @@ export async function deleteStockTransferLine(
     .eq("id", stockTransferLineId);
 }
 
+/** @mcp delete */
 export async function deleteWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
@@ -162,6 +190,7 @@ export async function deleteWarehouseTransfer(
   return client.from("warehouseTransfer").delete().eq("id", transferId);
 }
 
+/** @mcp delete */
 export async function deleteWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferLineId: string
@@ -169,6 +198,7 @@ export async function deleteWarehouseTransferLine(
   return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
 }
 
+/** @mcp read */
 export async function getItemLedgerPage(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -217,6 +247,7 @@ export async function getItemLedgerPage(
  *
  * Returns rows newest→oldest regardless of direction. No `count` — `hasMore` is
  * inferred from a full page, so there's no whole-table count per request.
+ * @mcp read
  */
 export async function getItemLedgerActivity(
   client: SupabaseClient<Database>,
@@ -266,6 +297,32 @@ export async function getItemLedgerActivity(
   return { data: rows, hasMore: (data?.length ?? 0) === pageSize, error };
 }
 
+/**
+ * On-hand quantity of an item at a location right after ledger entry
+ * `entryNumber` (omit it for on-hand now), on the same definition as the
+ * inventory table's On Hand column. The Activity panel fetches this once for
+ * its newest loaded entry and derives every other row's balance from the
+ * contiguous pages — see `withRunningBalance`.
+ * @mcp read
+ */
+export async function getItemLedgerBalance(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    companyId: string;
+    locationId: string;
+    entryNumber?: number;
+  }
+) {
+  return client.rpc("get_item_ledger_balance", {
+    company_id: args.companyId,
+    location_id: args.locationId,
+    item_id: args.itemId,
+    entry_number: args.entryNumber
+  });
+}
+
+/** @mcp read */
 export async function getBatchProperties(
   client: SupabaseClient<Database>,
   itemIds: string[],
@@ -279,6 +336,7 @@ export async function getBatchProperties(
     .order("sortOrder");
 }
 
+/** @mcp read */
 export async function getInventoryItems(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -294,7 +352,7 @@ export async function getInventoryItems(
       company_id: companyId
     },
     {
-      count: "exact"
+      count: LIST_COUNT
     }
   );
 
@@ -310,6 +368,7 @@ export async function getInventoryItems(
   return query;
 }
 
+/** @mcp read */
 export async function getInventoryItemsCount(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -321,7 +380,7 @@ export async function getInventoryItemsCount(
   let query = client
     .from("item")
     .select("id", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .neq("itemTrackingType", "Non-Inventory")
     .eq("companyId", companyId);
@@ -336,6 +395,7 @@ export async function getInventoryItemsCount(
   return query;
 }
 
+/** @mcp read */
 export async function getInventoryValuation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -348,6 +408,7 @@ export async function getInventoryValuation(
   });
 }
 
+/** @mcp read */
 export async function getInventoryValuationTieOut(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -369,6 +430,14 @@ export async function getInventoryValuationTieOut(
 // Posted on the tie-out's as-of date — the tie-out only counts journals with
 // postingDate <= asOfDate, so a today-dated journal could never resolve a
 // backdated variance. Posting may still be rejected if that period is Closed.
+/**
+ * Creates a draft GL journal that clears the inventory valuation variance.
+ *
+ * Gated on accounting, as the Reconcile screen is: it writes a journal, not
+ * inventory.
+ * @mcp create
+ * @mcp permission accounting:create
+ */
 export async function createInventoryReconciliationJournal(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -463,6 +532,7 @@ export async function createInventoryReconciliationJournal(
   }
 }
 
+/** @mcp read */
 export async function getKanbans(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -474,7 +544,7 @@ export async function getKanbans(
   let query = client
     .from("kanbans")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -491,13 +561,23 @@ export async function getKanbans(
   return query;
 }
 
+/** @mcp read */
 export async function getKanban(
   client: SupabaseClient<Database>,
-  kanbanId: string
+  kanbanId: string,
+  companyId: string
 ) {
-  return client.from("kanbans").select("*").eq("id", kanbanId).single();
+  // Scoped by company, not left to RLS: a user in several companies can read
+  // every one of their companies' kanbans, and a scan acts in the ACTIVE one.
+  return client
+    .from("kanbans")
+    .select("*")
+    .eq("id", kanbanId)
+    .eq("companyId", companyId)
+    .single();
 }
 
+/** @mcp read */
 export async function getStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -509,6 +589,7 @@ export async function getStockTransfer(
     .single();
 }
 
+/** @mcp read */
 export async function getStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLineId: string
@@ -520,6 +601,7 @@ export async function getStockTransferLine(
     .single();
 }
 
+/** @mcp read */
 export async function getStockTransferLines(
   client: SupabaseClient<Database>,
   stockTransferId: string
@@ -532,6 +614,7 @@ export async function getStockTransferLines(
     .order("createdAt", { ascending: true });
 }
 
+/** @mcp read */
 export async function getStockTransferTracking(
   client: SupabaseClient<Database>,
   stockTransferId: string,
@@ -545,6 +628,7 @@ export async function getStockTransferTracking(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getStockTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -556,7 +640,7 @@ export async function getStockTransfers(
   let query = client
     .from("stockTransfer")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -574,6 +658,7 @@ export async function getStockTransfers(
   return query;
 }
 
+/** @mcp read */
 export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -610,6 +695,7 @@ export async function getDefaultStorageUnitOrStorageUnitWithHighestQuantity(
   return storageUnitWithHighestQuantity?.storageUnitId ?? null;
 }
 
+/** @mcp read */
 export async function getReceipts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -620,7 +706,7 @@ export async function getReceipts(
   let query = client
     .from("receipt")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -637,6 +723,7 @@ export async function getReceipts(
   return query;
 }
 
+/** @mcp read */
 export async function getReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -644,6 +731,7 @@ export async function getReceipt(
   return client.from("receipt").select("*").eq("id", receiptId).single();
 }
 
+/** @mcp read */
 export async function getReceiptLines(
   client: SupabaseClient<Database>,
   receiptId: string
@@ -651,6 +739,60 @@ export async function getReceiptLines(
   return client.from("receiptLines").select("*").eq("receiptId", receiptId);
 }
 
+/**
+ * The documents around a receipt that its own row doesn't name: the purchase
+ * invoices raised against its supplier interaction (the PO's, so every
+ * receipt of that order shares them), and — for a customer return — the
+ * customer it came back from.
+ * @mcp read
+ */
+export async function getReceiptRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierInteractionId: string | null,
+  salesReturnOrderId: string | null
+) {
+  const [invoices, salesReturnOrder] = await Promise.all([
+    supplierInteractionId
+      ? client
+          .from("purchaseInvoice")
+          .select("id, invoiceId, status")
+          .eq("supplierInteractionId", supplierInteractionId)
+          .eq("companyId", companyId)
+          .order("createdAt")
+      : null,
+    salesReturnOrderId
+      ? client
+          .from("salesReturnOrder")
+          .select("customerId")
+          .eq("id", salesReturnOrderId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  if (invoices?.error) {
+    logger.error("Failed to get receipt purchase invoices", {
+      companyId,
+      supplierInteractionId,
+      error: invoices.error
+    });
+  }
+  if (salesReturnOrder?.error) {
+    logger.error("Failed to get receipt sales return order", {
+      companyId,
+      salesReturnOrderId,
+      error: salesReturnOrder.error
+    });
+  }
+
+  return {
+    invoices: invoices?.data ?? [],
+    customerId: salesReturnOrder?.data?.customerId ?? null
+  };
+}
+
+/** @mcp read */
 export async function getReceiptTracking(
   client: SupabaseClient<Database>,
   receiptId: string,
@@ -663,6 +805,7 @@ export async function getReceiptTracking(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getReceiptLineTracking(
   client: SupabaseClient<Database>,
   receiptLineId: string,
@@ -682,6 +825,7 @@ export async function getReceiptLineTracking(
  * (edited serial) entities would otherwise become phantom Available serials.
  * The keep/delete decision is owned by `reconcileReceiptLineSerials` so it
  * stays in lockstep with the post-time validation in ReceiptPostModal.
+ * @mcp action destructive
  */
 export async function reconcileReceiptSerialEntities(
   client: SupabaseClient<Database>,
@@ -734,14 +878,15 @@ export async function reconcileReceiptSerialEntities(
   }
 }
 
+/** @mcp read */
 export async function getReceiptFiles(
   client: SupabaseClient<Database>,
   companyId: string,
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/inventory/${lineId}`)
       .then((result) => ({
         ...result,
@@ -751,13 +896,9 @@ export async function getReceiptFiles(
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
-    return {
-      data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
-    };
+    return { data: [], error: firstError.message || "Failed to fetch files" };
   }
 
   // Merge data arrays and add lineId as bucketName
@@ -772,6 +913,7 @@ export async function getReceiptFiles(
   };
 }
 
+/** @mcp read */
 export async function getSerialNumbersForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -802,6 +944,7 @@ export async function getSerialNumbersForItem(
  * warehouse). `excludeAllocated` nets out quantities already allocated to other
  * non-cancelled picking lines so the same lot is never recommended twice;
  * `excludeLineId` keeps the current line's own allocation visible.
+ * @mcp read
  */
 export async function getAvailableTrackedEntities(
   client: SupabaseClient<Database>,
@@ -812,6 +955,8 @@ export async function getAvailableTrackedEntities(
     excludeLineside?: boolean;
     excludeAllocated?: boolean;
     excludeLineId?: string | null;
+    /** Only lots in this bin; `id: null` is the unassigned bin. */
+    inStorageUnit?: { id: string | null };
   }
 ) {
   return client.rpc("get_available_tracked_entities", {
@@ -820,13 +965,16 @@ export async function getAvailableTrackedEntities(
     p_location_id: args.locationId,
     p_exclude_lineside: args.excludeLineside ?? false,
     p_exclude_allocated: args.excludeAllocated ?? false,
-    p_exclude_line_id: args.excludeLineId ?? undefined
+    p_exclude_line_id: args.excludeLineId ?? undefined,
+    p_filter_storage_unit: args.inStorageUnit !== undefined,
+    p_storage_unit_id: args.inStorageUnit?.id ?? undefined
   });
 }
 
 /**
  * The configured tracked-entity pick order for an item at a location, used as
  * the picker's default sort. Falls back to "Default" (smart) when unset.
+ * @mcp read
  */
 export async function getPickOrder(
   client: SupabaseClient<Database>,
@@ -842,6 +990,7 @@ export async function getPickOrder(
   return data?.sortMethod ?? "Default";
 }
 
+/** @mcp read */
 export async function getBatchNumbersForItem(
   client: SupabaseClient<Database>,
   args: {
@@ -861,6 +1010,7 @@ export async function getBatchNumbersForItem(
     .order("createdAt", { ascending: true });
 }
 
+/** @mcp read */
 export async function getStorageUnitsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -873,6 +1023,7 @@ export async function getStorageUnitsList(
   );
 }
 
+/** @mcp read */
 export async function getStorageUnitsListForLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -893,6 +1044,7 @@ export async function getStorageUnitsListForLocation(
 // Tree shape from storageUnits_recursive view: each row has its 1-based depth
 // and the full ancestorPath (root → node ids). Sort by ancestorPath so the
 // caller can render a flat list that visually nests by depth.
+/** @mcp read */
 export async function getStorageUnitsTreeForLocation(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -916,6 +1068,7 @@ export async function getStorageUnitsTreeForLocation(
   );
 }
 
+/** @mcp read */
 export async function getStorageUnits(
   client: SupabaseClient<Database>,
   locationId: string,
@@ -928,7 +1081,7 @@ export async function getStorageUnits(
   // for tree rendering (indentation, hierarchy filters, subtree rollups).
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
 
@@ -945,6 +1098,7 @@ export async function getStorageUnits(
   return query;
 }
 
+/** @mcp read */
 export async function getStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -956,6 +1110,7 @@ export async function getStorageUnit(
     .single();
 }
 
+/** @mcp read */
 export async function getEffectiveWorkCenterId(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -967,6 +1122,7 @@ export async function getEffectiveWorkCenterId(
 
 // Roots only (depth = 1). Honors search/filter/pagination so the table can
 // paginate top-level storage units while children load lazily on demand.
+/** @mcp read */
 export async function getStorageUnitRoots(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -975,7 +1131,7 @@ export async function getStorageUnitRoots(
 ) {
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .eq("depth", 1);
@@ -993,6 +1149,7 @@ export async function getStorageUnitRoots(
 
 // Immediate children of a single parent (one level deep). Used by the lazy
 // expand handler in the StorageUnits table.
+/** @mcp read */
 export async function getStorageUnitChildren(
   client: SupabaseClient<Database>,
   parentId: string
@@ -1010,6 +1167,7 @@ export async function getStorageUnitChildren(
 // subtrees in one round trip. Used to render the tree expanded by default;
 // the depth cap keeps very deep trees from loading their entire subtree
 // eagerly — anything below `maxDepth` still lazy-loads on demand.
+/** @mcp read */
 export async function getStorageUnitSubtrees(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1033,6 +1191,7 @@ export async function getStorageUnitSubtrees(
 
 // Set of storageUnit ids that have at least one child in the given location.
 // Drives whether the table renders an expand chevron on a row.
+/** @mcp read */
 export async function getStorageUnitParentIdsWithChildren(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1058,6 +1217,7 @@ export async function getStorageUnitParentIdsWithChildren(
 // every ancestor of each match, so the tree path renders intact. Returns the
 // flat ordered row set + the parentIds that should be pre-expanded so that
 // matches are visible to the user.
+/** @mcp read */
 export async function searchStorageUnitsWithAncestors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1108,6 +1268,7 @@ export async function searchStorageUnitsWithAncestors(
   };
 }
 
+/** @mcp read */
 export async function getStockMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1118,7 +1279,7 @@ export async function getStockMovements(
   let query = client
     .from("itemLedgers")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1139,6 +1300,7 @@ export async function getStockMovements(
   return query;
 }
 
+/** @mcp read */
 export async function getShipments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1149,7 +1311,7 @@ export async function getShipments(
   let query = client
     .from("shipment")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1166,6 +1328,7 @@ export async function getShipments(
   return query;
 }
 
+/** @mcp read */
 export async function getShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1173,6 +1336,7 @@ export async function getShipment(
   return client.from("shipment").select("*").eq("id", shipmentId).single();
 }
 
+/** @mcp read */
 export async function getShipmentLines(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1183,6 +1347,7 @@ export async function getShipmentLines(
     .eq("shipmentId", shipmentId);
 }
 
+/** @mcp read */
 export async function getShipmentLinesWithDetails(
   client: SupabaseClient<Database>,
   shipmentId: string
@@ -1190,14 +1355,15 @@ export async function getShipmentLinesWithDetails(
   return client.from("shipmentLines").select("*").eq("shipmentId", shipmentId);
 }
 
+/** @mcp read */
 export async function getShipmentFiles(
   client: SupabaseClient<Database>,
   companyId: string,
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/inventory/${lineId}`)
       .then((result) => ({
         ...result,
@@ -1207,13 +1373,9 @@ export async function getShipmentFiles(
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
-    return {
-      data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
-    };
+    return { data: [], error: firstError.message || "Failed to fetch files" };
   }
 
   // Merge data arrays and add lineId as bucketName
@@ -1228,6 +1390,7 @@ export async function getShipmentFiles(
   };
 }
 
+/** @mcp read */
 export async function getShipmentRelatedItems(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -1237,7 +1400,15 @@ export async function getShipmentRelatedItems(
     .from("salesOrder")
     .select("*")
     .eq("id", sourceDocumentId)
-    .single();
+    .maybeSingle();
+
+  if (salesOrder.error) {
+    logger.error("Failed to get shipment sales order", {
+      shipmentId,
+      sourceDocumentId,
+      error: salesOrder.error
+    });
+  }
 
   const invoices = await client
     .from("salesInvoice")
@@ -1248,11 +1419,19 @@ export async function getShipmentRelatedItems(
       }`
     );
 
+  if (invoices.error) {
+    logger.error("Failed to get shipment sales invoices", {
+      shipmentId,
+      error: invoices.error
+    });
+  }
+
   return {
     invoices: invoices.data ?? []
   };
 }
 
+/** @mcp read */
 export async function getShipmentTracking(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -1265,6 +1444,51 @@ export async function getShipmentTracking(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
+export async function getRentalShipmentLines(
+  client: SupabaseClient<Database>,
+  shipmentId: string,
+  companyId: string
+) {
+  return (
+    client
+      .from("shipmentFixedAssetLine")
+      .select(
+        "id, shipped, meter, rentalAgreementLineId, rentalAgreementLine!shipmentFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** @mcp read */
+export async function getRentalReceiptLines(
+  client: SupabaseClient<Database>,
+  receiptId: string,
+  companyId: string
+) {
+  return (
+    client
+      .from("receiptFixedAssetLine")
+      .select(
+        "id, received, meter, notes, takeOutOfService, outOfServiceReason, residualDestination, rentalAgreementLineId, rentalAgreementLine!receiptFixedAssetLine_rentalAgreementLineId_fkey(id, status, lessorClassification, fixedAsset(id, fixedAssetId, name, serialNumber), item(name, readableIdWithRevision, thumbnailPath, type), trackedEntity(readableId))"
+      )
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId)
+      .not("rentalAgreementLineId", "is", null)
+      // A document's units are inserted in one statement and share a createdAt;
+      // without a tie-breaker an update reorders them.
+      .order("createdAt")
+      .order("id")
+  );
+}
+
+/** @mcp read */
 export async function getShipmentLineTracking(
   client: SupabaseClient<Database>,
   shipmentLineId: string,
@@ -1277,6 +1501,7 @@ export async function getShipmentLineTracking(
     .eq("companyId", companyId);
 }
 
+/** @mcp read */
 export async function getShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethodId: string
@@ -1288,6 +1513,7 @@ export async function getShippingMethod(
     .single();
 }
 
+/** @mcp read */
 export async function getShippingMethods(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1298,7 +1524,7 @@ export async function getShippingMethods(
   let query = client
     .from("shippingMethod")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1315,6 +1541,7 @@ export async function getShippingMethods(
   return query;
 }
 
+/** @mcp read */
 export async function getShippingMethodsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1327,6 +1554,7 @@ export async function getShippingMethodsList(
     .order("name", { ascending: true });
 }
 
+/** @mcp read */
 export async function getShippingTermsList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1339,6 +1567,65 @@ export async function getShippingTermsList(
     .order("name", { ascending: true });
 }
 
+/** What each serial unit of an item on hand would leave stock at — the
+ *  `preview-serial-unit-costs` server function, valued the way a shipment or
+ *  a capitalization would relieve it. Keyed by tracked entity id. */
+export async function getSerialUnitCosts(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    itemId: string;
+    locationId?: string | null;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("preview-serial-unit-costs", input);
+}
+
+/** Recost one serial unit in stock — the `recost-serial-unit` server
+ *  function: re-books the unit's layer at `unitCost` and posts the
+ *  difference against the offset account. Requires accounting update. */
+export async function recostSerialUnit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: ServerFnInput<"recost-serial-unit"> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId, ...input } = args;
+  return serverFns
+    .as({ client, db, companyId, userId })
+    .invoke("recost-serial-unit", input);
+}
+
+// Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
+// quantity, earliest expiry) with genealogy back to every parent. The issue
+// server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).
+/** @mcp action */
+export async function mergeTrackedEntities(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    trackedEntityIds: string[];
+    readableId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("issue", {
+      type: "mergeTrackedEntities",
+      ...args
+    });
+}
+
+/** @mcp read */
 export async function getTrackedEntities(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1366,17 +1653,28 @@ export async function getTrackedEntities(
   return query;
 }
 
+/** @mcp read */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
-  jobMakeMethodId: string
+  jobMakeMethodId: string,
+  companyId: string
 ) {
+  // Unit-axis order: position here is the `index` step records are stored
+  // under, so it must be a pure function of immutable columns. `createdAt`
+  // alone ties for bulk-minted serials and Postgres breaks the tie by physical
+  // row order, which any UPDATE changes. Full reasoning on the MES copy
+  // (`apps/mes/app/services/operations.service.ts`); keep the two identical.
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
-    .order("createdAt", { ascending: true });
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
+/** @mcp read */
 export async function getTrackedEntity(
   client: SupabaseClient<Database>,
   trackedEntityId: string
@@ -1404,6 +1702,7 @@ export async function getTrackedEntity(
  *     },
  *     ...
  *   ]
+ * @mcp update
  */
 export async function updateTrackedEntityExpiry(
   client: SupabaseClient<Database>,
@@ -1461,14 +1760,17 @@ export async function updateTrackedEntityExpiry(
     .eq("id", args.trackedEntityId);
 }
 
+/** @mcp read */
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
-  operationId: string
+  operationId: string,
+  companyId: string
 ) {
   const jobOperation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
 
   if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
@@ -1479,10 +1781,12 @@ export async function getTrackedEntitiesByOperationId(
 
   return getTrackedEntitiesByMakeMethodId(
     client,
-    jobOperation.data.jobMakeMethodId
+    jobOperation.data.jobMakeMethodId,
+    companyId
   );
 }
 
+/** @mcp read */
 export async function getWarehouseTransfers(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1495,7 +1799,7 @@ export async function getWarehouseTransfers(
     .select(
       "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .eq("companyId", companyId);
@@ -1512,6 +1816,7 @@ export async function getWarehouseTransfers(
   return query;
 }
 
+/** @mcp read */
 export async function getWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
@@ -1525,6 +1830,56 @@ export async function getWarehouseTransfer(
     .single();
 }
 
+/**
+ * The documents a warehouse transfer has raised: the shipments that send it
+ * out of the source location and the receipts that take it in at the
+ * destination.
+ * @mcp read
+ */
+export async function getWarehouseTransferRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  transferId: string
+) {
+  const [shipments, receipts] = await Promise.all([
+    client
+      .from("shipment")
+      .select("id, shipmentId, status")
+      .eq("sourceDocument", "Outbound Transfer")
+      .eq("sourceDocumentId", transferId)
+      .eq("companyId", companyId)
+      .order("createdAt"),
+    client
+      .from("receipt")
+      .select("id, receiptId, status")
+      .eq("sourceDocument", "Inbound Transfer")
+      .eq("sourceDocumentId", transferId)
+      .eq("companyId", companyId)
+      .order("createdAt")
+  ]);
+
+  if (shipments.error) {
+    logger.error("Failed to get warehouse transfer shipments", {
+      companyId,
+      transferId,
+      error: shipments.error
+    });
+  }
+  if (receipts.error) {
+    logger.error("Failed to get warehouse transfer receipts", {
+      companyId,
+      transferId,
+      error: receipts.error
+    });
+  }
+
+  return {
+    shipments: shipments.data ?? [],
+    receipts: receipts.data ?? []
+  };
+}
+
+/** @mcp read */
 export async function getWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferId: string,
@@ -1540,6 +1895,7 @@ export async function getWarehouseTransferLine(
     .single();
 }
 
+/** @mcp read */
 export async function getWarehouseTransferLines(
   client: SupabaseClient<Database>,
   transferId: string
@@ -1552,13 +1908,18 @@ export async function getWarehouseTransferLines(
     .eq("transferId", transferId);
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the single
-// write path for manual adjustments (shared with MES). The edge function owns
+// Thin wrapper over the post-inventory-adjustment server function — the single
+// write path for manual adjustments (shared with MES). The server function owns
 // Set Quantity resolution, storage-unit transfers, serial/batch stock-target
-// resolution, tracked-entity updates, cost layers, and GL posting (only when
-// companySettings.accountingEnabled) in one transaction.
+// resolution, tracked-entity updates, cost layers, and GL posting (Provisional
+// before the accounting cutover) in one transaction.
+/**
+ * @mcp create
+ * @mcp audit createdBy
+ */
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   // `requiresSerialTracking` is a form-only flag for the validator's serial
   // quantity guard — the route strips it before calling this.
   inventoryAdjustment: Omit<
@@ -1571,19 +1932,18 @@ export async function insertManualInventoryAdjustment(
 ) {
   const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("post-inventory-adjustment", {
-    body: { ...adjustment, companyId, userId: createdBy }
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("post-inventory-adjustment", {
+      ...adjustment
+    });
 
   if (result.error) {
     // Bare-string error, matching the old service's validation-branch
     // contract — the adjustment route compares `error === "<message>"`.
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
+      error: getErrorMessage(
         result.error,
         "Failed to create manual inventory adjustment"
       )
@@ -1596,9 +1956,10 @@ export async function insertManualInventoryAdjustment(
 // Authoritative effective quantity for a movement's correction group: resolve
 // the ultimate root by walking correctionOfItemLedgerId, then sum the root and
 // every correction in the group (BFS — historical count corrections chained
-// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// fix→fix). Mirrors the walk inside the correct-stock-movement server function;
 // the modal pre-fills from this so the user never submits a value derived from
 // an incomplete page of movements.
+/** @mcp read */
 export async function getStockMovementEffectiveQuantity(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1649,12 +2010,13 @@ export async function getStockMovementEffectiveQuantity(
   return { data: { rootId: root.id, effectiveQuantity }, error: null };
 }
 
-// Thin wrapper over the correct-stock-movement edge function: books ONE
-// opposite (delta) movement linked to the corrected movement via
+// Books ONE opposite (delta) movement linked to the corrected movement via
 // correctionOfItemLedgerId, dated with the original's postingDate and posted
-// into the original's accounting period.
+// into the original's accounting period (the correct-stock-movement operation).
+/** @mcp action */
 export async function correctStockMovement(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   correction: z.infer<typeof stockMovementCorrectionValidator> & {
     itemLedgerId: string;
     companyId: string;
@@ -1663,30 +2025,27 @@ export async function correctStockMovement(
 ) {
   const { companyId, createdBy, ...rest } = correction;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("correct-stock-movement", {
-    body: { ...rest, companyId, userId: createdBy }
-  });
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("correct-stock-movement", {
+      ...rest
+    });
 
   if (result.error) {
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
-        result.error,
-        "Failed to correct stock movement"
-      )
+      error: getErrorMessage(result.error, "Failed to correct stock movement")
     };
   }
 
-  return { data: result.data?.itemLedger ?? null, error: null };
+  return { data: result.data.itemLedger, error: null };
 }
 
 // ===========================================================================
 // Inventory Count / Cycle Count
 // ===========================================================================
 
+/** @mcp read */
 export async function getInventoryCounts(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1694,7 +2053,7 @@ export async function getInventoryCounts(
 ) {
   let query = client
     .from("inventoryCount")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1707,6 +2066,7 @@ export async function getInventoryCounts(
   return query;
 }
 
+/** @mcp read */
 export async function getInventoryCount(
   client: SupabaseClient<Database>,
   id: string,
@@ -1720,6 +2080,7 @@ export async function getInventoryCount(
     .single();
 }
 
+/** @mcp read */
 export async function getInventoryCountLines(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -1731,7 +2092,7 @@ export async function getInventoryCountLines(
   // apply the same generic column filters the quantities screen does.
   let query = client
     .from("inventoryCountLines")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -1758,6 +2119,7 @@ export async function getInventoryCountLines(
 
 // Aggregate counts for the confirm dialog. Computed server-side so the warnings
 // stay accurate regardless of which page of lines is currently loaded.
+/** @mcp read */
 export async function getInventoryCountLineSummary(
   client: SupabaseClient<Database>,
   inventoryCountId: string,
@@ -1785,6 +2147,7 @@ export async function getInventoryCountLineSummary(
 // corrections, which copy the count's documentType/documentId), found via the
 // movement's `documentType`/`documentId` back-reference. Used to show a posted
 // count what it actually did to inventory. Chronological.
+/** @mcp read */
 export async function getInventoryCountMovements(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1802,6 +2165,7 @@ export async function getInventoryCountMovements(
 
 // Counts are created once and never edited as a header (only their lines and
 // status change), so this is insert-only — no upsert/update branch.
+/** @mcp create */
 export async function insertInventoryCount(
   client: SupabaseClient<Database>,
   inventoryCount: {
@@ -1822,6 +2186,7 @@ export async function insertInventoryCount(
     .single();
 }
 
+/** @mcp delete */
 export async function deleteInventoryCount(
   client: SupabaseClient<Database>,
   id: string,
@@ -1840,6 +2205,7 @@ export async function deleteInventoryCount(
 // empty bins and correct discrepancies. On-hand is summed from `itemLedger`
 // (status-aware: excludes Rejected, matching `get_inventory_quantities`).
 // Idempotent: safe to re-run to re-snapshot while the count is Draft.
+/** @mcp create destructive */
 export async function generateInventoryCountLines(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -1973,6 +2339,7 @@ export async function generateInventoryCountLines(
 // read-then-update would leave open (a concurrent Confirm can't slip in between).
 // Returns the updated row id, or undefined when the line doesn't exist or the
 // count is no longer Draft. Kysely bypasses RLS — authorize at the route first.
+/** @mcp update */
 export async function updateInventoryCountLine(
   db: Kysely<KyselyDatabase>,
   args: z.infer<typeof inventoryCountLineValidator> & {
@@ -2016,6 +2383,7 @@ export async function updateInventoryCountLine(
     .executeTakeFirst();
 }
 
+/** @mcp update */
 export async function updateInventoryCountStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -2040,6 +2408,7 @@ export async function updateInventoryCountStatus(
   return query.select("id").single();
 }
 
+/** @mcp update */
 export async function updateBatchPropertyOrder(
   client: SupabaseClient<Database>,
   data: Omit<
@@ -2050,9 +2419,12 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  // batchProperty has no group column; the group is not stored.
+  const { batchPropertyGroupId: _group, ...order } = data;
+  return client.from("batchProperty").update(sanitize(order)).eq("id", data.id);
 }
 
+/** @mcp update */
 export async function updateStockTransferStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -2075,6 +2447,7 @@ export async function updateStockTransferStatus(
     .eq("id", id);
 }
 
+/** @mcp upsert */
 export async function upsertBatchProperty(
   client: SupabaseClient<Database>,
   batchProperty: z.infer<typeof batchPropertyValidator> & {
@@ -2082,7 +2455,11 @@ export async function upsertBatchProperty(
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  const {
+    userId,
+    configurationParameterGroupId: _group,
+    ...data
+  } = batchProperty;
   if (batchProperty.id) {
     return client
       .from("batchProperty")
@@ -2102,6 +2479,7 @@ export async function upsertBatchProperty(
   });
 }
 
+/** @mcp upsert */
 export async function upsertKanban(
   client: SupabaseClient<Database>,
   kanban:
@@ -2116,26 +2494,23 @@ export async function upsertKanban(
         customFields?: Json;
       })
 ) {
-  if ("createdBy" in kanban) {
-    return client
-      .from("kanban")
-      .insert({
-        ...kanban
-      })
-      .select("id")
-      .single();
+  // kanban has no customFields column.
+  const { customFields: _customFields, ...row } = kanban;
+  if ("createdBy" in row) {
+    return client.from("kanban").insert(row).select("id").single();
   }
   return client
     .from("kanban")
     .update({
-      ...sanitize(kanban),
+      ...sanitize(row),
       updatedAt: datetime.timestamp()
     })
-    .eq("id", kanban.id)
+    .eq("id", row.id)
     .select("id")
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertReceipt(
   client: SupabaseClient<Database>,
   receipt:
@@ -2166,6 +2541,7 @@ export async function upsertReceipt(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertStorageUnit(
   client: SupabaseClient<Database>,
   storageUnit:
@@ -2201,6 +2577,7 @@ export async function upsertStorageUnit(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertShippingMethod(
   client: SupabaseClient<Database>,
   shippingMethod:
@@ -2230,6 +2607,7 @@ export async function upsertShippingMethod(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertShipment(
   client: SupabaseClient<Database>,
   shipment:
@@ -2297,6 +2675,7 @@ export async function upsertStockTransfer(
     .single();
 }
 
+/** @mcp upsert */
 export async function upsertStockTransferLine(
   client: SupabaseClient<Database>,
   stockTransferLine:
@@ -2378,6 +2757,7 @@ export async function upsertWarehouseTransfer(
     .single();
 }
 
+/** @mcp update */
 export async function updateWarehouseTransferStatus(
   client: SupabaseClient<Database>,
   transferId: string,
@@ -2394,6 +2774,7 @@ export async function updateWarehouseTransferStatus(
     .eq("id", transferId);
 }
 
+/** @mcp upsert */
 export async function upsertWarehouseTransferLine(
   client: SupabaseClient<Database>,
   line:
@@ -2425,6 +2806,7 @@ export async function upsertWarehouseTransferLine(
   }
 }
 
+/** @mcp read */
 export async function getDefaultStorageUnitForJob(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -2468,6 +2850,7 @@ export async function getDefaultStorageUnitForJob(
 // defined in 20260417000200_storage-unit-nesting-and-type.sql)
 // ----------------------------------------------------------------------------
 
+/** @mcp read */
 export async function getStorageUnitTree(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2483,6 +2866,7 @@ export async function getStorageUnitTree(
     .order("ancestorPath");
 }
 
+/** @mcp read */
 export async function getStorageUnitDescendants(
   client: SupabaseClient<Database>,
   storageUnitId: string
@@ -2495,6 +2879,7 @@ export async function getStorageUnitDescendants(
     .contains("ancestorPath", [storageUnitId]);
 }
 
+/** @mcp action */
 export async function expandStorageUnitIdsWithDescendants(
   client: SupabaseClient<Database>,
   storageUnitIds: string[]
@@ -2515,6 +2900,7 @@ export async function expandStorageUnitIdsWithDescendants(
 // storageType CRUD (mirrors materialType in items.service.ts)
 // ----------------------------------------------------------------------------
 
+/** @mcp read */
 export async function getStorageTypeUsage(
   client: SupabaseClient<Database>,
   id: string,
@@ -2528,6 +2914,7 @@ export async function getStorageTypeUsage(
     .limit(5);
 }
 
+/** @mcp delete */
 export async function deleteStorageTypeWithCascade(
   client: SupabaseClient<Database>,
   id: string,
@@ -2553,6 +2940,7 @@ export async function deleteStorageTypeWithCascade(
   return client.from("storageType").delete().eq("id", id);
 }
 
+/** @mcp read */
 export async function getStorageTypes(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2560,7 +2948,7 @@ export async function getStorageTypes(
 ) {
   let query = client
     .from("storageType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2573,6 +2961,7 @@ export async function getStorageTypes(
   return query;
 }
 
+/** @mcp read */
 export async function getStorageType(
   client: SupabaseClient<Database>,
   id: string
@@ -2580,6 +2969,7 @@ export async function getStorageType(
   return client.from("storageType").select("*").eq("id", id).single();
 }
 
+/** @mcp read */
 export async function getStorageTypesList(
   client: SupabaseClient<Database>,
   companyId: string
@@ -2592,6 +2982,7 @@ export async function getStorageTypesList(
   );
 }
 
+/** @mcp upsert */
 export async function upsertStorageType(
   client: SupabaseClient<Database>,
   storageType:
@@ -2624,6 +3015,7 @@ export async function upsertStorageType(
     .single();
 }
 
+/** @mcp read */
 export async function getShelfLifeForItems(
   client: SupabaseClient<Database>,
   itemIds: string[]
@@ -2639,6 +3031,7 @@ export async function getShelfLifeForItems(
  * Map of trackedEntityId → expirationDate (or null) for a set of ids.
  * Used by the inventory adjustment modal to prefill the date picker when
  * editing an existing batch / serial.
+ * @mcp read
  */
 export async function getTrackedEntityExpirations(
   client: SupabaseClient<Database>,
@@ -2662,6 +3055,7 @@ export async function getTrackedEntityExpirations(
 // Picking List CRUD
 // ----------------------------------------------------------------------------
 
+/** @mcp read */
 export async function getPickingLists(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2675,7 +3069,7 @@ export async function getPickingLists(
   let query = client
     .from("pickingLists")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2704,6 +3098,7 @@ export async function getPickingLists(
   return query;
 }
 
+/** @mcp read */
 export async function getPickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -2717,6 +3112,62 @@ export async function getPickingList(
     .single();
 }
 
+/** @mcp read */
+export async function getPicksByJobMaterial(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  const lines = await client
+    .from("pickingListLine")
+    .select(
+      "jobMaterialId, itemId, quantityToPick, quantityPicked, quantityReturned, status, jobMaterial(itemId), pickingList!inner(id, pickingListId, status), item(readableIdWithRevision)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .neq("status", "Cancelled")
+    .neq("pickingList.status", "Cancelled");
+
+  const byMaterial: Record<string, JobMaterialPick[]> = {};
+  for (const line of lines.data ?? []) {
+    if (!line.jobMaterialId || !line.itemId) continue;
+    const picks = (byMaterial[line.jobMaterialId] ??= []);
+    const key = `${line.itemId}:${line.pickingList.id}`;
+    let pick = picks.find((p) => `${p.itemId}:${p.pickingListId}` === key);
+    if (!pick) {
+      pick = {
+        itemId: line.itemId,
+        itemReadableId: line.item?.readableIdWithRevision ?? line.itemId,
+        isSubstitute: line.jobMaterial?.itemId !== line.itemId,
+        quantityToPick: 0,
+        quantityPicked: 0,
+        pickingListId: line.pickingList.id,
+        pickingListReadableId: line.pickingList.pickingListId,
+        pickingListStatus: line.pickingList.status
+      };
+      picks.push(pick);
+    }
+    pick.quantityToPick += Number(line.quantityToPick ?? 0);
+    pick.quantityPicked += Math.max(
+      0,
+      Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
+    );
+  }
+  return { data: byMaterial, error: lines.error };
+}
+
+export type JobMaterialPick = {
+  itemId: string;
+  itemReadableId: string;
+  isSubstitute: boolean;
+  quantityToPick: number;
+  quantityPicked: number;
+  pickingListId: string;
+  pickingListReadableId: string;
+  pickingListStatus: string;
+};
+
+/** @mcp read */
 export async function getPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -2724,7 +3175,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, item(readableId)), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -2732,9 +3183,45 @@ export async function getPickingListLines(
 }
 
 /**
+ * The documents around a picking list that its own row doesn't name: the
+ * jobs its lines pick for, with their status.
+ * @mcp read
+ */
+export async function getPickingListRelatedItems(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  pickingListId: string
+) {
+  const jobs = await client
+    .from("job")
+    .select("id, jobId, status, itemId, pickingListLine!inner(pickingListId)")
+    .eq("pickingListLine.pickingListId", pickingListId)
+    .eq("companyId", companyId)
+    .order("jobId");
+
+  if (jobs.error) {
+    logger.error("Failed to get picking list jobs", {
+      companyId,
+      pickingListId,
+      error: jobs.error
+    });
+  }
+
+  return {
+    jobs: (jobs.data ?? []).map(({ id, jobId, status, itemId }) => ({
+      id,
+      jobId,
+      status,
+      itemId
+    }))
+  };
+}
+
+/**
  * Per-line WAREHOUSE (non-lineside, incl. the unassigned/null bin) on-hand for
  * a picking list's items — drives the "No Stock" warning. Returns a map of
  * pickingListLineId → availableQuantity.
+ * @mcp read
  */
 export async function getPickingListAvailability(
   client: SupabaseClient<Database>,
@@ -2767,6 +3254,7 @@ export type PickingListRecommendation = {
  * greedily assign distinct lots to lines in pick order so the same serial is never
  * recommended to two lines, and a batch lot is split across lines by remaining qty.
  * Returns a map of pickingListLineId → recommended lots (empty/partial if short).
+ * @mcp read
  */
 export async function getPickingListRecommendations(
   client: SupabaseClient<Database>,
@@ -2835,6 +3323,7 @@ export async function getPickingListRecommendations(
   return recommendations;
 }
 
+/** @mcp read */
 export async function getPickingListLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -2848,6 +3337,7 @@ export async function getPickingListLine(
     .single();
 }
 
+/** @mcp read */
 export async function getPickingListLineTrackedEntities(
   client: SupabaseClient<Database>,
   lineId: string
@@ -2861,11 +3351,13 @@ export async function getPickingListLineTrackedEntities(
 /**
  * Pick (or unpick) a tracked (serial/batch) lot for a picking line. A pick
  * MOVES the chosen lot from its warehouse bin to the line's lineside shelf via
- * the `post-picking` edge function (serial/batch), records it on the line, and
+ * the `post-picking` server function (serial/batch), records it on the line, and
  * points the job material at lineside. `unpick` reverses it.
+ * @mcp update
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     trackedEntityId: string;
@@ -2873,6 +3365,7 @@ export async function setPickingListLineTrackedEntity(
     quantity?: number;
     unpick?: boolean;
     userId: string;
+    companyId: string;
   }
 ) {
   const lineResult = await client
@@ -2881,6 +3374,9 @@ export async function setPickingListLineTrackedEntity(
       "*, pickingList(locationId, companyId, status), item(itemTrackingType)"
     )
     .eq("id", args.pickingListLineId)
+    // Callers pass the service role: the company scope is the tenant boundary,
+    // and the server function below acts in args.companyId, never the row's.
+    .eq("companyId", args.companyId)
     .single();
 
   if (lineResult.error || !lineResult.data) {
@@ -2932,33 +3428,33 @@ export async function setPickingListLineTrackedEntity(
     trackedEntityId: args.trackedEntityId,
     locationId: pickingList.locationId,
     userId: args.userId,
-    companyId: pickingList.companyId
+    companyId: args.companyId
   };
   if (!args.unpick) {
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;
-    if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
+    // A batch pick may be fractional (0.5 kg): send the requested quantity as
+    // is and fall back to 1 only when none was given. Flooring at 1 turned
+    // every sub-1 remainder into an over-pick post-picking refused.
+    if (isBatch) {
+      body.quantity =
+        args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
+    }
   }
 
-  const result = await client.functions.invoke("post-picking", { body });
+  const result = await serverFns
+    .as({ client, db, companyId: args.companyId, userId: args.userId })
+    .invoke("post-picking", body as ServerFnInput<"post-picking">);
   if (result.error) {
-    const ctx = (result.error as { context?: Response })?.context;
-    let message = "Failed to pick material";
-    if (ctx && typeof ctx.json === "function") {
-      try {
-        const parsed = await ctx.clone().json();
-        if (parsed?.message) message = parsed.message;
-      } catch {
-        /* fall through */
-      }
-    } else if ((result.error as { message?: string }).message) {
-      message = (result.error as { message: string }).message;
-    }
-    return { data: null, error: message };
+    return {
+      data: null,
+      error: getErrorMessage(result.error, "Failed to pick material")
+    };
   }
 
   return { data: { id: args.pickingListLineId }, error: null };
 }
 
+/** @mcp upsert */
 export async function upsertPickingList(
   client: SupabaseClient<Database>,
   pickingList:
@@ -3002,6 +3498,7 @@ export type UnresolvedPickingListLine = {
 // operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
 // silently left behind. `hasShort` reports whether any acknowledged shortfall
 // exists, which forces the final header status to Partial rather than Completed.
+/** @mcp read */
 export async function getUnresolvedPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3047,6 +3544,64 @@ export async function getUnresolvedPickingListLines(
   return { unresolved, hasShort, error: null };
 }
 
+/** @mcp action */
+export async function cancelOpenPickingListsForJob(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<{ error: Error | null }> {
+  try {
+    await db.transaction().execute(async (trx) => {
+      const lines = await trx
+        .selectFrom("pickingListLine as pll")
+        .innerJoin("pickingList as pl", "pl.id", "pll.pickingListId")
+        .select(["pll.id", "pll.pickingListId"])
+        .where("pll.jobId", "=", args.jobId)
+        .where("pll.companyId", "=", args.companyId)
+        .where("pll.status", "<>", "Cancelled")
+        .where("pl.status", "in", ["Draft", "In Progress"])
+        .execute();
+      if (lines.length === 0) return;
+
+      const now = new Date().toISOString();
+      await trx
+        .updateTable("pickingListLine")
+        .set({ status: "Cancelled", updatedBy: args.userId, updatedAt: now })
+        .where(
+          "id",
+          "in",
+          lines.map((line) => line.id)
+        )
+        .where("companyId", "=", args.companyId)
+        .execute();
+
+      const pickingListIds = Array.from(
+        new Set(lines.map((line) => line.pickingListId))
+      );
+      const remaining = await trx
+        .selectFrom("pickingListLine")
+        .select("pickingListId")
+        .where("pickingListId", "in", pickingListIds)
+        .where("companyId", "=", args.companyId)
+        .where("status", "<>", "Cancelled")
+        .execute();
+      const stillLive = new Set(remaining.map((line) => line.pickingListId));
+      const emptied = pickingListIds.filter((id) => !stillLive.has(id));
+      if (emptied.length === 0) return;
+
+      await trx
+        .updateTable("pickingList")
+        .set({ status: "Cancelled", updatedBy: args.userId, updatedAt: now })
+        .where("id", "in", emptied)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
+/** @mcp update */
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3089,6 +3644,7 @@ export async function upsertPickingListLine(
     .single();
 }
 
+/** @mcp delete */
 export async function deletePickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -3107,6 +3663,7 @@ export async function deletePickingListLine(
 // Picking List Business Logic
 // ----------------------------------------------------------------------------
 
+/** @mcp read */
 export async function getPickingSchedule(
   client: SupabaseClient<Database>,
   args: {
@@ -3179,6 +3736,50 @@ async function resolveWarehouseSource(
   return null;
 }
 
+function toPickFactor(value: number | string | null | undefined): number {
+  const n = Number(value ?? 1);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+async function getWarehouseOnHand(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; locationId: string; companyId: string }
+): Promise<number> {
+  const quantities = await getItemStorageUnitQuantities(
+    client,
+    args.itemId,
+    args.companyId,
+    args.locationId
+  );
+
+  const perUnit = new Map<string, number>();
+  let total = 0;
+  for (const row of quantities.data ?? []) {
+    const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
+    const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
+    if (!unitId) {
+      total += qty;
+    } else {
+      perUnit.set(unitId, (perUnit.get(unitId) ?? 0) + qty);
+    }
+  }
+  total = Math.max(0, total);
+
+  const stocked = Array.from(perUnit).filter(([, qty]) => qty > 0);
+  const workCenters = await async.map(
+    stocked,
+    async ([storageUnitId]) =>
+      await client.rpc("get_effective_work_center_id", {
+        p_storage_unit_id: storageUnitId
+      })
+  );
+  stocked.forEach(([, qty], index) => {
+    if (!workCenters[index]?.data) total += qty;
+  });
+
+  return total;
+}
+
 /**
  * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
  * INCLUDING the unassigned (null storage unit) bin.
@@ -3228,6 +3829,13 @@ async function hasWarehouseStock(
   return false;
 }
 
+class PickingReadError extends Error {
+  constructor(readonly postgrestError: PostgrestError) {
+    super(postgrestError.message);
+  }
+}
+
+/** @mcp create destructive */
 export async function generatePickingList(
   client: SupabaseClient<Database>,
   args: {
@@ -3321,10 +3929,11 @@ export async function generatePickingList(
   let materialsQuery = client
     .from("jobMaterial")
     .select(
-      "id, jobId, jobOperationId, jobMakeMethodId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
+      "id, jobId, jobOperationId, jobMakeMethodId, itemId, substitutedFromItemId, substitutionFactor, quantity, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
     )
     .eq("companyId", args.companyId)
-    .gt("quantityToIssue", 0);
+    .gt("quantityToIssue", 0)
+    .neq("methodType", "Make to Order");
   materialsQuery =
     makeMethodIds.length > 0
       ? materialsQuery.or(
@@ -3343,7 +3952,12 @@ export async function generatePickingList(
   // Stock Only) or, for Consume First, when the predecessor is out of stock.
   // Mirrors get_picking_schedule's SQL resolution.
   const materialItemIds = Array.from(
-    new Set((materials.data ?? []).map((m) => m.itemId))
+    new Set(
+      (materials.data ?? []).flatMap((m) => [
+        pickSupersessionItemId(m),
+        m.itemId
+      ])
+    )
   );
   const supersessionByItem = new Map<string, PickSupersession>();
   if (materialItemIds.length > 0) {
@@ -3370,8 +3984,120 @@ export async function generatePickingList(
   // boundary.
   const asOfDate = datetime.today("UTC").toString();
 
+  const warehouseStockCache = new Map<string, boolean>();
+  const inWarehouseStock = async (itemId: string): Promise<boolean> => {
+    const cached = warehouseStockCache.get(itemId);
+    if (cached !== undefined) return cached;
+    const result = await hasWarehouseStock(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    warehouseStockCache.set(itemId, result);
+    return result;
+  };
+  const warehouseRemaining = new Map<string, number>();
+  const remainingWarehouseStock = async (itemId: string): Promise<number> => {
+    const cached = warehouseRemaining.get(itemId);
+    if (cached !== undefined) return cached;
+    const result = await getWarehouseOnHand(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    warehouseRemaining.set(itemId, result);
+    return result;
+  };
+
   // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
   const onHandCache = new Map<string, Map<string, number>>();
+  const claimsByItem = new Map<string, LinesideClaim[]>();
+  const claimsFor = async (
+    itemId: string,
+    storageUnitId: string
+  ): Promise<LinesideClaim[]> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const cached = claimsByItem.get(key);
+    if (cached) return cached;
+    const { data, error } = await client
+      .from("pickingListLine")
+      .select(
+        "jobId, jobMaterialId, quantityPicked, quantityReturned, pickingList!inner(status), job!inner(status)"
+      )
+      .eq("companyId", args.companyId)
+      .eq("itemId", itemId)
+      .eq("toStorageUnitId", storageUnitId)
+      .neq("status", "Cancelled")
+      .neq("pickingList.status", "Cancelled")
+      .in("job.status", ["Planned", "Ready", "In Progress", "Paused"]);
+    if (error) throw new PickingReadError(error);
+    const claims = (data ?? []).map((line) => ({
+      jobId: line.jobId,
+      jobMaterialId: line.jobMaterialId,
+      staged:
+        Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
+    }));
+    claimsByItem.set(key, claims);
+    return claims;
+  };
+  const consumedByItem = new Map<string, Map<string, number>>();
+  const consumedFor = async (
+    itemId: string,
+    storageUnitId: string
+  ): Promise<Map<string, number>> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const cached = consumedByItem.get(key);
+    if (cached) return cached;
+    const { data, error } = await client
+      .from("itemLedger")
+      .select("documentId, quantity")
+      .eq("companyId", args.companyId)
+      .eq("locationId", args.locationId)
+      .eq("itemId", itemId)
+      .eq("storageUnitId", storageUnitId)
+      .eq("documentType", "Job Consumption");
+    if (error) throw new PickingReadError(error);
+    const byJob = new Map<string, number>();
+    for (const row of data ?? []) {
+      if (!row.documentId) continue;
+      byJob.set(
+        row.documentId,
+        (byJob.get(row.documentId) ?? 0) +
+          Math.max(0, -Number(row.quantity ?? 0))
+      );
+    }
+    consumedByItem.set(key, byJob);
+    return byJob;
+  };
+  const unclaimedRemaining = new Map<string, number>();
+  const linesideCreditFor = async (
+    itemId: string,
+    storageUnitId: string,
+    jobId: string,
+    jobMaterialId: string
+  ): Promise<{ own: number; unclaimed: number; key: string }> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const credit = linesideCredit({
+      onHand: (await onHandFor(itemId)).get(storageUnitId) ?? 0,
+      claims: await claimsFor(itemId, storageUnitId),
+      consumedByJob: await consumedFor(itemId, storageUnitId),
+      jobId,
+      jobMaterialId
+    });
+    if (!unclaimedRemaining.has(key)) {
+      unclaimedRemaining.set(key, credit.unclaimed);
+    }
+    return {
+      own: credit.own,
+      unclaimed: unclaimedRemaining.get(key) ?? 0,
+      key
+    };
+  };
+  const chargeUnclaimed = (key: string, used: number, own: number) => {
+    const current = unclaimedRemaining.get(key) ?? 0;
+    unclaimedRemaining.set(key, Math.max(0, current - Math.max(0, used - own)));
+  };
+
   const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
     const cached = onHandCache.get(itemId);
     if (cached) return cached;
@@ -3422,115 +4148,180 @@ export async function generatePickingList(
     companyId: string;
     createdBy: string;
   }> = [];
-  for (const mat of materials.data ?? []) {
-    const quantityToIssue = Number(mat.quantityToIssue ?? 0);
-    if (quantityToIssue <= 0) continue;
+  try {
+    for (const mat of materials.data ?? []) {
+      const quantityToIssue = Number(mat.quantityToIssue ?? 0);
+      if (quantityToIssue <= 0) continue;
 
-    // Unassigned materials attach to the earliest selected operation of their
-    // make method; its work center drives the lineside destination.
-    const effectiveOperationId =
-      mat.jobOperationId ??
-      firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
-      null;
+      // Unassigned materials attach to the earliest selected operation of their
+      // make method; its work center drives the lineside destination.
+      const effectiveOperationId =
+        mat.jobOperationId ??
+        firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
+        null;
 
-    const opWorkCenterId = effectiveOperationId
-      ? (workCenterByOperation.get(effectiveOperationId) ?? null)
-      : null;
+      const opWorkCenterId = effectiveOperationId
+        ? (workCenterByOperation.get(effectiveOperationId) ?? null)
+        : null;
 
-    // 5. Resolve the destination: the operation's work-center lineside shelf.
-    const toStorageUnitId = await resolveLineside(opWorkCenterId);
+      // 5. Resolve the destination: the operation's work-center lineside shelf.
+      const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
-    // 6. Honor supersession: decide which item this pick targets. Consume First
-    // needs to know whether the predecessor is out of warehouse stock (and the
-    // successor has stock), so probe those sources first — for that mode only.
-    // The stock TEST uses total non-lineside on-hand (including the unassigned
-    // bin) rather than a resolvable concrete source, so predecessor stock sitting
-    // only in the unassigned bin still blocks a spurious successor redirect.
-    const supersession = supersessionByItem.get(mat.itemId);
-    let predecessorInStock = true;
-    let successorInStock = true;
-    if (supersession?.supersessionMode === "Consume First") {
-      predecessorInStock = await hasWarehouseStock(client, {
+      // The stock TEST uses total non-lineside on-hand (including the unassigned
+      // bin) rather than a resolvable concrete source, so predecessor stock sitting
+      // only in the unassigned bin still blocks a spurious successor redirect.
+      const { rule: supersession, swappedFromItemId } = resolvePickRule(
+        mat,
+        supersessionByItem
+      );
+      const predecessorItemId = swappedFromItemId ?? mat.itemId;
+      const perAssemblyOld =
+        Number(mat.quantity ?? 0) *
+        (swappedFromItemId ? 1 / toPickFactor(mat.substitutionFactor) : 1);
+      let predecessorInStock = true;
+      let successorInStock = true;
+      let successorId: string | null = null;
+      if (
+        supersession?.supersessionMode === "Consume First" ||
+        supersession?.supersessionMode === "Prefer New"
+      ) {
+        successorId = swappedFromItemId
+          ? mat.itemId
+          : effectiveSuccessorId(supersession, asOfDate);
+        if (successorId) {
+          const available = await remainingWarehouseStock(predecessorItemId);
+          predecessorInStock =
+            supersession.supersessionMode === "Consume First"
+              ? consumableInWholeAssemblies(available, perAssemblyOld) > 0
+              : available > 0;
+          successorInStock = await inWarehouseStock(successorId);
+        }
+      }
+
+      const target = resolvePickTarget({
         itemId: mat.itemId,
-        locationId: args.locationId,
-        companyId: args.companyId
+        substitutedFromItemId: swappedFromItemId,
+        substitutionFactor: mat.substitutionFactor,
+        supersession,
+        predecessorInStock,
+        successorInStock,
+        asOfDate
       });
-      const successorId = effectiveSuccessorId(supersession, asOfDate);
-      if (successorId && !predecessorInStock) {
-        successorInStock = await hasWarehouseStock(client, {
-          itemId: successorId,
-          locationId: args.locationId,
-          companyId: args.companyId
+      // Nothing valid to pick for production (No Stock, or Stock Only without an
+      // effective successor) — drop it, matching get_picking_schedule.
+      if (target.kind === "skip") continue;
+
+      let targets: { itemId: string; quantity: number }[];
+      if (supersession?.supersessionMode === "Consume First" && successorId) {
+        const oldPerLine = swappedFromItemId
+          ? 1 / toPickFactor(mat.substitutionFactor)
+          : 1;
+        const newPerOld = swappedFromItemId
+          ? toPickFactor(mat.substitutionFactor)
+          : toPickFactor(supersession.conversionFactor);
+        const oldCredit = toStorageUnitId
+          ? await linesideCreditFor(
+              predecessorItemId,
+              toStorageUnitId,
+              mat.jobId,
+              mat.id
+            )
+          : null;
+        const newCredit = toStorageUnitId
+          ? await linesideCreditFor(
+              successorId,
+              toStorageUnitId,
+              mat.jobId,
+              mat.id
+            )
+          : null;
+        const warehouseOld = await remainingWarehouseStock(predecessorItemId);
+        const split = splitConsumeFirstPick({
+          needOld: quantityToIssue * oldPerLine,
+          perAssemblyOld,
+          newPerOld,
+          stagedOld: oldCredit ? oldCredit.own + oldCredit.unclaimed : 0,
+          stagedNew: newCredit ? newCredit.own + newCredit.unclaimed : 0,
+          warehouseOld,
+          successorInStock
+        });
+        warehouseRemaining.set(
+          predecessorItemId,
+          Math.max(0, warehouseOld - split.warehouseOldUsed)
+        );
+        if (oldCredit) {
+          chargeUnclaimed(oldCredit.key, split.stagedOldUsed, oldCredit.own);
+        }
+        if (newCredit) {
+          chargeUnclaimed(newCredit.key, split.stagedNewUsed, newCredit.own);
+        }
+        if (split.picks.length === 0) continue;
+        targets = split.picks.map((pick) => ({
+          itemId: pick.item === "predecessor" ? predecessorItemId : successorId,
+          quantity: pick.quantity
+        }));
+      } else {
+        const need = quantityToIssue * target.factor;
+        if (toStorageUnitId) {
+          const credit = await linesideCreditFor(
+            target.itemId,
+            toStorageUnitId,
+            mat.jobId,
+            mat.id
+          );
+          const credited = Math.min(need, credit.own + credit.unclaimed);
+          chargeUnclaimed(credit.key, credited, credit.own);
+          if (credited >= need) continue;
+          targets = [{ itemId: target.itemId, quantity: need - credited }];
+        } else {
+          targets = [{ itemId: target.itemId, quantity: need }];
+        }
+      }
+
+      for (const { itemId: pickItemId, quantity: quantityToPick } of targets) {
+        const onHandByUnit = await onHandFor(pickItemId);
+
+        let sourceStorageUnitId: string | null;
+        if (pickItemId === mat.itemId && mat.storageUnitId) {
+          const effectiveWc = await client.rpc("get_effective_work_center_id", {
+            p_storage_unit_id: mat.storageUnitId
+          });
+          const materialEffectiveWc =
+            (effectiveWc.data as string | null) ?? null;
+          sourceStorageUnitId = materialEffectiveWc
+            ? await resolveWarehouseSource(client, onHandByUnit)
+            : mat.storageUnitId;
+        } else {
+          sourceStorageUnitId = await resolveWarehouseSource(
+            client,
+            onHandByUnit
+          );
+        }
+
+        lineRows.push({
+          pickingListId: plId,
+          jobId: mat.jobId,
+          jobMaterialId: mat.id,
+          jobOperationId: effectiveOperationId,
+          itemId: pickItemId,
+          quantityToPick,
+          storageUnitId: sourceStorageUnitId,
+          toStorageUnitId,
+          companyId: args.companyId,
+          createdBy: args.createdBy
         });
       }
+      // Tracked (serial/batch) lots are intentionally NOT pre-allocated here — the
+      // kitter selects them at pick time via the TrackedEntityPicker (smart-ordered,
+      // deduped), and the pick records pickingListLineTrackedEntity. Pre-allocating
+      // would show un-picked lots as if already picked.
     }
-
-    const target = resolvePickTarget({
-      itemId: mat.itemId,
-      supersession,
-      predecessorInStock,
-      successorInStock,
-      asOfDate
-    });
-    // Nothing valid to pick for production (No Stock, or Stock Only without an
-    // effective successor) — drop it, matching get_picking_schedule.
-    if (target.kind === "skip") continue;
-
-    const pickItemId = target.itemId;
-    const quantityToPick = quantityToIssue * target.factor;
-
-    // On-hand of the resolved PICK item per bin at the location (reused for the
-    // already-staged skip and warehouse-source resolution).
-    const onHandByUnit = await onHandFor(pickItemId);
-
-    // Skip when the op's lineside bin already stocks enough of the pick item to
-    // cover the (converted) quantity — it's already staged here, so there's
-    // nothing to pick. We test the ACTUAL on-hand at that bin, not merely
-    // whether the jobMaterial's recorded shelf points there: a part can be
-    // line-stocked at this work center while the jobMaterial still points at the
-    // warehouse (or another line).
-    if (
-      toStorageUnitId &&
-      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToPick
-    ) {
-      continue;
+  } catch (err) {
+    if (err instanceof PickingReadError) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: err.postgrestError };
     }
-
-    // 7. Determine the source (warehouse) shelf. The jobMaterial's recorded
-    // shelf is only meaningful when we're picking that same item (the
-    // predecessor); for a substituted successor, resolve a warehouse source by
-    // on-hand. Use the recorded shelf only when it's a warehouse (non-lineside)
-    // shelf; otherwise resolve by on-hand — never rob another work center's
-    // lineside. A null source = a shortage the kitter/planner must resolve.
-    let sourceStorageUnitId: string | null;
-    if (pickItemId === mat.itemId && mat.storageUnitId) {
-      const effectiveWc = await client.rpc("get_effective_work_center_id", {
-        p_storage_unit_id: mat.storageUnitId
-      });
-      const materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
-      sourceStorageUnitId = materialEffectiveWc
-        ? await resolveWarehouseSource(client, onHandByUnit)
-        : mat.storageUnitId;
-    } else {
-      sourceStorageUnitId = await resolveWarehouseSource(client, onHandByUnit);
-    }
-
-    lineRows.push({
-      pickingListId: plId,
-      jobId: mat.jobId,
-      jobMaterialId: mat.id,
-      jobOperationId: effectiveOperationId,
-      itemId: pickItemId,
-      quantityToPick,
-      storageUnitId: sourceStorageUnitId,
-      toStorageUnitId,
-      companyId: args.companyId,
-      createdBy: args.createdBy
-    });
-    // Tracked (serial/batch) lots are intentionally NOT pre-allocated here — the
-    // kitter selects them at pick time via the TrackedEntityPicker (smart-ordered,
-    // deduped), and the pick records pickingListLineTrackedEntity. Pre-allocating
-    // would show un-picked lots as if already picked.
+    throw err;
   }
 
   // 7. If no lines to pick, delete the empty header and report.
@@ -3567,21 +4358,24 @@ export async function generatePickingList(
 /**
  * Pick, partial-pick (short), or unpick a picking line. A pick TRANSFERS the
  * material from its warehouse source shelf to the work center's lineside shelf
- * via the `post-picking` edge function (consumption happens later at
+ * via the `post-picking` server function (consumption happens later at
  * production). The DELTA between the desired picked quantity and what's already
  * picked is what moves: positive transfers in, negative reverses.
  *   - Pick (full):  quantity = quantityToPick
  *   - Unpick:       quantity = 0
  *   - Short:        quantity = whatever was actually picked, markShort = true
  * Tracked items go through the scan flow and are rejected here.
+ * @mcp action
  */
 export async function pickPickingListLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     quantity: number;
     markShort?: boolean;
     userId: string;
+    companyId: string;
   }
 ) {
   const lineResult = await client
@@ -3590,6 +4384,9 @@ export async function pickPickingListLine(
       "*, pickingList(locationId, companyId, status), item(itemTrackingType)"
     )
     .eq("id", args.pickingListLineId)
+    // Callers pass the service role: the company scope is the tenant boundary,
+    // and the server function below acts in args.companyId, never the row's.
+    .eq("companyId", args.companyId)
     .single();
 
   if (lineResult.error || !lineResult.data) {
@@ -3649,7 +4446,7 @@ export async function pickPickingListLine(
             quantity: delta,
             locationId: pickingList.locationId,
             userId: args.userId,
-            companyId: pickingList.companyId
+            companyId: args.companyId
           }
         : {
             type: "unpickInventory",
@@ -3658,29 +4455,22 @@ export async function pickPickingListLine(
             quantity: -delta,
             locationId: pickingList.locationId,
             userId: args.userId,
-            companyId: pickingList.companyId
+            companyId: args.companyId
           };
 
-    const result = await client.functions.invoke("post-picking", { body });
+    const result = await serverFns
+      .as({ client, db, companyId: body.companyId, userId: body.userId })
+      .invoke("post-picking", body as ServerFnInput<"post-picking">);
 
     if (result.error) {
-      const ctx = (result.error as { context?: Response })?.context;
-      let message = "Failed to pick material";
-      if (ctx && typeof ctx.json === "function") {
-        try {
-          const parsed = await ctx.clone().json();
-          if (parsed?.message) message = parsed.message;
-        } catch {
-          /* fall through */
-        }
-      } else if ((result.error as { message?: string }).message) {
-        message = (result.error as { message: string }).message;
-      }
-      return { data: null, error: message };
+      return {
+        data: null,
+        error: getErrorMessage(result.error, "Failed to pick material")
+      };
     }
   }
 
-  // Short overrides the status the edge function derived from quantities.
+  // Short overrides the status the server function derived from quantities.
   if (args.markShort) {
     const update = await client
       .from("pickingListLine")
@@ -3690,7 +4480,8 @@ export async function pickPickingListLine(
         updatedBy: args.userId,
         updatedAt: new Date().toISOString()
       })
-      .eq("id", line.id);
+      .eq("id", line.id)
+      .eq("companyId", args.companyId);
     if (update.error) {
       return { data: null, error: update.error };
     }
@@ -3699,6 +4490,7 @@ export async function pickPickingListLine(
   return { data: { id: line.id }, error: null };
 }
 
+/** @mcp create destructive */
 export async function insertStockTransfer(
   client: SupabaseClient<Database>,
   input: {
@@ -3797,6 +4589,7 @@ export async function insertStockTransfer(
   };
 }
 
+/** @mcp create */
 export async function insertWarehouseTransfer(
   client: SupabaseClient<Database>,
   input: {
@@ -3901,6 +4694,7 @@ export async function updateStockTransfer(
     .single();
 }
 
+/** @mcp update */
 export async function updateWarehouseTransfer(
   client: SupabaseClient<Database>,
   input: {

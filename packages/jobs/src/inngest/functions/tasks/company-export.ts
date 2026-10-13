@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { listBucketFilesRecursive } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Manifest } from "./company-backup";
@@ -240,11 +247,21 @@ export async function buildCompanyBackup(
 
   if (includeStorage === "all") {
     let totalBytes = 0;
-    const paths = await listBucketFilesRecursive(
-      client,
-      STORAGE_BUCKET,
-      companyId
-    );
+    // Assets live in the company's own bucket; files uploaded before the
+    // per-company bucket migration still live in the legacy shared bucket.
+    // Union both listings (same keys), preferring the company bucket's copy.
+    const [companyPaths, legacyPaths] = await Promise.all([
+      listBucketFilesRecursive(
+        client,
+        getCompanyPrivateBucket(companyId),
+        companyId
+      ),
+      listBucketFilesRecursive(client, STORAGE_BUCKET, companyId)
+    ]);
+    const byPath = new Map<string, { path: string; size: number }>();
+    for (const file of legacyPaths) byPath.set(file.path, file);
+    for (const file of companyPaths) byPath.set(file.path, file);
+    const paths = Array.from(byPath.values());
     for (const file of paths) {
       const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
       if (included) {
@@ -354,9 +371,11 @@ export const companyExportFunction = inngest.createFunction(
     const { companyId, userId, label, includeStorage, skipCorrupted } =
       event.data;
 
+    await requireBackupsEntitlement(companyId);
+
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(TABLE_CONCURRENCY);
+      const db = getJobDatabaseClient();
 
       // Live-progress marker (cleared on success, flipped to "failed" on error).
       // Throttled so a fast parallel dump doesn't hammer the row.
@@ -457,29 +476,3 @@ export const companyExportFunction = inngest.createFunction(
     });
   }
 );
-
-async function listBucketFilesRecursive(
-  client: ServiceRole,
-  bucket: string,
-  prefix = ""
-): Promise<Array<{ path: string; size: number }>> {
-  const files: Array<{ path: string; size: number }> = [];
-  const { data, error } = await client.storage.from(bucket).list(prefix, {
-    limit: 1000
-  });
-  if (error || !data) return files;
-
-  for (const entry of data) {
-    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
-    if (entry.id === null) {
-      // folder
-      files.push(...(await listBucketFilesRecursive(client, bucket, path)));
-    } else {
-      files.push({
-        path,
-        size: (entry.metadata as { size?: number } | null)?.size ?? 0
-      });
-    }
-  }
-  return files;
-}

@@ -1,4 +1,8 @@
-import type { WorkflowDefinition } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowDefinition } from "@carbon/ee/workflows";
 import type { WorkflowRunDetail } from "../../workflows.service";
 import type { LabelFor } from "../Builder/labelKeys";
 import { nodeTitle } from "../Builder/labelKeys";
@@ -37,7 +41,7 @@ function stepTitle(
 /**
  * One sentence describing what a run actually did. Exists because a condition
  * that matches no path still ends the run `Succeeded` — see
- * `conditionExecutor` in `packages/workflows/src/runtime/condition.ts`.
+ * `conditionExecutor` in `packages/ee/src/workflows/runtime/condition.ts`.
  */
 export function runOutcome(
   run: Pick<WorkflowRunDetail, "status" | "error" | "statusReason">,

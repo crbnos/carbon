@@ -1,22 +1,36 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { validationError, validator } from "@carbon/form";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
-import { ApprovalRuleForm } from "~/modules/settings";
 import {
   type ApprovalDocumentType,
-  approvalRuleValidator,
-  upsertApprovalRule
-} from "~/modules/shared";
+  approvalRuleValidator
+} from "@carbon/ee/approvals";
+import { upsertApprovalRule } from "@carbon/ee/approvals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate } from "react-router";
+import { ApprovalRuleForm } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "settings",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.settings,
+    feature: "APPROVAL_RULES"
   });
 
   const url = new URL(request.url);
@@ -24,7 +38,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const documentType: ApprovalDocumentType | null =
     typeParam === "purchaseOrder" ||
     typeParam === "qualityDocument" ||
-    typeParam === "supplier"
+    typeParam === "supplier" ||
+    typeParam === "changeOrder"
       ? typeParam
       : null;
 
@@ -37,9 +52,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.settings,
+    feature: "APPROVAL_RULES"
   });
 
   const serviceRole = getCarbonServiceRole();

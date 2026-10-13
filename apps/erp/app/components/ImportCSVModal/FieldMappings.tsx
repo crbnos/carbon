@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { Combobox, CreatableCombobox, useFormContext } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
   ModalBody,
@@ -27,7 +32,6 @@ import {
   useState
 } from "react";
 import { LuInfo, LuListPlus, LuMoveRight, LuPlus } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import { Submit } from "~/components/Form";
 import {
   useCompanySettings,
@@ -89,7 +93,26 @@ export function FieldMapping({
   const initialized = useRef(false);
   const { validate } = useFormContext(formId);
   const { fileColumns, filePath, firstRows } = useCsvContext();
-  const fetcher = useFetcher<typeof action>();
+  const fetcher = useAction<typeof action>({
+    onSettled: (data) => {
+      if (data && Object.keys(data).length > 0 && !initialized.current) {
+        initialized.current = true;
+        setColumnMappings((prevMappings) => {
+          if (!data || !fileColumns) return prevMappings;
+
+          return Object.entries(data).reduce(
+            (acc, [key, value]) => {
+              if (fileColumns.includes(value)) {
+                acc[key] = value;
+              }
+              return acc;
+            },
+            {} as Record<string, string>
+          );
+        });
+      }
+    }
+  });
   const mappableFields = fieldMappings[table];
   const [currentStep, setCurrentStep] = useState(0);
   const [columnMappings, setColumnMappings] = useState<Record<string, string>>(
@@ -150,30 +173,6 @@ export function FieldMapping({
       }
     );
   }, [fileColumns, firstRows]);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (
-      fetcher.data &&
-      Object.keys(fetcher.data).length > 0 &&
-      !initialized.current
-    ) {
-      initialized.current = true;
-      setColumnMappings((prevMappings) => {
-        if (!fetcher.data || !fileColumns) return prevMappings;
-
-        return Object.entries(fetcher.data).reduce(
-          (acc, [key, value]) => {
-            if (fileColumns.includes(value)) {
-              acc[key] = value;
-            }
-            return acc;
-          },
-          {} as Record<string, string>
-        );
-      });
-    }
-  }, [fetcher.data]);
 
   const enumFields: [
     string,
@@ -498,7 +497,7 @@ function EnumMappingStep({
 
   // Inline create-and-link for name-only lookups (e.g. supplier type). Created
   // ids flow through onEnumMappingChange into enumMappings, so the import
-  // payload is unchanged — the edge function only ever sees real ids. The same
+  // payload is unchanged — the server function only ever sees real ids. The same
   // batch path serves both the per-value combobox create and the "create all
   // missing" banner; the route is idempotent, so values that already exist are
   // linked instead of duplicated.

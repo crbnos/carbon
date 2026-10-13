@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getOnshapeClient } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import { getReadableIdWithRevision } from "~/utils/string";
 
 const logger = getLogger("erp", "integrations-onshape-d-did-v-vid-e-eid-bom");
 

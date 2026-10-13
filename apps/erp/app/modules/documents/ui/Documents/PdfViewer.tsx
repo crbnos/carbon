@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { Skeleton } from "@carbon/react";
-import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { useState } from "react";
 import { Document, Page, pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
+// Registered here, not in the client entry: this module is lazy, so the PDF
+// engine stays out of every page that shows no PDF.
+registerReactPdfWorker(pdfjs);
 
 function SkeletonDocument() {
   return (

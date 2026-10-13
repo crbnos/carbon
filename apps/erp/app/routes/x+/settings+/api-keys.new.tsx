@@ -1,13 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { hashApiKey, requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertApiKey } from "@carbon/ee/api-keys.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, useNavigate } from "react-router";
+import { data } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "users"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -82,7 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewApiKeyRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{ companyId: string }>(path.to.apiKeys);
 
   const initialValues = {
@@ -91,7 +97,7 @@ export default function NewApiKeyRoute() {
 
   return (
     <ApiKeyForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
       companyId={routeData?.companyId}
     />

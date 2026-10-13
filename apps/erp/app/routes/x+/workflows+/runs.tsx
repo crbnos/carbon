@@ -1,9 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { VStack } from "@carbon/react";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { RecordOutlet, VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData } from "react-router";
-import { getWorkflowRuns } from "~/modules/workflows";
+import { useLoaderData } from "react-router";
+import {
+  getWorkflowRunRecordNames,
+  getWorkflowRuns
+} from "~/modules/workflows";
 import WorkflowRunsTable from "~/modules/workflows/ui/Runs/WorkflowRunsTable";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -13,7 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "workflows",
     role: "employee"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -33,8 +40,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters
   });
 
+  const data = runs.data ?? [];
+  const recordNames = await getWorkflowRunRecordNames(
+    client,
+    companyId,
+    data.flatMap((run) =>
+      run.triggerTable && run.triggerRecordId
+        ? [{ table: run.triggerTable, id: run.triggerRecordId }]
+        : []
+    )
+  );
+
   return {
-    data: runs.data ?? [],
+    data: data.map((run) => ({
+      ...run,
+      recordName: recordNames[`${run.triggerTable}:${run.triggerRecordId}`]
+    })),
     count: runs.count ?? 0
   };
 }
@@ -44,7 +65,7 @@ export default function WorkflowRunsRoute() {
   return (
     <VStack spacing={0} className="h-full">
       <WorkflowRunsTable data={data} count={count} />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

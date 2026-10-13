@@ -3,9 +3,9 @@ title: Gauges and calibration
 description: Track measurement instruments, schedule their calibrations, and flag any gauge that falls out of calibration.
 ---
 
-A <Term>gauge</Term> is a measurement instrument you keep under control: a caliper, a micrometer, a pin gauge, a CMM. Carbon tracks each one as a record, holds it to a recurring <Term>calibration</Term> schedule, and marks it out of calibration the moment it's overdue. Every calibration you perform is logged as its own dated record, so the gauge carries its full history.
+A <Term>gauge</Term> is a controlled measurement instrument, such as a caliper, micrometer, pin gauge, or CMM. Carbon assigns each gauge a recurring <Term>calibration</Term> schedule and marks it out of calibration when overdue. Each calibration is a dated record, preserving the gauge's history.
 
-Gauges live in the quality module alongside [issues and inbound inspection](/docs/reference/quality). They're managed on their own, though: a gauge is not attached to an inspection you record. Carbon keeps the instrument controlled so the person taking a measurement knows the tool is trustworthy.
+Gauges are part of the quality module. An [inspection](/docs/reference/inspections#gauges) can record which gauge measured each characteristic.
 
 ## The gauge record
 
@@ -27,11 +27,11 @@ Add a gauge under Quality → Gauges. Each gauge belongs to a **gauge type** (Ca
   <Field name="storageUnitId">Which storage unit holds it.</Field>
 </FieldTable>
 
-A gauge also has a **status** of `Active` or `Inactive`. Deactivating a gauge (rather than deleting it) is the right move when it has calibration history: an inactive gauge is treated as out of calibration, and its records stay on file. Delete only a gauge that was never calibrated.
+A gauge has status `Active` or `Inactive`. Deactivate a gauge to preserve its calibration history; inactive gauges are treated as out of calibration. Delete only gauges without calibration history.
 
 ## The calibration schedule
 
-You don't set a next-due date by hand. You set the **interval** in months on the gauge, and Carbon does the arithmetic every time you record a calibration: it stamps the calibration date as the last calibration date and sets the next-due date to that plus the interval. A caliper calibrated on the first of January against a six-month interval comes due on the first of July.
+Set the gauge's calibration **interval** in months. When you record a calibration, Carbon sets that date as the last calibration date and calculates the next due date by adding the interval. For example, a gauge calibrated on January 1 with a six-month interval is due July 1.
 
 The interval and the last calibration date together are the whole schedule. Change the interval and the next calibration you log recomputes the due date from it.
 
@@ -54,7 +54,7 @@ Each time a gauge is calibrated, log it as a **calibration record** under Qualit
   <Field name="notes">Free-form notes on the calibration.</Field>
 </FieldTable>
 
-The three "requires" checkboxes decide whether the calibration passed. Tick any one of them and the calibration is a **Fail**; leave all three clear and it's a **Pass**. That result is what drives the gauge's calibration status, so recording a calibration is also how a gauge changes state.
+The three **requires** fields determine the result. If any is selected, the calibration **Fails**. If all are clear, it **Passes**. Recording the result updates the gauge's calibration status.
 
 <Callout type="note" title="A gauge keeps every calibration">
 Logging a calibration never overwrites the last one. Each record is a dated row, and the gauge shows them newest-first. What the gauge summarizes from them is the *latest* calibration date and the resulting status.
@@ -64,13 +64,13 @@ Logging a calibration never overwrites the last one. Each record is a dated row,
 
 A gauge carries a calibration status with three values, and Carbon sets it for you.
 
-<StatusFlow>
+<StatusFlow entity="gaugeCalibration">
   <Status name="Pending">The starting state. The gauge has a schedule but no passing calibration on record yet, so it's neither confirmed in nor out.</Status>
   <Status name="In-Calibration" accent>The most recent calibration passed and the next-due date is still in the future. The gauge is trustworthy.</Status>
   <Status name="Out-of-Calibration" terminal>The most recent calibration failed, the gauge is inactive, or the next-due date has passed. The gauge needs recalibrating.</Status>
 </StatusFlow>
 
-This isn't a lifecycle you step through by hand — it's derived. Record a passing calibration and the gauge moves to `In-Calibration`; record a failing one and it moves to `Out-of-Calibration`. On top of that, Carbon computes overdue on the fly: whenever a gauge is `Inactive` or its next-due date is before today, it reads as `Out-of-Calibration` regardless of the stored value. A gauge that passed calibration in January but was due in July shows overdue the moment July passes, without anyone touching it.
+Calibration status is derived, not manually assigned. A passing result sets `In-Calibration`; a failing result sets `Out-of-Calibration`. Carbon also reports any inactive or overdue gauge as `Out-of-Calibration`, regardless of its stored result.
 
 <Callout type="warn" title="Overdue is computed, not stored">
 You never mark a gauge overdue. The out-of-calibration reading for a past-due or inactive gauge is derived at read time from the next-due date, so it flips on its own the day the schedule lapses. Bringing it back is a matter of logging a fresh passing calibration.

@@ -1,4 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  CHANGE_LOGGED_TABLES,
+  REALTIME_TABLES
+} from "@carbon/database/realtime-tables";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
@@ -14,6 +24,7 @@ import {
   backupNameFromSource,
   bindValue,
   canSetReplicationRole,
+  deleteDanglingRows,
   ExportScopeViolationError,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
@@ -36,6 +47,8 @@ import {
 import { buildCompanyBackup } from "./company-export";
 
 const INSERT_CHUNK_SIZE = 200;
+
+const log = getLogger("jobs", "company-restore");
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
@@ -202,6 +215,58 @@ export async function wipeAndLoad(
         done: t + 1,
         total: loadTables.length
       });
+    }
+
+    // Kept identity rows whose parent the wipe removed (replica mode skipped the
+    // cascade) would fail every later export. A foreign restore already wiped them.
+    if (!remap) {
+      const dangling = await deleteDanglingRows(
+        trx,
+        catalog.tables.filter(
+          (t) => isUserScopedIdentityTable(t) && t.scopeColumn === "companyId"
+        ),
+        byName,
+        companyId,
+        targetGroupId
+      );
+      if (dangling.length > 0) {
+        log.warn("Restore: removed identity rows left dangling by the wipe", {
+          companyId,
+          deleted: dangling
+        });
+      }
+    }
+
+    // Every list an open client keeps a copy of has just been replaced. With
+    // triggers off nothing logged that, so say it here: a null row id tells
+    // the client to read the whole table again.
+    await trx
+      .insertInto("tableChange")
+      .values(
+        CHANGE_LOGGED_TABLES.map((table) => ({ companyId, table, rowId: null }))
+      )
+      .execute();
+
+    // The log only answers a client that asks, and an open tab asks when a
+    // broadcast tells it to. With triggers off none was sent: after a template
+    // was reverted, a tab kept the reverted parts in its pickers for up to an
+    // hour, and creating a job with one of them failed. Say on every table's
+    // topic that it changed in bulk (null ids): a list reads the log again and
+    // a page reloads. Sent with the transaction, so nothing hears of a restore
+    // that rolled back.
+    const realtime = await sql<{ present: boolean }>`
+      SELECT to_regprocedure('realtime.send(jsonb,text,text,boolean)') IS NOT NULL AS present
+    `.execute(trx);
+    if (realtime.rows[0]?.present) {
+      await sql`
+        SELECT realtime.send(
+          jsonb_build_object('table', t, 'op', 'UPDATE', 'ids', NULL, 'parents', NULL),
+          'UPDATE',
+          'company:' || ${companyId} || ':' || t,
+          true
+        )
+        FROM unnest(${[...REALTIME_TABLES]}::text[]) AS t
+      `.execute(trx);
     }
   });
 
@@ -392,9 +457,11 @@ export const companyRestoreFunction = inngest.createFunction(
     const { companyId, userId, filePath, restoreRunId, label, includeStorage } =
       event.data;
 
+    await requireBackupsEntitlement(companyId);
+
     return await step.run("restore-company", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       // Idempotency — a retry after the run already reached a terminal state
       // must not wipe again.
@@ -622,6 +689,10 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
+    // No entitlement gate here: finalize only RESOLVES an already-started (and
+    // already-gated) restore. If BACKUPS lapsed while the restore sat "ready",
+    // gating this would strand it — marker stuck "ready", snapshot orphaned,
+    // with no recovery path (retries: 1). The lock is on companyRestoreFunction.
     return await step.run("finalize-restore", async () => {
       const client = getCarbonServiceRole();
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
@@ -655,9 +726,13 @@ export const companyRestoreRevertFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
+    // No entitlement gate here (see finalize): revert must always be able to
+    // undo a pending restore and return the pre-restore snapshot, even if
+    // BACKUPS lapsed while it sat "ready" — blocking it would strand the company
+    // mid-restore. The lock is on companyRestoreFunction (the start).
     return await step.run("revert-restore", async () => {
       const client = getCarbonServiceRole();
-      const db = getJobDatabaseClient(1);
+      const db = getJobDatabaseClient();
 
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
       const snapshotPath = marker?.metadata.snapshotPath;

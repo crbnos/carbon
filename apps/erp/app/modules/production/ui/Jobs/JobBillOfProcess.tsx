@@ -1,8 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction, useChangedRows, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -17,6 +24,7 @@ import {
   CardHeader,
   CardTitle,
   Checkbox,
+  ContextMenuItem,
   Count,
   cn,
   DropdownMenu,
@@ -29,6 +37,7 @@ import {
   Input as InputField,
   Label,
   Loading,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -45,7 +54,7 @@ import {
   useDebounce,
   useDisclosure,
   useMount,
-  useRealtimeChannel,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -57,8 +66,8 @@ import {
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -80,15 +89,11 @@ import {
   LuRefreshCcw,
   LuSend,
   LuShieldX,
-  LuTriangleAlert
+  LuSquareChartGantt,
+  LuTriangleAlert,
+  LuWorkflow
 } from "react-icons/lu";
-import {
-  Link,
-  useFetcher,
-  useFetchers,
-  useParams,
-  useRevalidator
-} from "react-router";
+import { Link, useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
 import {
   Assignee,
@@ -117,7 +122,6 @@ import {
 import AssemblyInstruction from "~/components/Form/AssemblyInstruction";
 import InspectionDocument from "~/components/Form/InspectionDocument";
 import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import UnitOfMeasure, {
   useUnitOfMeasure
@@ -134,13 +138,19 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
+  useImageUpload,
   usePermissions,
   useRouteData,
   useUrlParams,
   useUser
 } from "~/hooks";
+import {
+  OperationRowDetails,
+  OperationRowTitle
+} from "~/modules/items/ui/Item/MethodRow";
 import type {
   OperationParameter,
   OperationStep,
@@ -186,6 +196,13 @@ export type Operation = z.infer<typeof jobOperationValidator> & {
   tags: string[] | null;
   workInstruction: JSONContent | null;
   reworkId: string | null;
+  // Embedded by getJobOperationsByMethodId: which operation batch (if any)
+  // this operation runs in. Only Active/Completing render a badge.
+  jobOperationBatch?: {
+    id: string;
+    readableId: string | null;
+    status: string | null;
+  } | null;
 };
 
 type ItemWithData = Item & {
@@ -225,6 +242,17 @@ type JobBillOfProcessProps = {
   customerId: string;
 };
 
+function newIssueUrl(
+  operation: Operation,
+  urlParams: { [key: string]: string }
+) {
+  return `${path.to.newIssue}?${new URLSearchParams({
+    jobOperationId: operation.id!,
+    operationSupplierProcessId: operation.operationSupplierProcessId ?? "",
+    ...urlParams
+  }).toString()}`;
+}
+
 function makeItems(
   operations: Operation[],
   tags: { name: string }[],
@@ -257,54 +285,40 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <VStack spacing={0}>
-        <HStack spacing={2}>
-          <h3 className="font-semibold truncate cursor-pointer">
-            {operation.description}
-          </h3>
-          {operation.reworkId && <Badge variant="red">Rework</Badge>}
-        </HStack>
-        {operation.operationType === "Outside Processing" && (
-          <SupplierProcessPreview
-            processId={operation.processId}
-            supplierProcessId={operation.operationSupplierProcessId}
-          />
-        )}
-      </VStack>
+      <OperationRowTitle
+        description={operation.description}
+        operationType={operation.operationType}
+        processId={operation.processId}
+        supplierProcessId={operation.operationSupplierProcessId}
+        badges={
+          <>
+            {operation.reworkId && (
+              <Badge variant="red">
+                <Trans>Rework</Trans>
+              </Badge>
+            )}
+            {operation.jobOperationBatch &&
+              (operation.jobOperationBatch.status === "Active" ||
+                operation.jobOperationBatch.status === "Completing") && (
+                <Badge
+                  variant={
+                    operation.jobOperationBatch.status === "Completing"
+                      ? "yellow"
+                      : "secondary"
+                  }
+                >
+                  {operation.jobOperationBatch.readableId}
+                </Badge>
+              )}
+          </>
+        }
+      />
     ),
     checked: false,
     order: operation.operationOrder,
-    details: (
-      <HStack spacing={1}>
-        {operation.operationType === "Outside Processing" ? (
-          <Badge>Outside Processing</Badge>
-        ) : (
-          <>
-            {(operation?.setupTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                {operation.setupTime} {operation.setupUnit}
-              </Badge>
-            )}
-            {(operation?.laborTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                {operation.laborTime} {operation.laborUnit}
-              </Badge>
-            )}
-
-            {(operation?.machineTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                {operation.machineTime} {operation.machineUnit}
-              </Badge>
-            )}
-          </>
-        )}
-      </HStack>
-    ),
+    details: <OperationRowDetails operation={operation} />,
     footer: temporaryItems[operation.id!] ? null : (
-      <HStack className="w-full justify-between">
+      <HStack className="w-full justify-between max-md:flex-col max-md:items-start max-md:gap-1 max-md:space-x-0">
         <HStack>
           <JobOperationStatus operation={operation} />
           <Assignee
@@ -314,13 +328,14 @@ function makeItem(
             value={operation.assignee ?? undefined}
           />
         </HStack>
-        <HStack>
+        <HStack className="max-md:flex-wrap">
           {projectedDate &&
             (behindDays > 0 ? (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Badge variant="red">
-                    <Trans>Projected {formatDate(projectedDate)}</Trans>
+                  <Badge variant="red" className="gap-1">
+                    <LuSquareChartGantt className="size-3 shrink-0" />
+                    {formatDate(projectedDate)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -330,8 +345,9 @@ function makeItem(
                 </TooltipContent>
               </Tooltip>
             ) : (
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                <Trans>Projected {formatDate(projectedDate)}</Trans>
+              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+                <LuSquareChartGantt className="size-3 shrink-0" />
+                {formatDate(projectedDate)}
               </span>
             ))}
           <OperationDueDatePicker
@@ -345,6 +361,7 @@ function makeItem(
               <a
                 href={path.to.external.mesJobOperation(operation.id!)}
                 title={t`Open in MES`}
+                className="max-md:hidden"
               >
                 <IconButton
                   icon={<LuPlay />}
@@ -363,13 +380,9 @@ function makeItem(
           <Tooltip>
             <TooltipTrigger asChild>
               <Link
-                to={`${path.to.newIssue}?${new URLSearchParams({
-                  jobOperationId: operation.id,
-                  operationSupplierProcessId:
-                    operation.operationSupplierProcessId ?? "",
-                  ...urlParams
-                }).toString()}`}
+                to={newIssueUrl(operation, urlParams)}
                 title={t`Create Issue`}
+                className="max-md:hidden"
               >
                 <IconButton
                   icon={<LuShieldX />}
@@ -518,12 +531,10 @@ const JobBillOfProcess = ({
     });
 
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -570,15 +581,12 @@ const JobBillOfProcess = ({
     (a, b) => (orderState[a.id!] ?? a.order) - (orderState[b.id!] ?? b.order)
   );
 
+  const issueUrlParams = { itemId, salesOrderLineId, customerId };
   const items = makeItems(
     operations,
     tags,
     temporaryItems,
-    {
-      itemId,
-      salesOrderLineId,
-      customerId
-    },
+    issueUrlParams,
     t
   ).map((item) => ({
     ...item,
@@ -588,6 +596,7 @@ const JobBillOfProcess = ({
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
+  const isReadOnly = isDisabled || !permissions.can("update", "production");
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "parts")) return;
@@ -703,23 +712,7 @@ const JobBillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, { upsert: true });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`parts/${selectedItemId}`);
 
   const [productionEvents, setProductionEvents] = useState<
     Database["public"]["Tables"]["productionEvent"]["Row"][]
@@ -728,77 +721,29 @@ const JobBillOfProcess = ({
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const addOperationButtonRef = useRef<HTMLButtonElement>(null);
+  const { isPhone } = useViewport();
 
-  useRealtimeChannel({
-    topic: `production-events:${selectedItemId}`,
+  useChangedRows<Database["public"]["Tables"]["productionEvent"]["Row"]>({
+    companyId,
+    table: "productionEvent",
     enabled: !!selectedItemId && !temporaryItems[selectedItemId],
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "productionEvent",
-          filter: `jobOperationId=eq.${selectedItemId}`
-        },
-        (payload) => {
-          switch (payload.eventType) {
-            case "INSERT":
-              const { new: inserted } = payload;
-              setProductionEvents((prevEvents) => [
-                ...prevEvents,
-                inserted as Database["public"]["Tables"]["productionEvent"]["Row"]
-              ]);
-              break;
-            case "UPDATE":
-              const { new: updated } = payload;
-              setProductionEvents((prevEvents) =>
-                prevEvents.map((event) =>
-                  event.id === updated.id
-                    ? (updated as Database["public"]["Tables"]["productionEvent"]["Row"])
-                    : event
-                )
-              );
-              break;
-            case "DELETE":
-              const { old: deleted } = payload;
-              setProductionEvents((prevEvents) =>
-                prevEvents.filter((event) => event.id !== deleted.id)
-              );
-              break;
-            default:
-              break;
-          }
-        }
-      );
-    }
-  });
-
-  // Phase 3: keep the live job's BOP steps fresh without closing the panel. When steps are
-  // added/edited/reordered for the open operation, or an operator records a step on the shop
-  // floor (jobOperationStepRecord), revalidate so the loader re-serves the latest steps.
-  const revalidator = useRevalidator();
-  useRealtimeChannel({
-    topic: `bop-steps:${selectedItemId}`,
-    enabled: !!selectedItemId && !temporaryItems[selectedItemId],
-    setup(channel) {
-      const refresh = () => revalidator.revalidate();
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperationStep",
-            filter: `operationId=eq.${selectedItemId}`
-          },
-          refresh
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "jobOperationStepRecord" },
-          refresh
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setProductionEvents((prevEvents) =>
+          prevEvents.filter((event) => !ids.includes(event.id))
         );
+        return;
+      }
+      const mine = rows.filter((row) => row.jobOperationId === selectedItemId);
+      setProductionEvents((prevEvents) => {
+        let next = prevEvents;
+        for (const row of mine) {
+          next = next.some((event) => event.id === row.id)
+            ? next.map((event) => (event.id === row.id ? row : event))
+            : [...next, row];
+        }
+        return next;
+      });
     }
   });
 
@@ -868,9 +813,8 @@ const JobBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <OperationForm
@@ -1029,9 +973,8 @@ const JobBillOfProcess = ({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={{
                 type: "spring",
-                bounce: 0.2,
-                duration: 0.75,
-                delay: 0.15
+                bounce: 0,
+                duration: 0.3
               }}
             >
               <InfiniteScroll
@@ -1056,6 +999,7 @@ const JobBillOfProcess = ({
 
     return (
       <SortableListItem<Operation>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -1065,6 +1009,24 @@ const JobBillOfProcess = ({
         onToggleItem={onToggleItem}
         onRemoveItem={onRemoveItem}
         handleDrag={onCloseOnDrag}
+        menuItems={
+          item.id in temporaryItems ? null : (
+            <>
+              <ContextMenuItem asChild>
+                <a href={path.to.external.mesJobOperation(item.id)}>
+                  <LuPlay className="mr-2 h-4 w-4" />
+                  <Trans>Open in MES</Trans>
+                </a>
+              </ContextMenuItem>
+              <ContextMenuItem asChild>
+                <Link to={newIssueUrl(item.data, issueUrlParams)}>
+                  <LuShieldX className="mr-2 h-4 w-4" />
+                  <Trans>Create Issue</Trans>
+                </Link>
+              </ContextMenuItem>
+            </>
+          )
+        }
         renderExtra={(item) => (
           <div>
             <SortableListItemToggle
@@ -1110,11 +1072,37 @@ const JobBillOfProcess = ({
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuWorkflow />}
+                heading={<Trans>No operations yet</Trans>}
+                description={
+                  <Trans>Add the operations that make this item.</Trans>
+                }
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={
+                      !permissions.can("update", "production") ||
+                      selectedItemId !== null ||
+                      isDisabled
+                    }
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Operation</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
         />
       </CardContent>
     </Card>
@@ -1158,7 +1146,8 @@ function StepsForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");
@@ -1292,23 +1281,7 @@ function StepsForm({
     [allItems, materialItemIds]
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1316,11 +1289,18 @@ function StepsForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await storage(carbon)
+        .company(companyId)
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -1336,6 +1316,8 @@ function StepsForm({
           annotations: []
         }
       ]);
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setDraftUploading(false);
     }
@@ -1550,7 +1532,10 @@ function StepsForm({
                 <Input name="name" label={t`Name`} />
               </div>
 
-              <VStack spacing={2} className="w-full col-span-2">
+              <VStack
+                spacing={2}
+                className="w-full col-span-2 max-md:col-span-full"
+              >
                 <Label>
                   <Trans>Description</Trans>
                 </Label>
@@ -1943,11 +1928,18 @@ function JobStepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await storage(carbon)
+        .company(companyId)
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -1960,6 +1952,8 @@ function JobStepSlides({
         method: "post",
         action: path.to.newJobOperationStepSlide
       });
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setUploading(false);
     }
@@ -2108,7 +2102,14 @@ function StepsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationStepAction>();
+  const fetcher = useAction<typeof editJobOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
+    }
+  });
   const duplicateStepFetcher = useFetcher();
   const { t } = useLingui();
   const [description, setDescription] = useState<JSONContent>(() => {
@@ -2124,14 +2125,6 @@ function StepsListItem({
       return {};
     }
   });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
-    }
-  }, [fetcher.state]);
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -2152,28 +2145,8 @@ function StepsListItem({
   const date = updatedAt ?? createdAt;
 
   const unitOfMeasures = useUnitOfMeasure();
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 
@@ -2212,7 +2185,10 @@ function StepsListItem({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>
                 <Trans>Description</Trans>
               </Label>
@@ -2386,10 +2362,14 @@ function StepsListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                     onClick={() =>
                       duplicateStepFetcher.submit(null, {
                         method: "post",
@@ -2400,6 +2380,7 @@ function StepsListItem({
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -2669,16 +2650,15 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationParameterAction>();
-  const { t } = useLingui();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editJobOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const { t } = useLingui();
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -2755,10 +2735,14 @@ function ParametersListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -3158,7 +3142,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
         />
 
         <Select
@@ -3735,7 +3719,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
@@ -3757,13 +3741,13 @@ function ProcedureSyncModal({
   procedureId: string;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal
       open
@@ -3830,13 +3814,13 @@ function AssemblyStepsSyncModal({
   assemblyInstructionId: string;
   onClose: () => void;
 }) {
-  const fetcher = useFetcher<{ success: boolean }>();
-  useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
+  const fetcher = useAction<{ success: boolean }>({
+    onSuccess: (data) => {
+      if (data?.success) {
+        onClose();
+      }
     }
-  }, [fetcher.data?.success, onClose]);
-
+  });
   return (
     <Modal
       open
@@ -3953,16 +3937,15 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editJobOperationToolAction>();
-  const { t } = useLingui();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editJobOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const { t } = useLingui();
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);
@@ -4051,10 +4034,14 @@ function ToolsListItem({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={disclosure.onOpen}>
+                <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
+                  onClick={disclosure.onOpen}
+                >
                   Edit
                 </DropdownMenuItem>
                 <DropdownMenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.delete}
                   destructive
                   onClick={deleteModalDisclosure.onOpen}
                 >
@@ -4212,26 +4199,17 @@ function OperationChat({ jobOperationId }: { jobOperationId: string }) {
     fetchChat();
   });
 
-  useRealtimeChannel({
-    topic: `job-operation-notes-${jobOperationId}`,
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "jobOperationNote",
-          filter: `jobOperationId=eq.${jobOperationId}`
-        },
-        (payload) => {
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === payload.new.id)) {
-              return prev;
-            }
-            return [...prev, payload.new as Message];
-          });
-        }
-      );
+  useChangedRows<Message & { jobOperationId: string }>({
+    companyId: user.company.id,
+    table: "jobOperationNote",
+    onResync: fetchChat,
+    onChange: ({ op, rows }) => {
+      if (op !== "INSERT") return;
+      const notes = rows.filter((row) => row.jobOperationId === jobOperationId);
+      setMessages((prev) => [
+        ...prev,
+        ...notes.filter((note) => !prev.some((m) => m.id === note.id))
+      ]);
     }
   });
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   DropdownMenu,
@@ -9,15 +13,17 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts,
-  usePrettifyShortcut
+  useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useRef } from "react";
+import type { ReactElement } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { PAGINATION_SHORTCUTS } from "~/shortcuts";
 import { PAGE_SIZES } from "~/utils/pagination";
 
 export type PaginationProps = {
@@ -92,7 +98,6 @@ export const PaginationButtons = ({
   const { t } = useLingui();
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const previousButtonRef = useRef<HTMLButtonElement>(null);
-  const prettifyShortcut = usePrettifyShortcut();
 
   const scrollToTop = useCallback(() => {
     document
@@ -110,49 +115,46 @@ export const PaginationButtons = ({
     scrollToTop();
   }, [nextPage, scrollToTop]);
 
-  useKeyboardShortcuts({
-    ArrowRight: (event: KeyboardEvent) => {
-      event.stopPropagation();
-      nextButtonRef.current?.click();
-    },
-    ArrowLeft: (event: KeyboardEvent) => {
-      event.stopPropagation();
-      previousButtonRef.current?.click();
-    }
-  });
+  useShortcutKeyMap(
+    useMemo(
+      () => [
+        {
+          shortcut: PAGINATION_SHORTCUTS.next,
+          action: () => nextButtonRef.current?.click()
+        },
+        {
+          shortcut: PAGINATION_SHORTCUTS.previous,
+          action: () => previousButtonRef.current?.click()
+        }
+      ],
+      []
+    )
+  );
 
   return (
     <>
       {condensed ? (
         <>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <IconButton
-                aria-label={t`Previous`}
-                icon={<BsChevronLeft />}
-                isDisabled={!canPreviousPage}
-                onClick={handlePreviousPage}
-                variant="secondary"
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <IconButton
-                aria-label={t`Next`}
-                icon={<BsChevronRight />}
-                isDisabled={!canNextPage}
-                onClick={handleNextPage}
-                variant="secondary"
-              />
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
-            </TooltipContent>
-          </Tooltip>
+          <PaginationTooltip direction="previous">
+            <IconButton
+              ref={previousButtonRef}
+              aria-label={t`Previous`}
+              icon={<BsChevronLeft />}
+              isDisabled={!canPreviousPage}
+              onClick={handlePreviousPage}
+              variant="secondary"
+            />
+          </PaginationTooltip>
+          <PaginationTooltip direction="next">
+            <IconButton
+              ref={nextButtonRef}
+              aria-label={t`Next`}
+              icon={<BsChevronRight />}
+              isDisabled={!canNextPage}
+              onClick={handleNextPage}
+              variant="secondary"
+            />
+          </PaginationTooltip>
         </>
       ) : (
         <>
@@ -160,42 +162,60 @@ export const PaginationButtons = ({
             {count > 0 ? offset + 1 : 0} - {Math.min(offset + pageSize, count)}{" "}
             <Trans>of</Trans> {count}
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                ref={previousButtonRef}
-                variant="secondary"
-                isDisabled={!canPreviousPage}
-                onClick={handlePreviousPage}
-                leftIcon={<BsChevronLeft />}
-              >
-                <Trans>Previous</Trans>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                ref={nextButtonRef}
-                variant="secondary"
-                isDisabled={!canNextPage}
-                onClick={handleNextPage}
-                rightIcon={<BsChevronRight />}
-              >
-                <Trans>Next</Trans>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
-            </TooltipContent>
-          </Tooltip>
+          <PaginationTooltip direction="previous">
+            <Button
+              ref={previousButtonRef}
+              variant="secondary"
+              isDisabled={!canPreviousPage}
+              onClick={handlePreviousPage}
+              leftIcon={<BsChevronLeft />}
+            >
+              <Trans>Previous</Trans>
+            </Button>
+          </PaginationTooltip>
+          <PaginationTooltip direction="next">
+            <Button
+              ref={nextButtonRef}
+              variant="secondary"
+              isDisabled={!canNextPage}
+              onClick={handleNextPage}
+              rightIcon={<BsChevronRight />}
+            >
+              <Trans>Next</Trans>
+            </Button>
+          </PaginationTooltip>
         </>
       )}
     </>
   );
 };
+
+/** Says what the button does, then its key — a bare arrow keycap reads as "chevron". */
+const PaginationTooltip = ({
+  direction,
+  children
+}: {
+  direction: keyof typeof PAGINATION_SHORTCUTS;
+  children: ReactElement;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>{children}</TooltipTrigger>
+    <TooltipContent>
+      <HStack>
+        <span>
+          {direction === "previous" ? (
+            <Trans>Previous page</Trans>
+          ) : (
+            <Trans>Next page</Trans>
+          )}
+        </span>
+        <ShortcutKey
+          shortcut={PAGINATION_SHORTCUTS[direction]}
+          variant="small"
+        />
+      </HStack>
+    </TooltipContent>
+  </Tooltip>
+);
 
 export default Pagination;

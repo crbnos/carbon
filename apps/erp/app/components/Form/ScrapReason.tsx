@@ -1,8 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
-import { useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
 import { useMemo } from "react";
-import { useFetcher } from "react-router";
 import { useRouteData } from "~/hooks";
 import type {
   getScrapReasonsList,
@@ -29,18 +32,15 @@ ScrapReason.displayName = "ScrapReason";
 export default ScrapReason;
 
 export const useScrapReasons = () => {
-  const scrapReasonFetcher =
-    useFetcher<Awaited<ReturnType<typeof getScrapReasonsList>>>();
-
   const sharedProductionData = useRouteData<{
     scrapReasons: ScrapReasonType[];
   }>(path.to.production);
 
   const hasScrapReasonData = sharedProductionData?.scrapReasons;
 
-  useMount(() => {
-    if (!hasScrapReasonData) scrapReasonFetcher.load(path.to.api.scrapReasons);
-  });
+  const scrapReasonFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getScrapReasonsList>>
+  >(!hasScrapReasonData ? path.to.api.scrapReasons : null);
 
   const options = useMemo(() => {
     const dataSource =

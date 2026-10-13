@@ -1,17 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { runLocationSchedule } from "@carbon/ee/planning";
 import { getLogger } from "@carbon/logger";
+import { runLocationSchedule } from "@carbon/planning";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
+  getJobReleaseReadiness,
   jobStatus,
+  makeToAssetItemError,
   recalculateJobRequirements,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { cancelJob, releaseJobs } from "~/modules/production/production.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -26,6 +35,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find id");
 
+  // Much of what follows (MRP, scheduling, picking sweeps, PO creation) runs
+  // with the service role or Kysely and keys on the URL job id.
+  await requireCompanyRecord(getCarbonServiceRole(), "job", companyId, { id });
+
   const url = new URL(request.url);
   const shouldSchedule = url.searchParams.get("schedule") === "1";
 
@@ -33,6 +46,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const status = formData.get("status") as (typeof jobStatus)[number];
   const selectedPurchaseOrdersBySupplierId = formData.get(
     "selectedPurchaseOrdersBySupplierId"
+  ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
   ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
@@ -45,7 +61,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Ready") {
     const { data } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
       .eq("id", id)
       .single();
 
@@ -55,11 +73,120 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(null, "Manufacturing is blocked"))
       );
     }
+
+    // Make to Asset gate, checked here so every path to Ready (the release
+    // dialog and the plain status post) refuses before releaseJobs runs. The
+    // item rule is `makeToAssetItemError`; a job on a sales order line is a
+    // sale, not a capitalisation.
+    if (data?.fixedAssetClassId || data?.fixedAssetId) {
+      const itemError = makeToAssetItemError({
+        fixedAssetClassId: data.fixedAssetClassId,
+        fixedAssetId: data.fixedAssetId,
+        itemTrackingType: data.item?.itemTrackingType,
+        quantity: data.quantity
+      });
+      if (itemError) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(request, error(null, itemError))
+        );
+      }
+      if (data.salesOrderLineId) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              "A job linked to a sales order line cannot complete to a fixed asset"
+            )
+          )
+        );
+      }
+    }
+  }
+
+  // The Release dialog: the shared release path (also run by batch release),
+  // re-checking what the dialog checked, then one schedule run for the location.
+  if (status === "Ready" && shouldSchedule) {
+    const readiness = await getJobReleaseReadiness(client, [id], companyId);
+    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
+    if (readiness.error || missing.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            readiness.error,
+            readiness.error
+              ? "Failed to validate job"
+              : `Assign an operation to each assembly before releasing: ${missing
+                  .map((m) => m.description)
+                  .join(", ")}`
+          )
+        )
+      );
+    }
+
+    try {
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
+    } catch (err) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to save the supplier choice"))
+      );
+    }
+
+    const released = await releaseJobs({
+      client,
+      db: getDatabaseClient(),
+      jobIds: [id],
+      companyId,
+      userId,
+      purchaseOrdersBySupplierId: JSON.parse(
+        selectedPurchaseOrdersBySupplierId ?? "{}"
+      )
+    });
+    if (released.error) {
+      // The job is Ready when it came back released (its purchase orders
+      // failed after the flip): schedule it, then say what failed.
+      if (released.releasedJobIds.includes(id)) {
+        try {
+          await scheduleJobLocation({ id, companyId, userId });
+        } catch (err) {
+          logger.error("Error", { error: err });
+        }
+      }
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(null, released.error))
+      );
+    }
+
+    try {
+      await scheduleJobLocation({ id, companyId, userId });
+    } catch (err) {
+      logger.error("Error", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to schedule job"))
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(id),
+      await flash(request, success("Updated job status"))
+    );
   }
 
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
-    await recalculateJobRequirements(serviceRole, {
+    await recalculateJobRequirements(serviceRole, getDatabaseClient(), {
       id,
       companyId,
       userId
@@ -72,8 +199,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
-  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // Commit the new status BEFORE invoking the scheduler. The scheduler
+  // only batches jobs whose status is already Ready/In Progress/Paused,
   // so a job released here must be persisted as Ready first — otherwise it is
   // filtered out of its own scheduling run and never lands in the forecast.
   //
@@ -81,65 +208,59 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (no inventory receipt, no backflush) and therefore also skips the
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
-  const update = await updateJobStatus(client, {
-    id,
-    companyId,
-    status,
-    assignee: ["Cancelled"].includes(status) ? null : undefined,
-    updatedBy: userId
-  });
-  if (update.error) {
-    throw redirect(
-      requestReferrer(request) ?? path.to.job(id),
-      await flash(request, error(update.error, "Failed to update job status"))
-    );
+  if (status === "Cancelled") {
+    // Returns picked material and closes picking lists before the status
+    // changes — the same path the planning Cancel action takes.
+    const failed = await cancelJob({
+      client,
+      db: getDatabaseClient(),
+      jobId: id,
+      companyId,
+      userId
+    });
+    if (failed) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(failed.error, failed.message))
+      );
+    }
+  } else {
+    const update = await updateJobStatus(client, {
+      id,
+      companyId,
+      status,
+      updatedBy: userId
+    });
+    if (update.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(update.error, "Failed to update job status"))
+      );
+    }
   }
 
-  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
+  if (status === "Planned" && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
       );
-
-      const serviceRole = getCarbonServiceRole();
-      // Forecast-first scheduling regenerates the whole location the job is in.
-      const { data: jobLocation } = await serviceRole
-        .from("job")
-        .select("locationId")
-        .eq("id", id)
-        .single();
-      if (!jobLocation?.locationId) {
-        throw new Error("Job has no location to schedule");
-      }
-      // Regenerate the whole location IN-PROCESS (Node) — no edge cold-start or
-      // HTTP hop. Throws on failure (caught below), in parallel with PO creation.
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
+      // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
-        runLocationSchedule({
-          db: getDatabaseClient(),
-          client: serviceRole,
-          locationId: jobLocation.locationId,
-          companyId,
-          userId
-        }),
-        serviceRole.functions.invoke("create", {
-          body: {
+        scheduleJobLocation({ id, companyId, userId }),
+        serverFns
+          .system({ db: getDatabaseClient(), companyId, userId })
+          .invoke("create", {
             type: "purchaseOrderFromJob",
             jobId: id,
-            purchaseOrdersBySupplierId,
-            companyId,
-            userId
-          }
-        })
-      ]);
-
-      if (status === "Ready") {
-        await client
-          .from("job")
-          .update({
-            releasedDate: new Date().toISOString()
+            purchaseOrdersBySupplierId
           })
-          .eq("id", id);
-      }
+      ]);
     } catch (err) {
       logger.error("Error", { error: err });
       throw redirect(
@@ -150,10 +271,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Closed") {
-    const serviceRole = await getCarbonServiceRole();
-    await serviceRole.functions.invoke("close-job", {
-      body: { jobId: id, userId, companyId }
-    });
+    const closed = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("close-job", { jobId: id });
+    if (closed.error) {
+      // The status change stands; only the WIP write-off failed, as before.
+      logger.error("Failed to write off WIP for closed job", {
+        jobId: id,
+        companyId,
+        error: closed.error
+      });
+    }
   }
 
   if (status === "Planned") {
@@ -167,4 +295,119 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
+}
+
+// Forecast-first scheduling regenerates the whole location the job is in,
+// in-process (Node). Throws on failure.
+async function scheduleJobLocation({
+  id,
+  companyId,
+  userId
+}: {
+  id: string;
+  companyId: string;
+  userId: string;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const { data: jobLocation } = await serviceRole
+    .from("job")
+    .select("locationId")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+  if (!jobLocation?.locationId) {
+    throw new Error("Job has no location to schedule");
+  }
+  await runLocationSchedule({
+    db: getDatabaseClient(),
+    client: serviceRole,
+    locationId: jobLocation.locationId,
+    companyId,
+    userId
+  });
+}
+
+// The release dialog's supplier pick for an outside operation whose process has
+// several suppliers, stamped on the operation so purchaseOrderFromJob resolves
+// it. Must land BEFORE the purchase orders are created.
+async function stampSupplierChoices({
+  jobId,
+  companyId,
+  userId,
+  choices
+}: {
+  jobId: string;
+  companyId: string;
+  userId: string;
+  choices: Record<string, string>;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const operationSupplierChoices = Object.entries(choices);
+  if (operationSupplierChoices.length > 0) {
+    // Both ids come from the form and drive a service-role (RLS-bypassing)
+    // write that purchaseOrderFromJob later consumes, so validate them before
+    // persisting: the operation must belong to THIS job, and the chosen
+    // supplier process must belong to that operation's own process. Otherwise
+    // a crafted submit could retarget another job or create a PO for an
+    // unrelated supplier.
+    const operationIds = operationSupplierChoices.map(
+      ([operationId]) => operationId
+    );
+    const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
+
+    const [
+      { data: jobOperations, error: jobOperationsError },
+      { data: supplierProcesses, error: supplierProcessesError }
+    ] = await Promise.all([
+      serviceRole
+        .from("jobOperation")
+        .select("id, processId")
+        .eq("jobId", jobId)
+        .eq("companyId", companyId)
+        .in("id", operationIds),
+      serviceRole
+        .from("supplierProcess")
+        .select("id, processId")
+        .eq("companyId", companyId)
+        .in("id", supplierProcessIds)
+    ]);
+    if (jobOperationsError) throw new Error(jobOperationsError.message);
+    if (supplierProcessesError) throw new Error(supplierProcessesError.message);
+
+    const operationProcessById = new Map(
+      (jobOperations ?? []).map((op) => [op.id, op.processId])
+    );
+    const supplierProcessProcessById = new Map(
+      (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
+    );
+
+    for (const [operationId, supplierProcessId] of operationSupplierChoices) {
+      const operationProcessId = operationProcessById.get(operationId);
+      if (!operationProcessId) {
+        throw new Error(`Operation ${operationId} does not belong to this job`);
+      }
+      if (
+        supplierProcessProcessById.get(supplierProcessId) !== operationProcessId
+      ) {
+        throw new Error(
+          "Selected supplier does not belong to the operation's process"
+        );
+      }
+    }
+
+    const updateResults = await Promise.all(
+      operationSupplierChoices.map(([operationId, supplierProcessId]) =>
+        serviceRole
+          .from("jobOperation")
+          .update({
+            operationSupplierProcessId: supplierProcessId,
+            updatedBy: userId
+          })
+          .eq("id", operationId)
+          .eq("companyId", companyId)
+      )
+    );
+    const failedUpdate = updateResults.find((result) => result.error);
+    if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
+  }
 }

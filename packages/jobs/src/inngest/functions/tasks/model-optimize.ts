@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { modelPathOptimizeFormat } from "@carbon/utils";
+import { storage } from "@carbon/files";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
@@ -188,8 +193,8 @@ export const modelOptimizeFunction = inngest.createFunction(
       },
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
-        const upload = await client.storage
-          .from("private")
+        const upload = await storage(client)
+          .company(companyId)
           .createSignedUploadUrl(optimizedPath, { upsert: true });
         const urls: Record<string, string> = {};
         if (upload.data)
@@ -205,12 +210,9 @@ export const modelOptimizeFunction = inngest.createFunction(
       // it via the late-mint URL, so the job never holds the bytes) to surface
       // the reduction against the untouched source `size`.
       const dir = `${companyId}/models/${modelUploadId}`;
-      const listed = await client.storage
-        .from("private")
-        .list(dir, { search: "optimized.glb" });
-      const optimizedSize =
-        listed.data?.find((o) => o.name === "optimized.glb")?.metadata?.size ??
-        null;
+      const listed = await storage(client).company(companyId).list(dir);
+      const optimized = listed.data?.find((o) => o.name === "optimized.glb");
+      const optimizedSize = optimized?.metadata?.size ?? null;
 
       await client
         .from("modelUpload")
@@ -234,10 +236,9 @@ export const modelOptimizeFunction = inngest.createFunction(
     });
 
     // Generate the preview thumbnail now that the optimised GLB exists — the
-    // thumbnail renderer (/file/model/:id) draws only the assembler GLB, so
-    // firing this at upload time (before the GLB) always failed. Chaining it to
-    // optimise success means it has something to render, and a re-optimise
-    // (viewer Retry / regenerate) refreshes the thumbnail for free.
+    // assembler renders it from that GLB, so an event sent at upload time
+    // (before the GLB) has nothing to draw. A re-optimise (viewer Retry /
+    // regenerate) refreshes the thumbnail for free.
     await step.sendEvent("thumbnail", {
       name: "carbon/model-thumbnail",
       data: { modelId: modelUploadId, companyId }

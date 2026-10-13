@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Avatar,
   AvatarGroup,
@@ -6,6 +10,7 @@ import {
   Badge,
   Checkbox,
   HStack,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem
 } from "@carbon/react";
@@ -17,6 +22,7 @@ import {
   LuBuilding2,
   LuCheck,
   LuFactory,
+  LuLayers,
   LuPencil,
   LuPower,
   LuQrCode,
@@ -36,6 +42,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -92,6 +99,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </Hyperlink>
           ),
         meta: {
+          mobile: "P1",
           icon: <LuRedoDot />
         }
       },
@@ -119,6 +127,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           icon: <LuFactory />,
           filter: {
             type: "static",
@@ -138,23 +147,21 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         id: "workCenters",
         header: t`Work Centers`,
         cell: ({ row }) => (
-          <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.workCenters ?? []) as Array<string>).map((wc) => {
-              const workCenter = workCenters.find((w) => w.value === wc);
-              return (
-                <Enumerable
-                  key={workCenter?.label}
-                  onClick={() =>
-                    navigate(path.to.workCenter(workCenter?.value!))
-                  }
-                  className="cursor-pointer"
-                  value={workCenter?.label ?? null}
-                />
-              );
-            })}
-          </span>
+          <EnumerableGroup
+            items={((row.original.workCenters ?? []) as Array<string>).flatMap(
+              (wc) => {
+                const workCenter = workCenters.find((w) => w.value === wc);
+                if (!workCenter) return [];
+                return {
+                  label: workCenter.label,
+                  onClick: () => navigate(path.to.workCenter(workCenter.value))
+                };
+              }
+            )}
+          />
         ),
         meta: {
+          mobile: "P3",
           icon: <LuBuilding2 />,
           filter: {
             type: "static",
@@ -219,6 +226,25 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         ),
         meta: {
           icon: <LuQrCode />,
+          filter: {
+            type: "static",
+            options: [
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" }
+            ]
+          }
+        }
+      },
+      {
+        accessorKey: "batchable",
+        header: t`Batchable`,
+        cell: ({ row }) => (
+          <div className="flex w-full items-center justify-center">
+            <Checkbox isChecked={row.original.batchable ?? false} />
+          </div>
+        ),
+        meta: {
+          icon: <LuLayers />,
           filter: {
             type: "static",
             options: [
@@ -310,6 +336,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.process(row.id!)}?${params.toString()}`);
             }}
@@ -343,6 +370,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
             </MenuItem>
           )}
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {

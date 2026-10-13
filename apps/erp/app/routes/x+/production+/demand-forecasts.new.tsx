@@ -1,14 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertDemandProjections } from "@carbon/ee/forecast.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import { useRouteData } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { useCloseRoute, useRouteData } from "@carbon/react";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useNavigate } from "react-router";
+import { data } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
-import { upsertDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
@@ -37,7 +41,7 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "production"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -106,7 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewProjectionRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const routeData = useRouteData<{
     locationId: string;
   }>(path.to.demandProjections);
@@ -119,7 +123,7 @@ export default function NewProjectionRoute() {
 
   return (
     <DemandProjectionForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

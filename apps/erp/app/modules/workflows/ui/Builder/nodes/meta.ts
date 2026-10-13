@@ -1,7 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNode, WorkflowNodeType } from "@carbon/ee/workflows";
+import {
+  cardsOf,
+  DATA_OPERATIONS,
+  integrationStepId
+} from "@carbon/ee/workflows";
+import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
 import { OPERATOR_LABELS } from "@carbon/utils";
-import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
-import { cardsOf, DATA_OPERATIONS, integrationStepId } from "@carbon/workflows";
-import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
   LuCalculator,

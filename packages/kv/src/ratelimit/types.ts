@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Redis } from "ioredis";
 
 /**
@@ -53,6 +57,12 @@ export interface Algorithm {
    * Reset the rate limit for a key
    */
   resetTokens: (ctx: RatelimitContext, key: string) => Promise<void>;
+
+  /**
+   * Give back one token a successful `limit()` consumed. Sliding window only;
+   * the others leave the token spent.
+   */
+  refund?: (ctx: RatelimitContext, key: string) => Promise<void>;
 }
 
 /**

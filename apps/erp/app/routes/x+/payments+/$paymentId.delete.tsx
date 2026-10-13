@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { deletePayment } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
@@ -11,7 +15,7 @@ import { path } from "~/utils/path";
 // a non-draft delete fails at the database; the UI also hides the action.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -23,7 +27,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const remove = await deletePayment(client, paymentId);
+  const remove = await deletePayment(client, paymentId, companyId);
   if (remove.error) {
     throw redirect(
       path.to.payment(paymentId),

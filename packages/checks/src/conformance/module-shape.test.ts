@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import type { ModuleDir } from "../check";
 import { moduleShape } from "./module-shape";
@@ -44,13 +48,13 @@ describe("moduleShape", () => {
 
   it("accepts the .ee-licensed service/server variant as the primary file", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
         "index.ts",
-        "accounting.ee.server.ts"
+        "widget.ee.server.ts"
       ])
     );
     expect(v).toHaveLength(0);
@@ -58,9 +62,9 @@ describe("moduleShape", () => {
 
   it("still flags a second service file alongside the .ee variant", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
         "index.ts",

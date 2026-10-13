@@ -1,3 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ValueOrRef } from "@carbon/ee/workflows";
+import {
+  INTEGRATION_CONNECTION_INPUT,
+  integrationAppLabelKey,
+  integrationStepId,
+  WORKFLOW_INTEGRATION_CATALOG
+} from "@carbon/ee/workflows";
 import {
   Accordion,
   AccordionContent,
@@ -10,13 +21,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import type { ValueOrRef } from "@carbon/workflows";
-import {
-  INTEGRATION_CONNECTION_INPUT,
-  integrationAppLabelKey,
-  integrationStepId,
-  WORKFLOW_INTEGRATION_CATALOG
-} from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router";

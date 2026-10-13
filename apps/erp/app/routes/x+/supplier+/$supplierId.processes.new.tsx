@@ -1,12 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { useParams } from "react-router";
 import {
   supplierProcessValidator,
   upsertSupplierProcess
@@ -14,7 +17,6 @@ import {
 import SupplierProcessForm from "~/modules/purchasing/ui/Supplier/SupplierProcessForm";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { supplierProcessesQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -61,32 +63,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     : redirect(path.to.supplierProcesses(supplierId));
 }
 
-export async function clientAction({
-  request,
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const formData = await request.clone().formData(); // if we. don't clone it we can't access it in the action
-  const validation = await validator(supplierProcessValidator).validate(
-    formData
-  );
-
-  if (validation.error) {
-    return validationError(validation.error);
-  }
-
-  if (validation.data.processId) {
-    window.clientCache?.setQueryData(
-      supplierProcessesQuery(validation.data.processId).queryKey,
-      null
-    );
-  }
-  return await serverAction();
-}
-
 export default function NewSupplierProcessRoute() {
   const { supplierId } = useParams();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   if (!supplierId) throw new Error("Could not find supplier id");
 
@@ -100,7 +79,7 @@ export default function NewSupplierProcessRoute() {
   return (
     <SupplierProcessForm
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

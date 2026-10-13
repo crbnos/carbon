@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getJobDatabaseClient } from "../../../db";
 import {
   bookChain,
@@ -16,7 +20,7 @@ export const workflowSchedulerFunction = inngest.createFunction(
     retries: 3,
     // Never two wakes at once. Combined with the Redis chain token, a duplicate chain
     // converges back to one instead of multiplying.
-    singleton: { key: "workflows-scheduler", mode: "skip" }
+    singleton: { mode: "skip" }
   },
   { event: "carbon/workflow-scheduler.wake" },
   async ({ event, step, logger }) => {

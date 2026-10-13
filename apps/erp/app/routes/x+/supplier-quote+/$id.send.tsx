@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getSupplierContact,
   getSupplierInteractionDocuments,
-  getSupplierInteractionLineDocuments,
+  getSupplierInteractionLineAttachments,
   getSupplierQuote,
   getSupplierQuoteLines,
   sendSupplierQuote,
@@ -16,8 +22,11 @@ import {
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "supplier-quote", "send");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -31,6 +40,10 @@ export async function action(args: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find supplier quote id");
+
+  // bypassRls hands back the service role and every read/write below is keyed
+  // on the URL's id.
+  await requireCompanyRecord(client, "supplierQuote", companyId, { id });
 
   const quote = await getSupplierQuote(client, id);
   if (quote.error) {
@@ -97,7 +110,7 @@ export async function action(args: ActionFunctionArgs) {
         const [company, supplierContact, supplierQuote, user] =
           await Promise.all([
             getCompany(client, companyId),
-            getSupplierContact(client, supplierContactId),
+            getSupplierContact(client, supplierContactId, companyId),
             getSupplierQuote(client, id),
             getUser(client, userId)
           ]);
@@ -122,14 +135,19 @@ export async function action(args: ActionFunctionArgs) {
 
           for (const doc of topDocs) {
             const storagePath = `${companyId}/supplier-interaction/${interactionId}/${doc.name}`;
-            const { data: signedUrlData } = await client.storage
-              .from("private")
+            const { data, error } = await storage(client)
+              .company(companyId)
               .createSignedUrl(storagePath, 3600);
 
-            if (signedUrlData?.signedUrl) {
+            if (data) {
               attachments.push({
                 filename: doc.name,
-                path: signedUrlData.signedUrl
+                path: data.signedUrl
+              });
+            } else {
+              logger.error("Failed to create signed URL for attachment", {
+                storagePath,
+                error
               });
             }
           }
@@ -139,27 +157,13 @@ export async function action(args: ActionFunctionArgs) {
         const lines = await getSupplierQuoteLines(client, id);
 
         if (lines.data) {
-          for (const line of lines.data) {
-            const docs = await getSupplierInteractionLineDocuments(
+          attachments.push(
+            ...(await getSupplierInteractionLineAttachments(
               client,
               companyId,
-              line.id ?? ""
-            );
-
-            for (const doc of docs) {
-              const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-              const { data: signedUrlData } = await client.storage
-                .from("private")
-                .createSignedUrl(storagePath, 3600);
-
-              if (signedUrlData?.signedUrl) {
-                attachments.push({
-                  filename: doc.name,
-                  path: signedUrlData.signedUrl
-                });
-              }
-            }
-          }
+              lines.data.flatMap((line) => (line.id ? [line.id] : []))
+            ))
+          );
         }
 
         const requestUrl = new URL(request.url);

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Boolean, Hidden, SelectControlled, ValidatedForm } from "@carbon/form";
 import {
@@ -31,8 +35,8 @@ import {
 import { useUser } from "~/hooks";
 import type { MethodItemType } from "~/modules/shared/types";
 import {
-  kanbanValidator,
-  replenishmentSystemTypes
+  kanbanReplenishmentSystemTypes,
+  kanbanValidator
 } from "../../inventory.models";
 
 type KanbanFormValues = z.infer<typeof kanbanValidator>;
@@ -52,6 +56,9 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
 
   const [storageUnitId, setStorageUnitId] = useState<string | null>(
     initialValues.storageUnitId || null
+  );
+  const [fromStorageUnitId, setFromStorageUnitId] = useState<string | null>(
+    initialValues.fromStorageUnitId || null
   );
   const [itemType, setItemType] = useState<MethodItemType | "Item">("Item");
   const [itemId, setItemId] = useState<string>(initialValues.itemId || "");
@@ -93,7 +100,11 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
       toast.error(t`Failed to load item details`);
       return;
     }
-    setSelectedReplenishmentSystem(item.data?.replenishmentSystem || "Buy");
+    // The item-level enum can be "Buy and Make", which a kanban cannot be —
+    // map anything other than "Make" (incl. "Buy and Make"/null) to "Buy".
+    setSelectedReplenishmentSystem(
+      item.data?.replenishmentSystem === "Make" ? "Make" : "Buy"
+    );
     if (storageUnit.data?.defaultStorageUnitId) {
       setStorageUnitId(storageUnit.data.defaultStorageUnitId);
     }
@@ -169,7 +180,10 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
   const onLocationChange = (value: { value: string } | null) => {
     setLocationId(value?.value || "");
     setStorageUnitId(null);
+    setFromStorageUnitId(null);
   };
+
+  const isTransfer = selectedReplenishmentSystem === "Transfer";
 
   return (
     <Drawer open onOpenChange={onClose}>
@@ -227,12 +241,10 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                       setSelectedReplenishmentSystem(value.value);
                     }
                   }}
-                  options={replenishmentSystemTypes
-                    .filter((type) => type !== "Buy and Make")
-                    .map((type) => ({
-                      value: type,
-                      label: <Enumerable value={type} />
-                    }))}
+                  options={kanbanReplenishmentSystemTypes.map((type) => ({
+                    value: type,
+                    label: <Enumerable value={type} />
+                  }))}
                 />
 
                 {selectedReplenishmentSystem === "Buy" && (
@@ -282,14 +294,24 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                   isReadOnly={isEditing}
                 />
 
+                {isTransfer && (
+                  <StorageUnit
+                    name="fromStorageUnitId"
+                    label={t`From Storage Unit`}
+                    locationId={locationId}
+                    value={fromStorageUnitId ?? undefined}
+                    onChange={(value) =>
+                      setFromStorageUnitId(value?.id ?? null)
+                    }
+                  />
+                )}
+
                 <StorageUnit
                   name="storageUnitId"
-                  label={t`Storage Unit`}
+                  label={isTransfer ? t`To Storage Unit` : t`Storage Unit`}
                   locationId={locationId}
                   value={storageUnitId ?? undefined}
-                  onChange={(value) => {
-                    if (value) setStorageUnitId(value?.id ?? null);
-                  }}
+                  onChange={(value) => setStorageUnitId(value?.id ?? null)}
                 />
 
                 {selectedReplenishmentSystem === "Make" && (
@@ -298,6 +320,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                       name="autoRelease"
                       label={t`Auto Release`}
                       termId="kanban-auto-release"
+                      bordered
                       value={autoRelease}
                       onChange={(value) => {
                         setAutoRelease(value);
@@ -311,6 +334,7 @@ const KanbanForm = ({ initialValues, onClose }: KanbanFormProps) => {
                       name="autoStartJob"
                       label={t`Auto Start Job`}
                       termId="kanban-auto-start-job"
+                      bordered
                       value={autoStartJob}
                       onChange={setAutoStartJob}
                       isDisabled={!autoRelease}

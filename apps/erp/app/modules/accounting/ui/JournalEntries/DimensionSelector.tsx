@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   BadgeCloseButton,
@@ -69,10 +73,16 @@ const entityTypeColors: Record<string, string> = {
     "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/15 dark:text-cyan-400 border-cyan-500/20",
   ScrapReason:
     "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-400 border-rose-500/20",
+  Project:
+    "bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-400 border-purple-500/20",
   Custom: ""
 };
 
-function getColor(entityType: string) {
+// Exported so a read-only dimension badge outside this file (the reimbursement
+// and charge detail pages) can tint by entity type exactly as the editor does.
+// Two independent colour maps for the same dimension types is how the read and
+// edit views of one document start disagreeing about what colour a Project is.
+export function getColor(entityType: string) {
   return entityTypeColors[entityType] ?? "";
 }
 

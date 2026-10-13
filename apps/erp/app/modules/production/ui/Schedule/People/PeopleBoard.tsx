@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ClientOnly, toast } from "@carbon/react";
 import type { DragEndEvent, DragStartEvent } from "@dnd-kit/core";
 import {
@@ -35,6 +39,13 @@ import {
   ladderShiftTime,
   UNASSIGNED
 } from "./peopleShared";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 5 } };
+const KEYBOARD_SENSOR_OPTIONS = {
+  coordinateGetter: sortableKeyboardCoordinates
+};
 
 export type {
   PeopleAbsence,
@@ -135,8 +146,8 @@ const PeopleBoard = ({
 
   const sensors = useSensors(
     // under ~5px of travel is a tap (opens the editor), beyond it a drag
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
+    useSensor(KeyboardSensor, KEYBOARD_SENSOR_OPTIONS)
   );
 
   const pendingMoves = usePendingMoves();

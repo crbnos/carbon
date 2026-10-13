@@ -1,14 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import {
   AbilityForm,
-  abilityValidator,
+  abilityRecertifyValidator,
   updateAbility
 } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -23,16 +28,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("Invalid ability id");
 
   const formData = await request.formData();
-  const validation = await validator(abilityValidator).validate(formData);
+  const validation = await validator(abilityRecertifyValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { name, recertifyEveryDays } = validation.data;
+  const { recertifyEveryDays } = validation.data;
 
   const update = await updateAbility(client, id, {
-    name,
     recertifyEveryDays: recertifyEveryDays ?? null
   });
   if (update.error) {

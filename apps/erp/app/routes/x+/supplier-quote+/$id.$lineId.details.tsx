@@ -1,13 +1,19 @@
-import { assertIsPost, error } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { useRouteData } from "@carbon/react";
+import { RecordOutlet, useRouteData } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Fragment } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { DeferredFiles } from "~/components";
 import type {
   SupplierQuote,
@@ -35,6 +41,8 @@ import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "supplier-quote-line-details");
+
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
     view: "purchasing"
@@ -56,6 +64,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       path.to.supplierQuote(id),
       await flash(request, error(line.error, "Failed to load line"))
     );
+  }
+
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the quote in the URL.
+  if (line.data.companyId !== companyId || line.data.supplierQuoteId !== id) {
+    logger.error("Supplier quote line not found for company", {
+      companyId,
+      supplierQuoteId: id,
+      lineId
+    });
+    throw notFound("Supplier quote line not found");
   }
 
   return {
@@ -191,7 +210,7 @@ export default function SupplierQuoteLine() {
         )}
       </DeferredFiles>
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

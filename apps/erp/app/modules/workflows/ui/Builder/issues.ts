@@ -1,4 +1,8 @@
-import type { WorkflowIssue } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowIssue } from "@carbon/ee/workflows";
 
 /**
  * The message for the first issue that names one of these field paths. A bad

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
@@ -12,6 +16,7 @@ interface KanbanLabel {
   supplierName?: string | null;
   storageUnitId?: string | null;
   storageUnitName?: string | null;
+  fromStorageUnitName?: string | null;
   quantity: number;
   unitOfMeasureCode?: string | null;
   thumbnail?: string | null;
@@ -144,7 +149,7 @@ const KanbanLabelPDF = ({
                         />
 
                         {/* Thumbnail if available */}
-                        {label.thumbnail && (
+                        {label.thumbnail ? (
                           <Image
                             src={label.thumbnail}
                             style={{
@@ -154,7 +159,7 @@ const KanbanLabelPDF = ({
                               marginLeft: 8
                             }}
                           />
-                        )}
+                        ) : null}
                       </View>
 
                       {/* Item Information */}
@@ -186,7 +191,15 @@ const KanbanLabelPDF = ({
                             "border-t border-gray-300 pt-2 mt-2 flex flex-col items-center text-center text-[14pt]"
                           )}
                         >
-                          {label.storageUnitName ? (
+                          {label.fromStorageUnitName ? (
+                            // Transfer kanban: show the source -> destination bins.
+                            // Use ASCII "->": the built-in Helvetica font has no
+                            // U+2192 glyph, so an arrow renders as a missing box.
+                            <Text>
+                              {label.fromStorageUnitName} {"->"}{" "}
+                              {label.storageUnitName || label.locationName}
+                            </Text>
+                          ) : label.storageUnitName ? (
                             <Text>{label.storageUnitName}</Text>
                           ) : (
                             <Text>{label.locationName}</Text>

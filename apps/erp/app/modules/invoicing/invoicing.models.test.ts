@@ -1,8 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
-  paymentValidator
+  memoValidator,
+  paymentValidator,
+  purchaseInvoiceSupplierChange,
+  salesInvoiceCustomerChange
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -29,6 +36,38 @@ describe("paymentValidator", () => {
       supplierId: "supp1"
     });
     expect(r.success).toBe(true);
+  });
+
+  it("accepts a customer refund disbursement", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement"
+      }).success
+    ).toBe(true);
+  });
+
+  it("accepts a supplier refund receipt", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined,
+        supplierId: "supp1"
+      }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    "Receipt",
+    "Disbursement"
+  ])("rejects ambiguous %s counterparty", (paymentType) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType,
+        supplierId: "supp1"
+      }).success
+    ).toBe(false);
   });
 
   it("rejects a Receipt missing customer", () => {
@@ -71,6 +110,40 @@ describe("paymentValidator", () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it("accepts a Disbursement with an employee (reimbursement payout)", () => {
+    const r = paymentValidator.safeParse({
+      ...validReceipt,
+      paymentType: "Disbursement",
+      customerId: undefined,
+      employeeId: "emp1"
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it.each([
+    ["customer", { customerId: "cust1" }],
+    ["supplier", { supplierId: "supp1" }]
+  ])("rejects an employee payee alongside a %s", (_label, other) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement",
+        customerId: undefined,
+        employeeId: "emp1",
+        ...other
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects a payment with no party at all", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined
+      }).success
+    ).toBe(false);
+  });
 });
 
 describe("invoiceSettlementValidator", () => {
@@ -111,6 +184,23 @@ describe("invoiceSettlementValidator", () => {
     const r = invoiceSettlementValidator.safeParse({
       ...validApp,
       targetSalesInvoiceId: undefined
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts an application against a reimbursement", () => {
+    const r = invoiceSettlementValidator.safeParse({
+      ...validApp,
+      targetSalesInvoiceId: undefined,
+      targetReimbursementId: "reimb1"
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects a reimbursement target alongside an invoice target", () => {
+    const r = invoiceSettlementValidator.safeParse({
+      ...validApp,
+      targetReimbursementId: "reimb1"
     });
     expect(r.success).toBe(false);
   });
@@ -167,9 +257,9 @@ describe("isInvoicePayable", () => {
     expect(isInvoicePayable("Overdue", 100)).toBe(true);
   });
 
-  it("forgives a sub-cent dust balance (not payable)", () => {
-    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(false);
-    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(false);
+  it("keeps positive foreign document remainders payable below a base cent", () => {
+    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(true);
+    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(true);
   });
 
   it("is not payable when fully paid or zero balance", () => {
@@ -186,5 +276,142 @@ describe("isInvoicePayable", () => {
   it("treats nullish balance/status as not payable", () => {
     expect(isInvoicePayable(null, null)).toBe(false);
     expect(isInvoicePayable(undefined, undefined)).toBe(false);
+  });
+});
+
+it("retains exact document principal when its rounded base is zero", () => {
+  const result = invoiceSettlementValidator.safeParse({
+    paymentId: "pay",
+    targetSalesInvoiceId: "inv",
+    appliedAmount: 0,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceAmount: 0.01,
+    sourceExchangeRate: 100000,
+    targetExchangeRate: 100000,
+    appliedDate: "2026-09-07"
+  });
+  expect(result.success).toBe(true);
+  if (result.success) expect(result.data).toHaveProperty("sourceAmount", 0.01);
+});
+
+describe("memoValidator", () => {
+  /**
+   * All four party × direction combinations are legal and must stay authorable.
+   * `memoDirection` carries both values, `memo`'s only party constraint is
+   * customer-XOR-supplier (verified against the live schema — nothing pairs the
+   * two), both memo list routes filter on the PARTY and offer direction as a
+   * separate filter, and `packages/database/src/datasets/validate.ts` requires
+   * coverage of both directions.
+   *
+   * `MemoForm` briefly derived `direction` from the party and force-submitted it
+   * with `<Hidden value>`, which both overwrote a stored direction on save and
+   * made a customer Debit / supplier Credit memo unauthorable. This pins the
+   * contract that change violated.
+   */
+  const base = {
+    memoDate: "2026-09-28",
+    currencyCode: "USD",
+    amount: "100",
+    exchangeRate: "1"
+  };
+
+  it.each([
+    ["customer", "Credit"],
+    ["customer", "Debit"],
+    ["supplier", "Credit"],
+    ["supplier", "Debit"]
+  ] as const)("accepts a %s memo in the %s direction", (party, direction) => {
+    const result = memoValidator.safeParse({
+      ...base,
+      direction,
+      ...(party === "customer"
+        ? { customerId: "cust_1" }
+        : { supplierId: "sup_1" })
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.direction).toBe(direction);
+  });
+
+  it("still requires exactly one party", () => {
+    for (const parties of [{}, { customerId: "cust_1", supplierId: "sup_1" }]) {
+      expect(
+        memoValidator.safeParse({ ...base, direction: "Credit", ...parties })
+          .success
+      ).toBe(false);
+    }
+  });
+
+  it("requires a direction rather than defaulting one", () => {
+    // A defaulted direction is how a wrong one reaches the journal unnoticed.
+    expect(
+      memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
+    ).toBe(false);
+  });
+});
+
+describe("salesInvoiceCustomerChange", () => {
+  it("sets the invoice customer and clears its contact and location", () => {
+    expect(salesInvoiceCustomerChange("cust_billing", null)).toEqual({
+      invoiceCustomerId: "cust_billing",
+      invoiceCustomerContactId: null,
+      invoiceCustomerLocationId: null
+    });
+  });
+
+  it("never writes the sold-to customer", () => {
+    for (const currency of [
+      null,
+      { currencyCode: "EUR", exchangeRate: 0.92 }
+    ]) {
+      expect(
+        salesInvoiceCustomerChange("cust_billing", currency)
+      ).not.toHaveProperty("customerId");
+    }
+  });
+
+  it("keeps the invoice currency when the customer has none", () => {
+    const change = salesInvoiceCustomerChange("cust_billing", null);
+    expect(change).not.toHaveProperty("currencyCode");
+    expect(change).not.toHaveProperty("exchangeRate");
+  });
+
+  it("takes the customer's currency and rate when it has one", () => {
+    expect(
+      salesInvoiceCustomerChange("cust_billing", {
+        currencyCode: "EUR",
+        exchangeRate: 0.92
+      })
+    ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.92 });
+  });
+});
+
+describe("purchaseInvoiceSupplierChange", () => {
+  it("sets the invoice supplier and clears its contact and location", () => {
+    expect(purchaseInvoiceSupplierChange("supp_billing", null)).toEqual({
+      invoiceSupplierId: "supp_billing",
+      invoiceSupplierContactId: null,
+      invoiceSupplierLocationId: null
+    });
+  });
+
+  it("never writes the supplier", () => {
+    for (const currency of [
+      null,
+      { currencyCode: "EUR", exchangeRate: 0.92 }
+    ]) {
+      expect(
+        purchaseInvoiceSupplierChange("supp_billing", currency)
+      ).not.toHaveProperty("supplierId");
+    }
+  });
+
+  it("takes the supplier's currency and rate when it has one", () => {
+    expect(
+      purchaseInvoiceSupplierChange("supp_billing", {
+        currencyCode: "EUR",
+        exchangeRate: 0.92
+      })
+    ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.92 });
   });
 });

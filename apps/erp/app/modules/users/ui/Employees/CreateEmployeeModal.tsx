@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   HStack,
   Modal,
@@ -8,13 +13,21 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
-  useMount,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useFetcher, useNavigate } from "react-router";
-import { Boolean, Input, Location, Select, Submit } from "~/components/Form";
+import { useFetcher } from "react-router";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Location,
+  Select,
+  Submit
+} from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { getEmployeeTypes, getInvitable } from "~/modules/users";
 import { createEmployeeValidator } from "~/modules/users";
 import type { Result } from "~/types";
@@ -28,26 +41,34 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   const { t } = useLingui();
   const { defaults } = useUser();
   const { isControlledEnvironment } = useFlags();
-  const navigate = useNavigate();
+  // Enterprise: choosing an employee type on invite is gated to the Business
+  // plan. When gated (Community / Starter), every invite defaults to the seeded
+  // Admin type — "everyone is an admin".
+  const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
+  const employeeTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getEmployeeTypes>>
+  >(path.to.api.employeeTypes);
 
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
+  const employeeTypes = employeeTypeFetcher.data?.data ?? [];
+  const employeeTypeOptions = employeeTypes.map((et) => ({
+    value: et.id,
+    label: et.name
+  }));
 
-  const employeeTypeOptions =
-    employeeTypeFetcher.data?.data?.map((et) => ({
-      value: et.id,
-      label: et.name
-    })) ?? [];
+  // The seeded Admin type is the only type a gated company has; fall back
+  // gracefully if the shape ever changes.
+  const adminType =
+    employeeTypes.find((et) => et.systemType === "Admin") ??
+    employeeTypes.find((et) => et.protected) ??
+    employeeTypes[0];
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />
@@ -75,13 +96,17 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                 <Input name="firstName" label={t`First Name`} />
                 <Input name="lastName" label={t`Last Name`} />
               </div>
-              <Select
-                name="employeeType"
-                label={t`Employee Type`}
-                termId="create-employee-employee-type"
-                options={employeeTypeOptions}
-                placeholder={t`Select Employee Type`}
-              />
+              {permissionsGated ? (
+                <Hidden name="employeeType" value={adminType?.id ?? ""} />
+              ) : (
+                <Select
+                  name="employeeType"
+                  label={t`Employee Type`}
+                  termId="create-employee-employee-type"
+                  options={employeeTypeOptions}
+                  placeholder={t`Select Employee Type`}
+                />
+              )}
               <Location
                 name="locationId"
                 label={t`Location`}
@@ -98,7 +123,14 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Submit isLoading={formFetcher.state !== "idle"}>
+              <Submit
+                isLoading={formFetcher.state !== "idle"}
+                // When gated, employeeType is a hidden field populated from the
+                // async-loaded Admin type. Block submit until it resolves, else
+                // an empty employeeType fails validation before the route's
+                // server-side Admin fallback can apply.
+                isDisabled={permissionsGated && !adminType}
+              >
                 <Trans>Invite</Trans>
               </Submit>
             </HStack>

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 // Import the constants from the models file directly (not the `../shared` barrel),
@@ -13,6 +18,7 @@ export const purchaseInvoiceLineType = [
   "Consumable",
   // "Fixed Asset",
   "G/L Account",
+  "Lease",
   "Comment"
 ] as const;
 
@@ -72,6 +78,42 @@ export function isSalesInvoiceLocked(
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+type InvoiceCurrency = { currencyCode: string; exchangeRate: number };
+
+/**
+ * The columns written when a sales invoice's invoice customer changes. It
+ * never writes `customerId`, the sold-to customer. A customer with no
+ * currency (`currency` null) leaves the invoice's currency as it is.
+ */
+export function salesInvoiceCustomerChange(
+  invoiceCustomerId: string,
+  currency: InvoiceCurrency | null
+) {
+  return {
+    invoiceCustomerId,
+    invoiceCustomerContactId: null,
+    invoiceCustomerLocationId: null,
+    ...currency
+  };
+}
+
+/**
+ * The columns written when a purchase invoice's invoice supplier changes. It
+ * never writes `supplierId`. A supplier with no currency (`currency` null)
+ * leaves the invoice's currency as it is.
+ */
+export function purchaseInvoiceSupplierChange(
+  invoiceSupplierId: string,
+  currency: InvoiceCurrency | null
+) {
+  return {
+    invoiceSupplierId,
+    invoiceSupplierContactId: null,
+    invoiceSupplierLocationId: null,
+    ...currency
+  };
+}
+
 export const purchaseInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),
@@ -106,12 +148,17 @@ export const purchaseInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(
-      [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
+      [
+        ...itemType,
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Lease",
+        "Comment"
+      ],
 
       {
-        errorMap: (issue, ctx) => ({
-          message: "Type is required"
-        })
+        error: "Type is required"
       }
     ),
     purchaseOrderId: zfd.text(z.string().optional()),
@@ -120,6 +167,9 @@ export const purchaseInvoiceLineValidator = z
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
+    // A Lease line names the lease; a drafted one also its payment row.
+    leaseId: zfd.text(z.string().optional()),
+    leasePaymentId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
     quantity: zfd.numeric(z.number().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
@@ -171,6 +221,17 @@ export const purchaseInvoiceLineValidator = z
       path: ["description"]
     }
   )
+  .refine((data) => (data.invoiceLineType === "Lease" ? data.leaseId : true), {
+    message: "Lease is required",
+    path: ["leaseId"]
+  })
+  .refine(
+    (data) => (data.invoiceLineType === "Lease" ? data.description : true),
+    {
+      message: "Description is required",
+      path: ["description"]
+    }
+  )
   .refine(
     (data) =>
       data.invoiceLineType === "Fixed Asset"
@@ -206,6 +267,18 @@ export const stripeCustomerActions = [
   "create"
 ] as const;
 
+/** The fields this panel emits, plus the email its parent commits — for a
+ *  form outside the invoice post modal (the contract confirm modal) that
+ *  submits the user's Stripe customer choice. The action re-checks it with
+ *  `linkStripeCustomerForBilling`. */
+export const stripeCustomerChoiceValidator = z.object({
+  stripeCustomerAction: z.enum(stripeCustomerActions).optional(),
+  stripeCustomerId: zfd.text(z.string().optional()),
+  stripeContactEmail: zfd.text(
+    z.string().email({ message: "Email is invalid" }).optional()
+  )
+});
+
 export const salesInvoicePostValidator = z
   .object({
     notification: z.enum(["Email", "Stripe", "None"]).optional(),
@@ -220,7 +293,7 @@ export const salesInvoicePostValidator = z
       z.string().email({ message: "Email is invalid" }).optional()
     ),
     // Supplied only when the invoice's own dateDue wouldn't survive
-    // clampDueDate (missing, past, or too far out) — see the post modal.
+    // stripeDueDate (missing, on/before today, or too far out) — see the post modal.
     stripeDueDate: zfd.text(z.string().optional())
   })
   .refine(
@@ -258,6 +331,9 @@ export const salesInvoicePostValidator = z
 export const salesInvoiceShipmentValidator = z.object({
   id: z.string(),
   locationId: zfd.text(z.string().optional()),
+  // The customer's ship-to (a `customerLocation` of the invoice's customer).
+  // Never the bill-to: sales rules evaluate standalone lines against it.
+  customerLocationId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   shippingTermId: zfd.text(z.string().optional()),
   shippingCost: zfd.numeric(z.number().optional().default(0)),
@@ -266,25 +342,44 @@ export const salesInvoiceShipmentValidator = z.object({
   customFields: z.any().optional()
 });
 
+/**
+ * A service period is both dates or neither, with the end on or after the
+ * start. `zfd.text` has already turned an empty submission into undefined.
+ * A malformed date fails the check instead of throwing out of the refine.
+ */
+function isValidServicePeriod(data: {
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+}): boolean {
+  const { serviceStartDate, serviceEndDate } = data;
+  if (!serviceStartDate && !serviceEndDate) return true;
+  if (!serviceStartDate || !serviceEndDate) return false;
+  try {
+    return parseDate(serviceEndDate).compare(parseDate(serviceStartDate)) >= 0;
+  } catch {
+    return false;
+  }
+}
+
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
-    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
-      errorMap: (issue, ctx) => ({
-        message: "Type is required"
-      })
+    // "Rental" lines are written by rental invoice generation, never offered as
+    // a choice (it is not in `salesInvoiceLineType`); it is accepted here so a
+    // rental line's shape validates. The DB requires a rental agreement line on
+    // every Rental row, so a hand-posted one is still refused.
+    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset", "Rental"], {
+      error: "Type is required"
     }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset lines.
+    // Fixed Asset and Rental lines.
     methodType: zfd.text(
       z
         .enum(methodType, {
-          errorMap: (issue, ctx) => ({
-            message: "Method is required"
-          })
+          error: "Method is required"
         })
         .optional()
     ),
@@ -299,11 +394,16 @@ export const salesInvoiceLineValidator = z
     quantity: zfd.numeric(z.number().optional()),
     unitOfMeasureCode: zfd.text(z.string().default("EA")),
     unitPrice: zfd.numeric(z.number().optional()),
+    // Percent points (0–100), as the form types it; the route stores the 0–1
+    // fraction the column holds. It discounts the merchandise only.
+    discountPercent: zfd.numeric(z.number().min(0).max(100).optional()),
     shippingCost: zfd.numeric(z.number().optional().default(0)),
     taxPercent: zfd.numeric(z.number().optional().default(0)),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional())
+    exchangeRate: zfd.numeric(z.number().optional()),
+    serviceStartDate: zfd.text(z.string().optional()),
+    serviceEndDate: zfd.text(z.string().optional())
   })
   .refine(
     (data) =>
@@ -329,7 +429,11 @@ export const salesInvoiceLineValidator = z
   )
   .refine(
     (data) => {
-      if (data.invoiceLineType === "Fixed Asset") return true;
+      if (
+        data.invoiceLineType === "Fixed Asset" ||
+        data.invoiceLineType === "Rental"
+      )
+        return true;
       return !!data.methodType;
     },
     {
@@ -345,6 +449,22 @@ export const salesInvoiceLineValidator = z
     {
       message: "Fixed Asset quantity must be 1",
       path: ["quantity"]
+    }
+  )
+  .refine((data) => isValidServicePeriod(data), {
+    message: "Service end must be on or after service start",
+    path: ["serviceEndDate"]
+  })
+  // Rental lines carry their billing period in these columns, written by
+  // rental invoice generation; every other non-Service type is a physical good.
+  .refine(
+    (data) =>
+      data.invoiceLineType === "Service" ||
+      data.invoiceLineType === "Rental" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
     }
   );
 
@@ -374,7 +494,7 @@ export const memoValidator = z
     id: zfd.text(z.string().optional()),
     memoId: zfd.text(z.string().optional()),
     direction: z.enum(memoDirection, {
-      errorMap: () => ({ message: "Direction is required" })
+      error: "Direction is required"
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
@@ -409,10 +529,14 @@ export const paymentValidator = z
     id: zfd.text(z.string().optional()),
     paymentId: zfd.text(z.string().optional()),
     paymentType: z.enum(paymentType, {
-      errorMap: () => ({ message: "Payment type is required" })
+      error: "Payment type is required"
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
+    // An employee payee settles reimbursements only — it is never a trade
+    // party, which is the point of the segregated employee-payable control
+    // account. Mirrors the DB's widened `payment_party_check`.
+    employeeId: zfd.text(z.string().optional()),
     paymentDate: z.string().min(1, { message: "Payment date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
@@ -423,18 +547,141 @@ export const paymentValidator = z
     ),
     bankAccount: z.string().min(1, { message: "Bank account is required" }),
     reference: zfd.text(z.string().optional()),
-    memo: zfd.text(z.string().optional())
+    memo: zfd.text(z.string().optional()),
+    // A customer deposit names the document it is held against — at most one
+    // (`payment_deposit_document_check`). post-payment books the unapplied cash
+    // of a payment carrying either reference on the prepayment account.
+    salesOrderId: zfd.text(z.string().optional()),
+    rentalAgreementId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
-      d.paymentType === "Receipt"
-        ? Boolean(d.customerId)
-        : Boolean(d.supplierId),
+      [d.customerId, d.supplierId, d.employeeId].filter(Boolean).length === 1,
     {
-      message: "Receipt requires a customer; Disbursement requires a supplier",
+      message:
+        "A payment requires exactly one party (customer, supplier, or employee)",
       path: ["customerId"]
     }
+  )
+  .refine((d) => !(d.salesOrderId && d.rentalAgreementId), {
+    message:
+      "A deposit is held against a sales order or a rental agreement, not both",
+    path: ["rentalAgreementId"]
+  })
+  .refine(
+    (d) => Boolean(d.customerId) || !(d.salesOrderId || d.rentalAgreementId),
+    {
+      message: "Only a customer payment can be a deposit",
+      path: ["rentalAgreementId"]
+    }
   );
+
+// A sales order or rental agreement a customer payment can be a deposit for
+// (a Receipt) or a refund of (a Disbursement), as the payment form's "Deposit
+// for" picker lists them. Loaded company-wide with the customer on each row —
+// the form narrows to the selected customer, which can change before the
+// payment is saved. `open` is whether a NEW deposit may be taken against it
+// (an open order / a Draft or Active agreement); a refund can name any document
+// that already holds a deposit, closed or not.
+export type DepositDocument = {
+  id: string;
+  readableId: string;
+  customerId: string;
+  kind: "salesOrder" | "rentalAgreement";
+  status: string;
+  open: boolean;
+};
+
+// ----------------------------------------------------------------------
+// Charges (Ramp spend-management sync)
+// ----------------------------------------------------------------------
+
+export const chargeType = [
+  "Charge",
+  "Credit",
+  "Payment",
+  "Cashback",
+  "Repayment"
+] as const;
+export const chargeStatus = ["Draft", "Posted", "Voided"] as const;
+
+export type ChargeType = (typeof chargeType)[number];
+export type ChargeStatusType = (typeof chargeStatus)[number];
+
+// ----------------------------------------------------------------------
+// Reimbursements (employee expense payables — imported from a spend tool,
+// then editable in Carbon while Draft; never hand-created)
+// ----------------------------------------------------------------------
+
+export const reimbursementStatus = ["Draft", "Posted", "Voided"] as const;
+export type ReimbursementStatusType = (typeof reimbursementStatus)[number];
+
+export function isReimbursementLocked(
+  status: string | null | undefined
+): boolean {
+  return status !== null && status !== undefined && status !== "Draft";
+}
+
+// Header edit. No create counterpart by design.
+export const reimbursementUpdateValidator = z.object({
+  id: z.string().min(1),
+  reimbursementDate: z
+    .string()
+    .min(1, { message: "Reimbursement date is required" }),
+  currencyCode: z.string().min(1, { message: "Currency is required" }),
+  exchangeRate: zfd.numeric(z.number().positive().default(1)),
+  amount: zfd.numeric(
+    z.number().finite().positive({ message: "Amount must be positive" })
+  ),
+  reference: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
+
+// One coding line. The five stored columns mirror chargeLine, plus the
+// generic dimension pairs DimensionSelector works in. Do NOT add a field per
+// dimension concept — that is what `dimensions` is.
+//
+// These lines arrive as parsed JSON from a hidden field, not as form data,
+// so this validator is plain zod (no zfd coercion) — zfd.numeric expects a
+// FormData string and would reject an already-numeric amount.
+export const reimbursementLineDimensionValidator = z.object({
+  dimensionId: z.string().min(1),
+  valueId: z.string().min(1)
+});
+
+export const reimbursementLineValidator = z.object({
+  id: z.string().optional(),
+  accountId: z.string().min(1, { message: "Account is required" }),
+  costCenterId: z.string().nullish(),
+  projectId: z.string().nullish(),
+  description: z.string().nullish(),
+  amount: z
+    .number()
+    .finite()
+    .positive({ message: "Line amount must be positive" }),
+  dimensions: z.array(reimbursementLineDimensionValidator).default([])
+});
+
+// The editor submits the whole line set as ONE hidden JSON field, so the
+// route parses that string and runs it through this array.
+export const reimbursementLinesValidator = z
+  .array(reimbursementLineValidator)
+  .min(1, { message: "A reimbursement needs at least one line" });
+
+// The "Pay expense" modal. Exactly three fields, and deliberately no more: they
+// are a 1:1 match for Rillet's `POST /reimbursements/{id}/payments`
+// (`{amount, date, account_code}`), which is what lets the payout sync across
+// with no impedance. The amount is in the reimbursement's DOCUMENT currency and
+// may be LESS than the balance — a partial payout is supported — so it is not
+// pinned to the balance here; the balance ceiling is enforced server-side by
+// `replaceInvoiceSettlements`.
+export const reimbursementPaymentValidator = z.object({
+  amount: zfd.numeric(
+    z.number().positive({ message: "Amount must be greater than zero" })
+  ),
+  paymentDate: z.string().min(1, { message: "Payment date is required" }),
+  bankAccount: z.string().min(1, { message: "Bank account is required" })
+});
 
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
@@ -445,11 +692,14 @@ export const invoiceSettlementBase = z.object({
   // Source: exactly one of a payment or a memo settles the target.
   paymentId: zfd.text(z.string().optional()),
   memoId: zfd.text(z.string().optional()),
-  // Target: exactly one of a sales invoice, purchase invoice, or memo.
+  // Target: exactly one of a sales invoice, purchase invoice, memo, or
+  // reimbursement.
   targetSalesInvoiceId: zfd.text(z.string().optional()),
   targetPurchaseInvoiceId: zfd.text(z.string().optional()),
   targetMemoId: zfd.text(z.string().optional()),
-  appliedAmount: zfd.numeric(z.number().nonnegative().default(0)),
+  targetReimbursementId: zfd.text(z.string().optional()),
+  sourceAmount: zfd.numeric(z.number().finite().nonnegative().optional()),
+  appliedAmount: zfd.numeric(z.number().finite().nonnegative().default(0)),
   discountAmount: zfd.numeric(z.number().nonnegative().default(0)),
   writeOffAmount: zfd.numeric(z.number().nonnegative().default(0)),
   targetExchangeRate: zfd.numeric(
@@ -471,11 +721,12 @@ export const invoiceSettlementValidator = invoiceSettlementBase
       [
         d.targetSalesInvoiceId,
         d.targetPurchaseInvoiceId,
-        d.targetMemoId
+        d.targetMemoId,
+        d.targetReimbursementId
       ].filter(Boolean).length === 1,
     {
       message:
-        "Application must target exactly one document (sales invoice, purchase invoice, or memo)",
+        "Application must target exactly one document (sales invoice, purchase invoice, memo, or reimbursement)",
       path: ["targetSalesInvoiceId"]
     }
   )
@@ -483,7 +734,8 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     (d) =>
       Number(d.appliedAmount) +
         Number(d.discountAmount) +
-        Number(d.writeOffAmount) >
+        Number(d.writeOffAmount) +
+        Number(d.sourceAmount ?? 0) >
       0,
     {
       message: "At least one of applied / discount / write-off must be > 0",
@@ -491,22 +743,15 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     }
   );
 
-// Sub-cent balances are forgiven as dust: an outstanding amount below one cent
-// (the smallest representable currency unit) can't be collected and is treated
-// as paid. Kept in sync with the SQL view forgiveness in
-// 20260630151500_invoice-dust-forgiveness.sql.
-export const INVOICE_DUST_THRESHOLD = 0.01;
-
-// An invoice is payable when it's posted with an outstanding balance of at least
-// one cent — i.e. not draft/pending, voided, already fully paid, or down to dust.
-// Shared by the sales (AR) and purchase (AP) invoice headers; the caller AND-s in
-// the permission check.
+// The balance views preserve any remaining document minor unit, even when its
+// base equivalent is smaller than a base currency cent.
 export function isInvoicePayable(
   status: string | null | undefined,
   balance: number | null | undefined
 ): boolean {
   return (
     !["Voided", "Draft", "Pending", "Paid"].includes(status ?? "") &&
-    Number(balance ?? 0) >= INVOICE_DUST_THRESHOLD
+    Number.isFinite(Number(balance)) &&
+    Number(balance ?? 0) > 0
   );
 }

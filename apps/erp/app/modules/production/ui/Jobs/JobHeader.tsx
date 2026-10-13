@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import {
@@ -5,7 +9,6 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -14,9 +17,8 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-  Heading,
   HStack,
-  IconButton,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,6 +31,7 @@ import {
   Status,
   useDisclosure,
   useMount,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
@@ -51,11 +54,8 @@ import {
   LuCircleStop,
   LuClipboardList,
   LuClock,
-  LuEllipsisVertical,
   LuList,
   LuLoaderCircle,
-  LuPanelLeft,
-  LuPanelRight,
   LuQrCode,
   LuSettings,
   LuShoppingCart,
@@ -72,6 +72,7 @@ import { Link, useFetcher, useNavigate, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { Location, StorageUnit } from "~/components/Form";
 import { usePanels } from "~/components/Layout";
+import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
@@ -82,12 +83,20 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
 import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
+import {
+  getDefaultSerialCompleteQuantity,
+  getFinishedUnreceivedQuantity,
+  getReceivableSerialUnits,
+  type JobReceiptSnapshot
+} from "./job-complete-logic";
+import { makeMethodsMissingOperations } from "./job-release-logic";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -111,6 +120,7 @@ const JobHeader = () => {
     }
   };
   const permissions = usePermissions();
+  const { isPhone } = useViewport();
   const { jobId } = useParams();
   if (!jobId) throw new Error("jobId not found");
 
@@ -129,7 +139,10 @@ const JobHeader = () => {
   const completeModal = useDisclosure();
   const deleteJobModal = useDisclosure();
   const expediteModal = useDisclosure();
-  const routeData = useRouteData<{ job: Job }>(path.to.job(jobId));
+  const routeData = useRouteData<{
+    job: Job;
+    unbatchedBatchableOperations?: number;
+  }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
   const expediteFetcher = useFetcher<{
@@ -139,6 +152,8 @@ const JobHeader = () => {
     } | null;
   }>();
   const status = routeData?.job?.status;
+  const unbatchedBatchableOperations =
+    routeData?.unbatchedBatchableOperations ?? 0;
 
   const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
@@ -185,294 +200,330 @@ const JobHeader = () => {
     };
   }, [projectedCompletionAt, jobDueDate]);
 
+  const menuItems = (
+    <>
+      {auditLogTrigger}
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
+          expediteFetcher.state !== "idle" ||
+          !permissions.can("view", "production")
+        }
+        onClick={() => {
+          expediteModal.onOpen();
+          expediteFetcher.submit(
+            {},
+            { method: "post", action: path.to.jobExpedite(jobId) }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuZap />} />
+        {t`Best case…`}
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        disabled={
+          !["Cancelled", "Completed"].includes(routeData?.job?.status ?? "") ||
+          statusFetcher.state !== "idle" ||
+          !permissions.can("update", "production")
+        }
+        onClick={() => {
+          statusFetcher.submit(
+            {
+              status:
+                routeData?.job?.status === "Cancelled" ? "Draft" : "In Progress"
+            },
+            {
+              method: "post",
+              action: path.to.jobStatus(jobId)
+            }
+          );
+        }}
+      >
+        <DropdownMenuIcon icon={<LuLoaderCircle />} />
+        <Trans>Reopen</Trans>
+      </DropdownMenuItem>
+      <DropdownMenuItem
+        shortcut={MENU_ITEM_SHORTCUTS.delete}
+        disabled={
+          !permissions.can("delete", "production") ||
+          !permissions.is("employee") ||
+          isJobLocked(routeData?.job?.status)
+        }
+        destructive
+        onClick={deleteJobModal.onOpen}
+      >
+        <DropdownMenuIcon icon={<LuTrash />} />
+        <Trans>Delete Job</Trans>
+      </DropdownMenuItem>
+    </>
+  );
+  const isReleasable = ["Draft", "Planned"].includes(status ?? "");
+  const statusBadges = (
+    <>
+      <JobStatus status={routeData?.job?.status} />
+      {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+        routeData?.job?.status ?? ""
+      ) && (
+        <>
+          {routeData?.job?.dueDate &&
+            isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
+              <JobStatus status="Due Today" />
+            )}
+          {routeData?.job?.dueDate &&
+            parseDate(routeData?.job?.dueDate) < todaysDate && (
+              <JobStatus status="Overdue" />
+            )}
+          {slack && (
+            <Status
+              color={slack.late ? "red" : "green"}
+              tooltip={`${t`Projected completion`}: ${slack.projectedDate}`}
+            >
+              {slack.late
+                ? t`${slack.absDays}d late`
+                : t`${slack.absDays}d early`}
+            </Status>
+          )}
+        </>
+      )}
+      {unbatchedBatchableOperations > 0 && (
+        <Status
+          color="gray"
+          tooltip={
+            unbatchedBatchableOperations === 1
+              ? t`1 batchable operation is not in a batch — it runs individually until batched`
+              : t`${unbatchedBatchableOperations} batchable operations are not in a batch — they run individually until batched`
+          }
+        >
+          {t`${unbatchedBatchableOperations} awaiting batching`}
+        </Status>
+      )}
+    </>
+  );
+
+  // Phones: the hero line under the app bar, "item · Qty N".
+  const jobQuantity = routeData?.job?.quantity;
+  const heroSubtitle =
+    [
+      routeData?.job?.itemReadableIdWithRevision,
+      jobQuantity != null ? t`Qty ${jobQuantity}` : null
+    ]
+      .filter(Boolean)
+      .join(" · ") || undefined;
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide ">
-        <HStack>
-          <IconButton
-            aria-label={t`Toggle Explorer`}
-            icon={<LuPanelLeft />}
-            onClick={toggleExplorer}
-            variant="ghost"
-          />
-          <Link to={path.to.jobDetails(jobId)}>
-            <Heading size="h4" className="flex items-center gap-2">
-              <span>{routeData?.job?.jobId}</span>
-            </Heading>
-          </Link>
-          <Copy text={routeData?.job?.jobId ?? ""} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <IconButton
-                aria-label={t`More options`}
-                icon={<LuEllipsisVertical />}
-                variant="secondary"
-                size="sm"
-              />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {auditLogTrigger}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  !["Ready", "In Progress", "Paused"].includes(status ?? "") ||
-                  expediteFetcher.state !== "idle" ||
-                  !permissions.can("view", "production")
-                }
-                onClick={() => {
-                  expediteModal.onOpen();
-                  expediteFetcher.submit(
-                    {},
-                    { method: "post", action: path.to.jobExpedite(jobId) }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuZap />} />
-                {t`Best case…`}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                disabled={
-                  !["Cancelled", "Completed"].includes(
-                    routeData?.job?.status ?? ""
-                  ) ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
-                }
-                onClick={() => {
-                  statusFetcher.submit(
-                    {
-                      status:
-                        routeData?.job?.status === "Cancelled"
-                          ? "Draft"
-                          : "In Progress"
-                    },
-                    {
-                      method: "post",
-                      action: path.to.jobStatus(jobId)
-                    }
-                  );
-                }}
-              >
-                <DropdownMenuIcon icon={<LuLoaderCircle />} />
-                Reopen
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={
-                  !permissions.can("delete", "production") ||
-                  !permissions.is("employee") ||
-                  isJobLocked(routeData?.job?.status)
-                }
-                destructive
-                onClick={deleteJobModal.onOpen}
-              >
-                <DropdownMenuIcon icon={<LuTrash />} />
-                Delete Job
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <JobStatus status={routeData?.job?.status} />
-          {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
-            routeData?.job?.status ?? ""
-          ) && (
-            <>
-              {routeData?.job?.dueDate &&
-                isSameDay(parseDate(routeData?.job?.dueDate), todaysDate) && (
-                  <JobStatus status="Due Today" />
-                )}
-              {routeData?.job?.dueDate &&
-                parseDate(routeData?.job?.dueDate) < todaysDate && (
-                  <JobStatus status="Overdue" />
-                )}
-              {slack && (
-                <Status
-                  color={slack.late ? "red" : "green"}
-                  tooltip={`${t`Projected completion`}: ${slack.projectedDate}`}
-                >
-                  {slack.late
-                    ? t`${slack.absDays}d late`
-                    : t`${slack.absDays}d early`}
-                </Status>
+      <RecordHeader
+        title={routeData?.job?.jobId}
+        titleTo={path.to.jobDetails(jobId)}
+        copyValue={routeData?.job?.jobId ?? ""}
+        menu={menuItems}
+        status={statusBadges}
+        subtitle={heroSubtitle}
+        onToggleExplorer={toggleExplorer}
+        onToggleProperties={toggleProperties}
+        actions={
+          <>
+            {routeData?.job?.salesOrderId &&
+              routeData?.job.salesOrderLineId && (
+                <RecordAction slot="overflow">
+                  <Button
+                    leftIcon={<RiProgress8Line />}
+                    variant="secondary"
+                    asChild
+                  >
+                    <Link
+                      to={path.to.salesOrderLine(
+                        routeData?.job?.salesOrderId,
+                        routeData?.job?.salesOrderLineId
+                      )}
+                    >
+                      <Trans>Sales Order</Trans>
+                    </Link>
+                  </Button>
+                </RecordAction>
               )}
-            </>
-          )}
-        </HStack>
-        <HStack>
-          {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
-            <Button leftIcon={<RiProgress8Line />} variant="secondary" asChild>
-              <Link
-                to={path.to.salesOrderLine(
-                  routeData?.job?.salesOrderId,
-                  routeData?.job?.salesOrderLineId
-                )}
-              >
-                Sales Order
-              </Link>
-            </Button>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                leftIcon={currentValue === "details" ? <LuList /> : <LuTable />}
-                rightIcon={<LuChevronDown />}
-                variant="secondary"
-              >
-                {getExplorerLabel(currentValue)}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56">
-              <DropdownMenuItem asChild>
-                <a
-                  target="_blank"
-                  href={path.to.file.jobTravelerByJobId(jobId)}
-                  rel="noreferrer"
-                >
-                  <DropdownMenuIcon icon={<LuQrCode />} />
-                  Job Traveler
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuRadioGroup
-                value={currentValue}
-                onValueChange={(option) => {
-                  navigate(getExplorePath(jobId, option));
-                }}
-              >
-                <DropdownMenuRadioItem value="details">
-                  <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
-                  {getExplorerLabel("details")}
-                </DropdownMenuRadioItem>
-                <DropdownMenuSeparator />
-                {[
-                  "materials",
-                  "operations",
-                  ...(status !== "Draft" && status !== "Planned" ? ["dag"] : [])
-                ].map((i) => (
-                  <DropdownMenuRadioItem value={i} key={i}>
-                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                    {getExplorerLabel(i)}
-                  </DropdownMenuRadioItem>
-                ))}
-                <DropdownMenuSeparator />
-                {["events", "quantities", "step-records"].map((i) => (
-                  <DropdownMenuRadioItem value={i} key={i}>
-                    <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
-                    {getExplorerLabel(i)}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            <RecordAction slot="overflow">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    leftIcon={
+                      currentValue === "details" ? <LuList /> : <LuTable />
+                    }
+                    rightIcon={<LuChevronDown />}
+                    variant="secondary"
+                  >
+                    {getExplorerLabel(currentValue)}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuItem asChild>
+                    <a
+                      target="_blank"
+                      href={path.to.file.jobTravelerByJobId(jobId)}
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuQrCode />} />
+                      <Trans>Job Traveler</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                  <DropdownMenuRadioGroup
+                    value={currentValue}
+                    onValueChange={(option) => {
+                      navigate(getExplorePath(jobId, option));
+                    }}
+                  >
+                    <DropdownMenuRadioItem value="details">
+                      <DropdownMenuIcon icon={getExplorerMenuIcon("details")} />
+                      {getExplorerLabel("details")}
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuSeparator />
+                    {[
+                      "materials",
+                      "operations",
+                      ...(status !== "Draft" && status !== "Planned"
+                        ? ["dag"]
+                        : [])
+                    ].map((i) => (
+                      <DropdownMenuRadioItem value={i} key={i}>
+                        <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                        {getExplorerLabel(i)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                    <DropdownMenuSeparator />
+                    {["events", "quantities", "step-records"].map((i) => (
+                      <DropdownMenuRadioItem value={i} key={i}>
+                        <DropdownMenuIcon icon={getExplorerMenuIcon(i)} />
+                        {getExplorerLabel(i)}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </RecordAction>
 
-          {status !== "Paused" ? (
-            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
-              <input type="hidden" name="status" value="Paused" />
-              <Button
-                isLoading={
-                  statusFetcher.state !== "idle" &&
-                  statusFetcher.formData?.get("status") === "Paused"
-                }
-                isDisabled={
-                  !["Ready", "In Progress"].includes(status ?? "") ||
-                  statusFetcher.state !== "idle" ||
-                  !permissions.can("update", "production")
-                }
-                leftIcon={<LuCirclePause />}
-                type="submit"
-                variant="secondary"
-              >
-                Pause
-              </Button>
-            </statusFetcher.Form>
-          ) : (
-            <statusFetcher.Form method="post" action={path.to.jobStatus(jobId)}>
-              <input type="hidden" name="status" value="Ready" />
-              <Button
+            {status !== "Paused" ? (
+              // Phones: Pause shows only while it can act (Ready or In Progress).
+              isPhone &&
+              !["Ready", "In Progress"].includes(status ?? "") ? null : (
+                <RecordAction slot="secondary">
+                  <statusFetcher.Form
+                    method="post"
+                    action={path.to.jobStatus(jobId)}
+                  >
+                    <input type="hidden" name="status" value="Paused" />
+                    <Button
+                      isLoading={
+                        statusFetcher.state !== "idle" &&
+                        statusFetcher.formData?.get("status") === "Paused"
+                      }
+                      isDisabled={
+                        !["Ready", "In Progress"].includes(status ?? "") ||
+                        statusFetcher.state !== "idle" ||
+                        !permissions.can("update", "production")
+                      }
+                      leftIcon={<LuCirclePause />}
+                      type="submit"
+                      variant="secondary"
+                    >
+                      <Trans>Pause</Trans>
+                    </Button>
+                  </statusFetcher.Form>
+                </RecordAction>
+              )
+            ) : (
+              <RecordAction slot="secondary">
+                <statusFetcher.Form
+                  method="post"
+                  action={path.to.jobStatus(jobId)}
+                >
+                  <input type="hidden" name="status" value="Ready" />
+                  <Button
+                    isLoading={
+                      statusFetcher.state !== "idle" &&
+                      statusFetcher.formData?.get("status") === "Ready"
+                    }
+                    isDisabled={
+                      statusFetcher.state !== "idle" ||
+                      !permissions.can("update", "production")
+                    }
+                    leftIcon={<LuCirclePlay />}
+                    type="submit"
+                  >
+                    <Trans>Resume</Trans>
+                  </Button>
+                </statusFetcher.Form>
+              </RecordAction>
+            )}
+
+            <RecordAction slot={isReleasable ? "primary" : "overflow"}>
+              <SplitButton
+                onClick={releaseModal.onOpen}
                 isLoading={
                   statusFetcher.state !== "idle" &&
                   statusFetcher.formData?.get("status") === "Ready"
                 }
                 isDisabled={
+                  !isReleasable ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production") ||
+                  (routeData?.job?.quantity === 0 &&
+                    routeData?.job?.scrapQuantity === 0)
+                }
+                leftIcon={<LuCirclePlay />}
+                variant={isReleasable ? "primary" : "secondary"}
+                dropdownItems={[
+                  {
+                    label: <JobStatus status="Planned" />,
+                    icon: <LuCheckCheck />,
+                    onClick: markAsPlanned
+                  }
+                ]}
+              >
+                <Trans>Release</Trans>
+              </SplitButton>
+            </RecordAction>
+
+            <RecordAction slot={isReleasable ? "overflow" : "primary"}>
+              <Button
+                onClick={completeModal.onOpen}
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formAction === path.to.jobComplete(jobId)
+                }
+                isDisabled={
+                  ["Completed", "Cancelled"].includes(status ?? "") ||
                   statusFetcher.state !== "idle" ||
                   !permissions.can("update", "production")
                 }
-                leftIcon={<LuCirclePlay />}
-                type="submit"
+                leftIcon={<LuCircleCheck />}
+                variant={status === "Completed" ? "primary" : "secondary"}
               >
-                Resume
+                <Trans>Complete</Trans>
               </Button>
-            </statusFetcher.Form>
-          )}
-
-          <SplitButton
-            onClick={releaseModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Ready"
-            }
-            isDisabled={
-              !["Draft", "Planned"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production") ||
-              (routeData?.job?.quantity === 0 &&
-                routeData?.job?.scrapQuantity === 0)
-            }
-            leftIcon={<LuCirclePlay />}
-            variant={
-              ["Draft", "Planned"].includes(status ?? "")
-                ? "primary"
-                : "secondary"
-            }
-            dropdownItems={[
-              {
-                label: <JobStatus status="Planned" />,
-                icon: <LuCheckCheck />,
-                onClick: markAsPlanned
-              }
-            ]}
-          >
-            Release
-          </SplitButton>
-
-          <Button
-            onClick={completeModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formAction === path.to.jobComplete(jobId)
-            }
-            isDisabled={
-              ["Completed", "Cancelled"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production")
-            }
-            leftIcon={<LuCircleCheck />}
-            variant={status === "Completed" ? "primary" : "secondary"}
-          >
-            Complete
-          </Button>
-          <Button
-            onClick={cancelModal.onOpen}
-            isLoading={
-              statusFetcher.state !== "idle" &&
-              statusFetcher.formData?.get("status") === "Cancelled"
-            }
-            isDisabled={
-              ["Cancelled", "Completed"].includes(status ?? "") ||
-              statusFetcher.state !== "idle" ||
-              !permissions.can("update", "production")
-            }
-            leftIcon={<LuCircleStop />}
-            variant="secondary"
-          >
-            Cancel
-          </Button>
-          <IconButton
-            aria-label={t`Toggle Properties`}
-            icon={<LuPanelRight />}
-            onClick={toggleProperties}
-            variant="ghost"
-          />
-        </HStack>
-      </div>
+            </RecordAction>
+            <RecordAction slot="overflow">
+              <Button
+                onClick={cancelModal.onOpen}
+                isLoading={
+                  statusFetcher.state !== "idle" &&
+                  statusFetcher.formData?.get("status") === "Cancelled"
+                }
+                isDisabled={
+                  ["Cancelled", "Completed"].includes(status ?? "") ||
+                  statusFetcher.state !== "idle" ||
+                  !permissions.can("update", "production")
+                }
+                leftIcon={<LuCircleStop />}
+                variant="secondary"
+              >
+                <Trans>Cancel</Trans>
+              </Button>
+            </RecordAction>
+          </>
+        }
+      />
       {releaseModal.isOpen && (
         <JobStartModal
           job={routeData?.job}
@@ -571,6 +622,7 @@ export function JobStartModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const [suppliers] = useSuppliers();
   const [loading, setLoading] = useState(true);
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
@@ -588,8 +640,22 @@ export function JobStartModal({
     selectedPurchaseOrdersBySupplierId,
     setSelectedPurchaseOrdersBySupplierId
   ] = useState<Record<string, string>>({});
+  // Outside operations whose process offers MORE THAN ONE supplier — the user
+  // picks which one (defaulting to the first). Single-supplier and explicitly
+  // assigned operations never appear here; they resolve automatically.
+  const [outsideOperationChoices, setOutsideOperationChoices] = useState<
+    {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[]
+  >([]);
+  const [
+    selectedSupplierProcessByOperationId,
+    setSelectedSupplierProcessByOperationId
+  ] = useState<Record<string, string>>({});
 
-  const validate = async () => {
+  const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
     const [makeMethod, materials, operations, methodTree] = await Promise.all([
       carbon
@@ -626,27 +692,125 @@ export function JobStartModal({
       existingPurchaseOrderLines.data?.map((pol) => pol.jobOperationId) ?? []
     );
 
-    // Filter out operations that already have purchase order lines
-    const operationsNeedingPurchaseOrders = outsideOperations.filter(
-      (op) =>
-        !existingJobOperationIds.has(op.id) && op.operationSupplierProcessId
+    // Outside operations that still need handling (no existing purchase order line)
+    const outsideOperationsWithoutPurchaseOrders = outsideOperations.filter(
+      (op) => !existingJobOperationIds.has(op.id)
     );
 
-    const uniqueOutsideProcessIds = operationsNeedingPurchaseOrders.map(
-      (op) => op.operationSupplierProcessId!
+    // Resolve each operation's supplier: its own supplier process, or — when the
+    // operation has none — the sole supplier configured for its process. A process
+    // with exactly one supplier is unambiguous, so it counts as assigned; a process
+    // with zero or multiple suppliers still requires an explicit per-operation pick.
+    type SupplierProcessRef = {
+      id: string;
+      supplierId: string;
+      processId: string;
+    };
+
+    const outsideProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.processId)
+          .filter(Boolean) as string[]
+      )
+    );
+    const explicitSupplierProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.operationSupplierProcessId)
+          .filter(Boolean) as string[]
+      )
     );
 
-    const supplierProcesses =
-      uniqueOutsideProcessIds.length > 0
+    const supplierProcessesByProcess =
+      outsideProcessIds.length > 0
         ? await carbon
             .from("supplierProcess")
-            .select("supplierId")
-            .in("id", uniqueOutsideProcessIds)
-        : { data: [] };
+            .select("id, supplierId, processId")
+            .in("processId", outsideProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+    const supplierProcessesById =
+      explicitSupplierProcessIds.length > 0
+        ? await carbon
+            .from("supplierProcess")
+            .select("id, supplierId, processId")
+            .in("id", explicitSupplierProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+
+    const supplierProcessById = new Map<string, SupplierProcessRef>();
+    for (const sp of [
+      ...(supplierProcessesByProcess.data ?? []),
+      ...(supplierProcessesById.data ?? [])
+    ]) {
+      supplierProcessById.set(sp.id, sp);
+    }
+    const supplierProcessesByProcessId = new Map<
+      string,
+      SupplierProcessRef[]
+    >();
+    for (const sp of supplierProcessesByProcess.data ?? []) {
+      const list = supplierProcessesByProcessId.get(sp.processId) ?? [];
+      list.push(sp);
+      supplierProcessesByProcessId.set(sp.processId, list);
+    }
+
+    // Resolve each operation's supplier: its own supplier process, the process's
+    // sole supplier, or — when the process offers several — a user pick (defaulting
+    // to the first candidate). Only a process with NO supplier at all is a genuine
+    // "missing supplier". `choicesOverride` carries the picks on a re-run.
+    const supplierProcessChoice =
+      choicesOverride ?? selectedSupplierProcessByOperationId;
+    const resolvedSupplierChoice: Record<string, string> = {};
+    const operationChoices: {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[] = [];
+
+    const resolveSupplierProcess = (op: {
+      id: string;
+      description: string | null;
+      operationSupplierProcessId: string | null;
+      processId: string | null;
+    }): SupplierProcessRef | null => {
+      if (op.operationSupplierProcessId) {
+        return supplierProcessById.get(op.operationSupplierProcessId) ?? null;
+      }
+      const candidates = op.processId
+        ? (supplierProcessesByProcessId.get(op.processId) ?? [])
+        : [];
+      if (candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0];
+      // Multiple suppliers for the process — the user chooses which one.
+      operationChoices.push({
+        id: op.id,
+        description: op.description ?? op.id,
+        options: candidates.map((c) => ({
+          supplierProcessId: c.id,
+          supplierId: c.supplierId
+        }))
+      });
+      const chosenId =
+        supplierProcessChoice[op.id] &&
+        candidates.some((c) => c.id === supplierProcessChoice[op.id])
+          ? supplierProcessChoice[op.id]
+          : candidates[0].id;
+      resolvedSupplierChoice[op.id] = chosenId;
+      return supplierProcessById.get(chosenId) ?? null;
+    };
+
+    const operationsWithSupplier = outsideOperationsWithoutPurchaseOrders.map(
+      (op) => ({ op, supplierProcess: resolveSupplierProcess(op) })
+    );
 
     const uniqueSupplierIds = new Set(
-      supplierProcesses.data?.map((sp) => sp.supplierId) ?? []
+      operationsWithSupplier
+        .map((entry) => entry.supplierProcess?.supplierId)
+        .filter(Boolean) as string[]
     );
+
+    setOutsideOperationChoices(operationChoices);
+    setSelectedSupplierProcessByOperationId(resolvedSupplierChoice);
 
     if (uniqueSupplierIds.size) {
       const draftPurchaseOrders = await carbon
@@ -669,36 +833,15 @@ export function JobStartModal({
       );
     }
 
-    setSelectedPurchaseOrdersBySupplierId(
+    setSelectedPurchaseOrdersBySupplierId((prev) =>
       Array.from(uniqueSupplierIds).reduce<Record<string, string>>(
         (acc, supplierId) => {
-          acc[supplierId] = "new";
+          acc[supplierId] = prev[supplierId] ?? "new";
           return acc;
         },
         {}
       )
     );
-
-    const kittedMakeMethodIds = new Set(
-      materials.data
-        ?.filter((m) => m.jobMaterialMakeMethodId && m.kit)
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // make methods for materials
-    const uniqueMakeMethodIds = new Set(
-      materials.data
-        ?.filter(
-          (m) =>
-            m.jobMaterialMakeMethodId &&
-            m.methodType === "Make to Order" &&
-            !kittedMakeMethodIds.has(m.jobMaterialMakeMethodId)
-        )
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // top-level make method
-    uniqueMakeMethodIds.add(makeMethod.data?.id!);
 
     const flatMethod =
       methodTree.data && methodTree.data.length > 0
@@ -715,33 +858,32 @@ export function JobStartModal({
       ])
     );
 
-    const missingAssemblies = Array.from(uniqueMakeMethodIds)
-      .filter(
-        (makeMethodId) =>
-          !(
-            operations.data?.some(
-              (op) => op.jobMakeMethodId === makeMethodId
-            ) ?? false
-          )
-      )
-      .map((makeMethodId) => {
-        const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
-        return info
-          ? { bomId: info.bomId, description: info.description }
-          : { bomId: "?", description: makeMethodId ?? "Unknown" };
-      });
+    const missingAssemblies = makeMethodsMissingOperations(
+      makeMethod.data?.id ?? null,
+      materials.data ?? [],
+      operations.data ?? []
+    ).map((makeMethodId) => {
+      const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
+      return info
+        ? { bomId: info.bomId, description: info.description }
+        : { bomId: "?", description: makeMethodId ?? "Unknown" };
+    });
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
 
-      // Only show purchase order UI if there are outside operations that need purchase orders
-      setHasOutsideOperations(operationsNeedingPurchaseOrders.length > 0);
+      // Show the release UI whenever there are outside operations still needing handling,
+      // whether or not they have a supplier yet
+      setHasOutsideOperations(
+        outsideOperationsWithoutPurchaseOrders.length > 0
+      );
 
-      // Check if all outside operations that need purchase orders have suppliers
+      // An outside operation "has a supplier" when it resolves to one — either its
+      // own supplier process or its process's sole supplier.
       setEachOutsideOperationHasASupplier(
-        operationsNeedingPurchaseOrders.length === 0 ||
-          operationsNeedingPurchaseOrders.every(
-            (op) => op.operationSupplierProcessId !== null
+        operationsWithSupplier.length === 0 ||
+          operationsWithSupplier.every(
+            (entry) => entry.supplierProcess !== null
           )
       );
     });
@@ -815,6 +957,49 @@ export function JobStartModal({
                         </Trans>
                       </AlertDescription>
                     </Alert>
+                    {outsideOperationChoices.length > 0 && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <p className="text-sm text-muted-foreground">
+                          <Trans>
+                            These operations use a process with multiple
+                            suppliers. Choose a supplier for each.
+                          </Trans>
+                        </p>
+                        {outsideOperationChoices.map((operation) => (
+                          <div
+                            key={operation.id}
+                            className="flex justify-between items-center gap-4 text-sm rounded-lg border p-4 w-full"
+                          >
+                            <span className="font-medium">
+                              {operation.description}
+                            </span>
+                            <Select
+                              size="sm"
+                              value={
+                                selectedSupplierProcessByOperationId[
+                                  operation.id
+                                ] ?? ""
+                              }
+                              options={operation.options.map((option) => ({
+                                value: option.supplierProcessId,
+                                label:
+                                  suppliers.find(
+                                    (s) => s.id === option.supplierId
+                                  )?.name ?? option.supplierId
+                              }))}
+                              onChange={(value) => {
+                                const next = {
+                                  ...selectedSupplierProcessByOperationId,
+                                  [operation.id]: value as string
+                                };
+                                setSelectedSupplierProcessByOperationId(next);
+                                validate(next);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {Object.entries(selectedPurchaseOrdersBySupplierId).map(
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
@@ -920,6 +1105,11 @@ export function JobStartModal({
                   type="hidden"
                   name="selectedPurchaseOrdersBySupplierId"
                   value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
+                />
+                <input
+                  type="hidden"
+                  name="selectedSupplierProcessByOperationId"
+                  value={JSON.stringify(selectedSupplierProcessByOperationId)}
                 />
                 <Button
                   isLoading={
@@ -1097,6 +1287,24 @@ function JobExpediteModal({
   );
 }
 
+// What the job has received as of now, from api+/production.job.$jobId.receipts.
+// Null when it cannot be read; the dialog then keeps the quantity locked rather
+// than offering units it cannot prove are unreceived.
+async function getJobReceipts(
+  jobId: string
+): Promise<JobReceiptSnapshot | null> {
+  try {
+    const response = await fetch(path.to.api.jobReceipts(jobId));
+    if (!response.ok) return null;
+    const body = (await response.json()) as {
+      receipts: JobReceiptSnapshot | null;
+    };
+    return body.receipts;
+  } catch {
+    return null;
+  }
+}
+
 function JobCompleteModal({
   job,
   onClose,
@@ -1107,6 +1315,7 @@ function JobCompleteModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1117,6 +1326,20 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
+  // Serial units the completion can still receive, in the order
+  // complete_job_to_inventory receives them. Null when the quantity is not
+  // chosen per serial unit.
+  const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
+    null
+  );
+  // The completed quantity is cumulative; this much was already received.
+  // Refreshed when the dialog opens, since the route's job may be stale.
+  const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
+    job?.quantityReceivedToInventory ?? 0
+  );
+  // complete_job_to_inventory refuses a stocked job below what it received.
+  const minimumQuantityComplete =
+    job?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1127,13 +1350,23 @@ function JobCompleteModal({
     useState<number>(0);
 
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
+  // Make to Asset: the completion capitalises the job (class) or sweeps its
+  // cost onto an asset under construction, so nothing is received to a bin
+  // and the location pickers are meaningless. The hidden inputs stay so
+  // jobCompleteValidator still sees both fields.
+  const completesToFixedAsset = !!(job?.fixedAssetClassId || job?.fixedAssetId);
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
+  // Serial units are received one at a time; the database refuses a fraction.
+  const hasFractionalSerialQuantity =
+    receivableSerials !== null &&
+    Number.isFinite(quantityComplete) &&
+    !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
     if (!carbon) return;
 
-    const [pickMethod, makeMethod] = await Promise.all([
+    const [pickMethod, makeMethod, receipts] = await Promise.all([
       carbon
         .from("pickMethod")
         .select("*")
@@ -1144,9 +1377,21 @@ function JobCompleteModal({
         .from("jobMakeMethod")
         .select("*")
         .eq("jobId", job?.id!)
+        .eq("companyId", company.id)
         .is("parentMaterialId", null)
-        .single()
+        .single(),
+      getJobReceipts(job?.id!)
     ]);
+
+    // Read now rather than from the job route: a receipt may have been made
+    // since the page loaded. When the read fails, fall back to the route's job
+    // and leave the quantity locked below — offering units that may already be
+    // received is the one thing this must not do. complete_job_to_inventory
+    // enforces both regardless.
+    const currentReceivedQuantity =
+      receipts?.quantityReceivedToInventory ??
+      job?.quantityReceivedToInventory ??
+      0;
 
     if (
       makeMethod.data?.requiresSerialTracking ||
@@ -1156,7 +1401,11 @@ function JobCompleteModal({
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
-        .order("createdAt", { ascending: true });
+        .eq("companyId", company.id)
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
@@ -1166,10 +1415,38 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        setQuantityComplete(availableQuantity);
-        setHasTrackedQuantity(true);
+        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        // Only unlock per-serial entry when the receipts are known: without them
+        // the list could offer a unit the job already received.
+        const serialUnits =
+          receipts && makeMethod.data?.requiresSerialTracking
+            ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
+            : null;
+
+        if (serialUnits) {
+          // Every unit already exists as a numbered serial, so the quantity can
+          // be chosen here even when nothing was finished on the shop floor.
+          setReceivableSerials(serialUnits);
+          setHasTrackedQuantity(false);
+          setQuantityComplete(
+            getDefaultSerialCompleteQuantity({
+              finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
+                trackedEntities.data,
+                receivedEntityIds
+              ),
+              jobQuantity: job?.quantity ?? 0,
+              priorReceivedQuantity: currentReceivedQuantity,
+              receivableSerialCount: serialUnits.length
+            })
+          );
+        } else {
+          setQuantityComplete(availableQuantity);
+          setHasTrackedQuantity(true);
+        }
       }
     }
+
+    setPriorReceivedQuantity(currentReceivedQuantity);
 
     flushSync(() => {
       setDefaultStorageUnitId(
@@ -1235,13 +1512,15 @@ function JobCompleteModal({
             fetcher={fetcher}
           >
             <ModalHeader>
+              {/* A job that completes to a fixed asset never enters
+                  inventory, so it reads like a make to order job. */}
               <ModalTitle>
-                {makeToOrder
+                {makeToOrder || completesToFixedAsset
                   ? t`Complete Job`
                   : t`Receive ${job.jobId} to Inventory`}
               </ModalTitle>
               <ModalDescription>
-                {makeToOrder
+                {makeToOrder || completesToFixedAsset
                   ? t`This job will no longer be available on the shop floor.`
                   : t`This job will be received to inventory. It will no longer be available on the shop floor.`}
               </ModalDescription>
@@ -1257,7 +1536,7 @@ function JobCompleteModal({
               name="leftoverReceiveQuantity"
               value={leftoverReceiveQuantity.toString()}
             />
-            {makeToOrder && (
+            {(makeToOrder || completesToFixedAsset) && (
               <>
                 <Hidden name="locationId" />
                 <Hidden name="storageUnitId" />
@@ -1265,19 +1544,27 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
-                {!makeToOrder && (
-                  <>
-                    <Location
-                      name="locationId"
-                      label={t`Location`}
-                      isReadOnly
-                    />
-                    <StorageUnit
-                      name="storageUnitId"
-                      locationId={job.locationId ?? undefined}
-                      label={t`Storage Unit`}
-                    />
-                  </>
+                {completesToFixedAsset ? (
+                  <p className="text-sm text-muted-foreground">
+                    {job.fixedAssetClassId
+                      ? t`Completes to fixed asset class ${job.fixedAssetClassId}`
+                      : t`Sweeps cost to asset ${job.fixedAssetId ?? ""}`}
+                  </p>
+                ) : (
+                  !makeToOrder && (
+                    <>
+                      <Location
+                        name="locationId"
+                        label={t`Location`}
+                        isReadOnly
+                      />
+                      <StorageUnit
+                        name="storageUnitId"
+                        locationId={job.locationId ?? undefined}
+                        label={t`Storage Unit`}
+                      />
+                    </>
+                  )
                 )}
                 <NumberControlled
                   name="quantityComplete"
@@ -1285,12 +1572,57 @@ function JobCompleteModal({
                   value={quantityComplete}
                   onChange={(value) => setQuantityComplete(value)}
                   isDisabled={hasTrackedQuantity}
+                  minValue={minimumQuantityComplete}
+                  maxValue={
+                    receivableSerials
+                      ? priorReceivedQuantity + receivableSerials.length
+                      : undefined
+                  }
                   helperText={
                     hasTrackedQuantity
                       ? t`Quantity is derived from completed serials/batches in MES and cannot be edited.`
-                      : undefined
+                      : hasFractionalSerialQuantity
+                        ? t`Serial-tracked jobs must be completed in whole units.`
+                        : undefined
                   }
                 />
+
+                {hasTrackedQuantity && !(quantityComplete > 0) && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Nothing completed in MES yet</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Complete serials/batches in MES before completing this
+                        job, or mark every operation Done to complete it
+                        automatically.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {receivableSerials &&
+                  quantityComplete > priorReceivedQuantity &&
+                  !hasFractionalSerialQuantity && (
+                    <VStack spacing={1} className="w-full">
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>Serial numbers received</Trans>
+                      </span>
+                      <span className="text-sm">
+                        {receivableSerials
+                          .slice(
+                            0,
+                            Math.max(
+                              quantityComplete - priorReceivedQuantity,
+                              0
+                            )
+                          )
+                          .join(", ")}
+                      </span>
+                    </VStack>
+                  )}
 
                 {hasLeftover && (
                   <>
@@ -1430,7 +1762,17 @@ function JobCompleteModal({
                 <Trans>Cancel</Trans>
               </Button>
 
-              <Button type="submit" isDisabled={hasLeftover && !leftoverAction}>
+              <Button
+                type="submit"
+                isDisabled={
+                  (hasLeftover && !leftoverAction) ||
+                  // Completing a stocked item at zero receives nothing and
+                  // consumes nothing; the database refuses it as well.
+                  (job.itemTrackingType !== "Non-Inventory" &&
+                    !(quantityComplete > 0)) ||
+                  hasFractionalSerialQuantity
+                }
+              >
                 <Trans>Complete Job</Trans>
               </Button>
             </ModalFooter>

@@ -1,16 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import {
   copyMakeMethod,
   makeMethodVersionValidator,
   upsertMakeMethodVersion
 } from "~/modules/items";
 import { getPathToMakeMethod } from "~/modules/items/ui/Methods/utils";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -63,13 +69,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // @ts-expect-error TS2345 - TODO: fix type
-  const copy = await copyMakeMethod(getCarbonServiceRole(), {
-    sourceId: validation.data.copyFromId,
-    targetId: methodOperationId,
-    companyId,
-    userId
-  });
+  const copy = await copyMakeMethod(
+    getCarbonServiceRole(),
+    getDatabaseClient(),
+    // @ts-expect-error TS2345 - TODO: fix type
+    {
+      sourceId: validation.data.copyFromId,
+      targetId: methodOperationId,
+      companyId,
+      userId
+    }
+  );
 
   if (copy.error) {
     return {

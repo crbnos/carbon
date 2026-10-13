@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Pins the two `useDatePickerState` settings `DateTimePicker` passes, because
  * both fix real bugs that are invisible in a type check and easy to "clean up".

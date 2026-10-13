@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { isUnsafeStoragePath } from "@carbon/files";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { postSuggestionToCarbonSlack } from "@carbon/lib/slack.server";
@@ -35,7 +40,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // formUserId is only an anonymous on/off signal — attribute the session user or nobody
   const suggestionUserId = formUserId ? userId : null;
   const suggestionAttachmentPath =
-    attachmentPath && attachmentPath.startsWith(`${companyId}/suggestions/`)
+    attachmentPath &&
+    attachmentPath.startsWith(`${companyId}/suggestions/`) &&
+    !isUnsafeStoragePath(attachmentPath)
       ? attachmentPath
       : null;
 

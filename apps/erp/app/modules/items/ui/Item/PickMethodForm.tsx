@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Boolean, useControlField, ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -19,6 +23,7 @@ import {
   HStack,
   IconButton,
   Label,
+  MENU_ITEM_SHORTCUTS,
   Switch,
   usePickOrderOptions,
   VStack
@@ -136,7 +141,7 @@ const PickMethodForm = ({
         validator={pickMethodWithShelfLifeValidator}
         defaultValues={initialValues}
       >
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:flex-wrap max-md:gap-y-0 max-md:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Inventory</Trans>
@@ -164,14 +169,14 @@ const PickMethodForm = ({
                   <IconButton
                     aria-label={t`Inventory actions`}
                     icon={<LuEllipsisVertical />}
-                    size="sm"
+                    size="md"
                     variant="secondary"
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {shelfLifeHistoryTrigger}
                   {inventoryHistoryTrigger}
-                  <DropdownMenuItem asChild>
+                  <DropdownMenuItem shortcut={MENU_ITEM_SHORTCUTS.open} asChild>
                     <Link to={path.to.auditLog}>
                       <DropdownMenuIcon icon={<LuSettings />} />
                       <Trans>Open Audit Log</Trans>

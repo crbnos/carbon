@@ -1,4 +1,8 @@
-import type { TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import {
   buttonVariants,
   Select as CarbonSelect,
@@ -139,6 +143,8 @@ export type SelectBaseProps = Omit<
   options: {
     label: string | JSX.Element;
     value: string;
+    helper?: string;
+    helperRight?: string;
   }[];
   isClearable?: boolean;
   isDisabled?: boolean;
@@ -175,7 +181,9 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
     const isNonInteractive = isReadOnly || isDisabled;
 
     return (
-      <HStack spacing={1}>
+      // Phones: Radix's hidden native <select> follows the trigger, so a
+      // space-x margin would end the trigger 4px short; use a gap instead.
+      <HStack spacing={1} className="max-md:space-x-0 max-md:gap-1">
         {isInlinePreview && value && (
           <span className="flex flex-grow line-clamp-1 items-center">
             {inline(value, options)}
@@ -191,7 +199,11 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
             ref={ref}
             size={size}
             {...props}
-            className={cn(!isInlinePreview && "min-w-[160px] relative")}
+            className={cn(
+              !isInlinePreview && "min-w-[160px] relative",
+              isInlinePreview &&
+                "max-md:relative max-md:after:absolute max-md:after:-inset-2.5"
+            )}
             inline={isInlinePreview}
             disabled={isNonInteractive}
             hideIcon={isLoading}
@@ -233,7 +245,12 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
                   </div>
                 ))
               : options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    helper={option.helper}
+                    helperRight={option.helperRight}
+                  >
                     {option.label}
                   </SelectItem>
                 ))}

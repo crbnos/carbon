@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Events } from "./events.ts";
 import { inngest } from "./inngest/client.ts";
 
@@ -7,7 +11,8 @@ import { inngest } from "./inngest/client.ts";
  * to `trigger("notify", payload)` with minimal changes.
  */
 const taskToEvent = {
-  "accounting-backfill": "carbon/accounting-backfill",
+  "accounting-journal-backfill": "carbon/accounting-journal-backfill",
+  "accounting-master-sync": "carbon/accounting-master-sync",
   "assembly-convert": "carbon/assembly-convert",
   "assembly-plan": "carbon/assembly-plan",
   "company-export": "carbon/company-export",
@@ -19,15 +24,18 @@ const taskToEvent = {
   "company-template-finalize": "carbon/company-template-finalize",
   "company-template-revert": "carbon/company-template-revert",
   "generate-maintenance": "carbon/generate-maintenance",
+  "invoice-automate": "carbon/invoice.automate",
   "model-thumbnail": "carbon/model-thumbnail",
   "model-optimize": "carbon/model-optimize",
   notify: "carbon/notify",
   onboard: "carbon/onboard",
+  "mount-publish": "carbon/mount-publish",
   "onshape-backfill": "carbon/onshape-backfill",
   "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",
   "print-job-deliver": "carbon/print-job-deliver",
+  "ramp-sync": "carbon/ramp-sync",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",
   "schedule-inputs-changed": "carbon/schedule.inputs.changed",

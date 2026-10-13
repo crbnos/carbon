@@ -1,9 +1,22 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
+import type {
+  AccountingCapabilities,
+  SyncProviderCapabilities
+} from "../../sync/capabilities";
 import type { AccountingProvider } from "../providers";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "./counterpart-types";
 import {
   createMappingService,
   type ExternalIntegrationMappingService
@@ -31,7 +44,8 @@ import type {
   SyncOperationDirectionSchema,
   SyncOperationSchema,
   SyncOperationStatusSchema,
-  SyncOperationTriggerSchema
+  SyncOperationTriggerSchema,
+  SyncProviderID
 } from "./models";
 import { JournalEntrySyncError } from "./posting";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
@@ -55,6 +69,18 @@ export interface OAuthClientOptions {
   redirectUri?: string;
   getAuthUrl: (scopes: string[], redirectUri: string) => string;
   onTokenRefresh?: (creds: ProviderCredentials) => Promise<void>;
+  /**
+   * Re-read the stored credentials right before a refresh. Several runners
+   * (pull/outbound sweeps, webhooks, event sync) hold the same pair and the
+   * providers rotate refresh tokens, so whoever refreshes second burns a token
+   * that is already dead. Returning a pair whose refreshToken differs from the
+   * in-memory one means another runner already rotated: adopt it, skip the call.
+   */
+  beforeRefresh?: () => Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt?: string;
+  } | null>;
 }
 
 export interface AuthProvider {
@@ -69,29 +95,21 @@ export type ProviderConfig<T = unknown> = {
   companyId: string;
   syncConfig: GlobalSyncConfig;
   onTokenRefresh?: OAuthClientOptions["onTokenRefresh"];
+  beforeRefresh?: OAuthClientOptions["beforeRefresh"];
 } & T;
 
 /**
  * Static description of how a provider communicates and what it supports.
+ *
+ * Now an alias of the shared, role-discriminated surface in `../../sync/capabilities`
+ * so spend providers and accounting providers answer capability questions through
+ * ONE vocabulary. Accounting providers are the "accounting" arm; the name is kept
+ * because every existing declaration and import uses it.
+ *
+ * Read it through `resolveCapabilities()`, never directly: `XeroProvider`
+ * deliberately declares no capabilities object at all.
  */
-export interface ProviderCapabilities {
-  /**
-   * How the provider is reached: "rest" = Carbon calls the provider API
-   * synchronously; "bridge" = a third-party vendor bridge performs the calls.
-   */
-  transport: "rest" | "bridge";
-  /** Whether the provider can push change notifications to Carbon. */
-  supportsWebhooks: boolean;
-  /** Whether Carbon journals can be pushed as provider journal entries. */
-  supportsJournalPush: boolean;
-  /**
-   * Structural cap on how many dimension slots the provider's journal
-   * lines can carry (QBO: 2 — one ClassRef + one DepartmentRef; Xero: 2 —
-   * org-wide tracking-category limit). Absent = no structural cap
-   * (Rillet Fields are dimension-native).
-   */
-  maxJournalDimensionSlots?: number;
-}
+export type ProviderCapabilities = AccountingCapabilities;
 
 /**
  * One analytics field a provider can carry on pushed journal lines — a
@@ -167,13 +185,86 @@ export function providerSupportsIncrementalPull<T extends BaseProvider>(
   );
 }
 
+/**
+ * Whether this provider can search for an existing counterpart of `kind`.
+ *
+ * BOTH conditions are required, and the `?? []` default is load-bearing: a
+ * provider that declares no `capabilities` object must read as "no search"
+ * rather than throwing. A provider that implements the method but does not list
+ * the kind is treated as not supporting it — declaring the kind is the opt-in,
+ * so a half-wired provider creates duplicates loudly rather than searching with
+ * a shape nobody reviewed.
+ */
+export function providerSupportsCounterpartSearch<T extends BaseProvider>(
+  provider: T,
+  kind: ExternalIdentityKind
+): provider is T & Required<Pick<BaseProvider, "findRemoteCandidates">> {
+  return (
+    typeof provider.findRemoteCandidates === "function" &&
+    (provider.capabilities?.searchableCounterparts ?? []).includes(kind)
+  );
+}
+
+/**
+ * Whether this provider can enumerate every remote record of `kind` for the
+ * master-data import. Same both-conditions rule as
+ * `providerSupportsCounterpartSearch`: the method must exist AND the kind must
+ * be declared, so a half-wired provider reports "cannot import" rather than
+ * importing nothing and calling it success.
+ */
+export function providerSupportsMasterDataImport<T extends BaseProvider>(
+  provider: T,
+  kind: ExternalIdentityKind
+): provider is T & Required<Pick<BaseProvider, "listRemoteEntityIds">> {
+  return (
+    typeof provider.listRemoteEntityIds === "function" &&
+    (provider.capabilities?.importableEntities ?? []).includes(kind)
+  );
+}
+
+/**
+ * The entity types the sync engine dispatches on.
+ *
+ * An alias, not a rename: `AccountingEntityType` is load-bearing in ~200 places
+ * and the naming debt is deliberately deferred. New role-agnostic code should
+ * say `SyncEntityType`, so the eventual rename is a deletion rather than a
+ * sweep.
+ */
+export type SyncEntityType = AccountingEntityType;
+
+/**
+ * The provider surface the sync engine itself depends on — role-agnostic.
+ *
+ * `BaseProvider` is the accounting-side base class; this is the structural
+ * subset `SyncFactory` and `BaseEntitySyncer` actually use, so a spend platform
+ * can satisfy it without inheriting accounting-shaped machinery. Every concrete
+ * syncer still narrows back to its own client (`this.qboProvider`,
+ * `this.rilletProvider`, …) for API calls, exactly as it already did.
+ *
+ * `authenticate` is deliberately omitted: its signature is `any[]` and no
+ * shared caller invokes it.
+ */
+export interface SyncProvider {
+  readonly id: SyncProviderID;
+  readonly capabilities?: SyncProviderCapabilities;
+  getSyncConfig<T extends SyncEntityType>(
+    entity: T
+  ): GlobalSyncConfig["entities"][T];
+  validate(auth: ProviderCredentials): Promise<boolean>;
+}
+
 export abstract class BaseProvider {
   static id: ProviderID;
 
   /**
    * Optional capability declaration. When absent, callers should assume a
-   * REST provider (`transport: "rest"`) — the default for all providers
-   * that predate this field (e.g. Xero).
+   * REST provider (`transport: "rest"`) — see `CAPABILITY_DEFAULTS`. All three
+   * accounting providers declare one today; the optionality is what keeps a
+   * new provider compiling before its capabilities are worked out.
+   *
+   * Declaring the object opts OUT of every default: an omitted field then
+   * asserts the default value rather than "unknown". `maxJournalDimensionSlots`
+   * is the one that bites — omitted, it means "no cap".
    */
   readonly capabilities?: ProviderCapabilities;
 
@@ -186,6 +277,30 @@ export abstract class BaseProvider {
    * no journal dimensions.
    */
   journalDimensionTargets?(): Promise<DimensionTarget[]>;
+
+  /**
+   * Optional: remote records that might already BE this local record, for the
+   * counterpart ladder (`core/counterpart.ts`). Returns candidates — it never
+   * decides. Declaring this without listing the kind in
+   * `capabilities.searchableCounterparts` leaves it unused, and vice versa;
+   * `providerSupportsCounterpartSearch` requires both.
+   */
+  findRemoteCandidates?(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]>;
+
+  /**
+   * Optional: every remote id of a master-data kind, for the one-shot import
+   * (`jobs/.../accounting-master-sync.ts`). Enumeration, not search — see
+   * `capabilities.importableEntities`, which must list the kind for this to be
+   * called.
+   *
+   * Returns ids only. The import enqueues them as `pull-from-accounting` ledger
+   * operations and the drain re-fetches each through the syncer, so handing
+   * back whole records here would be a second, divergent read path.
+   */
+  listRemoteEntityIds?(kind: ExternalIdentityKind): Promise<string[]>;
 
   abstract getSyncConfig<T extends AccountingEntityType>(
     entity: T
@@ -236,7 +351,20 @@ export type AccountingEntityType =
   | "invoice"
   | "payment"
   | "inventoryAdjustment"
-  | "journalEntry";
+  | "journalEntry"
+  /** A Carbon `charge` (Charge/Credit) pushed as the provider's native card-charge object. */
+  | "charge"
+  /** A Carbon `memo` on a CUSTOMER, pushed as the provider's native customer credit. */
+  | "creditMemo"
+  /** A Carbon `memo` on a SUPPLIER, pushed as the provider's native vendor credit. */
+  | "supplierCredit"
+  /**
+   * A Carbon `reimbursement` (employee expense payable) pushed as the
+   * provider's native reimbursement object, or an employee-vendor bill where
+   * the provider has none. Distinct from `employee`, which is declared above
+   * for a (still unimplemented) payroll-employee master sync.
+   */
+  | "reimbursement";
 
 export interface EntityConfig {
   /** Is this entity sync active? */
@@ -291,7 +419,7 @@ export interface AccountingEntity<
 export interface SyncContext {
   database: Kysely<KyselyDatabase>;
   companyId: string;
-  provider: AccountingProvider;
+  provider: SyncProvider;
   config: EntityConfig;
   entityType: AccountingEntityType;
 }
@@ -361,7 +489,7 @@ export abstract class BaseEntitySyncer<
 {
   protected database: Kysely<KyselyDatabase>;
   protected companyId: string;
-  protected provider: AccountingProvider;
+  protected provider: SyncProvider;
   protected config: EntityConfig;
   protected entityType: AccountingEntityType;
   protected mappingService: ExternalIntegrationMappingService;

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
@@ -7,6 +11,7 @@ import {
   getStockMovementEffectiveQuantity,
   stockMovementCorrectionValidator
 } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
 // The modal pre-fills its corrected-quantity field from this — the page's
 // visible rows can miss off-page corrections (or descendants of a correction
@@ -49,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const correction = await correctStockMovement(client, {
+  const correction = await correctStockMovement(client, getDatabaseClient(), {
     ...validation.data,
     itemLedgerId: ledgerId,
     companyId,

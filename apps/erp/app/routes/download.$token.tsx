@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { verifyDownloadToken } from "@carbon/auth/download-token.server";
+import { storage } from "@carbon/files";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
-
-// Documents live in the "private" storage bucket, keyed directly by `document.path`
-// (mirrors useDocument.ts).
-const DOCUMENTS_BUCKET = "private";
 
 // Pure resource route (loader only, no default export): it always returns a
 // Response — the file bytes on success, or a redirect to the friendly error page
@@ -48,11 +49,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
     if (doc.error || !doc.data?.path) return fail("unavailable");
 
     // Access already proven above; fetch the bytes with the service role.
-    const file = await getCarbonServiceRole()
-      .storage.from(DOCUMENTS_BUCKET)
+    // Documents live in the company's private bucket (legacy `private`
+    // fallback), keyed directly by `document.path` (mirrors useDocument.ts).
+    const file = await storage(getCarbonServiceRole())
+      .company(companyId)
       .download(doc.data.path);
 
-    if (file.error || !file.data) return fail("unavailable");
+    if (!file.data) return fail("unavailable");
 
     // Best-effort audit log mirroring useDocument's "Download" transaction, so
     // history stays consistent. Never block the download on a logging failure.

@@ -1,12 +1,12 @@
 ---
 title: CAD
 plan: Business
-description: Sync CAD data from Onshape into Carbon.
+description: Sync CAD data from Onshape and Onshape Government into Carbon.
 ---
 
 ## Onshape
 
-Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to paste.
+Connect **Onshape** through **OAuth** to import CAD data into Carbon.
 
 <Steps>
   <Step>
@@ -22,7 +22,7 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
   <Step>
   ### Tokens stored
 
-  Carbon stores the connection, the access and refresh tokens, and can then pull from your Onshape documents.
+  Carbon stores the access and refresh tokens and can then read your Onshape documents.
   </Step>
 </Steps>
 
@@ -31,9 +31,49 @@ Connect to **Onshape** over **OAuth** to bring CAD data into Carbon. No keys to 
 | Connection | Established by OAuth — no keys to paste. Carbon stores the access and refresh tokens for you. |
 
 <Callout type="warn">
-Onshape only appears when its OAuth client is configured server-side (`ONSHAPE_CLIENT_ID`) — see
-[Environment variables](/docs/platform/self-hosting/environment-variables).
+Onshape appears only when `ONSHAPE_CLIENT_ID` is configured server-side. See [Environment variables](/docs/platform/self-hosting/environment-variables).
 </Callout>
+
+## Onshape Government
+
+**Onshape Government** is Onshape's ITAR and FedRAMP edition. Because it has no public App Store, your Enterprise must create a **private OAuth app** for Carbon. After connection, it supports document browsing, bill-of-materials imports, and released-asset synchronization.
+
+<Steps>
+  <Step>
+  ### Create the private app in Onshape
+
+  An Enterprise admin opens **Enterprise settings → Developer → OAuth applications** and creates a new OAuth
+  application. Choose **Connected Cloud App** as the type. Set the redirect URL to
+  `https://<your Carbon address>/api/integrations/onshape-government/oauth`. Grant read access to profile
+  information, read access to documents, and write access to documents. Onshape shows the client secret only
+  once, so copy it immediately. Carbon support can help create the app if given a seat in your Enterprise.
+  </Step>
+  <Step>
+  ### Enter it in Carbon
+
+  Open **Onshape Government** under **Settings → Integrations**. Enter your Onshape URL and the
+  app's client ID and client secret. The integration drawer displays the redirect URL for your Carbon instance.
+  </Step>
+  <Step>
+  ### Approve the connection
+
+  Save the settings, approve the connection in your Onshape tenant, and return to Carbon.
+  </Step>
+</Steps>
+
+| Setting | What it controls |
+| --- | --- |
+| Onshape URL | The address your team signs in to Onshape Government at. Each Enterprise has its own. |
+| Client ID / Client secret | The private OAuth app from your Enterprise. The secret is stored encrypted. Leave it empty to keep the saved one, or enter it again to reconnect. |
+| Sync released assets | Same as on Onshape: pulls released drawings and models onto matching items. |
+
+<Callout type="warn">
+A private app's API calls count toward your Enterprise's **yearly Onshape API limit**. Browsing and importing
+a bill of materials take a few calls each. Released-asset sync takes several calls per released revision, so
+leave it off if your allowance is tight.
+</Callout>
+
+A company can connect to only one Onshape environment. Disconnect the current integration before connecting the other.
 
 ## Related
 

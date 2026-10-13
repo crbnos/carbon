@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { nanoid } from "nanoid";
@@ -35,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     quoteLineAdditionalChargesValidator.safeParse(additionalCharges);
   if (parsedCharges.success === false) {
     return data(
-      { data: null, errors: parsedCharges.error.errors?.[0].message },
+      { data: null, errors: parsedCharges.error.issues?.[0].message },
       { status: 400 }
     );
   }

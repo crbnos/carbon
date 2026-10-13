@@ -1,15 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
+import { DocumentPage, DocumentSidebar } from "~/components/DocumentPage";
 import {
   getMemo,
   getMemoApplications,
+  getSettlementRelatedItems,
   MemoApplicationsPanel,
+  MemoDocuments,
   MemoForm,
+  MemoHeader,
   memoValidator,
   upsertMemo
 } from "~/modules/invoicing";
@@ -17,38 +26,66 @@ import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+// The memo detail page is one shared URL (so every inbound path.to.memo(id)
+// link keeps working), but its crumb is party-aware: supplier memos are Vendor
+// Credits (AP), customer memos are Credit Memos (AR), followed by the memo id.
 export const handle: Handle = {
-  breadcrumb: "Credit / Debit Memos",
-  to: path.to.memos
+  breadcrumb: (_params: unknown, data: unknown) => {
+    const memo = (
+      data as
+        | { memo?: { supplierId?: string | null; memoId?: string } }
+        | undefined
+    )?.memo;
+    return [
+      memo?.supplierId
+        ? { breadcrumb: msg`Supplier Credits`, to: path.to.supplierCredits }
+        : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos },
+      { breadcrumb: memo?.memoId }
+    ];
+  },
+  module: "invoicing"
 };
 
-// A memo is just the credit/debit document — create it, then post it. Applying
-// it to invoices happens on the payment/receipt screen (alongside cash), so the
-// settlement UI lives in one place. The invoice's "Applied" panel shows where a
-// posted credit ended up.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
   });
   const { memoId } = params;
   if (!memoId) throw notFound("Missing memoId");
 
-  const memo = await getMemo(client, memoId);
+  const memo = await getMemo(client, memoId, companyId);
   if (memo.error || !memo.data) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(memo.error, "Failed to load memo"))
     );
   }
 
-  const applications = await getMemoApplications(client, memoId);
+  const applications = await getMemoApplications(client, companyId, memoId);
 
-  return { memo: memo.data, applications: applications.data ?? [] };
+  return {
+    memo: memo.data,
+    applications: applications.data ?? [],
+    relatedItems: getSettlementRelatedItems(client, companyId, {
+      journalId: memo.data.journalId,
+      targets: (applications.data ?? []).map(({ target }) => ({
+        targetSalesInvoiceId: target.type === "salesInvoice" ? target.id : null,
+        targetPurchaseInvoiceId:
+          target.type === "purchaseInvoice" ? target.id : null,
+        targetMemoId: target.type === "memo" ? target.id : null,
+        targetReimbursementId:
+          target.type === "reimbursement" ? target.id : null
+      })),
+      salesReturnOrderId: memo.data.salesReturnOrderId,
+      purchaseReturnOrderId: memo.data.purchaseReturnOrderId,
+      rentalAgreementId: memo.data.rentalAgreementId
+    })
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
   const { memoId } = params;
@@ -61,10 +98,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Only Draft memos are editable; Posted/Voided are immutable.
-  const existing = await getMemo(client, memoId);
+  const existing = await getMemo(client, memoId, companyId);
   if (existing.error || !existing.data) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(existing.error, "Failed to load memo"))
     );
   }
@@ -113,13 +150,27 @@ export default function MemoDetailRoute() {
     status: memo.status ?? undefined
   };
 
+  const type = memo.supplierId ? "supplierCredit" : "creditMemo";
+
   return (
-    <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <MemoForm initialValues={initialValues} />
+    <DocumentPage
+      header={<MemoHeader />}
+      sidebar={
+        <DocumentSidebar
+          documents={<MemoDocuments />}
+          activity={{
+            entityType: "memo",
+            entityId: memo.id,
+            refreshKey: `${memo.updatedAt ?? ""}:${memo.status}`
+          }}
+        />
+      }
+    >
+      <MemoForm initialValues={initialValues} type={type} />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}
       />
-    </VStack>
+    </DocumentPage>
   );
 }

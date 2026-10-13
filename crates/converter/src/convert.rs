@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! STEP → graph.json (+ GLB) driver. Reads the OCCT tree from the occt-bridge,
 //! assigns nodeIds, computes world bboxes, emits graph.json. Mirrors
 //! `app/convert.py::convert_step`.
 
 use crate::graph::{
     assign_node_ids, build_graph, compute_world_bboxes, count_leaves, count_triangles,
-    detect_source_unit, AssemblyNode, PartMesh,
+    detect_source_unit_bytes, AssemblyNode, PartMesh,
 };
 use nalgebra::Matrix4;
 use serde_json::Value;
@@ -205,7 +209,23 @@ pub fn convert_step(
     linear_deflection: f64,
     angular_deflection: f64,
 ) -> Result<Conversion, ConvertError> {
-    let source_unit = detect_source_unit(step_text);
+    convert_step_head(
+        step_path,
+        step_text.as_bytes(),
+        linear_deflection,
+        angular_deflection,
+    )
+}
+
+/// [`convert_step`], taking the file's head as bytes (for unit detection) so a
+/// caller can pass a memory-mapped slice instead of a decoded `String`.
+pub fn convert_step_head(
+    step_path: &str,
+    step_head: &[u8],
+    linear_deflection: f64,
+    angular_deflection: f64,
+) -> Result<Conversion, ConvertError> {
+    let source_unit = detect_source_unit_bytes(step_head);
     let root = build_tree(step_path, linear_deflection, angular_deflection)?;
     let component_count = count_leaves(&root);
     let triangles = count_triangles(&root);

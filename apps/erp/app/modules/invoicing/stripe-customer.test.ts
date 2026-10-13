@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 // Import the mapper directly, never `./stripe-customer.server` — that module
-// pulls the `~/modules/sales` barrel and, through it, `@carbon/glossary`'s
+// pulls the `~/modules/sales` barrel and, through it, `@carbon/content/glossary`'s
 // Lingui macros, which throw outside a configured i18n runtime.
 import type { StripeCustomerSources } from "./stripe-customer.mapper";
 import {

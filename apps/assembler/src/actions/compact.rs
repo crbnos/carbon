@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! `compact` action — shrink the retained raw so lazy planning + reoptimise keep
 //! working without hoarding the fat upload. Two modes:
 //!
@@ -14,9 +18,8 @@
 //! re-running compact on an already-compacted model is a no-op-safe passthrough.
 
 use crate::jobs::{Done, Output};
-use crate::{http, AppState};
+use crate::{admission, http, telemetry, AppState};
 use serde_json::json;
-use std::sync::Arc;
 use std::time::Instant;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -51,10 +54,9 @@ const ZSTD_LEVEL: i32 = 12;
 
 pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
     let jobs = state.jobs.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
-        let _permit = slots.acquire().await;
+    telemetry::spawn_job(&job_id.clone(), "compact", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -73,7 +75,12 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let mode = req.mode;
         let level = ZSTD_LEVEL;
 
-        let res = tokio::task::spawn_blocking(move || compress(&src_str, mode, level)).await;
+        let res = {
+            let _grant = admission
+                .acquire(admission::estimate_mb(http::file_len(&src).await))
+                .await;
+            telemetry::in_span("compute", tokio::task::spawn_blocking(move || compress(&src_str, mode, level))).await
+        };
         let _ = tokio::fs::remove_file(&src).await;
 
         let out = match res {
@@ -113,7 +120,7 @@ pub fn spawn(state: &AppState, job_id: &str, req: CompactReq) {
         let outputs = vec![Output {
             name: "raw".into(),
             content_type: "application/zstd".into(),
-            bytes: out.bytes,
+            bytes: out.bytes.into(),
         }];
         jobs.finish(&job_id, outputs, done, None).await;
     });

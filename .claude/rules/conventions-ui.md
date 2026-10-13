@@ -40,7 +40,61 @@ variant rather than styling a bare element.
   `destructive` · `ghost` · `outline` · `link`
 - **size**: `sm` · `md` (default) · `lg`
 - **props**: `isDisabled`, `isLoading`, `isIcon`, `isRound`, `leftIcon`,
-  `rightIcon`, `asChild`
+  `rightIcon`, `asChild`, `shortcut`, `hideShortcutKey`, `shortcutGuard`
+
+### Keyboard shortcuts
+
+`shortcut` binds a hotkey that ref-clicks the button and renders a keycap badge
+(`ShortcutKey`); it is inert while disabled/loading and while a dialog the
+button isn't inside is open. `shortcutGuard` AND-composes an extra guard.
+**Every combo is a named constant** — shared ones in
+`packages/react/src/shortcuts.ts` (`SHORTCUTS`), app ones in
+`apps/erp/app/shortcuts.ts` / `apps/mes/app/shortcuts.ts`. Never write a combo
+string literal at a call site. Many-bindings-to-many-actions use
+`useShortcutKeyMap(entries)` (dev-warns on duplicate combos); two-key sequences
+(`g` then a letter) use `useShortcutSequence`. The `?` overlay
+(`ShortcutHelpOverlay`) lists shortcuts; each app's `ShortcutHelp.tsx` declares
+its entries from the central files. `Submit` (`@carbon/form`) defaults to the
+`SHORTCUTS.save` binding (⌘/Ctrl+Enter) with a focus-aware guard; pass
+`shortcut={false}` to opt out of the binding or `hideShortcutKey` to keep it
+silent. The legacy `useKeyboardShortcuts` / `usePrettifyShortcut` hooks are
+deleted.
+
+All matching goes through **react-hotkeys-hook** (`useShortcutKeys` and
+`useShortcutKeyMap` both delegate to `useHotkeys`) — never hand-roll a
+document keydown listener; the library already handles typing-in-input
+suppression and physical-key (`event.code`) matching. `useShortcutSequence`
+is the one hand-rolled exception (the library has no sequence support).
+
+**Menu item keys.** `DropdownMenuItem` / `ContextMenuItem` / `MenuItem` take
+`shortcut={MENU_ITEM_SHORTCUTS.<verb>}` (`packages/react/src/shortcuts.ts`:
+Edit E, Rename R, Pin P, Duplicate/Copy C, Download D, View/Open O,
+Delete Backspace — the Backspace or Delete key).
+The item shows a keycap and runs when its key is pressed — only while its menu
+is open, because the handler (`utils/menuShortcut.ts`) sits on the menu
+content's `onKeyDown`, not on the document. Unowned letters fall through to
+Radix typeahead; keys typed into a field inside the menu are ignored. Give a
+Delete item the key only when choosing it opens a confirmation first; an item
+that deletes immediately gets none. An item with a keycap never wraps
+(`whitespace-nowrap`), so give its menu a `min-w-*`, not a fixed `w-*`. Never
+give two items in one menu the same key.
+
+**Interaction design rules** (apply per screen, don't bind mechanically):
+
+- **Enter** is the shortcut when there is one obvious action: a single input
+  (native form submit already handles it), a choice screen, "select and
+  continue". **⌘/Ctrl+Enter** is for real forms — multiple fields, selects,
+  editors — where Enter has other meanings and submission should be deliberate.
+- **Badge visibility is a design decision.** Don't advertise a shortcut on a
+  trivial screen (login email, OTP screens, single-input dialogs): the binding
+  can stay, the badge goes (`hideShortcutKey`). Multi-field forms keep the
+  ⌘↵ badge.
+- **Choice screens are radio groups**: one tab stop, arrow keys move AND
+  select, Enter confirms and continues (Radix radios don't activate on Enter,
+  which leaves it free for the continue button's `shortcut`). Use
+  `ChoiceCardGroup` (cards, `autoFocus` prop) or `RadioGroupButton`
+  (button-styled options); give the screen initial focus on the selected
+  option.
 
 ```typescript
 <Button variant="primary" leftIcon={<LuPlus />}>Save</Button>
@@ -161,12 +215,12 @@ For dynamic numbers, prevent layout shift with `tabular-nums` (used in
 
 ### 4. Scale on Press
 
-Tactile button feedback. `Button` itself applies `active:scale-[0.96]
+Tactile button feedback. `Button` itself applies `active:scale-[0.98]
 active:duration-75`; reuse `Button`/`IconButton` rather than reimplementing. When
-hand-rolling a pressable element, match `0.96` (never below `0.95`).
+hand-rolling a pressable element, match `0.98` (a deeper press reads as the layout moving; never below `0.95`).
 
 ```typescript
-<button className="active:scale-[0.96] transition-transform">
+<button className="active:scale-[0.98] transition-transform">
 ```
 
 ### 5. Minimum Hit Area
@@ -192,8 +246,8 @@ className="transition-all"
 
 ### 7. AnimatePresence
 
-Motion uses `framer-motion` (imported as `from "framer-motion"`, e.g.
-`apps/erp/app/components/DirectionAwareTabs.tsx`). Skip animation on page load with
+Motion uses `motion` (imported as `from "motion/react"`; `framer-motion` is no longer a dependency), e.g.
+`apps/erp/app/components/DirectionAwareTabs.tsx`. Skip animation on page load with
 `initial={false}`:
 
 ```typescript

@@ -1,23 +1,27 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import {
   canApproveRequest,
   canCancelRequest,
   getLatestApprovalRequestForDocument
-} from "~/modules/shared";
+} from "@carbon/ee/approvals.server";
+import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -28,6 +32,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get PO status and check if it's in "Needs Approval"
   const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+  // The service role bypasses RLS and orderId comes from the URL.
+  if (purchaseOrder.data && purchaseOrder.data.companyId !== companyId) {
+    logger.error("Purchase order not found for company", {
+      companyId,
+      orderId
+    });
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(request, error(null, "Purchase order not found"))
+    );
+  }
+
   if (purchaseOrder.error || !purchaseOrder.data) {
     throw redirect(
       path.to.purchaseOrders,
@@ -104,6 +120,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("documentType", "purchaseOrder")
         .eq("documentId", orderId)
+        .eq("companyId", companyId)
         .eq("status", "Pending");
     }
   }

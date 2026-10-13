@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -50,6 +54,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuMapPin />
         }
       },
@@ -58,6 +63,16 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
         header: t`Address`,
         cell: (item) => item.getValue(),
         meta: {
+          mobile: "P3",
+          // Phones: line 2 is the joined address (street, city, state).
+          mobileCell: (item) =>
+            [
+              item.row.original.addressLine1,
+              item.row.original.city,
+              item.row.original.stateProvince
+            ]
+              .filter(Boolean)
+              .join(", "),
           icon: <LuHouse />
         }
       },
@@ -133,6 +148,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             onClick={() => {
               navigate(`${path.to.location(row.id)}?${params.toString()}`);
             }}
@@ -141,6 +157,7 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
             <Trans>Edit Location</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "resources")}
             onClick={() => {

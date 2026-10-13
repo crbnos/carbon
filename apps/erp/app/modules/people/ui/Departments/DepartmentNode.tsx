@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger
+  DropdownMenuTrigger,
+  MENU_ITEM_SHORTCUTS,
+  useViewport
 } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
@@ -26,12 +32,14 @@ function DepartmentNodeComponent({
   data
 }: NodeProps & { data: DepartmentNodeData }) {
   const { department, onEdit, onDelete, onAddChild } = data;
+  // Phones lay the tree out left-to-right, so edges attach at the sides.
+  const { isPhone } = useViewport();
 
   return (
     <div className="group relative">
       <Handle
         type="target"
-        position={Position.Top}
+        position={isPhone ? Position.Left : Position.Top}
         className="!bg-transparent !border-0 !w-px !h-px !min-w-0 !min-h-0"
       />
 
@@ -52,14 +60,17 @@ function DepartmentNodeComponent({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
-              className="ml-auto shrink-0 rounded-md p-1 opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100"
+              className="ml-auto shrink-0 rounded-md p-1 md:opacity-0 transition-opacity hover:bg-accent group-hover:opacity-100 focus:opacity-100 max-md:hit-area"
               aria-label="Actions"
             >
               <LuEllipsisVertical className="size-3.5 text-muted-foreground" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            <DropdownMenuItem onClick={() => onEdit(department.id!)}>
+          <DropdownMenuContent align="end" className="min-w-44">
+            <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
+              onClick={() => onEdit(department.id!)}
+            >
               <LuPencil className="mr-2 size-4" />
               Edit
             </DropdownMenuItem>
@@ -68,6 +79,7 @@ function DepartmentNodeComponent({
               Add department
             </DropdownMenuItem>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               className="text-destructive focus:text-destructive"
               onClick={() => onDelete(department.id!)}
             >
@@ -80,7 +92,7 @@ function DepartmentNodeComponent({
 
       <Handle
         type="source"
-        position={Position.Bottom}
+        position={isPhone ? Position.Right : Position.Bottom}
         className="!bg-transparent !border-0 !w-px !h-px !min-w-0 !min-h-0"
       />
     </div>

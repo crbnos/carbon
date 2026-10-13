@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Every event id a live workflow subscribes to must still resolve. Needs a live database:
  * `pnpm --filter @carbon/checks workflow-events`. Does NOT run in CI — no job in
@@ -9,7 +13,7 @@
  *    catch on its own — it PARSES those ids rather than looking them up, deliberately,
  *    so that it stays company-blind. The existence check therefore lives here.
  */
-import { createWorkflowCatalog, REGISTRY_ENTRIES } from "@carbon/workflows";
+import { createWorkflowCatalog, REGISTRY_ENTRIES } from "@carbon/ee/workflows";
 import { Client } from "pg";
 
 const CUSTOM_FIELD_EVENT =

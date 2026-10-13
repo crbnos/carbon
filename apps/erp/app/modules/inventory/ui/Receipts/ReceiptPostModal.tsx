@@ -1,10 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
+  DatePicker,
+  FormControl,
+  FormLabel,
   HStack,
   Modal,
   ModalBody,
@@ -19,16 +26,17 @@ import {
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { getItemReadableId } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useNavigation, useParams } from "react-router";
-import { useUser } from "~/hooks";
+import { useCompanyToday, useUser } from "~/hooks";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.service";
-import type { ReceiptLine } from "../../types";
+import type { Receipt, ReceiptLine, RentalReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
@@ -37,12 +45,18 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useLingui();
   const [items] = useItems();
   const routeData = useRouteData<{
+    receipt: Receipt;
     receiptLines: ReceiptLine[];
     fixedAssetLines: {
       id: string;
       received: boolean;
     }[];
+    rentalLines: RentalReceiptLine[];
   }>(path.to.receipt(receiptId));
+
+  const isRental = routeData?.receipt?.sourceDocument === "Rental Agreement";
+  const companyToday = useCompanyToday();
+  const [postingDate, setPostingDate] = useState(companyToday);
 
   const navigation = useNavigation();
 
@@ -84,8 +98,11 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     const hasFaLines = (routeData?.fixedAssetLines ?? []).some(
       (line) => line.received
     );
+    const hasRentalLines = (routeData?.rentalLines ?? []).some(
+      (line) => line.received
+    );
 
-    if (!hasReceiptLines && !hasFaLines) {
+    if (!hasReceiptLines && !hasFaLines && !hasRentalLines) {
       setValidationErrors([
         {
           itemReadableId: null,
@@ -103,7 +120,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Receipt Line"] === line.id;
         });
 
-        if (!trackedEntity?.readableId) {
+        // A sales-return receipt picks an existing entity (ReturnEntityForm) —
+        // the entity itself is the batch, so it counts even without a
+        // readableId (mirrors the serial branch below).
+        const isSalesReturn =
+          routeData?.receipt?.sourceDocument === "Sales Return Order";
+
+        if (isSalesReturn ? !trackedEntity : !trackedEntity?.readableId) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             receivedQuantity: line.receivedQuantity ?? 0,
@@ -115,6 +138,12 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       if (line.requiresSerialTracking) {
         const receivedQuantity = line.receivedQuantity ?? 0;
         if (receivedQuantity === 0) return;
+
+        // A sales-return receipt fills its slots by picking existing tracked
+        // entities (ReturnEntityForm) — the entity itself is the serial unit,
+        // so an assigned entity counts even when it carries no readableId.
+        const isSalesReturn =
+          routeData?.receipt?.sourceDocument === "Sales Return Order";
 
         // post-receipt consumes one serial per index in [0, receivedQuantity);
         // extra or duplicate entities are ignored at post time. Validate that
@@ -130,7 +159,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             index: (tracking.attributes as TrackedEntityAttributes)[
               "Receipt Line Index"
             ],
-            hasSerial: !!tracking.readableId
+            hasSerial: isSalesReturn || !!tracking.readableId
           }));
 
         const { missingIndexes } = reconcileReceiptLineSerials(
@@ -148,6 +177,22 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       }
     });
 
+    // A unit returned from a rental treated as a sale must say where it goes.
+    (routeData?.rentalLines ?? []).forEach((line) => {
+      if (
+        line.received &&
+        line.lessorClassification === "Sale" &&
+        !line.residualDestination
+      ) {
+        const unitName = line.unitName;
+        errors.push({
+          itemReadableId: line.assetReadableId,
+          receivedQuantity: 1,
+          receivedQuantityError: t`Choose Return To for ${unitName}`
+        });
+      }
+    });
+
     setValidationErrors(errors);
     setValidated(true);
   };
@@ -156,7 +201,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     validateReceiptTracking();
   });
 
-  const ruleViolations = useStorageRuleViolations({
+  const ruleViolations = useRuleViolations({
     action: path.to.receiptPost(receiptId),
     onSuccess: onClose
   });
@@ -177,6 +222,19 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           </ModalTitle>
         </ModalHeader>
         <ModalBody>
+          {isRental && (
+            <FormControl className="mb-4">
+              <FormLabel>
+                <Trans>Returned on</Trans>
+              </FormLabel>
+              <DatePicker
+                aria-label={t`Returned on`}
+                value={parseDate(postingDate)}
+                maxValue={parseDate(companyToday)}
+                onChange={(d) => d && setPostingDate(d.toString())}
+              />
+            </FormControl>
+          )}
           {validationErrors.length > 0 ? (
             <Alert variant="destructive">
               <LuTriangleAlert className="h-4 w-4" />
@@ -213,7 +271,9 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                ruleViolations.submit(new FormData());
+                const formData = new FormData();
+                if (isRental) formData.set("postingDate", postingDate);
+                ruleViolations.submit(formData);
               }}
             >
               <Button

@@ -1,15 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useLoaderData,
-  useNavigate,
-  useParams
-} from "react-router";
+import { data, useLoaderData, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
@@ -186,15 +186,15 @@ export default function WarehouseTransferLineDetailsRoute() {
     notes: warehouseTransferLine.notes ?? ""
   };
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
-    <div className="flex flex-col gap-2 pb-16 w-full">
+    <div className="flex flex-col gap-4 pb-16 w-full">
       <WarehouseTransferLineForm
         key={initialValues.id}
         initialValues={initialValues}
         warehouseTransfer={warehouseTransferLine.warehouseTransfer!}
-        onClose={() => navigate(-1)}
+        onClose={() => closeRoute()}
       />
     </div>
   );

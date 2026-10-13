@@ -1,11 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadUrl, storage } from "@carbon/files";
+import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  cn,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -13,6 +21,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   Table,
   Tbody,
   Td,
@@ -21,13 +30,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactNode } from "react";
 import { useCallback, useState } from "react";
 import { LuDownload, LuEllipsisVertical, LuTrash } from "react-icons/lu";
-import { useRevalidator } from "react-router";
 import DocumentIcon from "~/components/DocumentIcon";
 import DocumentPreview from "~/components/DocumentPreview";
 import FileDropzone from "~/components/FileDropzone";
@@ -73,8 +80,19 @@ export default function DefaultAttachmentsPanel({
       }
       for (const file of acceptedFiles) {
         const safeName = stripSpecialCharacters(file.name);
-        const upload = await carbon.storage
-          .from("private")
+        if (wasConvertedFromHeic(file)) {
+          const existing = await storage(carbon)
+            .company(company.id)
+            .info(fullPath(safeName));
+          if (!existing.error && existing.data) {
+            toast.error(
+              t`A file named ${file.name} already exists — delete or rename it first`
+            );
+            continue;
+          }
+        }
+        const upload = await storage(carbon)
+          .company(company.id)
           .upload(fullPath(safeName), file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -83,23 +101,14 @@ export default function DefaultAttachmentsPanel({
       }
       revalidator.revalidate();
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   const onDownload = useCallback(
     async (name: string) => {
       const url = path.to.file.previewFile(`private/${fullPath(name)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, name);
       } catch (err) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: err });
@@ -117,11 +126,11 @@ export default function DefaultAttachmentsPanel({
       const storagePath = fullPath(name);
       setDeletingPath(storagePath);
       try {
-        const result = await carbon.storage
-          .from("private")
+        const { error } = await storage(carbon)
+          .company(company.id)
           .remove([storagePath]);
-        if (result.error) {
-          toast.error(result.error.message || t`Error deleting file`);
+        if (error) {
+          toast.error(error.message || t`Error deleting file`);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();
@@ -130,7 +139,7 @@ export default function DefaultAttachmentsPanel({
         setDeletingPath(null);
       }
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   return (
@@ -141,7 +150,7 @@ export default function DefaultAttachmentsPanel({
       </CardHeader>
       <CardContent>
         <Table className="w-full table-fixed">
-          <Thead>
+          <Thead className={cn(files.length === 0 && "max-md:hidden")}>
             <Tr>
               <Th className="w-auto">
                 <Trans>Name</Trans>
@@ -190,7 +199,7 @@ export default function DefaultAttachmentsPanel({
                             <DocumentPreview
                               bucket="private"
                               pathToFile={filePath}
-                              // @ts-ignore — type is a string union the preview accepts
+                              // @ts-expect-error — type is a string union the preview accepts
                               type={type}
                             >
                               {f.name}
@@ -223,6 +232,7 @@ export default function DefaultAttachmentsPanel({
                           </DropdownMenuTrigger>
                           <DropdownMenuContent>
                             <DropdownMenuItem
+                              shortcut={MENU_ITEM_SHORTCUTS.download}
                               onClick={() => onDownload(f.name)}
                             >
                               <DropdownMenuIcon icon={<LuDownload />} />

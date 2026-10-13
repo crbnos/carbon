@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   DummyDriver,
   Kysely,
@@ -10,6 +14,7 @@ import { describe, expect, it } from "vitest";
 import type { JobDatabase } from "../db";
 import type { ColumnInfo, ForeignKey, TableInfo } from "./schema";
 import {
+  buildDanglingPredicate,
   buildExclusionPredicate,
   ExportScopeViolationError,
   formatScopeViolations,
@@ -277,5 +282,33 @@ describe("purgeScopeViolations tenancy guard", () => {
   it("marks group-scoped tables as shared, company-scoped ones as not", () => {
     expect(groupScoped("currency").scopeColumn).toBe("companyGroupId");
     expect(pickMethod.scopeColumn).toBe("companyId");
+  });
+});
+
+describe("buildDanglingPredicate", () => {
+  // The demo-revert shape: a kept identity row whose parent the wipe removed.
+  const ability = table("ability", [col("id"), col("companyId")]);
+  const employeeAbility = table(
+    "employeeAbility",
+    [col("id"), col("companyId"), col("employeeId"), col("abilityId")],
+    [fk("employeeId", "user"), fk("abilityId", "ability")]
+  );
+  const names = new Map([ability, employeeAbility].map((t) => [t.name, t]));
+
+  it("matches a NOT-NULL FK whose parent row is missing anywhere, not just out of scope", () => {
+    const predicate = buildDanglingPredicate(employeeAbility, names);
+    const text = compile(predicate!);
+    expect(text).toContain(`"abilityId" NOT IN (SELECT "id" FROM "ability")`);
+    // Retained targets (user, employee, …) are never treated as dangling.
+    expect(text).not.toContain(`"user"`);
+  });
+
+  it("returns null when only nullable FKs could dangle", () => {
+    const optional = table(
+      "optionalLink",
+      [col("id"), col("companyId"), col("abilityId", { nullable: true })],
+      [fk("abilityId", "ability")]
+    );
+    expect(buildDanglingPredicate(optional, names)).toBeNull();
   });
 });

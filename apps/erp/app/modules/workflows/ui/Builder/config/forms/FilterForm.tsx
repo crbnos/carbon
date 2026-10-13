@@ -1,3 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type {
+  Clause,
+  DataOperation,
+  OperationCard,
+  ValueType,
+  WorkflowCatalog
+} from "@carbon/ee/workflows";
+import {
+  cardsOf,
+  DATA_OPERATIONS,
+  foldOperationTypes,
+  operationsFor,
+  truncateStarvedCards
+} from "@carbon/ee/workflows";
 import {
   Button,
   Command,
@@ -20,21 +38,6 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-
-import type {
-  Clause,
-  DataOperation,
-  OperationCard,
-  ValueType,
-  WorkflowCatalog
-} from "@carbon/workflows";
-import {
-  cardsOf,
-  DATA_OPERATIONS,
-  foldOperationTypes,
-  operationsFor,
-  truncateStarvedCards
-} from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { Fragment, useMemo, useState } from "react";

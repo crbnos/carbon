@@ -1,12 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { withContext } from "@logtape/logtape";
-import { DEFAULT_REDACT_FIELDS } from "@logtape/redaction";
 import { createId } from "@paralleldrive/cuid2";
 import {
   createContext,
   type MiddlewareFunction,
   type RouterContextProvider
 } from "react-router";
-import { getRequestContext } from "./context.server";
+import {
+  getRequestContext,
+  requestContextMiddleware,
+  requestDetailContext
+} from "./context.server";
+import { isSensitiveKey, REDACTED, redactSearch } from "./redaction";
+import { annotateRequestSpan } from "./tracing.server";
 
 // Re-exported from the existing entry point rather than adding a new package
 // export subpath: Vite resolves a package's `exports` map once at dev-server
@@ -15,14 +24,27 @@ import { getRequestContext } from "./context.server";
 // package's `exports` and repoint the four importers (both apps' root.tsx,
 // auth's auth.server.ts and users.server.ts) at it, then drop this re-export.
 export {
+  currentRequest,
+  describeRequest,
   getRequestContext,
   getRouterContext,
+  isReadRequest,
   oncePerRead,
   oncePerRequest,
   requestContextMiddleware
 } from "./context.server";
 
 import { getLogger } from "./logger";
+
+/**
+ * Run `fn` inside a LogTape implicit-context scope so every log line emitted
+ * within it carries `properties` — the same mechanism `requestIdMiddleware`
+ * uses for `requestId`. Scopes nest and merge, so calling this inside a
+ * request adds to the request's context rather than replacing it. Use it to
+ * stamp identity that a whole request shares (e.g. `companyId`/`userId` once
+ * auth resolves) instead of repeating the fields at every log call site.
+ */
+export { withContext as withLogContext } from "@logtape/logtape";
 
 export const REQUEST_ID_HEADER = "x-request-id";
 
@@ -34,40 +56,13 @@ const BODY_LOG_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * pulled into the log path.
  */
 const BODY_LOG_MAX_BYTES = 8 * 1024;
-const REDACTED = "[REDACTED]";
-
-/** `DEFAULT_REDACT_FIELDS` entries are `string | RegExp`; match either form. */
-function isSensitiveKey(key: string): boolean {
-  return DEFAULT_REDACT_FIELDS.some((pattern) =>
-    typeof pattern === "string"
-      ? key.toLowerCase().includes(pattern.toLowerCase())
-      : pattern.test(key)
-  );
-}
-
-/**
- * Mask sensitive query-param values (`?code=…`, `?token=…`, …) while keeping the
- * rest of the query string readable. Returns "" for a bodyless query.
- */
-function redactSearch(search: string): string {
-  if (!search || search === "?") return "";
-  const params = new URLSearchParams(search);
-  let changed = false;
-  for (const key of params.keys()) {
-    if (isSensitiveKey(key)) {
-      params.set(key, REDACTED);
-      changed = true;
-    }
-  }
-  return changed ? `?${params.toString()}` : search;
-}
 
 /**
  * Recursively mask values whose key matches a sensitive-field pattern (the same
- * `DEFAULT_REDACT_FIELDS` LogTape's `redactByField` uses: password/token/secret/
- * key/auth/email/phone/address/…). The sink-level redactor only runs in prod
- * (JSONL); debug bodies are captured in dev where it's off, so we redact the
- * body value here directly.
+ * `REDACT_FIELD_PATTERNS` the prod sink's `redactByField` uses: password/token/
+ * secret/key/auth/…). The sink-level redactor only runs in prod (JSONL); debug
+ * bodies are captured in dev where it's off, so we redact the body value here
+ * directly.
  */
 function redactBody(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(redactBody);
@@ -171,22 +166,47 @@ export const requestIdMiddleware: MiddlewareFunction<Response> = async (
 
   const response = await withContext({ requestId }, async () => {
     const res = await next();
+    annotateRequestSpan({
+      "http.response.status_code": res.status,
+      "carbon.request_id": requestId,
+      // The client left before the response was ready, so a read's queries
+      // were cancelled and its status says nothing about the server.
+      ...(request.signal.aborted && { "carbon.request.abandoned": true })
+    });
     // Debug-level so it is visible in dev but filtered by the prod `info`
     // default — the pipeline is observable with zero migrated call sites.
     // Rendered as a Morgan "dev"-style colored line in dev (see
     // http-formatter.ts) and as a structured JSONL record in prod. When a
     // request body was captured, it rides on the same record (`body`).
-    log.debug("{method} {pathname} → {status} in {responseTime}ms", {
-      method,
-      pathname,
-      search: redactSearch(search),
-      status: res.status,
-      responseTime: performance.now() - start,
-      ...(body === undefined ? {} : { body })
-    });
+    const detail = context.get(requestDetailContext);
+    log.debug(
+      detail
+        ? "{method} {pathname} {detail} → {status} in {responseTime}ms"
+        : "{method} {pathname} → {status} in {responseTime}ms",
+      {
+        method,
+        pathname,
+        ...(detail ? { detail } : {}),
+        search: redactSearch(search),
+        status: res.status,
+        responseTime: performance.now() - start,
+        ...(body === undefined ? {} : { body })
+      }
+    );
     return res;
   });
 
   response.headers.set(REQUEST_ID_HEADER, requestId);
   return response;
 };
+
+/**
+ * The request scope in one middleware: publishes the request context
+ * (`requestContextMiddleware`) and, inside it, assigns the request id and
+ * writes the access log (`requestIdMiddleware`). Register FIRST in an app's
+ * root `middleware`, so everything downstream runs inside both.
+ */
+export const requestMiddleware: MiddlewareFunction<Response> = (args, next) =>
+  requestContextMiddleware(args, () =>
+    Promise.resolve(requestIdMiddleware(args, next) as Response)
+  );

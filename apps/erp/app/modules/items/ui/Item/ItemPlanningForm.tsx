@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -14,6 +18,7 @@ import { useState } from "react";
 import type { z } from "zod";
 import {
   CustomFormFields,
+  Employee,
   Hidden,
   Number,
   Select as SelectForm,
@@ -29,7 +34,15 @@ import {
 import { ItemReorderPolicy } from "./ItemReorderPolicy";
 
 type ItemPlanningFormProps = {
-  initialValues: z.infer<typeof itemPlanningValidator>;
+  // the DB row carries responsibleEmployee / planningHorizonDays as nullable;
+  // the validator treats them as optional — accept both
+  initialValues: Omit<
+    z.infer<typeof itemPlanningValidator>,
+    "responsibleEmployee" | "planningHorizonDays"
+  > & {
+    responsibleEmployee?: string | null;
+    planningHorizonDays?: number | null;
+  };
   locations: ListItem[];
   type: "Part" | "Material" | "Tool" | "Consumable";
 };
@@ -56,7 +69,7 @@ const ItemPlanningForm = ({
         validator={itemPlanningValidator}
         defaultValues={initialValues}
       >
-        <HStack className="w-full justify-between items-start">
+        <HStack className="w-full justify-between items-start max-md:items-center">
           <CardHeader>
             <CardTitle>
               <Trans>Planning</Trans>
@@ -91,7 +104,7 @@ const ItemPlanningForm = ({
                 value: policy
               }))}
               onChange={(selected) => {
-                // @ts-ignore
+                // @ts-expect-error
                 setPolicy(selected?.value || "Manual Reorder");
               }}
             />
@@ -167,6 +180,19 @@ const ItemPlanningForm = ({
               </>
             )}
             {/* <Boolean name="critical" label={t`Critical`} /> */}
+
+            <Number
+              name="planningHorizonDays"
+              label={t`Planning Horizon (Days)`}
+              termId="item-planning-horizon"
+              minValue={0}
+            />
+
+            <Employee
+              name="responsibleEmployee"
+              label={t`Responsible Employee`}
+              type="assignee"
+            />
 
             <CustomFormFields table="itemPlanning" />
           </div>

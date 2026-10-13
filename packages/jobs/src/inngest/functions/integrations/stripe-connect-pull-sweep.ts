@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Stripe Connect payment pull sweep — the correctness guarantee behind the
  * webhook handler. Webhooks are a latency optimization; deliveries can be
@@ -216,8 +220,8 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
                 summary.errors++;
                 anyError = true;
                 logger.error(
-                  `[stripe-connect-pull-sweep] ${companyId}: error processing ${invoice.id}`,
-                  { error: err }
+                  "[stripe-connect-pull-sweep] {companyId}: error processing {invoiceId}",
+                  { companyId, invoiceId: invoice.id, error: err }
                 );
               }
             }
@@ -240,8 +244,8 @@ export const stripeConnectPullSweepFunction = inngest.createFunction(
         );
       } catch (err) {
         logger.error(
-          `[stripe-connect-pull-sweep] ${target.companyId}: sweep failed`,
-          { error: err }
+          "[stripe-connect-pull-sweep] {targetCompanyId}: sweep failed",
+          { targetCompanyId: target.companyId, error: err }
         );
         result = {
           companyId: target.companyId,

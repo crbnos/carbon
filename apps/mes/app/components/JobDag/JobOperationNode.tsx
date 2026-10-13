@@ -1,7 +1,12 @@
-import { BarProgress, cn } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { Badge, BarProgress, cn } from "@carbon/react";
 import { Handle, type NodeProps, Position } from "@xyflow/react";
 import { memo } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
+import { withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 type JobOperationNodeData = {
@@ -14,6 +19,8 @@ type JobOperationNodeData = {
   quantityReworked: number;
   quantityScrapped: number;
   isRework: boolean;
+  // Readable id of the live batch the operation runs in, or null.
+  batchReadableId?: string | null;
   direction: "LR" | "TB";
 };
 
@@ -32,6 +39,7 @@ function JobOperationNodeImpl({ data }: NodeProps) {
   const colors = STATUS_COLORS[d.status] ?? STATUS_COLORS.Todo;
   const isHorizontal = d.direction === "LR";
   const navigate = useNavigate();
+  const location = useLocation();
 
   return (
     <>
@@ -43,9 +51,10 @@ function JobOperationNodeImpl({ data }: NodeProps) {
       <div
         role="button"
         tabIndex={0}
-        onClick={() => navigate(path.to.operation(d.id))}
+        onClick={() => navigate(withOrigin(path.to.operation(d.id), location))}
         onKeyDown={(e) => {
-          if (e.key === "Enter") navigate(path.to.operation(d.id));
+          if (e.key === "Enter")
+            navigate(withOrigin(path.to.operation(d.id), location));
         }}
         className={cn(
           "w-[200px] rounded-lg border-2 bg-card px-3 py-2 shadow-sm cursor-pointer hover:bg-accent/50 transition-colors",
@@ -65,6 +74,11 @@ function JobOperationNodeImpl({ data }: NodeProps) {
             <span className="shrink-0 text-[10px] font-semibold text-red-600 bg-red-100 rounded px-1">
               Rework
             </span>
+          )}
+          {d.batchReadableId && (
+            <Badge variant="blue" className="shrink-0 px-1 text-[10px]">
+              {d.batchReadableId}
+            </Badge>
           )}
         </div>
         <BarProgress

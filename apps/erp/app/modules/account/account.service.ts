@@ -1,7 +1,43 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
+import type { NotificationPreferenceChannel } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sanitize } from "~/utils/supabase";
 
+export type ChangelogPanelEntry = {
+  guid: string;
+  slug: string;
+  title: string;
+  description: string | null;
+};
+
+// The newest entry in the dispatch ledger (service-role only). `slug` is the
+// last segment of the guid permalink and keys the dismissal flag.
+export async function getChangelogPanelEntry(
+  serviceRole: SupabaseClient<Database>
+): Promise<ChangelogPanelEntry | null> {
+  const latest = await serviceRole
+    .from("changelogDispatch")
+    .select("guid, title, description")
+    .order("dispatchedAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!latest.data?.title) return null;
+  const slug = latest.data.guid.split("/").filter(Boolean).pop() ?? "";
+  if (!slug) return null;
+  return {
+    guid: latest.data.guid,
+    slug,
+    title: latest.data.title,
+    description: latest.data.description
+  };
+}
+
+/** @mcp read */
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,
   userId: string,
@@ -14,13 +50,14 @@ export async function getNotificationPreferences(
     .eq("companyId", companyId);
 }
 
+/** @mcp upsert */
 export async function upsertNotificationPreference(
   client: SupabaseClient<Database>,
   preference: {
     userId: string;
     companyId: string;
     topic: string;
-    channel: "email" | "slack";
+    channel: NotificationPreferenceChannel;
     enabled: boolean;
   }
 ) {
@@ -33,6 +70,69 @@ export async function upsertNotificationPreference(
   );
 }
 
+/** Reads this browser's push subscription for the user. */
+export async function getPushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .select("id")
+    .eq("userId", args.userId)
+    .eq("endpoint", args.endpoint)
+    .maybeSingle();
+}
+
+/** Saves this browser's push subscription for the user. One row per browser;
+ * companyId is the company it was enabled from. */
+export async function upsertPushSubscription(
+  client: SupabaseClient<Database>,
+  subscription: {
+    userId: string;
+    companyId: string;
+    endpoint: string;
+    p256dh: string;
+    auth: string;
+    userAgent: string | null;
+  }
+) {
+  return client
+    .from("pushSubscription")
+    .upsert(
+      { ...subscription, updatedAt: datetime.timestamp() },
+      { onConflict: "endpoint" }
+    )
+    .select("id")
+    .single();
+}
+
+/** Removes every user's push subscription for a browser endpoint, or every
+ * user's but one with `exceptUserId`. Pass the service-role client: RLS shows
+ * a user only their own rows. */
+export async function deleteBrowserPushSubscriptions(
+  client: SupabaseClient<Database>,
+  args: { endpoint: string; exceptUserId?: string }
+) {
+  const query = client
+    .from("pushSubscription")
+    .delete()
+    .eq("endpoint", args.endpoint);
+  return args.exceptUserId ? query.neq("userId", args.exceptUserId) : query;
+}
+
+/** Removes this browser's push subscription for the user. */
+export async function deletePushSubscription(
+  client: SupabaseClient<Database>,
+  args: { userId: string; endpoint: string }
+) {
+  return client
+    .from("pushSubscription")
+    .delete()
+    .eq("userId", args.userId)
+    .eq("endpoint", args.endpoint);
+}
+
+/** @mcp delete */
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {
@@ -49,6 +149,7 @@ export async function deleteUserAttributeValue(
     .eq("userId", args.userId);
 }
 
+/** @mcp read */
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
   return client.from("user").select("*").eq("id", id).single();
 }
@@ -58,6 +159,7 @@ export async function getAccount(client: SupabaseClient<Database>, id: string) {
  * executor from the OAuth token, so this always resolves to the caller — it is the identity source
  * an OS deployment can use for sign-in (a user who completed Carbon's OAuth has proven control of
  * this account, so its email is a verified sign-in identity).
+ * @mcp read
  */
 export async function getCurrentUser(
   client: SupabaseClient<Database>,
@@ -70,6 +172,7 @@ export async function getCurrentUser(
     .single();
 }
 
+/** @mcp read */
 export async function getAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -95,6 +198,7 @@ export async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+/** @mcp read */
 export async function getPrivateAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -103,6 +207,7 @@ export async function getPrivateAttributes(
   return getAttributes(client, userId, companyId, false);
 }
 
+/** @mcp read */
 export async function getPublicAttributes(
   client: SupabaseClient<Database>,
   userId: string,
@@ -111,6 +216,7 @@ export async function getPublicAttributes(
   return getAttributes(client, userId, companyId, true);
 }
 
+/** @mcp read */
 export async function getAllAttributeCategories(
   client: SupabaseClient<Database>,
   userId: string,
@@ -134,6 +240,7 @@ export async function getAllAttributeCategories(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+/** @mcp read */
 export async function getAttributeCategoryWithValues(
   client: SupabaseClient<Database>,
   categoryId: string,
@@ -160,6 +267,7 @@ export async function getAttributeCategoryWithValues(
     .single();
 }
 
+/** @mcp update */
 export async function updateAvatar(
   client: SupabaseClient<Database>,
   userId: string,
@@ -175,6 +283,7 @@ export async function updateAvatar(
     .eq("id", userId);
 }
 
+/** @mcp update */
 export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {
@@ -188,6 +297,7 @@ export async function updatePublicAccount(
   return client.from("user").update(sanitize(account)).eq("id", account.id);
 }
 
+/** @mcp upsert */
 export async function upsertUserAttributeValue(
   client: SupabaseClient<Database>,
   update: {

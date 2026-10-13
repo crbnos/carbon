@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Builds events.generated.ts, actions.generated.ts, labels.generated.ts and
  * help.generated.ts from entities.ts, moments.ts, actions.ts, operations.ts, the
@@ -12,16 +16,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { buildPieceActionDeclarations } from "../packages/jobs/src/workflows/integrations/catalog";
 import schema from "../packages/database/src/swagger-docs-schema";
-import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
-import { buildCatalog } from "../packages/workflows/src/catalog/build";
-import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
-import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
-import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
+import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
+import { buildCatalog } from "../packages/ee/src/workflows/catalog/build";
+import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
+import { WORKFLOW_MOMENTS } from "../packages/ee/src/workflows/catalog/moments";
+import { WORKFLOW_OPERATIONS } from "../packages/ee/src/workflows/catalog/operations";
 
 // Resolved against the repo root; the script must be run from there.
 const CATALOG_DIR = path.join(
   process.cwd(),
-  "packages/workflows/src/catalog"
+  "packages/ee/src/workflows/catalog"
 );
 
 const HEADER =
@@ -93,7 +97,7 @@ async function main(): Promise<void> {
   // from plain Node, which check-workflow-catalog.ts relies on.
   const help = [
     HEADER,
-    `import type { TermId } from "@carbon/glossary";`,
+    `import type { TermId } from "@carbon/content/glossary";`,
     ``,
     `export const WORKFLOW_FIELD_HELP: Record<string, TermId> = ${JSON.stringify(sorted(built.help))};`,
     ``

@@ -1,12 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { deleteCustomerPortal } from "@carbon/ee/customer-portals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteCustomerPortal, getCustomerPortal } from "~/modules/shared";
+import { getCustomerPortal } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -36,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "sales"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -54,13 +60,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { error: deleteCustomerPortalError } = await deleteCustomerPortal(
     client,
-    id
+    id,
+    companyId
   );
   if (deleteCustomerPortalError) {
-    const errorMessage =
-      deleteCustomerPortalError.code === "23503"
-        ? "Customer portal is used elsewhere, cannot delete"
-        : "Failed to delete customer portal";
+    const errorMessage = getDatabaseErrorMessage(
+      deleteCustomerPortalError,
+      "Failed to delete customer portal",
+      { referenced: "Customer portal is used elsewhere, cannot delete" }
+    );
 
     throw redirect(
       `${path.to.customerPortals}?${getParams(request)}`,

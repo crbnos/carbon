@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { validator } from "@carbon/form";
-import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
-import { datetime } from "@carbon/utils";
+import { requireFeature } from "@carbon/ee/plan.server";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
@@ -14,7 +15,10 @@ import {
   validateDefinition,
   type WorkflowIssue,
   workflowDefinitionSchema
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { validator } from "@carbon/form";
+import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getUserClaims } from "~/modules/users/users.server";
@@ -42,7 +46,7 @@ function refuse(error: string, status = 400, issues: WorkflowIssue[] = []) {
 async function requireOwnedWorkflow(request: Request, id: string | undefined) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { update: "workflows" });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

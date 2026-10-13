@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -12,6 +16,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobMaterial
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -33,7 +38,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The writes below use the service role, which bypasses RLS: the job and
+  // every parent id in the form must belong to this company.
   const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "job", companyId, { id: jobId }),
+    requireCompanyRecord(serviceRole, "jobMakeMethod", companyId, {
+      id: validation.data.jobMakeMethodId,
+      jobId
+    }),
+    validation.data.jobOperationId
+      ? requireCompanyRecord(serviceRole, "jobOperation", companyId, {
+          id: validation.data.jobOperationId,
+          jobId
+        })
+      : undefined
+  ]);
+
   const insertJobMaterial = await upsertJobMaterial(serviceRole, {
     ...validation.data,
     jobId,
@@ -74,16 +95,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("job")
     .select("status")
     .eq("id", jobId)
+    .eq("companyId", companyId)
     .single();
   const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
 
   if (validation.data.methodType === "Make to Order") {
-    const makeMethod = await pullJobMaterialMakeMethod(serviceRole, {
-      jobMaterialId,
-      itemId: validation.data.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: validation.data.itemId,
+        companyId,
+        userId
+      }
+    );
 
     if (makeMethod.error) {
       return data(
@@ -100,8 +126,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Recalculate for ALL material types if job is released
   if (isReleased) {
-    const promises = [
-      recalculateJobMakeMethodRequirements(serviceRole, {
+    const promises: Promise<{ error: Error | null }>[] = [
+      recalculateJobMakeMethodRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.jobMakeMethodId,
         companyId,
         userId

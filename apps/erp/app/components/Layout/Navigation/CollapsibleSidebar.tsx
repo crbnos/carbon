@@ -1,24 +1,24 @@
-import {
-  cn,
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
-  IconButton,
-  useIsMobile
-} from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { motion, useReducedMotion } from "framer-motion";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { cn, IconButton, useViewport } from "@carbon/react";
+import { motion, useReducedMotion } from "motion/react";
 import type { ComponentProps, PropsWithChildren } from "react";
 import {
   createContext,
   forwardRef,
   useContext,
   useEffect,
-  useMemo
+  useMemo,
+  useRef
 } from "react";
 import { LuPanelLeft } from "react-icons/lu";
-import { useOptimisticLocation } from "~/hooks";
+import type { Location } from "react-router";
+import { useLocation, useMatches, useNavigation } from "react-router";
 import { useUIStore } from "~/stores/ui";
+import type { Handle } from "~/utils/handle";
+import { useSlidingHoverCard } from "./useSlidingHoverCard";
 
 interface CollapsibleSidebarContextValue {
   hasSidebar: boolean;
@@ -39,34 +39,28 @@ export function useCollapsibleSidebar() {
   return context;
 }
 
-export function CollapsibleSidebarProvider({ children }: PropsWithChildren) {
-  const isMobile = useIsMobile();
+function CollapsibleSidebarProvider({
+  hasSidebar,
+  children
+}: PropsWithChildren<{ hasSidebar: boolean }>) {
+  const { isPhone } = useViewport();
   const isSidebarOpen = useUIStore((state) => state.isSidebarOpen);
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
-  const setHasContentSidebar = useUIStore(
-    (state) => state.setHasContentSidebar
-  );
 
+  // Only a change of breakpoint moves it: opening on mount would undo the
+  // user's collapse.
+  const wasCompact = useRef(false);
   useEffect(() => {
-    if (isMobile) {
-      setSidebarOpen(false);
-    } else {
-      setSidebarOpen(true);
-    }
-  }, [isMobile, setSidebarOpen]);
-
-  // Tell the (global) Topbar that this route has a content sub-nav, so it can
-  // surface a mobile "Sections" trigger. Cleared when the module unmounts.
-  useEffect(() => {
-    setHasContentSidebar(true);
-    return () => setHasContentSidebar(false);
-  }, [setHasContentSidebar]);
+    if (isPhone) setSidebarOpen(false);
+    else if (wasCompact.current) setSidebarOpen(true);
+    wasCompact.current = isPhone;
+  }, [isPhone, setSidebarOpen]);
 
   return (
     <CollapsibleSidebarContext.Provider
       value={{
-        hasSidebar: true,
+        hasSidebar,
         isOpen: isSidebarOpen,
         onToggle: toggleSidebar
       }}
@@ -102,15 +96,106 @@ CollapsibleSidebarTrigger.displayName = "CollapsibleSidebarTrigger";
 // ease-out-quart: feels snappy and responsive for sidebar expand/collapse
 const easeOutQuart = [0.165, 0.84, 0.44, 1] as const;
 
-export const CollapsibleSidebar = ({
+/**
+ * The location a module sidebar highlights against: the pending one while it
+ * is still inside this sidebar, otherwise the one on screen. A sidebar about
+ * to be replaced keeps its highlight instead of going blank for the length of
+ * the loader.
+ */
+export function useSidebarLocation(isInside: (pathname: string) => boolean) {
+  const current = useLocation();
+  const pending: Location | undefined = useNavigation().location;
+  return pending && isInside(pending.pathname) ? pending : current;
+}
+
+/**
+ * The scrolling list of links inside the module sidebar, with the same hover
+ * card the icon rail has: one card for the whole list, moved with a transform
+ * to the link under the pointer, so the highlight travels between links
+ * instead of each one fading its own. The active link keeps its own
+ * background. A link opts in with `data-nav-item`.
+ */
+export function SidebarLinks({ children }: PropsWithChildren) {
+  const { containerRef, cardRef, handlers } =
+    useSlidingHoverCard<HTMLDivElement>();
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent h-full w-full pb-8"
+      {...handlers}
+    >
+      <span
+        ref={cardRef}
+        aria-hidden
+        className="pointer-events-none absolute left-0 top-0 rounded-md bg-active/60 opacity-0 transition-[transform,opacity] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
+      />
+      {children}
+    </div>
+  );
+}
+
+/**
+ * The current module's sub-navigation component from the route handles, or
+ * undefined. The desktop sidebar and the compact section switcher both read it.
+ */
+export function useModuleSidebar() {
+  const matches = useMatches();
+  const handles = matches.map((match) => match.handle as Handle | undefined);
+  return handles.some((handle) => handle?.hideModuleSidebar)
+    ? undefined
+    : handles.find((handle) => handle?.sidebar)?.sidebar;
+}
+
+/** Phones: the module sidebar, or a route's phone-only section switcher. */
+export function useCompactModuleSidebar() {
+  const matches = useMatches();
+  const Sidebar = useModuleSidebar();
+  if (Sidebar) return Sidebar;
+  return matches
+    .map((match) => match.handle as Handle | undefined)
+    .find((handle) => handle?.compactSidebar)?.compactSidebar;
+}
+
+/**
+ * The one module sidebar, rendered by the app shell around every page. A
+ * module layout names its sub-navigation on its route handle (`sidebar`) and
+ * the shell renders it here, so the sidebar's frame, width and collapsed
+ * state stay put from module to module and only its links change. Pages
+ * outside a module (detail pages) have none and get the full width.
+ */
+export function ModuleSidebarLayout({ children }: PropsWithChildren) {
+  const Sidebar = useModuleSidebar();
+
+  return (
+    <CollapsibleSidebarProvider hasSidebar={Boolean(Sidebar)}>
+      {/* `contents` when there is no sidebar: the page lays out exactly as if
+          this wrapper were not here, and stays in the same place in the tree. */}
+      <div
+        className={
+          Sidebar
+            ? "grid grid-cols-[auto_minmax(0,1fr)] w-full h-full"
+            : "contents"
+        }
+      >
+        {Sidebar ? (
+          <CollapsibleSidebar>
+            <Sidebar />
+          </CollapsibleSidebar>
+        ) : null}
+        {children}
+      </div>
+    </CollapsibleSidebarProvider>
+  );
+}
+
+const CollapsibleSidebar = ({
   children,
-  width = 180
+  width = 240
 }: PropsWithChildren<{ width?: number }>) => {
   const { isOpen } = useCollapsibleSidebar();
   const shouldReduceMotion = useReducedMotion();
-  const isMobile = useIsMobile();
-  const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
-  const location = useOptimisticLocation();
+  const { isPhone } = useViewport();
 
   const variants = useMemo(() => {
     return {
@@ -125,43 +210,16 @@ export const CollapsibleSidebar = ({
     };
   }, [width]);
 
-  // On mobile the sub-nav is an overlay drawer; close it once the user picks a
-  // section (the pathname changes) so it doesn't sit over the destination.
-  useEffect(() => {
-    if (isMobile) setSidebarOpen(false);
-  }, [location.pathname, isMobile, setSidebarOpen]);
-
-  if (isMobile) {
-    return (
-      <>
-        {/* The sub-nav is a portaled overlay on mobile, but the module layout
-            grid (`grid-cols-[auto_minmax(0,1fr)]`) still expects a node in its
-            first (`auto`) track. Without this zero-width occupant the content
-            slides into the `auto` track and the `1fr` track becomes an empty
-            gutter on the right. */}
-        <div aria-hidden className="w-0" />
-        <Drawer open={isOpen} onOpenChange={setSidebarOpen}>
-          <DrawerContent
-            position="left"
-            size="content"
-            className="w-[17rem] max-w-[85vw] p-0"
-          >
-            <DrawerTitle className="px-4 py-3">
-              <Trans>Submodules</Trans>
-            </DrawerTitle>
-            <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-              {children}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </>
-    );
-  }
+  // Compact: the app bar title opens the section switcher sheet instead.
+  // Keep the zero-width occupant of the layout grid's first track.
+  if (isPhone) return <div aria-hidden className="w-0" />;
 
   return (
     <motion.div
       animate={isOpen ? "visible" : "hidden"}
-      initial={shouldReduceMotion ? false : variants.visible}
+      // No enter animation: arriving from a page without a sidebar must not
+      // replay the collapse.
+      initial={false}
       transition={
         shouldReduceMotion
           ? { duration: 0 }

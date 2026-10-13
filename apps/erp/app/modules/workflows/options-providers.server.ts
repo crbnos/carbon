@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
@@ -167,11 +171,10 @@ const propertyProvider: OptionsProvider = {
     try {
       refreshConfig = await buildRefreshConfig(piece);
     } catch (cause) {
-      logger.error(
-        `Could not build the refresh config for ${piece}: ${
-          cause instanceof Error ? cause.message : String(cause)
-        }`
-      );
+      logger.error("Could not build the refresh config for {piece}: {cause}", {
+        piece,
+        cause: cause instanceof Error ? cause.message : String(cause)
+      });
       return { options: [], errorCode: "failed" };
     }
 

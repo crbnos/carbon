@@ -1,3 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  type AccountingEntityType,
+  enqueueSyncOperation,
+  findPaymentCompositesByRemoteId,
+  getAccountingIntegration,
+  getProviderIntegration,
+  isAccountingSyncEnabled,
+  type ProviderChange,
+  ProviderID,
+  providerSupportsIncrementalPull,
+  type SyncContext
+} from "@carbon/ee/accounting";
+import { chunkArray } from "@carbon/utils";
 /**
  * Generic accounting pull sweep — the correctness guarantee behind every
  * provider's inbound sync (webhooks, where a provider supports them, are
@@ -6,8 +24,8 @@
  *
  * Every 30 minutes, per company with an ACTIVE accounting integration
  * whose provider implements SupportsIncrementalPull (QBO wraps Intuit's
- * Change Data Capture; Rillet lists changed invoice payments; Xero has no
- * implementation yet and is skipped):
+ * Change Data Capture; Rillet lists changed invoice payments; Xero lists
+ * changed /Payments via If-Modified-Since):
  *
  * 1. Resolve the cursor from `metadata.settings.pullCursor`; default = the
  *    integration row's `updatedAt` (at-or-after install, so pre-connect
@@ -39,25 +57,12 @@
  * Activity, retryable there) — they do NOT hold the cursor back; the
  * ledger row is the durable record of the change.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  type AccountingEntityType,
-  enqueueSyncOperation,
-  findPaymentCompositesByRemoteId,
-  getAccountingIntegration,
-  getProviderIntegration,
-  type ProviderChange,
-  ProviderID,
-  providerSupportsIncrementalPull,
-  type SyncContext
-} from "@carbon/ee/accounting";
-import { chunkArray } from "@carbon/utils";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
 import {
   drainSyncOperations,
   getAdvancedPullCursor,
@@ -417,7 +422,7 @@ export const accountingPullSweepFunction = inngest.createFunction(
     const targets = await step.run("find-pull-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId")
+        .select("id, companyId, metadata, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -427,10 +432,14 @@ export const accountingPullSweepFunction = inngest.createFunction(
         );
       }
 
-      return (integrations.data ?? []).map((row) => ({
-        companyId: row.companyId,
-        providerId: row.id as ProviderID
-      }));
+      // An integration with sync turned off is still being set up.
+      return (integrations.data ?? [])
+        .filter((row) => isAccountingSyncEnabled(row.metadata))
+        .map((row) => ({
+          companyId: row.companyId,
+          providerId: row.id as ProviderID,
+          updatedBy: row.updatedBy
+        }));
     });
 
     if (targets.length === 0) {
@@ -438,28 +447,33 @@ export const accountingPullSweepFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: ProviderID } & SweepSummary
+      {
+        companyId: string;
+        providerId: ProviderID;
+      } & IsolatedStepOutcome<SweepSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `sweep-${target.providerId}-${target.companyId}`,
-        async () => {
-          // getPostgresConnectionPool returns a process-lifetime singleton
-          // (cached, shared with any other caller requesting the same size) —
-          // never end it here, or a concurrent invocation queries an ended pool
-          // (matches events/sync.ts).
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `sweep-${target.providerId}-${target.companyId}`,
+        target,
+        fn: async () => {
+          const database = getJobDatabaseClient();
           return await sweepCompanyProvider({
             companyId: target.companyId,
             providerId: target.providerId,
             database
           });
         }
-      );
+      });
 
-      results.push({ ...target, ...result });
+      results.push({
+        companyId: target.companyId,
+        providerId: target.providerId,
+        ...result
+      });
     }
 
     return { targets: targets.length, results };

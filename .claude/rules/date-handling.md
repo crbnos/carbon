@@ -52,7 +52,7 @@ helpers a loader calls ARE scanned. Instead:
 - `datetime.timestamp()` — UTC instant string for `createdAt`/`updatedAt`/instant columns (the only tz-free method).
 - `datetime.today(tz)` / `datetime.now(tz)` — calendar day / zoned now in an explicit IANA timezone.
 - `datetime.businessDay(instantStr, tz)` — which day a stored instant falls on in tz.
-- Resolve `tz` with `getCompanyTimeZone(client, companyId)` (ledger-scoped: posting dates, accounting periods, sequences, aging) or `getLocationTimeZone(client, locationId, companyId)` (operational: scheduling, shifts, MES, expiry) from `@carbon/database`. Deno edge functions use the mirror in `functions/lib/datetime.ts` (`getCompanyTimeZoneDb`/`getLocationTimeZoneDb` for Kysely).
+- Resolve `tz` with `getCompanyTimeZone(client, companyId)` (ledger-scoped: posting dates, accounting periods, sequences, aging) or `getLocationTimeZone(client, locationId, companyId)` (operational: scheduling, shifts, MES, expiry) from `@carbon/database`; both accept a Supabase client or a Kysely handle.
 - SQL functions use `company_today(p_company_id)` (migration `20260805023439`) or `location_today(p_location_id, p_company_id)` (migration `20260805201623`) instead of `CURRENT_DATE` for business dates. Read-only "is it overdue?" views still compare against `CURRENT_DATE` — they render a status rather than storing one.
 
 Client components keep `today(getLocalTimeZone())` etc. for **display** — in the
@@ -108,6 +108,17 @@ where DST bites. The stress suite pinning all of this lives in
   UTC schedules and compute per-company/location *days* inside the run. If a
   job must ever fire at an exact local wall time, compute the next-run instant
   via `toZoned(...)` per zone — don't fake it with a fixed UTC cron.
+
+## Kysely reads: DATE is a string, timestamps are still `Date`s
+
+`date` columns (OID 1082) are decoded to the raw `YYYY-MM-DD` string by both
+drivers, so a Kysely row matches the generated types and needs no conversion.
+`timestamp`/`timestamptz` (1114 / 1184) are still handed over as JS `Date`s while
+the types say `string` — so a value read through Kysely and sent to an external
+API, sliced, or compared against an ISO string must be normalized first
+(`toPostingDateString` in `accounting/core/posting.ts`). Full rationale and why
+the timestamp OIDs were left alone: `numeric-precision.md` → "Runtime type
+decoding".
 
 ## Narrow exception
 

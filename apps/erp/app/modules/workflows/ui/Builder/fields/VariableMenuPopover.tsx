@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ItemRef, ValueType, VariableRef } from "@carbon/ee/workflows";
 import { Popover, PopoverAnchor, PopoverContent } from "@carbon/react";
-import type { ItemRef, ValueType, VariableRef } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";

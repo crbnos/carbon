@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { downloadCsv } from "@carbon/files/csv";
 import {
   IconButton,
   Tooltip,
@@ -5,13 +10,12 @@ import {
   TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { json2csv } from "json-2-csv";
 import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
 import { selectExportColumns } from "../utils";
 
-type DownloadProps = {
+export type DownloadProps = {
   data: object[];
   columnAccessors: Record<string, string>;
   exportValues: Record<string, (row: any) => unknown>;
@@ -22,32 +26,18 @@ type DownloadProps = {
   exportOnlyColumns: string[];
 };
 
-// Last-resort guardrail so an export never ships `[object Object]` or explodes a
-// nested object into stray columns. Arrays/dates/primitives are left untouched —
-// json2csv already serializes them consistently. A column whose value is a plain
-// object should supply a readable `exportValue` rather than rely on this.
-function serializeForCsv(value: unknown): unknown {
-  if (
-    value != null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    !(value instanceof Date)
-  ) {
-    return JSON.stringify(value);
-  }
-  return value;
-}
-
-const Download = ({
+/**
+ * Builds the CSV of the current page (visible columns, view order) and
+ * downloads it. The desktop Download button and the compact ⋯ menu share it.
+ */
+export function useCsvDownload({
   data,
   columnAccessors,
   exportValues,
   columnOrder,
   columnVisibility,
   exportOnlyColumns
-}: DownloadProps) => {
-  const { t } = useLingui();
-
+}: DownloadProps) {
   const [items] = useItems();
   const [suppliers] = useSuppliers();
   const [people] = usePeople();
@@ -80,7 +70,7 @@ const Download = ({
     if (!data?.length) {
       return;
     }
-    // Build label-keyed rows so json2csv emits the view's header labels, in the
+    // Build label-keyed rows so the CSV emits the view's header labels, in the
     // view's column order, substituting names for id columns.
     const rows = data.map((row) => {
       const out: Record<string, unknown> = {};
@@ -94,20 +84,20 @@ const Download = ({
           const map = idNameMaps[key];
           value = map && raw != null ? (map.get(String(raw)) ?? raw) : raw;
         }
-        out[columnAccessors[key]] = serializeForCsv(value);
+        out[columnAccessors[key]] = value;
       }
       return out;
     });
-    let csvData = json2csv(rows, { emptyFieldValue: "" });
-    // Create a CSV file and allow the user to download it
-    let blob = new Blob([csvData], { type: "text/csv" });
-    let url = window.URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "data.csv";
-    document.body.appendChild(a);
-    a.click();
+    downloadCsv(rows, "data.csv");
   }, [data, exportColumns, idNameMaps, columnAccessors, exportValues]);
+
+  return onClick;
+}
+
+const Download = (props: DownloadProps) => {
+  const { t } = useLingui();
+  const { data } = props;
+  const onClick = useCsvDownload(props);
 
   if (!data?.length) {
     return null;

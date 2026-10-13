@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Trans } from "@lingui/react/macro";
 import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
@@ -29,7 +33,7 @@ export const FormLabel = forwardRef<
     <label
       {...labelProps}
       ref={ref}
-      className="flex items-center justify-between"
+      className="flex items-center justify-between max-md:gap-2"
       // {...props}
     >
       <span
@@ -38,9 +42,9 @@ export const FormLabel = forwardRef<
         {children}
       </span>
       {(isOptional || onConfigure) && (
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 max-md:gap-2">
           {isOptional && (
-            <span className="text-muted-foreground text-xxs">
+            <span className="text-muted-foreground text-xxs max-md:text-xs">
               <Trans>Optional</Trans>
             </span>
           )}

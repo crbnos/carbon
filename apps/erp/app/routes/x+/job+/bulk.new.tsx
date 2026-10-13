@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
+import { redirect } from "@carbon/utils";
 import { parseDateTime, toCalendarDateTime } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory";
 import { bulkJobValidator, insertJob } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -86,6 +92,27 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // insertJob runs with the service role, so every foreign-key id in the form
+  // is proven to belong to this company before any job is written.
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "item", companyId, {
+      id: jobData.itemId
+    }),
+    requireCompanyRecord(serviceRole, "location", companyId, {
+      id: jobData.locationId
+    }),
+    jobData.customerId
+      ? requireCompanyRecord(serviceRole, "customer", companyId, {
+          id: jobData.customerId
+        })
+      : null,
+    jobData.modelUploadId
+      ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
+          id: jobData.modelUploadId
+        })
+      : null
+  ]);
+
   const storageUnitId = await getDefaultStorageUnitForJob(
     serviceRole,
     jobData.itemId,
@@ -100,6 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const createJob = await insertJob(
       serviceRole,
+      getDatabaseClient(),
       {
         ...jobData,
         quantity: i === jobs - 1 ? quantityOfLastJob : quantityPerJob,

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatDate, isEoriCountry, pluralize } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Text, View } from "@react-pdf/renderer";
@@ -54,13 +58,13 @@ export function PartiesBlock({ data }: { data: QuoteData }) {
               postalCode={customerPostalCode}
               country={customerCountryName ?? customerCountryCode}
             />
-            {customerTaxId && !isEoriCountry(customerCountryCode) && (
+            {customerTaxId && !isEoriCountry(customerCountryCode) ? (
               <Text>Tax ID: {customerTaxId}</Text>
-            )}
-            {customerVatNumber && <Text>VAT: {customerVatNumber}</Text>}
-            {customerEori && <Text>EORI: {customerEori}</Text>}
-            {contactName && <Text>Contact: {contactName}</Text>}
-            {contactEmail && <Text>Email: {contactEmail}</Text>}
+            ) : null}
+            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
+            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
+            {contactName ? <Text>Contact: {contactName}</Text> : null}
+            {contactEmail ? <Text>Email: {contactEmail}</Text> : null}
           </View>
         </View>
 
@@ -78,28 +82,30 @@ export function PartiesBlock({ data }: { data: QuoteData }) {
                 locale
               )}
             </Text>
-            {quote.expirationDate && (
+            {quote.expirationDate ? (
               <Text style={tw("font-bold")}>
                 Expires: {formatDate(quote.expirationDate, undefined, locale)}
               </Text>
-            )}
-            {quote.customerReference && (
+            ) : null}
+            {quote.customerReference ? (
               <Text>Reference: {quote.customerReference}</Text>
-            )}
-            {maxLeadTime > 0 && (
+            ) : null}
+            {maxLeadTime > 0 ? (
               <Text>
                 Max Lead Time: {maxLeadTime} {pluralize(maxLeadTime, "day")}
               </Text>
-            )}
-            {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
-            {shipment?.incoterm && (
+            ) : null}
+            {paymentTerm ? (
+              <Text>Payment Terms: {paymentTerm.name}</Text>
+            ) : null}
+            {shipment?.incoterm ? (
               <Text>
                 Incoterm: {shipment.incoterm}
                 {shipment.incotermLocation
                   ? ` — ${shipment.incotermLocation}`
                   : ""}
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

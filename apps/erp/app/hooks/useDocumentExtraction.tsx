@@ -1,4 +1,9 @@
-import { useCarbon, useRealtimeChannel } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useChangedRows } from "@carbon/query";
+import { useCarbon } from "@carbon/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
   DocumentExtractionType,
@@ -26,7 +31,7 @@ const POLL_INTERVAL_MS = 3_000;
  * (confidence-gated) data once completed.
  *
  * Uses two complementary strategies:
- *  1. Supabase Realtime postgres_changes — instant push when available.
+ *  1. A realtime broadcast — instant push when available.
  *  2. Polling fallback every 3 s while extraction is in-progress — ensures
  *     the UI never stalls if the realtime event is missed or the channel
  *     takes time to subscribe.
@@ -103,36 +108,35 @@ export function useDocumentExtraction(
   }, [clearPoll]);
 
   // Subscribe to realtime changes
-  useRealtimeChannel({
-    topic: `extraction:${extractionId ?? "none"}`,
-    dependencies: [extractionId, company.id],
-    setup(channel) {
-      // Fetch initial data on subscribe (also starts polling if in-progress)
-      fetchInitial();
+  // biome-ignore lint/correctness/useExhaustiveDependencies: load once per extraction (also starts polling if in-progress)
+  useEffect(() => {
+    fetchInitial();
+  }, [extractionId, company.id]);
 
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "documentExtraction",
-          filter: extractionId ? `id=eq.${extractionId}` : undefined
-        },
-        (payload) => {
-          const row = payload.new as Record<string, unknown>;
-          if (row.companyId !== company.id) return;
-
-          handleRealtimeUpdate({
-            id: row.id as string,
-            status: row.status as ExtractionStatus,
-            filteredData: row.filteredData
-              ? parseExtractedData(documentType, row.filteredData)
-              : null,
-            error: row.error as string | null,
-            storagePath: row.storagePath as string | null
-          });
-        }
-      );
+  useChangedRows<{
+    id: string;
+    status: ExtractionStatus;
+    filteredData: unknown;
+    error: string | null;
+    storagePath: string | null;
+  }>({
+    companyId: company.id,
+    table: "documentExtraction",
+    columns: "id, status, filteredData, error, storagePath",
+    enabled: !!extractionId,
+    onResync: fetchInitial,
+    onChange: ({ rows }) => {
+      const row = rows.find((r) => r.id === extractionId);
+      if (!row) return;
+      handleRealtimeUpdate({
+        id: row.id,
+        status: row.status,
+        filteredData: row.filteredData
+          ? parseExtractedData(documentType, row.filteredData)
+          : null,
+        error: row.error,
+        storagePath: row.storagePath
+      });
     }
   });
 

@@ -1,7 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { GTM_EVENTS_API_SECRET_KEY, GTM_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 
 const log = getLogger("stripe", "gtm-events");
+
+// The forward runs as background work that keeps a serverless instance up, so
+// a GTM that never answers must not hold it until the function times out.
+const TIMEOUT_MS = 10_000;
 
 export async function forwardToGtm(
   type: string,
@@ -19,7 +27,8 @@ export async function forwardToGtm(
         "content-type": "application/json",
         "x-gtm-events-key": GTM_EVENTS_API_SECRET_KEY
       },
-      body: JSON.stringify({ type, metadata })
+      body: JSON.stringify({ type, metadata }),
+      signal: AbortSignal.timeout(TIMEOUT_MS)
     });
 
     if (!res.ok) {

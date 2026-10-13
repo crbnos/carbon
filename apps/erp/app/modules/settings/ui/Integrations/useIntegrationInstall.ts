@@ -1,4 +1,7 @@
-import { useRouteData } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCallback } from "react";
 import { useFetcher, useNavigate } from "react-router";
 import { path } from "~/utils/path";
@@ -26,29 +29,31 @@ export type InstallableIntegration = {
   };
 };
 
+/**
+ * Hand off to the connect route — for EVERY OAuth integration. The route builds
+ * the authorize URL server-side and sets the HttpOnly state cookie the callback
+ * needs, so this is a full navigation, not a popup.
+ */
+export function startOAuthConnect(integrationId: string, mode?: string) {
+  const url = new URL(
+    `/api/integrations/${integrationId}/connect`,
+    window.location.origin
+  );
+  if (mode) url.searchParams.set("mode", mode);
+  window.location.href = url.toString();
+}
+
 export function useIntegrationInstall(
   integration: InstallableIntegration | undefined
 ) {
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
-  const routeData = useRouteData<{ state: string }>(path.to.integrations);
-  const state = routeData?.state;
 
   const install = useCallback(async () => {
     if (!integration) return;
 
     if ("oauth" in integration && !!integration.oauth) {
-      const { clientId, redirectUri, scopes } = integration.oauth;
-      const encodedRedirectUri = encodeURIComponent(
-        `${window.location.origin}${redirectUri}`
-      );
-      const encodedScopes = encodeURIComponent(scopes.join(" "));
-      const encodedState = encodeURIComponent(
-        state ?? Math.random().toString(36).substring(2, 15)
-      );
-      window.open(
-        `${integration.oauth.authUrl}?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&state=${encodedState}&scope=${encodedScopes}`
-      );
+      startOAuthConnect(integration.id);
       return;
     }
 
@@ -66,7 +71,7 @@ export function useIntegrationInstall(
       method: "post",
       action: path.to.integration(integration.id)
     });
-  }, [integration, navigate, fetcher, state]);
+  }, [integration, navigate, fetcher]);
 
   return { install, isInstalling: fetcher.state !== "idle" };
 }

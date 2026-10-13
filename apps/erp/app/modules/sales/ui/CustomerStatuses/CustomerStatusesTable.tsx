@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -19,15 +23,10 @@ type CustomerStatusesTableProps = {
 
 const CustomerStatusesTable = memo(
   ({ data, count }: CustomerStatusesTableProps) => {
-    const { t, i18n } = useLingui();
+    const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-
-    const translateStatus = useCallback(
-      (value: string) => i18n._(value),
-      [i18n]
-    );
 
     const customColumns = useCustomColumns<CustomerStatus>("customerStatus");
     const columns = useMemo<ColumnDef<CustomerStatus>[]>(() => {
@@ -37,22 +36,24 @@ const CustomerStatusesTable = memo(
           header: t`Customer Status`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
-              <Enumerable value={translateStatus(row.original.name ?? "")} />
+              <Enumerable value={row.original.name ?? ""} />
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuStar />
           }
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, t, translateStatus]);
+    }, [customColumns, t]);
 
     const renderContextMenu = useCallback(
       (row: CustomerStatus) => {
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               onClick={() => {
                 navigate(`${path.to.customers}?filter=status:eq:${row.name}`);
               }}
@@ -61,6 +62,7 @@ const CustomerStatusesTable = memo(
               <Trans>View Customers</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 navigate(
                   `${path.to.customerStatus(row.id)}?${params.toString()}`
@@ -71,6 +73,7 @@ const CustomerStatusesTable = memo(
               <Trans>Edit Customer Status</Trans>
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               destructive
               disabled={!permissions.can("delete", "sales")}
               onClick={() => {

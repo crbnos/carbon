@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import { HStack } from "@carbon/react";
-import { useEffect, useMemo } from "react";
-import { useFetcher } from "react-router";
+import { useMemo } from "react";
 import type { getAssemblyInstructionsForItem } from "~/modules/production/production.service";
 import AssemblyInstructionStatus from "~/modules/production/ui/Assemblies/AssemblyInstructionStatus";
 import { path } from "~/utils/path";
@@ -34,17 +38,11 @@ export default AssemblyInstruction;
 
 export const useAssemblyInstructions = (args: { itemId?: string }) => {
   const { itemId } = args;
-  const assemblyInstructionFetcher =
-    useFetcher<Awaited<ReturnType<typeof getAssemblyInstructionsForItem>>>();
+  const assemblyInstructionFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getAssemblyInstructionsForItem>>
+  >(itemId ? path.to.api.assemblyInstructions(itemId) : null);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher.load is not referentially stable; reload only when itemId changes
-  useEffect(() => {
-    if (itemId) {
-      assemblyInstructionFetcher.load(path.to.api.assemblyInstructions(itemId));
-    }
-  }, [itemId]);
-
-  const loading = assemblyInstructionFetcher.state !== "idle";
+  const loading = assemblyInstructionFetcher.isFetching;
 
   const options = useMemo(
     () =>

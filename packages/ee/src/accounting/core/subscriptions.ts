@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { CreateSubscriptionParams } from "@carbon/database/event";
 import {
@@ -5,10 +9,10 @@ import {
   deleteEventSystemSubscription
 } from "@carbon/database/event";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ProviderID } from "./models";
+import { ProviderID, SpendProviderID, type SyncProviderID } from "./models";
 
 /**
- * The event-system subscriptions each accounting provider's OUTBOUND sync
+ * The event-system subscriptions each sync provider's OUTBOUND sync
  * requires (subscription name `${providerId}-sync`, handlerType SYNC).
  *
  * Single source of truth (v4 spec, Pillar A): install hooks, integration
@@ -37,9 +41,37 @@ type RequiredSyncSubscription = {
 const COMMON_PUSH_TABLES: RequiredSyncSubscription[] = [
   { table: "customer", operations: ["INSERT", "UPDATE", "DELETE"] },
   { table: "supplier", operations: ["INSERT", "UPDATE", "DELETE"] },
-  { table: "item", operations: ["INSERT", "UPDATE", "DELETE"] },
+  // `item` is deliberately NOT here. Carbon is a manufacturing ERP: its item
+  // master is parts, materials, tools, consumables and fixtures — tens of
+  // thousands of rows that mean nothing to an accounting system. Subscribing the
+  // table pushed EVERY one of them, on every insert and every edit, into Xero /
+  // QuickBooks Products & Services and Rillet Products, with no filter (none of
+  // the three item syncers overrides `shouldSync`). That is catalog pollution,
+  // not integration: it buries the handful of real sellable goods, and it churns
+  // the provider on routine engineering edits.
+  //
+  // Nothing is lost, because no INVOICE references a Carbon item any more: an AR
+  // line carries a synthetic per-revenue-account product (Rillet / QBO) or is
+  // account-coded outright (Xero), and a bill replays its posting journal. The
+  // documents that DO reference items — sales orders, purchase orders, inventory
+  // adjustments — still push exactly the ones they name, JIT via
+  // `ensureDependencySynced("item", …)`. That path is load-bearing and must stay.
+  //
+  // Removing a table from this list is self-healing: `ensureProviderSubscriptions`
+  // deletes any subscription whose table is no longer required, so existing
+  // installs stop pushing their catalog at the next converge.
   { table: "salesInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
-  { table: "purchaseInvoice", operations: ["INSERT", "UPDATE", "DELETE"] }
+  { table: "purchaseInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
+  // Card charges push on the transition to Posted/Voided; the row is never
+  // deleted once posted (Draft-only DELETE), so only INSERT/UPDATE.
+  { table: "charge", operations: ["INSERT", "UPDATE"] },
+  // Credit memos / supplier credits push on the transition to Posted/Voided.
+  // One table, TWO entity types — the memo's PARTY decides which (see
+  // getEntityTypeFromTable). Draft-only DELETE, so INSERT/UPDATE only.
+  { table: "memo", operations: ["INSERT", "UPDATE"] },
+  // Reimbursements push on the transition to Posted/Voided; the row is never
+  // deleted once posted (Draft-only DELETE), so only INSERT/UPDATE.
+  { table: "reimbursement", operations: ["INSERT", "UPDATE"] }
 ];
 
 /** Posting sync: journals are INSERTed born Posted or UPDATEd to
@@ -51,7 +83,7 @@ const JOURNAL_SUBSCRIPTION: RequiredSyncSubscription = {
 };
 
 export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
-  ProviderID,
+  SyncProviderID,
   RequiredSyncSubscription[]
 > = {
   [ProviderID.RILLET]: [
@@ -78,10 +110,27 @@ export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
     // payment write-back: push on the transition to Posted/Voided. Inbound
     // payments still ride the CDC pull sweep + webhook.
     { table: "payment", operations: ["INSERT", "UPDATE"] }
+  ],
+  /**
+   * Ramp is a SPEND provider: it mirrors Carbon's purchase orders and its open
+   * payables, and nothing else. No `customer`/`item`/`journal` — Ramp is not a
+   * ledger — and no DELETE, because a spend platform's document lifecycle is
+   * not Carbon's to retract (a handed-off draft bill has no delete endpoint at
+   * all).
+   *
+   * Ramp's INBOUND families (card charges, reimbursements, bill payments) are
+   * deliberately absent: they key off Ramp's own `SYNC_READY` status feed and
+   * batched confirm protocol, which has no Carbon row event to subscribe to.
+   * They stay on the `ramp-sync` cron, the same outbound-events /
+   * inbound-sweep split the accounting providers already run.
+   */
+  [SpendProviderID.RAMP]: [
+    { table: "purchaseOrder", operations: ["INSERT", "UPDATE"] },
+    { table: "purchaseInvoice", operations: ["INSERT", "UPDATE"] }
   ]
 };
 
-export function getSyncSubscriptionName(providerId: ProviderID): string {
+export function getSyncSubscriptionName(providerId: SyncProviderID): string {
   return `${providerId}-sync`;
 }
 
@@ -103,7 +152,7 @@ export type EnsureSubscriptionsResult = {
 export async function ensureProviderSubscriptions(
   client: SupabaseClient<Database>,
   companyId: string,
-  providerId: ProviderID
+  providerId: SyncProviderID
 ): Promise<EnsureSubscriptionsResult> {
   const required = REQUIRED_SYNC_SUBSCRIPTIONS[providerId];
   const name = getSyncSubscriptionName(providerId);

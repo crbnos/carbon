@@ -1,14 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { data, useLoaderData } from "react-router";
 import { customerPortalValidator } from "~/modules/sales";
-import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm";
-import { getCustomerPortal, upsertExternalLink } from "~/modules/shared";
-
+import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
+import { getCustomerPortal } from "~/modules/shared";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -43,7 +49,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "sales"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -63,7 +69,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, customerId } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCustomerPortal = await upsertExternalLink(client, {
+  const updateCustomerPortal = await upsertCustomerPortal(client, companyId, {
     id,
     documentType: "Customer",
     documentId: customerId,
@@ -88,7 +94,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function EditCustomerPortalRoute() {
   const { customerPortal } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: customerPortal.id ?? undefined,
@@ -99,7 +105,7 @@ export default function EditCustomerPortalRoute() {
     <CustomerPortalForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

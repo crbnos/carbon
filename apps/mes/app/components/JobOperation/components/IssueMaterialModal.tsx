@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Number as FormNumberInput, Hidden, ValidatedForm } from "@carbon/form";
+import { useLoaderQuery } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -37,7 +42,13 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { formatDate, getItemReadableId, SCALE_FORMAT } from "@carbon/utils";
+import {
+  formatDate,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  SCALE_FORMAT
+} from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -88,6 +99,8 @@ export function IssueMaterialModal({
   locationId,
   workCenterId,
   material,
+  batchId,
+  batchRemainingQuantity,
   parentId,
   parentIdIsSerialized,
   jobOperationStepId,
@@ -117,6 +130,15 @@ export function IssueMaterialModal({
   locationId?: string;
   workCenterId?: string;
   material?: JobMaterial;
+  // Batch mode: the pick covers every member of this operation batch. The
+  // server fn splits the picked lots pro-rata by remaining requirement and
+  // records per-member consumption, so no parent entity is sent.
+  batchId?: string;
+  // Batch mode: the WHOLE batch's outstanding requirement for this item. The
+  // default pick must be this, not the member's share — the pick is split
+  // pro-rata across every member, so defaulting to one member's quantity
+  // under-serves all of them (4,000 of a 6,500 batch became 2461/1538).
+  batchRemainingQuantity?: number;
   parentId?: string;
   parentIdIsSerialized?: boolean;
   // Assembly view only: the step + 1-based unit the operator is on, stamped onto the
@@ -327,6 +349,13 @@ export function IssueMaterialModal({
   // total for the operation.
   const initialQuantity = useMemo(() => {
     if (!material) return 1;
+    // Batch mode: one pick covers every member, so the default is the batch's
+    // outstanding requirement — the member's own share would be split again
+    // across all members and satisfy none of them. Never rounded up to 1: the
+    // batch refuses a pick above its requirement (0.000072 KG, say).
+    if (batchId && batchRemainingQuantity !== undefined) {
+      return batchRemainingQuantity || 1;
+    }
     const perUnit = material.quantity ?? material.estimatedQuantity ?? 1;
     if (parentIdIsSerialized) {
       return Math.max(1, perUnit - (material.quantityIssued ?? 0));
@@ -336,7 +365,13 @@ export function IssueMaterialModal({
     }
     const total = material.estimatedQuantity ?? material.quantity ?? 1;
     return Math.max(1, total - (material.quantityIssued ?? 0));
-  }, [material, parentIdIsSerialized, issuePerUnit]);
+  }, [
+    material,
+    parentIdIsSerialized,
+    issuePerUnit,
+    batchId,
+    batchRemainingQuantity
+  ]);
 
   // Serial numbers selection state
   const [selectedSerialNumbers, setSelectedSerialNumbers] = useState<
@@ -950,7 +985,7 @@ export function IssueMaterialModal({
   ]);
 
   const handleSubmitBatch = useCallback(() => {
-    if (!parentId) {
+    if (!batchId && !parentId) {
       toast.error("Parent tracking ID is required for batch tracked items.");
       return;
     }
@@ -987,28 +1022,38 @@ export function IssueMaterialModal({
         ...(jobOperationStepId ? { jobOperationStepId } : {}),
         ...(unitNumber !== undefined ? { unitNumber } : {})
       };
-      const payload = material?.id
+      const payload = batchId
         ? {
-            materialId: material.id,
-            parentTrackedEntityId: parentId,
+            batchId,
+            itemId: material?.itemId ?? selectedItemId,
             children: selectedBatchNumbers.map((bn) => ({
               trackedEntityId: bn.id,
               quantity: bn.quantity
             })),
-            ...contextFields,
             ...overrideFields
           }
-        : {
-            jobOperationId: operationId,
-            itemId: selectedItemId,
-            parentTrackedEntityId: parentId,
-            children: selectedBatchNumbers.map((bn) => ({
-              trackedEntityId: bn.id,
-              quantity: bn.quantity
-            })),
-            ...contextFields,
-            ...overrideFields
-          };
+        : material?.id
+          ? {
+              materialId: material.id,
+              parentTrackedEntityId: parentId,
+              children: selectedBatchNumbers.map((bn) => ({
+                trackedEntityId: bn.id,
+                quantity: bn.quantity
+              })),
+              ...contextFields,
+              ...overrideFields
+            }
+          : {
+              jobOperationId: operationId,
+              itemId: selectedItemId,
+              parentTrackedEntityId: parentId,
+              children: selectedBatchNumbers.map((bn) => ({
+                trackedEntityId: bn.id,
+                quantity: bn.quantity
+              })),
+              ...contextFields,
+              ...overrideFields
+            };
 
       fetcher.submit(JSON.stringify(payload), {
         method: "post",
@@ -1019,8 +1064,10 @@ export function IssueMaterialModal({
   }, [
     selectedBatchNumbers,
     validateBatchNumber,
+    batchId,
     parentId,
     material?.id,
+    material?.itemId,
     operationId,
     selectedItemId,
     fetcher,
@@ -1174,6 +1221,27 @@ export function IssueMaterialModal({
 
   const hasTrackedInputs = trackedInputs.length > 0;
 
+  // Scrapping a tracked entity is attributed to a job material: the scrap
+  // action requires a materialId, and it relieves that material's WIP /
+  // reopens its requirement. The generic "Issue Material" button opens this
+  // modal with no material, so there is nothing to scrap against — and building
+  // the scrap URL with an empty materialId 404s (generatePath collapses the
+  // empty segment to `/x/entity/:id/scrap`, which matches no route). Only offer
+  // the Scrap tab when a material is in context.
+  const canScrap = !!material?.id;
+
+  // The tracked (Serial/Batch) tabs are: Scan + Select, plus Scrap when there's
+  // a material, plus Unconsume when there are consumed inputs. Compute the grid
+  // column count from what's actually rendered so the triggers stay evenly
+  // spaced (Tailwind needs the literal class name).
+  const trackedTabCount = 2 + (canScrap ? 1 : 0) + (hasTrackedInputs ? 1 : 0);
+  const trackedTabsListClass = cn(
+    "grid w-full mb-4",
+    trackedTabCount === 2 && "grid-cols-2",
+    trackedTabCount === 3 && "grid-cols-3",
+    trackedTabCount === 4 && "grid-cols-4"
+  );
+
   return (
     <>
       <Modal open onOpenChange={onClose}>
@@ -1195,7 +1263,7 @@ export function IssueMaterialModal({
           trackingType === "Non-Inventory" ||
           trackingType === null ? (
             // Untracked item (Inventory or Non-Inventory, e.g. consumables and
-            // services) - use ValidatedForm; the issue edge function skips the
+            // services) - use ValidatedForm; the issue server function skips the
             // itemLedger for Non-Inventory items but still posts the WIP cost
             <ValidatedForm
               method="post"
@@ -1307,7 +1375,7 @@ export function IssueMaterialModal({
                         <FormNumberInput
                           name="quantity"
                           label="Quantity"
-                          minValue={0.01}
+                          minValue={INPUT_STEP.quantity}
                         />
                       </>
                     )}
@@ -1359,12 +1427,7 @@ export function IssueMaterialModal({
 
                   {showContent && trackingType === "Serial" && (
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList
-                        className={cn(
-                          "grid w-full grid-cols-3 mb-4",
-                          hasTrackedInputs && "grid-cols-4"
-                        )}
-                      >
+                      <TabsList className={trackedTabsListClass}>
                         <TabsTrigger value="scan">
                           <LuQrCode className="mr-2" />
                           Scan
@@ -1373,10 +1436,12 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
-                        <TabsTrigger value="scrap">
-                          <LuTrash2 className="mr-2" />
-                          Scrap
-                        </TabsTrigger>
+                        {canScrap && (
+                          <TabsTrigger value="scrap">
+                            <LuTrash2 className="mr-2" />
+                            Scrap
+                          </TabsTrigger>
+                        )}
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1385,17 +1450,19 @@ export function IssueMaterialModal({
                         )}
                       </TabsList>
 
-                      <TabsContent value="scrap">
-                        <ScrapTab
-                          entities={scrappableEntities}
-                          onScrap={(entity) =>
-                            setScrapEntityTarget({
-                              id: entity.id,
-                              readableId: entity.readableId
-                            })
-                          }
-                        />
-                      </TabsContent>
+                      {canScrap && (
+                        <TabsContent value="scrap">
+                          <ScrapTab
+                            entities={scrappableEntities}
+                            onScrap={(entity) =>
+                              setScrapEntityTarget({
+                                id: entity.id,
+                                readableId: entity.readableId
+                              })
+                            }
+                          />
+                        </TabsContent>
+                      )}
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1628,12 +1695,7 @@ export function IssueMaterialModal({
 
                   {showContent && trackingType === "Batch" && (
                     <Tabs value={activeTab} onValueChange={setActiveTab}>
-                      <TabsList
-                        className={cn(
-                          "grid w-full grid-cols-3 mb-4",
-                          hasTrackedInputs && "grid-cols-4"
-                        )}
-                      >
+                      <TabsList className={trackedTabsListClass}>
                         <TabsTrigger value="scan">
                           <LuQrCode className="mr-2" />
                           Scan
@@ -1642,10 +1704,12 @@ export function IssueMaterialModal({
                           <LuList className="mr-2" />
                           Select
                         </TabsTrigger>
-                        <TabsTrigger value="scrap">
-                          <LuTrash2 className="mr-2" />
-                          Scrap
-                        </TabsTrigger>
+                        {canScrap && (
+                          <TabsTrigger value="scrap">
+                            <LuTrash2 className="mr-2" />
+                            Scrap
+                          </TabsTrigger>
+                        )}
                         {hasTrackedInputs && (
                           <TabsTrigger value="unconsume">
                             <LuUndo2 className="mr-2" />
@@ -1654,17 +1718,19 @@ export function IssueMaterialModal({
                         )}
                       </TabsList>
 
-                      <TabsContent value="scrap">
-                        <ScrapTab
-                          entities={scrappableEntities}
-                          onScrap={(entity) =>
-                            setScrapEntityTarget({
-                              id: entity.id,
-                              readableId: entity.readableId
-                            })
-                          }
-                        />
-                      </TabsContent>
+                      {canScrap && (
+                        <TabsContent value="scrap">
+                          <ScrapTab
+                            entities={scrappableEntities}
+                            onScrap={(entity) =>
+                              setScrapEntityTarget({
+                                id: entity.id,
+                                readableId: entity.readableId
+                              })
+                            }
+                          />
+                        </TabsContent>
+                      )}
 
                       <TabsContent value="scan">
                         <div className="flex flex-col gap-4">
@@ -1718,13 +1784,14 @@ export function IssueMaterialModal({
                                   <NumberField
                                     id={`quantity-${index}`}
                                     value={batch.quantity}
+                                    formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
                                       updateBatchNumber({
                                         ...batch,
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={INPUT_STEP.quantity}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id
@@ -1801,13 +1868,14 @@ export function IssueMaterialModal({
                                 <div className="w-24">
                                   <NumberField
                                     value={batch.quantity}
+                                    formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
                                       updateBatchNumber({
                                         ...batch,
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={INPUT_STEP.quantity}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id
@@ -2034,29 +2102,18 @@ export function IssueMaterialModal({
 }
 
 function useSerialNumbers(itemId?: string) {
-  const serialNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSerialNumbersForItem>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
-  useEffect(() => {
-    if (itemId) {
-      serialNumbersFetcher.load(path.to.api.serialNumbers(itemId));
-    }
-  }, [itemId]);
+  const serialNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSerialNumbersForItem>>
+  >(itemId ? path.to.api.serialNumbers(itemId) : null);
 
   return { data: serialNumbersFetcher.data };
 }
 
 // Hook for fetching batch numbers
 function useBatchNumbers(itemId?: string) {
-  const batchNumbersFetcher =
-    useFetcher<Awaited<ReturnType<typeof getBatchNumbersForItem>>>();
-
-  useEffect(() => {
-    if (itemId) {
-      batchNumbersFetcher.load(path.to.api.batchNumbers(itemId));
-    }
-  }, [itemId, batchNumbersFetcher.load]);
+  const batchNumbersFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getBatchNumbersForItem>>
+  >(itemId ? path.to.api.batchNumbers(itemId) : null);
 
   return { data: batchNumbersFetcher.data };
 }

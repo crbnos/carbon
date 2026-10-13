@@ -1,4 +1,14 @@
-import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  Badge,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -15,6 +25,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
@@ -60,6 +71,7 @@ const ActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -68,6 +80,7 @@ const ActionsTable = memo(
           header: t`Action Type`,
           cell: ({ row }) => <Enumerable value={row.original.actionType} />,
           meta: {
+            mobile: "P2",
             icon: <LuFileText />,
             filter: {
               type: "static",
@@ -83,6 +96,7 @@ const ActionsTable = memo(
           header: t`Action Status`,
           cell: ({ row }) => <ActionStatus status={row.original.status} />,
           meta: {
+            mobile: "P2",
             icon: <LuCircleGauge />,
             filter: {
               type: "static",
@@ -100,6 +114,7 @@ const ActionsTable = memo(
             <EmployeeAvatar employeeId={row.original.assignee} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: people.map((employee) => ({
@@ -114,17 +129,16 @@ const ActionsTable = memo(
           id: "items",
           header: t`Items`,
           cell: ({ row }) => (
-            <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.items ?? []) as Array<string>).map((i) => {
-                const item = items.find((x) => x.id === i);
-                if (!item) return null;
-                return (
-                  <Badge variant="outline" key={item?.id}>
-                    {item?.readableIdWithRevision}
-                  </Badge>
-                );
-              })}
-            </span>
+            <EnumerableGroup
+              chip="outline"
+              items={((row.original.items ?? []) as Array<string>).flatMap(
+                (i) => {
+                  const item = items.find((x) => x.id === i);
+                  if (!item) return [];
+                  return { label: item.readableIdWithRevision ?? item.id };
+                }
+              )}
+            />
           ),
           meta: {
             icon: <LuBlocks />,
@@ -145,7 +159,7 @@ const ActionsTable = memo(
           header: t`Due Date`,
           cell: ({ row }) => {
             const isOverdue =
-              // @ts-ignore
+              // @ts-expect-error
               !["Completed", "Skipped"].includes(row.original.status) &&
               row.original.nonConformanceStatus !== "Closed" &&
               row.original.dueDate &&
@@ -157,6 +171,10 @@ const ActionsTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -196,6 +214,9 @@ const ActionsTable = memo(
             <DateTime value={row.original.completedDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -218,6 +239,7 @@ const ActionsTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.view}
               disabled={!permissions.can("update", "quality")}
               onClick={() => {
                 navigate(`${path.to.issue(row.nonConformanceId!)}`);

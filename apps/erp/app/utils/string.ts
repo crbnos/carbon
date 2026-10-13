@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { CalendarDate, now } from "@internationalized/date";
@@ -56,7 +60,7 @@ export const copyToClipboard = async (
 
 // used to generate sequences — date tokens derive in the company's business
 // timezone so document prefixes roll over at the company's midnight, not the
-// process's. Mirrors functions/lib/utils.ts; keep the two in sync.
+// process's. Mirrors packages/database/src/sequence.ts; keep the two in sync.
 export const interpolateSequenceDate = (
   value: string | null,
   timezone = "UTC"
@@ -79,15 +83,4 @@ export const interpolateSequenceDate = (
   }
 
   return result;
-};
-
-export const getReadableIdWithRevision = (
-  readableId: string,
-  revision?: string | null
-) => {
-  if (revision && revision !== "0") {
-    return `${readableId}.${revision}`;
-  }
-
-  return readableId;
 };

@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getOnshapeIntegration } from "@carbon/ee/onshape";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { getIntegration } from "../../modules/settings";
 
 // Inbound receiver for Onshape lifecycle webhooks (mirrors
 // webhook.jira.$companyId.ts / webhook.linear.$companyId.ts).
 //
 //   Onshape ──POST──▶ /api/webhook/onshape/:companyId
-//                        │  resolve companyId + active onshape integration
+//                        │  resolve companyId + its active Onshape connection
+//                        │  (public app or Government private app)
 //                        │  validate minimal envelope, log the event
 //                        ▼
 //     onshape.revision.created ──▶ trigger("onshape-revision-sync")
@@ -58,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const integration = await getIntegration(serviceRole, "onshape", companyId);
+  const integration = await getOnshapeIntegration(serviceRole, companyId);
 
   if (integration.error) {
     console.error(

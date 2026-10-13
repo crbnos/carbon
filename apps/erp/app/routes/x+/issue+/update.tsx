@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
+import { async, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
 
 const logger = getLogger("erp", "update");
@@ -28,7 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const issues = await client
     .from("nonConformance")
     .select("id, status")
-    .in("id", ids as string[]);
+    .in("id", ids as string[])
+    .eq("companyId", companyId);
 
   const lockedError = requireUnlockedBulk({
     statuses: (issues.data ?? []).map((i) => i.status),
@@ -43,12 +50,15 @@ export async function action({ request }: ActionFunctionArgs) {
       const arrayValue = value ? value.split(",") : [];
       const update = await client
         .from("nonConformance")
-        .update({
-          [field]: arrayValue,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[]);
+        .update(
+          unchecked({
+            [field]: arrayValue,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
+        .in("id", ids as string[])
+        .eq("companyId", companyId);
 
       if (update.error) {
         logger.error(update.error);
@@ -57,20 +67,21 @@ export async function action({ request }: ActionFunctionArgs) {
           data: null
         };
       }
-
-      const serviceRole = await getCarbonServiceRole();
       // A silent reconcile failure leaves the column and the task list disagreeing.
-      const reconciled = await Promise.all(
-        ids.map((id) =>
-          serviceRole.functions.invoke("create", {
-            body: {
-              type: "nonConformanceTasks",
-              id,
+      // Only the issues the scoped read above found are this company's.
+      // Bounded: each call takes a pooled connection, and a bulk edit can name
+      // hundreds of issues.
+      const reconciled = await async.map(
+        issues.data ?? [],
+        ({ id }) =>
+          serverFns
+            .system({
+              db: getDatabaseClient(),
               companyId,
               userId
-            }
-          })
-        )
+            })
+            .invoke("create", { type: "nonConformanceTasks", id }),
+        { concurrency: 4 }
       );
 
       const reconcileError = reconciled.find((r) => r.error)?.error;
@@ -97,12 +108,15 @@ export async function action({ request }: ActionFunctionArgs) {
     case "supplierId":
       return await client
         .from("nonConformance")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", ids as string[]);
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
+        .in("id", ids as string[])
+        .eq("companyId", companyId);
     default:
       return {
         error: { message: `Invalid field: ${field}` },

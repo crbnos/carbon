@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { z } from "zod";
 
 /**
@@ -86,7 +90,7 @@ export namespace Rillet {
     id: z.string(),
     name: z.string(),
     values: z.array(FieldValueSchema).default([]),
-    settings: z.record(z.unknown()).nullish(),
+    settings: z.record(z.string(), z.unknown()).nullish(),
     updated_at: z.string().nullish()
   });
 
@@ -197,7 +201,7 @@ export namespace Rillet {
 
   /**
    * Carbon only ever writes ONE_TIME prices (Rillet also supports
-   * FIXED_RECURRING and USAGE; Carbon-generated AR_ONLY invoices carry
+   * FIXED_RECURRING and USAGE; Carbon-generated invoices carry
    * their own line totals, so the product price is nominal).
    */
   export const ProductPriceSchema = z.object({
@@ -224,8 +228,25 @@ export namespace Rillet {
 
   export type Product = z.infer<typeof ProductSchema>;
 
-  /** AR_ONLY invoice item — product_id is REQUIRED on every line. */
+  export const ExchangeRateSchema = z.object({
+    base: z.string().min(1),
+    target: z.string().min(1),
+    rate: z
+      .string()
+      .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  });
+  export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
+
+  /** External invoice item — product_id is REQUIRED on every line. */
   export const InvoiceItemSchema = z.object({
+    revenue: z
+      .object({
+        account_code: z.string().optional(),
+        period: z.object({ start: z.string(), end: z.string() }).optional(),
+        pattern: z.enum(["DAILY", "EVEN_PERIOD"]).optional()
+      })
+      .optional(),
     id: z.string().optional(),
     product_id: z.string(),
     description: z.string(),
@@ -238,12 +259,12 @@ export namespace Rillet {
   export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 
   /**
-   * AR_ONLY invoice: Carbon keeps generating/sending the invoice; Rillet
-   * carries the receivable. `invoice_number` is Carbon's readable id.
+   * External invoice: Carbon issues the invoice; Rillet carries the receivable.
+   * New postings use REVENUE_RECOGNITION_ONLY for fixed FX and immediate revenue. `invoice_number` is Carbon's readable id.
    */
   export const InvoiceSchema = z.object({
     id: z.string(),
-    scope: z.literal("AR_ONLY"),
+    scope: z.enum(["AR_ONLY", "REVENUE_RECOGNITION_ONLY"]),
     customer_id: z.string(),
     /** YYYY-MM-DD. */
     invoice_date: z.string(),
@@ -252,7 +273,7 @@ export namespace Rillet {
     due_date: z.string().optional(),
     tax_amount: MonetaryAmountSchema.optional(),
     subsidiary_id: z.string().optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     items: z.array(InvoiceItemSchema).min(1),
     external_references: z.array(ExternalReferenceSchema).min(1),
     status: z.string().optional(),
@@ -295,12 +316,236 @@ export namespace Rillet {
     subsidiary_id: z.string().optional(),
     impact_date: z.string().optional(),
     external_references: z.array(ExternalReferenceSchema).optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     status: BillStatusSchema.optional(),
     updated_at: z.string().optional()
   });
 
   export type Bill = z.infer<typeof BillSchema>;
+
+  /** One coded line of a card charge (`POST /charges`). Same shape as a bill item. */
+  export const ChargeItemSchema = z.object({
+    id: z.string().optional(),
+    account_code: z.string(),
+    amount: MonetaryAmountSchema,
+    description: z.string().optional(),
+    tax_rate: z.number().optional(),
+    fields: z.array(ItemFieldRefSchema).optional()
+  });
+
+  export type ChargeItem = z.infer<typeof ChargeItemSchema>;
+
+  export const ChargeStatusSchema = z.enum([
+    "UNPAID",
+    "PAID",
+    "PARTIALLY_PAID"
+  ]);
+
+  /**
+   * A credit-card charge (`/charges`, spec `ChargeRequest`): Rillet derives
+   * the posting itself — debit each item's `account_code`, credit the
+   * `credit_card_account_code` liability — which is exactly what Carbon's
+   * "Charge" journal books, so the two ledgers cannot drift.
+   */
+  export const ChargeSchema = z.object({
+    id: z.string(),
+    vendor_id: z.string(),
+    items: z.array(ChargeItemSchema).min(1),
+    /** The date the card was charged. */
+    charge_date: z.string(),
+    /** GL impact date; defaults to charge_date when omitted. */
+    impact_date: z.string().optional(),
+    /** The credit-card liability account the charge is settled against. */
+    credit_card_account_code: z.string(),
+    subsidiary_id: z.string().optional(),
+    external_references: z.array(ExternalReferenceSchema).optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
+    status: ChargeStatusSchema.optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type Charge = z.infer<typeof ChargeSchema>;
+
+  export const ReimbursementStatusSchema = z.enum([
+    "UNPAID",
+    "PAID",
+    "PARTIALLY_PAID"
+  ]);
+
+  /**
+   * An employee reimbursement (`/reimbursements`, spec
+   * `CreateReimbursementRequest`). Unlike a charge, Rillet does NOT derive
+   * the payable: the caller names `payable_account_code`, which Carbon takes
+   * from the `reimbursement.payableAccountId` its posting credited — so the
+   * segregated employee-payable control account crosses the wire intact. The
+   * items are the same account-costed shape as a bill's.
+   *
+   * Field names VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/create-a-reimbursement, 2026-09-23):
+   * `vendor_id`, `items`, `reimbursement_date` and `payable_account_code` are
+   * REQUIRED; `impact_date`, `subsidiary_id`, `external_references` and
+   * `exchange_rate` are optional.
+   */
+  export const ReimbursementSchema = z.object({
+    id: z.string(),
+    vendor_id: z.string(),
+    items: z.array(BillItemSchema).min(1),
+    reimbursement_date: z.string(),
+    payable_account_code: z.string(),
+    impact_date: z.string().optional(),
+    subsidiary_id: z.string().optional(),
+    external_references: z.array(ExternalReferenceSchema).optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
+    status: ReimbursementStatusSchema.optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type Reimbursement = z.infer<typeof ReimbursementSchema>;
+
+  /**
+   * One line of a vendor credit (`POST /vendor-credits`). Account-coded,
+   * exactly like a bill item — Rillet's AP credit needs no product.
+   */
+  export const VendorCreditLineItemSchema = z.object({
+    id: z.string().optional(),
+    account_code: z.string(),
+    amount: MonetaryAmountSchema,
+    description: z.string().optional(),
+    tax_rate: z.number().optional(),
+    fields: z.array(ItemFieldRefSchema).optional()
+  });
+
+  export type VendorCreditLineItem = z.infer<typeof VendorCreditLineItemSchema>;
+
+  /**
+   * A vendor credit (`POST /vendor-credits`) — Rillet's native AP credit
+   * document, what a Carbon supplier+Debit memo IS. The lines are
+   * account-coded (`line_items[]`, NOT the bill's `items[]`), so the memo's
+   * reason account binds the GL directly and no product is involved.
+   *
+   * Header field names CONFIRMED against Rillet's OpenAPI
+   * (`CreateVendorCreditRequest` = `BaseVendorCreditRequest` + vendor_id +
+   * subsidiary_id). The earlier draft inferred them from the bill/invoice
+   * `<object>_date` convention and was wrong on three counts — `date` not
+   * `credit_date`, `gl_impact_date` not `impact_date`, and `subsidiary_id`
+   * REQUIRED here even though it is optional on a bill.
+   *
+   * The create body accepts ONLY credit_number, date, gl_impact_date, memo,
+   * line_items, vendor_id and subsidiary_id — note there is NO
+   * `external_references` and NO `exchange_rate`, unlike bills and invoices.
+   * Provenance therefore rides `credit_number` (Carbon's readable memo id) and
+   * the externalIntegrationMapping row.
+   */
+  export const VendorCreditSchema = z.object({
+    id: z.string(),
+    vendor_id: z.string(),
+    /** YYYY-MM-DD. Required. */
+    date: z.string(),
+    line_items: z.array(VendorCreditLineItemSchema).min(1),
+    /** Carbon's readable memo id. Required — also the provenance link. */
+    credit_number: z.string(),
+    /** Required; Rillet does not default it. */
+    gl_impact_date: z.string(),
+    /** Required on a vendor credit (unlike a bill, where it is optional). */
+    subsidiary_id: z.string(),
+    memo: z.string().optional(),
+    status: z.string().optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type VendorCredit = z.infer<typeof VendorCreditSchema>;
+
+  /**
+   * Per-line GL override on a credit-memo item. Same shape as an invoice
+   * item's `revenue`; Carbon sets `account_code` to the memo's reason
+   * account so the line is bound to it twice over (the product carries the
+   * same account — belt and braces, spec "Design Decisions").
+   */
+  export const ItemRevenueSchema = z.object({
+    account_code: z.string().optional(),
+    period: z.object({ start: z.string(), end: z.string() }).optional(),
+    pattern: z.enum(["DAILY", "EVEN_PERIOD"]).optional()
+  });
+
+  export type ItemRevenue = z.infer<typeof ItemRevenueSchema>;
+
+  /**
+   * Price block of a credit-memo item. `product_id`, `quantity` AND
+   * `amount_per_unit` are ALL REQUIRED — there is no account-coded AR line
+   * variant anywhere in Rillet's API, which is why a customer credit needs a
+   * reason-bound product (`core/credit-reason-item.ts`).
+   */
+  export const CreditMemoItemPriceSchema = z.object({
+    product_id: z.string(),
+    quantity: z.number(),
+    amount_per_unit: MonetaryAmountSchema
+  });
+
+  export type CreditMemoItemPrice = z.infer<typeof CreditMemoItemPriceSchema>;
+
+  export const CreditMemoItemSchema = z.object({
+    id: z.string().optional(),
+    description: z.string(),
+    price: CreditMemoItemPriceSchema,
+    revenue: ItemRevenueSchema.optional(),
+    tax_rate: z.number().optional(),
+    fields: z.array(ItemFieldRefSchema).optional()
+  });
+
+  export type CreditMemoItem = z.infer<typeof CreditMemoItemSchema>;
+
+  /**
+   * A credit memo (`POST /credit-memos`) — Rillet's native AR credit
+   * document, what a Carbon customer+Credit memo IS.
+   *
+   * NOT a journal entry: a sandbox probe (2026-09-23) proved Rillet accepts a
+   * journal to the AR control account but SILENTLY DISCARDS `related_entity`,
+   * so the control balance would move with no subledger document behind it.
+   * Documents only — never add a journal fallback here.
+   *
+   * VERIFY (sandbox, plan Task 15): `items[]` and its member shape are
+   * confirmed against Rillet's OpenAPI; the HEADER field names
+   * (`credit_memo_date`, `credit_memo_number`) follow the invoice/bill
+   * `<object>_date` convention and are NOT confirmed.
+   */
+  export const CreditMemoSchema = z.object({
+    id: z.string(),
+    customer_id: z.string(),
+    /** YYYY-MM-DD. */
+    credit_memo_date: z.string(),
+    items: z.array(CreditMemoItemSchema).min(1),
+    /** Carbon's readable memo id. */
+    credit_memo_number: z.string().optional(),
+    subsidiary_id: z.string().optional(),
+    external_references: z.array(ExternalReferenceSchema).optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
+    status: z.string().optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type CreditMemo = z.infer<typeof CreditMemoSchema>;
+
+  /** One entry of a credit memo's application set: how much of it settles an invoice. */
+  export const CreditMemoApplicationSchema = z.object({
+    invoice_id: z.string(),
+    amount: MonetaryAmountSchema,
+    /** YYYY-MM-DD. AR only — the AP endpoint has no application date. */
+    application_date: z.string().optional()
+  });
+
+  export type CreditMemoApplication = z.infer<
+    typeof CreditMemoApplicationSchema
+  >;
+
+  /** One entry of a vendor credit's application set. No application date on this side. */
+  export const VendorCreditApplicationSchema = z.object({
+    bill_id: z.string(),
+    amount: MonetaryAmountSchema
+  });
+
+  export type VendorCreditApplication = z.infer<
+    typeof VendorCreditApplicationSchema
+  >;
 
   /**
    * Payment status union across BOTH sources: the list endpoint
@@ -367,6 +612,37 @@ export namespace Rillet {
   });
 
   export type BillPayment = z.infer<typeof BillPaymentSchema>;
+
+  /**
+   * One reimbursement payment — the employee payout.
+   * `POST /reimbursements/{id}/payments`, whose request body is the SAME
+   * three fields as a bill payment (`amount`, `date`, `account_code`, all
+   * required) and whose response is flat.
+   *
+   * VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/create-a-reimbursement-payment,
+   * 2026-09-23): response `{ id, status: CLEARED | UNCLEARED,
+   * reimbursement_id, amount, date, account_code }`. `status` is kept lenient
+   * (a bare string) for the same reason `BillPaymentSchema` does — only
+   * "FAILED" would reverse a recorded payment, and a vocabulary that grows
+   * must not fail the parse.
+   *
+   * This endpoint is what retired `UNSUPPORTED_REIMBURSEMENT_PAYMENT`: the
+   * parking existed only because Rillet published no such path.
+   */
+  export const ReimbursementPaymentSchema = z.object({
+    id: z.string(),
+    status: z.string().optional(),
+    reimbursement_id: z.string().optional(),
+    amount: z.union([MonetaryAmountSchema, z.string(), z.number()]).optional(),
+    currency: z.string().optional(),
+    date: z.string().optional(),
+    account_code: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type ReimbursementPayment = z.infer<typeof ReimbursementPaymentSchema>;
 }
 
 /** Server-owned fields every Rillet write payload omits. */
@@ -387,6 +663,44 @@ export type RilletInvoiceCreate = Omit<
   RilletTransactionWriteOmit
 >;
 export type RilletBillCreate = Omit<Rillet.Bill, RilletTransactionWriteOmit>;
+export type RilletChargeCreate = Omit<
+  Rillet.Charge,
+  RilletTransactionWriteOmit
+>;
+export type RilletReimbursementCreate = Omit<
+  Rillet.Reimbursement,
+  RilletTransactionWriteOmit
+>;
+export type RilletVendorCreditCreate = Omit<
+  Rillet.VendorCredit,
+  RilletTransactionWriteOmit
+>;
+export type RilletCreditMemoCreate = Omit<
+  Rillet.CreditMemo,
+  RilletTransactionWriteOmit
+>;
+
+/**
+ * Body of `POST /credit-memos/{id}/applications`.
+ *
+ * **FULL RECONCILE** — Rillet replaces the credit memo's ENTIRE application
+ * set with what this body carries, so an entry you omit is DELETED. Always
+ * send the complete desired set derived from `invoiceSettlement`; never a
+ * single additive entry.
+ */
+export type RilletCreditMemoApplicationsRequest = {
+  applications: Rillet.CreditMemoApplication[];
+};
+
+/**
+ * Body of `POST /vendor-credits/{id}/applications`. Entries are
+ * `{ bill_id, amount }` — this side has NO `application_date`. Carbon sends
+ * the complete set here too (one POST at create time), so the AR
+ * full-reconcile rule and this one are satisfied by the same call shape.
+ */
+export type RilletVendorCreditApplicationsRequest = {
+  applications: Rillet.VendorCreditApplication[];
+};
 
 /**
  * Create payload for a Rillet payment recorded against one document

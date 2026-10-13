@@ -1,9 +1,13 @@
-import { getLogger } from "@carbon/logger";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   fromColumn,
   MAX_LIST_ITEMS,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { getLogger } from "@carbon/logger";
 import { readPath, toOutputPaths, toOutputTypes } from "./outputs";
 import type { PieceOutputSchema } from "./types";
 

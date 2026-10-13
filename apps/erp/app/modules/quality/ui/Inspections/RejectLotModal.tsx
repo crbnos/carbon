@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -20,9 +25,8 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import type { IssueTypeListItem } from "~/modules/quality/types";
 
 export type FailedFeatureSummary = {
@@ -51,19 +55,19 @@ const RejectLotModal = ({
   onSubmit
 }: RejectLotModalProps) => {
   const { t } = useLingui();
-  const fetcher = useFetcher<{}>();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onSubmit();
+        submitted.current = false;
+      }
+    }
+  });
   const submitted = useRef(false);
   const [createNcr, setCreateNcr] = useState(true);
   const [issueTypeId, setIssueTypeId] = useState<string>(
     issueTypes[0]?.id ?? ""
   );
-
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onSubmit();
-      submitted.current = false;
-    }
-  }, [fetcher.state, onSubmit]);
 
   const hasIssueTypes = issueTypes.length > 0;
 
@@ -87,7 +91,7 @@ const RejectLotModal = ({
             {failedFeatureSummary && failedFeatureSummary.length > 0 && (
               <div className="w-full rounded-md border p-3">
                 <p className="mb-1 text-xs font-medium text-muted-foreground">
-                  <Trans>Failed features</Trans>
+                  <Trans>Failed characteristics</Trans>
                 </p>
                 <ul className="flex flex-col gap-0.5">
                   {failedFeatureSummary.map((feature) => (

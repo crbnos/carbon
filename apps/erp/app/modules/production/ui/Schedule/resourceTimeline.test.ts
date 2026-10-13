@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import type { ResourceTimelineReservation } from "./resourceTimeline";
 import { buildResourceTimeline } from "./resourceTimeline";
@@ -65,6 +69,44 @@ describe("buildResourceTimeline", () => {
     expect(child.data.message).toBe("J000009 · CNC Route");
     expect(child.data.offset).toBe(2 * HOUR);
     expect(child.data.duration).toBe(2 * HOUR);
+  });
+
+  it("titles the bar and detail by the part, not the operation description", () => {
+    const result = buildResourceTimeline({
+      reservations: [
+        reservation({
+          operationDescription: "3D Print — ESTIMATED: Inspect camera fit",
+          itemReadableId: "PART-0042",
+          itemName: "Camera Housing",
+          itemThumbnailPath: "_templates/aerospace_satellite/part-0042.svg",
+          itemType: "Part"
+        })
+      ]
+    });
+
+    const bar = result.events.find((e) => e.id === "res-1")!;
+    // The row reads "{job} · {part}" — the description no longer titles it.
+    expect(bar.data.message).toBe("J000001 · PART-0042");
+
+    const detail = result.detailsById["res-1"];
+    expect(detail.title).toBe("J000001 · PART-0042");
+    // The panel carries the part + thumbnail, and keeps the description for context.
+    expect(detail.itemReadableId).toBe("PART-0042");
+    expect(detail.itemName).toBe("Camera Housing");
+    expect(detail.thumbnailPath).toBe(
+      "_templates/aerospace_satellite/part-0042.svg"
+    );
+    expect(detail.operationDescription).toBe(
+      "3D Print — ESTIMATED: Inspect camera fit"
+    );
+  });
+
+  it("falls back to the operation description when the part is unknown", () => {
+    const result = buildResourceTimeline({
+      reservations: [reservation({ operationDescription: "Deburr" })]
+    });
+    const bar = result.events.find((e) => e.id === "res-1")!;
+    expect(bar.data.message).toBe("J000001 · Deburr");
   });
 
   it("interleaves reservations and maintenance by start within a lane", () => {

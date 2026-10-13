@@ -1,9 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import { ValidatedForm } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
-import { Button, HStack, LabelWithHelp } from "@carbon/react";
+import {
+  Button,
+  Heading,
+  HStack,
+  LabelWithHelp,
+  useCloseRoute
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Select, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -30,8 +39,8 @@ const FiscalYearSettingsForm = ({
 }: FiscalYearSettingsFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const isDisabled =
     !permissions.can("update", "accounting") || !permissions.is("employee");
@@ -65,11 +74,11 @@ const FiscalYearSettingsForm = ({
       className="w-full"
     >
       <div className="rounded-lg border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border p-6">
+        <div className="flex items-center justify-between border-b border-border p-6 max-md:flex-col max-md:items-start max-md:gap-3 max-md:p-4">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">
+            <Heading as="h1" size="h3">
               <Trans>Fiscal Year Settings</Trans>
-            </h1>
+            </Heading>
             <p className="text-sm text-muted-foreground">
               <Trans>
                 Configure the start months for your fiscal and tax years
@@ -85,13 +94,13 @@ const FiscalYearSettingsForm = ({
             </Button>
           </HStack>
         </div>
-        <div className="flex flex-col gap-3 p-6">
+        <div className="flex flex-col gap-3 p-6 max-md:gap-5 max-md:p-4">
           {fields.map((field) => (
             <div
               key={field.name}
-              className="group rounded-lg border border-border p-4 transition-all hover:border-muted-foreground/30"
+              className="group rounded-lg border border-border p-4 transition-colors hover:border-muted-foreground/30 max-md:border-0 max-md:p-0"
             >
-              <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start justify-between gap-4 max-md:flex-col max-md:items-stretch max-md:gap-2">
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-medium text-foreground mb-1">
                     <LabelWithHelp variant="inline" termId={field.termId}>
@@ -110,7 +119,7 @@ const FiscalYearSettingsForm = ({
                     </p>
                   )}
                 </div>
-                <div className="flex-shrink-0 w-64">
+                <div className="flex-shrink-0 w-64 max-md:w-full">
                   <Select
                     name={field.name}
                     options={months.map((month) => ({

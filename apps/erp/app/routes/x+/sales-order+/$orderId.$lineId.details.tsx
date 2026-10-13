@@ -1,26 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { Card, CardHeader, CardTitle } from "@carbon/react";
+import { Card, CardHeader, CardTitle, RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import { getItemReplenishment } from "~/modules/items";
 import { getJobsBySalesOrderLine } from "~/modules/production";
 import type {
   Opportunity,
+  PriceTraceStep,
   SalesOrder,
   SalesOrderLineType
 } from "~/modules/sales";
@@ -33,6 +40,7 @@ import {
   salesOrderLineValidator,
   upsertSalesOrderLine
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -45,6 +53,8 @@ import { SalesOrderLineShipments } from "~/modules/sales/ui/SalesOrder/SalesOrde
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "sales-order-line-details");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -71,6 +81,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the order in the URL.
+  if (line.data.companyId !== companyId || line.data.salesOrderId !== orderId) {
+    logger.error("Sales order line not found for company", {
+      companyId,
+      orderId,
+      lineId
+    });
+    throw notFound("Sales order line not found");
+  }
+
   const itemId = line.data.itemId;
 
   return {
@@ -80,8 +101,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         ? getItemReplenishment(serviceRole, itemId, companyId)
         : Promise.resolve({ data: null }),
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
-    jobs: jobs?.data ?? [],
-    shipments: shipments?.data ?? []
+    jobs: (jobs?.data ?? []).filter((job) => job.companyId === companyId),
+    shipments: (shipments?.data ?? []).filter(
+      (shipment) => shipment.companyId === companyId
+    )
   };
 }
 
@@ -103,7 +126,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "sales"
   });
 
@@ -131,6 +154,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
+  // Sales-rule enforcement — only for lines that reference an item (Comment
+  // and Fixed Asset lines carry no itemId). Blocked submissions return
+  // violations for the form's violation modal; acknowledged warns pass
+  // through on re-submit.
+  let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
+  let acknowledgedRuleNames: Record<string, string> = {};
+  if (d.itemId) {
+    const acknowledged = formData.get("acknowledged") === "true";
+    const serviceRole = getCarbonServiceRole();
+    // Drop shipments deliver to the drop-ship location, not the header's —
+    // evaluating the header alone would clear an order that ships elsewhere.
+    const shipTo = await resolveSalesOrderShipTo(
+      serviceRole,
+      orderId,
+      companyId
+    );
+    const { violations, ruleNames } = await evaluateSalesRuleLines({
+      client: serviceRole,
+      companyId,
+      userId,
+      surface: "salesOrderLine",
+      lines: [{ lineId, itemId: d.itemId, quantity: d.saleQuantity ?? 1 }],
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0) {
+      if (isBlocked(deduped, acknowledged)) {
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesOrder",
+          documentId: orderId,
+          documentLineId: lineId,
+          itemId: d.itemId ?? null,
+          outcome: "blocked",
+          violations: deduped,
+          ruleNames
+        });
+        return { error: null, data: null, violations: deduped, ruleNames };
+      }
+      acknowledgedViolations = deduped;
+      acknowledgedRuleNames = ruleNames;
+    }
+  }
+
   const updateSalesOrderLine = await upsertSalesOrderLine(client, {
     id: lineId,
     ...d,
@@ -146,6 +215,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(updateSalesOrderLine.error, "Failed to update sales order line")
       )
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (acknowledgedViolations.length > 0) {
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: orderId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: acknowledgedViolations,
+      ruleNames: acknowledgedRuleNames
+    });
   }
 
   throw redirect(path.to.salesOrderLine(orderId, lineId));
@@ -184,6 +269,8 @@ export default function EditSalesOrderLineRoute() {
     methodType: line?.methodType ?? "Make to Order",
     nonTaxableAddOnCost: line?.nonTaxableAddOnCost ?? 0,
     promisedDate: line?.promisedDate ?? undefined,
+    serviceStartDate: line?.serviceStartDate ?? "",
+    serviceEndDate: line?.serviceEndDate ?? "",
     saleQuantity: line?.saleQuantity ?? 1,
     setupPrice: line?.setupPrice ?? 0,
     storageUnitId: line?.storageUnitId ?? "",
@@ -191,6 +278,9 @@ export default function EditSalesOrderLineRoute() {
     unitPrice: line?.unitPrice ?? 0,
     taxPercent: line?.taxPercent ?? 0,
     shippingCost: line?.shippingCost ?? 0,
+    configuration:
+      (line?.configuration as Record<string, unknown> | null) ?? null,
+    priceTrace: (line?.priceTrace as PriceTraceStep[] | null) ?? null,
     assetReadableId: (line as any)?.assetReadableId ?? undefined,
     assetName: (line as any)?.assetName ?? undefined,
     ...getCustomFields(line?.customFields)
@@ -200,7 +290,7 @@ export default function EditSalesOrderLineRoute() {
     <Fragment key={lineId}>
       <SalesOrderLineForm
         key={initialValues.id}
-        // @ts-ignore
+        // @ts-expect-error
         initialValues={initialValues}
       />
 
@@ -284,7 +374,7 @@ export default function EditSalesOrderLineRoute() {
         viewerClassName="aspect-square min-h-[420px] max-h-[70vh]"
       />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

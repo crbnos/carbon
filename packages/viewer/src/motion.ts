@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   AnimationClip,
   Matrix4,
@@ -46,7 +50,18 @@ export type MotionKeyframeOptions = {
 export type StepClipOptions = MotionKeyframeOptions & {
   /** Seconds to hold the seated pose at the end of each loop. */
   holdSeconds?: number;
+  /**
+   * A step that carries a finished sub-assembly in: prepend a straight glide
+   * from seat + `offset` (beside the build) to where the insertion starts.
+   * Never clamped like the insertion travel is — it starts far by design.
+   * With `nodeIds`, only those nodes glide; the step's other parts wait at
+   * their insertion start until the glide ends.
+   */
+  glide?: { offset: Vec3; seconds: number; nodeIds?: string[] };
 };
+
+/** Seconds a carried-in sub-assembly takes to glide to its insertion start. */
+export const CARRY_IN_GLIDE_SECONDS = 1.2;
 
 const INSERTION_SPEED_MM_PER_S = 60;
 const MIN_DURATION_S = 1;
@@ -60,19 +75,32 @@ export const DEFAULT_WAYPOINT_DISTANCE = 50;
 const NONE_STEP_SECONDS = 2;
 
 /**
- * Seconds a step occupies on the continuous timeline: the explicit
- * `durationSeconds` override when set, otherwise the natural animation
- * length (motion duration + seated hold), or a fixed slot for process-only
- * steps.
+ * How a step spends its slot on the continuous timeline (`total`): a
+ * carried-in sub-assembly's glide, the insertion, then the seated hold. The
+ * slot is the explicit `durationSeconds` when set, otherwise the natural length
+ * (a fixed slot for process-only steps). An authored duration shorter than the
+ * animation speeds all three up to fit, so the step never ends mid-travel and
+ * snaps its parts to their seat.
  */
-export function stepTimelineSeconds(
-  step: Pick<AssemblyStep, "motion" | "durationSeconds">
-): number {
-  if (step.durationSeconds && step.durationSeconds > 0) {
-    return step.durationSeconds;
-  }
-  if (step.motion.type === "none") return NONE_STEP_SECONDS;
-  return motionDuration(step.motion) + DEFAULT_HOLD_SECONDS;
+export function stepClipTiming(
+  step: Pick<AssemblyStep, "motion" | "durationSeconds">,
+  glideSeconds = 0
+): { total: number; glide: number; motion: number; hold: number } {
+  const motion = step.motion.type === "none" ? 0 : motionDuration(step.motion);
+  const natural = glideSeconds + motion + DEFAULT_HOLD_SECONDS;
+  const total =
+    step.durationSeconds && step.durationSeconds > 0
+      ? step.durationSeconds
+      : step.motion.type === "none"
+        ? glideSeconds + NONE_STEP_SECONDS
+        : natural;
+  const fit = Math.min(1, total / natural);
+  return {
+    total,
+    glide: glideSeconds * fit,
+    motion: motion * fit,
+    hold: DEFAULT_HOLD_SECONDS * fit
+  };
 }
 
 /** Total travel distance (mm) implied by a motion. */
@@ -460,20 +488,33 @@ export function motionToKeyframes(
  * uuid so duplicate node names cannot collide. World-space keyframes are
  * converted into each node's parent-local space, so nested assembly
  * transforms are respected. Nodes are assumed to currently sit at their
- * final (seated) pose.
+ * final (seated) pose — or at their staging spot for a step built aside, which
+ * is the pose the insertion then ends at.
  *
- * Returns `null` for `none` motions or when no component resolves to a node.
+ * With `glide`, every node first glides from seat + offset to its insertion
+ * start (a `none` motion glides straight to the seat).
+ *
+ * Returns `null` for `none` motions without a glide, or when no component
+ * resolves to a node.
  */
 export function buildStepClip(
   step: AssemblyStep,
   nodesById: Map<string, Object3D>,
   options: StepClipOptions = {}
 ): AnimationClip | null {
-  if (step.motion.type === "none" || step.componentNodeIds.length === 0) {
+  const { glide } = options;
+  if (
+    (step.motion.type === "none" && !glide) ||
+    step.componentNodeIds.length === 0
+  ) {
     return null;
   }
 
-  const duration = options.duration ?? motionDuration(step.motion);
+  const duration =
+    step.motion.type === "none"
+      ? 0
+      : (options.duration ?? motionDuration(step.motion));
+  const glideSeconds = glide ? glide.seconds : 0;
   const holdSeconds = options.holdSeconds ?? DEFAULT_HOLD_SECONDS;
   const tracks: (VectorKeyframeTrack | QuaternionKeyframeTrack)[] = [];
 
@@ -487,22 +528,39 @@ export function buildStepClip(
     const worldScale = new Vector3();
     node.matrixWorld.decompose(worldPosition, worldQuaternion, worldScale);
 
-    const rawKeyframes = motionToKeyframes(
-      step.motion,
-      {
-        position: worldPosition.toArray() as Vec3,
-        quaternion: toQuat(worldQuaternion)
-      },
-      { ...options, duration }
-    );
+    const seatedPose: Pose = {
+      position: worldPosition.toArray() as Vec3,
+      quaternion: toQuat(worldQuaternion)
+    };
+    // A `none` motion only happens with a glide: the insertion is the seat itself.
+    const rawKeyframes =
+      step.motion.type === "none"
+        ? {
+            times: [0],
+            positions: [...seatedPose.position],
+            quaternions: [...seatedPose.quaternion]
+          }
+        : motionToKeyframes(step.motion, seatedPose, {
+            ...options,
+            duration
+          });
     if (!rawKeyframes) continue;
     // Ease the straight insertion approaches (accelerate off the start, settle
     // into the seat). Helix threads at a constant rate (mechanically correct)
     // and paths carry their own timing, so leave those raw.
-    const keyframes =
+    const insertion =
       step.motion.type === "linear" || step.motion.type === "L"
         ? resampleEased(rawKeyframes)
         : rawKeyframes;
+    const glides = glide && (!glide.nodeIds || glide.nodeIds.includes(nodeId));
+    const keyframes = glide
+      ? prependGlide(
+          insertion,
+          glides ? glide.offset : null,
+          seatedPose,
+          glide.seconds
+        )
+      : insertion;
 
     const parentWorldInverse = node.parent
       ? node.parent.matrixWorld.clone().invert()
@@ -554,7 +612,50 @@ export function buildStepClip(
   }
 
   if (tracks.length === 0) return null;
-  return new AnimationClip(`step:${step.id}`, duration + holdSeconds, tracks);
+  return new AnimationClip(
+    `step:${step.id}`,
+    glideSeconds + duration + holdSeconds,
+    tracks
+  );
+}
+
+/**
+ * Prepends an eased straight glide from seat + `offset` to the insertion's
+ * first pose, and shifts the insertion to start when the glide ends. The part
+ * holds the insertion's starting orientation while it glides (the carry is a
+ * pure translation), so a helix that starts unscrewed doesn't snap. A `null`
+ * offset holds the part at its insertion start for the glide's duration.
+ */
+function prependGlide(
+  insertion: MotionKeyframes,
+  offset: Vec3 | null,
+  seatedPose: Pose,
+  seconds: number
+): MotionKeyframes {
+  const end = new Vector3().fromArray(insertion.positions, 0);
+  const start = offset
+    ? toVector3(seatedPose.position).add(toVector3(offset))
+    : end.clone();
+  const quaternion = new Quaternion().fromArray(insertion.quaternions, 0);
+
+  const times: number[] = [];
+  const positions: number[] = [];
+  const quaternions: number[] = [];
+  const point = new Vector3();
+  for (let j = 0; j <= EASE_SAMPLES; j++) {
+    const u = j / EASE_SAMPLES;
+    point.copy(start).lerp(end, easeInOutCubic(u));
+    times.push(u * seconds);
+    positions.push(point.x, point.y, point.z);
+    quaternions.push(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+  }
+  // The insertion's first frame is where the glide ended — skip the duplicate.
+  for (let i = 1; i < insertion.times.length; i++) {
+    times.push(seconds + (insertion.times[i] ?? 0));
+    positions.push(...insertion.positions.slice(i * 3, i * 3 + 3));
+    quaternions.push(...insertion.quaternions.slice(i * 4, i * 4 + 4));
+  }
+  return { times, positions, quaternions };
 }
 
 /**

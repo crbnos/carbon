@@ -1,4 +1,4 @@
-name: Check Lint and Types
+name: Checks
 
 on:
   pull_request:
@@ -32,6 +32,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -57,10 +68,26 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm exec biome check
+
+      - name: Conformance checks
+        run: |
+          pnpm --filter @carbon/config build
+          pnpm --filter @carbon/checks exec vitest run src/run.test.ts
 
   typecheck:
     name: Typecheck
@@ -83,6 +110,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
@@ -112,6 +150,17 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
@@ -138,6 +187,17 @@ jobs:
             docs/node_modules
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
+
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
 
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
@@ -166,10 +226,47 @@ jobs:
             packages/*/node_modules
           key: node-modules-${{ hashFiles('pnpm-lock.yaml') }}
 
+      # Turborepo's local cache, carried between runs: the postinstall
+      # (fonts), the MCP manifest, typecheck and test restore instead of re-running
+      # for packages whose inputs did not change. Keyed per job so each job
+      # saves its own tasks; it only ever grows, so bump the prefix to reset it.
+      - uses: actions/cache@v4
+        with:
+          path: .turbo/cache
+          key: turbo-v1-${{ github.job }}-${{ github.sha }}
+          restore-keys: |
+            turbo-v1-${{ github.job }}-
+
       # Always install so the postinstall generates the gitignored font data.
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm test
+
+  edge-functions:
+    name: Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # This job runs PR-authored code. actions/checkout otherwise leaves
+          # GITHUB_TOKEN in .git/config, where a test could read and exfiltrate
+          # it. Nothing here needs to talk to git after checkout.
+          persist-credentials: false
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      # Each function is self-contained: it imports nothing from outside its
+      # own directory, so this needs no permissions.
+      - name: Self-contained
+        working-directory: packages/database/supabase/functions
+        run: |
+          if grep -rnE "from ['\"]\.\./" --include='*.ts' .; then
+            echo "Edge functions must not import from outside their own directory" >&2
+            exit 1
+          fi
+      - name: Check
+        working-directory: packages/database/supabase/functions
+        run: deno check --no-lock */index.ts
 
   audit:
     name: Audit

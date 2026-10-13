@@ -1,15 +1,21 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ProductLabelPDF } from "@carbon/documents/pdf";
-import { labelSizes } from "@carbon/utils";
+import { labelSizes, redirect } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   getCompany,
   getCompanySettings,
   getDocumentTemplateConfig
 } from "~/services/inventory.service";
-import { resolveLabelLogo } from "~/services/labelLogo.server";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/services/labelLogo.server";
 import { getTrackedEntity } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -73,7 +79,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   const stream = await renderToStream(
     <ProductLabelPDF

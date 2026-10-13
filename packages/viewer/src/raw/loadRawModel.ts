@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // In-browser raw-model loading for the WASM fallback tier: turns the user's
 // original upload (GLB/glTF/STL directly; STEP/IGES/BREP via the occt-import-js
 // WASM tessellator) into a THREE Object3D for the existing ModelCanvas. Lives in

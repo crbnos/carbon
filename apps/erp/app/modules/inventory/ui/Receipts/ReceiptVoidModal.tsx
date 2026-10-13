@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertDescription,
@@ -7,16 +12,15 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
   ModalTitle
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import { useFetcher, useNavigation, useParams } from "react-router";
+import { useNavigation, useParams } from "react-router";
 import { path } from "~/utils/path";
 
 const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
@@ -24,15 +28,14 @@ const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
   if (!receiptId) throw new Error("receiptId not found");
 
   const navigation = useNavigation();
-  const fetcher = useFetcher<{}>();
-  const submitted = useRef(false);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (fetcher.state === "idle" && submitted.current) {
-      onClose();
+  const fetcher = useAction<{}>({
+    onSettled: () => {
+      if (submitted.current) {
+        onClose();
+      }
     }
-  }, [fetcher.state]);
+  });
+  const submitted = useRef(false);
 
   return (
     <Modal
@@ -47,14 +50,14 @@ const ReceiptVoidModal = ({ onClose }: { onClose: () => void }) => {
           <ModalTitle>
             <Trans>Void Receipt</Trans>
           </ModalTitle>
-          <ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-muted-foreground mb-4">
             <Trans>
               Are you sure you want to void this receipt? This action will
               reverse all inventory transactions and cannot be undone.
             </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
+          </p>
           <Alert variant="destructive">
             <LuTriangleAlert className="h-4 w-4" />
             <AlertTitle>

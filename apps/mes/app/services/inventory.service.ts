@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type {
   DocumentTemplate,
   DocumentTemplateType
 } from "@carbon/documents/template";
 import { toDocumentTemplate } from "@carbon/documents/template";
+import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -56,6 +62,7 @@ export async function getBatchNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client
@@ -132,6 +139,7 @@ export async function getSerialNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client
@@ -350,9 +358,17 @@ export async function getSuggestedAllocationForMaterial(
   return greedyFillAllocation(ordered, args.quantity);
 }
 
+export type JobMaterialPickedItem = {
+  itemId: string;
+  itemReadableId: string;
+  quantityPicked: number;
+  quantityToPick: number;
+};
+
 export type JobMaterialPickedQuantity = {
   quantityPicked: number;
   quantityToPick: number;
+  pickedByItem: JobMaterialPickedItem[];
 };
 
 /**
@@ -375,7 +391,7 @@ export async function getPickedQuantitiesByJobMaterial(
   const { data, error } = await client
     .from("pickingListLine")
     .select(
-      "jobMaterialId, quantityToPick, quantityPicked, quantityReturned, pickingList!inner(status)"
+      "jobMaterialId, itemId, quantityToPick, quantityPicked, quantityReturned, pickingList!inner(status), item(readableIdWithRevision)"
     )
     .in("jobMaterialId", jobMaterialIds)
     .neq("status", "Cancelled")
@@ -387,16 +403,33 @@ export async function getPickedQuantitiesByJobMaterial(
     if (!line.jobMaterialId) continue;
     const entry = (picked[line.jobMaterialId] ??= {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     });
     // Net of returns: quantityPicked is gross (returns book quantityReturned
     // instead of decrementing it), and consumers of this map reason about what
     // is still staged at lineside.
-    entry.quantityPicked += Math.max(
+    const quantityPicked = Math.max(
       0,
       Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
     );
-    entry.quantityToPick += Number(line.quantityToPick ?? 0);
+    const quantityToPick = Number(line.quantityToPick ?? 0);
+    entry.quantityPicked += quantityPicked;
+    entry.quantityToPick += quantityToPick;
+
+    if (!line.itemId) continue;
+    let byItem = entry.pickedByItem.find((p) => p.itemId === line.itemId);
+    if (!byItem) {
+      byItem = {
+        itemId: line.itemId,
+        itemReadableId: line.item?.readableIdWithRevision ?? line.itemId,
+        quantityPicked: 0,
+        quantityToPick: 0
+      };
+      entry.pickedByItem.push(byItem);
+    }
+    byItem.quantityPicked += quantityPicked;
+    byItem.quantityToPick += quantityToPick;
   }
 
   return picked;
@@ -462,12 +495,13 @@ export async function getPickedTrackedEntitiesForMaterial(
   return [...byEntity.values()];
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the same
-// unified write path the ERP uses. The edge function books the item ledger,
-// cost layers, and (when companySettings.accountingEnabled) the GL journal in
+// Thin wrapper over the post-inventory-adjustment operation — the same
+// unified write path the ERP uses. It books the item ledger, cost layers, and
+// the GL journal (Provisional before the accounting cutover, Posted after) in
 // one transaction, and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   inventoryAdjustment: z.infer<typeof inventoryAdjustmentValidator> & {
     companyId: string;
     createdBy: string;
@@ -476,34 +510,22 @@ export async function insertManualInventoryAdjustment(
   const { companyId, createdBy, entryType, ...adjustment } =
     inventoryAdjustment;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("post-inventory-adjustment", {
-    body: {
+  const result = await serverFns
+    .as({ client, db, companyId, userId: createdBy })
+    .invoke("post-inventory-adjustment", {
       ...adjustment,
-      adjustmentType: entryType,
-      companyId,
-      userId: createdBy
-    }
-  });
+      adjustmentType: entryType
+    });
 
   if (result.error) {
-    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError with the
-    // body on error.context — pull the real message out so the route's string
-    // match on "Insufficient quantity..." keeps working (same pattern as
-    // x+/issue-tracked-entity.tsx).
-    let message = "Failed to create manual inventory adjustment";
-    const ctx = (result.error as { context?: Response })?.context;
-    if (ctx && typeof ctx.clone === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body.message === "string") message = body.message;
-      } catch {
-        // body wasn't JSON — keep the fallback
+    // The route string-matches "Insufficient quantity..." on this message.
+    return {
+      data: null,
+      error: {
+        message:
+          result.error.message || "Failed to create manual inventory adjustment"
       }
-    }
-    return { data: null, error: { message } };
+    };
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };

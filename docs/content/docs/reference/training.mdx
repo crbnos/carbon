@@ -3,13 +3,13 @@ title: Training
 description: Training programs, quiz questions, group assignments, per-period completion tracking, and the weekly reminder digest.
 ---
 
-**Training** is where you build the courses your team has to complete, assign them to groups of employees, and track who has finished. A training is a named program with rich content and an optional quiz. You assign it to employee groups, and Carbon tracks completion per employee for the current period, chases the stragglers with a weekly email, and lets a manager mark someone complete by hand. It lives in the [resources](/docs/reference/work-centers) area and is governed by the `resources` permission.
+**Training** manages required courses, employee-group assignments, and completion records. A training program contains rich content and an optional quiz. Carbon tracks completion for each employee and period, sends weekly reminders for outstanding assignments, and allows managers to record manual completion. Training belongs to the [resources](/docs/reference/work-centers) area and uses the `resources` permission.
 
-A quick example: you create a "Lockout/Tagout" training, set its type to **"Mandatory"** and frequency to **"Annual"**, write the material, add a few quiz questions, then assign it to the "Machinists" group. Every machinist now shows as **"Pending"** for the current year until they complete it — and every Sunday night anyone still outstanding gets a reminder.
+For example, create a "Lockout/Tagout" training with type **"Mandatory"** and frequency **"Annual"**, then assign it to the "Machinists" group. Each group member remains **"Pending"** for the current year until completion and receives a Sunday reminder while outstanding.
 
 ## The training catalog
 
-Each training is one row in the `training` table (`packages/database/supabase/migrations/20251205021915_training.sql:18`). You create one from the training list with just a **Name** — the create form is deliberately minimal (`apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:76`). Everything else is edited afterward from the training's **Properties** panel (`apps/erp/app/modules/resources/ui/Training/TrainingProperties.tsx`), which saves each field on change through a bulk-update action.
+Each training is a row in the `training` table (`packages/database/supabase/migrations/20251205021915_training.sql:18`). The create form requires only a **Name** (`apps/erp/app/modules/resources/ui/Training/TrainingForm.tsx:76`). Configure the remaining fields in the **Properties** panel (`apps/erp/app/modules/resources/ui/Training/TrainingProperties.tsx`), which saves each change through a bulk-update action.
 
 <FieldTable>
 <Field name="name" required>The training's title.</Field>
@@ -24,7 +24,7 @@ Each training is one row in the `training` table (`packages/database/supabase/mi
 
 The status enum is a simple linear lifecycle on the training record — not to be confused with an employee's *completion* status further down.
 
-<StatusFlow>
+<StatusFlow entity="trainingCourse">
 <Status name="Draft">Being authored. Not yet meant for assignment.</Status>
 <Status name="Active" accent>Published and in use. Assignments and reminders operate against active trainings.</Status>
 <Status name="Archived" terminal>Retired. Kept for history, no longer assigned.</Status>
@@ -46,7 +46,7 @@ Questions are authored on the training detail page and can be reordered. The sto
 
 ## Assigning training to groups
 
-You don't assign a training to individuals one at a time — you assign it to **groups**. A `trainingAssignment` (`20251205021915_training.sql:93`) links one `trainingId` to an array of `groupIds`. Every employee who belongs to one of those groups is on the hook for the training.
+Trainings are assigned to **groups**, not individual employees. A `trainingAssignment` (`20251205021915_training.sql:93`) links one `trainingId` to an array of `groupIds`. Every employee in those groups receives the assignment.
 
 <Callout type="note" title="Assignments target groups, then expand to people">
 The assignment stores `groupIds`, not employee ids. Carbon expands the groups to their members when it computes who owes the training, so adding a person to a group automatically enrolls them — you don't re-assign.
@@ -68,7 +68,7 @@ The **period** is the heart of the recurring logic (`20251206000000_training_ass
 
 An employee's status is *computed*, not stored — Carbon evaluates it from whether a completion exists for the current period and when the employee started. There are four possible values (`apps/erp/app/modules/resources/resources.models.ts:318`):
 
-<StatusFlow>
+<StatusFlow entity="trainingAssignment">
 <Status name="Pending">Assigned, in the current period, not yet completed. The default state.</Status>
 <Status name="Completed" accent>A completion row exists for this employee and period.</Status>
 <Status name="Overdue" branch>A recurring period has already ended and the employee never completed it.</Status>
@@ -83,7 +83,7 @@ A manager marks completion from the assignment's Status tab; the action posts to
 
 ## The weekly reminder
 
-Every Sunday at 21:00 UTC, a scheduled job sweeps outstanding training and emails the stragglers (`packages/jobs/src/inngest/functions/scheduled/weekly.ts`, cron `0 21 * * 0`). For each company it pulls the assignment status, keeps only the employees whose status is a reminder-worthy one (**"Pending"** or **"Overdue"**), groups them by person, and sends one digest per employee.
+Every Sunday at 21:00 UTC, a scheduled job finds outstanding training (`packages/jobs/src/inngest/functions/scheduled/weekly.ts`, cron `0 21 * * 0`). It selects **"Pending"** and **"Overdue"** assignments and sends one digest to each employee.
 
 The notification is the `TrainingReminder` event (`training-reminder`) under the `Training` topic. Its email heading is **"Training reminder"** and the call-to-action button reads **"View training"** (`packages/notifications/src/index.ts`). It's the only *recurring* notification event in Carbon — so it needs a guard against nagging forever.
 
@@ -91,7 +91,7 @@ The notification is the `TrainingReminder` event (`training-reminder`) under the
 A recurring reminder is capped: once an outstanding training has had five successful reminder emails delivered for the current period, Carbon stops re-sending it. For quarterly and annual trainings the count is keyed to the period, so the cap resets when a new period begins. If a reminder "stopped coming," this cap is usually why.
 </Callout>
 
-Two related one-shot events fire when work is handed to people rather than chased: **"Training assigned to you"** (`training-assignment`) and **"New training available"** (`resource-training-assignment`). See [notifications](/docs/reference/notifications) for how these are delivered and how a person tunes them.
+Two one-time events announce assignments: **"Training assigned to you"** (`training-assignment`) and **"New training available"** (`resource-training-assignment`). See [notifications](/docs/reference/notifications) for delivery and preferences.
 
 ## Abilities are a separate system
 

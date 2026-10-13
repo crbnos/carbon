@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -54,6 +59,8 @@ import {
   insertTrainingCompletion
 } from "~/modules/resources";
 import type { TrainingQuestion } from "~/modules/resources/types";
+
+const logger = getLogger("erp", "share", "training");
 
 const PASSING_THRESHOLD = 0.8;
 
@@ -164,14 +171,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const answersJson = formData.get("answers") as string;
-  const questionsJson = formData.get("questions") as string;
 
-  if (!answersJson || !questionsJson) {
+  if (!answersJson) {
     return data({ error: "Missing answers or questions" }, { status: 400 });
   }
 
   const userAnswers = JSON.parse(answersJson) as Record<string, UserAnswer>;
-  const questions = JSON.parse(questionsJson) as TrainingQuestion[];
+
+  // Grade against the training's stored questions, never the posted
+  // `questions` field — that carries its own answer key, so trusting it let
+  // anyone pass (and be granted the training's ability) with any answers.
+  const serviceRole = getCarbonServiceRole();
+  const assignment = await getAuthorizedAssignment(serviceRole, id, userId);
+
+  const training = assignment.training;
+  if (!training || Array.isArray(training)) {
+    logger.error("Training not found for assignment", {
+      companyId: assignment.companyId,
+      trainingAssignmentId: id
+    });
+    return data({ error: "Training not found" }, { status: 404 });
+  }
+
+  const questions = (training.trainingQuestion ?? []) as TrainingQuestion[];
 
   let correctAnswers = 0;
   const totalQuestions = questions.length;
@@ -247,14 +269,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const passed = score >= PASSING_THRESHOLD;
 
   if (passed) {
-    const serviceRole = getCarbonServiceRole();
-    const assignment = await getAuthorizedAssignment(serviceRole, id, userId);
-
-    const training = assignment.training;
-    if (!training || Array.isArray(training)) {
-      return data({ error: "Training not found" }, { status: 404 });
-    }
-
     const { data: period } = await serviceRole.rpc(
       "get_current_training_period",
       {
@@ -430,7 +444,7 @@ export default function TrainingWizard() {
                 <LuFlag />
               </div>
               <div className="flex flex-col">
-                <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+                <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
                   Training
                 </span>
                 <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -730,7 +744,7 @@ function QuestionStep({
   return (
     <VStack spacing={4} className="w-full">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-display font-bold">
+        <h3 className="text-lg font-display font-semibold">
           Question {questionIndex + 1} of {totalQuestions}
         </h3>
         <p className="text-base">{question.question}</p>
@@ -775,7 +789,7 @@ function ResultsView({
               {actionData.passed ? <LuCircleCheck /> : <LuCircleX />}
             </div>
             <div className="flex flex-col">
-              <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+              <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
                 Training Complete
               </span>
               <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -787,7 +801,7 @@ function ResultsView({
             <div className="flex flex-col items-center justify-center gap-2">
               <span
                 className={cn(
-                  "text-xl uppercase font-mono font-bold tracking-tight",
+                  "text-xl uppercase font-mono font-semibold tracking-tight",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >
@@ -795,7 +809,7 @@ function ResultsView({
               </span>
               <div
                 className={cn(
-                  "text-6xl font-mono font-bold",
+                  "text-6xl font-mono font-semibold",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >

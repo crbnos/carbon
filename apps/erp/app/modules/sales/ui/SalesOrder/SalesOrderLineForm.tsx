@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
@@ -34,7 +39,15 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import {
+  distinctItemText,
+  equals,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  round
+} from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -47,6 +60,11 @@ import {
 import { useParams } from "react-router";
 import type { z } from "zod";
 import { ItemLifecycleBadge, MethodIcon } from "~/components";
+import type { ConfiguratorValues } from "~/components/Configurator/ConfiguratorForm";
+import {
+  ItemConfigureButton,
+  useItemConfiguration
+} from "~/components/Configurator/ItemConfigurator";
 import {
   CustomFormFields,
   DatePicker,
@@ -81,7 +99,7 @@ import type {
   SalesOrder,
   SalesOrderLineType
 } from "../../types";
-import { PriceTracePopover } from "../Pricing/PriceTracePopover";
+import { PriceTraceModal } from "../Pricing/PriceTraceModal";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -105,6 +123,19 @@ const SalesOrderLineForm = ({
 
   if (!orderId) throw new Error("orderId not found");
 
+  // Sales-rule enforcement: submissions run through the violation hook's
+  // fetcher so a blocked response opens <rules.ViolationModal /> with an
+  // acknowledge-and-resubmit path for warns. Modal close happens on success
+  // (not on submit) so violations can surface first.
+  const rules = useRuleViolations({
+    action: initialValues.id
+      ? path.to.salesOrderLine(orderId, initialValues.id)
+      : path.to.newSalesOrderLine(orderId),
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
+
   const routeData = useRouteData<{
     salesOrder: SalesOrder;
   }>(path.to.salesOrder(orderId));
@@ -117,6 +148,16 @@ const SalesOrderLineForm = ({
   const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<SalesOrderLineType | "Item">(
+    "Item"
+  );
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
+  );
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
@@ -144,10 +185,15 @@ const SalesOrderLineForm = ({
     priceListId:
       (initialValues as { priceListId?: string | null }).priceListId ?? null,
     priceListName: null,
-    priceTrace:
-      (initialValues as { priceTrace?: PriceTraceStep[] | null }).priceTrace ??
-      null
+    priceTrace: initialValues.priceTrace ?? null
   });
+
+  const configurator = useItemConfiguration({
+    itemId: initialValues.itemId,
+    configuration: initialValues.configuration as ConfiguratorValues | null
+  });
+  const { configuration } = configurator;
+  const requiresConfiguration = configurator.parameters !== null;
 
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
@@ -228,13 +274,15 @@ const SalesOrderLineForm = ({
       });
   }, [pricingRuleId, carbon]);
 
-  const onTypeChange = (t: SalesOrderLineType) => {
-    // @ts-ignore
-    setLineType(t);
+  const onTypeChange = (t: SalesOrderLineType | "Item") => {
+    setItemFilter(t);
+    // "Item" is the "All Items" filter, always compatible with the selection.
+    if (t === "Item") return;
+    setLineType(t as typeof lineType);
     // Clear itemData only when the new filter excludes the currently selected
     // item — otherwise a stale itemId of the old type would post with the new
-    // salesOrderLineType. "Item" is the "All Items" filter, always compatible.
-    if (!itemData.itemId || t === ("Item" as SalesOrderLineType)) return;
+    // salesOrderLineType.
+    if (!itemData.itemId) return;
     const currentType = items.find((i) => i.id === itemData.itemId)?.type;
     if (currentType && currentType === t) return;
     setItemData({
@@ -251,11 +299,17 @@ const SalesOrderLineForm = ({
     });
   };
 
+  const isService = lineType === "Service";
+
   const currencyFormatter = useCurrencyFormatter();
   const percentFormatter = usePercentFormatter();
 
   const resolvePrice = useCallback(
-    async (itemId: string, quantity: number) => {
+    async (
+      itemId: string,
+      quantity: number,
+      lineConfiguration: Record<string, unknown> | null
+    ) => {
       const customerId = routeData?.salesOrder?.customerId;
       if (!customerId) return null;
 
@@ -263,7 +317,12 @@ const SalesOrderLineForm = ({
         const response = await fetch(path.to.api.salesResolvePrice, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customerId, itemId, quantity })
+          body: JSON.stringify({
+            customerId,
+            itemId,
+            quantity,
+            ...(lineConfiguration ? { configuration: lineConfiguration } : {})
+          })
         });
         if (response.ok) {
           const result = await response.json();
@@ -284,21 +343,24 @@ const SalesOrderLineForm = ({
     [routeData?.salesOrder?.customerId]
   );
 
+  const applyResolvedPrice = (
+    result: NonNullable<Awaited<ReturnType<typeof resolvePrice>>>
+  ) =>
+    setItemData((d) => ({
+      ...d,
+      unitPrice: result.finalPrice,
+      priceListId: result.priceListId,
+      priceListName: result.priceListName,
+      priceTrace: result.trace
+    }));
+
   const debouncedQuantityResolve = useDebounce(async (qty: number) => {
     if (!itemData.itemId) {
       setIsPriceResolving(false);
       return;
     }
-    const result = await resolvePrice(itemData.itemId, qty);
-    if (result) {
-      setItemData((d) => ({
-        ...d,
-        unitPrice: result.finalPrice,
-        priceListId: result.priceListId,
-        priceListName: result.priceListName,
-        priceTrace: result.trace
-      }));
-    }
+    const result = await resolvePrice(itemData.itemId, qty, configuration);
+    if (result) applyResolvedPrice(result);
     setIsPriceResolving(false);
   }, 400);
 
@@ -308,15 +370,25 @@ const SalesOrderLineForm = ({
     debouncedQuantityResolve(qty);
   };
 
+  // A new configuration changes the configuration prices.
+  const onConfigured = async (values: ConfiguratorValues) => {
+    if (!itemData.itemId) return;
+    setIsPriceResolving(true);
+    const result = await resolvePrice(itemData.itemId, saleQuantity, values);
+    if (result) applyResolvedPrice(result);
+    setIsPriceResolving(false);
+  };
+
   const onChange = async (itemId: string) => {
     if (!itemId) return;
     if (!carbon || !company.id) return;
     setIsPriceResolving(true);
+    configurator.changeItem(itemId);
     const [item, price] = await Promise.all([
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -342,18 +414,25 @@ const SalesOrderLineForm = ({
     let resolvedPrice = price.data?.unitSalePrice ?? 0;
     let priceListId: string | null = null;
 
-    const result = await resolvePrice(itemId, saleQuantity);
+    const result = await resolvePrice(itemId, saleQuantity, null);
     if (result) {
       resolvedPrice = result.finalPrice;
       priceListId = result.priceListId;
     }
 
+    if (item.data?.type) {
+      setLineType(item.data.type as typeof lineType);
+    }
     setItemData({
       itemId,
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
       unitPrice: resolvedPrice,
-      uom: item.data?.unitOfMeasureCode ?? "EA",
+      // A service is always sold in "EA"
+      uom:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? "EA"),
       storageUnitId: defaultStorageUnitId ?? "",
       modelUploadId: item.data?.modelUploadId ?? null,
       priceListId,
@@ -433,6 +512,7 @@ const SalesOrderLineForm = ({
           >
             <ModalCardContent size="xxlarge">
               <ValidatedForm
+                fetcher={rules.fetcher}
                 defaultValues={initialValues}
                 validator={salesOrderLineValidator}
                 method="post"
@@ -443,13 +523,10 @@ const SalesOrderLineForm = ({
                 }
                 className="w-full"
                 isDisabled={isEditing && isLocked}
-                onSubmit={() => {
-                  if (type === "modal") onClose?.();
-                }}
               >
                 <HStack
                   className={cn(
-                    "w-full justify-between items-start",
+                    "w-full justify-between items-start max-md:flex-col max-md:items-stretch max-md:space-x-0",
                     type === "modal" && "pr-16"
                   )}
                 >
@@ -484,11 +561,16 @@ const SalesOrderLineForm = ({
                     <ModalCardDescription>
                       {isEditing ? (
                         <div className="flex flex-col items-start gap-1">
-                          <span>
-                            {isFixedAsset
-                              ? initialValues.assetName || assetData.description
-                              : itemData?.description}
-                          </span>
+                          {isFixedAsset ? (
+                            <span>
+                              {initialValues.assetName || assetData.description}
+                            </span>
+                          ) : (
+                            distinctItemText(
+                              getItemReadableId(items, itemData?.itemId),
+                              itemData?.description
+                            ) && <span>{itemData?.description}</span>
+                          )}
                           <div className="flex items-center gap-2">
                             <Badge
                               variant="outline"
@@ -523,7 +605,7 @@ const SalesOrderLineForm = ({
                       )}
                     </ModalCardDescription>
                   </ModalCardHeader>
-                  <div className="flex-shrink-0 flex items-center gap-2">
+                  <div className="flex-shrink-0 flex items-center gap-2 max-md:min-w-0 max-md:overflow-x-auto max-md:scroll-fade-x max-md:px-4 max-md:pb-2 max-md:empty:hidden">
                     {!isEditing && (
                       <TabsList>
                         <TabsTrigger value="item">
@@ -561,23 +643,31 @@ const SalesOrderLineForm = ({
                       name="priceListId"
                       value={itemData?.priceListId ?? undefined}
                     />
+                    {/* Always posted: "null" clears a stored trace once the
+                        price is typed rather than resolved. */}
                     <Hidden
                       name="priceTrace"
-                      value={
-                        itemData?.priceTrace
-                          ? JSON.stringify(itemData.priceTrace)
-                          : undefined
-                      }
+                      value={JSON.stringify(itemData?.priceTrace ?? null)}
                     />
-                    <Hidden name="unitOfMeasureCode" value={itemData.uom} />
+                    <Hidden name="salesOrderLineType" value={lineType} />
+                    <Hidden
+                      name="unitOfMeasureCode"
+                      value={isService ? "EA" : itemData.uom}
+                    />
+                    <Hidden
+                      name="configuration"
+                      value={configuration ? JSON.stringify(configuration) : ""}
+                    />
                     <VStack>
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                         <Item
+                          autoFocus={!isEditing}
                           name="itemId"
-                          label={i18n._(itemTypeLabel(lineType as "Part"))}
-                          type={lineType as "Part"}
+                          label={i18n._(itemTypeLabel(itemFilter as "Part"))}
+                          type={itemFilter as "Part"}
                           validItemTypes={[...itemType]}
-                          typeFieldName="salesOrderLineType"
+                          // The line type is posted above; the filter is not it.
+                          typeFieldName="itemFilter"
                           value={itemData.itemId}
                           locationId={locationId}
                           onChange={(value) => {
@@ -651,7 +741,7 @@ const SalesOrderLineForm = ({
                                     <Trans>Unit Price</Trans>
                                   </LabelWithHelp>
                                 </span>
-                                <PriceTracePopover
+                                <PriceTraceModal
                                   trace={itemData.priceTrace}
                                   currencyCode={baseCurrency}
                                 />
@@ -664,18 +754,52 @@ const SalesOrderLineForm = ({
                                   currencyDecimals
                                 )}
                                 onChange={(value) =>
-                                  setItemData((d) => ({
-                                    ...d,
-                                    unitPrice: value
-                                  }))
+                                  setItemData((d) =>
+                                    // The field commits at the storage scale,
+                                    // so a resolved price with more digits
+                                    // comes back rounded on blur — not a typed
+                                    // price.
+                                    equals(round(value), round(d.unitPrice))
+                                      ? d
+                                      : {
+                                          ...d,
+                                          unitPrice: value,
+                                          // A typed price is not the resolved one.
+                                          priceTrace: null
+                                        }
+                                  )
                                 }
                               />
                             </div>
-                            <DatePicker
-                              name="promisedDate"
-                              label={t`Promised Date`}
-                              termId="sales-order-line-promised-date"
-                            />
+                            {/* A service is promised for the day it starts, so
+                                the server copies the start date across. */}
+                            {!isService && (
+                              <DatePicker
+                                name="promisedDate"
+                                label={t`Promised Date`}
+                                termId="sales-order-line-promised-date"
+                              />
+                            )}
+                            {isService && (
+                              <>
+                                <DatePicker
+                                  name="serviceStartDate"
+                                  label={t`Service start`}
+                                  onChange={(date) =>
+                                    setServiceStartDate(date ?? undefined)
+                                  }
+                                />
+                                <DatePicker
+                                  name="serviceEndDate"
+                                  label={t`Service end`}
+                                  minValue={
+                                    serviceStartDate
+                                      ? parseDate(serviceStartDate)
+                                      : undefined
+                                  }
+                                />
+                              </>
+                            )}
                             {[
                               "Part",
                               "Material",
@@ -1035,9 +1159,25 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
+                  {activeTab === "item" && (
+                    <ItemConfigureButton
+                      configurator={configurator}
+                      isDisabled={
+                        !isEditable ||
+                        (isEditing
+                          ? !permissions.can("update", "sales")
+                          : !permissions.can("create", "sales"))
+                      }
+                      onConfigured={onConfigured}
+                    />
+                  )}
                   <Submit
                     isDisabled={
                       isPriceResolving ||
+                      (!isEditing &&
+                        requiresConfiguration &&
+                        activeTab === "item" &&
+                        !configuration) ||
                       !isEditable ||
                       (isEditing
                         ? !permissions.can("update", "sales")
@@ -1052,6 +1192,7 @@ const SalesOrderLineForm = ({
           </ModalCard>
         </ModalCardProvider>
       </Tabs>
+      <rules.ViolationModal />
     </>
   );
 };

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -9,18 +13,23 @@ import {
   getAuditLogArchives,
   isAuditLogEnabled,
   syncAuditSubscriptions
-} from "@carbon/database/audit";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
+} from "@carbon/ee/audit.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
+import { Button, RecordOutlet, ScrollArea } from "@carbon/react";
+import { redirect, redirectExternal } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuHistory } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Link, Outlet, redirect, useLoaderData } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-audit-logs");
 
 export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
@@ -40,12 +49,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Table might not exist yet, that's ok
   }
 
+  const serviceRole = getCarbonServiceRole();
+
   // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1): audit logging is on
   // by default and cannot be turned off. Enable it on demand for any controlled
-  // company that isn't already capturing.
+  // company that isn't already capturing. This is mandatory, not the viewer's
+  // choice, so it runs as the service role: create_audit_log_table requires
+  // settings_update, and this loader only requires settings_view.
   if (CONTROLLED_ENVIRONMENT && !enabled) {
     try {
-      await enableAuditLog(client, companyId);
+      await enableAuditLog(serviceRole, companyId);
       enabled = true;
     } catch {
       // Best-effort; the write path degrades gracefully if it can't enable here.
@@ -65,7 +78,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let archives: Awaited<ReturnType<typeof getAuditLogArchives>> = [];
   if (enabled) {
     try {
-      const serviceRole = getCarbonServiceRole();
       archives = await getAuditLogArchives(serviceRole, companyId);
     } catch {
       // Archives table might not exist
@@ -89,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (actionType) {
     case "enable": {
-      await requirePlan({
+      await requireFeature({
         request,
         client,
         companyId,
@@ -153,10 +165,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
       try {
         const serviceRole = getCarbonServiceRole();
-        const downloadUrl = await getArchiveDownloadUrl(serviceRole, archiveId);
+        const downloadUrl = await getArchiveDownloadUrl(
+          serviceRole,
+          archiveId,
+          companyId
+        );
         // Redirect to the signed URL for download
-        return redirect(downloadUrl);
+        return redirectExternal(downloadUrl);
       } catch (err) {
+        logger.error("Failed to generate audit archive download URL", {
+          companyId,
+          archiveId,
+          error: err
+        });
         throw redirect(
           path.to.auditLog,
           await flash(request, error(err, "Failed to generate download URL"))
@@ -182,14 +203,11 @@ export default function AuditLogRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <div className="flex items-center justify-between w-full">
-          <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <div className="flex items-center justify-between w-full max-md:justify-end">
+          <SettingsPageHeading>
             <Trans>Audit Logs</Trans>
-          </Heading>
+          </SettingsPageHeading>
           {enabled && (
             <Button variant="secondary" leftIcon={<LuHistory />} asChild>
               <Link to={path.to.auditLogDetails}>
@@ -203,8 +221,8 @@ export default function AuditLogRoute() {
           archives={archives}
           controlled={controlled}
         />
-        {enabled && <Outlet />}
-      </VStack>
+        {enabled && <RecordOutlet />}
+      </SettingsPage>
     </ScrollArea>
   );
 }

@@ -1,17 +1,32 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteUnitOfMeasure, getUnitOfMeasure } from "~/modules/items";
+import {
+  deleteUnitOfMeasure,
+  getUnitOfMeasure,
+  getUnitOfMeasureUsage
+} from "~/modules/items";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, uomsQuery } from "~/utils/react-query";
+import { camelCaseToWords } from "~/utils/string";
+
+// "purchase order line (12), item (4)" — humanized table names, no lookup to maintain.
+function describeUsage(usage: { tableName: string; count: number }[]) {
+  return usage
+    .map(
+      (u) =>
+        `${camelCaseToWords(u.tableName).trim().toLowerCase()} (${u.count})`
+    )
+    .join(", ");
+}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -32,7 +47,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { unitOfMeasure: unitOfMeasure.data };
+  // Checked up front so the modal can explain before the DB guard has to.
+  const usage = await getUnitOfMeasureUsage(client, uomId);
+  if (usage.error) {
+    throw redirect(
+      `${path.to.uoms}?${getParams(request)}`,
+      await flash(
+        request,
+        error(usage.error, "Failed to check where the unit of measure is used")
+      )
+    );
+  }
+
+  return {
+    unitOfMeasure: unitOfMeasure.data,
+    usage: usage.data ?? []
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -48,13 +78,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Re-checked: the code may have been put on a document while the modal was open.
+  const usage = await getUnitOfMeasureUsage(client, uomId);
+  if (usage.error) {
+    throw redirect(
+      path.to.uoms,
+      await flash(
+        request,
+        error(usage.error, "Failed to check where the unit of measure is used")
+      )
+    );
+  }
+
+  const inUse = usage.data ?? [];
+  if (inUse.length > 0) {
+    throw redirect(
+      path.to.uoms,
+      await flash(
+        request,
+        error(
+          inUse,
+          `Cannot delete a unit of measure that is in use: ${describeUsage(inUse)}`
+        )
+      )
+    );
+  }
+
   const { error: deleteTypeError } = await deleteUnitOfMeasure(client, uomId);
   if (deleteTypeError) {
     throw redirect(
       path.to.uoms,
       await flash(
         request,
-        error(deleteTypeError, "Failed to delete unit of measure")
+        // The trigger's refusal names the referencing tables — show it.
+        error(
+          deleteTypeError,
+          deleteTypeError.message || "Failed to delete unit of measure"
+        )
       )
     );
   }
@@ -65,14 +125,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(uomsQuery(getCompanyId()).queryKey, null);
-  return await serverAction();
-}
-
 export default function DeleteUnitOfMeasureRoute() {
   const { uomId } = useParams();
-  const { unitOfMeasure } = useLoaderData<typeof loader>();
+  const { unitOfMeasure, usage } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { t } = useLingui();
 
@@ -80,12 +135,19 @@ export default function DeleteUnitOfMeasureRoute() {
   if (!uomId) throw notFound("uomId not found");
 
   const onCancel = () => navigate(path.to.uoms);
+  const isInUse = usage.length > 0;
+  const where = describeUsage(usage);
 
   return (
     <ConfirmDelete
       action={path.to.deleteUom(uomId)}
       name={unitOfMeasure.name}
-      text={t`Are you sure you want to delete the unit of measure: ${unitOfMeasure.name}? This cannot be undone.`}
+      isDisabled={isInUse}
+      text={
+        isInUse
+          ? t`${unitOfMeasure.name} cannot be deleted because it is still in use by ${where}. Change those records to a different unit of measure first.`
+          : t`Are you sure you want to delete the unit of measure: ${unitOfMeasure.name}? This cannot be undone.`
+      }
       onCancel={onCancel}
     />
   );

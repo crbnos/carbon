@@ -1,15 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   POSTHOG_API_HOST,
   POSTHOG_PROJECT_PUBLIC_KEY,
   VERCEL_URL
 } from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
-import { OperatingSystemContextProvider } from "@carbon/react";
-import { I18nProvider } from "@react-aria/i18n";
 import posthog from "posthog-js";
 import { startTransition, useEffect } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
 
 ensureLoggingConfigured();
 
@@ -26,18 +29,16 @@ function PosthogInit() {
   return null;
 }
 
-startTransition(() => {
-  hydrateRoot(
-    document,
-    <OperatingSystemContextProvider
-      platform={window.navigator.userAgent.includes("Mac") ? "mac" : "windows"}
-    >
-      <I18nProvider
-        locale={navigator.language ?? navigator.languages?.[0] ?? "en-US"}
-      >
+// Fetch the active language's catalog before hydrating, or a non-en page
+// hydrates against an empty catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(
+      document,
+      <>
         <HydratedRouter />
-      </I18nProvider>
-      <PosthogInit />
-    </OperatingSystemContextProvider>
-  );
+        <PosthogInit />
+      </>
+    );
+  });
 });

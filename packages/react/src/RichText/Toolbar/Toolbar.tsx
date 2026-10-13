@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { TooltipProvider } from "../../Tooltip";
 import type { EditorComponent } from "../types";
 import BlockQuote from "./BlockQuote";
@@ -16,7 +20,7 @@ const Toolbar: EditorComponent = ({ editor }) => {
   return (
     <TooltipProvider>
       <div className="w-full border-b border-border p-2">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide max-md:scroll-fade-x max-md:[&>*]:shrink-0">
           <Paragraph editor={editor} />
           <HeadingOne editor={editor} />
           <HeadingTwo editor={editor} />

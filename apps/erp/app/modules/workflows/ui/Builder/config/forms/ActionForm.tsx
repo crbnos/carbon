@@ -1,3 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type {
+  ValueOrRef,
+  ValueType,
+  WorkflowCatalog
+} from "@carbon/ee/workflows";
+import {
+  isMultiSelect,
+  MAX_LIST_ITEMS,
+  WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_ENTITY_REGISTRY
+} from "@carbon/ee/workflows";
 import {
   Command,
   CommandEmpty,
@@ -15,13 +30,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import type { ValueOrRef, ValueType, WorkflowCatalog } from "@carbon/workflows";
-import {
-  isMultiSelect,
-  MAX_LIST_ITEMS,
-  WORKFLOW_ACTION_CATALOG,
-  WORKFLOW_ENTITY_REGISTRY
-} from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown, LuListOrdered } from "react-icons/lu";

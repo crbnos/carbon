@@ -1,0 +1,174 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import {
+  type ApprovalDocumentType,
+  type ApprovalRule,
+  approvalDocumentTypesWithAmounts
+} from "@carbon/ee/approvals";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+  Card,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  Heading,
+  HStack,
+  IconButton,
+  MENU_ITEM_SHORTCUTS,
+  Status,
+  useDisclosure
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { memo, useCallback } from "react";
+import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
+import { useNavigate } from "react-router";
+import ConfirmDelete from "~/components/Modals/ConfirmDelete";
+import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
+import { path } from "~/utils/path";
+import ApprovalRuleDetails from "./ApprovalRuleDetails.ee";
+
+type ApprovalRuleCardProps = {
+  rule: ApprovalRule & { approverGroupNames?: string[] };
+  documentType: ApprovalDocumentType;
+  upperBound?: number | null;
+};
+
+const ApprovalRuleCard = memo(
+  ({ rule, documentType, upperBound = null }: ApprovalRuleCardProps) => {
+    const { t } = useLingui();
+    const [params] = useUrlParams();
+    const navigate = useNavigate();
+    const permissions = usePermissions();
+    const currencyFormatter = useCurrencyFormatter({ compact: true });
+    const deleteDisclosure = useDisclosure();
+
+    const documentTypeLabels: Record<ApprovalDocumentType, string> = {
+      purchaseOrder: t`Purchase Order`,
+      qualityDocument: t`Quality Document`,
+      supplier: t`Supplier`,
+      changeOrder: t`Change Notice`
+    };
+    const documentTypeLabel = documentTypeLabels[documentType];
+
+    const canEdit = permissions.can("update", "settings");
+    const canDelete = permissions.can("update", "settings");
+
+    const handleEdit = useCallback(() => {
+      if (!rule.id) return;
+      navigate(`${path.to.approvalRule(rule.id)}?${params.toString()}`);
+    }, [navigate, params, rule.id]);
+
+    const handleDeleteClick = useCallback(() => {
+      deleteDisclosure.onOpen();
+    }, [deleteDisclosure]);
+
+    const handleDeleteConfirm = useCallback(() => {
+      deleteDisclosure.onClose();
+    }, [deleteDisclosure]);
+
+    if (!rule.id) return null;
+
+    return (
+      <>
+        <Card className="p-0 border">
+          <Accordion type="multiple" className="w-full">
+            <AccordionItem value={rule.id} className="border-none">
+              <div className="relative">
+                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full max-md:px-4 max-md:py-4">
+                  <HStack spacing={4} className="flex-1 justify-between pr-12">
+                    <Heading
+                      size="h4"
+                      as="h3"
+                      className="max-md:text-left max-md:min-w-0"
+                    >
+                      {documentTypeLabel}
+                      {approvalDocumentTypesWithAmounts.includes(
+                        documentType
+                      ) &&
+                        (upperBound != null
+                          ? ` ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)} – ${currencyFormatter.format(upperBound)}`
+                          : ` over ${currencyFormatter.format(rule.lowerBoundAmount ?? 0)}`)}
+                    </Heading>
+                    <Status
+                      color={rule.enabled ? "green" : "gray"}
+                      className="text-xs font-medium max-md:shrink-0"
+                    >
+                      {rule.enabled ? (
+                        <Trans>Enabled</Trans>
+                      ) : (
+                        <Trans>Disabled</Trans>
+                      )}
+                    </Status>
+                  </HStack>
+                </AccordionTrigger>
+                <div className="absolute right-12 top-1/2 -translate-y-1/2 z-10">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <IconButton
+                        aria-label={t`More options`}
+                        icon={<LuEllipsisVertical />}
+                        variant="ghost"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.edit}
+                        disabled={!canEdit}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEdit();
+                        }}
+                      >
+                        <LuPencil className="mr-2 h-4 w-4" />
+                        <Trans>Edit Rule</Trans>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.delete}
+                        destructive
+                        disabled={!canDelete}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick();
+                        }}
+                      >
+                        <LuTrash className="mr-2 h-4 w-4" />
+                        <Trans>Delete Rule</Trans>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              <AccordionContent className="px-6 pb-5">
+                <ApprovalRuleDetails
+                  rule={rule}
+                  documentType={documentType}
+                  currencyFormatter={currencyFormatter}
+                />
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+        </Card>
+        <ConfirmDelete
+          action={path.to.deleteApprovalRule(rule.id)}
+          isOpen={deleteDisclosure.isOpen}
+          name={t`${documentTypeLabel} approval rule`}
+          text={t`Are you sure you want to delete this approval rule? This cannot be undone.`}
+          onCancel={deleteDisclosure.onClose}
+          onSubmit={handleDeleteConfirm}
+        />
+      </>
+    );
+  }
+);
+
+ApprovalRuleCard.displayName = "ApprovalRuleCard";
+export default ApprovalRuleCard;

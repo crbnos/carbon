@@ -1,344 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { groupBy } from "@carbon/utils";
+import { sql } from "kysely";
 import { z } from "zod";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
-
-// Type for the Supabase client with our custom RPC functions
-type SearchRpcClient = ReturnType<typeof getCarbonServiceRole> & {
-  rpc(
-    fn: "delete_from_search_index",
-    params: { p_company_id: string; p_entity_type: string; p_entity_id: string }
-  ): Promise<any>;
-  rpc(
-    fn: "upsert_to_search_index",
-    params: {
-      p_company_id: string;
-      p_entity_type: string;
-      p_entity_id: string;
-      p_title: string;
-      p_description: string;
-      p_link: string;
-      p_tags: string[];
-      p_metadata: Record<string, any>;
-    }
-  ): Promise<any>;
-};
-
-// Configuration for each entity type's search indexing
-type SearchEntityConfig = {
-  entityType: string;
-  getTitle: (record: Record<string, any>) => string;
-  getDescription?: (record: Record<string, any>) => string;
-  getLink: (record: Record<string, any>) => string;
-  getTags: (record: Record<string, any>) => string[];
-  getMetadata: (record: Record<string, any>) => Record<string, any>;
-  enrichRecord?: (
-    record: Record<string, any>,
-    client: ReturnType<typeof getCarbonServiceRole>
-  ) => Promise<Record<string, any>>;
-};
-
-// Entity configurations matching the existing sync functions
-const SEARCH_ENTITY_CONFIGS: Record<string, SearchEntityConfig> = {
-  employee: {
-    entityType: "employee",
-    getTitle: (r) => r.fullName || "",
-    getLink: (r) => `/x/person/${r.id}`,
-    getTags: (r) => [r.employeeTypeName].filter(Boolean),
-    getMetadata: (r) => ({ active: r.active }),
-    enrichRecord: async (record, client) => {
-      const { data: user } = await client
-        .from("user")
-        .select("fullName")
-        .eq("id", record.id)
-        .single();
-      const { data: empType } = await client
-        .from("employeeType")
-        .select("name")
-        .eq("id", record.employeeTypeId)
-        .single();
-      return {
-        ...record,
-        fullName: user?.fullName,
-        employeeTypeName: empType?.name
-      };
-    }
-  },
-  customer: {
-    entityType: "customer",
-    getTitle: (r) => r.name,
-    getLink: (r) => `/x/customer/${r.id}`,
-    getTags: (r) => [r.customerTypeName, r.customerStatusName].filter(Boolean),
-    getMetadata: (r) => ({ taxId: r.taxId }),
-    enrichRecord: async (record, client) => {
-      const { data: custType } = await client
-        .from("customerType")
-        .select("name")
-        .eq("id", record.customerTypeId)
-        .single();
-      const { data: custStatus } = await client
-        .from("customerStatus")
-        .select("name")
-        .eq("id", record.customerStatusId)
-        .single();
-      const { data: tax } = await (client as any)
-        .from("customerTax")
-        .select("taxId")
-        .eq("customerId", record.id)
-        .single();
-      return {
-        ...record,
-        customerTypeName: custType?.name,
-        customerStatusName: custStatus?.name,
-        taxId: tax?.taxId
-      };
-    }
-  },
-  supplier: {
-    entityType: "supplier",
-    getTitle: (r) => r.name,
-    getLink: (r) => `/x/supplier/${r.id}`,
-    getTags: (r) => [r.supplierTypeName, r.supplierStatus].filter(Boolean),
-    getMetadata: (r) => ({ taxId: r.taxId }),
-    enrichRecord: async (record, client) => {
-      const { data: suppType } = await client
-        .from("supplierType")
-        .select("name")
-        .eq("id", record.supplierTypeId)
-        .single();
-      const { data: tax } = await (client as any)
-        .from("supplierTax")
-        .select("taxId")
-        .eq("supplierId", record.id)
-        .single();
-      return {
-        ...record,
-        supplierTypeName: suppType?.name,
-        taxId: tax?.taxId
-      };
-    }
-  },
-  item: {
-    entityType: "item",
-    getTitle: (r) => r.readableId,
-    getDescription: (r) => `${r.name} ${r.description || ""}`,
-    getLink: (r) => {
-      const typeLinks: Record<string, string> = {
-        Part: "/x/part/",
-        Service: "/x/service/",
-        Tool: "/x/tool/",
-        Consumable: "/x/consumable/",
-        Material: "/x/material/",
-        Fixture: "/x/fixture/"
-      };
-      return (typeLinks[r.type] || "/x/part/") + r.id;
-    },
-    getTags: (r) => [r.type, r.replenishmentSystem].filter(Boolean),
-    getMetadata: (r) => ({ active: r.active })
-  },
-  job: {
-    entityType: "job",
-    getTitle: (r) => r.jobId,
-    getDescription: (r) => `${r.itemName || ""} ${r.customerName || ""}`,
-    getLink: (r) => `/x/job/${r.id}`,
-    getTags: (r) => [r.status, r.deadlineType].filter(Boolean),
-    getMetadata: (r) => ({ quantity: r.quantity, dueDate: r.dueDate }),
-    enrichRecord: async (record, client) => {
-      const { data: item } = await client
-        .from("item")
-        .select("name")
-        .eq("id", record.itemId)
-        .single();
-      const { data: customer } = await client
-        .from("customer")
-        .select("name")
-        .eq("id", record.customerId)
-        .single();
-      return {
-        ...record,
-        itemName: item?.name,
-        customerName: customer?.name
-      };
-    }
-  },
-  purchaseOrder: {
-    entityType: "purchaseOrder",
-    getTitle: (r) => r.purchaseOrderId,
-    getDescription: (r) => r.supplierName || "",
-    getLink: (r) => `/x/purchase-order/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({
-      orderDate: r.orderDate,
-      supplierReference: r.supplierReference
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: supplier } = await client
-        .from("supplier")
-        .select("name")
-        .eq("id", record.supplierId)
-        .single();
-      return { ...record, supplierName: supplier?.name };
-    }
-  },
-  salesInvoice: {
-    entityType: "salesInvoice",
-    getTitle: (r) => r.invoiceId,
-    getDescription: (r) => r.customerName || "",
-    getLink: (r) => `/x/sales-invoice/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({ totalAmount: r.totalAmount, dateDue: r.dateDue }),
-    enrichRecord: async (record, client) => {
-      const { data: customer } = await client
-        .from("customer")
-        .select("name")
-        .eq("id", record.customerId)
-        .single();
-      return { ...record, customerName: customer?.name };
-    }
-  },
-  purchaseInvoice: {
-    entityType: "purchaseInvoice",
-    getTitle: (r) => r.invoiceId,
-    getDescription: (r) => r.supplierName || "",
-    getLink: (r) => `/x/purchase-invoice/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({ totalAmount: r.totalAmount, dateDue: r.dateDue }),
-    enrichRecord: async (record, client) => {
-      const { data: supplier } = await client
-        .from("supplier")
-        .select("name")
-        .eq("id", record.supplierId)
-        .single();
-      return { ...record, supplierName: supplier?.name };
-    }
-  },
-  nonConformance: {
-    entityType: "issue",
-    getTitle: (r) => r.nonConformanceId,
-    getDescription: (r) => `${r.name} ${r.description || ""}`,
-    getLink: (r) => `/x/issue/${r.id}`,
-    getTags: (r) => [r.status, r.priority, r.ncTypeName].filter(Boolean),
-    getMetadata: (r) => ({ source: r.source, dueDate: r.dueDate }),
-    enrichRecord: async (record, client) => {
-      const { data: ncType } = await client
-        .from("nonConformanceType")
-        .select("name")
-        .eq("id", record.nonConformanceTypeId)
-        .single();
-      return { ...record, ncTypeName: ncType?.name };
-    }
-  },
-  gauge: {
-    entityType: "gauge",
-    getTitle: (r) => r.gaugeId,
-    getDescription: (r) => `${r.description || ""} ${r.serialNumber || ""}`,
-    getLink: (r) => `/x/quality/gauges/${r.id}`,
-    getTags: (r) =>
-      [r.gaugeStatus, r.gaugeCalibrationStatus, r.gaugeTypeName].filter(
-        Boolean
-      ),
-    getMetadata: (r) => ({
-      nextCalibrationDate: r.nextCalibrationDate,
-      serialNumber: r.serialNumber
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: gaugeType } = await client
-        .from("gaugeType")
-        .select("name")
-        .eq("id", record.gaugeTypeId)
-        .single();
-      return { ...record, gaugeTypeName: gaugeType?.name };
-    }
-  },
-  quote: {
-    entityType: "quote",
-    getTitle: (r) => r.quoteId,
-    getDescription: (r) =>
-      `${r.customerName || ""} ${r.customerReference || ""}`,
-    getLink: (r) => `/x/quote/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({
-      customerId: r.customerId,
-      expirationDate: r.expirationDate,
-      customerReference: r.customerReference
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: customer } = await client
-        .from("customer")
-        .select("name")
-        .eq("id", record.customerId)
-        .single();
-      return { ...record, customerName: customer?.name };
-    }
-  },
-  salesRfq: {
-    entityType: "salesRfq",
-    getTitle: (r) => r.rfqId,
-    getDescription: (r) => r.customerName || "",
-    getLink: (r) => `/x/rfq/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({
-      customerId: r.customerId,
-      expirationDate: r.expirationDate
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: customer } = await client
-        .from("customer")
-        .select("name")
-        .eq("id", record.customerId)
-        .single();
-      return { ...record, customerName: customer?.name };
-    }
-  },
-  salesOrder: {
-    entityType: "salesOrder",
-    getTitle: (r) => r.salesOrderId,
-    getDescription: (r) =>
-      `${r.customerName || ""} ${r.customerReference || ""}`,
-    getLink: (r) => `/x/sales-order/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({
-      customerId: r.customerId,
-      orderDate: r.orderDate,
-      customerReference: r.customerReference
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: customer } = await client
-        .from("customer")
-        .select("name")
-        .eq("id", record.customerId)
-        .single();
-      return { ...record, customerName: customer?.name };
-    }
-  },
-  supplierQuote: {
-    entityType: "supplierQuote",
-    getTitle: (r) => r.supplierQuoteId,
-    getDescription: (r) => r.supplierName || "",
-    getLink: (r) => `/x/supplier-quote/${r.id}`,
-    getTags: (r) => [r.status].filter(Boolean),
-    getMetadata: (r) => ({
-      supplierId: r.supplierId,
-      expirationDate: r.expirationDate
-    }),
-    enrichRecord: async (record, client) => {
-      const { data: supplier } = await client
-        .from("supplier")
-        .select("name")
-        .eq("id", record.supplierId)
-        .single();
-      return { ...record, supplierName: supplier?.name };
-    }
-  }
-};
+import { planIndexWrites, planLookups, toIndexRow } from "./search-config";
 
 const SearchRecordSchema = z.object({
   event: z.object({
     table: z.string(),
     operation: z.enum(["INSERT", "UPDATE", "DELETE", "TRUNCATE"]),
     recordId: z.string(),
-    new: z.record(z.any()).nullable(),
-    old: z.record(z.any()).nullable(),
+    new: z.record(z.string(), z.any()).nullable(),
+    old: z.record(z.string(), z.any()).nullable(),
     timestamp: z.string()
   }),
   companyId: z.string()
@@ -349,6 +27,8 @@ const SearchPayloadSchema = z.object({
 });
 
 export type SearchPayload = z.infer<typeof SearchPayloadSchema>;
+
+const UNDEFINED_TABLE = "42P01";
 
 export const searchFunction = inngest.createFunction(
   {
@@ -364,11 +44,8 @@ export const searchFunction = inngest.createFunction(
     const results = {
       updated: 0,
       deleted: 0,
-      skipped: 0,
-      failed: 0
+      skipped: 0
     };
-
-    const client = getCarbonServiceRole() as unknown as SearchRpcClient;
 
     type SearchRecord = (typeof payload.records)[number];
     const byCompany = groupBy(payload.records, (r) => r.companyId);
@@ -382,111 +59,103 @@ export const searchFunction = inngest.createFunction(
         continue;
       }
 
-      // Process each company's records as a step
       const companyResult = await step.run(
         `search-index-${companyId}`,
         async () => {
-          const stepResults = { updated: 0, deleted: 0, skipped: 0, failed: 0 };
-
-          // Process deletions first
-          const deletes = records.filter(
-            (r) =>
-              r.event.operation === "DELETE" || r.event.operation === "TRUNCATE"
+          const { deletes, upserts, skipped } = planIndexWrites(
+            records.map((r) => r.event)
           );
 
-          for (const del of deletes) {
-            const config = SEARCH_ENTITY_CONFIGS[del.event.table];
-            if (!config) {
-              stepResults.skipped++;
-              continue;
-            }
+          // The lookup tables are picked from config at runtime, which the
+          // typed client cannot express.
+          const client = getCarbonServiceRole() as any;
+          const resolved = new Map(
+            await Promise.all(
+              planLookups(upserts).map(async (lookup) => {
+                let query = client
+                  .from(lookup.table)
+                  .select(`${lookup.matchOn}, ${lookup.column}`)
+                  .in(lookup.matchOn, lookup.ids);
+                if (lookup.companyScoped) {
+                  query = query.eq("companyId", companyId);
+                }
+                const { data, error } = await query;
 
-            try {
-              await client.rpc("delete_from_search_index", {
-                p_company_id: companyId,
-                p_entity_type: config.entityType,
-                p_entity_id: del.event.recordId
-              });
-              stepResults.deleted++;
-            } catch (error) {
-              logger.error("Failed to delete from search index", {
-                error,
-                record: del
-              });
-              stepResults.failed++;
-            }
-          }
+                if (error) {
+                  logger.error("Failed to read search index lookup", {
+                    companyId,
+                    table: lookup.table,
+                    error
+                  });
+                  throw new Error(
+                    `Search index lookup on "${lookup.table}" failed: ${error.message}`
+                  );
+                }
 
-          // Process inserts and updates
-          const upserts = records.filter(
-            (r) =>
-              r.event.operation === "INSERT" || r.event.operation === "UPDATE"
+                const values = new Map<string, unknown>(
+                  (data as Record<string, unknown>[]).map((row) => [
+                    String(row[lookup.matchOn]),
+                    row[lookup.column]
+                  ])
+                );
+                return [lookup.key, values] as const;
+              })
+            )
           );
 
-          for (const upsert of upserts) {
-            const config = SEARCH_ENTITY_CONFIGS[upsert.event.table];
-            if (!config) {
-              stepResults.skipped++;
-              continue;
+          const rows = upserts.map((upsert) => toIndexRow(upsert, resolved));
+          const pg = getJobDatabaseClient();
+
+          try {
+            if (deletes.length > 0) {
+              await sql`
+                SELECT delete_from_search_index(${companyId}, d.entity_type, d.entity_id)
+                FROM jsonb_to_recordset(${JSON.stringify(deletes)}::jsonb)
+                  AS d(entity_type text, entity_id text)
+              `.execute(pg);
             }
 
-            try {
-              let record = upsert.event.new as Record<string, any>;
-
-              // Special handling for employee - skip inactive employees
-              if (
-                upsert.event.table === "employee" &&
-                record.active === false
-              ) {
-                await client.rpc("delete_from_search_index", {
-                  p_company_id: companyId,
-                  p_entity_type: config.entityType,
-                  p_entity_id: upsert.event.recordId
-                });
-                stepResults.deleted++;
-                continue;
-              }
-
-              // Enrich record with related data if needed
-              if (config.enrichRecord) {
-                record = await config.enrichRecord(record, client);
-              }
-
-              const title = config.getTitle(record);
-              const description = config.getDescription?.(record) || "";
-              const link = config.getLink(record);
-              const tags = config.getTags(record);
-              const metadata = config.getMetadata(record);
-
-              await client.rpc("upsert_to_search_index", {
-                p_company_id: companyId,
-                p_entity_type: config.entityType,
-                p_entity_id: upsert.event.recordId,
-                p_title: title,
-                p_description: description,
-                p_link: link,
-                p_tags: tags,
-                p_metadata: metadata
-              });
-
-              stepResults.updated++;
-            } catch (error) {
-              logger.error("Failed to update search index", {
-                error,
-                record: upsert
-              });
-              stepResults.failed++;
+            if (rows.length > 0) {
+              await sql`
+                SELECT upsert_to_search_index(
+                  ${companyId}, r.entity_type, r.entity_id, r.title,
+                  r.description, r.link, r.tags, r.metadata
+                )
+                FROM jsonb_to_recordset(${JSON.stringify(rows)}::jsonb)
+                  AS r(
+                    entity_type text, entity_id text, title text,
+                    description text, link text, tags text[], metadata jsonb
+                  )
+              `.execute(pg);
             }
+          } catch (error) {
+            // Deleting a company drops its search table while its events may
+            // still be queued. A missing table on a live company is a real
+            // failure and still throws.
+            if (
+              (error as { code?: string }).code === UNDEFINED_TABLE &&
+              !(await pg
+                .selectFrom("company")
+                .select("id")
+                .where("id", "=", companyId)
+                .executeTakeFirst())
+            ) {
+              logger.warn("Skipped search index events of a deleted company", {
+                companyId
+              });
+              return { updated: 0, deleted: 0, skipped: records.length };
+            }
+            logger.error("Failed to write search index", { companyId, error });
+            throw error;
           }
 
-          return stepResults;
+          return { updated: rows.length, deleted: deletes.length, skipped };
         }
       );
 
       results.updated += companyResult.updated;
       results.deleted += companyResult.deleted;
       results.skipped += companyResult.skipped;
-      results.failed += companyResult.failed;
     }
 
     logger.info("Search function completed", results);

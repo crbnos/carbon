@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
@@ -7,7 +11,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -15,6 +19,7 @@ import {
   getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
+import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -39,22 +44,20 @@ import {
   Switch,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { type ReactNode, useEffect, useState } from "react";
 import { LuShieldCheck } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { Hidden, Input, Submit, TextArea } from "~/components/Form";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import {
-  ssoConnectionValidator,
-  ssoDomainValidator,
-  updateRequireMfaSetting
-} from "~/modules/settings";
+import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -156,7 +159,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const requireMfa = formData.get("enabled") === "true";
 
   if (requireMfa) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,
@@ -278,7 +281,7 @@ function SsoDomainRow({
   const submitting = fetcher.formData?.get("intent");
 
   return (
-    <div className="w-full rounded-md border border-border p-4">
+    <div className="w-full rounded-md border border-border p-4 max-md:border-0 max-md:p-0 max-md:rounded-none">
       <HStack className="w-full justify-between items-center">
         <HStack spacing={2}>
           <span className="text-sm font-medium font-mono">{domain.domain}</span>
@@ -373,32 +376,54 @@ export default function Security() {
   const twoFactorCard = (
     <Card>
       <CardHeader>
+        <CardTitle>
+          <Trans>Two-Factor Authentication Enforcement</Trans>
+        </CardTitle>
+        <CardDescription>
+          {CONTROLLED_ENVIRONMENT ? (
+            <Trans>
+              This is a controlled environment, so two-factor authentication is
+              required for everyone and cannot be turned off.
+            </Trans>
+          ) : (
+            <Trans>
+              Require an authenticator app before anyone can open this company.
+              Their other companies are unaffected. Visit the{" "}
+              <Link
+                to={path.to.employeeAccounts}
+                className="text-primary underline"
+              >
+                employee accounts page
+              </Link>{" "}
+              to see each person's status.
+            </Trans>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <HStack className="justify-between items-center">
-          <div>
-            <CardTitle>
-              <Trans>Two-Factor Authentication Enforcement</Trans>
-            </CardTitle>
-            <CardDescription>
-              {CONTROLLED_ENVIRONMENT ? (
+          <VStack className="items-start" spacing={1}>
+            <span className="font-medium">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
+                <Trans>Two-factor authentication is required</Trans>
+              ) : (
+                <Trans>Two-factor authentication is optional</Trans>
+              )}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
                 <Trans>
-                  This is a controlled environment, so two-factor authentication
-                  is required for everyone and cannot be turned off.
+                  Everyone must set up an authenticator app before opening this
+                  company.
                 </Trans>
               ) : (
                 <Trans>
-                  Require an authenticator app before anyone can open this
-                  company. Their other companies are unaffected. Visit the{" "}
-                  <Link
-                    to={path.to.employeeAccounts}
-                    className="text-primary underline"
-                  >
-                    employee accounts page
-                  </Link>{" "}
-                  to see each person's status.
+                  Enable to require an authenticator app before anyone can open
+                  this company.
                 </Trans>
               )}
-            </CardDescription>
-          </div>
+            </span>
+          </VStack>
           <Switch
             checked={CONTROLLED_ENVIRONMENT || requireMfa}
             onCheckedChange={(checked) =>
@@ -413,20 +438,17 @@ export default function Security() {
             aria-label={t`Require two-factor authentication`}
           />
         </HStack>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-8"
-      >
+      <SettingsPage className="gap-8">
         <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
+          <SettingsPageHeading>
             <Trans>Security</Trans>
-          </Heading>
+          </SettingsPageHeading>
           <p className="text-sm text-muted-foreground text-pretty">
             <Trans>
               Manage authentication and sign-in requirements for your company.
@@ -434,16 +456,6 @@ export default function Security() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
-            <Trans>MFA</Trans>
-          </Heading>
-          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
-            <Trans>
-              Require a second factor when members sign in to this company.
-            </Trans>
-          </p>
-        </div>
         {mfaGated ? (
           <UpgradeOverlaySection
             icon={<LuShieldCheck className="size-6 text-muted-foreground" />}
@@ -702,7 +714,7 @@ export default function Security() {
             )}
           </>
         )}
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

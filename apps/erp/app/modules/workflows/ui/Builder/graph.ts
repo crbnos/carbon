@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   WorkflowDefinition,
   WorkflowNode,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   nextNodeName
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import { MAX_NODE_CARD_WIDTH, NODE_ACCEPTS_INCOMING } from "./nodes/kinds";

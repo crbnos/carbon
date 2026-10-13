@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RilletPaymentSyncer } from "../payment";
 
@@ -5,9 +9,9 @@ import { RilletPaymentSyncer } from "../payment";
 // Rillet as a payment document; a provider-recorded (pulled) payment is skipped
 // by the mapping-exists guard. The pull path is covered in payment.test.ts.
 
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
+vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 
 // The mapping link runs inside withTriggersDisabled (a real Kysely transaction
 // with a `SET LOCAL` statement). Stub it to invoke the callback with a capturing
@@ -27,7 +31,7 @@ vi.mock("../../../../core/utils", async (importOriginal) => {
     ) => {
       const insertBuilder: Record<string, unknown> = {};
       insertBuilder.values = (v: Record<string, unknown>) => {
-        txLinkSink.push(v);
+        txLinkSink.push(...(Array.isArray(v) ? v : [v]));
         return insertBuilder;
       };
       insertBuilder.onConflict = () => insertBuilder;
@@ -47,6 +51,7 @@ type PaymentRow = {
   bankAccount: string;
   currencyCode: string;
   exchangeRate: number;
+  totalAmount?: number;
   paymentDate: string;
   postingDate: string | null;
   reference: string | null;
@@ -55,16 +60,24 @@ type PaymentRow = {
 type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
+  targetReimbursementId?: string | null;
   appliedAmount: number;
+  sourceAmount: number;
+  sourcePaymentId: string | null;
+  targetExchangeRate?: number;
+  fxGainLossAmount?: number;
   discountAmount: number;
   writeOffAmount: number;
 };
 
 function makePushDb(opts: {
   metadata?: unknown;
+  mappings?: Array<Record<string, unknown>>;
   payment?: PaymentRow;
   settlements?: SettlementRow[];
   linkSink: Array<Record<string, unknown>>;
+  /** `currency.decimalPlaces` of the payment currency (USD unless overridden). */
+  currencyDecimals?: number;
 }) {
   const selectChain = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
@@ -81,10 +94,17 @@ function makePushDb(opts: {
           opts.metadata === undefined ? [] : [{ metadata: opts.metadata }]
         );
       }
+      if (t === "externalIntegrationMapping")
+        return selectChain(opts.mappings ?? []);
       if (t === "payment") {
         return selectChain(opts.payment ? [opts.payment] : []);
       }
       if (t === "invoiceSettlement") return selectChain(opts.settlements ?? []);
+      // The settlement scale is read from the company's group-scoped currency
+      // row — the same authoritative source the bill syncer uses.
+      if (t === "company") return selectChain([{ companyGroupId: "group-1" }]);
+      if (t === "currency")
+        return selectChain([{ decimalPlaces: opts.currencyDecimals ?? 2 }]);
       return selectChain([]);
     },
     transaction: () => ({
@@ -109,11 +129,21 @@ function makePushDb(opts: {
 function makeSyncer(opts: {
   db: ReturnType<typeof makePushDb>;
   mapping?: { metadata: Record<string, unknown> | null } | null;
+  /**
+   * The SETTLED DOCUMENT's mapping row (entityType "bill"/"invoice"/
+   * "reimbursement") — separate from `mapping`, which is the payment's own
+   * coverage row. `pushRemotePayment` reads this one for both the remote id
+   * and the legacy `remoteKind` stamp.
+   */
+  targetMapping?: { metadata: Record<string, unknown> | null } | null;
   documentRemoteId?: string | null;
   accountCodes?: Map<string, string>;
   enabled?: boolean;
   createInvoicePayment?: ReturnType<typeof vi.fn>;
   createBillPayment?: ReturnType<typeof vi.fn>;
+  createReimbursementPayment?: ReturnType<typeof vi.fn>;
+  deleteInvoicePayment?: ReturnType<typeof vi.fn>;
+  deleteBillPayment?: ReturnType<typeof vi.fn>;
 }) {
   const createInvoicePayment =
     opts.createInvoicePayment ??
@@ -122,13 +152,23 @@ function makeSyncer(opts: {
     opts.createBillPayment ??
     vi.fn(async () => ({ id: "rillet-pay-1", status: "SUCCESSFUL" }));
 
+  const createReimbursementPayment =
+    opts.createReimbursementPayment ??
+    vi.fn(async () => ({ id: "rillet-pay-1", status: "UNCLEARED" }));
+
+  const deleteInvoicePayment =
+    opts.deleteInvoicePayment ?? vi.fn(async () => {});
+  const deleteBillPayment = opts.deleteBillPayment ?? vi.fn(async () => {});
   const syncer = new RilletPaymentSyncer({
     database: opts.db,
     companyId: "company-1",
     provider: {
       id: "rillet",
       createInvoicePayment,
-      createBillPayment
+      createBillPayment,
+      createReimbursementPayment,
+      deleteInvoicePayment,
+      deleteBillPayment
     } as never,
     config: {
       enabled: opts.enabled ?? true,
@@ -140,7 +180,13 @@ function makeSyncer(opts: {
 
   const s = syncer as unknown as Record<string, unknown>;
   s.mappingService = {
-    getByEntity: async () => opts.mapping ?? null,
+    getByEntity: async (entityType: string) =>
+      entityType === "payment"
+        ? (opts.mapping ?? null)
+        : (opts.targetMapping ?? {
+            externalId: opts.documentRemoteId ?? null,
+            metadata: null
+          }),
     getExternalId: async () => opts.documentRemoteId ?? null
   };
   // Pre-seed the account-code cache so the adapter never hits the DB.
@@ -148,7 +194,14 @@ function makeSyncer(opts: {
     opts.accountCodes ?? new Map([["bank-1", "1000"]])
   );
 
-  return { syncer, createInvoicePayment, createBillPayment };
+  return {
+    syncer,
+    createInvoicePayment,
+    createBillPayment,
+    createReimbursementPayment,
+    deleteInvoicePayment,
+    deleteBillPayment
+  };
 }
 
 const apPayment: PaymentRow = {
@@ -157,6 +210,7 @@ const apPayment: PaymentRow = {
   bankAccount: "bank-1",
   currencyCode: "USD",
   exchangeRate: 1,
+  totalAmount: 140,
   paymentDate: "2026-08-07",
   postingDate: "2026-08-07",
   reference: "PAY-1"
@@ -166,6 +220,10 @@ const apSettlement: SettlementRow = {
   targetSalesInvoiceId: null,
   targetPurchaseInvoiceId: "pinv-1",
   appliedAmount: 100,
+  sourceAmount: 100,
+  sourcePaymentId: null,
+  targetExchangeRate: 1,
+  fxGainLossAmount: 0,
   discountAmount: 0,
   writeOffAmount: 0
 };
@@ -297,7 +355,8 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
           {
             ...apSettlement,
             targetPurchaseInvoiceId: "pinv-2",
-            appliedAmount: 40
+            appliedAmount: 40,
+            sourceAmount: 40
           },
           apSettlement
         ],
@@ -333,6 +392,53 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     expect(txLinkSink[1]).toMatchObject({
       entityId: "pay_1:pinv-2",
       externalId: "bill:bill-remote-1:rillet-pay-2"
+    });
+  });
+
+  it("serializes a 0-decimal currency (JPY) at its own scale, not at cents", async () => {
+    // JPY settles at 0 decimals: ¥1000 is "1000". Serializing it as "1000.00"
+    // claims a precision the currency does not have.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "JPY", totalAmount: 1000 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 1000, sourceAmount: 1000 }
+        ],
+        linkSink: [],
+        currencyDecimals: 0
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "1000", currency: "JPY" }
+    });
+  });
+
+  it("serializes a 3-decimal currency (BHD) without losing its third decimal", async () => {
+    // BHD settles at 3 decimals (1000 fils): 0.563 must survive the wire.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "BHD", totalAmount: 0.563 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 0.563, sourceAmount: 0.563 }
+        ],
+        linkSink: [],
+        currencyDecimals: 3
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "0.563", currency: "BHD" }
     });
   });
 
@@ -384,19 +490,89 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
 });
 
 describe("RilletPaymentSyncer push — void routing", () => {
-  it("skips (not supported) a voided Carbon-originated payment", async () => {
-    const { syncer } = makeSyncer({
+  it.each([
+    "ar",
+    "ap"
+  ])("voids every Carbon-originated %s settlement and retains idempotent tombstones", async (family) => {
+    const remote = (n: number) =>
+      `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
+    const mappings = [1, 2].map((n) => ({
+      entityId: `pay_1:doc-${n}`,
+      externalId: remote(n),
+      metadata: { origin: "carbon", other: "preserved" }
+    }));
+    const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
         settlements: [apSettlement],
+        mappings,
         linkSink: []
-      }),
-      mapping: { metadata: { origin: "carbon" } }
+      })
     });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    const deletion = family === "ar" ? deleteInvoicePayment : deleteBillPayment;
+    expect(deletion.mock.calls).toEqual([
+      ["doc-1", "pay-1"],
+      ["doc-2", "pay-2"]
+    ]);
+    expect(txLinkSink).toHaveLength(2);
+    expect(
+      txLinkSink.every(
+        (row) =>
+          (row.metadata as any)?.voided === true &&
+          (row.metadata as any)?.other === "preserved"
+      )
+    ).toBe(true);
+  });
 
-    const result = await syncer.pushToAccounting("pay_1");
-    expect(result.status).toBe("skipped");
-    expect(result.error).toContain("not supported");
+  it("retains all mappings on partial delete failure so retry is safe", async () => {
+    const deletion = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("cleared payment"));
+    const { syncer } = makeSyncer({
+      deleteBillPayment: deletion,
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [apSettlement],
+        linkSink: [],
+        mappings: [1, 2].map((n) => ({
+          entityId: `pay_1:doc-${n}`,
+          externalId: `bill:doc-${n}:pay-${n}`,
+          metadata: { origin: "carbon" }
+        }))
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "error",
+      error: "cleared payment"
+    });
+    expect(txLinkSink).toHaveLength(0);
+  });
+
+  it("does not delete an already voided mapping again", async () => {
+    const { syncer, deleteBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [],
+        linkSink: [],
+        mappings: [
+          {
+            entityId: "pay_1",
+            externalId: "bill:doc-1:pay-1",
+            metadata: { origin: "carbon", voided: true }
+          }
+        ]
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    expect(deleteBillPayment).not.toHaveBeenCalled();
   });
 
   it("skips a voided pulled payment (no Carbon-originated provider payment to reverse)", async () => {
@@ -429,6 +605,7 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
       pushRemotePayment(ctx: {
         carbonPaymentId: string;
         family: "ar" | "ap";
+        targetEntityType: "invoice" | "bill" | "reimbursement";
         targetDocumentId: string;
         bankAccountId: string;
         amount: number;
@@ -442,6 +619,7 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
   const ctx = {
     carbonPaymentId: "pay_1",
     family: "ap" as const,
+    targetEntityType: "bill" as const,
     targetDocumentId: "pinv-1",
     bankAccountId: "bank-1",
     amount: 100,
@@ -466,6 +644,170 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
       }).pushRemotePayment(ctx)
     ).rejects.toMatchObject({
       failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+  });
+});
+
+describe("outbound cash funding validation", () => {
+  it("refuses credit-funded applications before provider writes", async () => {
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: apPayment,
+        settlements: [{ ...apSettlement, sourcePaymentId: "prior-credit" }],
+        linkSink: []
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+    const result = await syncer.pushToAccounting("pay_1");
+    expect(result.status).toBe("skipped");
+    expect(String(result.error)).toMatch(/credit/i);
+    expect(createBillPayment).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Employee reimbursement payouts. Rillet shipped
+// `POST /reimbursements/{id}/payments` (VERIFIED against its published
+// OpenAPI, 2026-09-23), which retired the UNSUPPORTED_REIMBURSEMENT_PAYMENT
+// parking: the payout now completes instead of stranding the reimbursement
+// UNPAID in Rillet.
+// ---------------------------------------------------------------------------
+
+const reimbursementSettlement: SettlementRow = {
+  targetSalesInvoiceId: null,
+  targetPurchaseInvoiceId: null,
+  targetReimbursementId: "reimb_1",
+  appliedAmount: 100,
+  sourceAmount: 100,
+  sourcePaymentId: null,
+  targetExchangeRate: 1,
+  fxGainLossAmount: 0,
+  discountAmount: 0,
+  writeOffAmount: 0
+};
+
+describe("RilletPaymentSyncer push — reimbursement payout", () => {
+  it("POSTs /reimbursements/{id}/payments and completes, never UNSUPPORTED_REIMBURSEMENT_PAYMENT", async () => {
+    const { syncer, createReimbursementPayment, createBillPayment } =
+      makeSyncer({
+        db: makePushDb({
+          payment: apPayment,
+          settlements: [reimbursementSettlement],
+          linkSink: []
+        }),
+        mapping: null,
+        documentRemoteId: "reimbursement-remote-1"
+      });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(result.remoteId).toBe("rillet-pay-1");
+    expect(createBillPayment).not.toHaveBeenCalled();
+    expect(createReimbursementPayment).toHaveBeenCalledTimes(1);
+
+    const [reimbursementId, payload] =
+      createReimbursementPayment.mock.calls[0]!;
+    expect(reimbursementId).toBe("reimbursement-remote-1");
+    // The documented body is the same required trio a bill payment takes.
+    expect(payload).toMatchObject({
+      amount: { amount: "100.00", currency: "USD" },
+      date: "2026-08-07",
+      account_code: "1000"
+    });
+
+    // Its own composite id space: a reimbursement payment is addressed through
+    // /reimbursements/{id}/payments, not /bills/{id}/payments.
+    expect(txLinkSink[0]).toMatchObject({
+      entityType: "payment",
+      externalId: "reimbursement:reimbursement-remote-1:rillet-pay-1",
+      metadata: { origin: "carbon" }
+    });
+  });
+
+  it("still warns UNSYNCED_DOCUMENT when the reimbursement has not synced", async () => {
+    const { syncer, createReimbursementPayment } = makeSyncer({
+      db: makePushDb({
+        payment: apPayment,
+        settlements: [reimbursementSettlement],
+        linkSink: []
+      }),
+      mapping: null,
+      documentRemoteId: null
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("error");
+    expect(result.error).toMatchObject({
+      errorCode: "UNSYNCED_DOCUMENT",
+      warning: true
+    });
+    expect((result.error as { message: string }).message).toMatch(
+      /reimbursement/
+    );
+    expect(createReimbursementPayment).not.toHaveBeenCalled();
+  });
+
+  // A purchase invoice synced between #1503 (2026-09-20) and the native
+  // `reimbursement` entity has a "bill" mapping whose remote id lives in the
+  // /reimbursements id space, recorded ONLY by `remoteKind: "reimbursement"`.
+  // `RilletBillSyncer.deleteRemote` reads the same stamp for the void; the
+  // payout has to read it too or it POSTs /bills/{reimbursementId}/payments.
+  it("routes a LEGACY remoteKind:reimbursement bill target to /reimbursements/{id}/payments", async () => {
+    const { syncer, createReimbursementPayment, createBillPayment } =
+      makeSyncer({
+        db: makePushDb({
+          payment: apPayment,
+          settlements: [apSettlement], // a BILL settlement, not a reimbursement
+          linkSink: []
+        }),
+        mapping: null,
+        targetMapping: {
+          externalId: "reimb-remote-1",
+          metadata: { remoteKind: "reimbursement" }
+        } as never
+      });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment).not.toHaveBeenCalled();
+    expect(createReimbursementPayment).toHaveBeenCalledTimes(1);
+    expect(createReimbursementPayment.mock.calls[0]?.[0]).toBe(
+      "reimb-remote-1"
+    );
+    // And the composite lands in the reimbursement id space, so the later void
+    // DELETEs /reimbursements/{id}/payments/{id} rather than /bills/....
+    expect(txLinkSink[0]).toMatchObject({
+      entityType: "payment",
+      externalId: "reimbursement:reimb-remote-1:rillet-pay-1"
+    });
+  });
+
+  it("leaves an ordinary bill target on /bills/{id}/payments", async () => {
+    const { syncer, createReimbursementPayment, createBillPayment } =
+      makeSyncer({
+        db: makePushDb({
+          payment: apPayment,
+          settlements: [apSettlement],
+          linkSink: []
+        }),
+        mapping: null,
+        targetMapping: {
+          externalId: "bill-remote-1",
+          metadata: { origin: "carbon" }
+        } as never
+      });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createReimbursementPayment).not.toHaveBeenCalled();
+    expect(createBillPayment).toHaveBeenCalledTimes(1);
+    expect(txLinkSink[0]).toMatchObject({
+      externalId: "bill:bill-remote-1:rillet-pay-1"
     });
   });
 });

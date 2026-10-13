@@ -1,23 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, Input, toast, useDebounce } from "@carbon/react";
+import { generateHTML, RecordOutlet, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { redirect } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { nanoid } from "nanoid";
-import { useState } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Outlet,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { useFetcher, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import {
   getTraining,
   TrainingExplorer,
@@ -26,8 +26,11 @@ import {
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/training+/update";
+import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "training-detail");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -58,6 +61,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (training.data.companyId !== companyId) {
+    logger.error("Training is not in the caller's company", {
+      companyId,
+      trainingId: id
+    });
+    throw redirect(path.to.trainings);
+  }
+
   return {
     training: training.data,
     tags: tags.data ?? []
@@ -65,6 +78,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function TrainingRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
@@ -75,11 +89,12 @@ export default function TrainingRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Questions`}
               explorer={<TrainingExplorer key={`explorer-${id}`} />}
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <TrainingEditor />
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<TrainingProperties key={`properties-${id}`} />}
@@ -95,6 +110,7 @@ function TrainingEditor() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { t } = useLingui();
   const permissions = usePermissions();
 
   const loaderData = useLoaderData<typeof loader>();
@@ -108,10 +124,7 @@ function TrainingEditor() {
   );
 
   const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
 
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
@@ -129,60 +142,53 @@ function TrainingEditor() {
   );
 
   const fetcher = useFetcher<typeof action>();
+  const setLiveTitle = useDocumentStore((s) => s.setLiveTitle);
 
-  const updateTrainingName = async (name: string) => {
-    const formData = new FormData();
+  const updateTrainingName = useDebounce(
+    async (name: string) => {
+      const formData = new FormData();
 
-    formData.append("ids", id);
-    formData.append("field", "name");
-    formData.append("value", name);
+      formData.append("ids", id);
+      formData.append("field", "name");
+      formData.append("value", name);
 
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.bulkUpdateTraining
-    });
-  };
+      fetcher.submit(formData, {
+        method: "post",
+        action: path.to.bulkUpdateTraining
+      });
+    },
+    500,
+    true
+  );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/training/${nanoid()}.${fileType}`;
+  const onUploadImage = useImageUpload("training");
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+  const canEdit =
+    permissions.can("update", "people") &&
+    loaderData?.training?.status === "Draft";
 
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  // Mirror the live title only while editing; clear it when editing ends (e.g.
+  // a Draft→Active transition that doesn't remount the route) or on unmount, so
+  // the header title bar can never show a stale edited title.
+  useEffect(() => {
+    if (!canEdit) setLiveTitle(null);
+    return () => setLiveTitle(null);
+  }, [canEdit, setLiveTitle]);
 
   return (
-    <div className="flex flex-col gap-6 w-full h-full p-6">
-      <Input
-        className="md:text-3xl text-2xl font-semibold leading-none tracking-tight text-foreground"
-        value={trainingName}
-        borderless
-        onChange={
-          loaderData?.training?.status === "Draft"
-            ? (e) => setTrainingName(e.target.value)
-            : undefined
-        }
-        onBlur={
-          loaderData?.training?.status === "Draft"
-            ? (e) => updateTrainingName(e.target.value)
-            : undefined
-        }
-      />
-
-      {permissions.can("update", "people") &&
-      loaderData?.training?.status === "Draft" ? (
+    <div className="flex flex-col w-full h-full">
+      {canEdit ? (
         <Editor
           toolbar
+          title={{
+            value: trainingName,
+            placeholder: t`Untitled`,
+            onChange: (name) => {
+              setTrainingName(name);
+              setLiveTitle(name);
+              updateTrainingName(name);
+            }
+          }}
           initialValue={content}
           onUpload={onUploadImage}
           onChange={(value) => {
@@ -191,12 +197,17 @@ function TrainingEditor() {
           }}
         />
       ) : (
-        <div
-          className="prose dark:prose-invert"
-          dangerouslySetInnerHTML={{
-            __html: generateHTML(content)
-          }}
-        />
+        <div className="flex flex-col gap-6 w-full h-full p-8">
+          <h1 className="md:text-3xl text-2xl font-semibold leading-tight tracking-tight text-foreground">
+            {trainingName}
+          </h1>
+          <div
+            className="prose dark:prose-invert"
+            dangerouslySetInnerHTML={{
+              __html: generateHTML(content)
+            }}
+          />
+        </div>
       )}
     </div>
   );

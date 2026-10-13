@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -36,7 +40,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const clientClaims = await getUserClaims(userId, companyId);
   const canUpdateAnyUser =
     // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    clientClaims.permissions["users"]?.update?.includes(companyId);
+    clientClaims.permissions["resources"]?.update?.includes(companyId);
 
   if (!canUpdateAnyUser && userId !== targetUserId) {
     return data(
@@ -78,7 +82,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const upsertAttributeValue = await upsertUserAttributeValue(client, {
-    ...validation.data,
+    // validator(v as ZodSchema) intentionally erases the union of attribute-value
+    // schemas; v4's ZodSchema output is `unknown` (was `any` in v3), so restore the
+    // permissive spread the runtime already relies on.
+    ...(validation.data as any),
     userId: targetUserId,
     updatedBy: userId
   });

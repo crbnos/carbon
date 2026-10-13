@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { downloadBlob, downloadUrl } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
 import { useCallback } from "react";
@@ -12,6 +17,7 @@ export function useFiles(job: Job) {
 
   const getFilePath = useCallback(
     (file: StorageItem) => {
+      if (file.storagePath) return file.storagePath;
       const companyId = user.company.id;
       const { bucket } = file;
       let id: string | null = "";
@@ -37,16 +43,7 @@ export function useFiles(job: Job) {
     async (file: StorageItem) => {
       const url = path.to.file.previewFile(`private/${getFilePath(file)}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error("Error downloading file");
         log.error("Error downloading file", { error });
@@ -76,15 +73,7 @@ export function useFiles(job: Job) {
           );
           return;
         }
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = model.modelName;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), model.modelName);
       } catch (error) {
         toast.error("Error downloading file");
         log.error("Error downloading file", { error });

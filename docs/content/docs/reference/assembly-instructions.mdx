@@ -1,0 +1,124 @@
+---
+title: Assembly instructions
+description: Step-by-step 3D build guides for a made part, authored in the ERP from its CAD model and played to operators on the shop floor.
+---
+
+An assembly instruction is a 3D build guide for a made part. It divides the part's CAD model into ordered steps that identify installed components and their motion paths. Operators follow these steps in the shop floor's [guided assembly view](/docs/reference/mes#the-guided-assembly-view).
+
+Create instructions under **Production → Assemblies**. Select **Add Assembly Instruction**, then choose a made-in-house **Part** with a STEP file on its **Model** tab. Carbon converts the model for 3D viewing when required, opens the editor, and begins generating draft steps.
+
+<Screenshot label="The assembly instruction editor: the Steps list on the left, the 3D model in the middle, and the selected step's Details tab on the right with Components and the Playback box" caption="Steps on the left, the model in the middle, the selected step's settings on the right." />
+
+## Versions and status
+
+<StatusFlow entity="assemblyInstruction">
+  <Status name="Draft">The only editable status. A new instruction, and every new version, starts here.</Status>
+  <Status name="Published" accent>The active version. Job operations that use this instruction follow it.</Status>
+  <Status name="Archived" terminal>A version that was active before a newer one took over. Read-only.</Status>
+</StatusFlow>
+
+Each version is an independent copy of the instruction. On a published instruction, **New Version** creates an editable draft containing the existing steps. On a draft, **Make Active** publishes it and archives the previously active version.
+
+<Callout type="warn" title="Making a version active updates jobs in progress.">
+Every job operation that points at another version of this instruction is moved to the new one and has its steps synced, as long as the operation isn't done or canceled and its job isn't locked. Operations on finished jobs keep the steps they were built with.
+</Callout>
+
+## Steps
+
+A new instruction starts without steps. **Generate Steps** runs the motion planner to determine a build order and collision-free path for each part. Planning usually takes one to three minutes. **Add step manually** creates a blank step. After steps exist, use **Add Step** to create another or drag a row handle to reorder it.
+
+Each step carries a status you change from the icon at the end of its row:
+
+<StatusFlow entity="assemblyStep">
+  <Status name="Todo">A step you added by hand that nobody has checked yet.</Status>
+  <Status name="Review">A step the motion planner generated. Check that it reads and plays correctly.</Status>
+  <Status name="Done" accent>An author has checked the step.</Status>
+</StatusFlow>
+
+The planner menu next to **Add Step** can recompute motion paths without changing step order (**Run Motion Planning**) or replace all steps with a new plan (**Regenerate Steps**). Regeneration is blocked when any step was added manually or has status **Done**.
+
+Step-list icons identify planning concerns. A warning triangle means the planner found no collision-free path; the parts fade into their final position instead of moving. A hand means a placed part may tip and could require a fixture or a second person.
+
+## Step details
+
+The **Details** tab holds what the operator reads at this step:
+
+<FieldTable>
+  <Field name="Type">What the operator records: a plain **Task**, a value, a measurement with a minimum and maximum, a checkbox, a list choice, a timestamp, a person, a file, or an inspection.</Field>
+  <Field name="Title">Leave it blank to use a title built from the step's components, such as "Add Bearing (×2)".</Field>
+  <Field name="Instruction">Free text for the operator. Type `@` to mention a part from the item's bill of materials.</Field>
+  <Field name="Required">The operator must record this step before the operation can be completed.</Field>
+</FieldTable>
+
+These fields save with **"Save"** at the bottom of the panel (or ⌘/Ctrl+Enter). Everything else on the step saves the moment you change it: components, hidden parts, playback settings, status, materials, tools, and slides.
+
+## Components and hidden parts
+
+**Components** lists what the step installs. Press **"Add"**, click parts in the 3D view (shift-click adds several), then **"Done Adding"**. Remove a part with the ✕ on its row.
+
+To expose obstructed work, select the eye on a row in the **Components** tab. This hides the part only for the selected step. The **<Term id="assembly-step-hidden-components">Hidden on this step</Term>** list shows hidden parts and restores them. A step cannot hide its own components. Parts hidden by an author are also hidden from operators.
+
+## Playback settings
+
+The **Playback** box sets how the step plays:
+
+<FieldTable>
+  <Field name="Motion">"Automatic" uses the path the planner found. **"Edit Path"** shows the path as red waypoints in the 3D view: drag one to reshape it, double-click the path to add one, and press Delete to remove the selected one. "No clear path" means the planner found none; hover the header note to see which parts block it.</Field>
+  <Field name="Camera">"Automatic" frames the step's parts on its own. **"Use Current View"** saves the angle you are looking from; **"Clear"** goes back to automatic.</Field>
+</FieldTable>
+
+## Sub-assemblies
+
+Some parts are put together on their own first and then fitted as one piece: a hub gets its bearing, circlip and brake disc on the bench before the whole hub goes onto the trailing arm. A <Term id="assembly-sub-assembly">sub-assembly</Term> models that: a named group of steps that is built by itself and then joins the main build.
+
+To start one, open a step's menu and choose **"Make Sub-Assembly"**; that step becomes its first step. Add more by dragging steps onto it, or with **"Move Into"** in a step's menu. **"Move Out of Sub-Assembly"** returns a step to the main list. The list numbers a sub-assembly's steps under it, such as 4.1 and 4.2 under sub-assembly 4.
+
+Double-click a sub-assembly (or choose **"Open Sub-Assembly"**) to work on it alone: the list and the 3D view show only its steps and parts, and **"Add Step"** adds to it. **"All steps"** goes back to the whole instruction.
+
+Selecting a sub-assembly shows its name, its steps, and **"Where it goes"**:
+
+<FieldTable>
+  <Field name="Used in">The later step that fits the finished sub-assembly. Leave it on **"Main build (after its last step)"** when no step uses it, and it joins the build right after its own steps.</Field>
+  <Field name="Instruction">Shown only when no step uses it: what the operator reads as the finished sub-assembly joins the main build.</Field>
+  <Field name="Camera">Shown only when no step uses it: the view for that moment, saved with **"Use Current View"**.</Field>
+</FieldTable>
+
+You can also set this from the other side: on a step, **"Use Sub-Assembly"** picks a finished sub-assembly to fit in that step. The step's row then shows **"Uses 4"**.
+
+During playback a sub-assembly's steps play in order on their own, and the finished unit glides in at the step that uses it. Pressing play with a sub-assembly selected builds it from its first step.
+
+**"Ungroup"** removes the sub-assembly and keeps its steps in the main list. **"Delete Sub-Assembly"** removes it together with its steps.
+
+<Callout type="note" title="One level only.">
+A sub-assembly can't sit inside another one. To build one into another, use it in one of the other's steps. A sub-assembly can only be used in a step that comes after it, and never in one of its own steps.
+</Callout>
+
+## Materials, tools, and slides
+
+The **BOM** tab links the step to what it consumes: parts from the item's bill of materials and the tools it needs. **"Match BOM"** in the **Components** tab matches 3D components to bill-of-materials items and fills in each step's materials for you. The **Slides** tab adds photos, PDFs, or extra 3D models the operator sees on this step.
+
+## On jobs and the shop floor
+
+An **Assembly** [operation](/docs/reference/jobs#operation-type) picks its instruction on the item's bill of process. A job copies the instruction's steps when it is created. To bring a later edit into an existing job, use **"Sync Assembly Steps"** on the job operation: steps that came from the instruction are updated or removed to match, and steps someone wrote by hand on the job are kept.
+
+On the shop floor the operation opens the [guided assembly view](/docs/reference/mes#the-guided-assembly-view), which plays the same steps, hidden parts, and sub-assemblies. A sub-assembly itself is not a step the operator records; its steps are. The instruction's steps come after any steps the operation already has.
+
+## Related
+
+<Cards>
+  <Card title="MES" href="/docs/reference/mes#the-guided-assembly-view">How operators play an instruction step by step, and the Build, Focus, and Full views.</Card>
+  <Card title="Jobs" href="/docs/reference/jobs">The work orders whose Assembly operations use an instruction.</Card>
+  <Card title="Methods" href="/docs/reference/methods">The bill of materials that step materials are picked from.</Card>
+</Cards>
+
+<AgentContext>
+## Internals, exact strings, and troubleshooting
+
+- Routes: list `/x/production/assemblies`, editor `/x/assembly/:id`. Tables: `assemblyInstruction` (row per version, grouped by `rootInstructionId ?? id`), `assemblyInstructionStep`, `assemblyInstructionStepMaterial`, `assemblyInstructionStepSlide`, `assemblyInstructionStepTool`.
+- Editing is Draft-only in the UI (`isDisabled = status !== "Draft" || !can("update","production")`). "Make Active" shows on any non-Published version, Archived included.
+- Step status DB meaning: Todo = new manual step, Review = planner-generated, Done = author-validated. New steps default to Todo with `planConfidence` "manual".
+- Sub-assemblies: a header row has `assemblyInstructionStep.isSubAssembly`; its steps have `parentStepId` = the header and are stored directly before it in `sortOrder`; the header's `usedInStepId` is the step that fits it (NULL = joins the main build at the header). Rules shared by ERP, the server, and playback: `validateSubAssemblies` in `packages/viewer/src/subassembly.ts`. Header rows are never copied to job steps. The carried unit glides in over 1.2 s. The open sub-assembly is the `?subAssembly=` URL parameter.
+- Hidden parts: `assemblyInstructionStep.hiddenComponentNodeIds`; a DB trigger strips the step's own components on every write.
+- Flash strings: "Step not found"; "Sub-assembly not found"; "This step is already a sub-assembly"; "This step is already in a sub-assembly"; "A sub-assembly can't be inside another sub-assembly"; "A sub-assembly's steps must come directly before it"; "A sub-assembly can only be used after it is built"; "A sub-assembly can't be used by one of its own steps"; "Only draft instructions can be edited"; "Failed to update hidden components"; "Failed to update step status"; "Failed to update assembly instruction step"; "Steps already exist — delete them before generating from the plan"; "Some steps are locked — cannot regenerate"; "The geometry service is unavailable — motion planning can't run right now."; "Motion planning is already running"; "This instruction has no processed model"; "The model must finish converting before planning"; "This job is locked — steps can't be synced to it"; "The selected item has no 3D model. Upload a STEP file on the item's Model tab first."; "Made assembly instruction active"; "Failed to make assembly instruction active".
+- Planner offline: "The geometry service is offline — motion planning is unavailable right now." Generate is disabled until it is back.
+</AgentContext>

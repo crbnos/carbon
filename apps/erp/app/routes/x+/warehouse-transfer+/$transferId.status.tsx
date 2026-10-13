@@ -1,13 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
   updateWarehouseTransferStatus,
   warehouseTransferStatusType
@@ -36,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Item Rule evaluation at every "go" transition — the user is committing to
+  // Storage Rule evaluation at every "go" transition — the user is committing to
   // the transfer plan. Pre-flight blocks early (before child shipment/receipt
   // are created). Cancel + Reopen are intentionally excluded — they're not
   // commits.

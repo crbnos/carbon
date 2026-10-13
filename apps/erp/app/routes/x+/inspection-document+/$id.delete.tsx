@@ -1,15 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
-import { redirect } from "react-router";
-import { deleteInspectionDocument } from "~/modules/production";
+import { storage } from "@carbon/files";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs } from "react-router";
+import { deleteInspectionDocument } from "~/modules/quality";
 import { path } from "~/utils/path";
-import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -35,16 +36,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const storagePath = result.data?.storagePath;
   if (storagePath) {
     const serviceRole = await getCarbonServiceRole();
-    await serviceRole.storage.from("private").remove([storagePath]);
+    await storage(serviceRole).company(companyId).remove([storagePath]);
   }
 
   throw redirect(
     path.to.inspectionDocuments,
     await flash(request, success("Inspection plan deleted"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateInspectionDocuments();
-  return await serverAction();
 }

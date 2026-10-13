@@ -1,12 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { curveBasis } from "@visx/curve";
 import { ParentSize } from "@visx/responsive";
 import { scaleLinear } from "@visx/scale";
 import { Area } from "@visx/shape";
 import { Text } from "@visx/text";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { Fragment, useMemo, useRef, useState } from "react";
-import { useIsMobile } from "./hooks";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 interface FunnelStep {
   id: string;
@@ -73,7 +77,7 @@ function FunnelChartContent({
   numberFormatter,
   defaultTooltipStepId
 }: FunnelChartContentProps) {
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
 
   const [activeTooltip, setActiveTooltip] = useState<string | null>(
     defaultTooltipStepId ?? null

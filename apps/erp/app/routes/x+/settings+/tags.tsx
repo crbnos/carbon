@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "tags");
@@ -15,11 +20,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await client
     // @ts-expect-error
     .from(table as string)
-    .update({
-      tags: value,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        tags: value,
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .in(getIdField(table as string), ids as string[]);
 
   if (result.error) {

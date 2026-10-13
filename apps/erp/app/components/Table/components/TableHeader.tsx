@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Hidden, Input, Submit, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -98,6 +102,10 @@ type HeaderProps<T> = {
   withPagination: boolean;
   withSearch: boolean;
   withSelectableRows: boolean;
+  // Embedded tables (wizards/drawers) can turn off the column picker and the
+  // CSV download; both default on so ordinary tables are unchanged.
+  withColumnOrdering?: boolean;
+  withCsvExport?: boolean;
   sort?: ReactNode;
 };
 
@@ -133,9 +141,11 @@ const TableHeader = <T extends object>({
   withSavedView,
   withSearch,
   withSelectableRows,
+  withColumnOrdering = true,
+  withCsvExport = true,
   sort
 }: HeaderProps<T>) => {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const [params, setParams] = useUrlParams();
   const currentFilters = params.getAll("filter").filter(Boolean);
   const currentSorts = params.getAll("sort").filter(Boolean);
@@ -160,11 +170,7 @@ const TableHeader = <T extends object>({
   }, [fetcher.state, fetcher.data?.success]);
 
   const { currentView, hasView } = useSavedViews();
-  const translateText = (value: string | undefined) => {
-    if (!value) return value;
-    return i18n._(value);
-  };
-  const viewTitle = translateText(currentView?.name ?? title);
+  const viewTitle = currentView?.name ?? title;
   // const viewDescription = currentView?.description ?? "";
   const savedViewFormValidator = useMemo(
     () =>
@@ -185,6 +191,22 @@ const TableHeader = <T extends object>({
 
   const hideTitleBar =
     !viewTitle && !primaryAction && !canSaveView && !titleBadge;
+
+  // With every control opted out the toolbar row would render as an empty
+  // padded strip — skip it entirely (embedded wizard tables).
+  const hideToolbar =
+    !withSearch &&
+    !filters?.length &&
+    !headerActions &&
+    !(withSelectableRows && typeof renderActions === "function") &&
+    sort === null &&
+    !withColumnOrdering &&
+    !canSaveView &&
+    !withCsvExport &&
+    !withPagination &&
+    // Forced edit mode hides the Edit/Lock toggle, the only control inline
+    // editing adds to the toolbar.
+    (!withInlineEditing || forceEditMode);
 
   return (
     <div className={cn("w-full flex flex-col", !compact && "mb-8")}>
@@ -293,7 +315,7 @@ const TableHeader = <T extends object>({
           </HStack>
         )
       )}
-      {!isEmpty && (
+      {!isEmpty && !hideToolbar && (
         <HStack
           className={cn(
             compact
@@ -333,12 +355,14 @@ const TableHeader = <T extends object>({
               sort
             )}
 
-            <Columns
-              columnOrder={columnOrder}
-              columns={columns}
-              setColumnOrder={setColumnOrder}
-              withSelectableRows={withSelectableRows}
-            />
+            {withColumnOrdering && (
+              <Columns
+                columnOrder={columnOrder}
+                columns={columns}
+                setColumnOrder={setColumnOrder}
+                withSelectableRows={withSelectableRows}
+              />
+            )}
 
             {canSaveView && (
               <Tooltip>
@@ -364,14 +388,16 @@ const TableHeader = <T extends object>({
               </Tooltip>
             )}
 
-            <Download
-              data={data}
-              columnAccessors={columnAccessors}
-              exportValues={exportValues}
-              exportOnlyColumns={exportOnlyColumns}
-              columnOrder={columnOrder}
-              columnVisibility={columnVisibility}
-            />
+            {withCsvExport && (
+              <Download
+                data={data}
+                columnAccessors={columnAccessors}
+                exportValues={exportValues}
+                exportOnlyColumns={exportOnlyColumns}
+                columnOrder={columnOrder}
+                columnVisibility={columnVisibility}
+              />
+            )}
 
             {withPagination &&
               (pagination.canNextPage || pagination.canPreviousPage) && (

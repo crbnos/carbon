@@ -1,10 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import type z from "zod";
 import type { calibrationAttempt } from "~/modules/quality";
 import {
@@ -17,6 +24,9 @@ import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeC
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
+
+const logger = getLogger("erp", "calibration-detail");
+
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
   to: path.to.gauges
@@ -44,6 +54,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         error(record.error, "Failed to load gauge calibration record")
       )
     );
+  }
+
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (record.data.companyId !== companyId) {
+    logger.error("Gauge calibration record is not in the caller's company", {
+      companyId,
+      calibrationRecordId: id
+    });
+    throw redirect(path.to.gauges);
   }
 
   return {
@@ -125,14 +145,14 @@ export default function GaugeCalibrationRecordRoute() {
     ...getCustomFields(record.customFields)
   };
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   return (
     <GaugeCalibrationRecordForm
       key={id}
       initialValues={initialValues}
       files={files}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

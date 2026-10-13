@@ -26,15 +26,49 @@ Key service functions (verified):
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
-  edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The edge function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  server function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The server function owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
-  `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
+  `accountDefault.inventoryAdjustmentVarianceAccount`) for every company — Provisional before the
+  accounting cutover, Posted after it.
   `post-inventory-count` books its variances through the same shared core
-  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL.
+  **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
+  (migration `20261006220601`) stamps a layer booked for ONE serial unit — every layer
+  `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
+  sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
+  optional `trackedEntityIds` and orders FIFO / LIFO layers through
+  `orderLayersForConsumption` (`packages/server-functions/src/lib/cost-layer-order.ts`): the leaving unit's own layer
+  first, then unstamped layers, then another unit's stamped layer as the last resort (so
+  nothing else eats a returned unit's value). Callers passing the ids: `bookAdjustment`
+  decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
+  shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
+  layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
+  Pinned by `lib/cost-layer-order.test.ts` and the database test
+  `lib/calculate-cogs.test.ts`.
+  **Serial unit cost and Recost.** `preview-serial-unit-costs` (`{ itemId,
+  locationId? }`, `view: accounting`) values every on-hand serial of an item
+  with the pure `serialUnitCost` (`lib/serial-unit-cost.ts`): calculateCOGS's
+  arithmetic for a quantity of one (own layer, then unstamped, with price
+  correction children; Standard / Average at the item cost), from one read of
+  the item's layers. ERP: `getSerialUnitCosts` → cached `api+/items.$itemId.serial-costs.ts`
+  (also returns `costingMethod` and `retainedEarningsAccountId`), read by
+  `InventoryStorageUnits` only when the user can view accounting; a zero
+  cost reads "No cost". **Recost** (row action, `update: accounting`, FIFO /
+  LIFO only) → `x+/inventory+/quantities+/$itemId.recost.tsx` →
+  `recostSerialUnit` → `recost-serial-unit` (`{ trackedEntityId, unitCost,
+  offsetAccountId?, postingDate }`, `update: accounting`): exactly one unit on
+  hand at one location; relieves it via `calculateCOGS` (its own layer first)
+  and books −1 at the old cost / +1 stamped at the new, both
+  `costLedgerType 'Revaluation'` (the only writer of that type; no
+  `itemLedger` row — nothing moves); posts an `'Inventory
+  Adjustment'` journal (Provisional before the accounting cutover) of the difference, inventory account vs the offset
+  account (`getOffsetAccount`, `lib/offset-account.ts`, signed by the offset
+  account's own class via `buildOffsetLines`). The valuation report's FIFO /
+  LIFO layer average moves by exactly the difference, so the tie-out holds. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +
@@ -52,19 +86,20 @@ Key service functions (verified):
   Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
   `scrapAccount` + dimensions replaces per-reason account mapping by design.
   The **ScrapReason** dimension is seeded active by default (a `dimension` row per
-  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  company group, from `packages/database/src/seed-data.ts`; backfilled to existing groups by
   `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
   it is entity-backed — its values resolve live from the `scrapReason` table via
-  `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.ee.service.ts), so adding a
+  `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
   scrap reason immediately makes it a selectable/taggable dimension value with no sync step.
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
+- `correctStockMovement` — wraps the **`correct-stock-movement` server function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
-  `postingDate` and (when accounting is on) posting its journal into the period containing
-  that date via `getAccountingPeriodForDate` (throws on Locked/Closed). The delta is
+  `postingDate` and posting its journal: after the accounting cutover into the period containing
+  that date via `getAccountingPeriodForDate` (throws on Locked/Closed); before it the journal is
+  Provisional and has no period. The delta is
   `correctedQuantity − effective` (effective = root + all prior corrections in the group),
   so repeat corrections converge. `documentType`/`documentId` are copied from the original
   so document-scoped movement views keep including the fix. Entry point: "Correct Quantity"
@@ -84,7 +119,7 @@ Key service functions (verified):
   (× `conversionFactor`); `Consume First` redirects only when the predecessor is out of warehouse
   stock; `No Stock` (and `Stock Only` without an effective successor) is dropped from the schedule
   and skipped in generation. Note picking's redirect rules differ from the MRP/job-creation map
-  (`functions/lib/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
+  (`packages/database/src/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
   for picking, `Stock Only` must not be picked for production. A substituted line's `itemId`
   differs from its `jobMaterial.itemId` (no new column); the availability RPC reports the
   line's OWN pick item's warehouse on-hand with NO successor fold-in — a substituted line
@@ -113,7 +148,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   longer an approximate matview. Excludes `Rejected` tracked stock; exact, with a
   nightly `reconcile-item-stock-quantities` cron as drift backstop. Read by
   RealtimeDataProvider (with realtime push), the workflow engine's
-  `item.quantityOnHand` operation, and the MRP edge function's on-hand input.
+  `item.quantityOnHand` operation, and MRP's on-hand input.
   The old `itemInventory` rollup table is DEAD — its maintaining trigger was dropped in
   `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via
@@ -128,17 +163,19 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`stockTransfer*`** — intra-location moves (separate from warehouse transfers).
 - **`pickMethod`** — default storage unit for picking an item at a location (`defaultStorageUnitId`).
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
-- **`storageRule`** + assignment tables — renamed from `customRule`/`itemRule` (`20260603130000`).
+- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
-read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
-`itemLedgerSnapshot`; `item_id` restricts to one item for detail-page loads). Returns ~52 cols:
+read. Newest definition is `20261006130001_demand-forecast-consumption.sql` (the
+`20260713235406_item-ledger-snapshot.sql` body — snapshot + delta via `itemLedgerSnapshot`,
+`item_id` restricts to one item for detail-page loads — plus a net-projection demand arm:
+`GREATEST("forecastQuantity" - "consumedQuantity", 0)` of `demandProjection`). Returns ~52 cols:
 item identity + material props, planning fields, and quantities `quantityOnHand`, `quantityOnHold`,
 `quantityRejected` (status-aware: excludes `Rejected`, surfaces `On Hold`), `quantityOnSalesOrder`,
 `quantityOnPurchaseOrder`, `quantityOnProductionOrder`, `quantityOnProductionDemand`, `demandForecast`,
 `usageLast30Days`, `usageLast90Days`, `daysRemaining`, plus `storageTypeIds`/`storageUnitIds` arrays.
 Aggregates from `itemLedger`, open `purchaseOrder(Line)`, `salesOrder(Line)`, `job`/`jobMaterial`,
-and `demandForecast`/`demandActual`.
+`demandForecast`/`demandActual`, and `demandProjection` net of `consumedQuantity`.
 
 Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 `20260807090400`), `trackedEntityStatus`
@@ -148,7 +185,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 ## Gotchas
 
 - **Migrations are timestamp-ordered; tables get renamed.** `shelf`→`storageUnit`/`shelfId`→`storageUnitId`,
-  `customRule`→`storageRule`. Grep the NEWEST migration for the real name; never trust an older one or the
+  `customRule`→`storageRule`→`enforcementRule` (merged with `salesRule`). Grep the NEWEST migration for the real name; never trust an older one or the
   old cache. The `shelf`→`storageUnit` rename was split across paired migrations
   `20260417000100` (rename, M2) + `..000300` (recreate dependents, M4) — they must apply together.
 - **Short-closed PO lines don't count as incoming supply.** `get_inventory_quantities`,
@@ -156,7 +193,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
   `pol."receivedComplete" = false` (`20260708204214`). A line short-closed via
   `shortClosePurchaseOrderLine` ("Stop Receiving") keeps `quantityToReceive > 0` but is excluded from
   `quantityOnPurchaseOrder`.
-- **`get_inventory_quantities` has many revisions.** Always read the newest (`20260713235406`), not the
+- **`get_inventory_quantities` has many revisions.** Always read the newest (`20261006130001`), not the
   first match. `quantityOnHand` is status-aware: `Rejected` tracked entities are excluded, and tracked
   rows are always computed live (never from `itemLedgerSnapshot`) so status flips are never stale.
 - **The auto-generated MCP reference (`.claude/rules/mcp-tools-reference.md`) is stale** for storage units —

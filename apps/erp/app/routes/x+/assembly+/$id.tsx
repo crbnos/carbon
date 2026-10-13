@@ -1,32 +1,44 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useRevalidator } from "@carbon/query";
 import {
   Button,
   ClientOnly,
   Spinner,
   toast,
   useInterval,
-  useMode
+  useMode,
+  useViewport
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyPlayerHandle,
   CameraPose,
   Motion
 } from "@carbon/viewer";
-import { AssemblyPlayer, indexAssemblyGraph } from "@carbon/viewer";
+import {
+  AssemblyPlayer,
+  buildSubAssemblyPlan,
+  indexAssemblyGraph,
+  subAssemblyPartIds
+} from "@carbon/viewer";
 import { msg } from "@lingui/core/macro";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
-  redirect,
   useFetcher,
   useLoaderData,
   useParams,
-  useRevalidator
+  useSearchParams
 } from "react-router";
 import { Empty } from "~/components";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
@@ -50,8 +62,11 @@ import {
 } from "~/modules/production";
 import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
 import AssemblyInstructionExplorer from "~/modules/production/ui/Assemblies/AssemblyInstructionExplorer";
-import AssemblyInstructionHeader from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
+import AssemblyInstructionHeader, {
+  AssemblyInstructionOverviewHero
+} from "~/modules/production/ui/Assemblies/AssemblyInstructionHeader";
 import AssemblyInstructionProperties from "~/modules/production/ui/Assemblies/AssemblyInstructionProperties";
+import { SUB_ASSEMBLY_PARAM } from "~/modules/production/ui/Assemblies/AssemblyStepList";
 import { ModelConvertProgress } from "~/modules/production/ui/Assemblies/ModelConvertProgress";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { getPrivateUrl, path } from "~/utils/path";
@@ -220,9 +235,8 @@ export default function AssemblyInstructionRoute() {
   // steps in rather than animating fallback paths the plan is about to replace.
   const isPlanning = isAssemblyPlanRunning(planJob);
 
-  const [selectedStepId, setSelectedStepId] = useState<string | null>(
-    steps[0]?.id ?? null
-  );
+  // null = the default below (the first row of the list).
+  const [selectedStepId, setSelectedStepId] = useState<string | null>(null);
   const [draftComponentNodeIds, setDraftComponentNodeIds] = useState<
     string[] | null
   >(null);
@@ -235,7 +249,10 @@ export default function AssemblyInstructionRoute() {
   // three panels: it renders red in the viewer, marks + scrolls to the row in the
   // Components panel, and (while authoring a step) stages the step's draft components.
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
-  const [hiddenNodeIds, setHiddenNodeIds] = useState<string[]>([]);
+  // null = read from the step; reset on step change, like the components draft.
+  const [draftHiddenNodeIds, setDraftHiddenNodeIds] = useState<string[] | null>(
+    null
+  );
   // Isolate/focus: picking components in the Components panel shows ONLY them in
   // the viewer (everything else hidden) so the part can be inspected alone.
   // Cleared by a viewer/3D pick, a step change, add-mode, or an empty selection.
@@ -246,8 +263,11 @@ export default function AssemblyInstructionRoute() {
   const [isAddingComponents, setIsAddingComponents] = useState(false);
 
   const { selectedStep, activeStepIndex } = useMemo(() => {
+    // Default to the first row of the list (a sub-assembly's steps are stored
+    // before its header).
     const step =
       steps.find((candidate) => candidate.id === selectedStepId) ??
+      steps.find((candidate) => !candidate.parentStepId) ??
       steps[0] ??
       null;
     return {
@@ -279,6 +299,145 @@ export default function AssemblyInstructionRoute() {
     [componentsFetcher, id]
   );
 
+  const hiddenFetcher = useFetcher<{ success: boolean }>();
+  const saveHiddenNodeIds = useCallback(
+    (stepId: string, hiddenNodeIds: string[]) => {
+      const formData = new FormData();
+      formData.set("hiddenComponentNodeIds", JSON.stringify(hiddenNodeIds));
+      hiddenFetcher.submit(formData, {
+        method: "post",
+        action: path.to.assemblyInstructionStepHiddenComponents(id, stepId)
+      });
+    },
+    [hiddenFetcher, id]
+  );
+  // A failed save must not keep showing the unsaved list: fall back to the step's saved one.
+  useEffect(() => {
+    if (
+      hiddenFetcher.state === "idle" &&
+      hiddenFetcher.data?.success === false
+    ) {
+      setDraftHiddenNodeIds(null);
+    }
+  }, [hiddenFetcher.state, hiddenFetcher.data]);
+
+  // The selected step shows its hidden draft before the autosave round-trips.
+  const viewerSteps = useMemo(
+    () =>
+      steps.map((step) => {
+        const viewerStep = toViewerStep(step);
+        return draftHiddenNodeIds && step.id === selectedStep?.id
+          ? { ...viewerStep, hiddenComponentNodeIds: draftHiddenNodeIds }
+          : viewerStep;
+      }),
+    [steps, draftHiddenNodeIds, selectedStep]
+  );
+
+  const subPlan = useMemo(
+    () => buildSubAssemblyPlan(viewerSteps),
+    [viewerSteps]
+  );
+
+  // A step that carries a finished sub-assembly in also "owns" its parts:
+  // they move on it, so they get the This-step badge and can't be hidden there.
+  const selectedOwnNodeIds = useMemo(() => {
+    const own = draftComponentNodeIds ?? selectedStep?.componentNodeIds ?? [];
+    if (!selectedStep) return own;
+    const carried = (subPlan.get(selectedStep.id)?.carriesIn ?? []).flatMap(
+      (headerId) => subAssemblyPartIds(viewerSteps, headerId)
+    );
+    return carried.length === 0 ? own : [...new Set([...own, ...carried])];
+  }, [draftComponentNodeIds, selectedStep, viewerSteps, subPlan]);
+  // Mirrors the DB trigger for the in-flight drafts: a part the step installs is
+  // never listed as hidden on it (e.g. right after adding it to the step).
+  const selectedHiddenNodeIds = useMemo(() => {
+    const own = new Set(selectedOwnNodeIds);
+    return (
+      draftHiddenNodeIds ??
+      selectedStep?.hiddenComponentNodeIds ??
+      []
+    ).filter((nodeId) => !own.has(nodeId));
+  }, [draftHiddenNodeIds, selectedStep, selectedOwnNodeIds]);
+
+  const onSetHiddenComponents = useCallback(
+    (nodeIds: string[]) => {
+      if (isDisabled || !selectedStep) return;
+      setDraftHiddenNodeIds(nodeIds);
+      saveHiddenNodeIds(selectedStep.id, nodeIds);
+    },
+    [isDisabled, selectedStep, saveHiddenNodeIds]
+  );
+
+  // An opened sub-assembly (?subAssembly=) scopes the player to its steps.
+  const { t } = useLingui();
+  const { isPhone } = useViewport();
+  const [searchParams] = useSearchParams();
+  const requestedSubAssembly = searchParams.get(SUB_ASSEMBLY_PARAM);
+  const openSubAssemblyId =
+    requestedSubAssembly && subPlan.get(requestedSubAssembly)?.isHeader
+      ? requestedSubAssembly
+      : null;
+  const scopeStepIds = useMemo(
+    () =>
+      openSubAssemblyId
+        ? viewerSteps
+            .filter((step) => step.parentStepId === openSubAssemblyId)
+            .map((step) => step.id)
+        : null,
+    [openSubAssemblyId, viewerSteps]
+  );
+
+  // A used sub-assembly's header plays nothing (the unit joins at the step
+  // that uses it), so selecting it shows its finished last step instead.
+  const playerStepIndex = useMemo(() => {
+    const info = selectedStep ? subPlan.get(selectedStep.id) : undefined;
+    if (!info?.isHeader || info.plays) return activeStepIndex;
+    const members = viewerSteps.filter(
+      (step) => step.parentStepId === info.stepId
+    );
+    const last = members[members.length - 1];
+    return last
+      ? viewerSteps.findIndex((step) => step.id === last.id)
+      : activeStepIndex;
+  }, [selectedStep, subPlan, viewerSteps, activeStepIndex]);
+
+  // With a sub-assembly row selected, Play builds it from its first step.
+  const playFromStepIndex = useMemo(() => {
+    if (!selectedStep?.isSubAssembly) return null;
+    const first = viewerSteps.findIndex(
+      (step) => step.parentStepId === selectedStep.id
+    );
+    return first >= 0 ? first : null;
+  }, [selectedStep, viewerSteps]);
+
+  const subAssemblyName = useCallback(
+    (headerId: string) =>
+      viewerSteps.find((step) => step.id === headerId)?.title ||
+      t`Sub-Assembly`,
+    [viewerSteps, t]
+  );
+  // Labels follow the step the player shows (a used header shows its last step).
+  const playerStepId = viewerSteps[playerStepIndex]?.id;
+  const activeInfo = playerStepId ? subPlan.get(playerStepId) : undefined;
+  const isolationLabel =
+    activeInfo && !activeInfo.isHeader && activeInfo.headerId
+      ? t`Sub-Assembly ${subPlan.get(activeInfo.headerId)?.number ?? ""} · ${subAssemblyName(
+          activeInfo.headerId
+        )} — shown on its own`
+      : null;
+  const carriedIn = (activeInfo?.carriesIn ?? []).filter(
+    (headerId) => headerId !== playerStepId
+  );
+  const carryInLabel =
+    carriedIn.length > 0
+      ? carriedIn
+          .map(
+            (headerId) =>
+              t`Uses ${subPlan.get(headerId)?.number ?? ""} · ${subAssemblyName(headerId)}`
+          )
+          .join(", ")
+      : null;
+
   // Bumped to preview (play) the active step — a double-click in the Explorer.
   const [playStepNonce, setPlayStepNonce] = useState(0);
 
@@ -286,6 +445,7 @@ export default function AssemblyInstructionRoute() {
     (stepId: string, options?: { selectComponents?: boolean }) => {
       setSelectedStepId(stepId);
       setDraftComponentNodeIds(null);
+      setDraftHiddenNodeIds(null);
       setIsAddingComponents(false);
       // Leave any open motion-path edit session when moving to another step.
       setEditingStepId(null);
@@ -296,15 +456,25 @@ export default function AssemblyInstructionRoute() {
       // viewer, marked in the Components panel. Viewer-driven changes (playback,
       // scrub, on-screen nav) pass selectComponents:false so auto-advance doesn't
       // stomp the selection the user is working with.
-      if (options?.selectComponents !== false) {
-        const step = stepsRef.current.find(
-          (candidate) => candidate.id === stepId
-        );
-        if (step) setSelectedNodeIds(step.componentNodeIds ?? []);
+      const step = stepsRef.current.find(
+        (candidate) => candidate.id === stepId
+      );
+      if (options?.selectComponents !== false && step) {
+        setSelectedNodeIds(step.componentNodeIds ?? []);
       }
     },
     []
   );
+
+  // Opening a sub-assembly lands on its first step (the player only plays its
+  // steps). Keyed on the opened id alone so picking another step afterwards
+  // (its header in Properties, say) isn't bounced back.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs only when a sub-assembly is opened
+  useEffect(() => {
+    if (!scopeStepIds || scopeStepIds.length === 0) return;
+    if (selectedStep && scopeStepIds.includes(selectedStep.id)) return;
+    onSelectStep(scopeStepIds[0]);
+  }, [openSubAssemblyId]);
 
   // Double-clicking a step previews it: select it, then bump the nonce so the
   // player animates its insertion (single-click just shows it seated).
@@ -387,8 +557,6 @@ export default function AssemblyInstructionRoute() {
     },
     [isDisabled, selectedStep, draftComponentNodeIds, saveComponentNodeIds]
   );
-
-  const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
 
   // Per-step slides/tools/materials for the properties panel — memoized so a
   // per-frame motion-drag re-render (draftMotion) doesn't hand the panel new
@@ -525,6 +693,7 @@ export default function AssemblyInstructionRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Steps`}
               explorer={
                 <AssemblyInstructionExplorer
                   steps={steps}
@@ -543,129 +712,137 @@ export default function AssemblyInstructionRoute() {
                   onSelectStep={onSelectStep}
                   onPreviewStep={onPreviewStep}
                   onHighlightComponents={onFocusComponents}
-                  onHideComponents={setHiddenNodeIds}
+                  hasSelectedStep={Boolean(selectedStep)}
+                  ownNodeIds={selectedOwnNodeIds}
+                  hiddenNodeIds={selectedHiddenNodeIds}
+                  onSetHiddenComponents={onSetHiddenComponents}
+                  openSubAssemblyId={openSubAssemblyId}
                 />
               }
               content={
-                <div className="relative bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full">
-                  {glbPath && graphPath && isPlanning && (
-                    <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
-                      <Spinner className="h-3.5 w-3.5" />
-                      <span className="whitespace-nowrap text-xs font-medium text-foreground">
-                        Planning motion…
-                      </span>
-                      <cancelPlanFetcher.Form
-                        method="post"
-                        action={path.to.assemblyJobsCancel(id!)}
-                      >
-                        <input type="hidden" name="kind" value="plan" />
-                        <button
-                          type="submit"
-                          disabled={cancelPlanFetcher.state !== "idle"}
-                          className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col">
+                  {isPhone ? <AssemblyInstructionOverviewHero /> : null}
+                  <div className="relative min-h-0 w-full flex-1 bg-card">
+                    {glbPath && graphPath && isPlanning && (
+                      <div className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 shadow-lg">
+                        <Spinner className="h-3.5 w-3.5" />
+                        <span className="whitespace-nowrap text-xs font-medium text-foreground">
+                          Planning motion…
+                        </span>
+                        <cancelPlanFetcher.Form
+                          method="post"
+                          action={path.to.assemblyJobsCancel(id!)}
                         >
-                          Cancel
-                        </button>
-                      </cancelPlanFetcher.Form>
-                    </div>
-                  )}
-                  {glbPath && graphPath ? (
-                    <ClientOnly
-                      fallback={
-                        <div className="flex h-full w-full items-center justify-center">
-                          <Spinner className="h-10 w-10" />
-                        </div>
-                      }
-                    >
-                      {() => (
-                        <AssemblyPlayer
-                          ref={playerRef}
-                          glbUrl={getPrivateUrl(glbPath)}
-                          graphUrl={getPrivateUrl(graphPath)}
-                          steps={viewerSteps}
-                          activeStepIndex={Math.max(activeStepIndex, 0)}
-                          playStepNonce={playStepNonce}
-                          onStepChange={(index) => {
-                            const step = steps[index];
-                            if (step)
-                              onSelectStep(step.id, {
-                                selectComponents: false
-                              });
-                          }}
-                          onSelectComponents={onSelectComponents}
-                          onGraphLoaded={setGraph}
-                          highlightedNodeIds={selectedNodeIds}
-                          hiddenNodeIds={hiddenNodeIds}
-                          focusedNodeIds={focusedNodeIds}
-                          readOnly={isDisabled}
-                          editMotion={
-                            editingStepId &&
-                            selectedStep?.id === editingStepId &&
-                            draftMotion
-                              ? { stepId: editingStepId, motion: draftMotion }
-                              : null
-                          }
-                          onMotionChange={onMotionChange}
-                          units={namedUnits}
-                          suppressFallbackMotions={isPlanning}
-                          componentPickerActive={isAddingComponents}
-                          autoPlay={false}
-                          mode={mode}
-                          className="h-full"
-                        />
-                      )}
-                    </ClientOnly>
-                  ) : (isActivelyConverting || isAwaitingPickup) &&
-                    modelUpload?.id ? (
-                    <ModelConvertProgress
-                      modelUploadId={modelUpload.id}
-                      instructionId={id!}
-                    />
-                  ) : modelUpload?.processingStatus === "Failed" ? (
-                    <Empty>
-                      <p className="text-sm font-medium text-foreground">
-                        Couldn't prepare this model
-                      </p>
-                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
-                        {modelUpload?.processingError ??
-                          "Something went wrong converting the CAD file for 3D viewing."}
-                      </p>
-                      <retryFetcher.Form
-                        method="post"
-                        action={path.to.assemblyModelConvert(id!)}
+                          <input type="hidden" name="kind" value="plan" />
+                          <button
+                            type="submit"
+                            disabled={cancelPlanFetcher.state !== "idle"}
+                            className="text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                        </cancelPlanFetcher.Form>
+                      </div>
+                    )}
+                    {glbPath && graphPath ? (
+                      <ClientOnly
+                        fallback={
+                          <div className="flex h-full w-full items-center justify-center">
+                            <Spinner className="h-10 w-10" />
+                          </div>
+                        }
                       >
-                        <Button
-                          type="submit"
-                          variant="secondary"
-                          isLoading={retryFetcher.state !== "idle"}
-                          isDisabled={
-                            retryFetcher.state !== "idle" ||
-                            !permissions.can("update", "production")
-                          }
+                        {() => (
+                          <AssemblyPlayer
+                            ref={playerRef}
+                            glbUrl={getPrivateUrl(glbPath)}
+                            graphUrl={getPrivateUrl(graphPath)}
+                            steps={viewerSteps}
+                            scopeStepIds={scopeStepIds}
+                            isolationLabel={isolationLabel}
+                            carryInLabel={carryInLabel}
+                            activeStepIndex={Math.max(playerStepIndex, 0)}
+                            playFromStepIndex={playFromStepIndex}
+                            playStepNonce={playStepNonce}
+                            onStepChange={(index) => {
+                              const step = steps[index];
+                              if (step)
+                                onSelectStep(step.id, {
+                                  selectComponents: false
+                                });
+                            }}
+                            onSelectComponents={onSelectComponents}
+                            onGraphLoaded={setGraph}
+                            highlightedNodeIds={selectedNodeIds}
+                            focusedNodeIds={focusedNodeIds}
+                            readOnly={isDisabled}
+                            editMotion={
+                              editingStepId &&
+                              selectedStep?.id === editingStepId &&
+                              draftMotion
+                                ? { stepId: editingStepId, motion: draftMotion }
+                                : null
+                            }
+                            onMotionChange={onMotionChange}
+                            units={namedUnits}
+                            suppressFallbackMotions={isPlanning}
+                            componentPickerActive={isAddingComponents}
+                            autoPlay={false}
+                            mode={mode}
+                            className="h-full"
+                          />
+                        )}
+                      </ClientOnly>
+                    ) : (isActivelyConverting || isAwaitingPickup) &&
+                      modelUpload?.id ? (
+                      <ModelConvertProgress
+                        modelUploadId={modelUpload.id}
+                        instructionId={id!}
+                      />
+                    ) : modelUpload?.processingStatus === "Failed" ? (
+                      <Empty>
+                        <p className="text-sm font-medium text-foreground">
+                          Couldn't prepare this model
+                        </p>
+                        <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                          {modelUpload?.processingError ??
+                            "Something went wrong converting the CAD file for 3D viewing."}
+                        </p>
+                        <retryFetcher.Form
+                          method="post"
+                          action={path.to.assemblyModelConvert(id!)}
                         >
-                          Try again
-                        </Button>
-                      </retryFetcher.Form>
-                    </Empty>
-                  ) : (
-                    <Empty>
-                      <p className="text-sm font-medium text-foreground">
-                        Model not ready yet
-                      </p>
-                      <p className="max-w-[320px] text-center text-sm text-muted-foreground">
-                        This model hasn't been prepared for 3D viewing. It'll
-                        appear here once processing starts.
-                      </p>
-                    </Empty>
-                  )}
+                          <Button
+                            type="submit"
+                            variant="secondary"
+                            isLoading={retryFetcher.state !== "idle"}
+                            isDisabled={
+                              retryFetcher.state !== "idle" ||
+                              !permissions.can("update", "production")
+                            }
+                          >
+                            Try again
+                          </Button>
+                        </retryFetcher.Form>
+                      </Empty>
+                    ) : (
+                      <Empty>
+                        <p className="text-sm font-medium text-foreground">
+                          Model not ready yet
+                        </p>
+                        <p className="max-w-[320px] text-center text-sm text-muted-foreground">
+                          This model hasn't been prepared for 3D viewing. It'll
+                          appear here once processing starts.
+                        </p>
+                      </Empty>
+                    )}
+                  </div>
                 </div>
               }
               properties={
                 <AssemblyInstructionProperties
                   key={selectedStep?.id ?? "empty"}
                   step={selectedStep}
-                  stepIndex={selectedStep ? activeStepIndex : null}
-                  stepCount={steps.length}
                   draftComponentNodeIds={draftComponentNodeIds}
                   selectedNodeIds={selectedNodeIds}
                   isAddingComponents={isAddingComponents}
@@ -676,6 +853,8 @@ export default function AssemblyInstructionRoute() {
                   onStartAddComponents={onStartAddComponents}
                   onStopAddComponents={onStopAddComponents}
                   onRemoveComponents={onRemoveComponents}
+                  hiddenNodeIds={selectedHiddenNodeIds}
+                  onSetHiddenComponents={onSetHiddenComponents}
                   isEditingMotion={isEditingSelectedMotion}
                   onEditMotion={onEditMotion}
                   onStopEditMotion={onStopEditMotion}
@@ -685,6 +864,8 @@ export default function AssemblyInstructionRoute() {
                   stepSlides={selectedStepSlides}
                   stepTools={selectedStepTools}
                   bomMaterials={bomMaterials}
+                  viewerSteps={viewerSteps}
+                  onSelectStep={onSelectStep}
                 />
               }
             />

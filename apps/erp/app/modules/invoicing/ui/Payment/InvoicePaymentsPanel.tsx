@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Card,
   CardContent,
@@ -37,8 +41,9 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
         </CardTitle>
         <CardDescription>
           <Trans>
-            Payments and credits applied to this invoice. Click a row to open
-            the source document.
+            Payments and credits applied to this invoice. Applied amounts and FX
+            are in company base currency. Click a row to open the source
+            document.
           </Trans>
         </CardDescription>
       </CardHeader>
@@ -82,7 +87,7 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
                     <Enumerable
                       value={
                         r.source.type === "payment"
-                          ? "Cash"
+                          ? "Payment"
                           : r.source.direction
                       }
                     />
@@ -101,6 +106,7 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
                   </Td>
                   <Td className="text-right tabular-nums">
                     {currencyFormatter.format(Number(r.appliedAmount))}
+                    <DocumentPrincipal row={r} />
                   </Td>
                   <Td className="text-right tabular-nums">
                     {currencyFormatter.format(Number(r.discountAmount))}
@@ -120,5 +126,14 @@ const InvoicePaymentsPanel = ({ rows }: InvoiceSettlementsPanelProps) => {
     </Card>
   );
 };
+
+function DocumentPrincipal({ row }: { row: InvoiceSettlementForInvoice }) {
+  const format = useCurrencyFormatter({ currency: row.source.currencyCode });
+  return row.sourceAmount == null ? null : (
+    <div className="text-xs text-muted-foreground">
+      {format.format(row.sourceAmount)}
+    </div>
+  );
+}
 
 export default InvoicePaymentsPanel;

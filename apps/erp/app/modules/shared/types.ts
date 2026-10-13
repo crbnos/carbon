@@ -1,11 +1,11 @@
-import type { Database } from "@carbon/database";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ColumnPinningState } from "@tanstack/react-table";
 import type { z } from "zod";
 import type { ModelUpload, StorageItem } from "~/types";
 import type {
-  ApprovalDocumentType,
-  approvalRequestValidator,
-  approvalRuleValidator,
   itemType,
   methodItemType,
   methodType,
@@ -17,54 +17,10 @@ import type {
   sourcingType,
   standardFactorType
 } from "./shared.models";
-import type {
-  getApprovalRequestsByDocument,
-  getApprovalRuleByAmount,
-  getNotes
-} from "./shared.service";
+import type { getNotes } from "./shared.service";
 
 /** A `ModelUpload` read off an item, carrying the item it came from. */
 export type ItemModelUpload = ModelUpload & { itemId: string | null };
-
-export type ApprovalFilters = {
-  documentType?: ApprovalDocumentType | null;
-  status?: ApprovalStatus | null;
-  dateFrom?: string | null;
-  dateTo?: string | null;
-};
-
-export type ApprovalHistory = NonNullable<
-  Awaited<ReturnType<typeof getApprovalRequestsByDocument>>["data"]
->;
-
-export type ApprovalRequest =
-  Database["public"]["Views"]["approvalRequests"]["Row"];
-
-export type ApprovalRequestForApproveCheck = {
-  amount: number | null;
-  documentType: ApprovalDocumentType;
-  companyId: string;
-};
-
-export type ApprovalRequestForCancelCheck = {
-  requestedBy: string;
-  status: string;
-};
-
-export type ApprovalRequestForViewCheck = {
-  requestedBy: string;
-  amount: number | null;
-  documentType: ApprovalDocumentType;
-  companyId: string;
-};
-
-export type ApprovalRule = NonNullable<
-  Awaited<ReturnType<typeof getApprovalRuleByAmount>>["data"]
->;
-
-export type ApprovalDecision = "Approved" | "Rejected";
-
-export type ApprovalStatus = Database["public"]["Enums"]["approvalStatus"];
 
 export type BillOfMaterialNodeType =
   | "parent"
@@ -94,7 +50,8 @@ export enum DataType {
   User = 6,
   Customer = 7,
   Supplier = 8,
-  File = 9
+  File = 9,
+  Link = 10
 }
 
 export type MethodItemType = (typeof methodItemType)[number];
@@ -147,8 +104,13 @@ export type OperationParameter = z.infer<typeof operationParameterValidator> & {
 };
 export type OptimisticFileObject = Omit<
   StorageItem,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 
 export type QuantityEffect = (quantity: number) => number;
 
@@ -166,22 +128,3 @@ export type SavedView = {
 };
 
 export type StandardFactor = (typeof standardFactorType)[number];
-
-export type CreateApprovalRequestInput = Omit<
-  z.infer<typeof approvalRequestValidator>,
-  "id"
-> & {
-  companyId: string;
-  requestedBy: string;
-  createdBy: string;
-};
-
-export type UpsertApprovalRuleInput =
-  | (Omit<z.infer<typeof approvalRuleValidator>, "id"> & {
-      companyId: string;
-      createdBy: string;
-    })
-  | (Omit<z.infer<typeof approvalRuleValidator>, "id"> & {
-      id: string;
-      updatedBy: string;
-    });

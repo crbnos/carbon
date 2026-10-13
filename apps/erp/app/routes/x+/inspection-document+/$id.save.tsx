@@ -1,14 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
   saveInspectionDocumentAtomic,
   updateInspectionDocumentSampling
-} from "~/modules/production";
+} from "~/modules/quality";
+import {
+  inspectionDocumentSamplingValidator,
+  inspectionSaveAnchorsPayloadValidator,
+  inspectionSaveBalloonsGeometryPayloadValidator,
+  inspectionSaveBalloonsPayloadValidator,
+  inspectionSaveFeaturesPayloadValidator
+} from "~/modules/quality/quality.models";
 import {
   type InspectionSaveBalloonsGeometryPayload,
   type InspectionSaveFeaturesPayload,
@@ -16,15 +24,7 @@ import {
   mergeInspectionFeaturesPayload,
   resolveInspectionFeaturePayloadIds,
   translateLegacyInspectionSavePayload
-} from "~/modules/production/inspectionDocumentSave.server";
-import {
-  inspectionDocumentSamplingValidator,
-  inspectionSaveAnchorsPayloadValidator,
-  inspectionSaveBalloonsGeometryPayloadValidator,
-  inspectionSaveBalloonsPayloadValidator,
-  inspectionSaveFeaturesPayloadValidator
-} from "~/modules/production/production.models";
-import { invalidateInspectionDocuments } from "~/utils/react-query";
+} from "~/modules/quality/quality.server";
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -181,36 +181,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   featuresParsed = await resolveInspectionFeaturePayloadIds(
     client,
     id,
+    companyId,
     featuresParsed
   );
 
-  const rpcResult = await saveInspectionDocumentAtomic(client, {
-    inspectionDocumentId: id,
-    companyId,
-    userId,
-    pdfUrl: pdfUrl ?? undefined,
-    pageCount,
-    defaultPageWidth,
-    defaultPageHeight,
-    features: featuresParsed,
-    balloons: balloonsParsed
-  });
-
-  if (rpcResult.error || !rpcResult.data) {
-    return data(
-      {
-        success: false,
-        message: getErrorMessage(
-          rpcResult.error,
-          "Failed to save inspection plan"
-        )
-      },
-      { status: 400 }
-    );
-  }
-
   // The document's default sampling rule rides the same save (a single
-  // UPDATE; not part of the features/balloons atomic contract).
+  // UPDATE; not part of the features/balloons atomic contract). It goes
+  // first: a failure after the RPC had committed new features would leave
+  // the editor holding their temp ids, and its retry would create them twice.
   if (samplingDefaultRaw) {
     try {
       const json = JSON.parse(samplingDefaultRaw) as unknown;
@@ -238,6 +216,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  const rpcResult = await saveInspectionDocumentAtomic(client, {
+    inspectionDocumentId: id,
+    companyId,
+    userId,
+    pdfUrl: pdfUrl ?? undefined,
+    pageCount,
+    defaultPageWidth,
+    defaultPageHeight,
+    features: featuresParsed,
+    balloons: balloonsParsed
+  });
+
+  if (rpcResult.error || !rpcResult.data) {
+    return data(
+      {
+        success: false,
+        message: getErrorMessage(
+          rpcResult.error,
+          "Failed to save inspection plan"
+        )
+      },
+      { status: 400 }
+    );
+  }
+
   return rpcResult.data as {
     success: boolean;
     featureIdMap: Record<string, string>;
@@ -246,9 +249,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     anchors: unknown[];
     balloons: unknown[];
   };
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateInspectionDocuments();
-  return await serverAction();
 }

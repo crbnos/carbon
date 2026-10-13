@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatMoney } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -57,6 +61,7 @@ const IntercompanyTransactionTable = memo(
           header: t`Target`,
           cell: ({ row }) => row.original.targetCompany?.name ?? "—",
           meta: {
+            mobile: "P3",
             icon: <LuBuilding2 />
           }
         },
@@ -75,6 +80,7 @@ const IntercompanyTransactionTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         },
@@ -87,6 +93,7 @@ const IntercompanyTransactionTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuFileText />
           }
         },
@@ -102,6 +109,7 @@ const IntercompanyTransactionTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: intercompanyTransactionStatuses.map((v) => ({

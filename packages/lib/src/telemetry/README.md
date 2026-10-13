@@ -62,8 +62,8 @@ Deliberate gaps, so nobody reads a zero as "no work happened":
 
 | Path | Why | What would fix it |
 |---|---|---|
-| `scrap_reported` from the MES floor (`apps/mes/app/routes/x+/scrap.tsx:37`) | The `productionQuantity` row is created inside the `issue` Deno function and its id is never returned to the route, so there is no key that makes one posting distinct. Keying on the operation would under-count a shift's repeat postings. | Return the inserted id from the `issue` function. |
-| `production_quantity_reported` serial and batch branches | Same function, same reason (`functions/issue/index.ts:1117`, `:1266`). The untracked branch goes through `insertProductionQuantity` and *is* covered. | As above. |
+| `scrap_reported` from the MES floor (`apps/mes/app/routes/x+/scrap.tsx`) | The `productionQuantity` row is created inside the `issue` server function (`packages/server-functions/src/issue/index.ts`) and its id is never returned to the route, so there is no key that makes one posting distinct. Keying on the operation would under-count a shift's repeat postings. | Return the inserted id from the `issue` function. |
+| `production_quantity_reported` serial and batch branches | Same function, same reason. The untracked branch goes through `insertProductionQuantity` and *is* covered. | As above. |
 | ~~`job_completed` via the automatic path~~ | Covered. `sync_finish_job_operation` runs inside the same transaction as the operation status flip, so `finishJobOperation` reads the job back and emits `path: "auto"` when it flipped. Keyed on `jobId`, so it collapses with the manual route. | — |
 | `quote_accepted` from the customer portal | Covered, but anonymous — `actorId` is deliberately null for a customer's own acceptance. | Nothing; this is correct. |
 | `job_created` via MCP or a customer workflow | Covered, but `source` is `unknown`. Both dispatch `production_insertJob` through a generic `(call, context, inputs)` signature with nowhere to put an option. Reported honestly rather than defaulted to `erp`, which would file automation as human work. | Thread a provenance field through the dispatch contract, or read the `workflow_run_id` JWT claim the event system already captures. |
@@ -79,9 +79,7 @@ total.
 | Path | Reaches | Note |
 |---|---|---|
 | **PostgREST with a `carbon-key`** — `PATCH /rest/v1/job`, `/salesOrder`, `/purchaseOrder`, `/quote`, `/pickingList`, `/salesInvoice` | every status-change event | Carbon's public API is the generated PostgREST surface. An API key with the module's `_update` scope can set any status directly. Structurally invisible to app code. |
-| **Deno edge functions invoked directly** — `post-receipt`, `post-shipment`, `post-sales-invoice`, `post-purchase-invoice`, `post-picking`, `schedule`, `convert` | the four posting events, `picking_list_completed`, `job_released` | `requirePermissions` accepts a `carbon-key`, so these are callable without ever entering the app. |
 | **Postgres trigger `update_picking_list_status_trigger`** | `picking_list_completed` | The header completes as a consequence of line picks, not a status call — so the two instrumented routes see only the subset a human closed by hand. |
-| **`schedule` with `mode: "initial"`** sets `job.status = 'Ready'` in Kysely | `job_released` | Latent today via `packages/jobs/.../recalculate.ts:95`; the two live callers also call `updateJobStatus`, which does emit. |
 | **Inngest `carbon/post-transaction`** | receipt, shipment, purchase-invoice posts | Registered and fully wired, with no in-repo sender. Silent the day one appears. |
 | **Paperless Parts webhook** inserts a `salesOrder` at `Confirmed` | `sales_order_confirmed` | A real integration, entirely outside the confirm route. |
 | **MES inspection-lot disposition** (`inspection-lot.$id.disposition.tsx`) | `scrap_reported` | Scrap that a customer would absolutely call scrap. Emits nothing today. |
@@ -94,7 +92,7 @@ for properties only the route knows (`emailed`, `source`, the derived status).
 
 Everything above is the honest ceiling of the app-layer approach. Closing it
 means the event-system queue handler (a Postgres trigger sees every one of
-these, since they all end in a row change) or changes inside the Deno
+these, since they all end in a row change) or changes inside the server
 functions.
 
 ## Verifying it after deploy

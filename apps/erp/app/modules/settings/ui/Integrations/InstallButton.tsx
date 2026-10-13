@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Button, Tooltip, TooltipContent, TooltipTrigger } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { InstallableIntegration } from "./useIntegrationInstall";
@@ -13,10 +17,13 @@ import { useIntegrationInstall } from "./useIntegrationInstall";
  */
 export function InstallButton({
   integration,
-  isDisabled = false
+  isDisabled = false,
+  onInstall
 }: {
   integration: InstallableIntegration & { active: boolean };
   isDisabled?: boolean;
+  /** Replaces the default install, e.g. to ask for an install mode first. */
+  onInstall?: () => void;
 }) {
   const { install, isInstalling } = useIntegrationInstall(integration);
 
@@ -24,7 +31,7 @@ export function InstallButton({
     <Button
       isDisabled={isDisabled || !integration.active || isInstalling}
       isLoading={isInstalling}
-      onClick={install}
+      onClick={onInstall ?? install}
     >
       <Trans>Install</Trans>
     </Button>

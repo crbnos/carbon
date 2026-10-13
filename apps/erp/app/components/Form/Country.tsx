@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
-import { useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
 import { useLingui } from "@lingui/react/macro";
-import { useFetcher } from "react-router";
+import { useMemo } from "react";
 import { Combobox } from "~/components/Form";
 import type { getCountries } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -19,19 +23,17 @@ Country.displayName = "Country";
 
 export default Country;
 
-export const useCountries = () => {
-  const countryFetcher = useFetcher<Awaited<ReturnType<typeof getCountries>>>();
+export const useCountries = (enabled = true) => {
+  const countryFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getCountries>>
+  >(enabled ? path.to.api.countries : null);
 
-  useMount(() => {
-    countryFetcher.load(path.to.api.countries);
-  });
-
-  const countries = countryFetcher.data?.data ?? [];
-
-  const options = countries.map((c) => ({
-    value: c.alpha2,
-    label: c.name
-  }));
+  const options = useMemo(() => {
+    return (countryFetcher.data?.data ?? []).map((c) => ({
+      value: c.alpha2,
+      label: c.name
+    }));
+  }, [countryFetcher.data?.data]);
 
   return options;
 };

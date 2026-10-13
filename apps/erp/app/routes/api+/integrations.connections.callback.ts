@@ -1,4 +1,7 @@
-import { VERCEL_URL } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -14,8 +17,8 @@ import {
   resolveOAuthApp
 } from "@carbon/jobs/integrations";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { verifyConnectionState } from "~/modules/settings/connection-state.server";
 import type { IntegrationErrorCode } from "~/modules/settings/integration-errors";
 import { integrationErrorSearch } from "~/modules/settings/integration-errors";
@@ -32,12 +35,10 @@ export const config = {
 
 const logger = getLogger("erp", "integrations", "connections");
 
-function integrationsUrl(request: Request) {
-  const requestUrl = new URL(request.url);
-  if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-    requestUrl.protocol = "http";
-  }
-  return `${requestUrl.origin}${path.to.integrations}`;
+// A path on this origin: the vendor sent the browser to this callback, so the
+// integrations page is on the same host.
+function integrationsUrl() {
+  return path.to.integrations;
 }
 
 /** The vendor redirects the browser here, so a failure must render as something
@@ -47,7 +48,7 @@ function connectionFailed(
   reason: IntegrationErrorCode<"connection">
 ) {
   return redirect(
-    `${integrationsUrl(request)}${integrationErrorSearch("connection", reason)}`
+    `${integrationsUrl()}${integrationErrorSearch("connection", reason)}`
   );
 }
 
@@ -151,7 +152,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return connectionFailed(request, "duplicate-name");
     }
     if (message.includes("rejected") || message.includes("access token")) {
-      logger.error(`Integration token exchange failed: ${message}`);
+      logger.error("Integration token exchange failed: {message}", { message });
       return connectionFailed(request, "token-exchange");
     }
     // A PostgREST failure is a plain object, not an Error: its `message`, `code`
@@ -166,11 +167,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       err instanceof Error
         ? `name=${err.name} detail=${message.slice(0, 400)}`
         : `name=${typeof err} detail=${serialized.slice(0, 400)}`;
-    logger.error(`Integration connection save failed: ${detail}`);
+    logger.error("Integration connection save failed: {detail}", { detail });
     return connectionFailed(request, "save-failed");
   }
 
-  return redirect(integrationsUrl(request));
+  return redirect(integrationsUrl());
 }
 
 /** Which account was connected, so two connections are tellable apart in the UI.

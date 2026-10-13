@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { z } from "zod";
 
 // Separate from webhook.ts so the contract below is testable — the handler
@@ -7,8 +11,8 @@ const eventSchema = z.object({
   table: z.string(),
   operation: z.enum(["INSERT", "UPDATE", "DELETE", "TRUNCATE"]),
   recordId: z.string().optional(),
-  new: z.record(z.any()).nullable().optional(),
-  old: z.record(z.any()).nullable().optional(),
+  new: z.record(z.string(), z.any()).nullable().optional(),
+  old: z.record(z.string(), z.any()).nullable().optional(),
   timestamp: z.string().optional()
 });
 
@@ -19,7 +23,7 @@ export const webhookPayloadSchema = z.object({
   data: eventSchema,
   config: z
     .object({
-      headers: z.record(z.string()).optional(),
+      headers: z.record(z.string(), z.string()).optional(),
       webhookId: z.string().optional()
     })
     .passthrough()

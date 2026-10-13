@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
@@ -7,8 +11,9 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { enableAuditLog } from "@carbon/database/audit";
+import { enableAuditLog } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Modal,
   ModalBody,
@@ -16,10 +21,10 @@ import {
   ModalHeader,
   ModalTitle
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
+import { isInternalEmail, redirect } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useUser } from "~/hooks";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
@@ -29,11 +34,14 @@ import {
   seedCompany,
   subsidiaryValidator
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-companies-new");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId, email } = await requirePermissions(request, {
+  const { companyGroupId, userId, email } = await requirePermissions(request, {
     create: "settings"
   });
 
@@ -58,6 +66,28 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const client = getCarbonServiceRole();
 
+  // seed-company joins the new company to its parent's group, so a parent id
+  // from another group would place it inside another tenant's group.
+  if (parentCompanyId) {
+    const parent = await client
+      .from("company")
+      .select("id")
+      .eq("id", parentCompanyId)
+      .eq("companyGroupId", companyGroupId)
+      .maybeSingle();
+    if (parent.error || !parent.data) {
+      logger.error("Parent company not found in the caller's company group", {
+        companyGroupId,
+        parentCompanyId,
+        error: parent.error
+      });
+      throw redirect(
+        path.to.companies,
+        await flash(request, error(parent.error, "Parent company not found"))
+      );
+    }
+  }
+
   const companyInsert = await insertCompany(client, {
     ...locationData,
     baseCurrencyCode
@@ -80,9 +110,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const seed = await seedCompany(client, companyId, userId, {
-    parentCompanyId
-  });
+  const seed = await seedCompany(
+    client,
+    getDatabaseClient(),
+    companyId,
+    userId,
+    {
+      parentCompanyId
+    }
+  );
   if (seed.error) {
     throw redirect(
       path.to.companies,

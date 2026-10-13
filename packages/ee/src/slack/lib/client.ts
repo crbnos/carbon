@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { createHmac } from "node:crypto";
 import { SLACK_SIGNING_SECRET } from "@carbon/auth";
 import Bolt from "@slack/bolt";

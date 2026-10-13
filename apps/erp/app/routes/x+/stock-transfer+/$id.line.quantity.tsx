@@ -1,11 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -65,7 +71,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  let type = "inventory";
+  let type: "inventory" | "unpickSerial" | "unpickBatch" | "unpickInventory" =
+    "inventory";
   if (pickedQuantity === 0) {
     if (stockTransferLine.data.requiresSerialTracking) {
       type = "unpickSerial";
@@ -93,19 +100,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Call the post-stock-transfer function for inventory items
-  const { data: transferResult, error: functionError } =
-    await client.functions.invoke("post-stock-transfer", {
-      body: JSON.stringify({
-        type: type,
-        stockTransferId: stockTransferLine.data.stockTransferId,
-        stockTransferLineId: lineId,
-        quantity: pickedQuantity,
-        locationId: locationId,
-        trackedEntityId: trackedEntityId,
-        userId,
-        companyId
-      })
-    });
+  // Service role: `userId` is the effective (console pin-in) user, not the
+  // token's subject, which the operation's membership check compares.
+  const { data: transferResult, error: functionError } = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-stock-transfer", {
+      type: type,
+      stockTransferId: stockTransferLine.data.stockTransferId,
+      stockTransferLineId: lineId,
+      quantity: pickedQuantity,
+      locationId: locationId,
+      trackedEntityId: trackedEntityId
+      // One body for four `type`s; the operation validates it per type.
+    } as ServerFnInput<"post-stock-transfer">);
 
   if (functionError) {
     return data(

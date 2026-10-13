@@ -1,12 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { insertJob, salesOrderToJobValidator } from "~/modules/production";
+import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -36,12 +43,73 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { id: _id, ...d } = validation.data;
 
-  const methodSource = d.quoteId && d.quoteLineId ? "quoteLine" : "item";
+  // The service role bypasses RLS and every id below comes from the request:
+  // each must belong to this company (and the line to the order in the URL)
+  // before a job is written that references them. The job is attached to the
+  // verified order and line, never the form's copies.
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "salesOrderLine", companyId, {
+      id: lineId,
+      salesOrderId: orderId
+    }),
+    requireCompanyRecord(serviceRole, "item", companyId, { id: d.itemId }),
+    requireCompanyRecord(serviceRole, "location", companyId, {
+      id: d.locationId
+    }),
+    d.customerId
+      ? requireCompanyRecord(serviceRole, "customer", companyId, {
+          id: d.customerId
+        })
+      : null,
+    d.quoteId
+      ? requireCompanyRecord(serviceRole, "quote", companyId, { id: d.quoteId })
+      : null,
+    d.quoteLineId
+      ? requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+          id: d.quoteLineId
+        })
+      : null,
+    d.modelUploadId
+      ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
+          id: d.modelUploadId
+        })
+      : null
+  ]);
+
+  // The order line's configuration wins over its quote line's; a line
+  // reconfigured on the order is built from the item, not the quote's method.
+  const [salesOrderLine, quoteLine] = await Promise.all([
+    serviceRole
+      .from("salesOrderLine")
+      .select("configuration")
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .single(),
+    d.quoteLineId
+      ? serviceRole
+          .from("quoteLine")
+          .select("configuration")
+          .eq("id", d.quoteLineId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+  const { configuration, reconfigured } = resolveJobConfiguration(
+    salesOrderLine.data?.configuration,
+    quoteLine.data?.configuration
+  );
+
+  const methodSource =
+    d.quoteId && d.quoteLineId && !reconfigured ? "quoteLine" : "item";
 
   const createJob = await insertJob(
     serviceRole,
+    getDatabaseClient(),
     {
       ...d,
+      configuration: configuration ?? d.configuration,
+      salesOrderId: orderId,
+      salesOrderLineId: lineId,
       jobId: d.jobId || undefined,
       companyId,
       createdBy: userId,

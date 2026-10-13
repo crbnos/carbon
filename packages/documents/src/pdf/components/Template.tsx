@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { Document, Page, StyleSheet, View } from "@react-pdf/renderer";
 import { type PropsWithChildren, useMemo } from "react";
@@ -74,13 +78,13 @@ const Template = ({
     >
       <Page size="A4" style={styles.body}>
         <DocStyleProvider value={docStyle}>
-          {hasHeader && (
+          {hasHeader ? (
             <View fixed style={{ marginBottom: 8 }}>
               <Note content={headerContent} />
             </View>
-          )}
+          ) : null}
           {children}
-          {showFooter && (
+          {showFooter ? (
             <Footer
               label={footerLabel}
               documentId={footerDocumentId}
@@ -89,7 +93,7 @@ const Template = ({
               pageNumberFormat={pageNumberFormat}
               showRegistrationLine={showRegistrationLine}
             />
-          )}
+          ) : null}
         </DocStyleProvider>
       </Page>
     </Document>

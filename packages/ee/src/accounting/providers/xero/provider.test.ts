@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG } from "../../core/models";
 import { AccountingApiError } from "../../core/utils";
@@ -340,5 +344,160 @@ describe("buildXeroSyncConfig — Carbon-owned master + documents", () => {
     expect(applied.entities.purchaseOrder).toEqual(
       DEFAULT_SYNC_CONFIG.entities.purchaseOrder
     );
+  });
+});
+
+describe("XeroProvider counterpart candidates", () => {
+  it("searches contacts by exact name and maps them to candidates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Contacts: [
+          { ContactID: "contact-1", Name: "Acme Tooling" },
+          // No ContactID — Xero has nothing to link to, so it is not a candidate.
+          { Name: "Acme Tooling" }
+        ]
+      })
+    );
+
+    const candidates = await makeProvider().findRemoteCandidates("vendor", {
+      name: "Acme Tooling"
+    });
+
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]))).toBe(
+      'https://api.xero.com/api.xro/2.0/Contacts?where=Name=="Acme Tooling"'
+    );
+    expect(candidates).toEqual([
+      { remoteId: "contact-1", name: "Acme Tooling" }
+    ]);
+  });
+
+  it("escapes double quotes in the where filter", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    await makeProvider().findRemoteCandidates("customer", {
+      name: 'The "Big" Co'
+    });
+
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]))).toContain(
+      'Name=="The \\"Big\\" Co"'
+    );
+  });
+
+  it("percent-encodes the where filter so a name cannot break the query", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    // Every one of these is ordinary in a counterparty name.
+    await makeProvider().findRemoteCandidates("vendor", {
+      name: "Smith & Sons + Co #2"
+    });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    // A bare `&` ends the `where` parameter early and adds a junk one; a bare
+    // `#` starts a fragment, which fetch never sends at all.
+    expect(url).not.toMatch(/[&#]/);
+    // And the whole name still reaches Xero, `+` included (a raw `+` in a query
+    // string decodes as a space).
+    expect(new URL(url).searchParams.get("where")).toBe(
+      'Name=="Smith & Sons + Co #2"'
+    );
+  });
+
+  it("throws rather than reporting no match when the search fails", async () => {
+    // Returning [] here would read as "no such contact" and create a duplicate.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
+
+    await expect(
+      makeProvider().findRemoteCandidates("vendor", { name: "Acme" })
+    ).rejects.toThrow();
+  });
+
+  it("does not call Xero without a name, or for an unsupported kind", async () => {
+    const provider = makeProvider();
+
+    expect(
+      await provider.findRemoteCandidates("vendor", { name: "  " })
+    ).toEqual([]);
+    expect(
+      await provider.findRemoteCandidates("account", { name: "Acme" })
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("XeroProvider master-data enumeration", () => {
+  it("filters customers and suppliers separately, not with listContacts' OR", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Contacts: [
+          { ContactID: "c-1", Name: "Acme" },
+          { Name: "no id — nothing to link to" }
+        ]
+      })
+    );
+
+    const ids = await makeProvider().listRemoteEntityIds("customer");
+
+    const url = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url).toContain("where=IsCustomer==true");
+    // The OR filter would import supplier-only contacts as Carbon customers.
+    expect(url).not.toContain("IsSupplier");
+    expect(ids).toEqual(["c-1"]);
+  });
+
+  it("uses the supplier filter for vendors", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    await makeProvider().listRemoteEntityIds("vendor");
+
+    const url = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url).toContain("where=IsSupplier==true");
+    expect(url).not.toContain("IsCustomer");
+  });
+
+  it("pages until a short page and stops", async () => {
+    const full = Array.from({ length: 100 }, (_, i) => ({
+      ContactID: `c-${i}`,
+      Name: `Contact ${i}`
+    }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: full }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Contacts: [{ ContactID: "c-100", Name: "Last" }] })
+    );
+
+    const ids = await makeProvider().listRemoteEntityIds("customer");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(decodeURIComponent(String(fetchMock.mock.calls[1]?.[0]))).toContain(
+      "page=2"
+    );
+    expect(ids).toHaveLength(101);
+  });
+
+  it("throws on a failed page rather than returning a partial list", async () => {
+    // A partial list read as complete silently imports a subset.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
+
+    await expect(
+      makeProvider().listRemoteEntityIds("customer")
+    ).rejects.toThrow();
+  });
+
+  it("throws at the page cap rather than returning a partial list", async () => {
+    // XERO_IMPORT_MAX_PAGES full pages: the walk never saw a short page, so it
+    // has no evidence these are every contact — and the master-data import
+    // would report a successful import of the subset it was handed.
+    const full = Array.from({ length: 100 }, (_, i) => ({
+      ContactID: `c-${i}`,
+      Name: `Contact ${i}`
+    }));
+    // A fresh Response per call — a body can only be read once.
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(jsonResponse({ Contacts: full }))
+    );
+
+    await expect(
+      makeProvider().listRemoteEntityIds("customer")
+    ).rejects.toThrow(/refusing to import a partial list/);
+    expect(fetchMock).toHaveBeenCalledTimes(100);
   });
 });

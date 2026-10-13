@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { MobileNav } from "./mobile-nav";
@@ -5,15 +9,15 @@ import { SearchCommand } from "./search/search-command";
 import { SiteLogo } from "./site-logo";
 
 const NAV = [
-  { key: "guides", label: "Guides", href: "/guides/order" },
   { key: "reference", label: "Reference", href: "/docs" },
-  { key: "api", label: "API", href: "/api-reference" },
-  { key: "mcp", label: "MCP", href: "/mcp" },
+  { key: "guides", label: "Guides", href: "/guides/order" },
+  { key: "api", label: "API", href: "/api" },
+  { key: "changelog", label: "Changelog", href: "/changelog" },
 ] as const;
 
 type Active = (typeof NAV)[number]["key"];
 
-/** The single site-wide header: Carbon · Guide · Reference · API · Open Carbon.
+/** The single site-wide header: Carbon · Reference · Guides · API · Open Carbon.
  *  `mobileNav` is the current surface's section tree, surfaced in the hamburger
  *  drawer below `lg` where the desktop sidebar is hidden. */
 export function MainHeader({ active, mobileNav }: { active?: Active; mobileNav?: ReactNode }) {

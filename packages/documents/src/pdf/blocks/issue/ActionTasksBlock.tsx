@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
 import { Note } from "../../components";
@@ -41,13 +45,13 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
               }
             </Text>
             <View style={tw("flex flex-col gap-1 text-[10px]")}>
-              {task.supplier?.name && (
+              {task.supplier?.name ? (
                 <View style={tw("flex flex-row gap-2")}>
                   <Text style={tw("font-bold text-gray-600")}>Supplier:</Text>
                   <Text style={tw("text-gray-800")}>{task.supplier.name}</Text>
                 </View>
-              )}
-              {task.assignee && assignees[task.assignee] && (
+              ) : null}
+              {task.assignee && assignees[task.assignee] ? (
                 <View style={tw("flex flex-row gap-2")}>
                   <Text style={tw("font-bold text-gray-600")}>
                     {task.supplier?.name ? "Verified by" : "Completed by"}:
@@ -56,21 +60,21 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                     {assignees[task.assignee]}
                   </Text>
                 </View>
-              )}
-              {task.completedDate && (
+              ) : null}
+              {task.completedDate ? (
                 <View style={tw("flex flex-row gap-2")}>
                   <Text style={tw("font-bold text-gray-600")}>
                     Completed on:
                   </Text>
                   <Text style={tw("text-gray-800")}>{task.completedDate}</Text>
                 </View>
-              )}
+              ) : null}
             </View>
-            {Object.keys(task.notes ?? {}).length > 0 && (
+            {Object.keys(task.notes ?? {}).length > 0 ? (
               <View style={tw("mt-2 pt-2 border-t border-gray-200")}>
                 <Note content={task.notes as JSONContent} />
               </View>
-            )}
+            ) : null}
             {/* Job Operation Step Records */}
             {jobOperationStepRecords
               .filter((step) => step.nonConformanceActionId === task.id)
@@ -78,7 +82,7 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                 step.jobOperationStepRecord?.some(
                   (record) => record.booleanValue !== null
                 )
-              ) && (
+              ) ? (
               <View style={tw("mt-2 pt-2 border-t border-gray-200")}>
                 <Text
                   style={tw(
@@ -123,9 +127,9 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                           <View style={tw("flex flex-col")}>
                             <Text style={tw("text-gray-800")}>{step.name}</Text>
                             <Text style={tw("text-[8px] text-gray-400 mt-0.5")}>
-                              {operationToJobId[step.operationId] && (
+                              {operationToJobId[step.operationId] ? (
                                 <>Job {operationToJobId[step.operationId]} • </>
-                              )}
+                              ) : null}
                               {assignees[record.createdBy] || "Unknown"} •{" "}
                               {
                                 new Date(record.createdAt)
@@ -138,7 +142,7 @@ export function ActionTasksBlock({ data }: { data: IssueData }) {
                       ))
                   )}
               </View>
-            )}
+            ) : null}
           </View>
         </View>
       ))}

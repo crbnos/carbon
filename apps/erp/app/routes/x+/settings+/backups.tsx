@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Settings → Backups (company export / in-place restore).
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { convertKbToString } from "@carbon/files";
 import {
   Hidden,
   Input,
@@ -11,6 +18,7 @@ import {
   validationError,
   validator
 } from "@carbon/form";
+import { useRevalidator } from "@carbon/query";
 import {
   Badge,
   Button,
@@ -20,47 +28,34 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalTitle,
   ScrollArea,
   toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LuLoaderCircle } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useFetchers,
-  useLoaderData,
-  useRevalidator
-} from "react-router";
+import { data, useFetcher, useFetchers, useLoaderData } from "react-router";
 import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
-  exportCompanyBackup,
   getCompanyExportRun,
   getCompanyRestoreRuns,
   totalScopeRows
 } from "~/modules/settings";
 import {
+  canManageBackups,
   dismissCompanyExportFailure,
+  exportCompanyBackup,
   finalizeCompanyRestore,
   getCompanyBackups,
   purgeCorruptedRows,
@@ -78,12 +73,11 @@ import {
   formatBackupName,
   IncludeStorageChoice,
   JobProgressModal,
+  PurgeCorruptedRowsModal,
   RestoreDisclosure,
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
-import { canAccessBackups } from "~/utils/backups";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -148,22 +142,18 @@ async function clearStaleExportFailure(
   }
 }
 
-function requireBackupAccess(email: string | null) {
-  // Internal-only in real deployments while multi-tenant hardening is pending;
-  // open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
-  requireBackupAccess(email);
+  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
-    getCompanyBackups(client, companyId),
+    // Backup objects are service-role only; the checks above gate this route.
+    getCompanyBackups(getCarbonServiceRole(), companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
@@ -184,7 +174,9 @@ export async function action({ request }: ActionFunctionArgs) {
       update: "settings"
     }
   );
-  requireBackupAccess(email);
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -196,7 +188,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const { label, includeStorage } = validation.data;
       await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup(client, {
+      const result = await exportCompanyBackup({
         companyId,
         userId,
         label: label || undefined,
@@ -205,10 +197,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to start backup"
-          )
+          message: getErrorMessage(result.error, "Failed to start backup")
         };
       return {
         success: true,
@@ -322,7 +311,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const includeStorage =
         validation.data.includeStorage ?? run.data.includeStorage ?? "none";
       await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup(client, {
+      const result = await exportCompanyBackup({
         companyId,
         userId,
         label,
@@ -332,10 +321,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to start backup"
-          )
+          message: getErrorMessage(result.error, "Failed to start backup")
         };
       return {
         success: true,
@@ -419,7 +405,11 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!name || name.includes("/"))
         return data({}, await flash(request, error(null, "Invalid backup")));
 
-      const result = await deleteCompanyBackup(client, companyId, name);
+      const result = await deleteCompanyBackup(
+        getCarbonServiceRole(),
+        companyId,
+        name
+      );
       if (result.error)
         return data(
           {},
@@ -557,9 +547,6 @@ export default function BackupsRoute() {
   const [purgeRun, setPurgeRun] = useState<
     (typeof visibleRestoreRuns)[number] | null
   >(null);
-  // Distinct ROWS, not per-edge violations — a row escaping scope through three
-  // of its FKs is one row, and this number sits on an irreversible-delete button.
-  const purgeRowCount = totalScopeRows(purgeRun?.violationRowsByTable ?? []);
   const exportChoices = useExportChoices();
   // A failed run's label and include setting seed the form, so "Skip corrupted
   // rows and retry" reuses what that run asked for and the person can see it.
@@ -609,8 +596,10 @@ export default function BackupsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
-        <Heading size="h3">Backups</Heading>
+      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4 max-md:py-3">
+        <SettingsPageHeading>
+          <Trans>Backups</Trans>
+        </SettingsPageHeading>
 
         {/* Create + Restore — equal-height cards, footers aligned. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
@@ -738,70 +727,30 @@ export default function BackupsRoute() {
         )}
 
         {purgeRun && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) setPurgeRun(null);
+          <PurgeCorruptedRowsModal
+            rowsByTable={purgeRun.violationRowsByTable}
+            description={
+              <Trans>
+                These rows link to data outside this company, so a safety copy
+                of your current data can't be made. Deleting them cannot be
+                undone. If they turn out to be shared with other companies in
+                this group, nothing is deleted and the restore doesn't start.
+              </Trans>
+            }
+            confirmLabel={<Trans>Delete and restore</Trans>}
+            onCancel={() => setPurgeRun(null)}
+            onConfirm={() => {
+              fetcher.submit(
+                {
+                  intent: "purgeAndRestore",
+                  restoreRunId: purgeRun.restoreRunId
+                },
+                { method: "post" }
+              );
+              resolveRun(purgeRun.restoreRunId);
+              setPurgeRun(null);
             }}
-          >
-            <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Plural
-                    value={purgeRowCount}
-                    one="Permanently delete # row?"
-                    other="Permanently delete # rows?"
-                  />
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    These rows link to data outside this company, so a safety
-                    copy of your current data can't be made. Deleting them
-                    cannot be undone. If they turn out to be shared with other
-                    companies in this group, nothing is deleted and the restore
-                    doesn't start.
-                  </Trans>
-                </p>
-                {/* Per TABLE, not per FK edge: the title counts distinct rows,
-                    and a per-edge list beside it would show larger numbers for
-                    the same delete. */}
-                <ul className="mt-3 flex flex-col gap-1 text-xs font-mono">
-                  {purgeRun.violationRowsByTable.map((t) => (
-                    <li key={t.table} className="flex justify-between gap-3">
-                      <span className="break-all">{t.table}</span>
-                      <span className="tabular-nums shrink-0">
-                        {t.rows.toLocaleString()}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={() => setPurgeRun(null)}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    fetcher.submit(
-                      {
-                        intent: "purgeAndRestore",
-                        restoreRunId: purgeRun.restoreRunId
-                      },
-                      { method: "post" }
-                    );
-                    resolveRun(purgeRun.restoreRunId);
-                    setPurgeRun(null);
-                  }}
-                >
-                  <Trans>Delete and restore</Trans>
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
+          />
         )}
 
         {active && (
@@ -912,7 +861,7 @@ export default function BackupsRoute() {
                   <button
                     type="button"
                     onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
                   >
                     <VStack spacing={0}>
                       <span className="text-sm font-medium">
@@ -967,7 +916,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
 
   return (
     <HStack
-      className={`w-full justify-between border rounded-lg p-3 ${
+      className={`w-full justify-between border rounded-lg p-3 max-md:border-0 max-md:p-0 max-md:rounded-none ${
         file.status === "pending" || isDeleting ? "opacity-70" : ""
       }`}
     >

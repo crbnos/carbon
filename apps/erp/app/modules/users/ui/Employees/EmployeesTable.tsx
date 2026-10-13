@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   Checkbox,
   DropdownMenuContent,
   DropdownMenuItem,
+  MENU_ITEM_SHORTCUTS,
   MenuIcon,
   MenuItem,
   Tooltip,
@@ -116,6 +121,7 @@ const EmployeesTable = memo(
           ),
 
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -151,6 +157,7 @@ const EmployeesTable = memo(
             return email;
           },
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -165,6 +172,7 @@ const EmployeesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: employeeTypes.map((type) => ({
@@ -189,6 +197,7 @@ const EmployeesTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [
@@ -272,6 +281,7 @@ const EmployeesTable = memo(
         return (
           <DropdownMenuContent>
             <DropdownMenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.edit}
               onClick={() => {
                 setSelectedUserIds(
                   selectedRows
@@ -365,6 +375,7 @@ const EmployeesTable = memo(
             {row.active === true ? (
               <>
                 <MenuItem
+                  shortcut={MENU_ITEM_SHORTCUTS.edit}
                   onClick={() =>
                     navigate(
                       `${path.to.employeeAccount(row.id!)}?${params.toString()}`
@@ -374,18 +385,24 @@ const EmployeesTable = memo(
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
-                {settings.consoleEnabled && (
-                  <MenuItem
-                    onClick={() =>
-                      navigate(
-                        `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
-                      )
-                    }
-                  >
-                    <MenuIcon icon={<LuShield />} />
-                    <Trans>Set Console PIN</Trans>
-                  </MenuItem>
-                )}
+                {/* Resetting a PIN hands over that person's console identity:
+                    console operators need users_update, anyone else also
+                    settings_update (enforced again by the route). */}
+                {settings.consoleEnabled &&
+                  permissions.can("update", "users") &&
+                  (permissions.can("update", "settings") ||
+                    row.email?.endsWith("@console.internal")) && (
+                    <MenuItem
+                      onClick={() =>
+                        navigate(
+                          `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
+                        )
+                      }
+                    >
+                      <MenuIcon icon={<LuShield />} />
+                      <Trans>Set Console PIN</Trans>
+                    </MenuItem>
+                  )}
                 <MenuItem
                   onClick={() =>
                     navigate(

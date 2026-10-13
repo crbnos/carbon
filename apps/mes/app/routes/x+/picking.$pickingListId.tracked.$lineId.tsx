@@ -1,14 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
+import { getDatabaseClient } from "~/services/database.server";
 import {
   getAvailableTrackedEntities,
   getCompanySettings,
   getPickOrder
 } from "~/services/inventory.service";
 import { setPickingListLineTrackedEntity } from "~/services/picking.service";
+
+const logger = getLogger("mes", "picking-tracked-line");
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -25,9 +33,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
-    .single();
+    .eq("companyId", companyId)
+    .maybeSingle();
 
   if (lineResult.error || !lineResult.data) {
+    logger.warn("Picking line not found for company", {
+      companyId,
+      lineId,
+      error: lineResult.error
+    });
     throw new Response("Line not found", { status: 404 });
   }
 
@@ -38,18 +52,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (line.item as { itemTrackingType: string } | null)?.itemTrackingType ??
     "Batch";
 
-  const entities = locationId
-    ? await getAvailableTrackedEntities(client, {
-        itemId: line.itemId,
-        companyId,
-        locationId,
-        excludeLineside: true,
-        excludeAllocated: true,
-        excludeLineId: lineId
-      })
-    : { data: [] };
-
-  const settings = await getCompanySettings(client, companyId);
+  const [entities, settings, defaultOrder] = await Promise.all([
+    locationId
+      ? getAvailableTrackedEntities(client, {
+          itemId: line.itemId,
+          companyId,
+          locationId,
+          excludeLineside: true,
+          excludeAllocated: true,
+          excludeLineId: lineId
+        })
+      : { data: [] },
+    getCompanySettings(client, companyId),
+    locationId
+      ? getPickOrder(client, { itemId: line.itemId, locationId, companyId })
+      : ("Default" as const)
+  ]);
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
     nearExpiryWarningDays?: number | null;
     expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
@@ -64,19 +82,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     nearExpiryWarningDays: shelfLife.nearExpiryWarningDays ?? 0,
     expiredEntityPolicy: shelfLife.expiredEntityPolicy ?? "Warn",
-    defaultOrder: locationId
-      ? await getPickOrder(client, {
-          itemId: line.itemId,
-          locationId,
-          companyId
-        })
-      : "Default"
+    defaultOrder
   };
 }
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId, companyId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
@@ -94,16 +106,27 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(serviceRole, {
-    pickingListLineId: lineId,
-    trackedEntityId,
-    fromStorageUnitId,
-    quantity,
-    unpick,
-    userId: effectiveUserId
-  });
+  const result = await setPickingListLineTrackedEntity(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      pickingListLineId: lineId,
+      trackedEntityId,
+      fromStorageUnitId,
+      quantity,
+      unpick,
+      userId: effectiveUserId,
+      companyId
+    }
+  );
 
   if (result.error) {
+    logger.error("Failed to pick tracked entity", {
+      companyId,
+      lineId,
+      trackedEntityId,
+      error: result.error
+    });
     return {
       success: false,
       message:

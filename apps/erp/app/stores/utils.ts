@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Insert `row` into a name-sorted list store, or return the list unchanged if a
  * row with the same id already exists. Used by create-on-the-fly flows (which

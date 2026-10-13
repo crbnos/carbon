@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { datetime } from "@carbon/utils";
+import { deleteDemandProjections } from "@carbon/ee/forecast.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
-import { deleteDemandProjections } from "~/modules/production/production.service";
+import { data } from "react-router";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { path } from "~/utils/path";
@@ -16,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "production"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

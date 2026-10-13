@@ -53,9 +53,16 @@ Route paths are used in redirects, links, and external integrations.
 ### Edge Function Names — FROZEN
 
 Edge functions deployed to Supabase are referenced by name in configuration and triggers.
+One remains: `embedding`.
 
 - Never rename an edge function
 - Adding new edge functions is safe
+
+The business functions (`get-method`, `issue`, `convert`, `create`, the `post-*` family,
+…) are no longer edge functions: they run in the app as `@carbon/server-functions` and
+are reached through the Carbon API's operations (for example
+`POST /api/v1/sales/upsertQuoteLineMethod`). `functions.invoke("<name>")` for any of
+them no longer works.
 
 ### Event Types (Inngest) — FROZEN
 

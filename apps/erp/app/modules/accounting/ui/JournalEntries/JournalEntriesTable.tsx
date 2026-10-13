@@ -1,4 +1,14 @@
-import { HStack, MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  HStack,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { ReactNode } from "react";
@@ -71,6 +81,7 @@ const JournalEntriesTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookmark />
           }
         },
@@ -81,6 +92,9 @@ const JournalEntriesTable = memo(
             <DateTime value={row.original.postingDate} variant="date" />
           ),
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -107,6 +121,9 @@ const JournalEntriesTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P3",
+            // Phones: plain text on the row's context line.
+            mobileCell: ({ row }) => row.original.description || "—",
             icon: <LuFileText />
           }
         },
@@ -136,6 +153,7 @@ const JournalEntriesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: journalEntryStatuses.map((v) => ({
@@ -152,6 +170,7 @@ const JournalEntriesTable = memo(
           cell: ({ row }) =>
             currencyFormatter.format(Number(row.original.totalDebits)),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDollarSign />
           }
         },
@@ -228,6 +247,9 @@ const JournalEntriesTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                isDraft ? MENU_ITEM_SHORTCUTS.edit : MENU_ITEM_SHORTCUTS.view
+              }
               disabled={!permissions.can("view", "accounting")}
               onClick={() => {
                 navigate(path.to.journalEntryDetails(row.id?.toString()!));
@@ -237,6 +259,7 @@ const JournalEntriesTable = memo(
               {isDraft ? t`Edit Journal Entry` : t`View Journal Entry`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={!isDraft || !permissions.can("delete", "accounting")}
               destructive
               onClick={() => {
@@ -263,6 +286,8 @@ const JournalEntriesTable = memo(
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
           title={t`Journal Entries`}
+          table="journal"
+          withSavedView
         />
         {selectedEntry && selectedEntry.id && (
           <ConfirmDelete

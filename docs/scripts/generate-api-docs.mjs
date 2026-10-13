@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Build-time generator: turns the PostgREST Swagger 2.0 spec into Protocol-style
 // API reference data (tables only, grouped by module). Run via `predev`/`prebuild`.
 //
@@ -51,7 +55,7 @@ const MODULE_RULES = [
   ["Sales", ["salesorder", "salesrfq", "customer", "quote", "opportunity", "salesperson", "noquotereason", "pricing"]],
   ["Purchasing", ["purchaseorder", "purchasingrfq", "supplier", "buymethod"]],
   ["Quality", ["nonconformance", "quality", "gauge", "inspection", "investigation", "issue", "risk"]],
-  ["Production", ["job", "makemethod", "methodoperation", "methodmaterial", "production", "scrapreason", "procedure", "workinstruction", "operation"]],
+  ["Production", ["job", "production", "scrapreason", "procedure", "workinstruction", "operation"]],
   ["Maintenance", ["maintenance"]],
   ["Planning", ["demand", "supply", "forecast"]],
   ["Inventory", ["itemledger", "shelf", "warehouse", "pickmethod", "trackedentity", "trackedactivity", "kanban", "receipt", "shipment", "stocktransfer", "batch", "serial", "inventory", "warehousetransfer", "shipping", "storage", "fulfillment"]],
@@ -63,8 +67,14 @@ const MODULE_RULES = [
   ["Settings", ["setting", "integration", "customfield", "sequence", "theme", "documenttemplate", "documentlabel", "notification", "webhook", "tag", "approval", "audit", "config", "country", "eventsystem", "feedback", "note", "plan", "printer", "searchindex", "suggestion", "tableview", "terms"]],
   ["Documents", ["document", "externallink", "modelupload"]],
 ];
+// An item's own method (its BOM + BOP) is item master data, so it lives with Items.
+// Checked before the keyword rules, whose `operation`/`material` would otherwise send
+// `methodOperation*`/`methodMaterial*` to Production. `jobMakeMethod`/`quoteMakeMethod`
+// don't match a prefix and stay with their job/quote.
+const ITEM_METHOD_PREFIXES = ["method", "makemethod", "activemakemethod"];
 function moduleFor(table) {
   const t = table.toLowerCase();
+  if (ITEM_METHOD_PREFIXES.some((p) => t.startsWith(p))) return "Items";
   for (const [mod, keys] of MODULE_RULES) if (keys.some((k) => t.includes(k))) return mod;
   return "Other";
 }
@@ -383,6 +393,7 @@ for (const t of allTools) {
     classification: t.classification,
     description: t.description || "",
     schema: t.schema || {},
+    responseSchema: t.responseSchema,
   });
 }
 const toolModules = [...toolsByModule.entries()]

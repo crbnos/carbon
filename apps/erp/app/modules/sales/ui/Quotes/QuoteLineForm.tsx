@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { TextArea, ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -11,6 +16,7 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
   ModalCard,
   ModalCardBody,
   ModalCardContent,
@@ -23,12 +29,17 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import {
+  distinctItemText,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
-import { Link, useFetcher, useParams } from "react-router";
+import { Link, useParams } from "react-router";
 import type { z } from "zod";
 import { MethodIcon, MethodItemTypeIcon } from "~/components";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
@@ -81,7 +92,6 @@ const QuoteLineForm = ({
   onClose
 }: QuoteLineFormProps) => {
   const { t, i18n } = useLingui();
-  const fetcher = useFetcher<typeof action>();
   const permissions = usePermissions();
   const { company } = useUser();
   const { carbon } = useCarbon();
@@ -89,6 +99,20 @@ const QuoteLineForm = ({
   const { quoteId } = useParams();
 
   if (!quoteId) throw new Error("quoteId not found");
+
+  // Sales-rule enforcement: submissions run through the violation hook's
+  // fetcher so a blocked response opens <rules.ViolationModal /> with an
+  // acknowledge-and-resubmit path for warns. Modal close happens on success
+  // (not on submit) so violations can surface first.
+  const rules = useRuleViolations<typeof action>({
+    action: initialValues.id
+      ? path.to.quoteLine(quoteId, initialValues.id)
+      : path.to.newQuoteLine(quoteId),
+    onSuccess: () => {
+      if (type === "modal") onClose?.();
+    }
+  });
+  const fetcher = rules.fetcher;
 
   const [items] = useItems();
   const routeData = useRouteData<{
@@ -99,6 +123,12 @@ const QuoteLineForm = ({
   const isEditable = !isLocked;
 
   const isEditing = initialValues.id !== undefined;
+
+  // Quantity breaks are always presented least-to-greatest, regardless of the
+  // order they were entered/stored in.
+  const sortedQuantity = [...(initialValues.quantity ?? [])].sort(
+    (a, b) => a - b
+  );
 
   const [itemData, setItemData] = useState<{
     customerPartId: string;
@@ -121,8 +151,14 @@ const QuoteLineForm = ({
   const [lineType, setLineType] = useState<ItemType>(
     (initialValues.itemType as ItemType) ?? "Part"
   );
+  // The picker's type filter. It starts on every item type; the line's own
+  // type is a real enum value — "Item" is not one — and follows the selected
+  // item.
+  const [itemFilter, setItemFilter] = useState<ItemType | "Item">("Item");
 
   const onTypeChange = (t: ItemType | "Item") => {
+    setItemFilter(t);
+    // "Item" is the "All Items" filter, always compatible with the selection.
     if (t === "Item") return;
     setLineType(t);
     if (itemData.itemId) {
@@ -210,7 +246,7 @@ const QuoteLineForm = ({
       carbon
         .from("item")
         .select(
-          "name, readableIdWithRevision, defaultMethodType, unitOfMeasureCode, modelUploadId"
+          "name, readableIdWithRevision, type, defaultMethodType, unitOfMeasureCode, modelUploadId"
         )
         .eq("id", itemId)
         .eq("companyId", company.id)
@@ -233,12 +269,19 @@ const QuoteLineForm = ({
       return;
     }
 
+    if (item.data?.type) {
+      setLineType(item.data.type as ItemType);
+    }
     const newItemData = {
       ...itemData,
       itemId,
       description: item.data?.name ?? "",
       methodType: item.data?.defaultMethodType ?? "",
-      uom: item.data?.unitOfMeasureCode ?? "",
+      // A service is always sold in "EA"
+      uom:
+        item.data?.type === "Service"
+          ? "EA"
+          : (item.data?.unitOfMeasureCode ?? ""),
       modelUploadId: item.data?.modelUploadId ?? null
     };
 
@@ -292,7 +335,7 @@ const QuoteLineForm = ({
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               fetcher={fetcher}
-              defaultValues={initialValues}
+              defaultValues={{ ...initialValues, quantity: sortedQuantity }}
               validator={quoteLineValidator}
               method="post"
               action={
@@ -302,9 +345,6 @@ const QuoteLineForm = ({
               }
               className="w-full"
               isDisabled={isEditing && isLocked}
-              onSubmit={() => {
-                if (type === "modal") onClose?.();
-              }}
             >
               <HStack className="w-full justify-between items-start">
                 <ModalCardHeader>
@@ -320,14 +360,17 @@ const QuoteLineForm = ({
                   <ModalCardDescription>
                     {isEditing ? (
                       <div className="flex flex-col items-start gap-1">
-                        <span>{itemData?.description}</span>
+                        {distinctItemText(
+                          getItemReadableId(items, itemData?.itemId),
+                          itemData?.description
+                        ) && <span>{itemData?.description}</span>}
                         <div className="flex items-center gap-2">
                           <Badge
                             variant="outline"
                             className="flex items-center gap-2"
                           >
                             <MethodIcon type={itemData.methodType} />
-                            {initialValues?.quantity.join(", ")}
+                            {sortedQuantity.join(", ")}
                           </Badge>
                           {initialValues?.taxPercent > 0 ? (
                             <Badge variant="red">
@@ -360,6 +403,7 @@ const QuoteLineForm = ({
                       <DropdownMenuContent align="end">
                         {!isLocked && (
                           <DropdownMenuItem
+                            shortcut={MENU_ITEM_SHORTCUTS.delete}
                             destructive
                             onClick={deleteDisclosure.onOpen}
                           >
@@ -367,7 +411,10 @@ const QuoteLineForm = ({
                             <Trans>Delete Line</Trans>
                           </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem asChild>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.view}
+                          asChild
+                        >
                           <Link
                             to={getLinkToItemDetails(
                               lineType,
@@ -388,7 +435,11 @@ const QuoteLineForm = ({
               <ModalCardBody>
                 <Hidden name="id" />
                 <Hidden name="quoteId" />
-                <Hidden name="unitOfMeasureCode" value={itemData?.uom} />
+                <Hidden name="itemType" value={lineType} />
+                <Hidden
+                  name="unitOfMeasureCode"
+                  value={lineType === "Service" ? "EA" : itemData?.uom}
+                />
                 <Hidden
                   name="modelUploadId"
                   value={itemData?.modelUploadId ?? undefined}
@@ -401,13 +452,15 @@ const QuoteLineForm = ({
                 )}
                 <VStack>
                   <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                    <div className="col-span-2 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
+                    <div className="col-span-2 max-md:col-span-full grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2 auto-rows-min">
                       <Item
                         autoFocus
                         name="itemId"
-                        label={i18n._(itemTypeLabel(lineType))}
-                        type={lineType}
-                        typeFieldName="itemType"
+                        label={i18n._(itemTypeLabel(itemFilter))}
+                        type={itemFilter}
+                        // The line type is posted separately; the filter is
+                        // not it.
+                        typeFieldName="itemFilter"
                         validItemTypes={[...itemType]}
                         value={itemData.itemId}
                         includeInactive
@@ -563,6 +616,7 @@ const QuoteLineForm = ({
           </ModalCardContent>
         </ModalCard>
       </ModalCardProvider>
+      <rules.ViolationModal />
       {isEditing && deleteDisclosure.isOpen && (
         <DeleteQuoteLine
           line={initialValues as QuotationLine}

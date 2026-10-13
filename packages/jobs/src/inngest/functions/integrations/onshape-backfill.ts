@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   getOnshapeClient,
+  getOnshapeIntegration,
   OnshapeApiError,
   OnshapeAssetTooLargeError
 } from "@carbon/ee/onshape";
@@ -60,6 +65,8 @@ export interface OnshapeBackfillWorkItem {
   versionId: string;
   elementId: string;
   modelElementKind?: "partstudio" | "assembly"; // kind === "model" only
+  partId?: string | null;
+  configuration?: string | null;
   assetBaseName?: string;
 }
 
@@ -113,12 +120,8 @@ export async function isOnshapeAssetSyncEnabled(
   carbon: CarbonClient,
   companyId: string
 ): Promise<boolean> {
-  const integration = await carbon
-    .from("companyIntegration")
-    .select("active, metadata")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  // Either Onshape connection — the public app or a Government private app.
+  const integration = await getOnshapeIntegration(carbon, companyId);
   const metadata = (integration.data?.metadata ?? {}) as Record<
     string,
     unknown
@@ -134,12 +137,7 @@ export async function resolveOnshapeCompanyId(
 ): Promise<string> {
   // Prefer the company id captured at connect (explicit + stable) over guessing
   // getCompanies()[0], which is ambiguous for multi-company Onshape accounts.
-  const stored = await carbon
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", "onshape")
-    .eq("companyId", input.companyId)
-    .maybeSingle();
+  const stored = await getOnshapeIntegration(carbon, input.companyId);
   const storedCompanyId = (
     stored.data?.metadata as Record<string, unknown> | undefined
   )?.onshapeCompanyId;
@@ -250,13 +248,14 @@ export async function matchOnshapeBackfillPage(
   );
   const itemByKey = new Map<
     string,
-    { id: string; modelUploadId: string | null }
+    { id: string; modelUploadId: string | null } | null
   >();
   if (modelKeys.length > 0) {
     const carbonItems = await carbon
       .from("item")
       .select("id, readableIdWithRevision, modelUploadId")
       .eq("companyId", input.companyId)
+      .eq("type", "Part")
       .in("readableIdWithRevision", modelKeys);
     if (carbonItems.error) {
       throw new Error(
@@ -265,10 +264,17 @@ export async function matchOnshapeBackfillPage(
     }
     for (const item of carbonItems.data ?? []) {
       if (item.readableIdWithRevision) {
-        itemByKey.set(item.readableIdWithRevision, {
-          id: item.id,
-          modelUploadId: item.modelUploadId
-        });
+        // Generated display keys can collide (dots in numbers/revisions).
+        // Retain an ambiguous marker instead of silently taking the last row.
+        itemByKey.set(
+          item.readableIdWithRevision,
+          itemByKey.has(item.readableIdWithRevision)
+            ? null
+            : {
+                id: item.id,
+                modelUploadId: item.modelUploadId
+              }
+        );
       }
     }
   }
@@ -288,6 +294,7 @@ export async function matchOnshapeBackfillPage(
         .from("item")
         .select("id, readableIdWithRevision")
         .eq("companyId", input.companyId)
+        .eq("type", "Part")
         .eq("revision", revision.revision)
         .ilike("readableId", `%${escapeLikePattern(suffix)}`);
       if (candidates.error) {
@@ -345,6 +352,8 @@ export async function matchOnshapeBackfillPage(
       versionId: revision.versionId,
       elementId: revision.elementId,
       modelElementKind: revision.elementType === 1 ? "assembly" : "partstudio",
+      partId: revision.partId,
+      configuration: revision.configuration,
       assetBaseName: releaseKey(revision.partNumber, revision.revision)
     });
   }
@@ -395,6 +404,8 @@ export async function syncOnshapeBackfillWorkItem(
           versionId: workItem.versionId,
           modelElementId: workItem.elementId,
           modelElementKind: workItem.modelElementKind ?? "partstudio",
+          partId: workItem.partId,
+          configuration: workItem.configuration,
           assetBaseName: workItem.assetBaseName
         }),
       workItem.label
@@ -516,8 +527,13 @@ export const onshapeBackfillFunction = inngest.createFunction(
             optimizeModelUploadIds.push(attached.modelUploadId);
           }
           // Fallback only: models whose Onshape-rendered thumbnail was stored
-          // during the sync don't need the screenshot pipeline.
-          if (attached.modelUploadId && !attached.thumbnailAttached) {
+          // during the sync don't need the screenshot pipeline. Selected parts
+          // wait for the optimizer to produce the GLB and fire its thumbnail.
+          if (
+            attached.modelUploadId &&
+            !attached.thumbnailAttached &&
+            workItem.modelElementKind !== "partstudio"
+          ) {
             syncedModelUploadIds.push(attached.modelUploadId);
           }
         } catch (syncError) {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import type {
   DocumentBlock,
@@ -322,6 +326,20 @@ function transactionalBlocks(): DocumentBlock[] {
   ];
 }
 
+/**
+ * Layout for a return document (RMA / supplier return): transactional chrome
+ * but no summary block — the line-items table carries its own total row.
+ */
+function returnOrderBlocks(): DocumentBlock[] {
+  return [
+    { id: "header", type: "header", visible: true },
+    { id: "parties", type: "parties", visible: true },
+    { id: "lineItems", type: "lineItems", visible: true },
+    { id: "notes", type: "notes", visible: true },
+    { id: "terms", type: "terms", visible: true }
+  ];
+}
+
 /** Standard layout for a fulfillment document (packing slip): no summary. */
 function fulfillmentBlocks(): DocumentBlock[] {
   return [
@@ -412,7 +430,17 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
     salesInvoice: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "salesInvoice",
-      blocks: transactionalBlocks(),
+      // An invoice line's description is the whole story of what is billed —
+      // a rental or contract period, its days and rate — so it wraps rather
+      // than losing its end to an ellipsis.
+      blocks: transactionalBlocks().map((block) =>
+        block.type === "lineItems"
+          ? {
+              ...block,
+              options: { ...DEFAULT_LINE_ITEMS_OPTIONS, textOverflow: "wrap" }
+            }
+          : block
+      ),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -427,10 +455,28 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
       headerSectionId: BUILT_IN_SECTION_IDS.header,
       footerSectionId: BUILT_IN_SECTION_IDS.footer
     },
+    salesReturnOrder: {
+      formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
+      documentType: "salesReturnOrder",
+      blocks: returnOrderBlocks(),
+      theme: { ...DEFAULT_THEME },
+      settings: { ...DEFAULT_DOCUMENT_SETTINGS },
+      headerSectionId: BUILT_IN_SECTION_IDS.header,
+      footerSectionId: BUILT_IN_SECTION_IDS.footer
+    },
     purchaseOrder: {
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "purchaseOrder",
       blocks: transactionalBlocks(),
+      theme: { ...DEFAULT_THEME },
+      settings: { ...DEFAULT_DOCUMENT_SETTINGS },
+      headerSectionId: BUILT_IN_SECTION_IDS.header,
+      footerSectionId: BUILT_IN_SECTION_IDS.footer
+    },
+    purchaseReturnOrder: {
+      formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
+      documentType: "purchaseReturnOrder",
+      blocks: returnOrderBlocks(),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -673,8 +719,22 @@ export const DOCUMENT_CATALOG: DocumentCatalogEntry[] = [
     themeColors: "full"
   },
   {
+    type: "salesReturnOrder",
+    label: "RMA",
+    group: "Sales",
+    supported: true,
+    themeColors: "full"
+  },
+  {
     type: "purchaseOrder",
     label: "Purchase Order",
+    group: "Purchasing",
+    supported: true,
+    themeColors: "full"
+  },
+  {
+    type: "purchaseReturnOrder",
+    label: "Supplier Return",
     group: "Purchasing",
     supported: true,
     themeColors: "full"

@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type {
   getMaterialFinishList,
   MaterialFinish as MaterialFinishType
@@ -32,29 +36,13 @@ const MaterialFinishPreview = (
 
 const MaterialFinish = (props: MaterialFinishSelectProps) => {
   const { t } = useLingui();
-  const materialFinishesLoader =
-    useFetcher<Awaited<ReturnType<typeof getMaterialFinishList>>>();
+  const materialFinishesLoader = useLoaderQuery<
+    Awaited<ReturnType<typeof getMaterialFinishList>>
+  >(props.substanceId ? path.to.api.materialFinishes(props.substanceId) : null);
 
   const newFinishModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  useMount(() => {
-    if (props.substanceId) {
-      materialFinishesLoader.load(
-        path.to.api.materialFinishes(props.substanceId)
-      );
-    }
-  });
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (props.substanceId) {
-      materialFinishesLoader.load(
-        path.to.api.materialFinishes(props.substanceId)
-      );
-    }
-  }, [props.substanceId]);
 
   const options = useMemo(() => {
     return (materialFinishesLoader.data?.data ?? []).map((c) => ({

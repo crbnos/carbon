@@ -1,8 +1,6 @@
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import { startTransition } from "react";
-import { pdfjs } from "react-pdf";
-
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
   CONTROLLED_ENVIRONMENT,
@@ -11,8 +9,10 @@ import {
 } from "@carbon/auth";
 import { ensureLoggingConfigured } from "@carbon/logger/config.client";
 import posthog from "posthog-js";
+import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
 
 ensureLoggingConfigured();
 
@@ -28,9 +28,12 @@ ensureLoggingConfigured();
 //
 // Controlled (ITAR) environments never initialize analytics — no data about a
 // U.S.-Persons-only environment leaves it, even if the key is set.
-if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
+if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
-    api_host: POSTHOG_API_HOST
+    api_host: POSTHOG_API_HOST,
+    // LCP, INP and CLS from real sessions: the only way to know which pages are
+    // slow for the people using them.
+    capture_performance: { web_vitals: true }
   });
 }
 
@@ -43,6 +46,11 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   );
 }
 
-startTransition(() => {
-  hydrateRoot(document, <HydratedRouter />);
+// The catalog is no longer in loader data, so fetch the active language's
+// chunk before hydrating — otherwise a non-en page hydrates against an empty
+// catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(document, <HydratedRouter />);
+  });
 });

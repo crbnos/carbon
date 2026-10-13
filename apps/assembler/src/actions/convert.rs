@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! `convert` action — STEP → GLB + graph.json. Async job: the caller long-polls
 //! and hands fresh signed upload URLs (`glb`, `graph`) per poll (late-mint). The
 //! in-process result cache still skips re-tessellation for repeated content; the
@@ -5,7 +9,7 @@
 
 use crate::cache::{CachedConvert, ResultCache};
 use crate::jobs::{Done, Output};
-use crate::{config, http, progress, AppState};
+use crate::{admission, config, http, progress, telemetry, AppState};
 use serde_json::json;
 use std::sync::Arc;
 use std::time::Instant;
@@ -29,10 +33,9 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
     let jobs = state.jobs.clone();
     let cache = Arc::clone(&state.cache);
     let progress_store = state.progress.clone();
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
     let job_id = job_id.to_string();
-    tokio::spawn(async move {
-        let _permit = slots.acquire().await;
+    telemetry::spawn_job(&job_id.clone(), "convert", async move {
         if jobs.is_canceled(&job_id).await {
             return;
         }
@@ -74,19 +77,30 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                 entry
             }
             None => {
+                // Held for the tessellation only: the download before it streams
+                // to disk and the upload after it holds just the outputs.
+                let _grant = admission
+                    .acquire(admission::estimate_mb(http::file_len(&tmp).await))
+                    .await;
                 let tmp_str = tmp.to_string_lossy().to_string();
                 let cache_ins = Arc::clone(&cache);
                 let (lin, ang, optimize) = (req.lin, req.ang, req.optimize);
-                let res = tokio::task::spawn_blocking(move || {
+                let res = telemetry::in_span("compute", tokio::task::spawn_blocking(move || {
                     // Compacted retained raws are BinXCAF (`.xbf`) — binary, no
                     // STEP header to unit-detect (already mm); running the lossy
                     // text scan on them is wasted work at best.
                     if converter::convert::is_xbf(&tmp_str) {
                         converter::convert::convert_xbf(&tmp_str, lin, ang)
                     } else {
-                        // Unit detection scans at most the first 32MB of STEP text.
-                        let text = read_head_lossy(&tmp_str, 32 * 1024 * 1024)?;
-                        converter::convert::convert_step(&tmp_str, &text, lin, ang)
+                        // Unit detection scans the head of the mapped file — no
+                        // decoded copy of it.
+                        let head = http::map_file(std::path::Path::new(&tmp_str)).map_err(|e| {
+                            converter::convert::ConvertError::new(
+                                "READ_FAILED",
+                                format!("read temp: {e}"),
+                            )
+                        })?;
+                        converter::convert::convert_step_head(&tmp_str, &head, lin, ang)
                     }
                     .map(|conv| {
                         let glb = if optimize {
@@ -94,17 +108,18 @@ pub fn spawn(state: &AppState, job_id: &str, req: ConvertReq) {
                         } else {
                             conv.glb
                         };
-                        let entry = Arc::new(CachedConvert {
-                            glb: glb.into(),
-                            graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
-                            component_count: conv.component_count,
-                            triangles: conv.triangles,
-                            unit: conv.graph["unit"].clone(),
-                        });
-                        cache_ins.insert(key, Arc::clone(&entry));
-                        entry
+                        cache_ins.insert(
+                            key,
+                            CachedConvert {
+                                glb: glb.into(),
+                                graph_bytes: serde_json::to_vec(&conv.graph).unwrap().into(),
+                                component_count: conv.component_count,
+                                triangles: conv.triangles,
+                                unit: conv.graph["unit"].clone(),
+                            },
+                        )
                     })
-                })
+                }))
                 .await;
                 let _ = tokio::fs::remove_file(&tmp).await;
                 match res {
@@ -176,12 +191,12 @@ async fn complete(
         Output {
             name: "glb".into(),
             content_type: "model/gltf-binary".into(),
-            bytes: entry.glb.to_vec(),
+            bytes: entry.glb.clone(),
         },
         Output {
             name: "graph".into(),
             content_type: "application/json".into(),
-            bytes: entry.graph_bytes.to_vec(),
+            bytes: entry.graph_bytes.clone(),
         },
     ];
     // Convert output paths are job-scoped, so no result-pointer cache (the bytes
@@ -209,19 +224,6 @@ fn optimize_glb(glb: Vec<u8>) -> Vec<u8> {
             glb
         }
     }
-}
-
-/// Read at most `cap` bytes from the head of a file, lossy-decoded.
-fn read_head_lossy(path: &str, cap: usize) -> Result<String, converter::convert::ConvertError> {
-    use std::io::Read;
-    let file = std::fs::File::open(path).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    let mut buf = Vec::new();
-    file.take(cap as u64).read_to_end(&mut buf).map_err(|e| {
-        converter::convert::ConvertError::new("READ_FAILED", format!("read temp: {e}"))
-    })?;
-    Ok(String::from_utf8_lossy(&buf).into_owned())
 }
 
 fn convert_code(e: &converter::convert::ConvertError) -> &'static str {

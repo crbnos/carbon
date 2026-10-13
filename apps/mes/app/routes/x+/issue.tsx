@@ -1,16 +1,22 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("mes", "issue");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -44,9 +50,21 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("jobOperation")
     .select("workCenterId")
     .eq("id", jobOperationId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
-  if (jobOpRow?.workCenterId) {
+  if (!jobOpRow) {
+    logger.warn("Job operation not found for company", {
+      companyId,
+      jobOperationId
+    });
+    throw redirect(
+      requestReferrer(request) ?? path.to.operations,
+      await flash(request, error(null, "Job operation not found"))
+    );
+  }
+
+  if (jobOpRow.workCenterId) {
     const ruleEval = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
@@ -83,24 +101,22 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
+  const issued = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("issue", {
       id: jobOperationId,
       type: "partToOperation",
       itemId,
       materialId,
       jobOperationStepId,
       quantity,
-      adjustmentType,
-      companyId,
-      userId
-    }
-  });
+      adjustmentType
+    });
 
-  if (issue.error) {
+  if (issued.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issue.error, "Failed to issue material"))
+      await flash(request, error(issued.error, "Failed to issue material"))
     );
   }
 

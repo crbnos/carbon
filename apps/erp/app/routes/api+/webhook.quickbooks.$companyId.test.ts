@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -18,6 +22,9 @@ vi.mock("@carbon/ee/accounting", () => ({
     getProviderIntegration(...args),
   parseStoredCredentials: (raw: unknown) => raw,
   ProviderID: { QUICKBOOKS: "quickbooks" },
+  isAccountingSyncEnabled: (metadata: unknown) =>
+    (metadata as { settings?: { syncEnabled?: unknown } } | null)?.settings
+      ?.syncEnabled !== false,
   // Faithful minimal version of the real helper: first LinkedTxn of the
   // family's TxnType → canonical composite.
   buildQboPaymentSyncChange: (
@@ -96,11 +103,12 @@ describe("webhook.quickbooks payment accelerator", () => {
     getProviderIntegration.mockReset();
 
     getAccountingIntegration.mockResolvedValue({
+      companyId: "company-1",
       active: true,
       metadata: {
         credentials: {
           type: "oauth2",
-          providerMetadata: { webhookVerifierToken: TOKEN }
+          providerMetadata: { webhookVerifierToken: TOKEN, realmId: "realm-1" }
         }
       }
     });
@@ -156,11 +164,32 @@ describe("webhook.quickbooks payment accelerator", () => {
     ]);
   });
 
+  it("acks and ignores a signed delivery while sync is turned off", async () => {
+    getAccountingIntegration.mockResolvedValue({
+      companyId: "company-1",
+      active: true,
+      metadata: {
+        settings: { syncEnabled: false },
+        credentials: {
+          type: "oauth2",
+          providerMetadata: { webhookVerifierToken: TOKEN, realmId: "realm-1" }
+        }
+      }
+    });
+
+    const result = await run(makeRequest(billPaymentEvent));
+
+    expect(result).toEqual({ success: true, ignored: true });
+    expect(trigger).not.toHaveBeenCalled();
+    expect(getProviderIntegration).not.toHaveBeenCalled();
+  });
+
   it("enqueues the prefix-less AR composite for a Payment", async () => {
     await run(
       makeRequest({
         eventNotifications: [
           {
+            realmId: "realm-1",
             dataChangeEvent: {
               entities: [{ name: "Payment", id: "pay-1", operation: "Update" }]
             }
@@ -182,6 +211,7 @@ describe("webhook.quickbooks payment accelerator", () => {
       makeRequest({
         eventNotifications: [
           {
+            realmId: "realm-1",
             dataChangeEvent: {
               entities: [{ name: "Customer", id: "c-1", operation: "Update" }]
             }
@@ -203,6 +233,7 @@ describe("webhook.quickbooks payment accelerator", () => {
 
   it("returns 401 when no verifier token is configured", async () => {
     getAccountingIntegration.mockResolvedValue({
+      companyId: "company-1",
       active: true,
       metadata: { credentials: { type: "oauth2", providerMetadata: {} } }
     });
@@ -220,5 +251,46 @@ describe("webhook.quickbooks payment accelerator", () => {
     if (original !== undefined) {
       process.env.QUICKBOOKS_WEBHOOK_VERIFIER_TOKEN = original;
     }
+  });
+
+  it("returns 404 when the resolved integration belongs to another company", async () => {
+    // getAccountingIntegration matches companyId OR a realm/tenant id, so a URL
+    // naming another company's realm must not resolve to that company.
+    getAccountingIntegration.mockResolvedValue({
+      companyId: "company-2",
+      active: true,
+      metadata: {
+        credentials: {
+          type: "oauth2",
+          providerMetadata: { webhookVerifierToken: TOKEN, realmId: "realm-1" }
+        }
+      }
+    });
+
+    const result = (await run(makeRequest(billPaymentEvent))) as {
+      init?: { status?: number };
+    };
+    expect(result.init?.status).toBe(404);
+    expect(getProviderIntegration).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
+  });
+
+  it("ignores notifications for a realm other than the company's own", async () => {
+    const result = (await run(
+      makeRequest({
+        eventNotifications: [
+          {
+            realmId: "realm-of-another-company",
+            dataChangeEvent: {
+              entities: [{ name: "Payment", id: "pay-1", operation: "Update" }]
+            }
+          }
+        ]
+      })
+    )) as { success: boolean; ignored?: boolean };
+
+    expect(result).toEqual({ success: true, ignored: true });
+    expect(getProviderIntegration).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
   });
 });

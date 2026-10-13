@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Shared contracts for animated work instructions (Phase 0).
  * These types mirror `docs/specs/animated-work-instructions-contracts.md` exactly.
@@ -55,7 +59,9 @@ export type NoneMotion = {
 
 /**
  * Describes the insertion motion of a step's components into the assembly. The
- * viewer derives removal (the reverse) and start poses from it.
+ * viewer derives removal (the reverse) and start poses from it. The demo
+ * datasets restate the shapes they seed as `AssemblyStepMotionSpec`
+ * (@carbon/database cannot import this package).
  */
 export type Motion =
   | LinearMotion
@@ -109,12 +115,23 @@ export type AssemblyStep = {
    */
   flagged?: boolean;
   /**
-   * Subassembly phase this step belongs to (baked at step generation from the
-   * plan's contact graph). `null`/absent = the main phase, built seated. A
-   * non-null phase builds staged off to the side and flies into the main body
-   * at its `join` step. See `@carbon/viewer` staging.
+   * Components the author hid on THIS step only (tooling, fixtures, installed
+   * parts blocking the view). Not drawn while this step is active; they return
+   * on the next step. Never applied to the step's own `componentNodeIds`.
    */
-  phase?: { id: string; name: string; join: boolean } | null;
+  hiddenComponentNodeIds?: string[];
+  /**
+   * This row is a sub-assembly (a header): the steps whose `parentStepId` is
+   * its id are built on their own, directly before it. See `subassembly.ts`.
+   */
+  isSubAssembly?: boolean;
+  /** The sub-assembly this step belongs to. `null`/absent = top level. */
+  parentStepId?: string | null;
+  /**
+   * On a header: the later step that fits the finished sub-assembly.
+   * `null`/absent = it joins the main build at the header itself.
+   */
+  usedInStepId?: string | null;
 };
 
 /** One node of the assembly tree in graph.json. */

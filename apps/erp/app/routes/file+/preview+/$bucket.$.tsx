@@ -1,52 +1,33 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { CompanyBucket } from "@carbon/files";
+import {
+  effectiveExtension,
+  fileResponseHeaders,
+  getCompanyPrivateBucket,
+  getContentType,
+  imageTransformErrorMessage,
+  isStorageNotFound,
+  isUnsafeStoragePath,
+  LEGACY_PRIVATE_BUCKET,
+  storage,
+  storageErrorStatus,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "bucket");
 
-const supportedFileTypes: Record<string, string> = {
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  avif: "image/avif",
-  webp: "image/webp",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  wmv: "video/x-ms-wmv",
-  mp3: "audio/mpeg",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-  flac: "audio/flac",
-  dxf: "application/dxf",
-  dwg: "application/dxf",
-  stl: "application/stl",
-  obj: "application/obj",
-  glb: "application/glb",
-  gltf: "application/gltf",
-  fbx: "application/fbx",
-  ply: "application/ply",
-  off: "application/off",
-  step: "application/step",
-  stp: "application/step",
-  iges: "application/iges",
-  igs: "application/iges",
-  brep: "application/octet-stream",
-  "3dm": "application/octet-stream",
-  "3ds": "application/octet-stream",
-  "3mf": "model/3mf",
-  amf: "application/octet-stream",
-  bim: "application/octet-stream",
-  dae: "model/vnd.collada+xml"
-};
-
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {});
+  // Employees only: the read below uses the service role, so this is the whole
+  // gate. A customer or supplier portal account is also a session in the company
+  // and would otherwise read every private file it has.
+  const { companyId } = await requirePermissions(request, { role: "employee" });
   const { bucket } = params;
   let path = params["*"];
 
@@ -55,6 +36,15 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   // Don't decode the path here - let Supabase handle the URL encoding
   // path = decodeURIComponent(path);
+
+  if (isUnsafeStoragePath(path)) {
+    logger.error("Refused a storage path that escapes its prefix", {
+      companyId,
+      bucket,
+      path
+    });
+    return new Response(null, { status: 400 });
+  }
 
   const fileType = path.split(".").pop()?.toLowerCase();
 
@@ -66,14 +56,12 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // download yields the original, openable file. The content-type + extension
   // come from the underlying format, not the `.zst` wrapper.
   const isZst = fileType === "zst";
-  const effectiveType = isZst
-    ? path.slice(0, -4).split(".").pop()?.toLowerCase()
-    : fileType;
-  // Unknown extensions still get a Content-Type — a bare octet-stream beats
-  // omitting the header (browsers may otherwise sniff or mangle the download).
-  const contentType = effectiveType
-    ? (supportedFileTypes[effectiveType] ?? "application/octet-stream")
-    : undefined;
+  const effectiveType = effectiveExtension(path);
+  // HEIC is converted at upload, so this only serves legacy files and paths
+  // that bypass the app (API uploads): browsers outside Safari can't render
+  // HEIC, so ask storage for the imgproxy JPEG rendition instead.
+  const isHeicFile = effectiveType === "heic" || effectiveType === "heif";
+  let contentType = getContentType(effectiveType);
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
@@ -86,39 +74,75 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
+  // `public` and `temp-staging` are shared buckets legitimately served through
+  // this route (DocumentPreview, staged CAD raw downloads); any other bucket id
+  // that isn't the caller's own company bucket (or legacy `private`) would be
+  // another tenant's private bucket — refuse it. The ownsPath check alone is
+  // not enough: a slash-bounded match allows `<otherCo>/x/<yourCo>/file`.
+  const isPrivateBucket =
+    bucket === getCompanyPrivateBucket(companyId) ||
+    bucket === LEGACY_PRIVATE_BUCKET;
+  if (
+    !isPrivateBucket &&
+    bucket !== "public" &&
+    bucket !== TEMP_STAGING_BUCKET
+  ) {
+    return new Response(null, { status: 403 });
+  }
+
   const serviceRole = await getCarbonServiceRole();
+  // A company-private request reads the company bucket with legacy fallback;
+  // any other bucket is read as-is.
+  const source: Pick<CompanyBucket, "download"> = isPrivateBucket
+    ? storage(serviceRole).company(companyId)
+    : storage(serviceRole).from(bucket);
 
   async function downloadFile() {
     if (!path) throw new Error("Path not found");
+    if (isHeicFile) {
+      const transformed = await source.download(path, {
+        transform: { quality: 85 }
+      });
+      if (!transformed.error) {
+        // imgproxy may negotiate webp via Accept — trust the blob, not the path
+        contentType = transformed.data.type || "image/jpeg";
+        return transformed;
+      }
+      // No imgproxy (off by default locally, or a stale self-host stack) —
+      // fall through to the raw bytes; Safari can still render them.
+      logger.error(
+        imageTransformErrorMessage(
+          transformed.error,
+          "Failed to transform HEIC file"
+        ),
+        { path, error: transformed.error }
+      );
+    }
     // Use the original encoded path for the storage API call
-    const result = await serviceRole.storage.from(bucket!).download(path);
-    if (result.error) {
-      logger.error(result.error);
-      return null;
-    }
-    return result.data;
+    return source.download(path);
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      // A missing object is a clean 404, not a 500 — consumers (e.g. the model
-      // download flow) branch on the status; an opaque error page body must
-      // never be saved to disk as if it were the file.
-      return new Response(null, { status: 404 });
-    }
+  const result = await downloadFile();
+  if (result.error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(result.error),
+      error: result.error
+    });
+    // A missing object is a clean 404, not a 500 — consumers (e.g. the model
+    // download flow) branch on the status; an opaque error page body must
+    // never be saved to disk as if it were the file.
+    // Anything else is a real failure and must not pass for a miss.
+    return new Response(null, {
+      status: (await isStorageNotFound(result.error)) ? 404 : 500
+    });
   }
+  const fileData = result.data;
 
-  const headers = new Headers({
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
-
-  if (contentType) {
-    headers.set("Content-Type", contentType);
-  }
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
 
   if (isZst) {
     // Stream the storage object through a zstd decompress transform (Node

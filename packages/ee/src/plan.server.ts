@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
-import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
+import {
+  getCompanyPlanId,
+  isCarbonOwnedCompany
+} from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
-import { Edition, normalizePlanId, Plan } from "@carbon/utils";
+import { Edition, normalizePlanId, Plan, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { redirect } from "react-router";
 import {
   defaultUpgradeMessage,
   type GateSpec,
@@ -19,17 +25,19 @@ function isBypassCompany(companyId: string): boolean {
     .includes(companyId);
 }
 
+// The plan read is `getCompanyPlanId` (`@carbon/auth`): service role, cached, and
+// shared with the API-key plan gate in `requirePermissions`. A failed read
+// normalizes to the lowest plan, which turns plan-gated ENFORCEMENT (storage/sales
+// rules) off — fail-open. Callers are UI gates and evaluators that should not 500
+// on a transient blip.
+//
+// The `_client` param is kept for call-site compatibility; the read never goes
+// through the caller's client, whose RLS scope can hide the plan row.
 async function getCompanyPlan(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string
 ): Promise<Plan> {
-  const { data } = await client
-    .from("companyPlan")
-    .select("planId")
-    .eq("id", companyId)
-    .single();
-
-  return normalizePlanId(data?.planId);
+  return normalizePlanId(await getCompanyPlanId(companyId));
 }
 
 /**
@@ -47,19 +55,16 @@ async function getCompanyPlan(
  * Returns `null` off Cloud (the client neutralizes gating there anyway).
  */
 export async function getPlan(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string
 ): Promise<string | null> {
   if (CarbonEdition !== Edition.Cloud) return null;
   if (isBypassCompany(companyId)) return Plan.Partner;
 
-  const { data } = await client
-    .from("companyPlan")
-    .select("planId")
-    .eq("id", companyId)
-    .single();
-
-  if (data?.planId) return data.planId;
+  // Reads via service role for the same reason as `getCompanyPlan` — the read
+  // must not depend on the caller's RLS scope.
+  const planId = await getCompanyPlanId(companyId);
+  if (planId) return planId;
 
   // No durable plan row (never subscribed). Carbon-owned companies still get
   // Business-tier access; everyone else resolves to Unknown → gated.
@@ -116,4 +121,47 @@ export async function requirePlan({
       )
     );
   }
+}
+
+/**
+ * Like `companyHasPlan`, but the **Community** edition is ALWAYS gated: it has no
+ * license, so a plan-gated feature is off regardless of the (absent) plan row.
+ * Enterprise/Test self-hosted PASS; Cloud is plan-based; bypass/carbon-owned as
+ * in `companyHasPlan`.
+ *
+ * Use this (not `companyHasPlan`/`requirePlan`) for features that must be BLOCKED
+ * on Community — RBAC authoring, console/kiosk mode — rather than merely paywalled
+ * on Cloud. `companyHasPlan` deliberately returns true for every non-Cloud edition
+ * (a self-hosted feature toggle), which is wrong for these.
+ */
+export async function companyHasFeature(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  spec: GateSpec
+): Promise<boolean> {
+  if (CarbonEdition === Edition.Community) return false;
+  return companyHasPlan(client, companyId, spec);
+}
+
+/** Throws a redirect with flash when `companyHasFeature` is false. */
+export async function requireFeature({
+  request,
+  client,
+  companyId,
+  redirectTo,
+  message,
+  ...spec
+}: RequirePlanArgs): Promise<void> {
+  if (await companyHasFeature(client, companyId, spec as GateSpec)) return;
+
+  throw redirect(
+    redirectTo,
+    await flash(
+      request,
+      error(
+        null,
+        message ?? defaultUpgradeMessage(resolveRequirement(spec as GateSpec))
+      )
+    )
+  );
 }

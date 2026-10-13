@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { ComponentProps, ElementType } from "react";
@@ -5,11 +9,11 @@ import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
 
-const subheadingVariants = cva("uppercase tracking-wide", {
+const subheadingVariants = cva("text-muted-foreground", {
   variants: {
     variant: {
-      heavy: "text-xs font-medium text-muted-foreground",
-      light: "text-[11px]/[13px] font-light text-foreground/70"
+      heavy: "font-medium text-sm",
+      light: "font-normal text-xs"
     }
   },
   defaultVariants: {

@@ -1,0 +1,59 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+import type { SourceFile } from "../check";
+
+const FUNCTIONS_ROOT = "packages/database/supabase/functions";
+const SERVER_FUNCTIONS_ROOT = "packages/server-functions/src";
+
+const NOT_FUNCTIONS = new Set(["node_modules"]);
+
+function collectTs(dir: string, out: string[]): void {
+  for (const entry of readdirSync(dir)) {
+    const path = join(dir, entry);
+    if (statSync(path).isDirectory()) {
+      collectTs(path, out);
+    } else if (entry.endsWith(".ts") && !entry.endsWith(".test.ts")) {
+      out.push(path);
+    }
+  }
+}
+
+/**
+ * One SourceFile per deployable edge function: every directory with an
+ * index.ts deploys, config.toml entry or not. Its contents are all of the
+ * function's own .ts files joined, so an auth call may live beside index.ts.
+ */
+export function loadEdgeFunctions(root: string): SourceFile[] {
+  return loadFunctionDirs(root, FUNCTIONS_ROOT);
+}
+
+/** One SourceFile per `@carbon/server-functions` entry point (one directory each). */
+export function loadServerFunctions(root: string): SourceFile[] {
+  return loadFunctionDirs(root, SERVER_FUNCTIONS_ROOT);
+}
+
+function loadFunctionDirs(root: string, dir: string): SourceFile[] {
+  const base = join(root, dir);
+  if (!existsSync(base)) return [];
+  return readdirSync(base)
+    .filter(
+      (name) =>
+        !NOT_FUNCTIONS.has(name) && existsSync(join(base, name, "index.ts"))
+    )
+    .sort()
+    .map((name) => {
+      const paths: string[] = [];
+      collectTs(join(base, name), paths);
+      return {
+        file: relative(root, join(base, name)),
+        contents: paths
+          .sort()
+          .map((path) => readFileSync(path, "utf8"))
+          .join("\n")
+      };
+    });
+}

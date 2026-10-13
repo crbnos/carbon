@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { getInventoryCount } from "~/modules/inventory";
-import { getEdgeFunctionErrorBody } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 // Post (Pending -> Posted): atomically posts the variance as inventory
-// adjustments via the edge function.
+// adjustments.
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -31,10 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  const post = await serviceRole.functions.invoke("post-inventory-count", {
-    body: { type: "post", inventoryCountId: id, userId, companyId }
-  });
+  const post = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("post-inventory-count", { inventoryCountId: id });
 
   if (post.error) {
     // The Post button submits via a fetcher, so a redirect+flash toast is not
@@ -43,13 +47,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // the `invalidLineIds`) so the component can toast it and highlight the
     // offending rows; the fetcher still revalidates, so the count stays Pending
     // and re-renders.
-    const body = await getEdgeFunctionErrorBody(post.error);
-    const message =
-      typeof body?.message === "string"
-        ? body.message
-        : "Failed to post inventory count";
-    const invalidLineIds = Array.isArray(body?.invalidLineIds)
-      ? (body.invalidLineIds as string[])
+    const message = post.error.message || "Failed to post inventory count";
+    const invalidLineIds = Array.isArray(post.error.body.invalidLineIds)
+      ? (post.error.body.invalidLineIds as string[])
       : undefined;
     return data({ success: false, message, invalidLineIds }, { status: 400 });
   }

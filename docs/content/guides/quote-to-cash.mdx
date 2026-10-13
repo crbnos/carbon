@@ -8,62 +8,65 @@ flowName: Quote to cash
 flowIndex: 1
 ---
 
-The make-to-order tour started at a confirmed sales order. This flow rewinds to where that order comes from: a customer asking for a price, a quote that answers it, an acceptance that turns it into work. Quote to cash is the commercial spine that runs alongside the build — pricing on one end, a settled invoice on the other.
-
-We'll follow one inquiry from a blank quote all the way to an order Carbon is ready to ship.
+This guide follows a customer inquiry from quote creation through conversion to a sales order. The [next guide](/guides/order-to-cash) covers shipment, invoicing, and payment.
 
 ## One opportunity, many documents
 
-In Carbon, a <Term id="rfq">request for quote</Term>, a <Term>quote</Term>, and a <Term>sales order</Term> aren't a rigid chain. They're three documents that hang off a single **<Term>opportunity</Term>**. The opportunity holds a slot for each (`salesRfqId`, `quoteId`, `salesOrderId`), and any of them can be empty.
+In Carbon, a <Term id="rfq">request for quote</Term>, <Term>quote</Term>, and <Term>sales order</Term> link to one **<Term>opportunity</Term>**. The opportunity can reference each document through `salesRfqId`, `quoteId`, and `salesOrderId`; none is required.
 
 <Figure illustration="opportunity-thread" caption="Three documents (RFQ, quote, order) hang off one opportunity, and any slot can be empty." />
 
-That design has a practical consequence: none of the steps are mandatory. You can raise a sales order cold, quote without a formal RFQ, or carry one opportunity through all three. Carbon tracks the relationship through the opportunity, not through a foreign key that forces the sequence.
+You can therefore create a sales order directly, create a quote without an RFQ, or use all three documents. The opportunity records the relationship without enforcing a sequence.
 
 <Callout tone="neutral" badge="NO RIGID CHAIN" title="Quotes are optional. The opportunity is the thread.">
-A sales order does not require a quote, and a quote does not require an RFQ. Each document links back to the same opportunity, so you can enter the flow at whatever point a deal actually starts.
+A sales order does not require a quote, and a quote does not require an RFQ. Link the documents to one opportunity regardless of where the sales process starts.
 </Callout>
 
 ## Build the quote
 
-Open a new quote and add a line per item the customer asked about. Pricing lives on the line and supports quantity breaks, so the unit price for one can differ from the price for twenty-five. The negotiated number you land on is what carries forward later.
+Create a quote and add one line for each requested item. Each line supports quantity-break pricing. The negotiated net unit price carries forward to the sales order.
 
-A fresh quote sits at **"Draft"**. Each line moves through its own state as you work it up: **"Draft"**, **"In Progress"**, then **"Complete"** once you've settled its pricing. The line states let you quote a multi-item inquiry piecemeal instead of all at once, marking lines complete one by one rather than all at once.
+A new quote is **"Draft"**. Each line progresses independently through **"Draft"**, **"In Progress"**, and **"Complete"**, allowing a multi-item quote to be priced incrementally.
 
 <Screenshot src="/screens/quote-builder.png" label="Quote builder" caption="A multi-line quote with quantity-break pricing, each line worked up independently." ratio="wide" />
 
-When the numbers are ready, finalizing the quote moves it to **"Sent"** and marks its lines **"Complete"**. That status is also the gate for the next step.
+Finalizing the quote moves it to **"Sent"** and marks its lines **"Complete"**. Only a Sent quote can proceed to customer action.
 
 ## Send it to the customer
 
-Carbon can hand the customer the quote directly. With digital quotes enabled, a **"Sent"** quote exposes a private share link: an unguessable id, no login required. Internal notes are stripped before anything reaches the customer.
+With digital quotes enabled, a **"Sent"** quote provides a private, unguessable share link that requires no login. The customer view excludes internal notes.
 
-From that link the customer does one of two things. They **accept** — the page ends with an **"Accept Quote"** button — and the quote converts straight into a sales order; the option to attach their PO as a PDF appears once they've accepted. Or they **reject**, via the **"Reject Quote"** link underneath, and the quote moves to **"Lost"**. Either way the outcome lands back in Carbon without a single email thread.
+The customer can:
+
+- Select **Accept Quote** to create a sales order, then optionally attach their purchase order as a PDF.
+- Select **Reject Quote** to move the quote to **"Lost"**.
+
+Carbon records either result on the quote.
 
 <Callout tone="blue" badge="DIGITAL QUOTE" title="Acceptance is a first-class action, not an inbox.">
-The customer-facing share link turns an accept into a real conversion and a reject into a recorded outcome. A companion customer portal then shows them live order and job status as the work proceeds.
+Acceptance converts the quote; rejection records the outcome. The customer portal can then display order and job status.
 </Callout>
 
 <Screenshot src="/screens/quote-digital-customer.png" label="Digital quote: customer view" caption="What the customer sees: line pricing, an 'Accept Quote' button, and a 'Reject Quote' link beneath it." ratio="wide" />
 
 ## When a quote doesn't land
 
-Not every quote converts, and Carbon keeps a distinct status for each ending. A quote whose validity date passes turns **"Expired"**; one the customer rejects becomes **"Lost"**; one you withdraw yourself is **"Cancelled"**. Each is a real outcome on the record, not a quote left hanging.
+Carbon records non-converted quotes as **"Expired"** after the validity date, **"Lost"** after customer rejection, or **"Cancelled"** after internal withdrawal.
 
-None of them ends the conversation. A quote carries a **revision** number, so when a price needs reworking you re-quote rather than start over: the revision bumps, the customer sees the current terms, and the history of what changed stays intact.
+To revise pricing or terms, create a new quote revision. Carbon increments the revision number and retains the previous terms.
 
 <Callout tone="neutral" badge="REVISE, DON'T RESTART" title="Re-quoting bumps a revision and keeps the trail.">
-A lost or expired quote isn't wasted work. Raise a new revision off it and the prior terms stay on the record, so a negotiation that runs three rounds leaves three readable versions, not three disconnected quotes.
+Create a revision from a lost or expired quote to retain the complete negotiation history.
 </Callout>
 
 ## Into a sales order
 
-Whether you convert internally or the customer accepts, the same thing happens: Carbon builds a sales order from the quote. The order lines carry the negotiated net unit price, the new order reuses the quote's opportunity, and the quote flips to **"Ordered"**, or **"Partial"** if only some lines converted. The order itself opens at **"To Ship and Invoice"**.
+Internal conversion and customer acceptance both create a sales order. The order inherits the negotiated net unit prices and opportunity. Carbon moves the quote to **"Ordered"**, or **"Partial"** if only some lines convert. The new order opens at **"To Ship and Invoice"**.
 
-That status is the handoff. Everything from here (production, shipment, invoice) keys off the sales order, exactly where the make-to-order tour began.
+Production, shipment, and invoicing use the sales order as their source.
 
 <Callout tone="amber" badge="ORDER → JOB, NOT QUOTE → JOB" title="Jobs come from the order, never the quote.">
-There is no path from a quote straight to a production job. A [make-to-order](/guides/order) line on the *sales order* is what spawns a job, so the sequence is always quote → order → job. The order is the source of truth the floor builds against.
+A quote cannot create a production job. A [make-to-order](/guides/order) sales-order line creates the job, so the sequence is quote → order → job.
 </Callout>
 
 <Screenshot src="/screens/quote-sales-order.png" label="Sales order" caption="The converted order, priced from the accepted quote. Its badge reads 'In Progress' while the make-to-order lines still have jobs to finish." ratio="wide" />

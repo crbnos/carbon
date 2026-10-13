@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { redis } from "@carbon/kv";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { loader } from "./health";
@@ -46,13 +50,13 @@ describe("health loader", () => {
     expect(body.checks.redis).toBe("down");
   });
 
-  it("reports the database down (never throws) on a query error", async () => {
+  it("returns 503 when the database is down — the code is the readiness gate", async () => {
     select.mockResolvedValue({ error: { message: "boom" } });
 
     const response = await loader();
     const body = await response.json();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     expect(body.status).toBe("degraded");
     expect(body.checks.database).toBe("down");
   });

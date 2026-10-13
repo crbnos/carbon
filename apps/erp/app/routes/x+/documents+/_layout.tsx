@@ -1,36 +1,38 @@
-import { VStack } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { MetaFunction } from "react-router";
-import { Outlet } from "react-router";
-import {
-  CollapsibleSidebarProvider,
-  ContentSidebar
-} from "~/components/Layout/Navigation";
+
+import { ContentSidebar } from "~/components/Layout/Navigation";
 import { useDocumentsSubmodules } from "~/modules/documents";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+export { RouteErrorBoundary as ErrorBoundary } from "@carbon/react/ErrorBoundary";
 
 export const meta: MetaFunction = () => {
   return [{ title: "Carbon | Documents" }];
 };
 
+function DocumentsSidebar() {
+  const { links } = useDocumentsSubmodules();
+  return <ContentSidebar links={links} />;
+}
+
 export const handle: Handle = {
   breadcrumb: msg`Documents`,
   to: path.to.documents,
-  module: "documents"
+  module: "documents",
+  sidebar: DocumentsSidebar
 };
 
 export default function DocumentsRoute() {
-  const { links } = useDocumentsSubmodules();
-
   return (
-    <CollapsibleSidebarProvider>
-      <div className="grid grid-cols-[auto_minmax(0,1fr)] w-full h-full">
-        <ContentSidebar links={links} />
-        <VStack spacing={0} className="h-full">
-          <Outlet />
-        </VStack>
-      </div>
-    </CollapsibleSidebarProvider>
+    <VStack spacing={0} className="h-full">
+      <RecordOutlet />
+    </VStack>
   );
 }

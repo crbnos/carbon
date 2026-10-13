@@ -1,23 +1,37 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { canApproveRequest } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { runMRP } from "~/modules/production";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  isPurchaseOrderReopenStatus,
   purchaseOrderStatusType,
   reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
-import { canApproveRequest } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-status");
+
+/** The PO statuses whose open lines MRP counts as supply
+ *  (`openPurchaseOrderLines`). */
+const MRP_SUPPLY_STATUSES = new Set<string>([
+  "Planned",
+  "To Receive",
+  "To Receive and Invoice"
+]);
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -32,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!status || !purchaseOrderStatusType.includes(status)) {
     throw redirect(
-      path.to.quote(id),
+      path.to.purchaseOrder(id),
       await flash(request, error(null, "Invalid status"))
     );
   }
@@ -51,11 +65,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const currentStatus = currentPo.data?.status;
   const isCurrentlyLocked = isPurchaseOrderLocked(currentStatus);
 
+  // A reopen moves the PO back to an editable status: Draft from the PO page,
+  // Planned from the planning pages (Draft is not MRP supply). Both are the
+  // same operation — permission, pending approvals and revision alike.
+  const isReopen = isPurchaseOrderReopenStatus(status);
+
   // Explicit request only — a plain Reopen never bumps.
   const createRevisionRequested =
-    status === "Draft" && formData.get("createRevision") === "true";
+    isReopen && formData.get("createRevision") === "true";
 
-  // Reject an ineligible revision BEFORE the Draft branch below cancels pending
+  // Reject an ineligible revision BEFORE the reopen branch below cancels pending
   // approvals: those side effects must not be applied for a request that is
   // about to fail. reopenPurchaseOrderAsRevision re-checks the same conditions
   // in SQL, so this is a pre-flight, not the authority.
@@ -77,11 +96,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Determine required permission:
-  // - Reopening (Draft) from a locked status requires delete permission
+  // - Reopening (Draft or Planned) from a locked status requires delete
+  //   permission
   // - Closing from any status requires delete permission
   // - Other status changes require update permission
   const requiresDeletePermission =
-    (status === "Draft" && isCurrentlyLocked) || status === "Closed";
+    (isReopen && isCurrentlyLocked) || status === "Closed";
 
   const { client, userId, companyId } = await requirePermissions(request, {
     ...(requiresDeletePermission
@@ -90,6 +110,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const serviceRole = getCarbonServiceRole();
+
+  // The approval writes below go through the service role, keyed on the URL's
+  // id: the purchase order must belong to this company first.
+  await requireCompanyRecord(serviceRole, "purchaseOrder", companyId, { id });
 
   // Cancel pending approval requests when closing the PO
   // Closed POs are terminal - no approvals should remain pending
@@ -106,6 +130,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending")
       .select("id");
 
@@ -116,15 +141,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Cancel pending approval requests when reopening to Draft
+  // Cancel pending approval requests when reopening (to Draft or Planned)
   // This handles reopening from both "Needs Approval" and "Closed" statuses
-  if (status === "Draft") {
+  if (isReopen) {
     // Find all pending approval requests for this PO
     const pendingApprovals = await serviceRole
       .from("approvalRequest")
       .select("*")
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending");
 
     if (pendingApprovals.data && pendingApprovals.data.length > 0) {
@@ -139,6 +165,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       } else if (currentStatus === "Needs Approval") {
         // Security check: Only allow reopening if user is the requester OR an approver
@@ -157,7 +184,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
         if (!isRequester && !isApprover) {
           throw redirect(
-            requestReferrer(request) ?? path.to.quote(id),
+            requestReferrer(request) ?? path.to.purchaseOrder(id),
             await flash(
               request,
               error(
@@ -180,6 +207,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       }
     }
@@ -191,7 +219,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       rowsUpdated = await reopenPurchaseOrderAsRevision(getDatabaseClient(), {
         id,
         companyId,
-        updatedBy: userId
+        updatedBy: userId,
+        status: isReopen ? status : "Draft"
       });
     } catch (err) {
       logger.error("Failed to create purchase order revision", { error: err });
@@ -225,7 +254,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (update.error) {
     throw redirect(
-      requestReferrer(request) ?? path.to.quote(id),
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
       await flash(
         request,
         error(update.error, "Failed to update purchasing order status")
@@ -233,7 +262,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (status === "Planned") {
+  // Planned makes the PO's lines MRP supply. A PO that already was supply (a
+  // released one reopened from planning) changes nothing MRP reads, so the
+  // reopen does not wait on a company-wide run.
+  if (status === "Planned" && !MRP_SUPPLY_STATUSES.has(currentStatus ?? "")) {
     await runMRP(serviceRole, getDatabaseClient(), {
       type: "purchaseOrder",
       id,
@@ -243,7 +275,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    requestReferrer(request) ?? path.to.quote(id),
+    requestReferrer(request) ?? path.to.purchaseOrder(id),
     await flash(request, success("Updated purchasing order status"))
   );
 }

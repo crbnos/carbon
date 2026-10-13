@@ -3,9 +3,9 @@ title: Permissions and access
 description: How Carbon decides who can see and change what, from the module-action model to employee types, groups, invites, and shop-floor PIN accounts.
 ---
 
-Everyone who works in Carbon signs in against one company, and Carbon decides what they can do from a set of small, explicit grants. A grant is a pair: a **module** (a slice of the app, like Sales or Inventory) and an **action** on it (view, create, update, or delete). Grant someone `sales_view` and they can read sales orders; grant `inventory_update` and they can edit inventory. Nothing is implied and nothing is global. A person with no grants can sign in and see nothing.
+Carbon authorizes each user through explicit grants scoped to a company. Each grant combines a **module**, such as Sales or Inventory, with an **action**: view, create, update, or delete. For example, `sales_view` permits reading sales records, and `inventory_update` permits editing inventory. Grants do not imply other grants; a user with none can sign in but cannot access any module.
 
-You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/reference/api-keys). Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see [two-factor authentication](/docs/reference/two-factor).
+An **employee type** provides a grant template, with per-employee exceptions. See [People](/docs/reference/people) for employee records, [API keys](/docs/building/api-keys) for programmatic access under the same model, and [two-factor authentication](/docs/reference/two-factor) for sign-in security.
 
 ## The module-action model
 
@@ -28,7 +28,7 @@ Every permission screen in Carbon is the same widget: a matrix with a **row per 
 Internally each grant stores the list of companies it applies to, so one person can hold different permissions in each company they belong to. In the UI you always edit permissions for the company you're currently in. The special value `"0"` means "all companies" and is how a true cross-company administrator is represented. See [multi-company setup](/docs/reference/intercompany) for how a user spans several companies.
 </Callout>
 
-Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for [API keys](/docs/reference/api-keys), which carry scopes in exactly this `module_action` shape.
+Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for [API keys](/docs/building/api-keys), which carry scopes in exactly this `module_action` shape.
 
 ## Employee types
 
@@ -49,7 +49,7 @@ Every other type is yours to create, rename, and delete. A company can hold at m
 
 ## Per-person overrides and bulk edits
 
-A type gives everyone the same start; real people need exceptions. Open a single employee under **Settings → Users → Accounts** and their permission matrix is pre-filled from their type. Check or uncheck any cell to override just that person. Their type stays the same as a label. Switching the type from the person's screen doesn't silently rewrite their grants either — Carbon asks first whether you want to overwrite the current set with the new type's template or keep what they have.
+An employee's permission matrix under **Settings → Users → Accounts** starts with the grants from their employee type. Checking or clearing a cell creates a per-employee exception without changing the type. When you switch types, Carbon asks whether to replace the current grants with the new template or preserve them.
 
 When a change needs to reach many people at once, use the **bulk permission editor**. Select the users, pick a mode, then set the matrix:
 
@@ -70,7 +70,7 @@ You don't create passwords for people. You **invite** them by email, and they se
 
 Because an invite is a real record, an employee has a clear **status** derived from it and their account (the `employees` view, `packages/database/supabase/migrations/20260529160000_employees-view-status.sql:16`):
 
-<StatusFlow>
+<StatusFlow entity="employeeAccount">
   <Status name="Invited">The invite has been sent but not yet accepted. The person can't sign in until they follow the link.</Status>
   <Status name="Active" accent>The invite was accepted and the account is live. This is the normal working state.</Status>
   <Status name="Inactive" terminal>The account has been deactivated, or the invite was revoked before acceptance. No access.</Status>
@@ -80,9 +80,9 @@ An invite is a company-scoped record keyed by email, and it carries the permissi
 
 ## Shop-floor PIN accounts
 
-Not everyone who needs to touch Carbon has an email inbox. A machinist on the floor signs in to the [MES](/docs/reference/mes) with a **4-digit PIN** on a shared station tablet, not a magic link. These are **console operators**, and they're a distinct kind of account.
+**Console operators** sign in to [MES](/docs/reference/mes) on a shared station with a **4-digit PIN** instead of an email-based login. They are a separate account type.
 
-Add one under **Settings → Users → Operators** (visible only when console mode is enabled for the company) with a name, a location, and a 4-digit PIN (`apps/erp/app/modules/users/users.models.ts:31`). Carbon creates a lightweight account with no email login and assigns it the **Console Operator** employee type automatically. On the shop floor the operator taps their name and enters the PIN, which Carbon checks against the account before starting their session (`apps/mes/app/routes/x+/console.pin-in.tsx:61`). You can reset an operator's PIN at any time from the same screen.
+Add one under **Settings → Users → Operators** (visible only when console mode is enabled for the company) with a name and a location. Carbon creates a lightweight account with no email login, assigns it the **Console Operator** employee type automatically, and generates a 4-digit PIN that is shown once, when the operator is created — Carbon stores only a hash of it, so copy it then. On the shop floor the operator taps their name and enters the PIN, which Carbon checks before starting their session. If a PIN is lost, reset it from the same screen to generate a new one; the old PIN stops working immediately. Resetting an operator's PIN takes `users_update`; setting a console PIN for any other employee (from the **Accounts** list) also takes `settings_update`.
 
 <Callout type="note" title="An operator can graduate to a full user">
 When a PIN account needs real ERP access, convert it: give it an email and a full employee type, and Carbon promotes the same person to a normal invited user without losing their history (`apps/erp/app/modules/users/users.server.ts:905`). Their old floor activity stays attached to the one identity.
@@ -96,7 +96,7 @@ PIN accounts are scoped to the floor by design. They carry only the grants their
   <Card title="People" href="/docs/reference/people">
     The individual accounts these permissions apply to.
   </Card>
-  <Card title="API keys" href="/docs/reference/api-keys">
+  <Card title="API keys" href="/docs/building/api-keys">
     Programmatic access using the same module-action scopes.
   </Card>
   <Card title="The MES app" href="/docs/reference/mes">
@@ -112,17 +112,17 @@ Access gates, PIN accounts, and why a permission change didn't take.
 ### "Incorrect PIN"
 The 4-digit PIN entered on the shop-floor station doesn't match the operator's account. Re-enter it, or reset the operator's PIN from **Settings → Users → Operators**.
 
-### "No PIN set. Please set a PIN in your account settings."
-The operator account being signed into has no PIN on record. Set one for that operator from the Operators screen before they can sign in on the floor.
+### "Too many incorrect PINs. Please wait a few minutes and try again."
+Five wrong PINs for one person within 15 minutes lock that person's pin-in for a while, from every station; the lock lasts a minute at first and doubles on repeat offenses. A single station is also capped at 30 wrong PINs in 15 minutes across everyone, and stations signed in with the same login share that cap. Wait it out — a correct PIN afterwards clears the person's count.
 
-### "PIN must be 4 digits"
-Creating or resetting an operator rejects anything that isn't exactly four digits. Enter a 4-digit numeric PIN.
+### "No PIN set. Ask an admin to set a console PIN for you."
+The person has no PIN on record, and PINs are never chosen on the floor: an admin generates one. For an operator, use **Reset PIN** on **Settings → Users → Operators** (needs `users_update`). For any other employee, use **Set Console PIN** on the **Accounts** list, which also needs `settings_update`, because a PIN lets whoever holds it act as that person on the floor.
 
 ### "Group members are required"
 A bulk action — bulk permission edit, group edit, deactivate, resend/revoke invite — was submitted with no users selected. Select at least one user first.
 
 ### A user can sign in but sees nothing / can't open a module
-Permissions are explicit grants; nothing is implied. A person with no `<module>_view` grant can't see that module's pages at all. Grant the needed `<module>_<action>` via their employee type or a per-person override. The database enforces the same grants through row-level security, so this holds even for API access, not just hidden buttons.
+Permissions are explicit. Without `<module>_view`, a user cannot access the module's pages. Assign the required `<module>_<action>` through an employee type or per-user override. Row-level security enforces the same grants for API access.
 
 ### Editing an employee type didn't change existing people's access
 Changing a type's permissions only sets the defaults for people assigned *after* the change; employees already on that type keep their current grants. To push the change to existing staff, use the bulk permission editor (**Update** mode to overwrite, **Add** to layer on).

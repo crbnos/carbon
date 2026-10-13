@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import * as RadioGroupPrimitive from "@radix-ui/react-radio-group";
@@ -5,6 +9,7 @@ import type { ComponentPropsWithoutRef, ElementRef } from "react";
 import { forwardRef } from "react";
 import { LuCircle } from "react-icons/lu";
 
+import { buttonVariants } from "./Button";
 import { cn } from "./utils/cn";
 
 const RadioGroup = forwardRef<
@@ -30,6 +35,8 @@ const RadioGroupItem = forwardRef<
       ref={ref}
       className={cn(
         "aspect-square size-4 shrink-0 rounded-full border-2 border-muted-foreground/50 shadow-xs transition-[color,box-shadow,border-color] outline-none hover:border-primary focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-[state=checked]:border-primary data-[state=checked]:text-primary dark:bg-input/30 dark:aria-invalid:ring-destructive/40 dark:data-[state=checked]:bg-primary dark:data-[state=checked]:text-primary-foreground",
+        // Phones: a 44x44 hit area around the visual dot.
+        "max-md:hit-area",
         className
       )}
       {...props}
@@ -42,4 +49,32 @@ const RadioGroupItem = forwardRef<
 });
 RadioGroupItem.displayName = RadioGroupPrimitive.Item.displayName;
 
-export { RadioGroup, RadioGroupItem };
+/**
+ * A radio option styled as a secondary Button — for choice screens where the
+ * options should read as buttons but behave as a radio group (one tab stop,
+ * arrow keys move AND select, Enter left free for the screen's continue
+ * action — Radix prevents Enter from activating a radio). Children render
+ * inline; there is no circle indicator, so express the checked state via
+ * `data-[state=checked]:*` classes at the call site.
+ */
+const RadioGroupButton = forwardRef<
+  ElementRef<typeof RadioGroupPrimitive.Item>,
+  ComponentPropsWithoutRef<typeof RadioGroupPrimitive.Item>
+>(({ className, children, ...props }, ref) => {
+  return (
+    <RadioGroupPrimitive.Item
+      ref={ref}
+      className={cn(
+        buttonVariants({ variant: "secondary", size: "md" }),
+        "gap-2 px-4",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </RadioGroupPrimitive.Item>
+  );
+});
+RadioGroupButton.displayName = "RadioGroupButton";
+
+export { RadioGroup, RadioGroupButton, RadioGroupItem };

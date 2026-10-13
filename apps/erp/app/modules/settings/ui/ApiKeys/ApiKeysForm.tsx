@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getBrowserEnv } from "@carbon/auth";
 import { DateTimePicker, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Alert,
   AlertTitle,
@@ -26,7 +31,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
 import { LuCheck, LuClipboard, LuLock } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
@@ -36,7 +40,11 @@ import {
   toApiKeyScopes,
   usePermissionMatrix
 } from "~/hooks/usePermissionMatrix";
-import { apiKeyPermissionModules, apiKeyValidator } from "~/modules/settings";
+import {
+  apiKeyOptInPermissionKeys,
+  apiKeyPermissionModules,
+  apiKeyValidator
+} from "~/modules/settings";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 
@@ -55,7 +63,13 @@ const ApiKeyForm = ({
 }: ApiKeyFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const fetcher = useFetcher<{ key: string }>();
+  const fetcher = useAction<{ key: string }>({
+    onSettled: (data) => {
+      if (data?.key) {
+        setKey(data.key);
+      }
+    }
+  });
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = !permissions.can("update", "users");
@@ -73,14 +87,9 @@ const ApiKeyForm = ({
 
   const matrix = usePermissionMatrix({
     modules: apiKeyPermissionModules,
-    initialState: initialScopeState
+    initialState: initialScopeState,
+    bulkExcludedKeys: apiKeyOptInPermissionKeys
   });
-
-  useEffect(() => {
-    if (fetcher.data?.key) {
-      setKey(fetcher.data.key);
-    }
-  }, [fetcher.data]);
 
   // Serialize scopes to JSONB format for form submission
   const scopesJsonb = companyId
@@ -104,7 +113,6 @@ const ApiKeyForm = ({
             }
             defaultValues={initialValues}
             fetcher={fetcher}
-            className="flex flex-col h-full"
           >
             <ModalHeader>
               <ModalTitle>
@@ -115,7 +123,7 @@ const ApiKeyForm = ({
                 )}
               </ModalTitle>
             </ModalHeader>
-            <ModalBody className="max-h-[70dvh] overflow-y-auto">
+            <ModalBody>
               <Hidden name="id" />
               <Hidden name="scopes" value={scopesJsonb} />
               <VStack spacing={4}>
@@ -127,7 +135,7 @@ const ApiKeyForm = ({
                   minValue={toCalendarDateTime(today(getLocalTimeZone()))}
                 />
 
-                <PermissionMatrix matrix={matrix} />
+                <PermissionMatrix matrix={matrix} isDisabled={isDisabled} />
               </VStack>
             </ModalBody>
             <ModalFooter>

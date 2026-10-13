@@ -1,13 +1,23 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
-import { deriveRate, taxableBase } from "@carbon/utils";
+import {
+  deriveRate,
+  getErrorMessage,
+  redirect,
+  taxableBase
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { upsertDocument } from "~/modules/documents";
 import {
@@ -19,10 +29,10 @@ import {
   upsertPurchaseInvoiceLine
 } from "~/modules/invoicing";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 export const handle: Handle = {
@@ -32,6 +42,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
   const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
@@ -41,13 +53,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const sourceDocument = url.searchParams.get("sourceDocument") ?? undefined;
   const sourceDocumentId = url.searchParams.get("sourceDocumentId") ?? "";
 
-  let result: FunctionsResponse<{ id: string }>;
+  let result: Awaited<
+    ReturnType<typeof createPurchaseInvoiceFromPurchaseOrder>
+  >;
 
   switch (sourceDocument) {
     case "Purchase Order":
       if (!sourceDocumentId) throw new Error("Missing sourceDocumentId");
       result = await createPurchaseInvoiceFromPurchaseOrder(
         getCarbonServiceRole(),
+        getDatabaseClient(),
         sourceDocumentId,
         companyId,
         userId
@@ -55,15 +70,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
       if (result.error || !result?.data) {
         throw redirect(
-          request.headers.get("Referer") ?? path.to.purchaseOrders,
+          requestReferrer(request) ?? path.to.purchaseOrders,
           await flash(
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create purchase invoice"
-              )
+              getErrorMessage(result.error, "Failed to create purchase invoice")
             )
           )
         );
@@ -203,8 +215,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const safeFilename = stripSpecialCharacters(originalFilename);
           const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
 
-          const copyResult = await client.storage
-            .from("private")
+          const copyResult = await storage(client)
+            .company(companyId)
             .copy(extractedStoragePath, newStoragePath);
 
           if (!copyResult.error) {
@@ -247,8 +259,8 @@ export default function PurchaseInvoiceNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <PurchaseInvoiceForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

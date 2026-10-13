@@ -26,7 +26,6 @@
     "cmdk": "0.2.0",
     "cookie": "catalog:",
     "dompurify": "catalog:",
-    "jotai": "2.19.1",
     "linkifyjs": "4.3.2",
     "nanoid": "catalog:",
     "react-markdown": "9.1.0",
@@ -34,7 +33,8 @@
     "tippy.js": "6.3.7",
     "tiptap-extension-global-drag-handle": "0.1.18",
     "tiptap-markdown": "0.8.10",
-    "tunnel-rat": "0.1.2"
+    "tunnel-rat": "0.1.2",
+    "zustand": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
@@ -56,7 +56,6 @@
   },
   "peerDependencies": {
     "@internationalized/date": "catalog:",
-    "framer-motion": "catalog:",
     "react": "catalog:",
     "react-icons": "catalog:"
   },

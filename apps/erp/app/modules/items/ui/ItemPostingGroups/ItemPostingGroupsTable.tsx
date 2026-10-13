@@ -1,4 +1,8 @@
-import { MenuIcon, MenuItem } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -42,12 +46,14 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
             }
             className="cursor-pointer"
           />
-        )
+        ),
+        meta: { mobile: "P1" }
       },
       {
         accessorKey: "description",
         header: t`Description`,
-        cell: (item) => item.getValue()
+        cell: (item) => item.getValue(),
+        meta: { mobile: "P3" }
       }
     ];
     return [...defaultColumns, ...customColumns];
@@ -58,6 +64,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
       return (
         <>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.edit}
             disabled={!permissions.can("update", "parts")}
             onClick={() => {
               navigate(
@@ -69,6 +76,7 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
             <Trans>Edit Item Group</Trans>
           </MenuItem>
           <MenuItem
+            shortcut={MENU_ITEM_SHORTCUTS.delete}
             destructive
             disabled={!permissions.can("delete", "parts")}
             onClick={() => {
@@ -91,6 +99,12 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      importCSV={[
+        {
+          table: "itemPostingGroup" as const,
+          label: t`Item Groups`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "parts") && (
           <New

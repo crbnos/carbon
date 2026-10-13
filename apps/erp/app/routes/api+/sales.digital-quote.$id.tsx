@@ -1,5 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument
+} from "@carbon/ee/rules.server";
+import { safeStorageFileName, storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -10,9 +19,11 @@ import {
   getSalesOrder,
   selectedLinesValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "sales", "digital-quote");
 
@@ -82,14 +93,96 @@ export async function action(args: ActionFunctionArgs) {
 
       const selectedLines = parseResult.data;
 
+      if (
+        !Object.values(selectedLines).some((line) => (line.quantity ?? 0) > 0)
+      ) {
+        return {
+          success: false,
+          message: "Select at least one item to accept the quote."
+        };
+      }
+
+      // Unauthenticated endpoint: the name becomes a storage key segment.
+      const uploadFileName =
+        file instanceof File ? safeStorageFileName(file.name) : null;
+      if (file instanceof File && !uploadFileName) {
+        logger.error("Rejected digital quote upload file name", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          fileName: file.name
+        });
+        return { success: false, message: "Invalid file name" };
+      }
+
       // Extract purchase order number from PDF filename if available
       let purchaseOrderNumber = "";
       if (file instanceof File && file.name.toLowerCase().endsWith(".pdf")) {
         purchaseOrderNumber = file.name.replace(/\.pdf$/i, "");
       }
 
+      // Terminal gate on the customer-facing accept. This endpoint is
+      // unauthenticated — the share link is the only credential — so it is
+      // HARD-BLOCK-ONLY: there is no employee here, nobody who may legitimately
+      // acknowledge a warning, and internal compliance text must never reach
+      // the customer. Errors refuse with a neutral message; warnings are logged
+      // for the seller and the order proceeds.
+      const { violations: salesRuleViolations, ruleNames: salesRuleNames } =
+        await evaluateSalesRulesForSalesDocument({
+          client: serviceRole,
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id
+        });
+      // Only the lines the customer selected convert — a deselected line's
+      // violations must not block the acceptance.
+      const acceptedLineIds = new Set(
+        Object.entries(selectedLines)
+          .filter(([, line]) => (line.quantity ?? 0) > 0)
+          .map(([lineId]) => lineId)
+      );
+      const dedupedSalesRuleViolations = dedupeViolations(
+        salesRuleViolations
+      ).filter((v) => !v.lineId || acceptedLineIds.has(v.lineId));
+      const blockingViolations = dedupedSalesRuleViolations.filter(
+        (v) => v.severity === "error"
+      );
+
+      if (blockingViolations.length > 0) {
+        logger.error("Digital quote acceptance blocked by sales rules", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: blockingViolations
+        });
+        // The customer is told to contact their rep — the rep needs the
+        // signal: write the same evidence + notification every internal gate
+        // writes, attributed to the quote's owner (there is no session user).
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id,
+          outcome: "blocked",
+          violations: blockingViolations,
+          ruleNames: salesRuleNames
+        });
+        return {
+          success: false,
+          message:
+            "This quote can no longer be accepted online. Please contact your sales representative."
+        };
+      }
+
+      if (dedupedSalesRuleViolations.length > 0) {
+        logger.warn("Digital quote accepted with sales rule warnings", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: dedupedSalesRuleViolations
+        });
+      }
+
       const [convert] = await Promise.all([
-        convertQuoteToOrder(serviceRole, {
+        convertQuoteToOrder(serviceRole, getDatabaseClient(), {
           id: quote.data.id,
           companyId: quote.data.companyId,
           userId: quote.data.createdBy,
@@ -168,11 +261,11 @@ export async function action(args: ActionFunctionArgs) {
         }
       }
 
-      if (file && file instanceof File) {
-        const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${quote.data.opportunityId}/${file.name}`;
+      if (file && file instanceof File && uploadFileName) {
+        const purchaseOrderDocumentPath = `${quote.data.companyId}/opportunity/${quote.data.opportunityId}/${uploadFileName}`;
 
-        const fileUpload = await serviceRole.storage
-          .from("private")
+        const fileUpload = await storage(serviceRole)
+          .company(quote.data.companyId)
           .upload(purchaseOrderDocumentPath, file);
 
         if (fileUpload.error) {

@@ -17,9 +17,12 @@ type, not just `action`.
 ## Pieces
 
 - **Config:** `packages/ee/src/linear/config.tsx` — `defineIntegration` (id `"linear"`,
-  category "Project Management", `active: true`). One setting `apiKey` (required; zod
-  must start with `lin_api`). Renders setup instructions + webhook URL
-  `/api/webhook/linear/{companyId}`.
+  category "Project Management", `active: true`). Settings: `apiKey` (required; zod
+  must start with `lin_api`) and `webhookSigningSecret` (optional). Both are
+  `type: "secret"` — vaulted via `SECRET_KEYS.linear` in
+  `packages/ee/src/integrations/secrets.ts`, never in the plaintext `metadata`
+  column; an empty field keeps the stored value. Renders setup instructions + webhook
+  URL `/api/webhook/linear/{companyId}` + where Linear shows the signing secret.
 - **Client:** `packages/ee/src/linear/lib/client.ts` — `LinearClient` over the Linear
   GraphQL API (`https://api.linear.app/graphql`, axios). Singleton `getLinearClient()`.
   Every method takes `companyId` first; auth header is the raw `apiKey` read from the
@@ -51,9 +54,29 @@ actionId)` looks up by **`entityId`** (the action id, despite the name) and pars
 
 ## Inbound: Linear → Carbon (webhook → Inngest, NOT trigger.dev)
 
-- Route `apps/erp/app/routes/api+/webhook.linear.$companyId.ts`: checks the integration
-  exists + is active, parses `syncIssueFromLinearSchema`, then
-  `trigger("sync-issue-from-linear", payload)`.
+- Route `apps/erp/app/routes/api+/webhook.linear.$companyId.ts`: reads the raw body
+  once, checks the integration exists + is active, verifies the signature (below),
+  parses `syncIssueFromLinearSchema`, then `trigger("sync-issue-from-linear", payload)`.
+- **Signing is OPT-IN.** Customers create the webhook by hand in Linear, so
+  requiring a signature would break every install made before it existed. The route
+  reads the secret with `getWebhookSigningSecret(serviceRole, companyId, "linear", row)`
+  (`@carbon/ee/integrations/secrets`; throws when the vault is unreadable → the route
+  returns 500, fail-closed, because "no secret" and "unreadable" are indistinguishable).
+  - Secret set → `verifyLinearWebhook` (`packages/ee/src/linear/lib/webhook.ts`,
+    exported from `@carbon/ee/linear.server`): `Linear-Signature` must be the hex
+    HMAC-SHA256 of the RAW body keyed by the secret (constant-time, length-checked,
+    non-hex rejected), AND the body's `webhookTimestamp` (UNIX ms) must be within
+    `LINEAR_WEBHOOK_TOLERANCE_MS` (60 s) of now. Any failure → logged `warning` with a
+    `reason` + 401, before parsing or triggering. Scheme per
+    https://linear.app/developers/webhooks ("Securing webhooks").
+  - No secret → accepted as before, with one `warning` per delivery that it is unsigned.
+  - There is no "clear" for the secret (an empty secret field keeps the vaulted value).
+  - The HMAC compare is shared: `verifyHmacSha256Signature`
+    (`packages/ee/src/integrations/webhook-signature.ts`), also used by Jira and Ramp.
+  - Tests: `webhook.linear.$companyId.test.ts` (stubs only the service-role client,
+    the clock and `trigger`).
+  - The settings action's "a credential is required" install check ignores
+    `WEBHOOK_SIGNING_SECRET_KEY`, so a signing secret alone never satisfies it.
 - Webhook body schema is **minimal**: `event.data = { id, assigneeId? }` only (type
   `"Issue"`, action `"update"`) — `packages/jobs/src/schemas.ts`
   `syncIssueFromLinearSchema`. The full issue is re-fetched, never trusted from the payload.

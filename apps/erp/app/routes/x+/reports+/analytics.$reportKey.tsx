@@ -1,13 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
+import { downloadText } from "@carbon/files";
+import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
@@ -15,7 +22,7 @@ import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, redirect, useFetcher, useLoaderData } from "react-router";
+import { data, useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type {
   AnalyticsReportKey,
@@ -572,29 +579,12 @@ export default function AnalyticsReportRoute() {
     // Label cells (dimension values, saved names) are user-controlled: prefix
     // formula-trigger characters so spreadsheets treat them as text. Numeric
     // measure cells (incl. negatives) pass through untouched.
-    const sanitizeCell = (value: string) => {
-      if (value === "" || Number.isFinite(Number(value))) return value;
-      return /^[=+\-@]/.test(value) ? `'${value}` : value;
-    };
-    const csvData = rows
-      .map((row) =>
-        row
-          .map(sanitizeCell)
-          .map((value) =>
-            /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${reportKey}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const [header, ...body] = rows;
+    downloadText(
+      encodeCsvTable(header, body),
+      `${reportKey}.csv`,
+      CSV_CONTENT_TYPE
+    );
   };
 
   return (

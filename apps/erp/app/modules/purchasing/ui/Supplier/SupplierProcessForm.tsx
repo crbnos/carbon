@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -10,13 +14,14 @@ import {
   ModalDrawerProvider,
   ModalDrawerTitle,
   toast,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
-import { useFetcher, useNavigate, useParams } from "react-router";
+import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -49,7 +54,7 @@ const SupplierProcessForm = ({
   const fetcher = useFetcher<PostgrestResponse<SupplierProcess>>();
   const { supplierId } = useParams();
   const [supplier, setSupplier] = useState<string | undefined>(supplierId);
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
@@ -60,7 +65,6 @@ const SupplierProcessForm = ({
 
     if (fetcher.state === "loading" && fetcher.data?.data) {
       onClose?.();
-      // @ts-ignore
       toast.success(`Created supplier process`);
     } else if (fetcher.state === "idle" && fetcher.data?.error) {
       toast.error(`Failed to create supplier process`);
@@ -81,7 +85,7 @@ const SupplierProcessForm = ({
             if (type === "modal") {
               onClose?.();
             } else {
-              navigate(-1);
+              closeRoute();
             }
           }
         }}

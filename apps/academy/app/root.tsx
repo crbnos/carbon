@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, getBrowserEnv, getCarbon } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
@@ -5,6 +10,8 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
+import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { getOrRefreshAuthSession } from "@carbon/auth/session.server";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import {
@@ -17,6 +24,7 @@ import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
+import { useContext } from "react";
 import type {
   LinksFunction,
   LoaderFunctionArgs,
@@ -30,6 +38,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  UNSAFE_FrameworkContext,
   useLoaderData
 } from "react-router";
 import NProgress from "~/styles/nprogress.css?url";
@@ -38,7 +47,12 @@ import { CourseSidebarNav } from "./components/CourseSidebar";
 import { SiteHeader } from "./components/SiteHeader";
 import { path } from "./utils/path";
 
-export const middleware = [requestIdMiddleware, flashMiddleware];
+export const middleware = [
+  requestIdMiddleware,
+  securityMiddleware,
+  formBodyMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => [
@@ -156,6 +170,7 @@ function Document({
 }
 
 export default function App() {
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const prefs = loaderData?.preferences;
@@ -169,6 +184,9 @@ export default function App() {
             <Outlet />
           </div>
           <script
+            // Server render only: on the client the nonce is undefined (and browsers hide it).
+            nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: `window.env = ${JSON.stringify(env)}`
             }}

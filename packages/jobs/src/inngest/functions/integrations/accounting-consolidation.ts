@@ -1,3 +1,34 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  aggregateJournalEntriesForDate,
+  claimPendingOperations,
+  completeOperation,
+  createMappingService,
+  enqueueSyncOperation,
+  failOperation,
+  getAccountingIntegration,
+  getPostingSyncSourceTypeSkipReason,
+  getProviderIntegration,
+  getSyncOperations,
+  isAccountingSyncEnabled,
+  JournalEntrySyncError,
+  type JournalEntrySyncer,
+  mapJournalEntryToManualJournal,
+  type PostingSyncSettings,
+  ProviderID,
+  parseJournalEntrySyncEntityId,
+  RatelimitError,
+  resolvePostingSyncSettings,
+  runJournalEntryPreflight,
+  type SyncContext,
+  SyncFactory,
+  type SyncOperation,
+  type XeroProvider
+} from "@carbon/ee/accounting";
 /**
  * Daily-consolidation cron (posting sync, spec Phase B §6).
  *
@@ -40,38 +71,12 @@
  * arrives). A RatelimitError aborts the company's step so Inngest retries;
  * claimed rows stay In Flight and become re-claimable once stale.
  */
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  getPostgresClient,
-  getPostgresConnectionPool
-} from "@carbon/database/client";
-import {
-  aggregateJournalEntriesForDate,
-  claimPendingOperations,
-  completeOperation,
-  createMappingService,
-  enqueueSyncOperation,
-  failOperation,
-  getAccountingIntegration,
-  getPostingSyncSourceTypeSkipReason,
-  getProviderIntegration,
-  getSyncOperations,
-  JournalEntrySyncError,
-  type JournalEntrySyncer,
-  mapJournalEntryToManualJournal,
-  type PostingSyncSettings,
-  ProviderID,
-  parseJournalEntrySyncEntityId,
-  RatelimitError,
-  resolvePostingSyncSettings,
-  runJournalEntryPreflight,
-  type SyncContext,
-  SyncFactory,
-  type SyncOperation,
-  type XeroProvider
-} from "@carbon/ee/accounting";
-import { PostgresDriver } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
 import {
   type ConsolidationGroup,
   getSyncOperationActor,
@@ -571,20 +576,22 @@ async function consolidateCompany(args: {
         journals: members.map(({ journal }) => journal)
       });
 
-      const preflight = runJournalEntryPreflight({
-        journal: aggregate.journal,
-        accountCodesById,
-        controlAccountIds,
-        lockDate,
-        settings
-      });
-      if (preflight.failure) {
-        throw new JournalEntrySyncError(preflight.failure);
-      }
-
       let externalId: string | undefined;
 
       if (aggregate.journal.lines.length > 0) {
+        // Only a summary with lines is checked: a net-zero day pushes
+        // nothing, so a lock date must not fail its members.
+        const preflight = runJournalEntryPreflight({
+          journal: aggregate.journal,
+          accountCodesById,
+          controlAccountIds,
+          lockDate,
+          settings
+        });
+        if (preflight.failure) {
+          throw new JournalEntrySyncError(preflight.failure);
+        }
+
         const payload = mapJournalEntryToManualJournal({
           journal: aggregate.journal,
           accountCodesById,
@@ -718,7 +725,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
         // per-provider consolidation push.
         const integrations = await client
           .from("companyIntegration")
-          .select("id, companyId, metadata")
+          .select("id, companyId, metadata, updatedBy")
           .eq("id", ProviderID.XERO)
           .eq("active", true);
 
@@ -730,13 +737,18 @@ export const accountingConsolidationFunction = inngest.createFunction(
 
         return (integrations.data ?? [])
           .filter((row) => {
+            if (!isAccountingSyncEnabled(row.metadata)) return false;
             const settings = resolvePostingSyncSettings(row.metadata);
             return (
               settings.consolidation === "daily" ||
               hasDailySummarySourceTypes(settings)
             );
           })
-          .map((row) => ({ companyId: row.companyId, providerId: row.id }));
+          .map((row) => ({
+            companyId: row.companyId,
+            providerId: row.id,
+            updatedBy: row.updatedBy
+          }));
       }
     );
 
@@ -745,26 +757,27 @@ export const accountingConsolidationFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: string } & ConsolidationSummary
+      {
+        companyId: string;
+        providerId: string;
+      } & IsolatedStepOutcome<ConsolidationSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `consolidate-${target.companyId}-${target.providerId}`,
-        async () => {
-          const pool = getPostgresConnectionPool(5);
-          const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await consolidateCompany({
-              companyId: target.companyId,
-              providerId: target.providerId as ProviderID,
-              database
-            });
-          } finally {
-            await pool.end();
-          }
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `consolidate-${target.companyId}-${target.providerId}`,
+        target,
+        fn: async () => {
+          const database = getJobDatabaseClient();
+          return await consolidateCompany({
+            companyId: target.companyId,
+            providerId: target.providerId as ProviderID,
+            database
+          });
         }
-      );
+      });
 
       results.push({
         companyId: target.companyId,

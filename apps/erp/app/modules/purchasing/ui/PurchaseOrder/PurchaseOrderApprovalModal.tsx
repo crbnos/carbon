@@ -1,10 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -20,7 +24,6 @@ import {
   SupplierContact
 } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { purchaseOrderApprovalValidator } from "../../purchasing.models";
 import type { PurchaseOrder } from "../../types";
@@ -83,16 +86,16 @@ const PurchaseOrderApprovalModal = ({
               {isApproving ? "Approve" : "Reject"}{" "}
               {purchaseOrder?.purchaseOrderId}
             </ModalTitle>
-            <ModalDescription>
-              {isApproving
-                ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
-                : "Are you sure you want to reject this purchase order? The requester will be notified."}
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                {isApproving
+                  ? "Are you sure you want to approve this purchase order? This will allow the order to proceed."
+                  : "Are you sure you want to reject this purchase order? The requester will be notified."}
+              </p>
               {isApproving && canEmail && (
                 <SelectControlled
                   label={t`Send Via`}

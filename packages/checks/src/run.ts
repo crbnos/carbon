@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { readdirSync } from "node:fs";
+import { join } from "node:path";
 import { keyOf, loadBaseline } from "./baseline";
 import type {
   ConformanceCheck,
@@ -6,26 +12,74 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import {
+  DOCUMENT_SEQUENCE_SYNCED,
+  findUnsyncedDocumentSequences
+} from "./conformance/document-sequence-synced";
+import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
+import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { moduleShape } from "./conformance/module-shape";
+import {
+  MANAGED_FUNCTION_SETS,
+  type ManagedFunction,
+  noAuthzDdlInMigrations
+} from "./conformance/no-authz-ddl-in-migrations";
+import { noBareOutlet } from "./conformance/no-bare-outlet";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
+import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import {
+  findDuplicatedAppFiles,
+  NO_DUPLICATED_APP_FILE,
+  SHARED_APP_DIRS
+} from "./conformance/no-duplicated-app-file";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noInlineSensorOptions } from "./conformance/no-inline-sensor-options";
+import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
+import { noInterpolatedErrorLog } from "./conformance/no-interpolated-error-log";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
+import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
+import { noNoopOpenChange } from "./conformance/no-noop-open-change";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noPostgresChanges } from "./conformance/no-postgres-changes";
+import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+import { noRawRedirect } from "./conformance/no-raw-redirect";
+import { noRawRevalidator } from "./conformance/no-raw-revalidator";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noStateCopyOfLoaderData } from "./conformance/no-state-copy-of-loader-data";
+import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
+import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
+import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
+import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
+import { spdxLicenseHeader } from "./conformance/spdx-license-header";
+import { loadDbTableColumns } from "./sources/db-columns";
+import { loadDocumentSequenceSources } from "./sources/document-sequences";
+import {
+  loadEdgeFunctions,
+  loadServerFunctions
+} from "./sources/edge-functions";
+import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
-import { loadTypescriptFiles } from "./sources/typescript";
+import {
+  loadTypescriptFiles,
+  REQUEST_HANDLING_ROOTS,
+  ROUTE_ROOTS
+} from "./sources/typescript";
 
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
   noLegacyRls,
   noDerivedPercentColumn,
-  noRequiredColumnWithoutDefault
+  noRequiredColumnWithoutDefault,
+  noViewWithoutInvoker,
+  journalStatusFilter
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -38,8 +92,24 @@ export const SERVER_CHECKS: ConformanceCheck[] = [
 export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
-  noDbClientInService
+  noDbClientInService,
+  noDefaultOnEffects,
+  noUnroundedTrackedQuantity,
+  noIntegrationIdBranching,
+  noUnscopedKyselyWrite,
+  noUnguardedSubmit,
+  noNoopOpenChange,
+  noPostgresChanges,
+  journalStatusFilter
 ];
+
+/** Checks that run once per edge function, over all of its .ts files. */
+export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
+  edgeFunctionAuthorizesCaller
+];
+
+/** Checks that run once per `@carbon/server-functions` entry point. */
+export const SERVER_FN_CHECKS: ConformanceCheck[] = [serverFnAuthorizesCaller];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
@@ -75,13 +145,62 @@ export function scanModules(
   return out;
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS under `root`. */
+/** The managed functions: one `<name>.sql` (or `<schema>.<name>.sql`) file each. */
+export function loadManagedFunctions(root: string): ManagedFunction[] {
+  return MANAGED_FUNCTION_SETS.flatMap(({ dir, since }) =>
+    readdirSync(join(root, dir))
+      .filter((file) => file.endsWith(".sql"))
+      .map((file) => {
+        const [first = "", second] = file.replace(/\.sql$/, "").split(".");
+        return {
+          schema: second ? first : "public",
+          name: second ?? first,
+          file: `${dir}/${file}`,
+          since
+        };
+      })
+  );
+}
+
+/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
-    ...scanAll(loadSqlFiles(migrationsDir(root))),
+    ...scanAll(loadSqlFiles(migrationsDir(root)), [
+      ...CONFORMANCE_CHECKS,
+      noAuthzDdlInMigrations(loadManagedFunctions(root))
+    ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    ...scanAll(loadTypescriptFiles(root), TS_CHECKS)
+    // noMissingAuditColumn needs the real column list, so it is built from the
+    // generated types here rather than sitting in TS_CHECKS — the same shape as
+    // noAuthzDdlInMigrations above, which keeps every `scan` pure.
+    ...scanAll(loadTypescriptFiles(root), [
+      ...TS_CHECKS,
+      noMissingAuditColumn(loadDbTableColumns(root))
+    ]),
+    ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
+      noRawForwardedHeaders,
+      noInterpolatedErrorLog,
+      noRawRedirect
+    ]),
+    ...scanAll(loadTypescriptFiles(root), [
+      noRawRevalidator,
+      noInlineSensorOptions,
+      noBareOutlet,
+      noStateCopyOfLoaderData
+    ]),
+    ...scanAll(loadTypescriptFiles(root, ROUTE_ROOTS), [
+      indexRedirectBeforeLoaders
+    ]),
+    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
+    ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS),
+    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
+    ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
+      (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
+    ),
+    ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
+      (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
+    )
   ];
 }
 

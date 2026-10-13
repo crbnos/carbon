@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   AnimationMixer,
   Group,
@@ -20,6 +24,7 @@ import {
   naturalizeMotion,
   type Pose,
   resampleEased,
+  stepClipTiming,
   waypointsToMotion
 } from "./motion";
 import type { AssemblyStep, Motion, Vec3 } from "./types";
@@ -392,6 +397,84 @@ describe("buildStepClip", () => {
     const times = positionTrack.times;
     expect(times[times.length - 1]).toBeCloseTo(2.5);
     expect(times[times.length - 2]).toBeCloseTo(2);
+  });
+
+  it("glides a carried-in unit from beside the build, then inserts", () => {
+    const { nodesById } = makeAssembly();
+    const motion: Motion = {
+      type: "linear",
+      direction: [1, 0, 0],
+      distance: 10
+    };
+    const clip = buildStepClip(makeStep(motion, ["node-a"]), nodesById, {
+      duration: 2,
+      holdSeconds: 0.5,
+      glide: { offset: [0, 100, 0], seconds: 1.2 }
+    });
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(1.2 + 2 + 0.5);
+
+    const [positionTrack] = clip.tracks;
+    if (!positionTrack) throw new Error("expected tracks");
+    const values = [...positionTrack.values];
+    const times = [...positionTrack.times];
+    // Seated world [6,2,3] + offset [0,100,0] → parent-local [1,102,3]
+    expectVectorClose(values.slice(0, 3), [1, 102, 3]);
+    // Glide ends at the linear insertion start: world [-4,2,3] → local [-9,2,3]
+    const glideEnd = times.findIndex((time) => Math.abs(time - 1.2) < 1e-5);
+    expect(glideEnd).toBeGreaterThan(0);
+    expectVectorClose(values.slice(glideEnd * 3, glideEnd * 3 + 3), [-9, 2, 3]);
+    // Still ends seated, with the hold
+    expectVectorClose(values.slice(-6, -3), [1, 2, 3]);
+    expect(times[times.length - 2]).toBeCloseTo(3.2);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]).toBeGreaterThan(
+        times[i - 1] ?? Number.POSITIVE_INFINITY
+      );
+    }
+  });
+
+  it("glides a none-motion carry-in step straight to the seat", () => {
+    const { nodesById } = makeAssembly();
+    const clip = buildStepClip(
+      makeStep({ type: "none" }, ["node-a"]),
+      nodesById,
+      {
+        holdSeconds: 0,
+        glide: { offset: [50, 0, 0], seconds: 1.2 }
+      }
+    );
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(1.2);
+    const [positionTrack] = clip.tracks;
+    if (!positionTrack) throw new Error("expected tracks");
+    const values = [...positionTrack.values];
+    expectVectorClose(values.slice(0, 3), [51, 2, 3]);
+    expectVectorClose(values.slice(-3), [1, 2, 3]);
+  });
+
+  it("glides only the carried unit; the step's own parts wait at their start", () => {
+    const { nodesById } = makeAssembly();
+    const motion: Motion = {
+      type: "linear",
+      direction: [1, 0, 0],
+      distance: 10
+    };
+    const clip = buildStepClip(makeStep(motion, ["node-a"]), nodesById, {
+      duration: 2,
+      holdSeconds: 0,
+      glide: { offset: [0, 100, 0], seconds: 1.2, nodeIds: ["other"] }
+    });
+    if (!clip) throw new Error("expected clip");
+    const [positionTrack] = clip.tracks;
+    if (!positionTrack) throw new Error("expected tracks");
+    const values = [...positionTrack.values];
+    const times = [...positionTrack.times];
+    // Not carried: sits at its insertion start (local [-9,2,3]) through the glide.
+    expectVectorClose(values.slice(0, 3), [-9, 2, 3]);
+    const glideEnd = times.findIndex((time) => Math.abs(time - 1.2) < 1e-5);
+    expectVectorClose(values.slice(glideEnd * 3, glideEnd * 3 + 3), [-9, 2, 3]);
+    expectVectorClose(values.slice(-3), [1, 2, 3]);
   });
 
   it("converts world-space motion into the local space of a rotated parent", () => {
@@ -841,5 +924,47 @@ describe("motionToWaypoints / waypointsToMotion", () => {
   it("drops a zero-length middle segment (3 pts, collinear) to linear", () => {
     const back = waypointsToMotion([[0, 0, 0], [0, 0, 0], seated], seated);
     expect(back.type).toBe("linear");
+  });
+});
+
+describe("stepClipTiming", () => {
+  const linear: Motion = { type: "linear", direction: [0, 0, 1], distance: 60 };
+  const seconds = motionDuration(linear);
+
+  it("plays the natural animation when no duration is authored", () => {
+    expect(stepClipTiming({ motion: linear })).toEqual({
+      total: seconds + 0.6,
+      glide: 0,
+      motion: seconds,
+      hold: 0.6
+    });
+  });
+
+  it("adds a carry-in glide before the insertion", () => {
+    const timing = stepClipTiming({ motion: linear }, 1.2);
+    expect(timing.total).toBeCloseTo(1.2 + seconds + 0.6);
+    expect(timing.glide).toBe(1.2);
+  });
+
+  it("gives a process-only step a fixed slot plus any glide", () => {
+    expect(stepClipTiming({ motion: { type: "none" } }).total).toBe(2);
+    expect(stepClipTiming({ motion: { type: "none" } }, 1.2).total).toBe(3.2);
+  });
+
+  it("speeds glide, insertion and hold up to fit a shorter authored duration", () => {
+    const natural = 1.2 + seconds + 0.6;
+    const timing = stepClipTiming(
+      { motion: linear, durationSeconds: natural / 2 },
+      1.2
+    );
+    expect(timing.total).toBe(natural / 2);
+    expect(timing.glide + timing.motion + timing.hold).toBeCloseTo(natural / 2);
+    expect(timing.glide).toBeCloseTo(0.6);
+  });
+
+  it("keeps the natural animation inside a longer authored duration", () => {
+    const timing = stepClipTiming({ motion: linear, durationSeconds: 30 });
+    expect(timing.total).toBe(30);
+    expect(timing.motion).toBe(seconds);
   });
 });

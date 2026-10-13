@@ -1,4 +1,8 @@
-import type { WorkflowNotice } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNotice } from "@carbon/ee/workflows";
 import { useLingui } from "@lingui/react/macro";
 
 /** The prose for a `WorkflowNotice` — the package emits codes and params only, so

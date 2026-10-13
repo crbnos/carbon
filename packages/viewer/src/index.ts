@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export {
   AssemblyPlayer,
   type AssemblyPlayerHandle,
   type AssemblyPlayerProps,
-  type FutureComponentsMode
+  type AssemblyView,
+  type FutureComponentsMode,
+  type InstalledComponentsMode
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
 export { type FramingFit, fitFraming } from "./camera";
@@ -30,7 +36,7 @@ export {
   naturalizeMotion,
   type Pose,
   type StepClipOptions,
-  stepTimelineSeconds
+  stepClipTiming
 } from "./motion";
 export {
   type AssemblyPlan,
@@ -43,6 +49,19 @@ export {
   planMotionForComponents,
   type StepPhase
 } from "./plan";
+export {
+  arrivalIndexByNode,
+  buildSubAssemblyPlan,
+  displayOrder,
+  isSubAssemblyHeader,
+  type SubAssemblyInfo,
+  type SubAssemblyRule,
+  type SubAssemblyViolation,
+  subAssemblyPartIds,
+  type UnusableReason,
+  usableSubAssemblies,
+  validateSubAssemblies
+} from "./subassembly";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,
@@ -60,4 +79,10 @@ export type {
   Vec3
 } from "./types";
 export { type UseAssemblyResult, useAssembly } from "./useAssembly";
-export { type ComponentVisual, visualForComponent } from "./visibility";
+export {
+  ASSEMBLY_VIEWS,
+  type ComponentVisual,
+  VIEW_MODES,
+  viewForModes,
+  visualForComponent
+} from "./visibility";

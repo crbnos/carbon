@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { JobTravelerPDF } from "@carbon/documents/pdf";
@@ -17,7 +21,7 @@ import {
   getJobOperationsByMethodId,
   getTrackedEntityByJobId
 } from "~/modules/production/production.service";
-import { getCompany } from "~/modules/settings";
+import { getCompany, getCompanySettings } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 const logger = getLogger("erp", "traveler", "pdf");
@@ -40,8 +44,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load job make method");
   }
 
-  const [company, job] = await Promise.all([
+  const [company, companySettings, job] = await Promise.all([
     getCompany(serviceRole, jobMakeMethod.data?.companyId ?? ""),
+    getCompanySettings(serviceRole, companyId),
     getJob(serviceRole, jobMakeMethod.data?.jobId ?? "")
   ]);
 
@@ -49,6 +54,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error("Failed to load company", { error: company.error });
     throw new Error("Failed to load company");
   }
+
+  // Opt-out company setting (defaults on): render the operations section on the
+  // traveler. Mirrors the job traveler route.
+  const includeOperations =
+    (
+      companySettings.data as {
+        includeOperationsOnTraveler?: boolean | null;
+      } | null
+    )?.includeOperationsOnTraveler ?? true;
 
   if (job.error || !job.data) {
     logger.error("Failed to load job", { error: job.error });
@@ -143,6 +157,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }}
       notes={jobNotes}
       thumbnail={thumbnail}
+      includeOperations={includeOperations}
       title="Job Traveler"
     />
   );

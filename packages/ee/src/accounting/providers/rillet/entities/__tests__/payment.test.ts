@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   type NormalizedPayment,
@@ -9,16 +13,19 @@ import {
   getRilletPaymentAmount,
   getRilletPaymentCurrency,
   getRilletPaymentSyncEntityId,
-  getSettledInvoiceStatus,
   mapRilletPaymentToLocal,
   parseRilletPaymentSyncEntityId,
   RilletPaymentSyncer
 } from "../payment";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: invokeMock } })
-}));
+vi.mock("@carbon/server-functions", () => {
+  const bind = (actor: string) => (fields: object) => ({
+    invoke: (_name: string, input: unknown) =>
+      invokeMock({ ...fields, actor }, input)
+  });
+  return { serverFns: { system: bind("system"), as: bind("caller") } };
+});
 
 describe("composite payment sync entity id", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
@@ -32,6 +39,7 @@ describe("composite payment sync entity id", () => {
     );
     expect(parseRilletPaymentSyncEntityId(entityId)).toEqual({
       family: "ar",
+      kind: "invoice",
       documentRemoteId: "0b9f9c1e-9f10-4c8e-8f2c-1a2b3c4d5e6f",
       paymentRemoteId: "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f"
     });
@@ -48,6 +56,7 @@ describe("composite payment sync entity id", () => {
     );
     expect(parseRilletPaymentSyncEntityId(entityId)).toEqual({
       family: "ap",
+      kind: "bill",
       documentRemoteId: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
       paymentRemoteId: "9f8e7d6c-5b4a-3210-fedc-ba9876543210"
     });
@@ -76,40 +85,6 @@ describe("composite payment sync entity id", () => {
     expect(() => parseRilletPaymentSyncEntityId("bill:b-1:")).toThrow(
       /Invalid Rillet payment sync entity id/
     );
-  });
-});
-
-describe("getSettledInvoiceStatus", () => {
-  it("covers the zero / partial / exact / over boundaries", () => {
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 0 })
-    ).toBeNull();
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 40 })
-    ).toBe("Partially Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 100 })
-    ).toBe("Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 150 })
-    ).toBe("Paid");
-  });
-
-  it("is cents-accurate and never restates degenerate invoices", () => {
-    // 99.999 rounds to 10000 cents — exact at 2dp
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 99.999 })
-    ).toBe("Paid");
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: 99.99 })
-    ).toBe("Partially Paid");
-
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 0, settledTotal: 50 })
-    ).toBeNull();
-    expect(
-      getSettledInvoiceStatus({ invoiceTotal: 100, settledTotal: -5 })
-    ).toBeNull();
   });
 });
 
@@ -456,7 +431,7 @@ describe("RilletPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "pay-1",
       amount: 125,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-07-15",
       reference: "pay-1",
       status: "settled"
@@ -492,7 +467,7 @@ describe("RilletPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "bp-1",
       amount: 500,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-08-01",
       reference: "bp-1",
       status: "settled"
@@ -537,6 +512,9 @@ function makeFakeTx(store: {
       const entityId = store.docMappings[where("externalId") as string];
       return entityId ? { entityId } : undefined; // getEntityId
     }
+    if (b.table === "company")
+      return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+    if (b.table === "currency") return { decimalPlaces: 2 };
     if (b.table === "salesInvoice") return store.salesInvoice;
     if (b.table === "purchaseInvoice") return store.purchaseInvoice;
     if (b.table === "payment") {
@@ -591,6 +569,37 @@ function makeFakeTx(store: {
         return b;
       },
       async execute() {
+        if (op === "select") {
+          if (table === "externalIntegrationMapping")
+            return Object.entries(store.docMappings).map(
+              ([externalId, entityId]) => ({ externalId, entityId })
+            );
+          if (table === "salesInvoices")
+            return store.salesInvoice
+              ? [
+                  {
+                    ...store.salesInvoice,
+                    partyId: store.salesInvoice.customerId,
+                    exchangeRate: 1,
+                    totalAmount: 1000,
+                    balance: 1000
+                  }
+                ]
+              : [];
+          if (table === "purchaseInvoices")
+            return store.purchaseInvoice
+              ? [
+                  {
+                    ...store.purchaseInvoice,
+                    partyId: store.purchaseInvoice.supplierId,
+                    exchangeRate: 1,
+                    totalAmount: 1000,
+                    balance: 1000
+                  }
+                ]
+              : [];
+          return [];
+        }
         store.records.push({ op, table, values: b.valuesArg });
         return [];
       },
@@ -994,14 +1003,14 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
     const result = await syncer.applyPostPayment("inv-1:pay-1", successResult);
 
-    expect(invokeMock).toHaveBeenCalledWith("post-payment", {
-      body: {
-        type: "post",
-        paymentId: "payment-row-1",
+    expect(invokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: "company-1",
         userId: "user-1",
-        companyId: "company-1"
-      }
-    });
+        actor: "system"
+      }),
+      { type: "post", paymentId: "payment-row-1" }
+    );
     expect(result).toEqual(successResult);
   });
 
@@ -1014,14 +1023,14 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
     await syncer.applyPostPayment("inv-1:pay-1", successResult);
 
-    expect(invokeMock).toHaveBeenCalledWith("post-payment", {
-      body: {
-        type: "void",
-        paymentId: "payment-row-1",
+    expect(invokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: "company-1",
         userId: "user-1",
-        companyId: "company-1"
-      }
-    });
+        actor: "system"
+      }),
+      { type: "void", paymentId: "payment-row-1" }
+    );
   });
 
   it("does not invoke post-payment when postAction is 'none'", async () => {
@@ -1037,8 +1046,8 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
   it("surfaces a post-payment error as a Failed result (not swallowed)", async () => {
     invokeMock.mockResolvedValue({
-      data: { message: "Accounting period is locked" },
-      error: { message: "Edge Function returned 500" }
+      data: null,
+      error: { message: "Accounting period is locked" }
     });
     const syncer = makeDispatchSyncer({
       paymentRowId: "payment-row-1",

@@ -1,4 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ActivepiecesPiece } from "@carbon/ee/integrations/pieces";
+import type { getEnv } from "@carbon/env";
+
+/** A variable `@carbon/env` declares — `getEnv` refuses any other name. */
+type EnvName = Parameters<typeof getEnv>[0];
 
 /** What Carbon exposes from a third-party integration piece.
  *
@@ -64,9 +72,9 @@ export interface AllowlistEntry {
    * never carry a secret, and by the browser-safe settings config indirectly.
    */
   oauth: {
-    clientIdEnv: string;
-    clientSecretEnv: string;
-    redirectUrlEnv: string;
+    clientIdEnv: EnvName;
+    clientSecretEnv: EnvName;
+    redirectUrlEnv: EnvName;
     /** Consent endpoint to use instead of the piece's `authUrl` — for a piece that bakes
      * extra requests (Slack's `user_scope=`) into its URL. */
     authUrl?: string;
@@ -111,7 +119,7 @@ export interface AllowlistEntry {
  *     `integration` row FAILS the consent callback on its "installed" write — after
  *     the token is already in the vault. Every piece needs the one-row migration
  *     (the `INSERT INTO "integration"` at the end of
- *     `20260901173000_workflow-integration-connections.sql`). Gmail, 2026-09-01.
+ *     `20261013031247_workflow-integration-connections.sql`). Gmail, 2026-09-01.
  *  2. Google canonicalises scopes: request `email` and the token response's `scope`
  *     says `https://www.googleapis.com/auth/userinfo.email` (plus an unrequested
  *     `openid`). `missingScopes(granted, required)` then never matches, and the

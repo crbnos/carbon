@@ -3,16 +3,11 @@ title: Shelf life
 description: How Carbon stamps expiration dates on tracked stock, and blocks consuming it once expired.
 ---
 
-**Shelf life** is how Carbon decides when a batch or serial of an item *expires*, and what happens when
-someone tries to use it after that. It only applies to **<Term id="serial">Serial-</Term>** or **<Term id="batch">Batch-tracked</Term>** items, because the
-expiration date lives on the physical lot, the **<Term id="tracked-entity">tracked entity</Term>**, not on the item master.
+**Shelf life** determines when serial- or batch-tracked stock expires and whether it can be used afterward. The expiration date belongs to the physical **<Term id="tracked-entity">tracked entity</Term>**, so shelf life applies only to **<Term id="serial">Serial-</Term>** and **<Term id="batch">Batch-tracked</Term>** items.
 
-Three records work together: a **policy** per item (how expiry is decided), an **expiration date** per
-tracked entity (the actual date), and a **company-wide rule** for what to do with expired stock.
+Three values control shelf life: an item-level **policy**, a tracked entity's **expiration date**, and a **company-wide rule** for expired stock.
 
-Say a batch of adhesive is received under a **180-day** policy: Carbon stamps that lot to expire about six
-months out. Try to issue it to a job on day 200 and the issue is **blocked**. Expired stock can't flow into
-a build unless someone with permission overrides it.
+For example, receiving a batch under a **180-day** policy sets its expiration date 180 days later. After that date, Carbon blocks issue to a job unless an authorized user overrides the block.
 
 ## How a date gets set: the three modes
 

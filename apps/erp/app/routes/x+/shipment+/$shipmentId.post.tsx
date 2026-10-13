@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -5,23 +9,28 @@ import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+  evaluateSalesRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { datetime } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, redirect } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -39,13 +48,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
+  const postingDateValue = formData.get("postingDate");
+  const postingDate =
+    typeof postingDateValue === "string" && postingDateValue !== ""
+      ? postingDateValue
+      : undefined;
 
-  // Item Rule evaluation across every line on this shipment before posting.
+  // Storage Rule evaluation across every line on this shipment before posting.
   const serviceRole = getCarbonServiceRole();
   const { data: lines } = await serviceRole
     .from("shipmentLine")
     .select(
-      "id, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
+      "id, lineId, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
     )
     .eq("shipmentId", shipmentId)
     .eq("companyId", companyId);
@@ -56,9 +70,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // fire here too.
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument, locationId")
+    .select("sourceDocument, sourceDocumentId, locationId")
     .eq("id", shipmentId)
-    .single();
+    // Service-role read: companyId scope is not backstopped by RLS here.
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // Everything below reads through the service role by shipmentId (the
+  // packing slip included), so a shipment outside this company stops here.
+  if (!shipmentForSurface) {
+    logger.error("Shipment not found for company", { companyId, shipmentId });
+    throw redirect(
+      path.to.shipments,
+      await flash(request, error(null, "Shipment not found"))
+    );
+  }
+
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
     surfaces.push("warehouseTransfer");
@@ -88,7 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Pick pass — the bin side of the shipment. Same lines, same item target;
-  // item rules own the `pick` surface. Transfers double-up via the
+  // storage rules own the `pick` surface. Transfers double-up via the
   // warehouseTransfer surface (dedupe collapses the overlap).
   const pickSurfaces: ("pick" | "warehouseTransfer")[] = ["pick"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
@@ -107,17 +134,81 @@ export async function action({ request, params }: ActionFunctionArgs) {
     Object.assign(allRuleNames, ruleNames);
   }
 
-  const deduped = dedupeViolations(allViolations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return {
-      error: null,
-      data: null,
-      violations: deduped,
-      ruleNames: allRuleNames
-    };
+  // Sales rules on the originating sales order — the last physical checkpoint.
+  // Sales rules have no `shipment` surface (their enum is sales-document only),
+  // so this evaluates under `salesOrderLine` rather than inventing a surface.
+  // Scope is THIS shipment's lines at their real shipped quantities — the
+  // whole order would let an unshipped violating line block a partial
+  // shipment of a clean one. The ship-to is the order's resolved destination
+  // (drop-ship included).
+  let salesRuleViolations: ReturnType<typeof dedupeViolations> = [];
+  if (
+    shipmentForSurface?.sourceDocument === "Sales Order" &&
+    shipmentForSurface.sourceDocumentId
+  ) {
+    const shipTo = await resolveSalesOrderShipTo(
+      serviceRole,
+      shipmentForSurface.sourceDocumentId,
+      companyId
+    );
+    const { violations, ruleNames } = await evaluateSalesRuleLines({
+      client: serviceRole,
+      companyId,
+      userId,
+      surface: "salesOrderLine",
+      lines: (lines ?? [])
+        .filter((l) => !!l.itemId && Number(l.shippedQuantity ?? 0) > 0)
+        .map((l) => ({
+          // Attribute to the source sales-order line when linked, so the
+          // evidence row and deep link land on the order line.
+          lineId: (l.lineId as string | null) ?? (l.id as string),
+          itemId: l.itemId as string,
+          quantity: Number(l.shippedQuantity)
+        })),
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+    salesRuleViolations = violations;
+    allViolations.push(...violations);
+    Object.assign(allRuleNames, ruleNames);
   }
 
-  // Expired-batch policy check. Mirrors post-stock-transfer / issue edge
+  const deduped = dedupeViolations(allViolations);
+  // Evidence covers only the SALES violations (the acknowledgment table is
+  // sales-family evidence, attributed to the source order); storage
+  // violations on the same post carry no evidence, as on every other
+  // storage surface. The outcome reflects the submission's overall fate —
+  // a post blocked by any violation records its sales violations as
+  // blocked too. Acknowledged evidence waits until the post has committed.
+  const salesDeduped = dedupeViolations(salesRuleViolations);
+  if (deduped.length > 0) {
+    const blocked = isBlocked(deduped, acknowledged);
+    if (
+      blocked &&
+      salesDeduped.length > 0 &&
+      shipmentForSurface?.sourceDocumentId
+    ) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: shipmentForSurface.sourceDocumentId,
+        outcome: "blocked",
+        violations: salesDeduped,
+        ruleNames: allRuleNames
+      });
+    }
+    if (blocked) {
+      return {
+        error: null,
+        data: null,
+        violations: deduped,
+        ruleNames: allRuleNames
+      };
+    }
+  }
+
+  // Expired-batch policy check. Mirrors post-stock-transfer / issue server
   // functions: pulls inventoryShelfLife.expiredEntityPolicy from
   // companySettings and refuses to post when any tracked entity attached to
   // the shipment is past its expirationDate (unless policy is "Warn").
@@ -180,7 +271,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update({
       status: "Pending"
     })
-    .eq("id", shipmentId);
+    .eq("id", shipmentId)
+    .eq("companyId", companyId)
+    .in("status", ["Draft", "Pending"])
+    .select("id");
 
   if (setPendingState.error) {
     throw redirect(
@@ -188,6 +282,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(
         request,
         error(setPendingState.error, "Failed to post shipment")
+      )
+    );
+  }
+
+  if (!setPendingState.data?.length) {
+    throw redirect(
+      path.to.shipments,
+      await flash(
+        request,
+        error(null, "This shipment has already been posted or voided")
       )
     );
   }
@@ -201,6 +305,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("shipment")
       .select("sourceDocument, sourceDocumentId, shipmentId")
       .eq("id", shipmentId)
+      .eq("companyId", companyId)
       .single();
 
     // If the shipment is related to a sales order, save the packing slip PDF
@@ -214,6 +319,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .from("salesOrder")
           .select("opportunityId")
           .eq("id", shipment.sourceDocumentId)
+          .eq("companyId", companyId)
           .single();
 
         if (salesOrder?.opportunityId) {
@@ -238,8 +344,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
             const documentFilePath = `${companyId}/opportunity/${salesOrder.opportunityId}/${fileName}`;
 
             // Upload the PDF to storage
-            const documentFileUpload = await serviceRole.storage
-              .from("private")
+            const documentFileUpload = await storage(serviceRole)
+              .company(companyId)
               .upload(documentFilePath, file, {
                 cacheControl: `${12 * 60 * 60}`,
                 contentType: "application/pdf",
@@ -268,16 +374,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const postShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
+    const posted = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-shipment", {
         type: "post",
-        shipmentId: shipmentId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
+        shipmentId,
+        postingDate
+      });
 
-    if (postShipment.error) {
+    if (posted.error) {
       await client
         .from("shipment")
         .update({
@@ -287,10 +392,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       throw redirect(
         path.to.shipmentDetails(shipmentId),
-        await flash(
-          request,
-          error(postShipment.error, "Failed to post shipment")
-        )
+        await flash(request, error(posted.error, "Failed to post shipment"))
       );
     }
 
@@ -300,6 +402,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .from("shipment")
         .select("locationId")
         .eq("id", shipmentId)
+        .eq("companyId", companyId)
         .single();
       const locationId = shipmentForPrint?.locationId as string | undefined;
       if (locationId) {
@@ -327,7 +430,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // RETAINED shelf lots (their quantity changed in the split) — existing
     // entities being reprinted, hence sourceDocument "Entity". The shipped
     // child departed Consumed and gets no label.
-    const splitEntityIds = postShipment.data?.splitEntityIds || [];
+    const splitEntityIds = posted.data?.splitEntityIds || [];
     if (splitEntityIds.length > 0) {
       try {
         for (const entityId of splitEntityIds) {
@@ -364,6 +467,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // See the receipt post route: below the catch still runs after a rollback,
   // so the flag is what makes this "the post stuck", not the position.
   if (!reverted) {
+    // Acknowledged-override evidence only once the post has stuck — a trail
+    // (and notification) for a post that was rolled back would be false.
+    if (salesDeduped.length > 0 && shipmentForSurface?.sourceDocumentId) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: shipmentForSurface.sourceDocumentId,
+        outcome: "acknowledged",
+        violations: salesDeduped,
+        ruleNames: allRuleNames
+      });
+    }
     trackWorkEvent("shipment_posted", {
       companyId,
       userId,

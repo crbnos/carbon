@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it, vi } from "vitest";
 import type { NormalizedPayment } from "../../../../core/payment-application";
 import { SyncFactory } from "../../../../core/sync";
@@ -13,11 +17,9 @@ import {
   XeroPaymentSyncer
 } from "../payment";
 
-// The base dynamically imports @carbon/auth/client.server only when posting;
-// mock it so nothing touches server env during these pure-mapper tests.
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
+vi.mock("@carbon/server-functions", () => ({ serverFns: {} }));
 
 describe("composite payment sync entity id (Xero)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
@@ -110,7 +112,7 @@ describe("XeroPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "pay-1",
       amount: 500,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-08-01",
       reference: "pay-1",
       status: "settled"
@@ -180,7 +182,7 @@ describe("XeroPaymentSyncer.mapToNormalized", () => {
     );
     expect(normalized.amount).toBe(40);
     expect(normalized.currencyCode).toBeNull();
-    expect(normalized.exchangeRate).toBe(1);
+    expect(normalized.exchangeRate).toBeNull();
   });
 });
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useRouteData, useUrlParams } from "@carbon/react";
 import type { SavedView } from "~/modules/shared/types";
 import type { Route } from "~/types";

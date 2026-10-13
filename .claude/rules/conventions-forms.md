@@ -20,8 +20,9 @@ Real reference examples (current code):
   `payment-terms.$paymentTermId.tsx` (edit).
 - `apps/erp/app/modules/resources/ui/WorkCenters/WorkCenterForm.tsx` +
   `apps/erp/app/routes/x+/resources+/work-centers.new.tsx`.
-- `apps/erp/app/modules/storage-rules/ui/StorageRuleForm.tsx` (uses `.superRefine`,
-  `zfd.checkbox`, `zfd.repeatableOfType`).
+- `apps/erp/app/modules/inventory/ui/StorageRules/StorageRuleForm.tsx` (uses
+  `.superRefine`, `zfd.checkbox`, `zfd.repeatableOfType`; its validator lives in
+  the module's one `inventory.models.ts`).
 
 ## File Locations
 
@@ -179,6 +180,19 @@ const ThingForm = ({ initialValues, type = "drawer", open, onClose }: ThingFormP
 - `VStack spacing={4}` for vertical layout; `grid grid-cols-1 lg:grid-cols-3
   gap-x-8 gap-y-4` for multi-column.
 - Permission check drives `isDisabled` on `<Submit>`.
+- **A submit button must disable while its own submission is in flight.** Inside a
+  `ValidatedForm` use `<Submit>`, which disables on `isSubmitting`; the form itself
+  also drops a re-entrant submit, so the two together make a double POST impossible.
+  On a `fetcher.Form` / `<Form>` bind the button yourself —
+  `isLoading={fetcher.state !== "idle"}` (on `@carbon/react`'s `Button`, `isLoading`
+  disables as well as spins), or `navigation.formAction === <action>` for a
+  navigation form. Every extra click is a whole extra POST: `fetcher.submit` aborts
+  the previous browser request, but the server action it started runs to completion
+  — nothing reads `request.signal`. A slow action (render a PDF, post a ledger entry,
+  email a customer) is exactly where this bites, and the missing spinner is what
+  invites the second click. Enforced by `no-unguarded-submit` (`@carbon/checks`);
+  note that an `isDisabled` bound to something that is not a submit-state signal
+  does NOT count.
 - Pass `fetcher` from `useFetcher()` when the form is a drawer/modal (so loading
   state and action data flow through the fetcher); plain page forms may omit it.
 
@@ -189,10 +203,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { thingValidator, upsertThing } from "~/modules/things";
 import { setCustomFields } from "~/utils/form";
@@ -347,29 +358,24 @@ const typeOptions = thingTypes.map((t) => ({ label: t, value: t }));
 <Select name="type" label="Type" options={typeOptions} />
 ```
 
-### Client action (cache invalidation)
+### Cache invalidation
 
-Cached entities add a `clientAction` that clears/invalidates the company-scoped
-query, then delegates. Two shapes are both in use:
+Nothing to write. The root client middleware (`createInvalidationMiddleware`,
+`@carbon/query`) marks every cached loader entry stale after any action, so a
+form's route does not export a `clientAction` and does not name the lists it
+changes. See `clientAction-patterns.md`.
+
+### Reacting to the result
+
+Use `useAction` from `@carbon/query` instead of `useFetcher` plus an effect that
+watches `fetcher.data`:
 
 ```typescript
-// Clear a specific cached query (most common for these list queries)
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(thingsQuery(getCompanyId()).queryKey, null);
-  return await serverAction();
-}
-
-// Or invalidate by predicate on a company-scoped key
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  const companyId = getCompanyId();
-  window.clientCache?.invalidateQueries({
-    predicate: (query) => {
-      const queryKey = query.queryKey as string[];
-      return queryKey[0] === "things" && queryKey[1] === companyId;
-    }
-  });
-  return await serverAction();
-}
+const fetcher = useAction<typeof action>({
+  onSuccess: () => onClose(),
+  onError: (data) => toast.error(data.message)
+});
+// <ValidatedForm fetcher={fetcher} …> or fetcher.submit(…), as before
 ```
 
 ## Checklist
@@ -382,6 +388,5 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
       `validator(schema).validate(formData)` → service → flash/redirect
 - [ ] `setCustomFields(formData)` + `<CustomFormFields table="..." />` if the
       table has custom fields
-- [ ] `clientAction` if the entity is cached client-side
 - [ ] Path helpers in `~/utils/path` (use `path.to.*`, never hardcoded URLs)
 - [ ] Container matches neighboring routes (ModalDrawer, Card, inline, etc.)

@@ -1,20 +1,24 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { breakQuantities, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { CadModel, DeferredFiles } from "~/components";
 import type { Tree } from "~/components/TreeView";
 import { usePermissions, useRealtime, useRouteData, useUser } from "~/hooks";
@@ -44,7 +48,10 @@ import {
   quoteLineValidator,
   reconcileQuantityBreaks
 } from "~/modules/sales";
-import { saveQuoteLineWithPrices } from "~/modules/sales/sales.server";
+import {
+  recordSalesRuleOutcome,
+  saveQuoteLineWithPrices
+} from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -61,6 +68,7 @@ import {
 import QuoteLinePricingHistory from "~/modules/sales/ui/Quotes/QuoteLinePricingHistory";
 import QuoteLineRiskRegister from "~/modules/sales/ui/Quotes/QuoteLineRiskRegister";
 import { getTagsList, type SupplierPriceMap } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -76,6 +84,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   if (!lineId) throw new Error("Could not find lineId");
 
   const serviceRole = await getCarbonServiceRole();
+  // Every read below uses the service role and keys on the URL line id.
+  await requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+    id: lineId,
+    quoteId
+  });
 
   const [line, operations, prices] = await Promise.all([
     getQuoteLine(serviceRole, lineId),
@@ -137,7 +150,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     : null;
 
   return {
-    line: line.data,
+    line: {
+      ...line.data,
+      // Present quantity breaks least-to-greatest everywhere they're consumed
+      // (line form, costing grid, pricing grid). Preserve null so the `?? [1]`
+      // fallbacks downstream still apply. Distinct: a line saved with a
+      // repeated break must not render twice (one price row per quantity).
+      quantity: line.data.quantity
+        ? [...new Set(line.data.quantity)].sort((a, b) => a - b)
+        : line.data.quantity
+    },
     operations: operations?.data ?? [],
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
@@ -162,6 +184,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  // The rule evaluation, evidence and price writes below use the service role
+  // (or Kysely) and key on the URL ids.
+  await requireCompanyRecord(getCarbonServiceRole(), "quoteLine", companyId, {
+    id: lineId,
+    quoteId
+  });
 
   const { client: viewClient } = await requirePermissions(request, {
     view: "sales"
@@ -191,10 +220,47 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // transaction. Previously the line update committed on its own, and a
   // resolver failure left it saved with its new breaks unpriced.
   const serviceRole = getCarbonServiceRole();
+
+  // Sales-rule enforcement: evaluate before the line is written. Blocked
+  // submissions return violations for the form's violation modal;
+  // acknowledged warns pass through on re-submit.
+  const acknowledged = formData.get("acknowledged") === "true";
+  const { violations, ruleNames } = await evaluateSalesRuleLines({
+    client: serviceRole,
+    companyId,
+    userId,
+    surface: "quoteLine",
+    // Quote lines carry a quantity-break array rather than a single
+    // transaction quantity. Evaluate the largest break — it is the one most
+    // likely to trip a `gt` threshold, so it is the conservative choice.
+    lines: breakQuantities(d.quantity).map((quantity) => ({
+      lineId,
+      itemId: d.itemId ?? null,
+      quantity
+    })),
+    customerId: quote.data?.customerId ?? null,
+    customerLocationId: quote.data?.customerLocationId ?? null
+  });
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "blocked",
+      violations: deduped,
+      ruleNames
+    });
+    return { error: null, data: null, violations: deduped, ruleNames };
+  }
   const existingPrices = await serviceRole
     .from("quoteLinePrice")
     .select("quantity")
-    .eq("quoteLineId", lineId);
+    .eq("quoteLineId", lineId)
+    .eq("companyId", companyId);
 
   if (existingPrices.error) {
     throw redirect(
@@ -275,6 +341,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     await saveQuoteLineWithPrices({
+      companyId,
+      quoteId,
       lineId,
       line: {
         ...sanitize({ ...d, updatedBy: userId }),
@@ -289,6 +357,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.quoteLine(quoteId, lineId),
       await flash(request, error(err, "Failed to update quote line"))
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
   }
 
   throw redirect(path.to.quoteLine(quoteId, lineId));
@@ -368,7 +452,7 @@ export default function QuoteLine() {
       />
 
       {methodData && (
-        <VStack spacing={2}>
+        <VStack spacing={4}>
           <QuoteBillOfProcess
             key={`bop:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
@@ -380,7 +464,7 @@ export default function QuoteLine() {
           <QuoteBillOfMaterial
             key={`bom:${methodData.rootMethodId}`}
             quoteMakeMethodId={methodData.rootMethodId}
-            // @ts-ignore
+            // @ts-expect-error
             materials={methodData.methodMaterials}
             // @ts-expect-error
             operations={methodData.methodOperations}
@@ -483,7 +567,7 @@ export default function QuoteLine() {
 
       <QuoteLineRiskRegister quoteLineId={lineId} itemId={line.itemId ?? ""} />
 
-      <Outlet />
+      <RecordOutlet />
     </Fragment>
   );
 }

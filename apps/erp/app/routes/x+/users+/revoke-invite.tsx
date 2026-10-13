@@ -1,14 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { CarbonEdition, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition } from "@carbon/utils";
+import { datetime, Edition, getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { revokeInviteValidator } from "~/modules/users";
@@ -30,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users } = validation.data;
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
 
   const serviceRole = getCarbonServiceRole();
 
@@ -119,9 +123,7 @@ export async function action({ request }: ActionFunctionArgs) {
           actorId: userId,
           diff: { revokedAt: { old: null, new: revokedAt } },
           metadata: {
-            ipAddress:
-              request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-              undefined,
+            ipAddress: getClientIp(request) ?? undefined,
             userAgent: request.headers.get("user-agent") ?? undefined
           }
         }))

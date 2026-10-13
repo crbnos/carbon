@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { formatPercent } from "@carbon/utils";
 import { Image, Text, View } from "@react-pdf/renderer";
@@ -96,73 +100,73 @@ export function LineItemsBlock({
                   {getLineDescriptionDetails(line)}
                 </Text>
                 {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  )}
+                thumbnails &&
+                line.id &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-1 w-16")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-full h-auto")}
+                    />
+                  </View>
+                ) : null}
                 {line.salesOrderLineType !== "Comment" &&
-                  totalTaxAndFees > 0 && (
-                    <View style={tw("mt-1")}>
-                      <Text style={tw("text-[9px] text-gray-600 font-bold")}>
-                        Tax & Fees
-                      </Text>
-                      {lineShippingCost > 0 && (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            - Shipping
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineShippingCost)}
-                          </Text>
-                        </View>
-                      )}
-                      {lineAddOnCost > 0 && (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            - Add-On
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineAddOnCost)}
-                          </Text>
-                        </View>
-                      )}
-                      {lineNonTaxableAddOnCost > 0 && (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            - Non-Taxable Add-On
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineNonTaxableAddOnCost)}
-                          </Text>
-                        </View>
-                      )}
-                      {lineTaxPercent > 0 && (
-                        <View style={tw("flex flex-row justify-between")}>
-                          <Text
-                            style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
-                          >
-                            - Tax ({formatPercent(lineTaxPercent, locale)})
-                          </Text>
-                          <Text style={tw("text-[9px] text-gray-600")}>
-                            {numberFormatter.format(lineTaxAmount)}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
+                totalTaxAndFees > 0 ? (
+                  <View style={tw("mt-1")}>
+                    <Text style={tw("text-[9px] text-gray-600 font-bold")}>
+                      Tax & Fees
+                    </Text>
+                    {lineShippingCost > 0 ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Shipping
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineShippingCost)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {lineAddOnCost > 0 ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineAddOnCost)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {lineNonTaxableAddOnCost > 0 ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Non-Taxable Add-On
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineNonTaxableAddOnCost)}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {lineTaxPercent > 0 ? (
+                      <View style={tw("flex flex-row justify-between")}>
+                        <Text
+                          style={tw("text-[9px] text-gray-600 flex-1 pr-2")}
+                        >
+                          - Tax ({formatPercent(lineTaxPercent, locale)})
+                        </Text>
+                        <Text style={tw("text-[9px] text-gray-600")}>
+                          {numberFormatter.format(lineTaxAmount)}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
               </View>
               <Text style={tw("w-1/6 text-center text-gray-600")}>
                 {line.salesOrderLineType === "Comment"
@@ -180,14 +184,14 @@ export function LineItemsBlock({
                   : numberFormatter.format(getLineTotal(line))}
               </Text>
             </View>
-            {Object.keys(line.externalNotes ?? {}).length > 0 && (
+            {Object.keys(line.externalNotes ?? {}).length > 0 ? (
               <View style={tw("px-3 py-2 border-b border-gray-200")}>
                 <Note
                   key={`${line.id}-notes`}
                   content={line.externalNotes as JSONContent}
                 />
               </View>
-            )}
+            ) : null}
           </View>
         );
       })}

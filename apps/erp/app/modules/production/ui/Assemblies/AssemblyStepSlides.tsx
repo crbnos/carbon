@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { toast } from "@carbon/react";
 import { nanoid } from "nanoid";
 import { useRef, useState } from "react";
@@ -50,11 +56,18 @@ export default function AssemblyStepSlides({
     if (!file || !carbon) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await storage(carbon)
+        .company(companyId)
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error("Failed to upload image");
         return;
@@ -67,6 +80,8 @@ export default function AssemblyStepSlides({
         method: "post",
         action: path.to.newAssemblyStepSlide(instructionId)
       });
+    } catch {
+      toast.error("Failed to convert image");
     } finally {
       setUploading(false);
     }

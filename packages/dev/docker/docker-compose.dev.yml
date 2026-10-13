@@ -5,15 +5,23 @@
 # SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY, plus user secrets passed through.
 ###
 
+# `restart: on-failure` on every service: a crashed container comes back, but
+# the stack does NOT restart with the Docker daemon. A stack is only useful
+# with its `crbn up` running, and `unless-stopped` brought every stack whose
+# terminal had died back to life on each Docker start.
 services:
   postgres:
     image: supabase/postgres:15.14.1.112
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_POSTGRES:-384m}
-          cpus: ${CPU_POSTGRES:-1.0}
+          # Defaults are sized so one stack runs smoothly while a machine can
+          # host several worktree stacks at once (limits are ceilings, not
+          # reservations — idle usage is far below them). Override any of these
+          # per worktree via MEM_*/CPU_* in that worktree's .env.
+          memory: ${MEM_POSTGRES:-1g}
+          cpus: ${CPU_POSTGRES:-2}
     networks:
       default:
         aliases:
@@ -69,11 +77,11 @@ services:
 
   gotrue:
     image: supabase/gotrue:v2.189.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_GOTRUE:-48m}
+          memory: ${MEM_GOTRUE:-96m}
           cpus: ${CPU_GOTRUE:-0.25}
     environment:
       GOTRUE_API_HOST: 0.0.0.0
@@ -82,7 +90,10 @@ services:
       GOTRUE_DB_DRIVER: postgres
       GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:postgres@postgres:5432/postgres
       GOTRUE_SITE_URL: ${ERP_URL}
-      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/callback,${MES_URL},${MES_URL}/callback,${GTM_URL}
+      # `/**` so a callback carrying `?redirectTo=` still matches — an exact
+      # entry does not, and GoTrue then falls back to GOTRUE_SITE_URL (the
+      # ERP). localhost:4000 is the starter (`pnpm dev:starter`).
+      GOTRUE_URI_ALLOW_LIST: ${ERP_URL},${ERP_URL}/**,${MES_URL},${MES_URL}/**,${GTM_URL},http://localhost:4000,http://localhost:4000/**
       GOTRUE_DISABLE_SIGNUP: ${GOTRUE_DISABLE_SIGNUP:-false}
       GOTRUE_JWT_SECRET: ${SUPABASE_JWT_SECRET}
       GOTRUE_JWT_EXP: 3600
@@ -125,12 +136,12 @@ services:
 
   postgrest:
     image: postgrest/postgrest:v13.0.8
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_POSTGREST:-160m}
-          cpus: ${CPU_POSTGREST:-0.25}
+          memory: ${MEM_POSTGREST:-256m}
+          cpus: ${CPU_POSTGREST:-1}
     depends_on:
       postgres:
         condition: service_healthy
@@ -151,12 +162,12 @@ services:
 
   realtime:
     image: supabase/realtime:v2.89.0
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_REALTIME:-256m}
-          cpus: ${CPU_REALTIME:-0.25}
+          memory: ${MEM_REALTIME:-384m}
+          cpus: ${CPU_REALTIME:-0.5}
     depends_on:
       postgres:
         condition: service_healthy
@@ -186,7 +197,7 @@ services:
 
   storage:
     image: supabase/storage-api:v1.58.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
@@ -217,19 +228,46 @@ services:
       TENANT_ID: stub
       REGION: stub
       GLOBAL_S3_BUCKET: stub
-      ENABLE_IMAGE_TRANSFORMATION: "false"
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+    volumes:
+      - storage:/var/lib/storage:z
+
+  # Image transformations (resize + HEIC→JPEG decode) for the storage API.
+  # Internal only — never publish a port: direct imgproxy access reads the
+  # storage volume with no RLS.
+  imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    restart: on-failure
+    profiles: ["full"]
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_IMGPROXY:-512m}
+          cpus: ${CPU_IMGPROXY:-1}
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
+      IMGPROXY_MAX_SRC_RESOLUTION: "60"
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
     volumes:
       - storage:/var/lib/storage:z
 
   meta:
     image: supabase/postgres-meta:v0.96.5
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_META:-96m}
+          memory: ${MEM_META:-128m}
           cpus: ${CPU_META:-0.25}
-    profiles: ["full"]
+    profiles: ["full", "studio"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -243,13 +281,13 @@ services:
 
   studio:
     image: supabase/studio:2026.04.28-sha-89d08a2
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_STUDIO:-256m}
-          cpus: ${CPU_STUDIO:-0.25}
-    profiles: ["full"]
+          memory: ${MEM_STUDIO:-384m}
+          cpus: ${CPU_STUDIO:-0.5}
+    profiles: ["full", "studio"]
     depends_on:
       meta:
         condition: service_started
@@ -264,27 +302,42 @@ services:
       SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Studio's SQL-editor snippets are read from a directory on disk; with the
+      # var unset it throws "SNIPPETS_MANAGEMENT_FOLDER env var is not set" on
+      # the SQL editor page. Studio creates the folder itself if missing. Not a
+      # mounted volume on purpose — snippets are scratch SQL, not project state.
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
 
   inbucket:
     image: inbucket/inbucket:3.1.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_INBUCKET:-32m}
+          memory: ${MEM_INBUCKET:-64m}
           cpus: ${CPU_INBUCKET:-0.25}
-    profiles: ["full"]
+    profiles: ["mail"]
     ports:
       - "${PORT_INBUCKET}:9000"
+    # The image declares /config and /storage as volumes; left unmounted, each
+    # `down` strands two anonymous volumes. /config is empty in the image.
+    tmpfs:
+      - /config
+    volumes:
+      - inbucket:/storage
 
   edge-runtime:
     image: supabase/edge-runtime:v1.74.0
-    restart: unless-stopped
+    restart: on-failure
+    profiles: ["full"]
     deploy:
       resources:
         limits:
-          memory: ${MEM_EDGE:-512m}
-          cpus: ${CPU_EDGE:-0.5}
+          # The edge runtime compiles each function's TS module graph on worker
+          # boot. Starved of CPU, worker boot outlives the isolate CPU budget
+          # and requests hang mid-kill.
+          memory: ${MEM_EDGE:-1g}
+          cpus: ${CPU_EDGE:-3}
     depends_on:
       postgres:
         condition: service_healthy
@@ -294,21 +347,9 @@ services:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
       VERIFY_JWT: "false"
-      # Backups edge fns (export/import/revert) send Inngest events. The edge
-      # runtime is a separate env from the ERP app, so without these its
-      # inngest.send() defaults to Inngest Cloud → 401. Point it at the local
-      # dev server via the compose-network alias (NOT localhost — that's the
-      # edge container itself).
-      INNGEST_DEV: "1"
-      INNGEST_BASE_URL: http://inngest:8288
-      # Local Chromium for the `thumbnail` edge fn (the `chrome` profile below).
-      # Prod reads no env → falls back to the remote browserless box.
-      BROWSERLESS_WS_URL: ws://chrome:3000
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
-      - ./packages/database/src:/home/src:ro
       # Dev-only dispatcher; lives outside supabase/functions/ so prod
       # `supabase functions deploy --all` can't pick it up.
       - ./packages/dev/docker/edge-main:/home/deno/main:ro
@@ -319,11 +360,11 @@ services:
 
   kong:
     image: kong:2.8.1
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_KONG:-192m}
+          memory: ${MEM_KONG:-256m}
           cpus: ${CPU_KONG:-0.5}
     depends_on:
       gotrue:
@@ -339,6 +380,7 @@ services:
         required: false
       edge-runtime:
         condition: service_started
+        required: false
     ports:
       - "${PORT_API}:8000"
     environment:
@@ -361,12 +403,12 @@ services:
 
   inngest:
     image: inngest/inngest:v1.19.4
-    restart: unless-stopped
+    restart: on-failure
     deploy:
       resources:
         limits:
-          memory: ${MEM_INNGEST:-128m}
-          cpus: ${CPU_INNGEST:-0.25}
+          memory: ${MEM_INNGEST:-256m}
+          cpus: ${CPU_INNGEST:-0.5}
     ports:
       - "${PORT_INNGEST}:8288"
     command:
@@ -382,35 +424,9 @@ services:
       - inngest:/data
       - ${HOME}/.portless/ca.pem:/etc/ssl/certs/portless-ca.pem:ro
 
-  # Local headless Chromium for the `thumbnail` edge fn — opt-in
-  # (`crbn up --thumbnails` enables this profile). v1 browserless (swiftshader
-  # WebGL, so the GLB render works) is compatible with the edge fn's puppeteer
-  # 16.2.0. edge-runtime reaches it at ws://chrome:3000; it in turn renders the
-  # portless ERP host (VERCEL_URL, e.g. erp.<prefix>.dev) through the portless
-  # proxy on the host — the same host-gateway path the inngest service uses. The
-  # raw ERP dev port only binds 127.0.0.1, so it is NOT container-reachable; the
-  # proxy is. The edge fn connects with ignoreHTTPSErrors for the self-signed CA.
-  chrome:
-    image: browserless/chrome:1-puppeteer-21.3.6
-    restart: unless-stopped
-    profiles: ["chrome"]
-    deploy:
-      resources:
-        limits:
-          memory: ${MEM_CHROME:-1g}
-          cpus: ${CPU_CHROME:-1}
-    environment:
-      # Match the edge fn's connect URL (ws://chrome:3000, no token).
-      TOKEN: ""
-      CONNECTION_TIMEOUT: "60000"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      # Resolve the portless erp host (erp.<prefix>.dev) to the host, so the
-      # rendered VERCEL_URL reaches the portless proxy — mirrors inngest.
-      - "${INNGEST_TLS_HOST}:host-gateway"
-
 volumes:
   pgdata:
   pgconfig:
   storage:
   inngest:
+  inbucket:

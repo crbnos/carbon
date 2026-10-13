@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { cn } from "@carbon/react";
@@ -24,7 +28,10 @@ interface ActionData {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {
+    // Records the learner's own progress, whatever their role in the company.
+    allowPortalAccounts: true
+  });
   const formData = await request.formData();
   const reset = formData.get("reset");
 

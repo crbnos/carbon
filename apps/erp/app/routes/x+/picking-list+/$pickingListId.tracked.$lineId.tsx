@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -8,6 +12,8 @@ import {
   setPickingListLineTrackedEntity
 } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -39,18 +45,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (line.item as { itemTrackingType: string } | null)?.itemTrackingType ??
     "Batch";
 
-  const entities = locationId
-    ? await getAvailableTrackedEntities(client, {
-        itemId: line.itemId,
-        companyId,
-        locationId,
-        excludeLineside: true,
-        excludeAllocated: true,
-        excludeLineId: lineId
-      })
-    : { data: [] };
-
-  const settings = await getCompanySettings(client, companyId);
+  const [entities, settings, defaultOrder] = await Promise.all([
+    locationId
+      ? getAvailableTrackedEntities(client, {
+          itemId: line.itemId,
+          companyId,
+          locationId,
+          excludeLineside: true,
+          excludeAllocated: true,
+          excludeLineId: lineId
+        })
+      : { data: [] },
+    getCompanySettings(client, companyId),
+    locationId
+      ? getPickOrder(client, { itemId: line.itemId, locationId, companyId })
+      : ("Default" as const)
+  ]);
   const shelfLife = (settings.data?.inventoryShelfLife ?? {}) as {
     nearExpiryWarningDays?: number | null;
     expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
@@ -65,23 +75,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ),
     nearExpiryWarningDays: shelfLife.nearExpiryWarningDays ?? 0,
     expiredEntityPolicy: shelfLife.expiredEntityPolicy ?? "Warn",
-    defaultOrder: locationId
-      ? await getPickOrder(client, {
-          itemId: line.itemId,
-          locationId,
-          companyId
-        })
-      : "Default"
+    defaultOrder
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, { update: "inventory" });
+  const { companyId, userId } = await requirePermissions(request, {
+    update: "inventory"
+  });
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
-  if (!lineId) return { success: false, message: "Missing line" };
+  const { pickingListId, lineId } = params;
+  if (!pickingListId || !lineId) {
+    return { success: false, message: "Missing line" };
+  }
+
+  // The pick runs through the service role: the line must belong to this
+  // company and to the picking list in the URL.
+  await requireCompanyRecord(serviceRole, "pickingListLine", companyId, {
+    id: lineId,
+    pickingListId
+  });
 
   const formData = await request.formData();
   const trackedEntityId = formData.get("trackedEntityId") as string;
@@ -94,14 +109,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing tracked entity" };
   }
 
-  const result = await setPickingListLineTrackedEntity(serviceRole, {
-    pickingListLineId: lineId,
-    trackedEntityId,
-    fromStorageUnitId,
-    quantity,
-    unpick,
-    userId
-  });
+  const result = await setPickingListLineTrackedEntity(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      pickingListLineId: lineId,
+      trackedEntityId,
+      fromStorageUnitId,
+      quantity,
+      unpick,
+      userId,
+      companyId
+    }
+  );
 
   if (result.error) {
     return {

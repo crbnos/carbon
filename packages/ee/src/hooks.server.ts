@@ -1,13 +1,24 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { emailHealthcheck } from "./email/hooks.server";
 import { revokeConnectionsForPiece } from "./integrations/connections";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
+import { mountHealthcheck } from "./mount/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
 import {
   quickbooksOnInstall,
   quickbooksOnUninstall
 } from "./quickbooks/hooks.server";
+import {
+  rampHealthcheck,
+  rampOnInstall,
+  rampOnUninstall,
+  rampOnUpdate
+} from "./ramp/hooks.server";
 import {
   rilletHealthcheck,
   rilletOnInstall,
@@ -80,6 +91,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onUninstall: (companyId) =>
       revokeConnectionsForPiece(getCarbonServiceRole(), "gmail", companyId)
   },
+  mount: {
+    onHealthcheck: mountHealthcheck
+  },
   onshape: {
     onUninstall: onshapeOnUninstall
   },
@@ -89,6 +103,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onUninstall: (companyId) =>
       revokeConnectionsForPiece(getCarbonServiceRole(), "slack", companyId)
   },
+  "onshape-government": {
+    onUninstall: onshapeOnUninstall
+  },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install
   // self-heals the company's `${provider}-sync` subscription rows whenever
@@ -97,6 +114,12 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: quickbooksOnInstall,
     onUpdate: quickbooksOnInstall,
     onUninstall: quickbooksOnUninstall
+  },
+  ramp: {
+    onInstall: rampOnInstall,
+    onUpdate: rampOnUpdate,
+    onUninstall: rampOnUninstall,
+    onHealthcheck: rampHealthcheck
   },
   rillet: {
     onHealthcheck: rilletHealthcheck,

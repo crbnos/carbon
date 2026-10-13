@@ -1,13 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, ERP_URL, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
+import { serverFns } from "@carbon/server-functions";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import invariant from "tiny-invariant";
 import {
   deleteIssue,
@@ -21,6 +25,7 @@ import { dispositionInspection } from "~/modules/quality/quality.server";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "inspections-id-reject");
@@ -64,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Post the inventory write-off (itemLedger + cost relief + GL) for a
-  // non-tracked Inventory lot through the post-nonconformance edge function.
+  // non-tracked Inventory lot through the post-nonconformance operation.
   // Idempotent per (documentType, documentId), so retrying the reject after a
   // failure here re-posts safely (the lot stays Rejected). A failed write-off
   // MUST abort before NCR creation: the NCR's disposition (closeIssue) restores
@@ -72,10 +77,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // it, so proceeding would leave the received quantity double-counted on hand.
   const writeOff = dispositionResult.data?.writeOff;
   if (writeOff) {
-    const post = await client.functions.invoke("post-nonconformance", {
-      body: {
-        companyId,
-        userId,
+    const post = await serverFns
+      .as({ client, db: getDatabaseClient(), companyId, userId })
+      .invoke("post-nonconformance", {
         documentType: "Inbound Inspection",
         documentId: id,
         description: "Inbound inspection lot rejected",
@@ -87,9 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             quantity: writeOff.quantity
           }
         ]
-      },
-      region: FunctionRegion.UsEast1
-    });
+      });
     if (post.error) {
       logger.error("Failed to post inspection reject write-off", {
         error: post.error,
@@ -239,41 +241,121 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const ncrId = createResult.data.id;
 
+  // Every tracked entity in the lot: the sampled ones plus the un-sampled
+  // ones, which the cascade also Rejected.
+  const trackedEntityIds = ((insp.inspectionSample as any[]) ?? [])
+    .map((s) => s.trackedEntityId as string)
+    .filter(Boolean);
+  // A failed read would link only part of the lot and still report success,
+  // so roll the NCR back and let the operator retry the reject instead.
+  const failLotRead = async (err: unknown): Promise<never> => {
+    await deleteIssue(serviceRole, ncrId);
+    throw redirect(
+      path.to.inspection(id),
+      await flash(
+        request,
+        error(err, "Lot rejected, but failed to read the lot for the NCR")
+      )
+    );
+  };
+  const receiptLineEntities = await serviceRole
+    .from("trackedEntity")
+    .select("id")
+    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+    .eq("companyId", companyId);
+  if (receiptLineEntities.error) await failLotRead(receiptLineEntities.error);
+  const allLotEntityIds = Array.from(
+    new Set([
+      ...trackedEntityIds,
+      ...(receiptLineEntities.data ?? []).map((r: any) => r.id as string)
+    ])
+  );
+  const entityQuantities =
+    allLotEntityIds.length > 0
+      ? await serviceRole
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", allLotEntityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entityQuantities.error) await failLotRead(entityQuantities.error);
+
   // insertIssue inserted nonConformanceItem rows with default qty 0 and
   // disposition 'Pending'. Now that we know the lot context, overwrite with
   // the actual lot quantity and default the MRB's starting disposition to
   // 'Scrap' (the most conservative outcome — they can downgrade to Rework /
-  // Use As Is / split later).
-  let scrapRowId: string | null = null;
-  if (insp.itemId) {
-    await serviceRole
-      .from("nonConformanceItem")
-      .update({
-        quantity: Number(insp.lotSize ?? 0),
-        disposition: "Scrap",
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("nonConformanceId", ncrId)
-      .eq("itemId", insp.itemId);
+  // Use As Is / split later), link the source inspection, and seed the
+  // per-row entity links so the MRB can split / reassign specific entities.
+  // All of it runs under the issue lock shared by every disposition writer,
+  // so a quantity edit cannot land between the lot quantity and the
+  // inspection link.
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, {
+          nonConformanceId: ncrId,
+          companyId
+        });
 
-    const scrapRow = await serviceRole
-      .from("nonConformanceItem")
-      .select("id")
-      .eq("nonConformanceId", ncrId)
-      .eq("itemId", insp.itemId)
-      .single();
-    scrapRowId = scrapRow.data?.id ?? null;
+        let scrapRowId: string | null = null;
+        if (insp.itemId) {
+          const scrapRow = await trx
+            .updateTable("nonConformanceItem")
+            .set({
+              quantity: Number(insp.lotSize ?? 0),
+              disposition: "Scrap",
+              updatedBy: userId,
+              updatedAt: datetime.timestamp()
+            })
+            .where("nonConformanceId", "=", ncrId)
+            .where("itemId", "=", insp.itemId)
+            .where("companyId", "=", companyId)
+            .returning(["id"])
+            .executeTakeFirst();
+          scrapRowId = scrapRow?.id ?? null;
+        }
+
+        await trx
+          .insertInto("nonConformanceInspection")
+          .values({
+            nonConformanceId: ncrId,
+            inspectionId: insp.id,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        const entityRows = (entityQuantities.data ?? []) as {
+          id: string;
+          quantity: number | null;
+        }[];
+        if (scrapRowId && entityRows.length > 0) {
+          await trx
+            .insertInto("nonConformanceItemTrackedEntity")
+            .values(
+              entityRows.map((e) => ({
+                nonConformanceItemId: scrapRowId!,
+                nonConformanceId: ncrId,
+                trackedEntityId: e.id,
+                quantity: Number(e.quantity ?? 1),
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+        }
+      });
+  } catch (err) {
+    await deleteIssue(serviceRole, ncrId);
+    throw redirect(
+      path.to.inspection(id),
+      await flash(
+        request,
+        error(err, "Lot rejected, but failed to link the NCR to the lot")
+      )
+    );
   }
-
-  // Link the source inspection to the NCR so the issue explorer can surface
-  // the origin and deep-link back to the inspection lot.
-  await serviceRole.from("nonConformanceInspection").insert({
-    nonConformanceId: ncrId,
-    inspectionId: insp.id,
-    companyId,
-    createdBy: userId
-  });
 
   // Also link the receipt line — gives the explorer the supplier / receipt
   // context through the existing "Receipt Lines" association branch.
@@ -293,22 +375,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Link every tracked entity in the lot to the NCR.
-  const trackedEntityIds = ((insp.inspectionSample as any[]) ?? [])
-    .map((s) => s.trackedEntityId as string)
-    .filter(Boolean);
-  // Include un-sampled entities too (they were also Rejected by the cascade).
-  const receiptLineEntities = await client
-    .from("trackedEntity")
-    .select("id")
-    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-    .eq("companyId", companyId);
-  const allLotEntityIds = Array.from(
-    new Set([
-      ...trackedEntityIds,
-      ...(receiptLineEntities.data ?? []).map((r: any) => r.id as string)
-    ])
-  );
-
   if (allLotEntityIds.length > 0) {
     await serviceRole.from("nonConformanceTrackedEntity").insert(
       allLotEntityIds.map((trackedEntityId) => ({
@@ -318,40 +384,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
         createdBy: userId
       }))
     );
-
-    // Seed the per-row entity links on the default Scrap row so the MRB can
-    // split / reassign specific entities to other dispositions. Each entity
-    // contributes its own quantity to the row.
-    if (scrapRowId) {
-      const entityQuantities = await serviceRole
-        .from("trackedEntity")
-        .select("id, quantity")
-        .in("id", allLotEntityIds)
-        .eq("companyId", companyId);
-      const rows = (entityQuantities.data ?? []).map((e: any) => ({
-        nonConformanceItemId: scrapRowId!,
-        trackedEntityId: e.id as string,
-        quantity: Number(e.quantity ?? 1),
-        companyId,
-        createdBy: userId
-      }));
-      if (rows.length > 0) {
-        await (serviceRole as any)
-          .from("nonConformanceItemTrackedEntity")
-          .insert(rows);
-      }
-    }
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
+  const tasks = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
-  });
+      id: ncrId
+    });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);
     throw redirect(

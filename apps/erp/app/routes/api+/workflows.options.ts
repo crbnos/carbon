@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -76,14 +80,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       typeof err === "object" && err !== null && "status" in err
         ? (err as { status?: unknown }).status
         : undefined;
-    // Interpolated into the MESSAGE, not passed as properties: the dev console uses
-    // LogTape's `ansiColorFormatter`, which renders the template and drops anything
-    // not referenced by it — so structured fields alone were invisible, and
-    // "lookup failed" said nothing an operator could act on.
+    // Every field is a {placeholder} in the MESSAGE: the dev console uses LogTape's
+    // `ansiColorFormatter`, which renders the template and drops any property it
+    // does not reference — so unreferenced fields were invisible, and "lookup
+    // failed" said nothing an operator could act on.
     const name = err instanceof Error ? err.name : typeof err;
     const detail = err instanceof Error ? err.message.slice(0, 300) : "";
     logger.error(
-      `Workflow options lookup failed: provider=${providerId} error=${name} status=${status ?? "none"} detail=${detail}`
+      "Workflow options lookup failed: provider={providerId} error={name} status={status} detail={detail}",
+      { providerId, name, status: status ?? "none", detail }
     );
     return { options: [], errorCode: FAILED };
   }

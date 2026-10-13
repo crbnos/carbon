@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { z } from "zod";
 import { applyCreditsToInvoices, getPayment } from "~/modules/invoicing";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
@@ -19,11 +22,18 @@ const setCreditsValidator = z.object({
 });
 
 const rowsValidator = z.array(
-  z.object({
-    memoId: z.string().min(1),
-    invoiceId: z.string().min(1),
-    amount: z.number().positive()
-  })
+  z
+    .object({
+      memoId: z.string().min(1),
+      invoiceId: z.string().min(1),
+      amount: z.number().finite().nonnegative(),
+      sourceAmount: z.number().finite().nonnegative().optional()
+    })
+    .strict()
+    .refine(
+      (a) => a.amount > 0 || (a.sourceAmount ?? 0) > 0,
+      "Applied document amount must be positive"
+    )
 );
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -66,7 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The invoice side follows the payment's party: a customer's credits clear
   // sales invoices; a supplier's clear purchase invoices.
-  const payment = await getPayment(client, paymentId);
+  const payment = await getPayment(client, paymentId, companyId);
   if (payment.error || !payment.data) {
     throw redirect(
       path.to.payment(paymentId),

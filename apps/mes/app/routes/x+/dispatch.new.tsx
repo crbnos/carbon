@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -6,9 +10,9 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { datetime } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { maintenanceDispatchValidator } from "~/services/models";
 import { endProductionEventsByWorkCenter } from "~/services/operations.service";
 import { path } from "~/utils/path";
@@ -29,6 +33,50 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
+
+  // The insert below is service-role, so every referenced id from the form
+  // must belong to this company: one scoped query per id type. The work
+  // center's location is read here too (it is stamped on the dispatch).
+  const failureModeIds = [
+    ...new Set(
+      [
+        validation.data.suspectedFailureModeId,
+        validation.data.actualFailureModeId
+      ].filter((id): id is string => Boolean(id))
+    )
+  ];
+  const [workCenter, failureModes] = await Promise.all([
+    serviceRole
+      .from("workCenter")
+      .select("locationId")
+      .eq("id", validation.data.workCenterId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    failureModeIds.length
+      ? serviceRole
+          .from("maintenanceFailureMode")
+          .select("id")
+          .in("id", failureModeIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null }
+  ]);
+  if (
+    !workCenter.data ||
+    failureModes.error ||
+    (failureModes.data ?? []).length !== failureModeIds.length
+  ) {
+    log.warn("Dispatch references records outside the company", {
+      companyId,
+      workCenterId: validation.data.workCenterId,
+      failureModeIds,
+      error: workCenter.error ?? failureModes.error
+    });
+    return data(
+      {},
+      await flash(request, error(null, "Work center or failure mode not found"))
+    );
+  }
+  const locationId = workCenter.data.locationId ?? undefined;
 
   // Get the next sequence for maintenance dispatch
   const nextSequence = await serviceRole.rpc("get_next_sequence", {
@@ -59,19 +107,6 @@ export async function action({ request }: ActionFunctionArgs) {
     : "Open";
 
   const currentTime = datetime.timestamp();
-
-  // Get locationId from work center
-  let locationId: string | undefined;
-  if (validation.data.workCenterId) {
-    const workCenter = await serviceRole
-      .from("workCenter")
-      .select("locationId")
-      .eq("id", validation.data.workCenterId)
-      .single();
-    if (!workCenter.error && workCenter.data?.locationId) {
-      locationId = workCenter.data.locationId;
-    }
-  }
 
   const insertDispatch = await serviceRole
     .from("maintenanceDispatch")
@@ -140,6 +175,7 @@ export async function action({ request }: ActionFunctionArgs) {
             .from("maintenanceFailureMode")
             .select("type")
             .eq("id", validation.data.suspectedFailureModeId)
+            .eq("companyId", companyId)
             .single();
 
           if (!failureMode.error && failureMode.data?.type) {

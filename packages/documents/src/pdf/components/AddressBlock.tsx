@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Text } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 
@@ -37,12 +41,12 @@ const AddressBlock = ({
   const stateAndPostal = [stateProvince, postalCode].filter(Boolean).join(" ");
   return (
     <>
-      {name && <Text style={tw("font-bold")}>{name}</Text>}
-      {addressLine1 && <Text>{addressLine1}</Text>}
-      {addressLine2 && <Text>{addressLine2}</Text>}
-      {city && <Text>{city}</Text>}
-      {stateAndPostal && <Text>{stateAndPostal}</Text>}
-      {country && <Text>{country}</Text>}
+      {name ? <Text style={tw("font-bold")}>{name}</Text> : null}
+      {addressLine1 ? <Text>{addressLine1}</Text> : null}
+      {addressLine2 ? <Text>{addressLine2}</Text> : null}
+      {city ? <Text>{city}</Text> : null}
+      {stateAndPostal ? <Text>{stateAndPostal}</Text> : null}
+      {country ? <Text>{country}</Text> : null}
     </>
   );
 };

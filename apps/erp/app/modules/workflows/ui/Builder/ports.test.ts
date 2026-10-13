@@ -1,5 +1,9 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
-import { getNodeHandles, NODE_KINDS } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
+import { getNodeHandles, NODE_KINDS } from "@carbon/ee/workflows";
 import type { MessageDescriptor } from "@lingui/core";
 import { describe, expect, it, vi } from "vitest";
 import { createNode } from "./graph";

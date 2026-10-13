@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   type ActionOutcome,
   entityValue,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { DispatchContext, WorkflowDispatch } from "./dispatcher";
 import { toPlainValue } from "./values";
 

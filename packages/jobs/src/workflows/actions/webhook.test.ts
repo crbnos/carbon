@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import dns from "node:dns";
 import type { Database } from "@carbon/database";
-import { pairsValue, primitiveValue } from "@carbon/workflows";
+import { pairsValue, primitiveValue } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runWebhookAction } from "./webhook";

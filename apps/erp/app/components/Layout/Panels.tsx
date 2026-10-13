@@ -1,16 +1,30 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
-  Drawer,
-  DrawerContent,
-  DrawerTitle,
+  cn,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-  useIsMobile
+  useViewport
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { createContext, useContext, useEffect, useRef, useState } from "react";
 import type { ImperativePanelHandle } from "react-resizable-panels";
 import { useOptimisticLocation } from "~/hooks";
+import type { CompactTabItem } from "./CompactTabRow";
+import { CompactTabRow } from "./CompactTabRow";
+import { createValueSlot } from "./Mobile/slots";
+
+/**
+ * Phones: a record's sub-route tabs (Details, Purchasing, …), provided by its
+ * DetailsTopbar, and whether a record frame is mounted to show them in its
+ * one tab row (DetailsTopbar renders its own row otherwise).
+ */
+export const recordTabsSlot = createValueSlot<CompactTabItem[]>();
+export const recordFrameSlot = createValueSlot<true>();
 
 interface PanelContextType {
   isExplorerCollapsed: boolean;
@@ -21,7 +35,7 @@ interface PanelContextType {
   setIsPropertiesCollapsed: (collapsed: boolean) => void;
 }
 
-const PanelContext = createContext<PanelContextType>({
+const defaultPanelContext: PanelContextType = {
   isExplorerCollapsed: false,
   isPropertiesCollapsed: false,
   // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
@@ -32,7 +46,9 @@ const PanelContext = createContext<PanelContextType>({
   setIsExplorerCollapsed: () => {},
   // biome-ignore lint/suspicious/noEmptyBlockStatements: suppressed due to migration
   setIsPropertiesCollapsed: () => {}
-});
+};
+
+const PanelContext = createContext<PanelContextType>(defaultPanelContext);
 
 export function usePanels() {
   const context = useContext(PanelContext);
@@ -47,7 +63,7 @@ interface PanelProviderProps {
 }
 
 export function PanelProvider({ children }: PanelProviderProps) {
-  const isMobile = useIsMobile();
+  const { isPhone } = useViewport();
 
   // Seed both to `false` so the first client render matches the server (which
   // has no `window`); collapsing based on viewport happens post-mount in the
@@ -65,15 +81,14 @@ export function PanelProvider({ children }: PanelProviderProps) {
     setIsPropertiesCollapsed
   };
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
-    if (isMobile) {
+    if (isPhone) {
       setIsExplorerCollapsed(true);
       setIsPropertiesCollapsed(true);
     } else if (window.innerWidth < 1024) {
       setIsPropertiesCollapsed(true);
     }
-  }, [isMobile]);
+  }, [isPhone]);
 
   return (
     <PanelContext.Provider value={value}>{children}</PanelContext.Provider>
@@ -84,22 +99,123 @@ interface ResizablePanelsProps {
   explorer?: React.ReactNode;
   content: React.ReactNode;
   properties?: React.ReactNode;
+  /** Compact tab label for the explorer; defaults to "Lines". */
+  explorerLabel?: ReactNode;
+}
+
+/** True inside a compact record frame's tab panel (see CompactToolbar). */
+export const RecordFrameContext = createContext(false);
+
+type RecordPanel = "content" | "explorer" | "properties";
+const RecordPanelContext = createContext<(panel: RecordPanel) => void>(
+  () => {}
+);
+
+/**
+ * Phones: switch the record frame's tab, e.g. "See all 30" opening Lines.
+ * A no-op outside a compact record frame.
+ */
+export const useShowRecordPanel = () => useContext(RecordPanelContext);
+
+/**
+ * Phones: one sticky underline tab row instead of side panels: the record's
+ * content (or its sub-route tabs), the explorer and the properties. Content
+ * comes first because tapping a line changes it.
+ */
+function CompactRecordTabs({
+  explorer,
+  content,
+  properties,
+  explorerLabel
+}: ResizablePanelsProps) {
+  const { t } = useLingui();
+  const location = useOptimisticLocation();
+  const recordTabs = recordTabsSlot.useValue();
+  recordFrameSlot.useProvide(true);
+  const [panel, setPanel] = useState<RecordPanel>("content");
+
+  // A tapped line (or any navigation) shows its content.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: switch back on navigation only
+  useEffect(() => {
+    setPanel("content");
+  }, [location.pathname]);
+
+  const showContent = () => setPanel("content");
+  const tabs: CompactTabItem[] = [
+    ...(recordTabs?.length
+      ? recordTabs.map((tab) => ({
+          ...tab,
+          active: panel === "content" && tab.active,
+          onClick: showContent
+        }))
+      : [
+          {
+            id: "content",
+            label: t`Overview`,
+            active: panel === "content",
+            onClick: showContent
+          }
+        ]),
+    ...(explorer
+      ? [
+          {
+            id: "explorer",
+            label: explorerLabel ?? t`Lines`,
+            active: panel === "explorer",
+            onClick: () => setPanel("explorer")
+          }
+        ]
+      : []),
+    ...(properties
+      ? [
+          {
+            id: "properties",
+            label: t`Properties`,
+            active: panel === "properties",
+            onClick: () => setPanel("properties")
+          }
+        ]
+      : [])
+  ];
+
+  return (
+    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full flex-col overflow-hidden">
+      <CompactTabRow items={tabs} />
+      {/* Panels fill the tab area: their own desktop sizes (w-96 border-l,
+          fixed heights) give way to the full width and height. */}
+      <div
+        className={cn(
+          "flex min-h-0 flex-1 flex-col overflow-y-auto bg-card",
+          // Sub-routes size themselves from --header-height: here that is the
+          // hero plus this tab row (44 + 1 border), not the hero alone.
+          "[--header-height:calc(var(--hero-height,0px)+45px)]",
+          "[&>*]:h-auto [&>*]:min-h-full [&>*]:w-full [&>*]:max-w-none [&>*]:flex-1 [&>*]:border-0"
+        )}
+      >
+        <RecordFrameContext.Provider value>
+          <RecordPanelContext.Provider value={setPanel}>
+            {panel === "content"
+              ? content
+              : panel === "explorer"
+                ? explorer
+                : properties}
+          </RecordPanelContext.Provider>
+        </RecordFrameContext.Provider>
+      </div>
+    </div>
+  );
 }
 
 export function ResizablePanels({
   explorer,
   content,
-  properties
+  properties,
+  explorerLabel
 }: ResizablePanelsProps) {
-  const {
-    isExplorerCollapsed,
-    isPropertiesCollapsed,
-    setIsExplorerCollapsed,
-    setIsPropertiesCollapsed
-  } = usePanels();
+  const { isExplorerCollapsed, isPropertiesCollapsed, setIsExplorerCollapsed } =
+    usePanels();
   const panelRef = useRef<ImperativePanelHandle>(null);
-  const isMobile = useIsMobile();
-  const location = useOptimisticLocation();
+  const { isPhone } = useViewport();
 
   useEffect(() => {
     if (isExplorerCollapsed) {
@@ -109,85 +225,40 @@ export function ResizablePanels({
     }
   }, [isExplorerCollapsed]);
 
-  // On mobile the side panels overlay the content as drawers; collapse them once
-  // the pathname changes (e.g. picking an item in the explorer) so the drawer
-  // doesn't sit over the destination.
-  useEffect(() => {
-    if (isMobile) {
-      setIsExplorerCollapsed(true);
-      setIsPropertiesCollapsed(true);
-    }
-  }, [
-    location.pathname,
-    isMobile,
-    setIsExplorerCollapsed,
-    setIsPropertiesCollapsed
-  ]);
-
-  // A resizable column split is unreadable at phone width. Render the content
-  // full-width and float the explorer / properties as overlay drawers instead.
-  if (isMobile) {
+  if (isPhone) {
     return (
-      <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] w-full overflow-hidden">
-        {content}
-        {explorer && (
-          <Drawer
-            open={!isExplorerCollapsed}
-            onOpenChange={(open) => setIsExplorerCollapsed(!open)}
-          >
-            <DrawerContent
-              position="left"
-              size="content"
-              className="w-[20rem] max-w-[90vw] p-0"
-            >
-              <DrawerTitle className="sr-only">
-                <Trans>Explorer</Trans>
-              </DrawerTitle>
-              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-                {explorer}
-              </div>
-            </DrawerContent>
-          </Drawer>
-        )}
-        {properties && (
-          <Drawer
-            open={!isPropertiesCollapsed}
-            onOpenChange={(open) => setIsPropertiesCollapsed(!open)}
-          >
-            <DrawerContent
-              position="right"
-              size="content"
-              className="w-[20rem] max-w-[90vw] p-0"
-            >
-              <DrawerTitle className="sr-only">
-                <Trans>Properties</Trans>
-              </DrawerTitle>
-              <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-                {properties}
-              </div>
-            </DrawerContent>
-          </Drawer>
-        )}
-      </div>
+      <CompactRecordTabs
+        explorer={explorer}
+        content={content}
+        properties={properties}
+        explorerLabel={explorerLabel}
+      />
     );
   }
 
+  // A layout with no explorer renders no left panel at all -- an always-present
+  // `ResizablePanel` would leave an empty column and a drag handle with nothing
+  // behind it.
   return (
     <ResizablePanelGroup direction="horizontal">
-      <ResizablePanel
-        ref={panelRef}
-        order={1}
-        minSize={10}
-        className="bg-card shadow-lg"
-        collapsible
-        defaultSize={isExplorerCollapsed ? 0 : 20}
-        collapsedSize={0}
-        onCollapse={() => setIsExplorerCollapsed(true)}
-        onExpand={() => setIsExplorerCollapsed(false)}
-      >
-        {!isExplorerCollapsed && explorer}
-      </ResizablePanel>
-      <ResizableHandle withHandle />
+      {explorer && (
+        <>
+          <ResizablePanel
+            ref={panelRef}
+            order={1}
+            minSize={10}
+            className="bg-card shadow-lg"
+            collapsible
+            defaultSize={isExplorerCollapsed ? 0 : 20}
+            collapsedSize={0}
+            onCollapse={() => setIsExplorerCollapsed(true)}
+            onExpand={() => setIsExplorerCollapsed(false)}
+          >
+            {!isExplorerCollapsed && explorer}
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+        </>
+      )}
       <ResizablePanel order={2} className="z-1 relative">
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           {content}

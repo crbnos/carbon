@@ -1,14 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import type { Violation } from "@carbon/utils";
+import { datetime, redirect } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
 import {
   finalizeQuote,
@@ -17,12 +29,17 @@ import {
   getQuote,
   quoteFinalizeValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "quote", "finalize");
 
 function getErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) return error.message;
@@ -54,12 +71,81 @@ export async function action(args: ActionFunctionArgs) {
   let fileName: string;
   let documentFilePath: string;
 
+  // `client` is the service role (bypassRls): the URL quote must belong to
+  // this company before it is evaluated, linked, rendered or sent.
+  await requireCompanyRecord(client, "quote", companyId, { id: quoteId });
+
   const quote = await getQuote(client, quoteId);
   if (quote.error) {
     throw redirect(
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
     );
+  }
+
+  // A customer with no reachable contact cannot be created as a vendor/customer at
+  // a connected platform, so its documents are rejected there long after anyone
+  // is watching. Gate at issue time, where the record can still be fixed. No-op
+  // unless the company has turned the setting on.
+  const customerContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "customer", id: quote.data.customerId }
+  );
+  if (customerContactError) {
+    throw redirect(
+      path.to.quote(quoteId),
+      await flash(request, error(null, customerContactError))
+    );
+  }
+
+  // Terminal gate: re-evaluate every line before the quote leaves for the
+  // customer. Lines can arrive here from paths the per-line check never saw
+  // (RFQ conversion, duplication, integrations, the API), and a line that
+  // passed earlier may violate a rule authored since or a ship-to that changed.
+  // Runs before the external link + PDF so a blocked quote produces neither.
+  const formData = await request.clone().formData();
+  const acknowledged = formData.get("acknowledged") === "true";
+  let violations: Violation[];
+  let ruleNames: Record<string, string>;
+  try {
+    const result = await evaluateSalesRulesForSalesDocument({
+      client,
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId
+    });
+    violations = result.violations;
+    ruleNames = result.ruleNames;
+  } catch (err) {
+    // Fail closed but not as a raw 500 — the modal shows the message.
+    return {
+      violations: [
+        {
+          ruleId: "__evaluation-error__",
+          severity: "error" as const,
+          message:
+            err instanceof Error ? err.message : "Sales rule evaluation failed"
+        }
+      ],
+      ruleNames: {}
+    };
+  }
+  const deduped = dedupeViolations(violations);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+    // The strongest overrides happen at gates like this one — record the
+    // same evidence + notification the per-line checks write.
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: "blocked",
+      violations: deduped,
+      ruleNames
+    });
+    return { violations: deduped, ruleNames };
   }
 
   const externalLink = await upsertExternalLink(client, {
@@ -95,8 +181,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await client.storage
-      .from("private")
+    const documentFileUpload = await storage(client)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -142,6 +228,21 @@ export async function action(args: ActionFunctionArgs) {
         await flash(request, error(finalize.error, "Failed to finalize quote"))
       );
     }
+
+    // Acknowledged-override evidence only once the finalize has committed —
+    // a trail for a transition that then failed would be false, and a retry
+    // would duplicate it.
+    if (deduped.length > 0) {
+      await recordSalesRuleOutcome(getCarbonServiceRole(), {
+        companyId,
+        userId,
+        documentType: "quote",
+        documentId: quoteId,
+        outcome: "acknowledged",
+        violations: deduped,
+        ruleNames
+      });
+    }
   } catch (thrown) {
     // Re-throw redirects — don't swallow them
     if (thrown instanceof Response) throw thrown;
@@ -182,7 +283,7 @@ export async function action(args: ActionFunctionArgs) {
             getCompany(client, companyId),
             getCompanySettings(client, companyId),
             getCustomer(client, quote.data.customerId!),
-            getCustomerContact(client, customerContactId),
+            getCustomerContact(client, customerContactId, companyId),
             getUser(client, userId)
           ]);
 
@@ -214,9 +315,15 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await client.storage
-          .from("private")
+        const signed = await storage(client)
+          .company(companyId)
           .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath: documentFilePath,
+            error: signed.error
+          });
+        }
 
         await trigger("send-email", {
           to: [user.data.email, customerContact.data.contact!.email!],
@@ -225,10 +332,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Quote ${getQuoteDisplayId(quote.data)}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

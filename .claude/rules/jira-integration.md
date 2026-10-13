@@ -23,7 +23,11 @@ Code lives in `packages/ee/src/jira/`. Two export subpaths (see `packages/ee/pac
   category "Project Management", `active: !!JIRA_CLIENT_ID`). Registered in
   `packages/ee/src/index.ts` `integrations[]`. OAuth scopes: `read:jira-user`,
   `read:jira-work`, `write:jira-work`, `offline_access`. Also renders the
-  `SetupInstructions` (webhook URL + which events to subscribe).
+  `SetupInstructions` (webhook URL + which events to subscribe + the "Secret" field).
+  One setting: `webhookSigningSecret` (optional, `type: "secret"`, vaulted via
+  `SECRET_KEYS.jira`; an empty field keeps the stored value). The drawer is only
+  reachable after the OAuth install, so its Update button never installs Jira
+  without credentials.
 - `lib/client.ts` — `JiraClient` (singleton via `getJiraClient()`). REST calls go to
   `https://api.atlassian.com/ex/jira/{cloudId}/rest/api/3{path}`. `getAuthHeaders()`
   refreshes the access token when within a 5-min expiry buffer and persists the new
@@ -77,9 +81,30 @@ this reason.
   assignable users filtered to Carbon employees.
 - `integrations.jira.issue.sync-notes.ts` — POST pushes Tiptap notes → ADF onto the
   linked issue's description (no-op if the task isn't linked).
-- `webhook.jira.$companyId.ts` — inbound webhook. Validates the company's `jira`
-  integration is active, parses with `syncIssueFromJiraSchema` (`@carbon/jobs`), then
+- `webhook.jira.$companyId.ts` — inbound webhook. Reads the raw body once, validates
+  the company's `jira` integration is active, verifies the signature (below), parses
+  with `syncIssueFromJiraSchema` (`@carbon/jobs`), then
   `trigger("sync-issue-from-jira", ...)`.
+
+## Webhook signing (opt-in)
+
+The webhook is created BY HAND as a Jira admin webhook, so a signature cannot be
+required without breaking existing installs. The route reads the secret with
+`getWebhookSigningSecret(serviceRole, companyId, "jira", row)`
+(`@carbon/ee/integrations/secrets`; a vault read failure → 500, fail-closed).
+
+- Secret set → `verifyJiraWebhook` (`packages/ee/src/jira/lib/webhook.ts`, exported
+  from `@carbon/ee/jira.server`): `X-Hub-Signature` must be `sha256=<hex HMAC-SHA256
+  of the RAW body keyed by the secret>` (only the `sha256` method is accepted;
+  constant-time, length-checked, non-hex rejected). Failure → logged `warning` with a
+  `reason` + 401, before parsing or triggering. Scheme per
+  https://developer.atlassian.com/cloud/jira/platform/webhooks/ ("Secure admin
+  webhooks"). Jira sends no signed timestamp, so there is no replay window; the job
+  re-fetches the issue, so a replay only re-applies Jira's current state.
+- No secret → accepted as before, with one `warning` per delivery that it is unsigned.
+- Shared HMAC compare: `verifyHmacSha256Signature`
+  (`packages/ee/src/integrations/webhook-signature.ts`).
+- Tests: `webhook.jira.$companyId.test.ts`.
 
 ## Inbound webhook job (Inngest, NOT Trigger.dev)
 

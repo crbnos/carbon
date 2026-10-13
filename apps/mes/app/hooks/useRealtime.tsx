@@ -1,29 +1,19 @@
-import { useRealtimeChannel } from "@carbon/react";
-import { useRevalidator } from "react-router";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { RealtimeTable } from "@carbon/database/realtime-tables";
+import { useRealtimeRevalidator, useRealtimeTable } from "@carbon/query";
 import { useUser } from "./useUser";
 
-export function useRealtime(table: string, filter?: string) {
+export { useRealtimeRevalidator };
+
+/**
+ * Reloads the page's data when `table` changes in the user's company. A route
+ * declares its tables in `handle.realtime` instead; this is for a component
+ * that is not a route. Only an `id=eq.` / `id=in.()` filter narrows it.
+ */
+export function useRealtime(table: RealtimeTable, filter?: string) {
   const { company } = useUser();
-  const revalidator = useRevalidator();
-
-  const channel = useRealtimeChannel({
-    topic: `postgres_changes:${table}`,
-    dependencies: [company.id, filter],
-    setup(channel) {
-      return channel.on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: table,
-          filter: filter ?? `companyId=eq.${company.id}`
-        },
-        () => {
-          revalidator.revalidate();
-        }
-      );
-    }
-  });
-
-  return channel;
+  return useRealtimeTable({ companyId: company.id, table, filter });
 }

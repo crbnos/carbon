@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { Enumerable } from "~/components/Enumerable";
 import type { getSupplierTypesList } from "~/modules/purchasing";
 import SupplierTypeForm from "~/modules/purchasing/ui/SupplierTypes/SupplierTypeForm";
@@ -63,12 +67,9 @@ SupplierType.displayName = "SupplierType";
 export default SupplierType;
 
 export const useSupplierTypes = () => {
-  const supplierTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getSupplierTypesList>>>();
-
-  useMount(() => {
-    supplierTypeFetcher.load(path.to.api.supplierTypes);
-  });
+  const supplierTypeFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getSupplierTypesList>>
+  >(path.to.api.supplierTypes);
 
   const options = useMemo(() => {
     const dataSource = supplierTypeFetcher.data?.data ?? [];

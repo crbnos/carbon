@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   DemandOrderSpec,
   DemandProjectionSpec,
+  HqPlanningSpec,
   PlanningData
 } from "../../types.ts";
 
@@ -62,9 +67,15 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
+export const HQ_PLANNING: HqPlanningSpec = {
+  reorderItemIds: ["MCH-HSG-PUMP", "CYL-HYD-40"],
+  demandProjections: [{ readableId: "MCH-HSG-PUMP", quantities: [2, 2, 3, 3] }]
+};
+
 export const precisionPlanning: PlanningData = {
   buyItemIds: BUY_ITEM_IDS,
   makeItemIds: MAKE_ITEM_IDS,
   demandProjections: DEMAND_PROJECTIONS,
-  demandOrder: DEMAND_ORDER
+  demandOrder: DEMAND_ORDER,
+  hq: HQ_PLANNING
 };

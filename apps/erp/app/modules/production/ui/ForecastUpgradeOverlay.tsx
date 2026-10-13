@@ -1,5 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuChartLine } from "react-icons/lu";
 import {
@@ -55,9 +58,7 @@ export default function ForecastUpgradeOverlay({
           <UpgradeOverlayDescription>{description}</UpgradeOverlayDescription>
         </UpgradeOverlayContent>
         <UpgradeOverlayActions>
-          <UpgradeOverlayUpgradeButton>
-            <Trans>Upgrade to Business</Trans>
-          </UpgradeOverlayUpgradeButton>
+          <UpgradeOverlayUpgradeButton />
         </UpgradeOverlayActions>
       </UpgradeOverlayCard>
     </UpgradeOverlay>

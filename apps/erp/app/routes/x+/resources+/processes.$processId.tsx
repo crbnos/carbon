@@ -1,15 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import type { BatchRules } from "@carbon/utils";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
+  batchRuleInitialValues,
   ensureProcessAbility,
   getProcess,
   ProcessForm,
@@ -18,7 +22,6 @@ import {
 } from "~/modules/resources";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-import { getCompanyId, processesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -85,7 +88,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (d.requiresAbility) {
     const abilityResult = await ensureProcessAbility(client, {
       processId: id,
-      processName: d.name,
       companyId,
       userId
     });
@@ -144,18 +146,10 @@ export async function action({ request }: ActionFunctionArgs) {
   return modal ? createProcess : redirect(path.to.processes);
 }
 
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window.clientCache?.setQueryData(
-    processesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
-}
-
 export default function ProcessRoute() {
   const { process } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const initialValues = {
     id: process.id!,
@@ -163,11 +157,14 @@ export default function ProcessRoute() {
     processType: process.processType ?? "Process",
     defaultStandardFactor: process.defaultStandardFactor ?? "Minutes/Piece",
     workCenters: process.workCenters ?? [],
-    // @ts-ignore
+    // @ts-expect-error
     suppliers: (process.suppliers ?? []).map((s) => s.id) ?? [],
     ...getCustomFields(process.customFields),
     completeAllOnScan: process.completeAllOnScan ?? false,
-    requiresAbility: process.requiresAbility ?? false
+    batchable: process.batchable ?? false,
+    batchType: process.batchType ?? ("Sequential" as const),
+    requiresAbility: process.requiresAbility ?? false,
+    ...batchRuleInitialValues(process.batchRules as BatchRules | null)
   };
 
   return <ProcessForm initialValues={initialValues} onClose={onClose} />;

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /*
 License: MIT
 Author: Pontus Abrahamssons
@@ -59,7 +63,7 @@ export const AttachmentSchema = BaseEntitySchema.extend({
   isPublic: z.boolean().default(false),
   uploadedBy: z.string().optional(),
   checksum: z.string().optional(), // For file integrity
-  metadata: z.record(z.any()).optional() // Provider-specific metadata
+  metadata: z.record(z.string(), z.any()).optional() // Provider-specific metadata
 });
 
 // Account schema for chart of accounts
@@ -117,7 +121,7 @@ export const CustomerSchema = BaseEntitySchema.extend({
   balance: z.number().optional(),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.any()).optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   attachments: z.array(AttachmentSchema).optional()
 });
 
@@ -140,7 +144,7 @@ export const VendorSchema = BaseEntitySchema.extend({
   balance: z.number().optional(),
   notes: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  customFields: z.record(z.any()).optional(),
+  customFields: z.record(z.string(), z.any()).optional(),
   attachments: z.array(AttachmentSchema).optional()
 });
 
@@ -162,7 +166,7 @@ export const ItemSchema = BaseEntitySchema.extend({
   isSold: z.boolean().default(true),
   isPurchased: z.boolean().default(false),
   taxCode: z.string().optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Enhanced invoice schema with attachments
@@ -212,7 +216,7 @@ export const InvoiceSchema = BaseEntitySchema.extend({
     })
   ),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Bill schema (for vendor bills)
@@ -259,7 +263,7 @@ export const BillSchema = BaseEntitySchema.extend({
     })
   ),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Enhanced transaction schema with attachments and reconciliation
@@ -309,7 +313,7 @@ export const TransactionSchema = BaseEntitySchema.extend({
     )
     .optional(),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Expense schema
@@ -350,7 +354,7 @@ export const ExpenseSchema = BaseEntitySchema.extend({
     )
     .optional(),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Journal Entry schema
@@ -385,7 +389,7 @@ export const JournalEntrySchema = BaseEntitySchema.extend({
   totalCredit: z.number(),
   notes: z.string().optional(),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Payment schema
@@ -416,7 +420,7 @@ export const PaymentSchema = BaseEntitySchema.extend({
   fees: z.number().optional(),
   notes: z.string().optional(),
   attachments: z.array(AttachmentSchema).optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Company info schema
@@ -435,7 +439,7 @@ export const CompanyInfoSchema = BaseEntitySchema.extend({
   logo: z.string().url().optional(),
   industry: z.string().optional(),
   employees: z.number().optional(),
-  customFields: z.record(z.any()).optional()
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Enhanced provider-specific metadata
@@ -445,8 +449,8 @@ export const ProviderMetadataSchema = z.object({
   lastSyncAt: z.string().datetime().optional(),
   syncHash: z.string().optional(),
   version: z.string().optional(),
-  rawData: z.record(z.any()).optional(), // Store original provider data
-  customFields: z.record(z.any()).optional()
+  rawData: z.record(z.string(), z.any()).optional(), // Store original provider data
+  customFields: z.record(z.string(), z.any()).optional()
 });
 
 // Enhanced API Request/Response schemas

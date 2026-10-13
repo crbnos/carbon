@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { z } from "zod";
 
@@ -382,7 +386,9 @@ export const documentSettingsSchema = z.object({
 export const documentTemplateTypeSchema = z.enum([
   "salesInvoice",
   "salesOrder",
+  "salesReturnOrder",
   "purchaseOrder",
+  "purchaseReturnOrder",
   "quote",
   "packingSlip",
   "stockTransfer",
@@ -399,7 +405,9 @@ export const documentTemplateTypeSchema = z.enum([
 export const REGISTRATION_LINE_DOCUMENT_TYPES: DocumentTemplateType[] = [
   "salesInvoice",
   "salesOrder",
+  "salesReturnOrder",
   "purchaseOrder",
+  "purchaseReturnOrder",
   "quote",
   "packingSlip"
 ];

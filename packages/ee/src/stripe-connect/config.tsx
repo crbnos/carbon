@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { STRIPE_CONNECT_ENABLED } from "@carbon/env";
 import { Badge, Button, toast } from "@carbon/react";
 import { useCallback, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { pieceLogo } from "../integrations/piece-logo";
+import { StripeConnectSetupInstructions } from "./setup-instructions";
 
 export const StripeConnectSettingsSchema = z.object({
   stripeAccountId: z.string().optional(),
@@ -27,7 +32,7 @@ export const StripeConnect = defineIntegration({
     "Connect your Stripe account to send invoices with direct online payment options to your customers, automatically updating payment statuses and AR ledger entries.",
   shortDescription: "Accept card and ACH payments directly on sales invoices.",
   images: [],
-  setupInstructions: StripeConnectStatus,
+  setupInstructions: StripeConnectSetupPanel,
   schema: StripeConnectSettingsSchema,
   settingGroups: [
     {
@@ -56,6 +61,22 @@ export const StripeConnect = defineIntegration({
     }
   ]
 });
+
+function StripeConnectSetupPanel(
+  props: Parameters<typeof StripeConnectStatus>[0]
+) {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="border-b border-border pb-4">
+        <p className="text-xs text-muted-foreground mb-3">
+          <strong>Getting Started:</strong>
+        </p>
+        <StripeConnectSetupInstructions />
+      </div>
+      <StripeConnectStatus {...props} />
+    </div>
+  );
+}
 
 function ConnectStripeAccountButton({
   label,

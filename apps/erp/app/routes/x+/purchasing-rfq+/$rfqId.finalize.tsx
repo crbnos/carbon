@@ -1,44 +1,49 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { tiptapToHTML } from "@carbon/utils";
+import { redirect, tiptapToHTML } from "@carbon/utils";
 import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import {
+  finalizePurchasingRfq,
   getPurchasingRFQ,
   getPurchasingRFQLines,
-  getPurchasingRFQSuppliers,
-  getSupplierContact,
   getSupplierInteractionDocuments,
-  getSupplierInteractionLineDocuments,
-  insertSupplierQuote,
-  purchasingRfqFinalizeValidator,
-  updatePurchasingRFQStatus,
-  upsertSupplierQuoteLine
+  getSupplierInteractionLineAttachments,
+  purchasingRfqFinalizeValidator
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
-import type { ItemType } from "~/modules/shared";
-import { itemType, upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "purchasing-rfq", "finalize");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {
-      create: "purchasing",
-      role: "employee",
-      bypassRls: true
-    });
+  const { client, companyId, userId } = await requirePermissions(request, {
+    create: "purchasing",
+    role: "employee",
+    bypassRls: true
+  });
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
+
+  // bypassRls hands back the service role and every read/write below is keyed
+  // on the URL's rfqId.
+  await requireCompanyRecord(client, "purchasingRfq", companyId, {
+    id: rfqId
+  });
 
   // Validate form data
   const validation = await validator(purchasingRfqFinalizeValidator).validate(
@@ -52,10 +57,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { suppliers: supplierContacts } = validation.data;
 
   // Get RFQ, lines, and suppliers
-  const [rfqResult, linesResult, suppliersResult] = await Promise.all([
+  const [rfqResult, linesResult] = await Promise.all([
     getPurchasingRFQ(client, rfqId),
-    getPurchasingRFQLines(client, rfqId),
-    getPurchasingRFQSuppliers(client, rfqId)
+    getPurchasingRFQLines(client, rfqId)
   ]);
 
   if (rfqResult.error) {
@@ -72,26 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (suppliersResult.error) {
-    throw redirect(
-      path.to.purchasingRfqDetails(rfqId),
-      await flash(
-        request,
-        error(suppliersResult.error, "Failed to load RFQ suppliers")
-      )
-    );
-  }
-
   const lines = linesResult.data ?? [];
-  const suppliers = suppliersResult.data ?? [];
-
-  if (suppliers.length === 0) {
-    throw redirect(
-      path.to.purchasingRfqDetails(rfqId),
-      await flash(request, error(null, "No suppliers found for this RFQ"))
-    );
-  }
-
   if (lines.length === 0) {
     throw redirect(
       path.to.purchasingRfqDetails(rfqId),
@@ -108,122 +93,56 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const requestUrl = new URL(request.url);
   const baseUrl = `${requestUrl.protocol}//${requestUrl.host}`;
 
-  // Create a supplier quote for each supplier
-  const createdQuotes: string[] = [];
-  const emailsToSend: Array<{
-    contactEmail: string;
-    contactFirstName: string;
-    supplierQuoteId: string;
-    supplierQuoteReadableId: string;
-    externalLinkId: string;
-  }> = [];
-
-  for (const rfqSupplier of suppliers) {
-    const supplierId = rfqSupplier.supplierId;
-    const supplierContactData = supplierContacts.find(
-      (sc) => sc.supplierId === supplierId
+  // The quotes, their lines and share links, and the RFQ's status are written
+  // in one transaction.
+  const finalize = await finalizePurchasingRfq(client, getDatabaseClient(), {
+    rfqId,
+    companyId,
+    userId
+  });
+  if (finalize.error) {
+    throw redirect(
+      path.to.purchasingRfqDetails(rfqId),
+      await flash(
+        request,
+        error(
+          finalize.error,
+          finalize.error.message || "Failed to create supplier quotes"
+        )
+      )
     );
-
-    // Create the supplier quote
-    const quoteResult = await insertSupplierQuote(client, {
-      supplierId,
-      companyId,
-      companyGroupId,
-      createdBy: userId
-    });
-
-    if (quoteResult.error || !quoteResult.data) {
-      logger.error("Failed to create supplier quote", {
-        error: quoteResult.error
-      });
-      continue;
-    }
-
-    const supplierQuoteId = quoteResult.data.id;
-    const supplierQuoteReadableId = quoteResult.data.supplierQuoteId;
-    createdQuotes.push(supplierQuoteId);
-
-    // Create quote lines for each RFQ line that has an itemId
-    for (const line of lines) {
-      // Skip lines without an itemId since supplierQuoteLine.itemId is NOT NULL
-      if (!line.itemId) {
-        logger.warning("Skipping line without itemId", { lineId: line.id });
-        continue;
-      }
-
-      await upsertSupplierQuoteLine(client, {
-        supplierQuoteId,
-        supplierQuoteLineType: itemType.includes(line.itemType as ItemType)
-          ? (line.itemType as ItemType)
-          : "Part",
-        itemId: line.itemId,
-        description: line.description ?? "",
-        quantity: line.quantity ?? [1],
-        inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode ?? "EA",
-        purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode ?? "EA",
-        conversionFactor: line.conversionFactor ?? 1,
-        companyId,
-        createdBy: userId
-      });
-    }
-
-    // Link RFQ to supplier quote
-    await client.from("purchasingRfqToSupplierQuote").insert({
-      purchasingRfqId: rfqId,
-      supplierQuoteId,
-      companyId
-    });
-
-    // Create or get external link for the supplier quote (required for sharing/email)
-    // First check if one already exists (in case quote was created before)
-    const existingLink = await client
-      .from("externalLink")
-      .select("id")
-      .eq("documentId", supplierQuoteId)
-      .eq("documentType", "SupplierQuote")
-      .eq("companyId", companyId)
-      .maybeSingle();
-
-    const externalLinkResult = await upsertExternalLink(client, {
-      id: existingLink.data?.id,
-      documentType: "SupplierQuote",
-      documentId: supplierQuoteId,
-      supplierId,
-      companyId
-    });
-
-    // Update quote with external link ID
-    if (externalLinkResult.data) {
-      await client
-        .from("supplierQuote")
-        .update({ externalLinkId: externalLinkResult.data.id })
-        .eq("id", supplierQuoteId);
-    }
-
-    // If contact was provided, queue up email
-    if (supplierContactData?.contactId && externalLinkResult.data) {
-      const supplierContact = await getSupplierContact(
-        client,
-        supplierContactData.contactId
-      );
-
-      if (supplierContact?.data?.contact?.email) {
-        emailsToSend.push({
-          contactEmail: supplierContact.data.contact.email,
-          contactFirstName: supplierContact.data.contact.firstName ?? "there",
-          supplierQuoteId,
-          supplierQuoteReadableId,
-          externalLinkId: externalLinkResult.data.id
-        });
-      }
-    }
   }
+  const createdQuotes = finalize.data.quotes;
 
-  // Update RFQ status to Requested
-  await updatePurchasingRFQStatus(client, {
-    id: rfqId,
-    status: "Requested",
-    updatedBy: userId
+  const contactIdBySupplier = new Map(
+    supplierContacts.flatMap((sc) =>
+      sc.contactId ? [[sc.supplierId, sc.contactId] as const] : []
+    )
+  );
+  const contacts = contactIdBySupplier.size
+    ? await client
+        .from("supplierContact")
+        .select("id, contact(email, firstName)")
+        .in("id", [...contactIdBySupplier.values()])
+        .eq("companyId", companyId)
+    : null;
+  const contactById = new Map(
+    (contacts?.data ?? []).map((row) => [row.id, row.contact])
+  );
+
+  const emailsToSend = createdQuotes.flatMap((quote) => {
+    const contactId = contactIdBySupplier.get(quote.supplierId);
+    const contact = contactId ? contactById.get(contactId) : undefined;
+    return contact?.email
+      ? [
+          {
+            contactEmail: contact.email,
+            contactFirstName: contact.firstName ?? "there",
+            supplierQuoteReadableId: quote.supplierQuoteId,
+            externalLinkId: quote.externalLinkId
+          }
+        ]
+      : [];
   });
 
   // Send emails if we have any contacts (using same format as supplier quote send)
@@ -240,39 +159,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     for (const doc of rfqDocs) {
       const storagePath = `${companyId}/supplier-interaction/${rfqId}/${doc.name}`;
-      const { data: signedUrlData } = await client.storage
-        .from("private")
+      const { data, error } = await storage(client)
+        .company(companyId)
         .createSignedUrl(storagePath, 3600);
 
-      if (signedUrlData?.signedUrl) {
-        attachments.push({ filename: doc.name, path: signedUrlData.signedUrl });
+      if (data) {
+        attachments.push({ filename: doc.name, path: data.signedUrl });
+      } else {
+        logger.error("Failed to create signed URL for attachment", {
+          storagePath,
+          error
+        });
       }
     }
 
-    // Fetch line-level supplier interaction documents
-    for (const line of lines) {
-      if (!line.id) continue;
-
-      const lineDocs = await getSupplierInteractionLineDocuments(
+    attachments.push(
+      ...(await getSupplierInteractionLineAttachments(
         client,
         companyId,
-        line.id
-      );
-
-      for (const doc of lineDocs) {
-        const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-        const { data: signedUrlData } = await client.storage
-          .from("private")
-          .createSignedUrl(storagePath, 3600);
-
-        if (signedUrlData?.signedUrl) {
-          attachments.push({
-            filename: doc.name,
-            path: signedUrlData.signedUrl
-          });
-        }
-      }
-    }
+        lines.flatMap((line) => (line.id ? [line.id] : []))
+      ))
+    );
 
     // Convert internal notes to HTML
     const internalNotes = (rfqResult.data?.internalNotes ?? {}) as JSONContent;

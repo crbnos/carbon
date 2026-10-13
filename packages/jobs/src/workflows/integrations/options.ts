@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /** The two options providers integration actions name, and the input every one of
  * them depends on.
  *
@@ -10,7 +14,7 @@
 /** Which of the company's connections the step acts as. Declared in `@carbon/workflows`
  * because the builder reads it too — it must know whether an app is connected before it
  * can offer any of that app's steps. */
-export { INTEGRATION_CONNECTION_INPUT as CONNECTION_INPUT } from "@carbon/workflows";
+export { INTEGRATION_CONNECTION_INPUT as CONNECTION_INPUT } from "@carbon/ee/workflows";
 
 /** Lists the company's connections for one piece. */
 export const CONNECTION_PROVIDER = "integration.connection";

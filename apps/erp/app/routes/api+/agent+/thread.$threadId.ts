@@ -1,11 +1,41 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { getMessages } from "~/modules/agent";
+import { getDisplayMessages, getThread } from "~/modules/agent";
+
+const logger = getLogger("erp", "agent-thread");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
   const threadId = params.threadId;
-  if (!threadId) return { messages: [] };
-  const messages = await getMessages(client, { threadId, companyId });
-  return { messages: messages.data ?? [] };
+  if (!threadId) throw new Response("Conversation not found", { status: 404 });
+
+  // A missing or foreign thread is a 404, so the browser falls back to a new chat
+  // instead of sending into a thread it can no longer read.
+  const thread = await getThread(client, { threadId, companyId, userId });
+  if (!thread.data) {
+    if (thread.error) {
+      logger.error("Failed to read agent thread", {
+        companyId,
+        threadId,
+        error: thread.error
+      });
+    }
+    throw new Response("Conversation not found", { status: 404 });
+  }
+
+  const messages = await getDisplayMessages(client, { threadId, companyId });
+  if (messages.error) {
+    logger.error("Failed to load agent messages", {
+      companyId,
+      threadId,
+      error: messages.error
+    });
+    throw new Response("Failed to load the conversation", { status: 500 });
+  }
+  return { messages: messages.data };
 }

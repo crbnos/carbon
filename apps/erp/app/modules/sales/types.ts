@@ -1,8 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
+import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
 import type {
   getCustomer,
+  getCustomerBankAccounts,
   getCustomerContacts,
   getCustomerLocations,
   getCustomerStatuses,
@@ -30,16 +36,27 @@ import type {
   getSalesRFQs,
   priceSourceTypes
 } from "./sales.service";
+import type {
+  pricingRuleConfigurationPriceValidator,
+  QuoteLinePriceSource
+} from "./sales.utils";
 
 // Pricing types
 export type MatchedRule = {
   id: string;
   name: string;
-  ruleType: string;
-  amountType: string;
+  ruleType: Database["public"]["Enums"]["pricingRuleType"];
+  amountType: Database["public"]["Enums"]["pricingRuleAmountType"];
   amount: number;
   priority: number;
+  // Parsed from the stored JSONB by `toMatchedRule`; empty for any rule type
+  // but Configuration.
+  configurationPrices: PricingRuleConfigurationPrice[];
 };
+
+export type PricingRuleConfigurationPrice = z.infer<
+  typeof pricingRuleConfigurationPriceValidator
+>;
 
 export type PriceOverrideBreak = {
   id?: string;
@@ -89,6 +106,7 @@ export type PriceResolutionInput = {
   quantity: number;
   date?: string;
   existingBasePrice?: number;
+  configuration?: Record<string, unknown> | null;
 };
 
 export type PriceResolutionResult = {
@@ -105,6 +123,21 @@ export type PriceTraceStep = {
   amount: number;
   adjustment?: number;
   ruleId?: string;
+  // A readable name for the step's badge — the parameter label on a
+  // Configuration step.
+  label?: string;
+};
+
+// One quantity break of a quote line: `trace` is how its price was reached
+// (stored with the price; null for a manual price or one set before traces
+// were recorded), `currentTrace` what today's rules would produce (null for a
+// manual price).
+export type QuoteLinePriceTrace = {
+  quantity: number;
+  unitPrice: number;
+  priceSource: QuoteLinePriceSource;
+  trace: PriceTraceStep[] | null;
+  currentTrace: PriceTraceStep[] | null;
 };
 
 export type PricingRule = NonNullable<
@@ -147,6 +180,10 @@ export type CostEffects = {
 
 export type Customer = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]
+>[number];
+
+export type CustomerBankAccount = NonNullable<
+  Awaited<ReturnType<typeof getCustomerBankAccounts>>["data"]
 >[number];
 
 export type CustomerContact = NonNullable<

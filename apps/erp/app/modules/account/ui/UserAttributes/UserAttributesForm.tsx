@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -14,7 +19,6 @@ import { useLocale } from "@react-aria/i18n";
 import { useState } from "react";
 import { LuFile, LuPaperclip } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
-import type { ZodSchema } from "zod";
 import CustomerAvatar from "~/components/CustomerAvatar";
 import { DateTime } from "~/components/DateTime";
 import FileDropzone from "~/components/FileDropzone";
@@ -79,7 +83,7 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
       <VStack spacing={4}>
         {attributeCategory.userAttribute.map((attribute) => {
           const genericProps = getGenericProps(
-            // @ts-ignore
+            // @ts-expect-error
             attribute as PublicAttributes["userAttribute"],
             optimisticUpdates[attribute.id]
           );
@@ -97,7 +101,6 @@ const UserAttributesForm = ({ attributeCategory }: UserAttributesFormProps) => {
                   [attribute.id]: value
                 }))
               }
-              // @ts-ignore
               updateFetcher={updateFetcher}
               userId={userId}
               {...genericProps}
@@ -167,7 +170,7 @@ function TypedForm(
         <ValidatedForm
           method="post"
           action={path.to.userAttribute(userId)}
-          validator={attributeBooleanValidator as ZodSchema}
+          validator={attributeBooleanValidator}
           defaultValues={{
             userAttributeId,
             userAttributeValueId,
@@ -176,7 +179,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -213,7 +216,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -246,7 +249,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -287,7 +290,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -320,7 +323,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -353,7 +356,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -386,7 +389,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -419,7 +422,7 @@ function TypedForm(
           fetcher={updateFetcher}
           onSubmit={(data) => onSubmit(data.value)}
         >
-          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+          <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
             <p className="text-muted-foreground self-center">
               {attribute.name}
             </p>
@@ -480,7 +483,7 @@ function TypedDisplay(
   switch (type) {
     case DataType.Boolean:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground items-center">{attribute.name}</p>
           {displayValue === "N/A" ? (
             <p className="self-center">{displayValue}</p>
@@ -504,7 +507,7 @@ function TypedDisplay(
     case DataType.List:
     case DataType.Text:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           <p className="self-center">
             {type === DataType.Date &&
@@ -530,7 +533,7 @@ function TypedDisplay(
       );
     case DataType.Numeric:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           <p className="self-center">{displayValue.toLocaleString(locale)}</p>
           <UpdateRemoveButtons
@@ -545,7 +548,7 @@ function TypedDisplay(
       );
     case DataType.User:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <UserSelect disabled value={value.toString()} />
@@ -565,7 +568,7 @@ function TypedDisplay(
       );
     case DataType.Customer:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <CustomerAvatar customerId={value.toString()} />
@@ -585,7 +588,7 @@ function TypedDisplay(
       );
     case DataType.Supplier:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <SupplierAvatar supplierId={value.toString()} />
@@ -605,7 +608,7 @@ function TypedDisplay(
       );
     case DataType.File:
       return (
-        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+        <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
           <p className="text-muted-foreground self-center">{attribute.name}</p>
           {value ? (
             <a
@@ -770,8 +773,8 @@ function FileAttributeForm({
 
     const fileName = `${company.id}/person/${userId}/${fileUpload.name}`;
 
-    const upload = await carbon?.storage
-      .from("private")
+    const upload = await storage(carbon)
+      .company(company.id)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true
@@ -800,7 +803,7 @@ function FileAttributeForm({
         if (filePath) onSubmit(filePath);
       }}
     >
-      <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center">
+      <div className="grid grid-cols-[1fr_2fr_1fr] border-t border-border gap-x-2 pt-3 w-full items-center max-md:grid-cols-1 max-md:gap-2">
         <p className="text-muted-foreground self-center">{attribute.name}</p>
         <div>
           <Hidden name="type" value="file" />

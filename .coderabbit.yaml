@@ -1,0 +1,109 @@
+# CodeRabbit configuration for Carbon.
+#
+# Two jobs here. First, keep generated and agent-facing files out of review: they
+# are the bulk of a large PR's file count, nothing in them is hand-written, and a
+# review budget spent on a 13-locale .po diff is a review budget not spent on the
+# code. Second, hand CodeRabbit the repo conventions it cannot infer from a diff —
+# the ones in AGENTS.md and .claude/rules/ that are easy to violate and invisible
+# in a single file's context.
+language: en-US
+
+reviews:
+  profile: chill
+  high_level_summary: true
+  poem: false
+  review_status: true
+  collapse_walkthrough: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+    # Stacked PRs. `base_branches` is a list of regexes, and it defaults to the
+    # repository's default branch alone — so a PR based on another feature branch
+    # gets no automatic review at all, which is what happens to the upper half of
+    # a split PR. Carbon splits large PRs into a stack to stay under the 300-file
+    # review limit, so any branch may legitimately be a base.
+    base_branches:
+      - ".*"
+
+  path_filters:
+    # Generated — regenerate, never hand-edit (AGENTS.md: "Never hand-edit
+    # generated DB types").
+    - "!packages/database/src/types.ts"
+    - "!packages/database/src/swagger-docs-schema.ts"
+    - "!packages/jobs/manifests/schema.json"
+    - "!apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"
+    - "!**/pnpm-lock.yaml"
+    # Machine-filled translation catalogs (the /translate skill writes these).
+    - "!packages/locale/locales/**/*.po"
+    # Agent-facing context, not shipped code.
+    - "!.ai/**"
+    - "!.claude/**"
+    - "!.codex/**"
+    # Bundled demo artwork and CAD assemblies — binary/vector, reviewed visually.
+    - "!packages/database/src/datasets/assets/**"
+
+  path_instructions:
+    - path: "apps/erp/app/modules/**"
+      instructions: |
+        Every query and write must be scoped by `companyId` — Carbon is
+        multi-tenant and every table carries one. Flag any Supabase or Kysely
+        query that filters by id alone.
+
+        Never construct a DB connection, pool or Kysely client inside a
+        `*.service.ts`: those files are re-exported through a module barrel that
+        client components import, so they are bundled for the browser. The client
+        is built in a `.server` file and passed in as a `db` argument.
+
+        Flag a query inside a loop (N+1). Collect the ids and make one `.in()`
+        call, an embed, or a view.
+
+        Chained Supabase-client writes are not a transaction — the client has
+        none. Multi-row writes need a Kysely transaction or an RPC.
+    - path: "**/*.{ts,tsx}"
+      instructions: |
+        Never use the JavaScript `Date` type for parsing, formatting or
+        arithmetic on date-only values: it shifts them by the runtime timezone.
+        Use `@internationalized/date` plus `formatDate` from `@carbon/utils`.
+
+        Never use `Math.round`/`ceil`/`floor` or `.toFixed` on a value-bearing
+        number (money, quantity, rate). Use `round`/`applyRate`/`deriveRate` from
+        `@carbon/utils`, and take display digits from a named formatter
+        (`formatMoney`/`formatPrice`/`formatQuantity`) rather than inline
+        `minimumFractionDigits`/`maximumFractionDigits`.
+
+        A `taxPercent` and its amount are one value pair — any write that sets
+        one must set both.
+    - path: "packages/database/supabase/migrations/**"
+      instructions: |
+        Migrations must be idempotent: the deploy runner retries a failed file
+        over committed partial state, so guard every DDL statement.
+
+        Never edit a migration that is already on main — fix forward with a new
+        timestamped file.
+
+        Adding a column to a table means dropping and recreating every view over
+        it; a `CREATE OR REPLACE VIEW` that omits `WITH (security_invoker = true)`
+        silently turns an invoker view into an owner-rights one that bypasses RLS.
+
+        Redefining a function: fork from its NEWEST definition, not an older copy —
+        a later-timestamped fork from a stale base silently reverts a concurrent
+        redefinition.
+    - path: "packages/database/supabase/functions/**"
+      instructions: |
+        `verify_jwt = true` only checks the JWT signature, and the published anon
+        key is a valid JWT. Every edge function must authorize in-function:
+        `requirePermissions`, `requireCaller`, or `requireServiceRole`.
+
+        A function that takes a record id must re-read that record scoped by
+        `companyId` and 404 on a miss. The caller's route permission proves
+        nothing about the ids in the body.
+    - path: "packages/ee/**"
+      instructions: |
+        The entitlement check must live INSIDE the commercial function
+        (`requireEntitlement`), not as a call in an open route — a gate in
+        community-licensed code is deletable without breaching the license.
+
+        Watch the `.server` boundary: a client-safe barrel that transitively
+        reaches a `.server` module breaks the React Router build, and typecheck
+        does not catch it.

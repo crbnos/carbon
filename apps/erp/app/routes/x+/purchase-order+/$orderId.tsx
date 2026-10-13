@@ -1,19 +1,35 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  approveRequest,
+  canApproveRequest,
+  canCancelRequest,
+  getLatestApprovalRequestForDocument,
+  getLowerTierApproverUserIds,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { VStack } from "@carbon/react";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
+import type { FileObject } from "@supabase/storage-js";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useParams } from "react-router";
+import { useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
@@ -35,14 +51,6 @@ import {
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompany, getCompanySettings } from "~/modules/settings";
-import {
-  approveRequest,
-  canApproveRequest,
-  canCancelRequest,
-  getLatestApprovalRequestForDocument,
-  getLowerTierApproverUserIds,
-  rejectRequest
-} from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -53,6 +61,27 @@ import { stripSpecialCharacters } from "~/utils/string";
 const logger = getLogger("erp", "purchase-order");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Purchase Order`,
+  realtime: [
+    { table: "purchaseOrder", column: "id", param: "orderId" },
+    { table: "purchaseOrderLine", column: "purchaseOrderId", param: "orderId" },
+    {
+      // Receipts and invoices of this order share its supplier interaction
+      // (`usePurchaseOrder`, `getSupplierInteraction`).
+      table: "receipt",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    },
+    {
+      table: "purchaseInvoice",
+      filter: ({ data }) =>
+        data?.purchaseOrder?.supplierInteractionId
+          ? `supplierInteractionId=eq.${data.purchaseOrder.supplierInteractionId}`
+          : undefined
+    }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Orders`, to: path.to.purchaseOrders },
     (data) => data?.purchaseOrder?.purchaseOrderId
@@ -98,7 +127,13 @@ export async function action(args: ActionFunctionArgs) {
     orderId
   );
 
-  if (!approvalRequest.data || approvalRequest.data.id !== approvalRequestId) {
+  // The service role bypasses RLS and orderId comes from the URL: the request
+  // must belong to this company, not just to a purchase order with this id.
+  if (
+    !approvalRequest.data ||
+    approvalRequest.data.id !== approvalRequestId ||
+    approvalRequest.data.companyId !== companyId
+  ) {
     throw redirect(
       path.to.purchaseOrder(orderId),
       await flash(request, error(null, "Approval request not found"))
@@ -221,8 +256,8 @@ export async function action(args: ActionFunctionArgs) {
 
           documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
 
-          const documentFileUpload = await serviceRole.storage
-            .from("private")
+          const documentFileUpload = await storage(serviceRole)
+            .company(companyId)
             .upload(documentFilePath, file, {
               cacheControl: `${12 * 60 * 60}`,
               contentType: "application/pdf",
@@ -270,7 +305,7 @@ export async function action(args: ActionFunctionArgs) {
             buyer
           ] = await Promise.all([
             getCompany(serviceRole, companyId),
-            getSupplierContact(serviceRole, supplierContact),
+            getSupplierContact(serviceRole, supplierContact, companyId),
             getPurchaseOrderLines(serviceRole, orderId),
             getPurchaseOrderLocations(serviceRole, orderId),
             getPaymentTermsList(serviceRole, companyId),
@@ -318,9 +353,15 @@ export async function action(args: ActionFunctionArgs) {
             const html = await renderAsync(emailTemplate);
             const text = await renderAsync(emailTemplate, { plainText: true });
 
-            const { data: signedUrlData } = await serviceRole.storage
-              .from("private")
+            const signed = await storage(serviceRole)
+              .company(companyId)
               .createSignedUrl(documentFilePath!, 3600);
+            if (signed.error) {
+              logger.error("Failed to create signed URL for attachment", {
+                storagePath: documentFilePath,
+                error: signed.error
+              });
+            }
 
             await trigger("send-email", {
               to: [buyer.data.email, supplierEmail],
@@ -329,10 +370,10 @@ export async function action(args: ActionFunctionArgs) {
               subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
               html,
               text,
-              attachments: signedUrlData?.signedUrl
+              attachments: signed.data
                 ? [
                     {
-                      path: signedUrlData.signedUrl,
+                      path: signed.data.signedUrl,
                       filename: fileName!
                     }
                   ]
@@ -351,19 +392,18 @@ export async function action(args: ActionFunctionArgs) {
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
       ) {
-        const priceUpdate = await serviceRole.functions.invoke(
-          "update-purchased-prices",
-          {
-            body: {
-              purchaseOrderId: orderId,
-              companyId,
-              userId,
-              source: "purchaseOrder",
-              updatePrices: true,
-              updateLeadTimes: false
-            }
-          }
-        );
+        const priceUpdate = await serverFns
+          .system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          })
+          .invoke("update-purchased-prices", {
+            purchaseOrderId: orderId,
+            source: "purchaseOrder",
+            updatePrices: true,
+            updateLeadTimes: false
+          });
 
         if (priceUpdate.error) {
           logger.error("Failed to update purchased prices", {
@@ -382,6 +422,17 @@ export async function action(args: ActionFunctionArgs) {
     )
   );
 }
+
+const toAttachments = (docs: FileObject[], folder: string) =>
+  docs.map((d) => ({
+    source: "po" as const,
+    name: d.name,
+    size:
+      (d.metadata as { size?: number } | null | undefined)?.size != null
+        ? Math.round(((d.metadata as { size?: number }).size as number) / 1024)
+        : null,
+    path: `${folder}/${d.name}`
+  }));
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
@@ -491,48 +542,52 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     )
   );
   const supplierInteractionId = purchaseOrder.data?.supplierInteractionId;
-  const [defaultAttachments, adHocDocs, currency] = await Promise.all([
+  // One listing feeds both the documents panel and the attachment list, and
+  // neither holds up the page.
+  const files = supplierInteractionId
+    ? getSupplierInteractionDocuments(
+        serviceRole,
+        companyId,
+        supplierInteractionId
+      )
+    : Promise.resolve([]);
+  const resolvedAttachments = Promise.all([
     getDefaultAttachmentsForPO(serviceRole, {
       companyId,
       supplierId: purchaseOrder.data?.supplierId ?? null,
       itemIds
     }),
-    supplierInteractionId
-      ? getSupplierInteractionDocuments(
-          serviceRole,
-          companyId,
-          supplierInteractionId
-        )
-      : Promise.resolve([]),
-    purchaseOrder.data?.currencyCode
-      ? getCurrencyByCode(
-          serviceRole,
-          companyGroupId,
-          purchaseOrder.data.currencyCode
-        )
-      : null
-  ]);
-  const adHocAttachments = adHocDocs.map((d) => ({
-    source: "po" as const,
-    name: d.name,
-    size:
-      (d.metadata as { size?: number } | null | undefined)?.size != null
-        ? Math.round(((d.metadata as { size?: number }).size as number) / 1024)
-        : null,
-    path: `${companyId}/supplier-interaction/${supplierInteractionId}/${d.name}`
-  }));
-  const resolvedAttachments = [...defaultAttachments, ...adHocAttachments];
+    files
+  ])
+    .then(([defaults, adHocDocs]) => [
+      ...defaults,
+      ...toAttachments(
+        adHocDocs,
+        `${companyId}/supplier-interaction/${supplierInteractionId}`
+      )
+    ])
+    .catch((error) => {
+      logger.error("Failed to resolve purchase order attachments", {
+        companyId,
+        orderId,
+        error
+      });
+      return [];
+    });
+  const currency = purchaseOrder.data?.currencyCode
+    ? await getCurrencyByCode(
+        serviceRole,
+        companyGroupId,
+        purchaseOrder.data.currencyCode
+      )
+    : null;
 
   return {
     purchaseOrder: purchaseOrder.data,
     purchaseOrderDelivery: purchaseOrderDelivery.data,
     currency: currency?.data ?? null,
     lines: lines.data ?? [],
-    files: getSupplierInteractionDocuments(
-      client,
-      companyId,
-      purchaseOrder.data.supplierInteractionId!
-    ),
+    files,
     interaction: interaction?.data,
     supplier: supplier?.data ?? null,
     approvalRequest: approvalRequest.data,
@@ -560,7 +615,7 @@ export default function PurchaseOrderRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

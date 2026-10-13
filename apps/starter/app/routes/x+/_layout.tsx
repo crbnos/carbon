@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonProvider,
   getAppUrl,
@@ -9,9 +14,22 @@ import {
   destroyAuthSession,
   requireAuthSession
 } from "@carbon/auth/session.server";
+import { setClientCompanyId } from "@carbon/query/cache";
 import { Toaster, useNProgress } from "@carbon/react";
-import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { redirectExternal } from "@carbon/utils";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
+import { Outlet, useLoaderData } from "react-router";
+import { path } from "~/utils/path";
+
+// The refreshed session reaches the client through this loader, and the
+// refresh asks for no other loader to re-run.
+export const shouldRevalidate: ShouldRevalidateFunction = ({
+  formAction,
+  defaultShouldRevalidate
+}) => formAction === path.to.refreshSession || defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { accessToken, companyId, expiresAt, expiresIn, userId } =
@@ -32,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const company = companies.data?.find((c) => c.companyId === companyId);
   if (!company) {
-    throw redirect(getAppUrl());
+    throw redirectExternal(getAppUrl());
   }
 
   return {
@@ -48,13 +66,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session } = useLoaderData<typeof loader>();
+  const { session, company, user } = useLoaderData<typeof loader>();
+  // During render, not in an effect: the cached API reads key on the company.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
 
   useNProgress();
 
   return (
     <CarbonProvider session={session}>
       <Outlet />
+      {user && company?.id && (
+        <AccountSettings
+          api={path.to.erpApi}
+          user={user}
+          companyId={company.id}
+        />
+      )}
       <Toaster position="bottom-right" />
     </CarbonProvider>
   );

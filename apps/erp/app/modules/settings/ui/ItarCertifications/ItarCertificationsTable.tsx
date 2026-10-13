@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatDate } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -39,13 +43,13 @@ const ItarCertificationsTable = memo(
           accessorKey: "name",
           header: t`Name`,
           cell: (item) => item.getValue() ?? dash,
-          meta: { icon: <LuUser /> }
+          meta: { mobile: "P1", icon: <LuUser /> }
         },
         {
           accessorKey: "email",
           header: t`Email`,
           cell: (item) => item.getValue() ?? dash,
-          meta: { icon: <LuMail /> }
+          meta: { mobile: "P3", icon: <LuMail /> }
         },
         {
           accessorKey: "lastLogin",
@@ -60,7 +64,7 @@ const ItarCertificationsTable = memo(
           accessorKey: "certVersion",
           header: t`Cert Version`,
           cell: ({ row }) => row.original.certVersion ?? t`Not certified`,
-          meta: { icon: <LuBadgeCheck /> }
+          meta: { mobile: "P2", icon: <LuBadgeCheck /> }
         },
         {
           accessorKey: "certifiedAt",

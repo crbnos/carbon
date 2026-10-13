@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import "./global.css";
 import "./editorial.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
@@ -42,6 +46,7 @@ export const metadata: Metadata = {
     "MES",
     "MRP",
     "manufacturing software",
+    "Carbon API",
     "REST API",
     "MCP"
   ],

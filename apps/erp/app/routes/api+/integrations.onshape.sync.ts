@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "integrations-onshape-sync");
 
@@ -44,18 +50,16 @@ export async function action({ request }: ActionFunctionArgs) {
     const parsed = onShapeDataValidator.parse(JSON.parse(rows as string));
     const serviceRole = await getCarbonServiceRole();
 
-    const sync = await serviceRole.functions.invoke("sync", {
-      body: {
+    const synced = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("sync", {
         type: "onshape",
-        makeMethodId,
-        data: parsed,
-        companyId,
-        userId
-      }
-    });
+        makeMethodId: makeMethodId as string,
+        data: parsed
+      });
 
-    if (sync.error) {
-      logger.info("Failed to sync onshape data", { error: sync.error });
+    if (synced.error) {
+      logger.info("Failed to sync onshape data", { error: synced.error });
       return data(
         { success: false, message: "Failed to sync onshape data" },
         { status: 400 }
@@ -70,7 +74,8 @@ export async function action({ request }: ActionFunctionArgs) {
       .delete()
       .eq("entityType", "item")
       .eq("entityId", itemId)
-      .eq("integration", "onshape");
+      .eq("integration", "onshape")
+      .eq("companyId", companyId);
 
     await client.from("externalIntegrationMapping").insert({
       entityType: "item",

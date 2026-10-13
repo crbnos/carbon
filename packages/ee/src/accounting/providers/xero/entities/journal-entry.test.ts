@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { validateDimensionSlots } from "../../../core/dimension-mapping";
 import {
@@ -288,11 +292,24 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     // reason is the loud delivery-hole message instead — either way the
     // journal is never pushed in documents mode.
     const backed = ["Sales Invoice", "Purchase Invoice", "Payment"];
+    // Memos resolve their family from the memo's PARTY, which this
+    // party-less reason helper cannot know — so they report that instead.
+    const partyResolved = ["Credit Memo", "Debit Memo"];
+    // Reimbursement IS document-backed (the `reimbursement` entity), but this
+    // helper only knows the invoice/bill flags, so it reports the backing
+    // sync as disabled. Either way the journal never pushes here — and the
+    // real decision, with the full docSync flags, is made by
+    // getJournalPostingPolicyDecision at enqueue time.
+    const backedButUnflagged = ["Reimbursement"];
 
     for (const sourceType of POSTING_SYNC_EXCLUDED_SOURCE_TYPES) {
       const expected = backed.includes(sourceType)
         ? "excluded from posting sync"
-        : "no document representation";
+        : partyResolved.includes(sourceType)
+          ? "customer or supplier memo"
+          : backedButUnflagged.includes(sourceType)
+            ? "document sync is disabled"
+            : "no document representation";
 
       expect(
         getPostingSyncSourceTypeSkipReason(sourceType, makeSettings()),
@@ -372,7 +389,10 @@ describe("resolvePostingSyncSettings", () => {
     expect(DEFAULT_POSTING_SYNC_SETTINGS.enabled).toBe(true);
     expect(DEFAULT_POSTING_SYNC_SETTINGS.families).toEqual({
       ar: "documents",
-      ap: "documents"
+      ap: "documents",
+      // Memo families are opt-in, go-forward — see PostingSyncStoredSchema.
+      creditMemo: "none",
+      supplierCredit: "none"
     });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.periodLockPolicy).toBe("park");
     expect(DEFAULT_POSTING_SYNC_SETTINGS.onUnmappedDimensionValue).toBe("warn");
@@ -383,7 +403,7 @@ describe("resolvePostingSyncSettings", () => {
     ).toEqual({ enabled: true, granularity: "individual" });
     expect(
       DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes["Production Event"]
-    ).toEqual({ enabled: true, granularity: "daily-summary" });
+    ).toEqual({ enabled: true, granularity: "individual" });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes.Manual).toEqual({
       enabled: false,
       granularity: "individual"
@@ -412,7 +432,12 @@ describe("resolvePostingSyncSettings", () => {
       granularity: "daily-summary"
     });
     expect(resolved.sourceTypes.Manual.enabled).toBe(false);
-    expect(resolved.families).toEqual({ ar: "documents", ap: "documents" });
+    expect(resolved.families).toEqual({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      supplierCredit: "none"
+    });
   });
 
   it("upgrades a stored v2 sourceTypes array + includeManual through the shim", () => {

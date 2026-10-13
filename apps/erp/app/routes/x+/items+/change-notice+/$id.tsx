@@ -1,10 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNotice,
@@ -40,6 +50,8 @@ import { getTagsList } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "change-notice");
+
 export const handle: Handle = {
   // Leaf crumb: show the CO's readable number (from loader data), not a second
   // static "Change Notices" (the parent _layout already renders the list crumb).
@@ -54,30 +66,42 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "parts"
   });
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const [changeNotice, types, affected, diff, actions, nonConformances] =
-    await Promise.all([
-      getChangeNotice(client, id, companyId),
-      getChangeNoticeTypesList(client, companyId),
-      getChangeNoticeAffectedItems(client, id, companyId),
-      getChangeNoticeDiff(client, id, companyId),
-      getChangeNoticeActions(client, id, companyId),
-      // NCR cross-link picker options (4a).
-      getIssues(client, companyId)
-    ]);
+  const [
+    changeNotice,
+    types,
+    affected,
+    diff,
+    actions,
+    nonConformances,
+    locationsList,
+    requiredActionsList,
+    partTags,
+    operationTags
+  ] = await Promise.all([
+    getChangeNotice(client, id, companyId),
+    getChangeNoticeTypesList(client, companyId),
+    getChangeNoticeAffectedItems(client, id, companyId),
+    getChangeNoticeDiff(client, id, companyId),
+    getChangeNoticeActions(client, id, companyId),
+    // NCR cross-link picker options (4a).
+    getIssues(client, companyId),
+    // Company locations feed the embedded PartProperties pick-method editor.
+    getLocationsList(client, companyId),
+    // Active default-action templates for the "Add Actions" picker.
+    getChangeNoticeRequiredActionsList(client, companyId),
+    getTagsList(client, companyId, "part"),
+    getTagsList(client, companyId, "operation")
+  ]);
 
-  // Company locations feed the embedded PartProperties pick-method editor.
-  const locations = (await getLocationsList(client, companyId)).data ?? [];
-
-  // Active default-action templates for the "Add Actions" picker.
-  const requiredActions =
-    (await getChangeNoticeRequiredActionsList(client, companyId)).data ?? [];
+  const locations = locationsList.data ?? [];
+  const requiredActions = requiredActionsList.data ?? [];
 
   if (changeNotice.error) {
     throw redirect(
@@ -92,23 +116,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Human label for the currently-linked NCR (so the sidebar link shows the
   // readable id/name, not the raw id).
   const linkedNonConformanceId = changeNotice.data?.nonConformanceId ?? null;
-  const linkedNonConformance = linkedNonConformanceId
-    ? (await getIssue(client, linkedNonConformanceId)).data
+  const linkedNonConformancePromise = linkedNonConformanceId
+    ? getIssue(client, linkedNonConformanceId).then((issue) => issue.data)
     : null;
 
   const affectedRows = affected.data ?? [];
 
   // Impact = where each affected item is used across the system (jobs, POs,
   // sales, receipts, methods, NCRs, …) — the same "Used In" data the part detail
-  // page loads, one entry per affected item.
-  const impactUsedIn = await Promise.all(
+  // page loads, one entry per affected item. Streamed: only the impact panel
+  // reads it.
+  const impactUsedIn = Promise.all(
     affectedRows.map(async (a) => ({
       itemId: a.itemId,
       readableIdWithRevision: a.item?.readableIdWithRevision ?? a.itemId,
       itemName: a.item?.name ?? null,
       usedIn: await getPartUsedIn(client, a.itemId, companyId)
     }))
-  );
+  ).catch((error) => {
+    logger.error("Failed to load change notice impact", {
+      companyId,
+      changeNoticeId: id,
+      error
+    });
+    return [];
+  });
 
   const diffByAffectedId = new Map(
     (diff.data?.items ?? []).map((entry) => [entry.affectedItemId, entry])
@@ -150,56 +182,51 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           affectedItem.changeType === "Replacement Part" ||
           affectedItem.changeType === "New Part") &&
         affectedItem.item?.type === "Part";
-      let partData = null;
-      if (needsAttributes) {
-        const [partSummary, supplierParts, pickMethods, partTags] =
-          await Promise.all([
+      const partDataPromise = needsAttributes
+        ? Promise.all([
             getPart(client, draftItemId, companyId),
             getSupplierParts(client, draftItemId, companyId),
-            getPickMethods(client, draftItemId, companyId),
-            getTagsList(client, companyId, "part")
-          ]);
-        if (partSummary.data) {
-          partData = {
-            itemId: draftItemId,
-            locations,
-            partSummary: partSummary.data,
-            files: getItemFiles(client, draftItemId, companyId),
-            supplierParts: supplierParts.data ?? [],
-            pickMethods: pickMethods.data ?? [],
-            makeMethods: getMakeMethods(client, draftItemId, companyId),
-            tags: partTags.data ?? []
-          };
-        }
-      }
+            getPickMethods(client, draftItemId, companyId)
+          ]).then(([partSummary, supplierParts, pickMethods]) =>
+            partSummary.data
+              ? {
+                  itemId: draftItemId,
+                  locations,
+                  partSummary: partSummary.data,
+                  files: getItemFiles(client, draftItemId, companyId),
+                  supplierParts: supplierParts.data ?? [],
+                  pickMethods: pickMethods.data ?? [],
+                  makeMethods: getMakeMethods(client, draftItemId, companyId),
+                  tags: partTags.data ?? []
+                }
+              : null
+          )
+        : null;
 
       const [
         makeMethod,
         methodMaterials,
         methodOperations,
-        tags,
         manufacturing,
-        revisionLock
+        revisionLock,
+        partData
       ] = await Promise.all([
         getMakeMethodById(client, draftMakeMethodId, companyId),
         getMethodMaterialsByMakeMethod(client, draftMakeMethodId),
         getMethodOperationsByMakeMethodId(client, draftMakeMethodId),
-        getTagsList(client, companyId, "operation"),
         getItemManufacturing(client, draftItemId, companyId),
-        getRevisionLock(client, { itemId: draftItemId, companyId })
+        getRevisionLock(client, { itemId: draftItemId, companyId }),
+        partDataPromise
       ]);
 
       const config = manufacturing.data?.requiresConfiguration
-        ? {
-            parameters: (
-              await getConfigurationParameters(client, draftItemId, companyId)
-            ).parameters,
-            configurationRules: await getConfigurationRules(
-              client,
-              draftItemId,
-              companyId
-            )
-          }
+        ? await Promise.all([
+            getConfigurationParameters(client, draftItemId, companyId),
+            getConfigurationRules(client, draftItemId, companyId)
+          ]).then(([{ parameters }, configurationRules]) => ({
+            parameters,
+            configurationRules
+          }))
         : {
             parameters: [] as Awaited<
               ReturnType<typeof getConfigurationParameters>
@@ -237,7 +264,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             workCenterId: operation.workCenterId ?? undefined,
             workInstruction: operation.workInstruction as JSONContent | null
           })) ?? [],
-        tags: tags.data ?? [],
+        tags: operationTags.data ?? [],
         configurable: manufacturing.data?.requiresConfiguration ?? false,
         configurationRules: config.configurationRules,
         parameters: config.parameters,
@@ -267,6 +294,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : []
   );
 
+  // Approval only gates Engineering Complete → Implementation.
+  const [linkedNonConformance, approval] = await Promise.all([
+    linkedNonConformancePromise,
+    changeNotice.data?.status === "Engineering Complete"
+      ? getDocumentApprovalState(getCarbonServiceRole(), {
+          documentType: "changeOrder",
+          documentId: id,
+          companyId,
+          userId
+        })
+      : null
+  ]);
+
   return {
     changeNotice: changeNotice.data,
     types: types.data ?? [],
@@ -276,6 +316,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     impactUsedIn,
     nonConformanceOptions,
+    approval,
     linkedNonConformance: linkedNonConformance
       ? {
           id: linkedNonConformance.id,
@@ -287,6 +328,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function ChangeNoticeIdRoute() {
+  const { t } = useLingui();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   // Surfaced to child routes + header/explorer/properties via useRouteData.
@@ -304,10 +346,11 @@ export default function ChangeNoticeIdRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Affected Items`}
               explorer={<ChangeNoticeExplorer />}
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
-                  <Outlet />
+                  <RecordOutlet />
                 </div>
               }
               properties={<ChangeNoticeProperties key={id} />}

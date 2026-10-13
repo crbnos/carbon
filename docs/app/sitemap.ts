@@ -1,11 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { MetadataRoute } from "next";
 import { allResourceParams } from "@/lib/api-data";
 import { SITE } from "@/lib/seo";
-import { guideSource, source } from "@/lib/source";
+import { changelogSource, guideSource, source } from "@/lib/source";
 import { allToolParams } from "@/lib/tools-data";
 
 /** Every canonical, indexable URL on the docs site. `/` is intentionally omitted —
- *  it rewrites to /guides/order, which is listed as its own canonical entry. */
+ *  it rewrites to /docs, which is listed as its own canonical entry. */
 export default function sitemap(): MetadataRoute.Sitemap {
   const abs = (path: string) => `${SITE.url}${path}`;
   const out: MetadataRoute.Sitemap = [];
@@ -20,40 +24,43 @@ export default function sitemap(): MetadataRoute.Sitemap {
     out.push({ url: abs(page.url), changeFrequency: "monthly", priority: 0.7 });
   }
 
-  // REST API reference
+  // Changelog (the feed page + one permalink per entry)
+  out.push({ url: abs("/changelog"), changeFrequency: "weekly", priority: 0.7 });
+  for (const page of changelogSource.getPages()) {
+    out.push({ url: abs(page.url), changeFrequency: "yearly", priority: 0.5 });
+  }
+
+  // Carbon API (the headline surface — service layer, reached over MCP today)
+  out.push({ url: abs("/api"), changeFrequency: "monthly", priority: 0.7 });
+  out.push({ url: abs("/api/mcp"), changeFrequency: "monthly", priority: 0.5 });
   out.push({
-    url: abs("/api-reference"),
-    changeFrequency: "monthly",
-    priority: 0.6
-  });
-  out.push({
-    url: abs("/api-reference/authentication"),
+    url: abs("/api/authentication"),
     changeFrequency: "yearly",
     priority: 0.5
   });
-  for (const { module, resource } of allResourceParams()) {
+  out.push({ url: abs("/api/sdks"), changeFrequency: "monthly", priority: 0.5 });
+  for (const { tool } of allToolParams()) {
     out.push({
-      url: abs(`/api-reference/${module}/${resource}`),
+      url: abs(`/api/operations/${tool}`),
       changeFrequency: "monthly",
       priority: 0.5
     });
   }
 
-  // MCP
-  out.push({ url: abs("/mcp"), changeFrequency: "monthly", priority: 0.6 });
+  // Data API (PostgREST — the secondary data plane, demoted below the Carbon API)
   out.push({
-    url: abs("/mcp/authentication"),
-    changeFrequency: "yearly",
-    priority: 0.5
-  });
-  out.push({
-    url: abs("/mcp/tools"),
+    url: abs("/api/data"),
     changeFrequency: "monthly",
     priority: 0.5
   });
-  for (const { tool } of allToolParams()) {
+  out.push({
+    url: abs("/api/data/authentication"),
+    changeFrequency: "yearly",
+    priority: 0.4
+  });
+  for (const { module, resource } of allResourceParams()) {
     out.push({
-      url: abs(`/mcp/tools/${tool}`),
+      url: abs(`/api/data/${module}/${resource}`),
       changeFrequency: "monthly",
       priority: 0.4
     });

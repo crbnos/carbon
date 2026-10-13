@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   FormControl,
   FormErrorMessage,
@@ -16,6 +20,7 @@ import type { ValidationBehaviorOptions } from "../internal/getInputProps";
 type FormInputOTPProps = {
   name: string;
   label?: ReactNode;
+  autoFocus?: boolean;
   isConfigured?: boolean;
   isOptional?: boolean;
   isRequired?: boolean;
@@ -30,6 +35,7 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
     {
       name,
       label,
+      autoFocus,
       isConfigured,
       isOptional,
       isRequired,
@@ -95,6 +101,7 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
           value={value}
           onChange={setValue}
           ref={ref}
+          autoFocus={autoFocus}
           disabled={isDisabled}
         >
           <InputOTPGroup>

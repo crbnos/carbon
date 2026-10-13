@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { cn } from "@carbon/react";
 import { cva } from "class-variance-authority";
 import { useState } from "react";
@@ -81,14 +85,17 @@ const ItemThumbnail = ({
 
   return thumbnailPath && failedPath !== thumbnailPath ? (
     <img
+      loading="lazy"
+      decoding="async"
       alt="thumbnail"
+      data-thumbnail={size}
       className={itemVariants({ size, withPadding: false })}
       key={thumbnailPath}
       onError={() => setFailedPath(thumbnailPath)}
       src={getPrivateUrl(thumbnailPath)}
     />
   ) : (
-    <div className={cn(itemVariants({ size }))}>
+    <div data-thumbnail={size} className={cn(itemVariants({ size }))}>
       {type ? (
         <MethodItemTypeIcon className={iconVariants({ size })} type={type} />
       ) : (

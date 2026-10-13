@@ -1,8 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Config } from "@react-router/dev/config";
 import { vercelPreset } from "@vercel/react-router/vite";
 
 export default {
   ssr: true,
   presets: process.env.VERCEL ? [vercelPreset()] : undefined,
-  future: { v8_middleware: true },
+  future: { v8_middleware: true, v8_viteEnvironmentApi: true },
 } satisfies Config;

@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { inspectionCompletePassedValidator } from "~/services/models";
 import { returnPickedRemainders } from "~/services/operations.service";
 import {
@@ -13,6 +18,7 @@ import {
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 // Completions posted here insert productionQuantity rows, whose SQL interceptor
@@ -30,7 +36,7 @@ async function sweepIfOperationDone(
     .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.data?.status !== "Done") return;
-  await returnPickedRemainders(serviceRole, args);
+  await returnPickedRemainders(serviceRole, getDatabaseClient(), args);
 }
 
 // Progressive completion while the lot stays open: any unit that passed
@@ -63,7 +69,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   };
-  const returnTo = path.to.inspection(operationId);
+  // The page the inspection was opened from; Back keeps returning there.
+  const origin = readOrigin(formData);
+  const returnTo = withOrigin(path.to.inspection(operationId), origin);
   const fail = async (err: unknown, message: string): Promise<never> => {
     throw redirect(returnTo, await flash(request, error(err, message)));
   };

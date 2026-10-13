@@ -1,13 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   getMaterialType,
   materialTypeValidator,
@@ -15,8 +17,6 @@ import {
 } from "~/modules/items";
 import MaterialTypeForm from "~/modules/items/ui/MaterialTypes/MaterialTypeForm";
 import { getParams, path } from "~/utils/path";
-
-import { getCompanyId, materialTypesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
@@ -46,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -62,6 +62,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateMaterialType = await upsertMaterialType(client, {
     id: id,
+    companyId,
     ...validation.data
   });
 
@@ -81,33 +82,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-export async function clientAction({
-  request,
-  serverAction
-}: ClientActionFunctionArgs) {
-  const formData = await request.clone().formData();
-  const validation = await validator(materialTypeValidator).validate(formData);
-
-  if (!validation.error) {
-    const companyId = getCompanyId();
-    const { materialSubstanceId, materialFormId } = validation.data;
-
-    if (companyId && materialSubstanceId && materialFormId) {
-      // Invalidate the cache for this specific combination
-      window.clientCache?.setQueryData(
-        materialTypesQuery(materialSubstanceId, materialFormId, companyId)
-          .queryKey,
-        null
-      );
-    }
-  }
-
-  return await serverAction();
-}
-
 export default function EditMaterialTypesRoute() {
   const { materialType } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
 
   const initialValues = {
     id: materialType?.id ?? undefined,
@@ -121,7 +98,7 @@ export default function EditMaterialTypesRoute() {
     <MaterialTypeForm
       key={initialValues.id}
       initialValues={initialValues}
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
     />
   );
 }

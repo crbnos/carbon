@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
@@ -18,17 +22,14 @@ import {
   HStack,
   IconButton,
   Label,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   toast,
   useDebounce,
   useDisclosure,
-  VStack
+  useViewport
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -36,20 +37,15 @@ import {
   LuArrowLeft,
   LuChevronDown,
   LuChevronRight,
-  LuExternalLink,
   LuGitPullRequest,
   LuGitPullRequestCreate,
   LuGitPullRequestCreateArrow,
+  LuPackage,
   LuRedoDot
 } from "react-icons/lu";
-import { Link, useFetcher, useFetchers, useParams } from "react-router";
+import { useFetcher, useFetchers, useParams } from "react-router";
 import type { z } from "zod";
-import {
-  ItemLifecycleBadge,
-  MethodIcon,
-  MethodItemTypeIcon,
-  TrackingTypeIcon
-} from "~/components";
+import { MethodIcon } from "~/components";
 import {
   DefaultMethodType,
   Hidden,
@@ -73,6 +69,7 @@ import {
   SortableListItemPanel,
   SortableListItemToggle
 } from "~/components/SortableList";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
 import {
   useCurrencyDecimals,
   usePermissions,
@@ -81,7 +78,10 @@ import {
   useUser
 } from "~/hooks";
 import { ItemTrackingType } from "~/modules/items";
-import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
+import {
+  MaterialRowDetails,
+  MaterialRowTitle
+} from "~/modules/items/ui/Item/MethodRow";
 import type { MethodItemType, MethodType } from "~/modules/shared";
 import type { Item as ItemType } from "~/stores";
 import { useItems } from "~/stores";
@@ -154,90 +154,31 @@ function makeItem(
   return {
     id: material.id!,
     title: (
-      <VStack spacing={0} className="py-1 cursor-pointer">
-        <div className="flex items-center gap-2 group">
-          <h3 className="font-semibold truncate">{itemReadableId ?? ""}</h3>
-          <ItemLifecycleBadge
-            mode={items.find((i) => i.id === material.itemId)?.supersessionMode}
-          />
-          {material.itemId && material.itemType && (
-            <Link
-              to={getLinkToItemDetails(material.itemType, material.itemId)}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <LuExternalLink className="h-4 w-4 opacity-0 group-hover:opacity-100" />
-            </Link>
-          )}
-        </div>
-        {material?.description && (
-          <span className="text-xs text-muted-foreground">
-            {material.description}{" "}
-          </span>
-        )}
-      </VStack>
+      <MaterialRowTitle
+        readableId={itemReadableId}
+        description={material?.description}
+        itemId={material.itemId}
+        itemType={material.itemType}
+        supersessionMode={
+          items.find((i) => i.id === material.itemId)?.supersessionMode
+        }
+      />
     ),
     checked: checked,
     details: (
-      <HStack spacing={2}>
-        {material.requiresBatchTracking ? (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="secondary">
-                <TrackingTypeIcon type="Batch" />
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>Batch Tracking</Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : material.requiresSerialTracking ? (
-          <Tooltip>
-            <TooltipTrigger>
-              <Badge variant="secondary">
-                <TrackingTypeIcon type="Serial" />
-              </Badge>
-            </TooltipTrigger>
-            <TooltipContent>
-              <Trans>Serial Tracking</Trans>
-            </TooltipContent>
-          </Tooltip>
-        ) : null}
-
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodIcon type={material.methodType} isKit={material.kit} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {material.methodType === "Purchase to Order" ? (
-              <Trans>Purchase to Order</Trans>
-            ) : material.methodType === "Pull from Inventory" ? (
-              <Trans>Pull from Inventory</Trans>
-            ) : (
-              <Trans>Make to Order</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-        <Badge variant="secondary">{material.quantity}</Badge>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <Badge variant="secondary">
-              <MethodItemTypeIcon type={material.itemType} />
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            {material.itemType === "Consumable" ? (
-              <Trans>Consumable</Trans>
-            ) : material.itemType === "Material" ? (
-              <Trans>Material</Trans>
-            ) : (
-              <Trans>Part</Trans>
-            )}
-          </TooltipContent>
-        </Tooltip>
-      </HStack>
+      <MaterialRowDetails
+        trackingType={
+          material.requiresBatchTracking
+            ? "Batch"
+            : material.requiresSerialTracking
+              ? "Serial"
+              : null
+        }
+        methodType={material.methodType}
+        isKit={material.kit}
+        quantity={material.quantity}
+        itemType={material.itemType}
+      />
     ),
     data: {
       ...material,
@@ -250,7 +191,7 @@ const initialMethodMaterial: Omit<Material, "jobMakeMethodId" | "order"> & {
   description: string;
 } = {
   itemId: "",
-  // @ts-ignore
+  // @ts-expect-error
   itemType: "Item" as const,
   methodType: "Purchase to Order" as const,
   description: "",
@@ -300,16 +241,15 @@ const JobBillOfMaterial = ({
   const permissions = usePermissions();
 
   const addItemButtonRef = useRef<HTMLButtonElement>(null);
+  const { isPhone } = useViewport();
 
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [temporaryItems, setTemporaryItems] = useState<TemporaryItems>({});
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialMaterials.reduce((acc, material) => {
-      acc[material.id!] = material.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const materialsById = new Map<string, Material>();
 
@@ -352,6 +292,7 @@ const JobBillOfMaterial = ({
   const isDisabled = ["Completed", "Cancelled"].includes(
     jobData?.job?.status ?? ""
   );
+  const isReadOnly = isDisabled || !permissions.can("update", "production");
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "production") || isDisabled) return;
@@ -484,6 +425,7 @@ const JobBillOfMaterial = ({
 
     return (
       <SortableListItem<Material>
+        isReadOnly={isReadOnly}
         item={item}
         items={items}
         order={order}
@@ -571,11 +513,33 @@ const JobBillOfMaterial = ({
       </HStack>
       <CardContent>
         <SortableList
+          isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
           onToggleItem={onToggleItem}
           onRemoveItem={onRemoveItem}
           renderItem={renderListItem}
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuPackage />}
+                heading={<Trans>No materials yet</Trans>}
+                description={<Trans>Add the materials this job uses.</Trans>}
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={
+                      isDisabled || !permissions.can("update", "production")
+                    }
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Item</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
         />
       </CardContent>
     </Card>
@@ -831,7 +795,7 @@ function MaterialForm({
           onChange={(newValue) => {
             setItemData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
         />
         {itemData.methodType !== "Make to Order" && (
           <NumberControlled
@@ -846,7 +810,7 @@ function MaterialForm({
 
       <div className="border border-border rounded-md shadow-sm p-4 flex flex-col gap-4 w-full">
         <HStack
-          className="w-full justify-between cursor-pointer"
+          className="w-full justify-between cursor-pointer max-md:flex-wrap max-md:gap-y-2"
           onClick={sourceDisclosure.onToggle}
         >
           <HStack>
@@ -866,7 +830,7 @@ function MaterialForm({
               </>
             )}
           </HStack>
-          <HStack>
+          <HStack className="max-md:flex-wrap max-md:gap-y-1">
             <Badge variant="secondary">
               <MethodIcon type={itemData.methodType} className="size-3 mr-1" />
               {itemData.methodType === "Purchase to Order"
@@ -1016,7 +980,7 @@ function MaterialForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div

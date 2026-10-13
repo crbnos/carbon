@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { DateTimePicker, Hidden, Select, ValidatedForm } from "@carbon/form";
+import { useAction } from "@carbon/query";
 import {
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -73,14 +79,14 @@ const MaintenanceDispatchProperties = () => {
       ? optimisticAssignment
       : (routeData?.dispatch?.assignee?.id ?? null);
 
-  const fetcher = useFetcher<{ error?: { message: string } }>();
-  const eventFetcher = useFetcher<{ error?: { message: string } }>();
-
-  useEffect(() => {
-    if (fetcher.data?.error) {
-      toast.error(fetcher.data.error.message);
+  const fetcher = useAction<{ error?: { message: string } }>({
+    onError: (data) => {
+      if (data?.error) {
+        toast.error(data.error.message);
+      }
     }
-  }, [fetcher.data]);
+  });
+  const eventFetcher = useFetcher<{ error?: { message: string } }>();
 
   useEffect(() => {
     if (
@@ -153,24 +159,13 @@ const MaintenanceDispatchProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label="Copy ID"
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(routeData?.dispatch?.id ?? "")}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy dispatch ID</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.dispatch?.id ?? ""}
+              label={t`Copy dispatch ID`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

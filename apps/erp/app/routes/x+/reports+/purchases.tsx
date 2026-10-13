@@ -1,18 +1,25 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { downloadText } from "@carbon/files";
+import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import { VStack } from "@carbon/react";
 import {
   computeReportPeriodBuckets,
   datetime,
-  defaultReportRange
+  defaultReportRange,
+  redirect
 } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { useUrlParams } from "~/hooks";
 import type { PivotState, PurchaseLinePivotLine } from "~/modules/accounting";
 import {
@@ -300,29 +307,12 @@ export default function PurchasesReportRoute() {
     });
     if (rows.length === 0) return;
 
-    const sanitizeCell = (value: string) => {
-      if (value === "" || Number.isFinite(Number(value))) return value;
-      return /^[=+\-@]/.test(value) ? `'${value}` : value;
-    };
-    const csvData = rows
-      .map((row) =>
-        row
-          .map(sanitizeCell)
-          .map((value) =>
-            /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = downloadUrl;
-    anchor.download = "purchases.csv";
-    document.body.appendChild(anchor);
-    anchor.click();
-    window.URL.revokeObjectURL(downloadUrl);
-    document.body.removeChild(anchor);
+    const [header, ...body] = rows;
+    downloadText(
+      encodeCsvTable(header, body),
+      "purchases.csv",
+      CSV_CONTENT_TYPE
+    );
   };
 
   return (

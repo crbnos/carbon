@@ -1,14 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Result } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
-import {
-  CarbonEdition,
-  CONTROLLED_ENVIRONMENT,
-  RESEND_DOMAIN
-} from "@carbon/env";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { CarbonEdition, CONTROLLED_ENVIRONMENT } from "@carbon/env";
+import { sendEmail } from "@carbon/lib/email.server";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
 import { Edition } from "@carbon/utils";
 import { render } from "@react-email/components";
@@ -105,7 +105,6 @@ export const userAdminFunction = inngest.createFunction(
           );
 
           await sendEmail({
-            from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
             to: user.data.email,
             subject: `You have been invited to join ${company.data?.name} on Carbon`,
             headers: {
@@ -136,7 +135,9 @@ export const userAdminFunction = inngest.createFunction(
       if (result.success) {
         logger.info(`Success ${payload.id}`);
       } else {
-        logger.error(`Admin action ${payload.type} failed for ${payload.id}`, {
+        logger.error("Admin action {payloadType} failed for {payloadId}", {
+          payloadType: payload.type,
+          payloadId: payload.id,
           message: result.message
         });
       }

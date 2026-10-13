@@ -1,15 +1,19 @@
-import { assertIsPost, success } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { useRouteData } from "@carbon/react";
+import { isUniqueViolation } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useNavigate, useParams } from "react-router";
 import type { MaterialSummary } from "~/modules/items";
 import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getDatabaseClient } from "~/services/database.server";
-import { setCustomFields } from "~/utils/form";
+import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,7 +33,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .single(),
     client
       .from("supplierPartPrice")
-      .select("quantity, unitPrice, sourceType, sourceDocumentId, createdAt")
+      .select(
+        "quantity, supplierUnitPrice, leadTime, sourceType, sourceDocumentId, createdAt"
+      )
       .eq("supplierPartId", supplierPartId)
       .order("quantity", { ascending: true })
   ]);
@@ -42,7 +48,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const purchasingHistory = await client
     .from("purchaseOrderLine")
     .select(
-      "id, purchaseQuantity, unitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate)"
+      "id, purchaseQuantity, supplierUnitPrice, purchaseOrderId, purchaseOrder!inner(purchaseOrderId, supplierId, orderDate, currencyCode)"
     )
     .eq("itemId", supplierPart.itemId)
     .eq("purchaseOrder.supplierId", supplierPart.supplierId)
@@ -85,6 +91,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
+  // buyMethod_part_supplier_unique: one supplier part per item and supplier
+  if (isUniqueViolation(updatedSupplierPart.error)) {
+    return validationError({
+      fieldErrors: {
+        supplierId: "This item already has a supplier part for this supplier"
+      }
+    });
+  }
+
   if (updatedSupplierPart.error) {
     return { success: false, message: "Failed to update supplier part" };
   }
@@ -93,7 +108,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (priceBreaksRaw) {
     const priceBreaks = JSON.parse(priceBreaksRaw as string) as {
       quantity: number;
-      unitPrice: number;
+      supplierUnitPrice: number;
       leadTime: number;
     }[];
     const db = getDatabaseClient();
@@ -101,6 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await trx
         .deleteFrom("supplierPartPrice")
         .where("supplierPartId", "=", supplierPartId)
+        .where("companyId", "=", companyId)
         .execute();
       if (priceBreaks.length > 0) {
         await trx
@@ -109,7 +125,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             priceBreaks.map((pb) => ({
               supplierPartId,
               quantity: pb.quantity,
-              unitPrice: pb.unitPrice,
+              supplierUnitPrice: pb.supplierUnitPrice,
               leadTime: pb.leadTime ?? 0,
               sourceType: "Manual Entry" as const,
               companyId,
@@ -122,10 +138,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  throw redirect(
-    path.to.materialPurchasing(itemId),
-    await flash(request, success("Supplier part updated"))
-  );
+  // Fetcher-friendly success, as on the part route: the form's fetcher effect
+  // toasts and fires onClose, so a caller outside the item page stays put.
+  return { success: true, message: "Supplier part updated" };
 }
 
 export default function EditMaterialSupplierRoute() {
@@ -147,11 +162,13 @@ export default function EditMaterialSupplierRoute() {
     itemId: supplierPart.itemId,
     supplierId: supplierPart.supplierId,
     supplierPartId: supplierPart.supplierPartId ?? "",
-    unitPrice: supplierPart.unitPrice ?? 0,
+    currencyCode: supplierPart.currencyCode ?? undefined,
+    supplierUnitPrice: supplierPart.supplierUnitPrice ?? 0,
     supplierUnitOfMeasureCode: supplierPart.supplierUnitOfMeasureCode ?? "EA",
     minimumOrderQuantity: supplierPart.minimumOrderQuantity ?? 1,
     orderMultiple: supplierPart.orderMultiple ?? 1,
-    conversionFactor: supplierPart.conversionFactor ?? 1
+    conversionFactor: supplierPart.conversionFactor ?? 1,
+    ...getCustomFields(supplierPart.customFields)
   };
 
   return (

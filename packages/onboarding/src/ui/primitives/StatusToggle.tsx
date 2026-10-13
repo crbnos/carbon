@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Binary status pill button (validated / in-scope / done toggles). Renders the
 // design-system `Badge` (green when active, outline when inactive) inside a
 // button so the toggle stays interactive. `withIcon` shows a check when active

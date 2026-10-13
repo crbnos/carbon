@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import type { Database } from "@carbon/database";
@@ -11,7 +15,7 @@ import {
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
-import { Edition, Plan } from "@carbon/utils";
+import { async, companyPlanCacheKey, Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
 import { z } from "zod";
@@ -479,9 +483,10 @@ export async function processStripeEvent({
     eventType === "invoice.payment_succeeded" ||
     eventType === "invoice.payment_failed"
   ) {
-    forwardToGtm(eventType, { invoice: event.data.object }).catch((err) => {
-      log.error("gtm-events forward failed", { error: err });
-    });
+    async.background(
+      () => forwardToGtm(eventType, { invoice: event.data.object }),
+      (error) => log.error("gtm-events forward failed", { error })
+    );
   }
 }
 
@@ -615,6 +620,7 @@ export async function syncStripeDataToKV(
     if (companyPlan.error) {
       log.error("Failed to upsert company plan", { error: companyPlan.error });
     }
+    await redis.del(companyPlanCacheKey(companyId));
   } else {
     log.error("no company id, skipping company plan upsert");
   }
@@ -709,8 +715,14 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
     // Update the quantity on the first subscription item
     const subscriptionItemId = subscription?.items.data[0]?.id ?? "";
 
+    // A paused subscription (pause_collection set) rejects any update that would
+    // create prorated invoice items. Keep the seat count in sync for when it
+    // resumes by skipping proration in that case; unpaused subs keep the default.
+    const isPaused = !!subscription.pause_collection;
+
     await stripe.subscriptionItems.update(subscriptionItemId, {
-      quantity: activeUserCount
+      quantity: activeUserCount,
+      ...(isPaused ? { proration_behavior: "none" as const } : {})
     });
 
     log.debug("Updated Stripe subscription quantity", {

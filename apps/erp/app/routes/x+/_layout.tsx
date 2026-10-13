@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CarbonEdition,
   CarbonProvider,
@@ -16,29 +20,33 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { isAuditLogEnabled } from "@carbon/database/audit";
+import { isApprovalRequired } from "@carbon/ee/approvals.server";
+import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
-import {
-  detectImplementationSignals,
-  getImplementationCheckStates,
-  getImplementationHub
-} from "@carbon/onboarding/server";
+import { getVapidDetails } from "@carbon/env/push.server";
+import { getLogger } from "@carbon/logger";
+import { getImplementationCheckStates } from "@carbon/onboarding/server";
 import type { PrintingSettings } from "@carbon/printing";
-import { getPrinterRoutes } from "@carbon/printing";
 import { PrintingProvider } from "@carbon/printing/ui";
+import { RouteRealtime } from "@carbon/query";
+import { setClientCompanyId } from "@carbon/query/cache";
 import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
+  SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
-  useNProgress
+  useNProgress,
+  useViewport
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
   Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
+  redirect,
+  redirectExternal,
+  requiresItarEntityCertification,
+  SHELL_MAX_AGE_MS
 } from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
@@ -47,51 +55,56 @@ import type {
   LoaderFunctionArgs,
   ShouldRevalidateFunction
 } from "react-router";
-import {
-  Await,
-  data,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useNavigate
-} from "react-router";
+import { Await, data, Outlet, useLoaderData, useNavigate } from "react-router";
 import { RealtimeDataProvider } from "~/components";
-import { PrimaryNavigation, Topbar } from "~/components/Layout";
+import ChangelogPanel from "~/components/ChangelogPanel";
+import {
+  ModuleSidebarLayout,
+  PrimaryNavigation,
+  Topbar
+} from "~/components/Layout";
+import {
+  MobileAppBar,
+  MobileBottomChrome,
+  MobileDock
+} from "~/components/Layout/Mobile";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
+import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
+import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
+import AccountSettings from "~/modules/account/ui/AccountSettings";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
+import { employeeCompaniesOf, getEmployeeCompanies } from "~/modules/settings";
 import {
-  getCompanies,
-  getCompanyIntegrations,
-  getCompanySettings,
-  getEmployeeCompanies
-} from "~/modules/settings";
-import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
-import {
-  getSavedViews,
-  isApprovalRequired
-} from "~/modules/shared/shared.service";
+  getAppShell,
+  getCustomFieldsSchemas,
+  getImplementationSignals
+} from "~/modules/shared/shared.server";
 import { getItarCertificationStatus } from "~/modules/users";
-import {
-  getModulePreferences,
-  getUser,
-  getUserClaims,
-  getUserDefaults,
-  getUserGroups
-} from "~/modules/users/users.server";
+import { getUserClaims } from "~/modules/users/users.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+const log = getLogger("erp", "auth");
+
+// Set from the component when loader data arrives, not in shouldRevalidate:
+// link prefetching calls that too.
+let shellLoadedAt = Date.now();
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
+  formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
     currentUrl.pathname.startsWith("/x/users") ||
@@ -103,16 +116,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 16 parallel queries plus an auth round-trip.
-  // Without this it re-ran on every table filter, sort and page click, none of
-  // which can change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
-    return false;
+  // Only a mutation can change what the shell returns, so a GET re-runs it
+  // only once the data has aged out — that covers out-of-band changes.
+  if (!formMethod || formMethod === "GET") {
+    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
   }
 
   return defaultShouldRevalidate;
@@ -125,7 +132,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Block ERP access when console mode is active on this terminal.
   // Console terminals should only access the MES app.
   if (authSession.console) {
-    throw redirect(getMESUrl());
+    throw redirectExternal(getMESUrl());
   }
 
   // const { computeRegion, proxyRegion } = parseVercelId(
@@ -139,14 +146,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const client = getCarbon(accessToken);
 
+  // The user's and the company's rows, in one round trip. Started here so the
+  // hub's signal probes can chain off it and overlap the fan-out below.
+  const shellPromise = getAppShell(client, companyId, userId);
+
   // Only probe product signals when the company is actually enrolled, so the
-  // home card + nav badge count gates the same way the hub page does. Chained
-  // off the hub query rather than awaited after the fan-out below, so the
-  // probes overlap the rest of it instead of forming a second serial wave.
-  const implementationHubPromise = getImplementationHub(client, companyId);
-  const implementationSignalsPromise = implementationHubPromise.then((hub) =>
-    hub.data ? detectImplementationSignals(client, companyId) : null
-  );
+  // home card + nav badge count gates the same way the hub page does.
+  const implementationSignalsPromise = shellPromise.then(({ data }) => {
+    const hub = data?.implementationHub;
+    // A finished hub shows no badge and no card, so it needs no signals.
+    return hub && hub.status !== "complete" && hub.status !== "archived"
+      ? getImplementationSignals(client, companyId)
+      : null;
+  });
 
   // ITAR gate status — only queried in controlled environments; elsewhere the
   // gate never renders, so default to "certified" and skip the round-trip.
@@ -155,58 +167,94 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
-  // Parallelize all requests
-  const [
-    companies,
-    employeeCompaniesResult,
-    stripeCustomer,
-    plan,
-    customFields,
-    integrations,
-    companySettings,
-    savedViews,
-    user,
-    claims,
-    groups,
-    defaults,
-    auditLogEnabled,
-    modulePreferences,
-    printerRoutes,
-    implementationHub,
-    implementationCheckStates,
-    implementationSignals,
-    itarCertification
-  ] = await Promise.all([
-    getCompanies(client, userId),
-    getEmployeeCompanies(client, userId),
-    getStripeCustomerByCompanyId(companyId, userId),
-    getPlan(client, companyId),
-    getCustomFieldsSchemas(client, { companyId }),
-    getCompanyIntegrations(client, companyId),
-    getCompanySettings(client, companyId),
-    getSavedViews(client, userId, companyId),
-    getUser(client, userId),
-    getUserClaims(userId, companyId),
-    getUserGroups(client, userId),
-    getUserDefaults(client, userId, companyId),
-    isAuditLogEnabled(client, companyId).catch(() => false),
-    getModulePreferences(client, userId, companyId),
-    getPrinterRoutes(client, companyId),
-    implementationHubPromise,
+  // The hub row (in the shell read, awaited below) decides whether the primary
+  // nav has a Get Started item and the home page a card: streamed, both arrived
+  // after first paint and pushed the page down. Progress only fills in the
+  // badge count and the card's bar, in place, so it stays streamed. It catches:
+  // the loader can exit early with nothing awaiting it.
+  const implementationProgress = Promise.all([
     getImplementationCheckStates(client, companyId),
-    implementationSignalsPromise,
-    itarCertificationPromise
-  ]);
+    implementationSignalsPromise
+  ])
+    .then(([checkStates, signals]) => ({
+      checkStates: checkStates.data ?? [],
+      signals
+    }))
+    .catch((error) => {
+      log.error("Failed to load implementation progress", {
+        companyId,
+        error
+      });
+      return { checkStates: [], signals: null };
+    });
+  const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
+    () => false
+  );
+  // Streamed, not awaited; each catches for the same early-exit reason.
+  // Whether this user dismissed it is a user flag, read client-side.
+  const changelog = getCachedChangelogPanelEntry().catch(() => null);
+
+  // Parallelize all requests
+  const [shell, stripeCustomer, plan, customFields, claims, itarCertification] =
+    await Promise.all([
+      shellPromise,
+      getStripeCustomerByCompanyId(companyId, userId),
+      getPlan(client, companyId),
+      getCustomFieldsSchemas(client, { companyId }),
+      getUserClaims(userId, companyId),
+      itarCertificationPromise
+    ]);
+
+  // The same shapes the nine separate reads returned, so what follows reads as
+  // it did. A failed shell read fails each of them, as each could before.
+  const read = <T,>(value: T | undefined) => ({
+    data: value ?? null,
+    error: shell.error
+  });
+  const companies = read(shell.data?.companies);
+  const integrations = read(shell.data?.companyIntegrations);
+  const companySettings = read(shell.data?.companySettings ?? undefined);
+  const savedViews = read(shell.data?.savedViews);
+  const user = read(shell.data?.user ?? undefined);
+  const groups = { data: shell.data?.groups ?? [], error: shell.error };
+  const defaults = read(shell.data?.defaults ?? undefined);
+  const modulePreferences = read(shell.data?.modulePreferences);
+  const printerRoutes = read(shell.data?.printerRoutes);
 
   // Empty groups is a valid pre-onboarding state (a first-run user with no
   // company yet has zero memberships → groups is []), NOT an auth failure —
   // logging out here made the `requiresOnboarding` redirect below unreachable.
   // Only a genuine RPC error (groups.error) logs out.
   if (!claims || user.error || !user.data || groups.error) {
-    throw await destroyAuthSession(request);
+    // Four very different faults share this exit: no claims usually means the
+    // user has no company membership (get_claims returned nothing), while the
+    // user/groups errors mean a failed RPC. Record which one before bouncing.
+    const reason = !claims
+      ? "no-claims"
+      : user.error
+        ? "user-error"
+        : !user.data
+          ? "no-user-row"
+          : "groups-error";
+
+    log.warn("Destroying auth session in x+/_layout loader", {
+      userId,
+      companyId,
+      reason,
+      noClaims: !claims,
+      userError: user.error?.message ?? null,
+      hasUserData: Boolean(user.data),
+      groupsError: groups.error?.message ?? null
+    });
+
+    throw await destroyAuthSession(request, reason);
   }
 
-  const employeeCompanies = employeeCompaniesResult.data ?? [];
+  // Derived from the read above. A failed read falls back to its own query, so
+  // a multi-company user still reaches the picker rather than onboarding.
+  const employeeCompanies = companies.data
+    ? employeeCompaniesOf(companies.data)
+    : ((await getEmployeeCompanies(client, userId)).data ?? []);
   const hasMultipleCompanies = employeeCompanies.length > 1;
 
   // Send multi-company users to the picker, preserving where they were headed.
@@ -285,14 +333,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     groups: groups.data ?? [],
     permissions: claims?.permissions,
     plan,
+    // Null hides the bell's "Enable browser notifications" row: the
+    // deployment has no push keys (no SESSION_SECRET).
+    pushPublicKey: getVapidDetails()?.publicKey ?? null,
     role: claims?.role,
     user: user.data,
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementationHub: implementationHub.data ?? null,
-    implementationCheckStates: implementationCheckStates.data ?? [],
-    implementationSignals,
+    implementationHub: shell.data?.implementationHub ?? null,
+    implementationProgress,
+    changelog,
     itarCertification: {
       ...itarCertification,
       // Server-decided, never client-inferred: the gate must not be skippable
@@ -323,6 +374,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
+  const loaderData = useLoaderData<typeof loader>();
+  const { isPhone } = useViewport();
   const {
     company,
     session,
@@ -333,10 +386,17 @@ export default function AuthenticatedRoute() {
     itarCertification,
     mfaEnrollment,
     sessionTimeout
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
+  // During render, not in an effect: clientLoaders and the first child read it.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
+  useEffect(() => {
+    shellLoadedAt = Date.now();
+  }, [loaderData]);
   const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
+  const changelogPanel = useChangelogPanel();
 
   // Session lock (NIST 3.1.10) — client idle UX only; the server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT.
@@ -469,22 +529,59 @@ export default function AuthenticatedRoute() {
             }}
           >
             <RealtimeDataProvider>
+              {company?.id && <RouteRealtime companyId={company.id} />}
               <TooltipProvider>
-                <div className="flex h-screen">
+                <SidebarProvider
+                  defaultOpen={false}
+                  keyboardShortcut={false}
+                  className="h-screen min-h-0"
+                >
                   <PrimaryNavigation />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border relative z-10">
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
+                    {/* Phones: app bar on top; below <main>, a page's
+                        bottom bar in flow or the dock floating over it.
+                        Mounted only on phones so their hooks
+                        (notifications, sheets) never run on desktop. */}
+                    {isPhone && <MobileAppBar />}
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
-                      <Outlet />
+                      <ModuleSidebarLayout>
+                        {/* A company switch stays on the same page. Without the key the page
+                            keeps its state, so a form still held the previous company's
+                            values and saving wrote them to the new one. */}
+                        <Outlet key={companyId} />
+                      </ModuleSidebarLayout>
+                      {/* Room to scroll a page's end out from under the
+                          floating dock. A spacer, not padding: padding would
+                          shrink h-full pages and end them above the dock. */}
+                      {isPhone && (
+                        <div
+                          aria-hidden
+                          className="h-[var(--dock-height,0px)] md:hidden"
+                        />
+                      )}
                     </main>
+                    {isPhone && (
+                      <MobileBottomChrome>
+                        <MobileDock />
+                      </MobileBottomChrome>
+                    )}
                   </div>
-                </div>
+                </SidebarProvider>
                 <TrainingPanel
                   training={training}
                   isOpen={isOpen}
                   onDismiss={dismiss}
                 />
+                {/* Shares the training panel's corner; training wins while open. */}
+                <ChangelogPanel
+                  entry={changelogPanel.entry}
+                  isOpen={changelogPanel.isOpen && !isOpen}
+                  onDismiss={changelogPanel.dismiss}
+                />
                 <AgentRoot />
+                <ShortcutHelp />
+                <AccountSettings />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>

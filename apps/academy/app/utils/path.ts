@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ERP_URL as ERP_URL_CONFIG, SUPABASE_URL } from "@carbon/auth";
+import { DOCS_URL as DOCS_URL_PROD } from "@carbon/content/links";
 import { generatePath } from "react-router";
 
 const challenge = "/challenge"; // from ~/routes/challenge+ folder
@@ -11,7 +16,7 @@ const ERP_URL = SUPABASE_URL?.includes("localhost")
 
 const DOCS_URL = SUPABASE_URL?.includes("localhost")
   ? "http://localhost:3002"
-  : "https://docs.carbon.ms";
+  : DOCS_URL_PROD;
 
 export const path = {
   to: {

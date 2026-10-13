@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule } from "@carbon/ee/planning";
+import { runLocationSchedule } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -19,11 +24,16 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: false, error: "A location is required to regenerate" };
   }
 
-  // Regenerate the whole location's forecast IN-PROCESS (Node) rather than
-  // round-tripping to the `schedule` edge function — no cold start, no HTTP hop.
-  // Awaited before we return, so the fetcher's revalidation reads fully-
-  // committed reservations. Service-role client matches the privileged execution
-  // the edge function did internally; the route's requirePermissions is the gate.
+  // The location id comes from the query string and the run below is
+  // privileged (Kysely + service role), so prove it is this company's first.
+  await requireCompanyRecord(getCarbonServiceRole(), "location", companyId, {
+    id: locationId
+  });
+
+  // Regenerate the whole location's forecast IN-PROCESS (Node). Awaited before
+  // we return, so the fetcher's revalidation reads fully-committed
+  // reservations. Service-role client for the privileged execution; the route's
+  // requirePermissions is the gate.
   try {
     const result = await runLocationSchedule({
       db: getDatabaseClient(),

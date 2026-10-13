@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
+import { serverFns } from "@carbon/server-functions";
 import type { ActionFunctionArgs } from "react-router";
 import { splitValidator } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,21 +45,15 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const serviceRole = getCarbonServiceRole();
-
-  const salesOrderShipment = await serviceRole.functions.invoke<{
-    id: string;
-  }>("create", {
-    body: {
+  const salesOrderShipment = await serverFns
+    .system({ db: getDatabaseClient(), companyId, userId })
+    .invoke("create", {
       type: "receiptLineSplit",
-      companyId,
       locationId,
       receiptId: documentId,
       receiptLineId: documentLineId,
-      quantity,
-      userId: userId
-    }
-  });
+      quantity
+    });
 
   if (salesOrderShipment.error) {
     return {

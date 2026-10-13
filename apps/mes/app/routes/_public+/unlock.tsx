@@ -1,9 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   assertIsPost,
   error,
   isAuthProviderEnabled,
-  RATE_LIMIT,
-  safeRedirect
+  RATE_LIMIT
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -36,6 +39,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { getClientIp, redirect } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -51,7 +55,6 @@ import type {
 import {
   data,
   Form,
-  redirect,
   useFetcher,
   useLoaderData,
   useSearchParams
@@ -104,7 +107,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request);
   }
   if (!isSessionIdleLocked(authSession)) {
-    throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
+    throw redirect(redirectTo || path.to.authenticatedRoot);
   }
 
   // Unlock credentials: a verified TOTP factor and/or a registered passkey.
@@ -252,7 +255,7 @@ async function unlockWithPasskey(request: Request) {
       );
     }
 
-    return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
+    return redirect(redirectTo || path.to.authenticatedRoot, {
       headers: [
         ["Set-Cookie", sessionCookie],
         ["Set-Cookie", setCompanyId(resumed.companyId)]
@@ -267,7 +270,7 @@ async function unlockWithPasskey(request: Request) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
 
   const ratelimit = new Ratelimit({
     redis,
@@ -282,6 +285,15 @@ export async function action({ request }: ActionFunctionArgs) {
       error(null, "Rate limit exceeded"),
       await flash(request, error(null, "Rate limit exceeded"))
     );
+  }
+
+  // Absolute cap already passed → termination wins over lock, as in the loader
+  // and requireAuthSession. Both unlock paths below re-stamp createdAt (the
+  // passkey path directly, TOTP via makeAuthSession), so a POST here would
+  // otherwise revive a session past its absolute cap.
+  const lockedSession = await getAuthSession(request);
+  if (lockedSession && isSessionExpiredAbsolute(lockedSession)) {
+    throw await destroyAuthSession(request);
   }
 
   // Passkey unlock arrives as JSON (the credential assertion); TOTP unlock is a
@@ -331,7 +343,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   return redirect(
-    safeRedirect(result.redirectTo ?? redirectTo, path.to.authenticatedRoot),
+    (result.redirectTo ?? redirectTo) || path.to.authenticatedRoot,
     {
       headers: [
         ["Set-Cookie", result.sessionCookie],
@@ -351,7 +363,7 @@ function UnlockCodeField({ result }: { result?: UnlockResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" />;
+  return <InputOTP name="code" label="" autoFocus />;
 }
 
 export default function UnlockRoute() {
@@ -472,6 +484,7 @@ export default function UnlockRoute() {
                 </p>
                 <UnlockCodeField result={fetcher.data} />
                 <Submit
+                  hideShortcutKey
                   size="lg"
                   className="w-full"
                   withBlocker={false}

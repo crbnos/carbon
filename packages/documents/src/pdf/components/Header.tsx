@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatCityStatePostalCode } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import { DEFAULT_HEADER_OPTIONS, type HeaderOptions } from "../../template";
@@ -38,13 +42,18 @@ const Header = ({
       ? (company.logoLightIcon ?? company.logoLight)
       : (company.logoLight ?? company.logoLightIcon);
   const showLogo = opts.showLogo && Boolean(logoSrc);
-  // Name fallback only when a logo is wanted but missing. With the logo turned
-  // off, render nothing here (the company name still shows in the details block).
-  const showNameFallback = opts.showLogo && !logoSrc;
+  // Name fallback only when a logo is wanted but missing AND the details block
+  // is not already printing the name — otherwise the 2xl fallback and the 9px
+  // details line both draw `company.name` and visibly overlap.
+  const showNameFallback =
+    opts.showLogo && !logoSrc && !opts.showCompanyDetails;
 
   const headerView = (
     <View style={tw("flex flex-row justify-between mb-1")}>
-      <View style={tw("flex flex-row")}>
+      {/* Unconstrained flex children overlap in react-pdf when both sides are
+          wide (long titles like "Return Merchandise Authorization") — bound
+          each side so the title wraps instead of colliding. */}
+      <View style={tw("flex flex-row shrink pr-3")}>
         {showLogo ? (
           <LogoImage
             src={logoSrc!}
@@ -57,14 +66,14 @@ const Header = ({
             {company.name}
           </Text>
         ) : null}
-        {opts.showCompanyDetails && (
+        {opts.showCompanyDetails ? (
           <View style={tw("flex flex-col text-[9px] text-gray-800")}>
-            {company.name && (
+            {company.name ? (
               <Text style={tw("font-bold")}>{company.name}</Text>
-            )}
-            {company.addressLine1 && <Text>{company.addressLine1}</Text>}
-            {company.addressLine2 && <Text>{company.addressLine2}</Text>}
-            {(company.city || company.stateProvince || company.postalCode) && (
+            ) : null}
+            {company.addressLine1 ? <Text>{company.addressLine1}</Text> : null}
+            {company.addressLine2 ? <Text>{company.addressLine2}</Text> : null}
+            {company.city || company.stateProvince || company.postalCode ? (
               <Text>
                 {formatCityStatePostalCode(
                   company.city,
@@ -72,24 +81,31 @@ const Header = ({
                   company.postalCode
                 )}
               </Text>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
       </View>
-      <View style={tw("flex flex-col items-end justify-start")}>
-        {opts.showDocumentTitle && (
-          <Text style={tw("text-2xl font-bold text-gray-800")}>{title}</Text>
-        )}
-        {opts.showDocumentId && documentId && (
+      {/* `shrink` (not `shrink-0`) so a long title — "Return Merchandise
+          Authorization" — wraps inside its 55% bound instead of overflowing
+          the page. Short titles still size to their content. */}
+      <View
+        style={tw("flex flex-col items-end justify-start shrink max-w-[55%]")}
+      >
+        {opts.showDocumentTitle ? (
+          <Text style={tw("text-2xl font-bold text-gray-800 text-right")}>
+            {title}
+          </Text>
+        ) : null}
+        {opts.showDocumentId && documentId ? (
           <Text style={tw("text-sm font-bold text-gray-600 -mt-4")}>
             {documentId}
           </Text>
-        )}
-        {documentSubId && (
+        ) : null}
+        {documentSubId ? (
           <Text style={tw("text-[8px] font-bold text-gray-600")}>
             {documentSubId}
           </Text>
-        )}
+        ) : null}
       </View>
     </View>
   );

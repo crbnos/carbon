@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   type CostingLine,
@@ -8,6 +12,7 @@ import {
 import { createMappingService } from "../../../core/external-mapping";
 import {
   JournalEntrySyncError,
+  noPostedJournalMessage,
   toPostingDateString
 } from "../../../core/posting";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
@@ -23,6 +28,7 @@ import {
   carbonExternalReference,
   loadRilletAccountCodesById,
   RilletTransactionSyncer,
+  toRilletExchangeRate,
   toRilletMoney,
   writeDroppingUnregisteredReferences
 } from "./shared";
@@ -51,6 +57,19 @@ import {
  * `due_date` is REQUIRED by Rillet; when Carbon has none it falls back to
  * the bill date (Rillet's own default for invoices).
  */
+
+/**
+ * Mapping metadata marking a bill this syncer once wrote as a Rillet
+ * reimbursement (the employee-supplier detour that predates the native
+ * `reimbursement` entity). Read-only now — nothing writes it any more.
+ *
+ * Exported because BOTH halves of that legacy row have to honour it: the
+ * void here (`deleteRemote`) and the payout in `entities/payment.ts`, whose
+ * remote id also lives in the `/reimbursements` id space. Provider-prefixed
+ * so the `accounting/index.ts` star-export cannot collide with another
+ * provider's legacy marker.
+ */
+export const RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND = "reimbursement";
 
 // Only posted bills are pushed (Draft has no journal to replay) — mirrors the
 // Rillet invoice syncer's posted-status gate.
@@ -120,24 +139,25 @@ function describeCostingLine(line: CostingLine): string | undefined {
 /**
  * Map a Carbon bill to the Rillet bill create payload. Pure — exported for
  * tests. `postingJournalLines` are the bill's costing lines (AP control line
- * already excluded by `loadBillCostingLines`); the mapper re-runs the AP
- * filter defensively so direct callers may pass raw journal lines too.
+ * already excluded by `loadBillCostingLines`). The mapper accepts costing only.
  *
  * The costing lines carry base-currency debit-signed amounts;
  * `bill.exchangeRate` converts them to the invoice's transaction currency
- * (pass-through at rate 1). Throws structured Warnings when the journal is
- * missing (invoice not posted / accounting off) or an account is unmapped.
+ * (rounded at the document currency boundary). Throws structured Warnings when the journal is
+ * missing (invoice not posted, or dated before the accounting cutover) or an account is unmapped.
  */
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
+  documentTotal: number;
+  decimalPlaces: number;
+  baseCurrencyCode: string;
+  postingDate: string;
   vendorRemoteId: string;
   accountCodesById: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
   companyId: string;
   /** Costing lines of the bill's posted Purchase Invoice journal, debit-signed. */
   postingJournalLines: BillPostingJournalLine[];
-  /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
-  payablesAccountId: string | null;
   /**
    * Slot config + resolved Field-value ids (same contract as the journal
    * mapper's RilletJournalDimensionArgs). Slotted line dimensions with no
@@ -152,18 +172,17 @@ export function mapBillToRilletBill(args: {
   if (args.postingJournalLines.length === 0) {
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
-      message: `Cannot sync bill ${bill.invoiceId}: no posted Purchase Invoice journal found — the bill's G/L costing comes from its posting journal. Post the invoice (with accounting enabled), then retry.`,
+      message: noPostedJournalMessage({
+        subject: `bill ${bill.invoiceId}`,
+        journal: "Purchase Invoice",
+        document: "invoice"
+      }),
       warning: true,
       metadata: { billId: bill.id }
     });
   }
 
-  // Defensive re-filter: loadBillCostingLines already dropped the AP control
-  // line, but keep the filter so raw journal lines (tests) also work.
-  const costingLines = args.postingJournalLines.filter(
-    (line) =>
-      line.accountId === null || line.accountId !== args.payablesAccountId
-  );
+  const costingLines = args.postingJournalLines;
 
   const unmapped = new Set<string>();
   const lineIdsWithoutAccount: string[] = [];
@@ -202,11 +221,12 @@ export function mapBillToRilletBill(args: {
   }
 
   // FX: convert base-currency amounts to the invoice's transaction currency
-  // (pass-through at rate 1) and pin exchange_rate on the payload below.
-  const transactionLines = toTransactionCurrencyLines(
-    costingLines,
-    bill.exchangeRate
-  );
+  // (rounded at the document currency boundary) and pin exchange_rate on the payload below.
+  const transactionLines = toTransactionCurrencyLines(costingLines, {
+    exchangeRate: bill.exchangeRate,
+    documentTotal: args.documentTotal,
+    decimalPlaces: args.decimalPlaces
+  });
 
   const items: Rillet.BillItem[] = transactionLines.map((line) => {
     const fieldRefs: Rillet.ItemFieldRef[] = [];
@@ -231,15 +251,13 @@ export function mapBillToRilletBill(args: {
 
     return {
       account_code: args.accountCodesById.get(line.accountId!)!,
-      amount: toRilletMoney(line.amount, currency),
+      amount: toRilletMoney(line.amount, currency, args.decimalPlaces),
       ...(description ? { description } : {}),
       ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
     };
   });
 
-  const billDate = toPostingDateString(
-    bill.dateIssued ?? new Date().toISOString()
-  );
+  const billDate = toPostingDateString(bill.dateIssued ?? args.postingDate);
 
   return {
     vendor_id: args.vendorRemoteId,
@@ -249,8 +267,13 @@ export function mapBillToRilletBill(args: {
     due_date: toPostingDateString(bill.dateDue ?? billDate),
     items,
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
-    // Pin the provider exchange rate for FX bills (omit at parity rate 1).
-    ...(bill.exchangeRate !== 1 ? { exchange_rate: bill.exchangeRate } : {}),
+    // Pin the directed provider exchange rate for foreign-currency bills.
+    exchange_rate: toRilletExchangeRate({
+      baseCurrencyCode: args.baseCurrencyCode,
+      documentCurrencyCode: currency,
+      foreignPerBaseRate: bill.exchangeRate,
+      date: args.postingDate
+    }),
     external_references: [
       carbonExternalReference(bill.id),
       carbonCompanyExternalReference(args.companyId)
@@ -282,6 +305,32 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
   // =================================================================
   // 1. LOCAL FETCH (Single + Batch)
   // =================================================================
+
+  protected isVoided(local: Accounting.Bill): boolean {
+    return local.status === "Voided";
+  }
+
+  /**
+   * A bill's void deletes `/bills/{id}` — EXCEPT for a legacy mapping stamped
+   * `remoteKind: "reimbursement"`. Between 2026-09-20 (#1503) and the native
+   * `reimbursement` entity, this syncer wrote an employee-supplier purchase
+   * invoice as a Rillet reimbursement and stamped the kind on the mapping; the
+   * stamp is the only record that the remote id lives in the `/reimbursements`
+   * id space. `deleteEntity` swallows a 404 as "already gone", so sending such
+   * an id to `/bills` tombstones the mapping and reports success while the
+   * reimbursement stays live in Rillet — a silent divergence with no error to
+   * act on. Nothing writes the stamp any more; this only reads it.
+   */
+  protected async deleteRemote(
+    remoteId: string,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    if (metadata?.remoteKind === RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND) {
+      await this.rilletProvider.deleteReimbursement(remoteId);
+      return;
+    }
+    await this.rilletProvider.deleteBill(remoteId);
+  }
 
   async fetchLocal(id: string): Promise<Accounting.Bill | null> {
     const bills = await this.fetchBillsByIds([id]);
@@ -491,11 +540,17 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       );
     }
 
-    const payablesAccountId = await this.getPayablesAccountId();
-    const { lines: costingLines } = await loadBillCostingLines(this.database, {
+    const {
+      lines: costingLines,
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
+      currencyCode,
+      exchangeRate
+    } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
-      billId: local.id,
-      payablesAccountId
+      billId: local.id
     });
 
     // Send ALL dimensions on the bill: auto-provision every Rillet Field +
@@ -505,26 +560,21 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     const { fieldIdByDimensionId, fieldValueIdsByValue } =
       await this.resolveLineDimensions(costingLines);
 
+    const accountCodesById = await this.getAccountCodesById();
+
     return mapBillToRilletBill({
-      bill: local,
+      bill: { ...local, currencyCode, exchangeRate },
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
       vendorRemoteId,
-      accountCodesById: await this.getAccountCodesById(),
+      accountCodesById,
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
       postingJournalLines: costingLines,
-      payablesAccountId,
       dimensions: { fieldIdByDimensionId, fieldValueIdsByValue }
     });
-  }
-
-  /** accountDefault.payablesAccount — the AP control line to exclude. */
-  private async getPayablesAccountId(): Promise<string | null> {
-    const defaults = await this.database
-      .selectFrom("accountDefault")
-      .select("payablesAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    return defaults?.payablesAccount ?? null;
   }
 
   // =================================================================

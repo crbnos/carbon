@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -9,19 +13,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Copy,
   Heading,
   HStack,
-  ScrollArea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  VStack
+  ScrollArea
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuKeySquare, LuRocket } from "react-icons/lu";
 import type { ActionFunctionArgs } from "react-router";
 import { data, Link } from "react-router";
+import { AppBarActions } from "~/components/Layout/Mobile";
+import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import { useImplementationReopenItem } from "~/hooks/useImplementationNavItem";
 import type { Company as CompanyType } from "~/modules/settings";
@@ -35,7 +38,6 @@ import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { copyToClipboard } from "~/utils/string";
 
 export const handle: Handle = {
   breadcrumb: msg`Company`,
@@ -50,7 +52,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const validation = await validator(companyValidator).validate(formData);
-
+  console.log(validation.error);
   if (validation.error) {
     return validationError(validation.error);
   }
@@ -80,6 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       );
     } catch (err) {
+      console.error(err);
       return data(
         {},
         await flash(request, error(err, "Failed to update company"))
@@ -90,6 +93,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ...validation.data,
       updatedBy: userId
     });
+    console.log(update.error);
     if (update.error)
       return data(
         {},
@@ -137,33 +141,28 @@ export default function Company() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <HStack spacing={1} className="items-center">
+      <SettingsPage className="gap-4">
+        <HStack spacing={1} className="items-center max-md:hidden">
           <Heading size="h3">
             <Trans>Company</Trans>
           </Heading>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                aria-label={t`Copy`}
-                size="sm"
-                className="p-1"
-                onClick={() => copyToClipboard(company.id ?? "")}
-              >
-                <LuKeySquare className="w-3 h-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>
-                <Trans>Copy company unique identifier</Trans>
-              </span>
-            </TooltipContent>
-          </Tooltip>
+          <Copy
+            text={company.id ?? ""}
+            label={t`Copy company unique identifier`}
+            icon={<LuKeySquare className="size-3" />}
+            variant="ghost"
+            className="w-auto"
+          />
         </HStack>
+        <AppBarActions>
+          <Copy
+            text={company.id ?? ""}
+            label={t`Copy company unique identifier`}
+            icon={<LuKeySquare />}
+            variant="ghost"
+            size="lg"
+          />
+        </AppBarActions>
         <Card>
           <CardHeader>
             <div className="flex items-start justify-between gap-3">
@@ -193,11 +192,11 @@ export default function Company() {
             </div>
           </CardHeader>
           <CardContent>
-            {/* @ts-ignore */}
+            {/* @ts-expect-error */}
             <CompanyForm company={initialValues} />
           </CardContent>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

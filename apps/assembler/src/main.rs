@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Carbon assembler service (Rust) — the CAD heavy-lifting hub. Action-based RPC
 //! over HTTP/JSON, versioned under `/v1`, with one shared async job model:
 //!
-//!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact
+//!   POST /v1/convert | /v1/optimize | /v1/plan | /v1/compact | /v1/thumbnail
 //!                                                → 202 { ok, job }   (create, async)
 //!                          ...?sync              → 200 { ok, job }   (run inline; Lambda)
 //!   GET  /v1/jobs/{id}?wait=N                     → 200 { ok, job }   (poll)
@@ -16,6 +20,7 @@
 //! fallback. Wires the `converter` and `planner` crates via `actions::*`.
 
 mod actions;
+mod admission;
 mod cache;
 mod config;
 mod dispatch;
@@ -25,6 +30,7 @@ mod http;
 mod jobs;
 mod progress;
 mod run;
+mod telemetry;
 
 use axum::{
     extract::{Path, Query, State},
@@ -37,7 +43,6 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
-use tokio::sync::Semaphore;
 use tower_http::compression::{predicate::SizeAbove, CompressionLayer};
 
 const VERSION: &str = "0.1.0";
@@ -53,9 +58,17 @@ const DEFAULT_MAX_RENDER_WEIGHT_BYTES: u64 = 419_430_400; // 400 MiB
 #[global_allocator]
 static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+// Read by jemalloc at startup. A background thread purges freed pages after a
+// second (and skips the lazy "muzzy" stage), so memory a finished job freed
+// goes back to the OS instead of sitting in the allocator until the next job.
+#[cfg(target_os = "linux")]
+#[allow(non_upper_case_globals)]
+#[export_name = "malloc_conf"]
+pub static malloc_conf: &[u8] = b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:0\0";
+
 #[derive(Clone)]
 pub struct AppState {
-    pub slots: Arc<Semaphore>,
+    pub admission: admission::Admission,
     pub jobs: jobs::JobStore,
     pub cache: Arc<cache::ResultCache>,
     pub progress: progress::ProgressStore,
@@ -80,17 +93,30 @@ fn main() {
 /// one-shot `run-job` CLI so both share one JobStore + cache + concurrency.
 pub async fn build_state() -> AppState {
     AppState {
-        slots: Arc::new(Semaphore::new(config::max_concurrency())),
+        admission: admission::Admission::from_env(),
         jobs: jobs::JobStore::from_env().await,
-        cache: Arc::new(cache::ResultCache::new(config::cache_bytes())),
+        cache: Arc::new(cache::ResultCache::new(
+            config::cache_dir(),
+            config::cache_bytes(),
+        )),
         progress: progress::ProgressStore::default(),
     }
 }
 
 async fn serve() {
-    let max = config::max_concurrency();
+    telemetry::init();
+    http::clear_stale_sources();
     let state = build_state().await;
-    let slots = Arc::clone(&state.slots);
+    let admission = state.admission.clone();
+    // Parked outputs nobody drained (see `jobs.rs`): the disk half of the
+    // pending TTL, including whatever a previous process left behind.
+    let sweeper = state.jobs.clone();
+    tokio::spawn(async move {
+        loop {
+            sweeper.sweep_parked().await;
+            tokio::time::sleep(std::time::Duration::from_secs(60)).await;
+        }
+    });
     let app = Router::new()
         .route("/health", get(health))
         .route("/v1", get(discovery))
@@ -98,6 +124,7 @@ async fn serve() {
         .route("/v1/optimize", post(create_optimize))
         .route("/v1/plan", post(create_plan))
         .route("/v1/compact", post(create_compact))
+        .route("/v1/thumbnail", post(create_thumbnail))
         .route("/v1/jobs/:job_id", get(get_job))
         .route("/v1/jobs/:job_id/cancel", post(cancel_job))
         .route("/v1/cache/invalidate", post(cache_invalidate))
@@ -112,10 +139,12 @@ async fn serve() {
         // entirely with `Accept-Encoding: identity`. Skip bodies under 1KB
         // (pointer-sized job envelopes) where a frame would cost more than it saves.
         .layer(CompressionLayer::new().compress_when(SizeAbove::new(1024)))
+        .layer(axum::middleware::from_fn(telemetry::http_span))
         .with_state(state);
 
     eprintln!(
-        "assembler config: version={VERSION} concurrency={max} cacheMB={} maxParts={} maxSourceMB={} longPollCap={}s jobTtl={}s resultTtl={}s",
+        "assembler config: version={VERSION} memoryBudgetMB={} cacheMB={} maxParts={} maxSourceMB={} longPollCap={}s jobTtl={}s resultTtl={}s",
+        admission.budget_mb(),
         config::cache_bytes() / 1024 / 1024,
         config::max_parts(),
         config::max_source_bytes() / 1024 / 1024,
@@ -135,11 +164,13 @@ async fn serve() {
         .await
         .unwrap();
 
-    // Jobs run detached (create returns 202) and each holds a slot; wait for
-    // every slot to free before exiting so a deploy/scale-down doesn't kill an
-    // in-flight job. The grace deadline in shutdown_signal force-exits a wedged one.
+    // Jobs run detached (create returns 202) and each holds part of the memory
+    // budget while it computes; wait for all of it to come back before exiting
+    // so a deploy/scale-down doesn't kill an in-flight job. The grace deadline
+    // in shutdown_signal force-exits a wedged one.
     eprintln!("assembler draining in-flight jobs");
-    let _ = slots.acquire_many(max as u32).await;
+    admission.drain().await;
+    telemetry::shutdown();
     eprintln!("assembler drained cleanly; exiting");
 }
 
@@ -167,12 +198,21 @@ async fn shutdown_signal() {
     tokio::spawn(async move {
         tokio::time::sleep(grace).await;
         eprintln!("assembler shutdown grace elapsed; forcing exit");
+        telemetry::shutdown();
         std::process::exit(0);
     });
 }
 
-async fn health() -> Json<Value> {
-    Json(json!({ "ok": true, "version": VERSION }))
+/// Healthy means it can do its job, and it cannot without Redis: every job's
+/// status lives there. A probe that fails here gets the instance replaced.
+async fn health(State(state): State<AppState>) -> (StatusCode, Json<Value>) {
+    if state.jobs.ping().await {
+        return (StatusCode::OK, Json(json!({ "ok": true, "version": VERSION })));
+    }
+    (
+        StatusCode::SERVICE_UNAVAILABLE,
+        Json(json!({ "ok": false, "version": VERSION, "error": "redis unreachable" })),
+    )
 }
 
 async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
@@ -190,7 +230,7 @@ async fn discovery(headers: HeaderMap) -> Result<Json<Value>, ApiError> {
         .collect();
     Ok(Json(json!({
         "version": VERSION,
-        "actions": ["convert", "optimize", "plan", "compact"],
+        "actions": ["convert", "optimize", "plan", "compact", "thumbnail"],
         "input_formats": input_formats,
         "codecs": ["meshopt", "draco", "none"],
         "limits": {
@@ -363,6 +403,7 @@ async fn lambda_dispatch(
             spec["token"] = k.into();
         }
     }
+    telemetry::inject(&mut spec);
     if let Err(m) = dispatch::self_invoke(&spec).await {
         state
             .jobs
@@ -716,6 +757,70 @@ async fn create_compact(
         }
     }
     respond(&state, &headers, &job_id, "compact", sync).await
+}
+
+async fn create_thumbnail(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Query(q): Query<CreateQuery>,
+    body: Result<Json<Value>, axum::extract::rejection::JsonRejection>,
+) -> Result<(StatusCode, HeaderMap, Json<Value>), ApiError> {
+    require_auth(&headers)?;
+    let req = parse_body(body)?;
+
+    let source_url = req["source"]["url"]
+        .as_str()
+        .ok_or_else(|| ApiError::invalid("missing source.url"))?;
+    config::validate_url(source_url)?;
+    let job_id = resolve_job_id(&headers);
+    let sync = sync_flag(&q);
+    let (submit_urls, callback_url) = submit_plumbing(&headers, &req)?;
+
+    match state.jobs.existing_active(&job_id).await {
+        Some(status) if !sync => return Ok(created(&job_id, "thumbnail", &status)),
+        Some(_) => {} // sync: attach to the running job, don't re-spawn
+        None if dispatch::from_env() == dispatch::Dispatch::Lambda => {
+            state
+                .jobs
+                .set_pending(&job_id, "thumbnail", optional_meta(&req), submit_urls.clone(), callback_url.clone())
+                .await;
+            lambda_dispatch(&state, &headers, &job_id, "thumbnail", &req).await?;
+        }
+        None => {
+            let meta = optional_meta(&req);
+            state.jobs.set_pending(&job_id, "thumbnail", meta, submit_urls.clone(), callback_url.clone()).await;
+            eprintln!("[{job_id}] thumbnail queued");
+            actions::thumbnail::spawn(&state, &job_id, thumbnail_req(source_url, &req["output"]));
+        }
+    }
+    respond(&state, &headers, &job_id, "thumbnail", sync).await
+}
+
+/// `output: { path?, size?, direction? }` — shared by the HTTP body and the
+/// run-job spec. `direction` is `[x, y, z]`, model towards camera.
+pub fn thumbnail_req(source_url: &str, output: &Value) -> actions::thumbnail::ThumbnailReq {
+    actions::thumbnail::ThumbnailReq {
+        source_url: source_url.to_string(),
+        size: output["size"]
+            .as_u64()
+            .map_or(thumbnail::DEFAULT_SIZE, |s| s.min(u32::MAX as u64) as u32),
+        path: output["path"].as_str().map(str::to_string),
+        direction: view_direction(&output["direction"]),
+    }
+}
+
+/// Three finite numbers that are not all zero, else the viewer's home direction.
+fn view_direction(value: &Value) -> [f32; 3] {
+    let parsed: Option<Vec<f32>> = value
+        .as_array()
+        .filter(|a| a.len() == 3)
+        .and_then(|a| a.iter().map(|n| n.as_f64().map(|n| n as f32)).collect());
+    match parsed.as_deref() {
+        Some(&[x, y, z]) if [x, y, z].iter().all(|c| c.is_finite()) && (x, y, z) != (0.0, 0.0, 0.0) => {
+            [x, y, z]
+        }
+        _ => thumbnail::DEFAULT_DIRECTION,
+    }
 }
 
 fn optional_meta(req: &Value) -> Option<Value> {

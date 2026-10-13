@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -7,8 +11,8 @@ import {
   getOrCreateConnectAccount,
   isStaleConnectAccountError
 } from "@carbon/stripe/connect.server";
+import { getRequestOrigin, redirect, redirectExternal } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect } from "react-router";
 import { path } from "~/utils/path";
 
 const logger = getLogger("stripe-connect");
@@ -19,8 +23,10 @@ async function handle({ request }: { request: Request }) {
   });
 
   const url = new URL(request.url);
-  const returnUrl = `${url.origin}/api/integrations/stripe-connect/callback?status=success`;
-  const refreshUrl = `${url.origin}/api/integrations/stripe-connect/callback?status=refresh`;
+  // Stripe sends the browser back here: the public origin, not request.url's.
+  const origin = getRequestOrigin(request) ?? url.origin;
+  const returnUrl = `${origin}/api/integrations/stripe-connect/callback?status=success`;
+  const refreshUrl = `${origin}/api/integrations/stripe-connect/callback?status=refresh`;
 
   try {
     let stripeAccountId = await getOrCreateConnectAccount(
@@ -94,7 +100,7 @@ async function handle({ request }: { request: Request }) {
       return Response.json({ redirectUrl: onboardingUrl });
     }
 
-    return redirect(onboardingUrl);
+    return redirectExternal(onboardingUrl);
   } catch (err: any) {
     logger.error("Failed to initiate Stripe Connect onboarding", {
       error: err

@@ -1,4 +1,14 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
+import { createHash } from "node:crypto";
 import { z } from "zod";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -25,6 +35,7 @@ import {
   type QboCreatePayload,
   type QboUpdatePayload
 } from "./models";
+import { escapeQboQueryValue } from "./query";
 
 const QBO_PRODUCTION_HOST = "https://quickbooks.api.intuit.com";
 const QBO_SANDBOX_HOST = "https://sandbox-quickbooks.api.intuit.com";
@@ -44,6 +55,48 @@ export const QBO_MINOR_VERSION = "75";
 
 /** QBO's hard upper bound for MAXRESULTS on /query. */
 export const QBO_QUERY_MAX_RESULTS = 1000;
+
+/**
+ * QBO caps the `requestid` idempotency token at 50 characters. Intuit replays
+ * a write's ORIGINAL response for the same `requestid`, which is what makes a
+ * retried create safe after a lost response.
+ * https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
+ */
+export const QBO_REQUEST_ID_MAX_LENGTH = 50;
+
+/**
+ * Deterministic `?requestid=` for a create: sha256 of
+ * `companyId:operation:localId`, truncated inside QBO's 50-char cap. Keyed by
+ * the CARBON id (never the payload) so a retry after a crash between the remote
+ * create and the local mapping write replays the original response instead of
+ * minting a second document — the same contract as Rillet's
+ * `buildRilletIdempotencyKey`.
+ */
+export function buildQboRequestId(
+  companyId: string,
+  operation: string,
+  localId: string
+): string {
+  return createHash("sha256")
+    .update(`${companyId}:${operation}:${localId}`)
+    .digest("hex")
+    .slice(0, 40);
+}
+
+/**
+ * QBO quotes `ExchangeRate` as HOME currency units per ONE unit of the
+ * document currency. Carbon's `exchangeRate` is the INVERSE — document units
+ * per base unit (`.claude/rules/numeric-precision.md`). Invert at this
+ * boundary and nowhere else.
+ */
+export function toQboExchangeRate(carbonExchangeRate: number): number {
+  if (!Number.isFinite(carbonExchangeRate) || carbonExchangeRate <= 0) {
+    throw new Error(
+      `Cannot convert exchange rate ${carbonExchangeRate} to QuickBooks Online's home-per-foreign convention: it must be finite and positive`
+    );
+  }
+  return 1 / carbonExchangeRate;
+}
 
 /**
  * Dimension slot target ids (stored on
@@ -316,7 +369,11 @@ export const QBO_CARBON_OWNED_ENTITIES = [
   "vendor",
   "item",
   "invoice",
-  "bill"
+  "bill",
+  "charge",
+  "creditMemo",
+  "supplierCredit",
+  "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -365,11 +422,14 @@ export class QboProvider extends BaseProvider {
   static id = ProviderID.QUICKBOOKS;
 
   readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
     transport: "rest",
     supportsWebhooks: false,
     supportsJournalPush: true,
     // One ClassRef + one DepartmentRef per journal line — 2 fixed slots
-    maxJournalDimensionSlots: 2
+    maxJournalDimensionSlots: 2,
+    searchableCounterparts: ["customer", "vendor"],
+    importableEntities: ["customer", "vendor"]
   };
 
   http: HTTPClient;
@@ -391,6 +451,7 @@ export class QboProvider extends BaseProvider {
       redirectUri: config.redirectUri,
       tokenUrl: QBO_TOKEN_URL,
       onTokenRefresh: config.onTokenRefresh,
+      beforeRefresh: config.beforeRefresh,
       getAuthUrl(scopes: string[], redirectURL: string): string {
         const params = new URLSearchParams({
           response_type: "code",
@@ -472,6 +533,54 @@ export class QboProvider extends BaseProvider {
    * the results with STARTPOSITION/MAXRESULTS until a short page signals
    * the end. `maxResults` is the page size, capped at QBO's limit of 1000.
    */
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`).
+   *
+   * QBO has a real search endpoint, so this queries by `DisplayName` instead of
+   * listing the company the way Rillet must. That makes **name the only rung it
+   * can answer**: the candidate set is already filtered to one name, so
+   * populating an email or tax id on these candidates could never change the
+   * outcome. Widening the ladder for QBO means widening this WHERE clause, not
+   * adding fields below.
+   *
+   * Throws on a failed query rather than returning `[]` — "the search failed"
+   * must not read as "no match exists", which would create a duplicate vendor
+   * in the customer's master data. `query` throws, so this is the default.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    const entity =
+      kind === "customer" ? "Customer" : kind === "vendor" ? "Vendor" : null;
+    if (!entity) return [];
+
+    const name = keys.name?.trim();
+    if (!name) return [];
+
+    const rows = await this.query<Qbo.Customer | Qbo.Vendor>(
+      entity,
+      `DisplayName = '${escapeQboQueryValue(name)}'`
+    );
+
+    return rows
+      .filter((row) => Boolean(row.Id))
+      .map((row) => ({ remoteId: row.Id, name: row.DisplayName ?? null }));
+  }
+
+  /**
+   * Every remote id of a master-data kind, for the one-shot import. `query`
+   * pages internally, so an unfiltered SELECT drains the whole list.
+   */
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    const entity =
+      kind === "customer" ? "Customer" : kind === "vendor" ? "Vendor" : null;
+    if (!entity) return [];
+
+    const rows = await this.query<Qbo.Customer | Qbo.Vendor>(entity);
+    return rows.flatMap((row) => (row.Id ? [row.Id] : []));
+  }
+
   async query<T>(
     entity: string,
     where?: string,
@@ -597,11 +706,12 @@ export class QboProvider extends BaseProvider {
     resource: string,
     envelopeKey: string,
     operation: string,
-    payload: unknown
+    payload: unknown,
+    requestId?: string
   ): Promise<T> {
     const response = await this.request<Record<string, T>>(
       "POST",
-      `/${resource}`,
+      `/${resource}${requestId ? `?requestid=${encodeURIComponent(requestId)}` : ""}`,
       { body: JSON.stringify(payload) }
     );
 
@@ -656,9 +766,16 @@ export class QboProvider extends BaseProvider {
   }
 
   async createVendor(
-    vendor: QboCreatePayload<Qbo.Vendor>
+    vendor: QboCreatePayload<Qbo.Vendor>,
+    requestId?: string
   ): Promise<Qbo.Vendor> {
-    return this.writeEntity("vendor", "Vendor", "create vendor", vendor);
+    return this.writeEntity(
+      "vendor",
+      "Vendor",
+      "create vendor",
+      vendor,
+      requestId
+    );
   }
 
   async updateVendor(
@@ -714,8 +831,11 @@ export class QboProvider extends BaseProvider {
     return this.readEntity<Qbo.Bill>("bill", "Bill", id);
   }
 
-  async createBill(bill: QboCreatePayload<Qbo.Bill>): Promise<Qbo.Bill> {
-    return this.writeEntity("bill", "Bill", "create bill", bill);
+  async createBill(
+    bill: QboCreatePayload<Qbo.Bill>,
+    requestId?: string
+  ): Promise<Qbo.Bill> {
+    return this.writeEntity("bill", "Bill", "create bill", bill, requestId);
   }
 
   async updateBill(bill: QboUpdatePayload<Qbo.Bill>): Promise<Qbo.Bill> {
@@ -755,6 +875,259 @@ export class QboProvider extends BaseProvider {
       "update purchase order",
       this.updateBody(purchaseOrder)
     );
+  }
+
+  // =================================================================
+  // Purchases (card charges) — POST /purchase, GET /purchase/{id}
+  // =================================================================
+
+  async getPurchase(id: string): Promise<Qbo.Purchase | null> {
+    return this.readEntity<Qbo.Purchase>("purchase", "Purchase", id);
+  }
+
+  /**
+   * Create a QBO Purchase (POST /purchase). Carbon writes card charges as
+   * `PaymentType: "CreditCard"` purchases (see QboChargeSyncer).
+   * VERIFY (QBO sandbox): no sandbox was available when this shipped — the
+   * payload follows Intuit's Purchase reference but is unverified against a
+   * live QBO company.
+   */
+  async createPurchase(
+    purchase: QboCreatePayload<Qbo.Purchase>,
+    requestId?: string
+  ): Promise<Qbo.Purchase> {
+    return this.writeEntity(
+      "purchase",
+      "Purchase",
+      "create purchase",
+      purchase,
+      requestId
+    );
+  }
+
+  /** Intuit's Purchase-Delete contract uses POST with Id + current SyncToken.
+   * https://www.postman.com/intuit-developer/intuit-developer-quickbooks-online-accounting-api/request/4884662-823fd98f-4f9c-4f4e-9c9b-8667c474a851
+   * Do not use forgiving getPurchase here: a failed read is not proof of deletion. */
+  async deletePurchase(id: string): Promise<void> {
+    const current = await this.request<{
+      Purchase: Qbo.Purchase & { status?: string };
+    }>("GET", `/purchase/${encodeURIComponent(id)}`);
+    if (current.error) throwQboApiError("read purchase before delete", current);
+    const purchase = current.data?.Purchase;
+    if (purchase?.Id === id && purchase.status === "Deleted") return;
+    if (purchase?.Id !== id || !purchase.SyncToken)
+      throw new Error(
+        "QuickBooks purchase read returned no current SyncToken; deletion was not attempted"
+      );
+    const deleted = await this.request<{
+      Purchase: { Id: string; status?: string };
+    }>("POST", "/purchase?operation=delete", {
+      body: JSON.stringify({ Id: id, SyncToken: purchase.SyncToken })
+    });
+    if (deleted.error) throwQboApiError("delete purchase", deleted);
+    if (
+      deleted.data?.Purchase?.Id !== id ||
+      deleted.data.Purchase.status !== "Deleted"
+    )
+      throw new Error("QuickBooks did not confirm the purchase was deleted");
+  }
+
+  /**
+   * Delete a Bill. QBO has no DELETE verb: `POST /bill?operation=delete`
+   * carrying the current `SyncToken` is the delete, exactly as for a Purchase
+   * (`deletePurchase` above, from which this is cloned). Refuses to claim
+   * success unless QBO echoes `status: "Deleted"` for the same id.
+   *
+   * VERIFY (QBO sandbox): the operation=delete contract is Intuit's documented
+   * pattern for transaction entities, but Carbon has not exercised it for
+   * `bill` against a live company.
+   */
+  async deleteBill(id: string): Promise<void> {
+    const current = await this.request<{
+      Bill: Qbo.Bill & { status?: string };
+    }>("GET", `/bill/${encodeURIComponent(id)}`);
+    if (current.error) throwQboApiError("read bill before delete", current);
+    const bill = current.data?.Bill;
+    if (bill?.Id === id && bill.status === "Deleted") return;
+    if (bill?.Id !== id || !bill.SyncToken)
+      throw new Error(
+        "QuickBooks bill read returned no current SyncToken; deletion was not attempted"
+      );
+    const deleted = await this.request<{
+      Bill: { Id: string; status?: string };
+    }>("POST", "/bill?operation=delete", {
+      body: JSON.stringify({ Id: id, SyncToken: bill.SyncToken })
+    });
+    if (deleted.error) throwQboApiError("delete bill", deleted);
+    if (deleted.data?.Bill?.Id !== id || deleted.data.Bill.status !== "Deleted")
+      throw new Error("QuickBooks did not confirm the bill was deleted");
+  }
+
+  async updatePurchase(
+    purchase: QboUpdatePayload<Qbo.Purchase>
+  ): Promise<Qbo.Purchase> {
+    return this.writeEntity(
+      "purchase",
+      "Purchase",
+      "update purchase",
+      this.updateBody(purchase)
+    );
+  }
+
+  // =================================================================
+  // Credit documents — CreditMemo (AR) / VendorCredit (AP), and the
+  // provider-side Service item an AR credit line must reference
+  // =================================================================
+
+  /** GET /creditmemo/{id}. */
+  async getCreditMemo(id: string): Promise<Qbo.CreditMemo | null> {
+    return this.readEntity<Qbo.CreditMemo>("creditmemo", "CreditMemo", id);
+  }
+
+  /**
+   * Create a QBO CreditMemo (POST /creditmemo) — a CUSTOMER credit.
+   *
+   * Every line MUST carry `SalesItemLineDetail.ItemRef`: QBO accepts only
+   * `SalesItemLine`/`GroupLine` here, and an item-less line's `Amount` is
+   * SILENTLY IGNORED (no fault — you get a zero-total credit memo). The
+   * credit-memo syncer resolves that item from the memo's reason account.
+   *
+   * VERIFY (QBO sandbox): no sandbox was available when this shipped — the
+   * payload follows Intuit's CreditMemo reference but is unverified against a
+   * live QBO company, like the QBO payment push.
+   */
+  async createCreditMemo(
+    creditMemo: QboCreatePayload<Qbo.CreditMemo>,
+    requestId?: string
+  ): Promise<Qbo.CreditMemo> {
+    return this.writeEntity(
+      "creditmemo",
+      "CreditMemo",
+      "create credit memo",
+      creditMemo,
+      requestId
+    );
+  }
+
+  /** GET /vendorcredit/{id}. */
+  async getVendorCredit(id: string): Promise<Qbo.VendorCredit | null> {
+    return this.readEntity<Qbo.VendorCredit>(
+      "vendorcredit",
+      "VendorCredit",
+      id
+    );
+  }
+
+  /**
+   * Create a QBO VendorCredit (POST /vendorcredit) — a SUPPLIER credit.
+   * Account-coded through `AccountBasedExpenseLineDetail.AccountRef`, so
+   * unlike CreditMemo it needs no provider-side item.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async createVendorCredit(
+    vendorCredit: QboCreatePayload<Qbo.VendorCredit>,
+    requestId?: string
+  ): Promise<Qbo.VendorCredit> {
+    return this.writeEntity(
+      "vendorcredit",
+      "VendorCredit",
+      "create vendor credit",
+      vendorCredit,
+      requestId
+    );
+  }
+
+  /**
+   * Create a `Service` Item whose `IncomeAccountRef` is the mapped credit
+   * reason account — the GL binding a QBO CreditMemo line needs
+   * (`ItemAccountRef` is invoice-only). This is the `createItem` callback the
+   * shared `resolveCreditReasonItem` injects on QBO; the Item is a
+   * PROVIDER-SIDE ARTIFACT and never becomes a Carbon `item` row.
+   *
+   * QBO's name namespace is shared and unique, so a name collision (fault
+   * 6240) is recovered by adopting the existing Item rather than failing the
+   * memo forever — the reason account's name is exactly the sort of label a
+   * customer already has in Products & Services.
+   */
+  async createServiceItem(args: {
+    name: string;
+    incomeAccountRef: Qbo.Ref;
+    description?: string;
+    requestId?: string;
+  }): Promise<Qbo.Item> {
+    const payload: QboCreatePayload<Qbo.Item> = {
+      Name: args.name,
+      Type: "Service",
+      IncomeAccountRef: args.incomeAccountRef,
+      ...(args.description ? { Description: args.description } : {})
+    };
+
+    try {
+      return await this.writeEntity<Qbo.Item>(
+        "item",
+        "Item",
+        "create service item",
+        payload,
+        args.requestId
+      );
+    } catch (error) {
+      if (!isQboDuplicateNameError(error)) throw error;
+
+      const existing = await this.query<Qbo.Item>(
+        "Item",
+        `Name = '${args.name.replace(/'/g, "\\'")}'`
+      );
+      const match = existing.find((item) => item.Name === args.name);
+      if (!match) throw error;
+      return match;
+    }
+  }
+
+  /**
+   * Apply a CreditMemo to an Invoice: a ZERO-cash QBO `Payment` whose lines
+   * link both transactions (`LinkedTxn` TxnType `Invoice` and `CreditMemo`).
+   * QBO has no dedicated allocation endpoint — the zero-total Payment IS the
+   * allocation. Returns the created Payment id.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async applyCreditMemo(
+    payload: QboCreditMemoApplicationPayload,
+    requestId?: string
+  ): Promise<string> {
+    const created = await this.writeEntity<Qbo.Payment>(
+      "payment",
+      "Payment",
+      "apply credit memo",
+      payload,
+      requestId
+    );
+    return created.Id;
+  }
+
+  /**
+   * Apply a VendorCredit to a Bill: a ZERO-cash QBO `BillPayment` whose lines
+   * link both transactions (`LinkedTxn` TxnType `Bill` and `VendorCredit`).
+   *
+   * `BillPayment` requires a `PayType` AND a bank account even when no cash
+   * moves, which is why the caller must resolve the company's configured bank
+   * account first. Returns the created BillPayment id.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async applyVendorCredit(
+    payload: QboVendorCreditApplicationPayload,
+    requestId?: string
+  ): Promise<string> {
+    const created = await this.writeEntity<Qbo.BillPayment>(
+      "billpayment",
+      "BillPayment",
+      "apply vendor credit",
+      payload,
+      requestId
+    );
+    return created.Id;
   }
 
   // =================================================================
@@ -1164,6 +1537,43 @@ export type QboBillPaymentCreatePayload = {
   PayType: "Check";
   CheckPayment: { BankAccountRef: Qbo.Ref };
   Line: Qbo.PaymentLine[];
+};
+
+/**
+ * Write payload for the zero-cash `Payment` that APPLIES a CreditMemo to an
+ * Invoice. QBO has no allocation endpoint: the application IS a Payment whose
+ * `TotalAmt` is 0 and whose lines link the Invoice and the CreditMemo through
+ * `LinkedTxn`. `CustomerRef` is required (QBO cannot infer the party from the
+ * links).
+ */
+export type QboCreditMemoApplicationPayload = {
+  CustomerRef: Qbo.Ref;
+  /** Always 0 — applying a credit moves no cash. */
+  TotalAmt: 0;
+  TxnDate: string;
+  Line: Qbo.PaymentLine[];
+  CurrencyRef?: Qbo.Ref;
+  /** HOME per FOREIGN unit — see toQboExchangeRate. */
+  ExchangeRate?: number;
+};
+
+/**
+ * Write payload for the zero-cash `BillPayment` that APPLIES a VendorCredit to
+ * a Bill. `PayType` and a bank account are required by QBO even at zero cash,
+ * so the caller resolves the company's configured bank/cash account and fails
+ * with a clear reason when it is unset or unmapped.
+ */
+export type QboVendorCreditApplicationPayload = {
+  VendorRef: Qbo.Ref;
+  /** Always 0 — applying a credit moves no cash. */
+  TotalAmt: 0;
+  TxnDate: string;
+  PayType: "Check";
+  CheckPayment: { BankAccountRef: Qbo.Ref };
+  Line: Qbo.PaymentLine[];
+  CurrencyRef?: Qbo.Ref;
+  /** HOME per FOREIGN unit — see toQboExchangeRate. */
+  ExchangeRate?: number;
 };
 
 /**

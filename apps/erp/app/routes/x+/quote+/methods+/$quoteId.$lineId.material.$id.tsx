@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -10,6 +14,7 @@ import {
   recalculateQuoteLinePrices,
   upsertQuoteMaterial
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -36,7 +41,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The update below uses the service role, which bypasses RLS: the material,
+  // its line and every parent id in the form must belong to this company.
   const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+      id: lineId,
+      quoteId
+    }),
+    requireCompanyRecord(serviceRole, "quoteMaterial", companyId, {
+      id,
+      quoteLineId: lineId
+    }),
+    validation.data.quoteOperationId
+      ? requireCompanyRecord(serviceRole, "quoteOperation", companyId, {
+          id: validation.data.quoteOperationId,
+          quoteLineId: lineId
+        })
+      : undefined
+  ]);
+
   const updateQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
     quoteId,
     quoteLineId: lineId,
@@ -71,7 +95,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(
+    serviceRole,
+    companyId,
+    quoteId,
+    lineId,
+    userId
+  );
 
   return {
     id: quoteMaterialId,

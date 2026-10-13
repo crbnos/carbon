@@ -7690,6 +7690,25 @@
       }
     },
     {
+      "term": "Shipping Revenue",
+      "category": "accounting",
+      "context": "The revenue account credited for shipping charged to customers, posted on its own line and distinct from the Sales account. Its account-default field renders as \"Shipping Revenue (default)\" beside it on the Account Defaults screen, so both must use the SAME term.",
+      "translations": {
+        "fr": "Revenus d’expédition",
+        "de": "Umsatzerlöse aus Versand",
+        "es": "Ingresos por gastos de envío",
+        "it": "Ricavi da spedizioni",
+        "ja": "配送売上高",
+        "pl": "Przychody z opłat za wysyłkę",
+        "pt": "Receita de envio",
+        "ru": "Выручка от доставки",
+        "zh": "运输收入",
+        "hi": "शिपिंग राजस्व",
+        "tr": "Kargo hasılatı",
+        "ko": "배송 매출"
+      }
+    },
+    {
       "term": "To Ship",
       "category": "sales",
       "context": "Outstanding lines awaiting shipment.",

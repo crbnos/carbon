@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteMaterialForm, getMaterialForm } from "~/modules/items";
 import { getParams, path } from "~/utils/path";
@@ -64,12 +70,12 @@ export default function DeleteMaterialFormRoute() {
   if (!formId) throw new Error("formId not found");
 
   const { materialForm } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
 
   if (!materialForm) return null;
 
-  const onCancel = () => navigate(-1);
+  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete

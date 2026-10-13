@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
@@ -172,11 +177,11 @@ export const assemblyConvertFunction = inngest.createFunction(
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
         const [glbUpload, graphUpload] = await Promise.all([
-          client.storage
-            .from("private")
+          storage(client)
+            .company(companyId)
             .createSignedUploadUrl(glbPath, { upsert: true }),
-          client.storage
-            .from("private")
+          storage(client)
+            .company(companyId)
             .createSignedUploadUrl(graphPath, { upsert: true })
         ]);
         const urls: Record<string, string> = {};

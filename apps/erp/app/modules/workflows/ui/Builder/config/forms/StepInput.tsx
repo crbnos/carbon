@@ -1,11 +1,15 @@
-import type { TermId } from "@carbon/glossary";
-import type { ChoiceSelectOption } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import type {
   CatalogInput,
   ValueOrRef,
   WorkflowIssue
-} from "@carbon/workflows";
-import { isMultiSelect } from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { isMultiSelect } from "@carbon/ee/workflows";
+import type { ChoiceSelectOption } from "@carbon/react";
 import type { ReactNode } from "react";
 import { MultiChoiceField } from "../../fields/MultiChoiceField";
 import { OptionsField } from "../../fields/OptionsField";

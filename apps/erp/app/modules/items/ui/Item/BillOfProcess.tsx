@@ -1,6 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
+import { useAction, useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -13,6 +20,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  ClientOnly,
   Count,
   cn,
   DropdownMenu,
@@ -24,6 +32,7 @@ import {
   IconButton,
   Label,
   Loading,
+  MENU_ITEM_SHORTCUTS,
   Subheading,
   ToggleGroup,
   ToggleGroupItem,
@@ -34,20 +43,22 @@ import {
   useDebounce,
   useDisclosure,
   useThrottle,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getItemById, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { motion, Reorder, useDragControls } from "framer-motion";
+import type { DragControls } from "motion/react";
+import { motion, Reorder, useDragControls } from "motion/react";
 import { nanoid } from "nanoid";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
+  LuBox,
   LuChevronLeft,
   LuChevronRight,
   LuCirclePlus,
@@ -61,14 +72,10 @@ import {
   LuMaximize2,
   LuMinimize2,
   LuSquareFunction,
-  LuTriangleAlert
+  LuTriangleAlert,
+  LuWorkflow
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useFetchers,
-  useParams,
-  useRevalidator
-} from "react-router";
+import { useFetcher, useFetchers, useParams } from "react-router";
 import { z } from "zod";
 import {
   DateTime,
@@ -99,12 +106,16 @@ import {
 import AssemblyInstruction from "~/components/Form/AssemblyInstruction";
 import InspectionDocument from "~/components/Form/InspectionDocument";
 import Procedure from "~/components/Form/Procedure";
-import { SupplierProcessPreview } from "~/components/Form/SupplierProcess";
 import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidePinOverlay,
+  SlidesEditor,
+  uploadStepSlideModel,
+  useSlideModels
+} from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
   SortableList,
@@ -113,7 +124,13 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
+import { CompactEmpty } from "~/components/Table/components/Compact/CompactEmpty";
+import {
+  useCurrencyDecimals,
+  useImageUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
   OperationParameter,
@@ -145,6 +162,7 @@ import type {
   ConfigurationRule,
   MakeMethod
 } from "../../types";
+import { OperationRowDetails, OperationRowTitle } from "./MethodRow";
 import type { ReleaseLockProps } from "./ReleaseLockAlert";
 import ReleaseLockAlert, { getReleaseLockFlags } from "./ReleaseLockAlert";
 
@@ -249,6 +267,7 @@ const BillOfProcess = ({
     revisionStatus,
     releaseControl
   });
+  const { isPhone } = useViewport();
   const isReadOnly =
     permissions.can("update", "parts") === false ||
     makeMethod.status !== "Draft" ||
@@ -296,12 +315,10 @@ const BillOfProcess = ({
       }, {} as PendingWorkInstructions);
     });
   const [checkedState, setCheckedState] = useState<CheckedState>({});
-  const [orderState, setOrderState] = useState<OrderState>(() => {
-    return initialOperations.reduce((acc, op) => {
-      acc[op.id!] = op.order;
-      return acc;
-    }, {} as OrderState);
-  });
+  // Only the rows this session has reordered. Every other row takes its order
+  // from the loaded data: a copy of all of them taken at mount hid a reorder
+  // made anywhere else until the page was reloaded.
+  const [orderState, setOrderState] = useState<OrderState>({});
 
   const operationsById = new Map<
     string,
@@ -377,26 +394,7 @@ const BillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, {
-        upsert: true,
-        cacheControl: "3600"
-      });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`parts/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
     if (isReadOnly) return;
@@ -494,10 +492,6 @@ const BillOfProcess = ({
       return rest;
     });
   };
-
-  const {
-    company: { id: companyId }
-  } = useUser();
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -819,11 +813,11 @@ const BillOfProcess = ({
   return (
     <Card>
       <HStack className="justify-between">
-        <CardHeader>
-          <CardTitle className="flex flex-row items-center gap-2">
+        <CardHeader className="max-md:min-w-0">
+          <CardTitle className="flex flex-row items-center gap-2 max-md:flex max-md:flex-wrap max-md:gap-y-1">
             <Trans>Bill of Process</Trans>
             {itemName && (
-              <span className="text-xs text-muted-foreground font-normal">
+              <span className="text-xs text-muted-foreground font-normal max-md:order-last max-md:min-w-0 max-md:basis-full max-md:truncate">
                 {itemName}
               </span>
             )}
@@ -894,6 +888,27 @@ const BillOfProcess = ({
           <ReleaseLockAlert isLocked={isReleaseLocked} className="mb-4" />
         )}
         <SortableList
+          emptyState={
+            isPhone ? (
+              <CompactEmpty
+                className="py-10"
+                icon={<LuWorkflow />}
+                heading={<Trans>No operations yet</Trans>}
+                description={
+                  <Trans>Add the operations that make this item.</Trans>
+                }
+                primaryAction={
+                  <Button
+                    variant="secondary"
+                    isDisabled={isReadOnly || selectedItemId !== null}
+                    onClick={onAddItem}
+                  >
+                    <Trans>Add Operation</Trans>
+                  </Button>
+                }
+              />
+            ) : undefined
+          }
           isReadOnly={isReadOnly}
           items={items}
           onReorder={onReorder}
@@ -906,7 +921,6 @@ const BillOfProcess = ({
         <ConfigurationEditor
           configuration={configuration}
           open={configuratorDisclosure.isOpen}
-          // @ts-ignore
           parameters={parameters ?? []}
           onClose={configuratorDisclosure.onClose}
         />
@@ -1260,7 +1274,7 @@ function OperationForm({
           onChange={(newValue) => {
             setProcessData((d) => ({ ...d, description: newValue }));
           }}
-          className="col-span-2"
+          className="col-span-2 max-md:col-span-full"
           isConfigured={rulesByField.has(key("description"))}
           onConfigure={
             configurable && !temporaryItems[item.id]
@@ -1841,7 +1855,7 @@ function OperationForm({
         transition={{
           type: "spring",
           bounce: 0,
-          duration: 0.55
+          duration: 0.25
         }}
       >
         <motion.div layout className="ml-auto mr-1 pt-2">
@@ -1896,7 +1910,8 @@ function AttributesForm({
 
   // Update sort order when steps change
   useEffect(() => {
-    if (steps && steps.length > 0) {
+    // Also when the last step is deleted: its id must leave the order.
+    if (steps) {
       const sorted = [...steps]
         .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
         .map((step) => step.id || "");
@@ -2012,23 +2027,7 @@ function AttributesForm({
   }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   // Upload a chosen image to storage immediately and buffer it as a draft slide.
   const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2037,11 +2036,18 @@ function AttributesForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await storage(carbon)
+        .company(companyId)
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -2057,6 +2063,8 @@ function AttributesForm({
           annotations: []
         }
       ]);
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setDraftUploading(false);
     }
@@ -2260,7 +2268,10 @@ function AttributesForm({
                 <Input name="name" label={t`Name`} />
               </div>
 
-              <VStack spacing={2} className="w-full col-span-2">
+              <VStack
+                spacing={2}
+                className="w-full col-span-2 max-md:col-span-full"
+              >
                 <Label>Description</Label>
                 <Editor
                   initialValue={description}
@@ -2540,16 +2551,15 @@ function AttributesListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationStepAction>();
-  const duplicateFetcher = useFetcher();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationStepAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
+  const duplicateFetcher = useFetcher();
 
   const [type, setType] = useState<OperationStep["type"]>(attribute.type);
   const [numericControls, setNumericControls] = useState<string[]>(() => {
@@ -2574,28 +2584,7 @@ function AttributesListItem({
     attribute.description ?? {}
   );
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 
@@ -2640,7 +2629,10 @@ function AttributesListItem({
               <Input name="name" label={t`Name`} />
             </div>
 
-            <VStack spacing={2} className="w-full col-span-2">
+            <VStack
+              spacing={2}
+              className="w-full col-span-2 max-md:col-span-full"
+            >
               <Label>Description</Label>
               <Editor
                 initialValue={description}
@@ -2894,10 +2886,14 @@ function AttributesListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.duplicate}
                     onClick={() =>
                       duplicateFetcher.submit(null, {
                         method: "post",
@@ -2908,6 +2904,7 @@ function AttributesListItem({
                     Duplicate
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -3120,11 +3117,18 @@ function StepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await storage(carbon)
+        .company(companyId)
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -3137,6 +3141,8 @@ function StepSlides({
         method: "post",
         action: path.to.newMethodOperationStepSlide
       });
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setUploading(false);
     }
@@ -3351,15 +3357,14 @@ function ParametersListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationParameterAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationParameterAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const isUpdated = updatedBy !== null;
   const person = isUpdated ? updatedBy : createdBy;
@@ -3490,10 +3495,14 @@ function ParametersListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -3536,12 +3545,41 @@ function OperationPreview({
   const { t } = useLingui();
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
+  const [slideIdx, setSlideIdx] = useState(0);
+
+  // Move to a step and reset to its first slide.
+  const goToStep = (next: number) => {
+    setCurrent(next);
+    setSlideIdx(0);
+  };
 
   const sorted = [...steps].sort(
     (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
 
-  if (sorted.length === 0) {
+  // Computed before the early return so the hooks below run unconditionally.
+  const idx = Math.min(current, Math.max(0, sorted.length - 1));
+  const step = sorted[idx] as OperationStep | undefined;
+  const slides = (
+    (step?.methodOperationStepSlide ?? []) as OperationStepSlide[]
+  )
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  // Model thumbnails (+ conversion status polling) for the model slides, reusing
+  // the same hook the editor uses.
+  const slideModels = useSlideModels(
+    slides.map((s) => ({
+      key: s.id,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      size: s.size,
+      annotations: s.annotations
+    }))
+  );
+
+  if (sorted.length === 0 || !step) {
     return (
       <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
         <Trans>Add steps to preview the operator view.</Trans>
@@ -3549,15 +3587,15 @@ function OperationPreview({
     );
   }
 
-  const idx = Math.min(current, sorted.length - 1);
-  const step = sorted[idx];
-  const slides = [...(step.methodOperationStepSlide ?? [])].sort(
-    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-  );
-  // First IMAGE slide for the preview panel — model slides render only in the MES
-  // assembly view; here they'd have no picture to show.
-  const firstImagePath = slides.find((s) => s.imagePath)?.imagePath;
-  const image = firstImagePath ? getPrivateUrl(firstImagePath) : null;
+  const sIdx = Math.min(slideIdx, Math.max(0, slides.length - 1));
+  const slide = slides[sIdx];
+  const slideModel = slide?.modelUploadId
+    ? slideModels[slide.modelUploadId]
+    : undefined;
+  const slideImage = slide?.imagePath ? getPrivateUrl(slide.imagePath) : null;
+  const slideModelThumb = slideModel?.thumbnailPath
+    ? getPrivateUrl(slideModel.thumbnailPath)
+    : null;
 
   // Tools scoped to this step + operation-level (no links) tools shown on every step
   // (tool ↔ step is many-to-many).
@@ -3573,6 +3611,31 @@ function OperationPreview({
       ).map((s) => s.methodOperationStepId);
     return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
+
+  // Pins are image-only and the overlay draws just the number, so surface each
+  // pin's label (and the tool it links to, when set) as a legend under the image —
+  // otherwise an annotation's meaning is only visible inside the annotator.
+  // The content CHECK is `imagePath IS NOT NULL OR modelUploadId IS NOT NULL`, so a
+  // row may carry both; the panel renders the model then, and no pins are drawn — so
+  // match that precedence here rather than listing labels for invisible pins.
+  const pinLegend = (
+    slide?.imagePath && !slide.modelUploadId ? (slide.annotations ?? []) : []
+  )
+    .map((pin, index) => {
+      const tool = pin.toolId
+        ? allTools.find((x) => x.id === pin.toolId)
+        : undefined;
+      return {
+        pin,
+        index,
+        toolId: tool?.readableIdWithRevision,
+        // MES names a pin's tool by item name; keep the preview reading the same.
+        toolName: tool?.name
+      };
+    })
+    .filter(({ pin, toolId, toolName }) =>
+      Boolean(pin.label || toolId || toolName)
+    );
 
   const descriptionHtml =
     step.description && typeof step.description === "object"
@@ -3592,7 +3655,7 @@ function OperationPreview({
             isIcon
             aria-label={t`Previous step`}
             isDisabled={idx <= 0}
-            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+            onClick={() => goToStep(Math.max(0, idx - 1))}
           >
             <LuChevronLeft />
           </Button>
@@ -3602,28 +3665,128 @@ function OperationPreview({
             isIcon
             aria-label={t`Next step`}
             isDisabled={idx >= sorted.length - 1}
-            onClick={() =>
-              setCurrent((c) => Math.min(sorted.length - 1, c + 1))
-            }
+            onClick={() => goToStep(Math.min(sorted.length - 1, idx + 1))}
           >
             <LuChevronRight />
           </Button>
         </div>
       </div>
 
-      <div className="flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-        {image ? (
-          <img
-            src={image}
-            alt=""
-            className="max-h-full max-w-full object-contain"
-          />
+      {/* Center content in a bounded frame. The image slide wraps the picture in
+          an inline-block sized to the RENDERED image so the pin overlay maps to the
+          image box, not a letterboxed aspect-video frame (which drifted the pins). */}
+      <div className="relative flex min-h-[240px] items-center justify-center rounded-md border bg-muted/40 p-2">
+        {!slide ? (
+          <span className="text-xs text-muted-foreground">
+            <Trans>No reference image</Trans>
+          </span>
+        ) : slide.modelUploadId ? (
+          <>
+            {slideModelThumb ? (
+              <img
+                src={slideModelThumb}
+                alt={slide.caption ?? slideModel?.name ?? "3D model"}
+                className="max-h-[520px] max-w-full object-contain"
+              />
+            ) : (
+              <LuBox className="size-10 text-muted-foreground" />
+            )}
+            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[10px] font-semibold text-muted-foreground">
+              3D
+            </span>
+          </>
+        ) : slideImage ? (
+          <div className="relative inline-block">
+            <img
+              src={slideImage}
+              alt={slide.caption ?? ""}
+              className="block max-h-[520px] w-auto max-w-full rounded-md"
+            />
+            <SlidePinOverlay pins={slide.annotations ?? []} />
+          </div>
         ) : (
           <span className="text-xs text-muted-foreground">
             <Trans>No reference image</Trans>
           </span>
         )}
       </div>
+
+      {slide?.caption ? (
+        <p className="text-xs text-muted-foreground">{slide.caption}</p>
+      ) : null}
+
+      {pinLegend.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {pinLegend.map(({ pin, index, toolId, toolName }) => (
+            <div key={pin.id} className="flex items-start gap-2">
+              <span
+                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                style={{ backgroundColor: pin.color ?? "#ef4444" }}
+              >
+                {index + 1}
+              </span>
+              <span className="min-w-0 flex-1 text-xs">
+                {toolId ? <span className="font-medium">{toolId}</span> : null}
+                {toolName ? (
+                  <span className="text-muted-foreground">
+                    {toolId ? " " : null}
+                    {toolName}
+                  </span>
+                ) : null}
+                {(toolId || toolName) && pin.label ? " · " : null}
+                {pin.label ? (
+                  <span className="text-muted-foreground">{pin.label}</span>
+                ) : null}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {slides.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {slides.map((s, i) => {
+            const model = s.modelUploadId
+              ? slideModels[s.modelUploadId]
+              : undefined;
+            const thumb = s.modelUploadId
+              ? model?.thumbnailPath
+                ? getPrivateUrl(model.thumbnailPath)
+                : null
+              : s.imagePath
+                ? getPrivateUrl(s.imagePath)
+                : null;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-label={s.caption || t`Slide ${i + 1}`}
+                title={s.caption ?? undefined}
+                onClick={() => setSlideIdx(i)}
+                className={cn(
+                  "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                  i === sIdx ? "border-foreground" : "border-transparent"
+                )}
+              >
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt=""
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <LuBox className="size-5 text-muted-foreground" />
+                )}
+                {s.modelUploadId && (
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                    3D
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <span className="flex size-6 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">
@@ -3632,12 +3795,18 @@ function OperationPreview({
         {step.type ? <Badge variant="secondary">{step.type}</Badge> : null}
       </div>
       <p className="text-sm font-medium">{step.name ?? t`Step`}</p>
-      {descriptionHtml ? (
-        <div
-          className="prose prose-sm max-w-none text-sm dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: descriptionHtml }}
-        />
-      ) : null}
+      {/* generateHTML returns nothing on the server, so the server never
+          renders this block: rendering it during hydration would not match. */}
+      <ClientOnly>
+        {() =>
+          descriptionHtml ? (
+            <div
+              className="prose prose-sm max-w-none text-sm dark:prose-invert"
+              dangerouslySetInnerHTML={{ __html: descriptionHtml }}
+            />
+          ) : null
+        }
+      </ClientOnly>
 
       <div className="flex flex-col gap-1 border-t pt-3">
         <Subheading variant="heavy">
@@ -3649,9 +3818,16 @@ function OperationPreview({
             return (
               <div key={tl.id ?? i} className="flex items-center gap-2 py-0.5">
                 <LuHammer className="size-3 shrink-0 text-muted-foreground" />
-                <span className="flex-1 text-xs">
-                  {tool?.readableIdWithRevision ?? tl.toolId}
-                </span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-xs">
+                    {tool?.readableIdWithRevision ?? tl.toolId}
+                  </span>
+                  {tool?.name ? (
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {tool.name}
+                    </span>
+                  ) : null}
+                </div>
                 {tl.quantity > 1 ? (
                   <span className="text-xs text-muted-foreground">
                     ×{tl.quantity}
@@ -3786,15 +3962,14 @@ function ToolsListItem({
   const disclosure = useDisclosure();
   const deleteModalDisclosure = useDisclosure();
   const submitted = useRef(false);
-  const fetcher = useFetcher<typeof editMethodOperationToolAction>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (submitted.current && fetcher.state === "idle") {
-      disclosure.onClose();
-      submitted.current = false;
+  const fetcher = useAction<typeof editMethodOperationToolAction>({
+    onSettled: () => {
+      if (submitted.current) {
+        disclosure.onClose();
+        submitted.current = false;
+      }
     }
-  }, [fetcher.state]);
+  });
 
   const tools = useTools();
   const tool = tools.find((t) => t.id === toolId);
@@ -3884,10 +4059,14 @@ function ToolsListItem({
                   />
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={disclosure.onOpen}>
+                  <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.edit}
+                    onClick={disclosure.onOpen}
+                  >
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    shortcut={MENU_ITEM_SHORTCUTS.delete}
                     destructive
                     onClick={deleteModalDisclosure.onOpen}
                   >
@@ -3931,48 +4110,16 @@ function makeItem(
   return {
     id: operation.id!,
     title: (
-      <VStack spacing={0}>
-        <h3 className="font-semibold truncate cursor-pointer">
-          {operation.description}
-        </h3>
-        {operation.operationType === "Outside Processing" && (
-          <SupplierProcessPreview
-            processId={operation.processId}
-            supplierProcessId={operation.operationSupplierProcessId}
-          />
-        )}
-      </VStack>
+      <OperationRowTitle
+        description={operation.description}
+        operationType={operation.operationType}
+        processId={operation.processId}
+        supplierProcessId={operation.operationSupplierProcessId}
+      />
     ),
     checked: false,
     order: operation.operationOrder,
-    details: (
-      <HStack spacing={1}>
-        {operation.operationType === "Outside Processing" ? (
-          <Badge>Outside Processing</Badge>
-        ) : (
-          <>
-            {(operation?.setupTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Setup" className="h-3 w-3 mr-1" />
-                {operation.setupTime} {operation.setupUnit}
-              </Badge>
-            )}
-            {(operation?.laborTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Labor" className="h-3 w-3 mr-1" />
-                {operation.laborTime} {operation.laborUnit}
-              </Badge>
-            )}
-            {(operation?.machineTime ?? 0) > 0 && (
-              <Badge variant="secondary">
-                <TimeTypeIcon type="Machine" className="h-3 w-3 mr-1" />
-                {operation.machineTime} {operation.machineUnit}
-              </Badge>
-            )}
-          </>
-        )}
-      </HStack>
-    ),
+    details: <OperationRowDetails operation={operation} />,
     data: operation
   };
 }

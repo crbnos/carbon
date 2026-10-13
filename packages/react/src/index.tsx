@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@tiptap/react";
 
 export {
@@ -15,6 +19,8 @@ import {
 } from "./Accordion";
 import ActionBar, { ActionBarButton } from "./ActionBar";
 import { ActionMenu } from "./ActionMenu";
+import type { ActionPresentation } from "./ActionPresentation";
+import { ActionPresentationProvider } from "./ActionPresentation";
 import { Alert, AlertDescription, AlertTitle } from "./Alert";
 import { AutodeskProvider, AutodeskViewer } from "./AutodeskViewer";
 import type { AvatarProps } from "./Avatar";
@@ -27,18 +33,24 @@ import {
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { BarProgress } from "./BarProgress";
+import { useBotProtection } from "./BotProtection";
 import {
   BottomSheet,
+  BottomSheetBack,
   BottomSheetBody,
   BottomSheetClose,
   BottomSheetContent,
   BottomSheetDescription,
+  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
-  BottomSheetTrigger
+  BottomSheetTrigger,
+  SheetSectionLabel,
+  sheetRowClassName
 } from "./BottomSheet";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
+import { CarbonPulse } from "./CarbonPulse";
 import {
   Card,
   CardAction,
@@ -114,6 +126,23 @@ import {
 } from "./Date";
 import type { DateTimeProps } from "./DateTime";
 import { DateTime } from "./DateTime";
+import { DisabledReason, getDisabledReason } from "./DisabledReason";
+import {
+  Dock,
+  DockBar,
+  DockFinder,
+  DockFinderGroup,
+  DockFinderItem,
+  DockFinderSeparator,
+  DockItem,
+  DockMenu,
+  DockMenuContent,
+  DockMenuPanel,
+  DockMenuSection,
+  DockSeparator,
+  DockSwitcher,
+  dockMenuRowClassName
+} from "./Dock";
 import {
   Drawer,
   DrawerBody,
@@ -142,6 +171,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger
 } from "./Dropdown";
+import {
+  Enumerable,
+  EnumerableAsText,
+  useEnumerableAsText
+} from "./Enumerable";
 import { File } from "./File";
 import {
   FormControl,
@@ -152,12 +186,15 @@ import {
 import { Heading } from "./Heading";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
-import { generateHTML, HTML } from "./HTML";
+import { generateHTML, HTML, isRichTextEmpty, RichTextView } from "./HTML";
 import type {
   Modifier,
   Shortcut,
-  ShortcutDefinition
+  ShortcutDefinition,
+  ShortcutInput,
+  ShortcutKeyMapEntry
 } from "./hooks/useShortcutKeys";
+import { KeyboardKeys, useShortcutKeyMap } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -178,7 +215,6 @@ import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
 import { Loading } from "./Loading";
-import { LoadingBars } from "./LoadingBars";
 import {
   Menu,
   MenuCheckboxItem,
@@ -236,6 +272,15 @@ import {
 } from "./ModalDrawer";
 import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
+import {
+  NavRail,
+  NavRailBrand,
+  NavRailDivider,
+  NavRailGroup,
+  NavRailItem,
+  NavRailLink,
+  navRailItemClasses
+} from "./NavRail";
 import type { NumberFieldProps } from "./Number";
 import {
   NumberDecrementStepper,
@@ -260,9 +305,10 @@ import {
   PopoverHeader,
   PopoverTrigger
 } from "./Popover";
+import { PrefetchLink } from "./PrefetchLink";
 import { Progress } from "./Progress";
 import { PulsingDot } from "./PulsingDot";
-import { RadioGroup, RadioGroupItem } from "./Radio";
+import { RadioGroup, RadioGroupButton, RadioGroupItem } from "./Radio";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -282,6 +328,8 @@ import {
   SelectValue
 } from "./Select";
 import { Separator } from "./Separator";
+import type { ShortcutHelpEntry } from "./ShortcutHelpOverlay";
+import { ShortcutHelpKeys, ShortcutHelpOverlay } from "./ShortcutHelpOverlay";
 import { ShortcutKey, shortcutKeyVariants } from "./ShortcutKey";
 import {
   Sidebar,
@@ -317,6 +365,9 @@ import { Status } from "./Status";
 import type { SubheadingProps } from "./Subheading";
 import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
+import type { MenuItemShortcut } from "./shortcuts";
+import { MENU_ITEM_SHORTCUTS, SHORTCUTS } from "./shortcuts";
+import { TabBar, TabBarItem } from "./TabBar";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import type { TextareaProps } from "./Textarea";
@@ -345,23 +396,35 @@ import {
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
+import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
-import { getValidChildren, reactNodeToString } from "./utils/react";
+import { isEditableTarget } from "./utils/keyboard";
+import {
+  getValidChildren,
+  optionLabelText,
+  reactNodeToString
+} from "./utils/react";
+import { useViewport, ViewportProvider } from "./Viewport";
 import { VStack } from "./VStack";
 
 export * from "./Acknowledge";
+export * from "./ColorPicker";
 export * from "./hooks";
+export * from "./RecordOutlet";
 export {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
+  ActionPresentationProvider,
   BarProgress,
   BottomSheet,
+  BottomSheetBack,
   BottomSheetBody,
   BottomSheetClose,
   BottomSheetContent,
   BottomSheetDescription,
+  BottomSheetFooter,
   BottomSheetHeader,
   BottomSheetTitle,
   BottomSheetTrigger,
@@ -378,6 +441,9 @@ export {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Badge,
+  Enumerable,
+  EnumerableAsText,
+  useEnumerableAsText,
   BadgeCloseButton,
   Button,
   Card,
@@ -400,6 +466,7 @@ export {
   CollapsibleContent,
   CollapsibleTrigger,
   Combobox,
+  ViewportProvider,
   filterComboboxOptions,
   Command,
   CommandDialog,
@@ -437,6 +504,21 @@ export {
   DateRangePicker,
   DateTime,
   DateTimePicker,
+  DisabledReason,
+  Dock,
+  DockBar,
+  DockFinder,
+  DockFinderGroup,
+  DockFinderItem,
+  DockFinderSeparator,
+  DockItem,
+  DockMenu,
+  DockMenuContent,
+  DockMenuPanel,
+  DockMenuSection,
+  DockSeparator,
+  DockSwitcher,
+  dockMenuRowClassName,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -468,6 +550,7 @@ export {
   FormLabel,
   HStack,
   HTML,
+  RichTextView,
   Heading,
   HoverCard,
   HoverCardContent,
@@ -487,7 +570,7 @@ export {
   Label,
   LabelWithHelp,
   Loading,
-  LoadingBars,
+  CarbonPulse,
   Menu,
   MenuCheckboxItem,
   MenuGroup,
@@ -538,6 +621,13 @@ export {
   NumberDecrementStepper,
   NumberField,
   NumberIncrementStepper,
+  NavRail,
+  NavRailBrand,
+  NavRailDivider,
+  NavRailGroup,
+  NavRailItem,
+  NavRailLink,
+  navRailItemClasses,
   NumberInput,
   NumberInputGroup,
   NumberInputStepper,
@@ -550,9 +640,11 @@ export {
   PopoverFooter,
   PopoverHeader,
   PopoverTrigger,
+  PrefetchLink,
   Progress,
   PulsingDot,
   RadioGroup,
+  RadioGroupButton,
   RadioGroupItem,
   ResizableHandle,
   ResizablePanel,
@@ -570,7 +662,18 @@ export {
   SelectTrigger,
   SelectValue,
   Separator,
+  SheetSectionLabel,
+  sheetRowClassName,
+  KeyboardKeys,
+  MENU_ITEM_SHORTCUTS,
+  SHORTCUTS,
+  ShortcutHelpKeys,
+  ShortcutHelpOverlay,
   ShortcutKey,
+  hasOpenDialog,
+  isEditableTarget,
+  isInsideTopmostDialog,
+  useShortcutKeyMap,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -601,6 +704,8 @@ export {
   Status,
   Subheading,
   Switch,
+  TabBar,
+  TabBarItem,
   Table,
   TableCaption,
   Tabs,
@@ -623,6 +728,7 @@ export {
   TrackedEntityPicker,
   usePickOrderOptions,
   TruncatedTooltipText,
+  getDisabledReason,
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -634,17 +740,22 @@ export {
   cn,
   copyToClipboard,
   generateHTML,
+  isRichTextEmpty,
   getValidChildren,
   multiSelectTriggerVariants,
+  optionLabelText,
   reactNodeToString,
   shortcutKeyVariants,
   toast,
+  useBotProtection,
+  useViewport,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,
   useSidebar
 };
 export type {
+  ActionPresentation,
   AvatarProps,
   BadgeProps,
   ButtonProps,
@@ -661,9 +772,13 @@ export type {
   Modifier,
   MultiSelectProps,
   NumberFieldProps,
+  MenuItemShortcut,
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  ShortcutHelpEntry,
+  ShortcutInput,
+  ShortcutKeyMapEntry,
   SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,

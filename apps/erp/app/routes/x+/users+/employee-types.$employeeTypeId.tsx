@@ -1,30 +1,41 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  makeCompanyPermissionsFromEmployeeType,
+  upsertEmployeeType,
+  upsertEmployeeTypePermissions
+} from "@carbon/ee/permissions.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { redirect } from "@carbon/utils";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   EmployeeTypeForm,
   employeeTypePermissionsValidator,
   employeeTypeValidator,
   getEmployeeType,
-  getPermissionsByEmployeeType,
-  upsertEmployeeType,
-  upsertEmployeeTypePermissions
+  getPermissionsByEmployeeType
 } from "~/modules/users";
-import { makeCompanyPermissionsFromEmployeeType } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
-import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "users",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const { employeeTypeId } = params;
@@ -48,6 +59,14 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
     update: "users"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const validation = await validator(employeeTypeValidator).validate(
@@ -113,11 +132,6 @@ export async function action({ request }: ActionFunctionArgs) {
     path.to.employeeTypes,
     await flash(request, success("Updated employee type"))
   );
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  invalidateUserSelectQueries(getCompanyId());
-  return await serverAction();
 }
 
 export default function EditEmployeeTypesRoute() {

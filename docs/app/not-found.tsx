@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { MainHeader } from "@/components/main-header";
 
 export const metadata: Metadata = {
-  title: "Page not found — Carbon",
+  title: "Page not found | Carbon",
   description: "The page you’re looking for doesn’t exist or has moved."
 };
 
@@ -20,10 +24,14 @@ const LINKS = [
   },
   {
     label: "API",
-    desc: "REST resources for every table and view",
-    href: "/api-reference"
+    desc: "The service layer — read and write the safe way",
+    href: "/api"
   },
-  { label: "MCP", desc: "Connect AI clients to your data", href: "/mcp" }
+  {
+    label: "Data API",
+    desc: "Direct REST access to every table and view",
+    href: "/api/data"
+  }
 ];
 
 function Arrow() {

@@ -23,7 +23,7 @@ in the migrations — **newest wins**; core tables created in
   `ReviewersList`, `AssociatedItemsList`, `IssueAssociations`, `IssuesTable`
   (see `ui/Issue/index.ts`). Plus `ui/IssueTypes/`, `ui/IssueWorkflows/`,
   `ui/RequiredActions/`, `ui/Actions/`.
-- Task creation edge function: `packages/database/supabase/functions/create/index.ts`,
+- Task creation server function: `packages/server-functions/src/create/index.ts`,
   case `"nonConformanceTasks"`.
 
 ## Status enums (verified in `quality.models.ts` + migrations)
@@ -49,15 +49,36 @@ in the migrations — **newest wins**; core tables created in
   (`Inventory` / `Non-Inventory`, e.g. a job-operation NCR from `apps/mes` or a
   rejected non-tracked inbound-inspection lot) — they carry a `quantity` and no
   `nonConformanceItemTrackedEntity` links. `AssociatedItemsList.tsx` renders these as
-  a quantity + disposition `Select` (no entity chips; "Move entities" stays gated on
-  `links.length > 0`). **Split** works for a non-tracked row as a pure quantity split
+  an inline-editable quantity + disposition `Select` (no entity chips; "Move entities"
+  stays gated on `links.length > 0`). The quantity saves through `item+/update.tsx`
+  (`field: "quantity"`) → `updateIssueItemQuantity` (`quality-disposition.server.ts`),
+  which refuses rows with entity links (their quantity is the link sum) and any NCR with
+  a `nonConformanceInspection` link (the reject already wrote off the lot, and
+  `closeIssue` restores `row.quantity` on Use As Is / Rework). The write is a
+  compare-and-set on `expectedQuantity` (the quantity the client last saw), so a stale
+  save matches no row and is refused. It is a Kysely write, so the audit actor comes
+  from `updatedBy` (the audit handler's fallback when `auth.uid()` is null).
+- **Issue disposition lock**: `lockIssueDispositions` (`@carbon/database/quality`)
+  takes `FOR NO KEY UPDATE` on the `nonConformance` row. Every writer that inserts
+  `nonConformanceItemTrackedEntity` / `nonConformanceInspection` rows or changes
+  `nonConformanceItem.quantity` takes it first, inside its transaction, before touching
+  any item row: the quantity edit, `assignEntitiesToIssueItem`, `splitIssueItem`, the
+  inspection association (`$id.association.new.tsx`), `new.tsx` job-operation
+  auto-link, the ERP inspection reject, sales-return escalation, and MES
+  `linkIssueDispositionContext` (which also writes the MES reject's inspection link, via
+  `createQualityIssue({ inspectionId })`). `linkEntitiesToIssueItemRow` is the shared
+  find-or-create-row + link + grow-quantity step. A new writer of those tables must take
+  the lock too, or the quantity edit's link / inspection checks can race it.
+- **Split** works for a non-tracked row as a pure quantity split
   (`splitIssueItem` creates a new `Pending` row for the split-off quantity and shrinks
   the original, no entity subdivision), so MRB can e.g. scrap N and use-as-is the
   rest. `closeIssue` still requires every row (tracked or not) to be non-`Pending`.
 - **Disposition GL/cost posting** (`closeIssue` + inspection reject): inventory value
-  movements go through the **`post-nonconformance` edge function** (`itemLedger` +
+  movements go through the **`post-nonconformance` server function** (`itemLedger` +
   `costLedger` relief via `calculateCOGS` + a balanced `journal` offset to
-  `accountDefault.scrapAccount`, gated on `accountingEnabled`), **not** raw `itemLedger`
+  `accountDefault.scrapAccount` for every company — Provisional before the accounting
+  cutover, when an empty `scrapAccount` becomes a stand-in line on retained earnings;
+  after it an empty one falls back to `inventoryAdjustmentVarianceAccount`), **not** raw `itemLedger`
   inserts. `closeIssue` builds `movements[]` and invokes it BEFORE the status-flip
   transaction (idempotent per `(documentType,documentId)`, so a retry is safe; a GL
   failure aborts the close). Movement rules: tracked Scrap/Return → `-link.qty` per
@@ -88,7 +109,7 @@ Task status writes go to `path.to.issueTaskStatus`; `updateIssueTaskStatus` sets
 ## Required actions & system action types
 
 Issues carry `requiredActionIds TEXT[]` (IDs into `nonConformanceRequiredAction`).
-The create edge function inserts one `nonConformanceActionTask` per id (1-indexed
+The `create` server function inserts one `nonConformanceActionTask` per id (1-indexed
 `sortOrder`). `nonConformanceRequiredAction.systemType` (enum
 `nonConformanceSystemActionType`, added `20260313000001`):
 `Containment`, `Corrective`, `Preventive`, `Verification`, `Communication`. System
@@ -98,7 +119,7 @@ or change `systemType`); unique per `(companyId, systemType)`. Custom actions ha
 
 ## Approvals / MRB / reviewers
 
-`approvalRequirements nonConformanceApproval[]` → the edge function inserts a
+`approvalRequirements nonConformanceApproval[]` → the server function inserts a
 `nonConformanceApprovalTask` per requirement. When `MRB` is newly required it
 seeds two `nonConformanceReviewer` rows (`title: "Engineering"`, `"Quality"`);
 removing MRB deletes the reviewers; existing reviewers are left untouched.
@@ -168,6 +189,6 @@ Reviewers managed in `ReviewersList.tsx` (`nonConformanceReviewerValidator` = ju
 - Slack NC notifications post to the channel picked at Slack install, read off the company's
   Slack connection (`getSlackWorkspace().channelId`, `integrationConnection` metadata) — the old
   `nonconformance_channel_id` / `nonconformance_notifications_enabled` jsonschema fields were
-  dropped in `20260901173100` (they had no readers).
+  dropped in `20261013031318` (they had no readers).
 - Filename `20251114222648_supplier_id.sql` is non-conformance work (supplier links +
   disposition enum), not a generic "supplier" change.

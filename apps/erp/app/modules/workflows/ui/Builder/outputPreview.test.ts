@@ -1,5 +1,9 @@
-import type { ValueType } from "@carbon/workflows";
-import { t, WORKFLOW_INTEGRATION_CATALOG } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ValueType } from "@carbon/ee/workflows";
+import { t, WORKFLOW_INTEGRATION_CATALOG } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { fieldsOf, groupOutputs, weightOf } from "./outputPreview";
 

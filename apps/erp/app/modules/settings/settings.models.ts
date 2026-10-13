@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   blockSchema,
   documentSectionPlacementSchema,
@@ -28,6 +32,15 @@ export const modulesType = [
 
 export const kanbanOutputTypes = ["label", "qrcode", "url"] as const;
 
+// Mirrors the `invoiceAutomation` DB enum: what happens to a recurring
+// invoice (rental agreements today) when the daily job creates it.
+export const invoiceAutomations = [
+  "Draft Only",
+  "Post",
+  "Post and Email",
+  "Post and Send via Stripe"
+] as const;
+
 export const purchasePriceUpdateTimingTypes = [
   "Purchase Invoice Post",
   "Purchase Order Finalize"
@@ -35,7 +48,7 @@ export const purchasePriceUpdateTimingTypes = [
 
 /** All permission modules with their available CRUD actions */
 export const apiKeyPermissionModules = {
-  accounting: ["view", "create", "update"],
+  accounting: ["view", "create", "update", "delete"],
   documents: ["view", "create", "update", "delete"],
   inventory: ["view", "create", "update", "delete"],
   invoicing: ["view", "create", "update", "delete"],
@@ -51,6 +64,14 @@ export const apiKeyPermissionModules = {
 } as const;
 
 export type ApiKeyPermissionModule = keyof typeof apiKeyPermissionModules;
+
+/**
+ * Permission keys (`${module}_${action}`) that are opt-in only: they must be
+ * enabled by clicking their own cell and are never turned on by the "all
+ * modules" or per-row select-all checkboxes. Deleting accounting data via the
+ * API is high-risk, so it stays deselected unless explicitly chosen.
+ */
+export const apiKeyOptInPermissionKeys = ["accounting_delete"] as const;
 
 export const apiKeyValidator = z.object({
   id: zfd.text(z.string().optional()),
@@ -228,6 +249,34 @@ export const jobCompletedValidator = z.object({
   salesJobCompletedNotificationGroup: z.array(z.string()).optional()
 });
 
+export const invoiceAutomationValidator = z.object({
+  invoiceAutomation: z.enum(invoiceAutomations)
+});
+
+export const mrpScheduleTypes = ["Every 3 Hours", "Daily"] as const;
+
+// "Every 3 Hours" is the default cadence and ignores the time; "Daily" runs
+// once a day at `mrpRunTime` on the company's own clock. The form offers whole
+// hours, but the column (and the MCP tool) take any time — the cron checks
+// every 15 minutes — so the field is the stored "HH:MM[:SS]" string, and a
+// time like 14:30 saves back unchanged instead of being cut to 14:00.
+export const mrpScheduleValidator = z
+  .object({
+    mrpSchedule: z.enum(mrpScheduleTypes),
+    mrpRunTime: zfd.text(
+      z
+        .string()
+        .regex(/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/, {
+          message: "Choose a time"
+        })
+        .optional()
+    )
+  })
+  .refine(
+    (data) => data.mrpSchedule !== "Daily" || data.mrpRunTime !== undefined,
+    { message: "Time is required", path: ["mrpRunTime"] }
+  );
+
 export const kanbanOutputValidator = z.object({
   kanbanOutput: z.enum(kanbanOutputTypes)
 });
@@ -250,6 +299,21 @@ export const expiredEntityPolicies = [
   "Block",
   "BlockWithOverride"
 ] as const;
+
+// Planning settings (MRP suggestions). Whole days / whole weekly buckets.
+export const rescheduleToleranceValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(365))
+});
+
+// Empty clears the default: items without their own horizon then have no fence.
+export const planningHorizonValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(3650).optional())
+});
+
+export const forecastConsumptionValidator = z.object({
+  backwardPeriods: zfd.numeric(z.number().int().min(0).max(52)),
+  forwardPeriods: zfd.numeric(z.number().int().min(0).max(52))
+});
 
 // Every shelf-life knob lives inside the companySettings.inventoryShelfLife
 // JSONB blob. The validator below reads/writes that single object so the
@@ -332,8 +396,20 @@ export const productLabelSizeValidator = z.object({
   )
 });
 
+export const invoiceNotificationValidator = z.object({
+  invoiceNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
 export const rfqReadyValidator = z.object({
   rfqReadyNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
+export const salesRuleNotificationValidator = z.object({
+  salesRuleNotificationGroup: z
     .array(z.string().min(1, { message: "Invalid selection" }))
     .optional()
 });
@@ -421,7 +497,7 @@ export type Theme = (typeof themes)[number];
 export const themeValidator = z.object({
   next: zfd.text(z.string().optional()),
   theme: z.enum(themes, {
-    errorMap: (issue, ctx) => ({ message: "Theme is required" })
+    error: "Theme is required"
   })
 });
 
@@ -591,8 +667,20 @@ export const postingSyncSettingsValidator = z.object({
   ),
   familyAr: z.enum(["documents", "journals", "none"]),
   familyAp: z.enum(["documents", "journals", "none"]),
+  familyCreditMemo: z.enum(["documents", "journals", "none"]),
+  familySupplierCredit: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
+});
+
+/**
+ * Turns an accounting integration's sync on or off (the switch in the
+ * integration drawer header). The action refuses "on" while any required
+ * account is unmapped.
+ */
+export const syncEnabledValidator = z.object({
+  intent: z.literal("update-sync-enabled"),
+  syncEnabled: z.enum(["true", "false"]).transform((value) => value === "true")
 });
 
 /**

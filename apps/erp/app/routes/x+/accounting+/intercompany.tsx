@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Button, VStack } from "@carbon/react";
+import { Button, RecordOutlet, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import { New } from "~/components";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { getIntercompanyTransactions } from "~/modules/accounting";
@@ -47,6 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function IntercompanyRoute() {
+  const { t } = useLingui();
   const { data, count } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
   const permissions = usePermissions();
@@ -90,12 +96,12 @@ export default function IntercompanyRoute() {
                   Regenerate
                 </Button>
               </regenerateFetcher.Form>
-              <New label="IC Transaction" to={`new?${params.toString()}`} />
+              <New label={t`IC Transaction`} to={`new?${params.toString()}`} />
             </div>
           )
         }
       />
-      <Outlet />
+      <RecordOutlet />
     </VStack>
   );
 }

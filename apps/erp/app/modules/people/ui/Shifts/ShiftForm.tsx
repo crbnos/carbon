@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -10,10 +14,10 @@ import {
   FormControl,
   FormLabel,
   HStack,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useNavigate } from "react-router";
 import type { z } from "zod";
 import {
   Boolean,
@@ -35,8 +39,8 @@ type ShiftFormProps = {
 const ShiftForm = ({ initialValues }: ShiftFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const navigate = useNavigate();
-  const onClose = () => navigate(-1);
+  const closeRoute = useCloseRoute();
+  const onClose = () => closeRoute();
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing
@@ -77,7 +81,8 @@ const ShiftForm = ({ initialValues }: ShiftFormProps) => {
                 <FormLabel>
                   <Trans>Days</Trans>
                 </FormLabel>
-                <VStack>
+                {/* Phones: the day names read as row labels, not helper text. */}
+                <VStack className="max-md:[&_p]:text-sm max-md:[&_p]:text-foreground">
                   <Boolean name="monday" description={t`Monday`} bordered />
                   <Boolean name="tuesday" description={t`Tuesday`} bordered />
                   <Boolean

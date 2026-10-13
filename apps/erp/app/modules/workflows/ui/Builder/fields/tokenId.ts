@@ -1,4 +1,8 @@
-import type { ItemRef, VariableRef } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ItemRef, VariableRef } from "@carbon/ee/workflows";
 import { nodeNameLabel, outputLabel } from "../labelKeys";
 
 /** The two template parts that are not plain text. */

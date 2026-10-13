@@ -1,4 +1,9 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import type { Qbo } from "../models";
 import {
@@ -352,13 +357,30 @@ export class QboCustomerSyncer extends QboEntitySyncer<
     data: Omit<Qbo.Customer, QboWriteOmit>,
     localId: string
   ): Promise<string> {
-    let existingRemoteId = await this.getRemoteId(localId);
-
-    // Smart match: QBO DisplayNames are unique — search before creating so
-    // backfills against a populated QBO company link instead of colliding.
-    if (!existingRemoteId && data.DisplayName) {
-      existingRemoteId = await this.findRemoteCustomerByName(data.DisplayName);
-    }
+    // Already mapped, or already on QBO under a name we have never linked:
+    // one shared ladder decides (`core/counterpart.ts`), so ambiguity creates
+    // rather than guessing. QBO DisplayNames are unique, so the search below is
+    // exact — a backfill against a populated QBO company links instead of
+    // colliding.
+    const { remoteId: existingRemoteId } =
+      await resolveOrCreateRemoteCounterpart({
+        provider: this.qboProvider,
+        kind: "customer",
+        keys: { name: data.DisplayName ?? null },
+        existingRemoteId: await this.getRemoteId(localId),
+        localId,
+        // A name match can land on a counterpart another Carbon record already
+        // owns; adopting it would repoint this record at a master that is not
+        // its own. Ambiguity creates — see core/counterpart.ts.
+        isClaimed: async (remoteId) => {
+          const owner = await this.mappingService.getEntityId(
+            this.provider.id,
+            remoteId,
+            this.entityType
+          );
+          return owner !== null && owner !== localId;
+        }
+      });
 
     try {
       if (!existingRemoteId) {
@@ -389,18 +411,5 @@ export class QboCustomerSyncer extends QboEntitySyncer<
       if (nameExists) throw nameExists;
       throw error;
     }
-  }
-
-  private async findRemoteCustomerByName(name: string): Promise<string | null> {
-    const matches = await this.qboProvider.query<Qbo.Customer>(
-      "Customer",
-      `DisplayName = '${escapeQboQueryValue(name)}'`
-    );
-
-    const match = matches[0];
-    if (!match) return null;
-
-    this.rememberRemoteEntity(match);
-    return match.Id;
   }
 }

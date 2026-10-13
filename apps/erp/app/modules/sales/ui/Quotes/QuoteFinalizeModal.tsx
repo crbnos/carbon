@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { getQuoteDisplayId } from "@carbon/documents/utils";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { ValidatedForm } from "@carbon/form";
 import {
   Alert,
@@ -9,7 +14,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -20,7 +24,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
-import type { FetcherWithComponents } from "react-router";
 import { useParams } from "react-router";
 import {
   CustomerContact,
@@ -45,20 +48,29 @@ type QuotationFinalizeModalProps = {
   onClose: () => void;
   quote?: Quotation;
   shipment: QuotationShipment | null;
-  fetcher: FetcherWithComponents<{}>;
   defaultCc?: string[];
 };
 
 const QuotationFinalizeModal = ({
   quote,
   onClose,
-  fetcher,
   shipment,
   defaultCc = []
 }: QuotationFinalizeModalProps) => {
   const { t } = useLingui();
   const { quoteId } = useParams();
   if (!quoteId) throw new Error("quoteId not found");
+
+  // Finalizing re-evaluates sales rules across every line (the terminal gate in
+  // the action). Route the submission through the violations hook so a blocked
+  // finalize opens the shared modal instead of silently doing nothing, and only
+  // close this modal once the action actually succeeds.
+  const ruleViolations = useRuleViolations({
+    action: path.to.quoteFinalize(quoteId),
+    onSuccess: onClose
+  });
+  const { fetcher } = ruleViolations;
+  const isSubmitting = fetcher.state !== "idle";
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
@@ -162,7 +174,6 @@ const QuotationFinalizeModal = ({
           method="post"
           validator={quoteFinalizeValidator}
           action={path.to.quoteFinalize(quoteId)}
-          onSubmit={onClose}
           defaultValues={{
             notification: notificationType as "Email" | "None",
             customerContact: quote?.customerContactId ?? undefined,
@@ -172,12 +183,12 @@ const QuotationFinalizeModal = ({
         >
           <ModalHeader>
             <ModalTitle>{`Finalize ${getQuoteDisplayId(quote)}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>Are you sure you want to finalize the quote?</Trans>
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>Are you sure you want to finalize the quote?</Trans>
+              </p>
               {warningLineReadableIds.length > 0 && (
                 <Alert variant="destructive">
                   <LuTriangleAlert className="h-4 w-4" />
@@ -242,12 +253,17 @@ const QuotationFinalizeModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button isDisabled={loading} type="submit">
+            <Button
+              isDisabled={loading || isSubmitting}
+              isLoading={isSubmitting}
+              type="submit"
+            >
               <Trans>Finalize</Trans>
             </Button>
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 };

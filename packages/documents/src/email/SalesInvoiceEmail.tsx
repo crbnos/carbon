@@ -1,5 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
-import { formatCityStatePostalCode, formatDate } from "@carbon/utils";
+import {
+  formatCityStatePostalCode,
+  formatDate,
+  formatPercent
+} from "@carbon/utils";
 import {
   Body,
   Column,
@@ -18,7 +26,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-invoice";
-import { getMoneyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -60,6 +68,14 @@ const SalesInvoiceEmail = ({
 
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const formatter = getMoneyFormatter(locale, currencyDecimals, currencyCode);
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
+    locale,
+    currencyDecimals,
+    currencyCode
+  );
   const preview = (
     <Preview>{`${salesInvoice.invoiceId} from ${company.name}`}</Preview>
   );
@@ -253,8 +269,17 @@ const SalesInvoiceEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.invoiceLineType === "Comment"
                       ? "-"
-                      : formatter.format(line.convertedUnitPrice ?? 0)}
+                      : rateFormatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
+                  {line.invoiceLineType !== "Comment" &&
+                  (line.discountPercent ?? 0) > 0 ? (
+                    <Text
+                      className={`text-xs ${themeClasses.mutedText}`}
+                      style={{ color: lightStyles.mutedText.color }}
+                    >
+                      {formatPercent(-(line.discountPercent ?? 0), locale)}
+                    </Text>
+                  ) : null}
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">
                   <Text className="text-xs font-semibold">

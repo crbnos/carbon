@@ -1,5 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
-import { LuBanknote, LuCreditCard, LuReceiptText } from "react-icons/lu";
+import {
+  LuBanknote,
+  LuCreditCard,
+  LuReceipt,
+  LuReceiptText,
+  LuWallet
+} from "react-icons/lu";
 import {
   BanknoteArrowDown,
   BanknoteArrowUp
@@ -14,6 +24,19 @@ export default function useInvoicingSubmodules() {
   const permissions = usePermissions();
   const { addSavedViewsToRoutes } = useSavedViews();
 
+  // Charges are a first-class Carbon document with their own posting path, so
+  // the nav entry is NOT gated on a spend integration being connected — an
+  // empty list is discoverable, a missing nav entry is not. Permission is the
+  // only gate (as it is for every other invoicing route).
+  const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
+    if (route.role) {
+      return permissions.is(route.role);
+    } else if (route.permission) {
+      return permissions.can("view", route.permission);
+    }
+    return true;
+  };
+
   const invoicingRoutes: AuthenticatedRouteGroup[] = [
     {
       name: t`Accounts Payable`,
@@ -25,10 +48,31 @@ export default function useInvoicingSubmodules() {
           permission: "invoicing"
         },
         {
-          name: t`Purchasing Invoices`,
+          name: t`Purchase Invoices`,
           to: path.to.invoicingPurchasing,
           icon: <LuReceiptText />,
           table: "purchaseInvoice",
+          permission: "invoicing"
+        },
+        {
+          name: t`Supplier Credits`,
+          to: path.to.supplierCredits,
+          icon: <LuCreditCard />,
+          table: "memo",
+          permission: "invoicing"
+        },
+        {
+          name: t`Charges`,
+          to: path.to.charges,
+          icon: <LuReceipt />,
+          table: "charge",
+          permission: "invoicing"
+        },
+        {
+          name: t`Reimbursements`,
+          to: path.to.reimbursements,
+          icon: <LuWallet />,
+          table: "reimbursement",
           permission: "invoicing"
         }
       ]
@@ -48,6 +92,13 @@ export default function useInvoicingSubmodules() {
           icon: <LuCreditCard />,
           table: "salesInvoice",
           permission: "invoicing"
+        },
+        {
+          name: t`Credit Memos`,
+          to: path.to.creditMemos,
+          icon: <LuCreditCard />,
+          table: "memo",
+          permission: "invoicing"
         }
       ]
     },
@@ -61,13 +112,6 @@ export default function useInvoicingSubmodules() {
           icon: <LuBanknote />,
           table: "payment",
           permission: "invoicing"
-        },
-        {
-          name: t`Credits & Debits`,
-          to: path.to.memos,
-          icon: <LuCreditCard />,
-          table: "memo",
-          permission: "invoicing"
         }
       ]
     }
@@ -75,32 +119,10 @@ export default function useInvoicingSubmodules() {
 
   return {
     groups: invoicingRoutes
-      .filter((group) => {
-        const filteredRoutes = group.routes.filter((route) => {
-          if (route.role) {
-            return permissions.is(route.role);
-          } else if (route.permission) {
-            return permissions.can("view", route.permission);
-          } else {
-            return true;
-          }
-        });
-
-        return filteredRoutes.length > 0;
-      })
+      .filter((group) => group.routes.some(isRouteVisible))
       .map((group) => ({
         ...group,
-        routes: group.routes
-          .filter((route) => {
-            if (route.role) {
-              return permissions.is(route.role);
-            } else if (route.permission) {
-              return permissions.can("view", route.permission);
-            } else {
-              return true;
-            }
-          })
-          .map(addSavedViewsToRoutes)
+        routes: group.routes.filter(isRouteVisible).map(addSavedViewsToRoutes)
       }))
   };
 }

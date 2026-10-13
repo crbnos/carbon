@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { EPSILON } from "@carbon/utils";
 import type { Edge, Node } from "@xyflow/react";
 import type {
@@ -752,6 +756,8 @@ export function sourceLinkHref(
       return `/x/picking-list/${id}`;
     case "Stock Transfer":
       return `/x/stock-transfer/${id}`;
+    case "Rental Agreement":
+      return `/x/rental-agreement/${id}/details`;
     default:
       return null;
   }

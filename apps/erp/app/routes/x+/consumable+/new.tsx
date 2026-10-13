@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { consumableValidator, upsertConsumable } from "~/modules/items";
 import { ConsumableForm } from "~/modules/items/ui/Consumables";
 import { setCustomFields } from "~/utils/form";
@@ -80,8 +86,8 @@ export default function ConsumablesNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <ConsumableForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

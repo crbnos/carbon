@@ -1,10 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { RecordOutlet } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Outlet, redirect, useLoaderData } from "react-router";
+import { data, useLoaderData } from "react-router";
 import {
   accountProfileValidator,
   getAllAttributeCategories,
@@ -103,12 +109,12 @@ export default function PersonRoute() {
   return (
     <>
       <PersonPreview />
-      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_4fr] h-full w-full gap-4 max-md:h-auto max-md:gap-0">
         <PersonSidebar
           attributeCategories={attributeCategories}
           timeCardEnabled={timeCardEnabled}
         />
-        <Outlet />
+        <RecordOutlet />
       </div>
     </>
   );

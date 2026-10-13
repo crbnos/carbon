@@ -1,10 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   error,
   getAppUrl,
   getPermissionCacheKey,
-  RESEND_DOMAIN,
   success as successFlash
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -14,24 +17,30 @@ import {
   getAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
 import { InviteEmail } from "@carbon/documents/email";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition } from "@carbon/utils";
+import {
+  datetime,
+  Edition,
+  getClientIp,
+  redirect,
+  redirectExternal
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { render } from "@react-email/components";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion } from "motion/react";
 import { nanoid } from "nanoid";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   MetaFunction
 } from "react-router";
-import { Form, Link, redirect, useLoaderData } from "react-router";
+import { Form, Link, useLoaderData } from "react-router";
 import {
   acceptInvite,
   isControlledInviteExpired
@@ -110,9 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         actorId: null,
         diff: { acceptedAt: { old: null, new: accept.data.acceptedAt } },
         metadata: {
-          ipAddress:
-            request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-            undefined,
+          ipAddress: getClientIp(request) ?? undefined,
           userAgent: request.headers.get("user-agent") ?? undefined
         }
       }
@@ -156,9 +163,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )}`
       }
     });
-    throw redirect(magicLink.data?.properties?.action_link ?? path.to.root, {
+    const actionLink = magicLink.data?.properties?.action_link;
+    const init = {
       headers: [["Set-Cookie", setCompanyId(accept.data.companyId)]]
-    });
+    } satisfies ResponseInit;
+    throw actionLink
+      ? redirectExternal(actionLink, init)
+      : redirect(path.to.root, init);
   }
 }
 
@@ -173,9 +184,7 @@ async function requestNewInvite(
   code: string,
   serviceRole: ReturnType<typeof getCarbonServiceRole>
 ) {
-  const ip =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
 
   const invite = await serviceRole
@@ -255,7 +264,6 @@ async function requestNewInvite(
     .single();
 
   await sendEmail({
-    from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: invite.data.email,
     subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
     headers: { "X-Entity-Ref-ID": nanoid() },
@@ -401,6 +409,7 @@ export default function Invite() {
             transition={{ duration: 1.2, ease: "easeInOut", delay: 1.5 }}
             size="lg"
             type="submit"
+            autoFocus
           >
             <Trans>Join {company?.name ?? "Company"}</Trans>
           </Button>

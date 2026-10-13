@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Text, View } from "@react-pdf/renderer";
 import { useTw } from "../tw";
 import type { Associations, IssueData } from "./types";
@@ -48,18 +52,18 @@ export function AssociationsBlock({ data }: { data: IssueData }) {
             <View key={item.id} style={rowStyle}>
               <Text style={tw("w-1/4 font-bold text-gray-600")}>Item:</Text>
               <Text style={tw("text-gray-800")}>{item.documentReadableId}</Text>
-              {item.disposition && (
+              {item.disposition ? (
                 <>
                   <Text style={tw("text-gray-400")}>-</Text>
                   <Text style={tw("text-gray-800")}>{item.disposition}</Text>
                 </>
-              )}
-              {item.quantity && (
+              ) : null}
+              {item.quantity ? (
                 <>
                   <Text style={tw("text-gray-400")}>-</Text>
                   <Text style={tw("text-gray-800")}>Qty: {item.quantity}</Text>
                 </>
-              )}
+              ) : null}
             </View>
           ))}
           {SIMPLE_GROUPS.flatMap(({ key, label }) =>

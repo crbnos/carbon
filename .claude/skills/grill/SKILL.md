@@ -1,6 +1,6 @@
 ---
 name: grill
-description: Interview the user relentlessly, one question at a time, to stress-test a plan, spec, or design until every open decision is resolved — recommended answer per question, answers cross-checked against the codebase and the @carbon/glossary domain terms, resolutions written back to the artifact as they land. Use when the user says "grill me", wants to stress-test a design or plan, or a spec-in-design's open questions need resolving (spec-writing Step 5 invokes this BEFORE the spec is written). SUPERVISED ONLY — never invoke from an automated loop (conductor, headless/outer-loop runs); autonomous flows use spec-writing's autonomous mode instead. Do not use to author the artifact itself — use /spec-writing for specs, /plan for implementation plans.
+description: Interview the user relentlessly, one question at a time, to stress-test a plan, spec, or design until every open decision is resolved — recommended answer per question, answers cross-checked against the codebase and the @carbon/content/glossary domain terms, resolutions written back to the artifact as they land. Use when the user says "grill me", wants to stress-test a design or plan, or a spec-in-design's open questions need resolving (spec-writing Step 5 invokes this BEFORE the spec is written). SUPERVISED ONLY — never invoke from an automated loop (conductor, headless/outer-loop runs); autonomous flows use spec-writing's autonomous mode instead. Do not use to author the artifact itself — use /spec-writing for specs, /plan for implementation plans.
 ---
 
 # grill — stress-test a design by interviewing its author
@@ -58,8 +58,8 @@ question:
 - Stress-test fuzzy answers with a concrete scenario before accepting them
   ("a PO has 3 lines and one is already received — what happens on cancel?").
 - Sharpen fuzzy terms. When the user uses a vague or overloaded word, propose
-  the precise canonical term. Check `packages/glossary` (the `terms` object in
-  `@carbon/glossary`) for an existing definition and challenge conflicts:
+  the precise canonical term. Check `docs/content/src/glossary` (the `terms` object in
+  `@carbon/content/glossary`) for an existing definition and challenge conflicts:
   "the glossary defines {term} as {definition}; you seem to mean {other} —
   which is it?"
 
@@ -71,10 +71,10 @@ apply regardless of target:
 
 - A decision that sets a durable convention beyond this feature → update the
   matching `.claude/rules/*.md` file in the same turn.
-- A genuinely new canonical domain term → offer a `@carbon/glossary` entry,
+- A genuinely new canonical domain term → offer a `@carbon/content/glossary` entry,
   only when all three hold: the term is user-facing (UI or docs), the grill
   revealed real ambiguity, and the user confirmed the definition. Follow
-  `packages/glossary/AGENTS.md` (its "Ask First" rule is satisfied by the
+  `docs/content/AGENTS.md` (its "Ask First" rule is satisfied by the
   user's confirmation in the interview).
 
 ## Done when
@@ -85,6 +85,9 @@ apply regardless of target:
       chat
 - [ ] Durable conventions reflected in `.claude/rules/`; glossary offers made
       where the three-part test passed
+- [ ] Every resolution written to a spec or plan is in STE-80, and the
+      STE-80 review pass (`.claude/rules/writing-ste.md` → Enforcement) is
+      done on that file
 
 ## Anti-patterns
 

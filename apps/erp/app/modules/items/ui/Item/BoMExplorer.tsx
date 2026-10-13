@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,7 +160,7 @@ function ItemBoMExplorerContent({
           </BoMExplorerActions>
         </HStack>
       )}
-      {integrations.has("onshape") && (
+      {hasOnshapeIntegration(integrations) && (
         <div className="flex flex-shrink-0 w-full">
           <OnshapeSync
             makeMethodId={makeMethodId}

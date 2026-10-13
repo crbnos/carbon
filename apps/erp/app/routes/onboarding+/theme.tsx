@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { validationError, validator } from "@carbon/form";
 import {
@@ -8,21 +12,22 @@ import {
   CardTitle,
   cn,
   HStack,
-  useKeyboardShortcuts,
+  PrefetchLink,
+  RadioGroup,
+  RadioGroupButton,
   useMode,
+  useModePreference,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
-import { themes } from "@carbon/utils";
+import { redirect, themes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
-import { BiMoon, BiSun } from "react-icons/bi";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
+import { BiLaptop, BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
-  Link,
-  redirect,
   useFetcher,
   useLoaderData,
   useNavigation,
@@ -34,6 +39,7 @@ import type { Theme as ThemeValue } from "~/modules/settings";
 import { themeValidator } from "~/modules/settings";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -63,15 +69,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const { next, theme } = validation.data;
   if (!next) throw new Error("Fatal: next is required");
 
-  throw redirect(next, {
+  throw redirect(next || path.to.onboarding.root, {
     headers: { "Set-Cookie": setTheme(theme) }
   });
 }
 
 export default function OnboardingTheme() {
   const { theme: initialTheme } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
 
   const mode = useMode();
+  const modePreference = useModePreference();
   const modeFetcher = useFetcher<typeof modeAction>();
 
   const [theme, setTheme] = useState<ThemeValue>(initialTheme as "zinc");
@@ -112,13 +120,13 @@ export default function OnboardingTheme() {
 
   const transition = useNavigation();
 
-  const nextRef = useRef<HTMLButtonElement>(null);
-
-  useKeyboardShortcuts({
-    Enter: () => {
-      nextRef.current?.click();
-    }
-  });
+  const onModeChange = (nextMode: string) => {
+    document.body.removeAttribute("style");
+    modeFetcher.submit(
+      { mode: nextMode },
+      { method: "post", action: path.to.root }
+    );
+  };
 
   return (
     <OnboardingCard>
@@ -134,58 +142,61 @@ export default function OnboardingTheme() {
       </CardHeader>
       <OnboardingCardContent>
         <VStack spacing={4}>
-          <HStack className="w-full justify-between">
-            <modeFetcher.Form
-              action={path.to.root}
-              method="post"
-              onSubmit={() => {
-                document.body.removeAttribute("style");
-              }}
-              className="w-full"
+          <RadioGroup
+            value={modePreference}
+            onValueChange={onModeChange}
+            aria-label={t`Appearance`}
+            className="flex w-full gap-2"
+          >
+            <RadioGroupButton
+              value="light"
+              autoFocus={modePreference === "light"}
+              className={cn(
+                "flex-1",
+                modePreference === "light" && "border-2 border-primary"
+              )}
             >
-              <input type="hidden" name="mode" value="light" />
-              <Button
-                variant="secondary"
-                type="submit"
-                leftIcon={<BiSun />}
-                className={cn(
-                  "w-full",
-                  mode == "light" && "border-2 border-primary"
-                )}
-              >
-                <Trans>Light</Trans>
-              </Button>
-            </modeFetcher.Form>
-            <modeFetcher.Form
-              action={path.to.root}
-              method="post"
-              onSubmit={() => {
-                document.body.removeAttribute("style");
-              }}
-              className="w-full"
+              <BiSun />
+              <Trans>Light</Trans>
+            </RadioGroupButton>
+            <RadioGroupButton
+              value="dark"
+              autoFocus={modePreference === "dark"}
+              className={cn(
+                "flex-1",
+                modePreference === "dark" && "border-2 border-primary"
+              )}
             >
-              <input type="hidden" name="mode" value="dark" />
-              <Button
-                variant="secondary"
-                leftIcon={<BiMoon />}
-                type="submit"
-                className={cn(
-                  "w-full",
-                  mode == "dark" && "border-2 border-primary"
-                )}
-              >
-                <Trans>Dark</Trans>
-              </Button>
-            </modeFetcher.Form>
-          </HStack>
-          <div className="w-full grid grid-cols-3 gap-4">
+              <BiMoon />
+              <Trans>Dark</Trans>
+            </RadioGroupButton>
+            <RadioGroupButton
+              value="system"
+              autoFocus={modePreference === "system"}
+              className={cn(
+                "flex-1",
+                modePreference === "system" && "border-2 border-primary"
+              )}
+            >
+              <BiLaptop />
+              <Trans>System</Trans>
+            </RadioGroupButton>
+          </RadioGroup>
+          <RadioGroup
+            value={theme}
+            onValueChange={(name) => {
+              const selected = themes.find((entry) => entry.name === name);
+              if (selected) onThemeChange(selected);
+            }}
+            aria-label={t`Theme`}
+            className="w-full grid grid-cols-3 gap-4"
+          >
             {themes.map((t) => {
               const isActive = theme === t.name;
               return (
-                <Button
+                <RadioGroupButton
                   key={t.name}
-                  variant="secondary"
-                  onClick={() => onThemeChange(t)}
+                  value={t.name}
                   className={cn(
                     "justify-start",
                     isActive && "border-2 border-primary"
@@ -209,10 +220,10 @@ export default function OnboardingTheme() {
                     {isActive && <RxCheck className="h-4 w-4 text-white" />}
                   </span>
                   {t.label}
-                </Button>
+                </RadioGroupButton>
               );
             })}
-          </div>
+          </RadioGroup>
         </VStack>
       </OnboardingCardContent>
       <CardFooter>
@@ -225,16 +236,16 @@ export default function OnboardingTheme() {
               asChild
               tabIndex={-1}
             >
-              <Link to={previous} prefetch="intent">
+              <PrefetchLink to={previous}>
                 <Trans>Previous</Trans>
-              </Link>
+              </PrefetchLink>
             </Button>
           )}
 
           <Button
             isLoading={transition.state !== "idle"}
             isDisabled={transition.state !== "idle"}
-            ref={nextRef}
+            shortcut={ONBOARDING_SHORTCUTS.continue}
             onClick={onSubmit}
           >
             <Trans>Next</Trans>

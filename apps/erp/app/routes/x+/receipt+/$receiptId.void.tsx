@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { serverFns } from "@carbon/server-functions";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,8 +20,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!receiptId) throw new Error("receiptId not found");
 
   try {
-    const serviceRole = getCarbonServiceRole();
-
     const { data: receipt } = await client
       .from("receipt")
       .select("status, invoiced")
@@ -59,14 +62,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        type: "void",
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
+    const voidReceipt = await serverFns
+      .system({ db: getDatabaseClient(), companyId, userId })
+      .invoke("post-receipt", { type: "void", receiptId: receiptId });
 
     if (voidReceipt.error) {
       throw redirect(

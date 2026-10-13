@@ -1,4 +1,13 @@
-import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import {
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  useDisclosure
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
@@ -56,6 +65,7 @@ const WarehouseTransfersTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -68,6 +78,7 @@ const WarehouseTransfersTable = memo(
             return <WarehouseTransferStatus status={status} />;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: warehouseTransferStatusType.map((type) => ({
@@ -84,6 +95,7 @@ const WarehouseTransfersTable = memo(
           header: t`From Location`,
           cell: ({ row }) => row.original.fromLocation?.name || "N/A",
           meta: {
+            mobile: "P3",
             icon: <LuMapPin />
           }
         },
@@ -111,6 +123,10 @@ const WarehouseTransfersTable = memo(
             return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
+            mobile: "P2",
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -122,6 +138,9 @@ const WarehouseTransfersTable = memo(
             return date ? <DateTime value={date} variant="date" /> : "N/A";
           },
           meta: {
+            filter: {
+              type: "dateRange"
+            },
             icon: <LuCalendar />
           }
         },
@@ -193,6 +212,11 @@ const WarehouseTransfersTable = memo(
         return (
           <>
             <MenuItem
+              shortcut={
+                row.status !== "Draft"
+                  ? MENU_ITEM_SHORTCUTS.view
+                  : MENU_ITEM_SHORTCUTS.edit
+              }
               disabled={!permissions.can("update", "inventory")}
               onClick={() => {
                 navigate(
@@ -206,6 +230,7 @@ const WarehouseTransfersTable = memo(
               {row.status !== "Draft" ? t`View Transfer` : t`Edit Transfer`}
             </MenuItem>
             <MenuItem
+              shortcut={MENU_ITEM_SHORTCUTS.delete}
               disabled={
                 !permissions.can("delete", "inventory") ||
                 row.status === "Draft"

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -5,17 +9,14 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  generateHTML,
-  toast,
+  RichTextView,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
-import { usePermissions, useUser } from "~/hooks";
-import { getPrivateUrl } from "~/utils/path";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
 const ShipmentNotes = ({
   id,
@@ -24,32 +25,12 @@ const ShipmentNotes = ({
   id: string | null;
   notes?: JSONContent;
 }) => {
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
-  const { t } = useLingui();
   const permissions = usePermissions();
   const [notes, setNotes] = useState(initialNotes ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/inventory/${id}/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`inventory/${id}`);
 
   const onUpdateNotes = useDebounce(
     async (content: JSONContent) => {
@@ -86,11 +67,9 @@ const ShipmentNotes = ({
               }}
             />
           ) : (
-            <div
-              className="prose dark:prose-invert"
-              dangerouslySetInnerHTML={{
-                __html: generateHTML(notes as JSONContent)
-              }}
+            <RichTextView
+              content={notes as JSONContent}
+              empty={<Trans>No notes</Trans>}
             />
           )}
         </CardContent>

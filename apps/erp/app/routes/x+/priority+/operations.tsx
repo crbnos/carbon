@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { useChangedRows } from "@carbon/query";
 import {
   Button,
   ClientOnly,
@@ -19,7 +24,7 @@ import {
   useInterval,
   useLocalStorage,
   useMount,
-  useRealtimeChannel,
+  useViewport,
   VStack
 } from "@carbon/react";
 import {
@@ -30,6 +35,7 @@ import {
 } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { replaceEqualDeep } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   LuCirclePlus,
@@ -49,11 +55,13 @@ import { useUrlParams, useUser } from "~/hooks";
 import { getActiveJobOperationsByLocation } from "~/modules/production";
 import type { Column, OperationItem } from "~/modules/production/ui/Schedule";
 import type {
+  BatchItem,
   DisplaySettings,
   Event,
+  Item,
   Progress
 } from "~/modules/production/ui/Schedule/Kanban";
-import { Kanban } from "~/modules/production/ui/Schedule/Kanban";
+import { isBatchItem, Kanban } from "~/modules/production/ui/Schedule/Kanban";
 import { comparePriorityThenId } from "~/modules/production/ui/Schedule/Kanban/placement";
 import { ScheduleNavigation } from "~/modules/production/ui/Schedule/Kanban/ScheuleNavigation";
 import {
@@ -62,6 +70,7 @@ import {
 } from "~/modules/resources";
 import { getTagsList } from "~/modules/shared";
 import { resolveLocationId } from "~/modules/shared/location.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
 import { makeDurations } from "~/utils/duration";
 import type { Handle } from "~/utils/handle";
@@ -89,10 +98,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let selectedSalesOrderIds: string[] = [];
   let selectedTags: string[] = [];
   let selectedAssignee: string[] = [];
+  // Material-property facets (nesting compatibility): an operation matches if
+  // ANY of its BOM lines matches ALL active facets.
+  const selectedMaterialFacets: Record<string, string[]> = {};
+  const MATERIAL_FACET_KEYS = [
+    "substanceId",
+    "gradeId",
+    "dimensionId",
+    "formId",
+    "finishId"
+  ] as const;
 
   if (filterParam) {
     for (const filter of filterParam) {
       const [key, operator, value] = filter.split(":");
+      if (
+        (MATERIAL_FACET_KEYS as readonly string[]).includes(key) &&
+        (operator === "in" || operator === "eq")
+      ) {
+        selectedMaterialFacets[key] =
+          operator === "in" ? value.split(",") : [value];
+      }
       if (key === "workCenterId") {
         if (operator === "in") {
           selectedWorkCenterIds = value.split(",");
@@ -142,6 +168,129 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "operation")
   ]);
 
+  // The empty state must tell "no work centers at THIS location" apart from
+  // "none exist anywhere" — after a restore left work centers on another (or
+  // no) location, the create-work-center prompt here misread the situation.
+  let companyHasWorkCenters = (workCenters.data?.length ?? 0) > 0;
+  if (!companyHasWorkCenters) {
+    const anywhere = await client
+      .from("workCenter")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId);
+    companyHasWorkCenters = (anywhere.count ?? 0) > 0;
+  }
+
+  const processNameById = new Map(
+    (processes.data ?? []).map((p) => [p.id, p.name])
+  );
+
+  // BOM material properties for every listed operation — powers the material
+  // facets and the per-card chips. One Kysely join (id lists this size blow
+  // the PostgREST URL limit).
+  const opIds = (operations.data ?? []).map((op) => op.id);
+  type MaterialLine = {
+    substanceId: string | null;
+    gradeId: string | null;
+    dimensionId: string | null;
+    formId: string | null;
+    finishId: string | null;
+    chip: string;
+  };
+  const materialLinesByOp = new Map<string, MaterialLine[]>();
+  const facetOptions: Record<string, Map<string, string>> = {
+    substanceId: new Map(),
+    gradeId: new Map(),
+    dimensionId: new Map(),
+    formId: new Map(),
+    finishId: new Map()
+  };
+  if (opIds.length > 0) {
+    const db = getDatabaseClient();
+    const materialRows = await db
+      .selectFrom("jobMaterial as jm")
+      .innerJoin("item as i", "i.id", "jm.itemId")
+      .leftJoin("material as m", (join) =>
+        join
+          .onRef("m.id", "=", "i.readableId")
+          .onRef("m.companyId", "=", "i.companyId")
+      )
+      .leftJoin("materialSubstance as ms", "ms.id", "m.materialSubstanceId")
+      .leftJoin("materialGrade as mg", "mg.id", "m.gradeId")
+      .leftJoin("materialDimension as md", "md.id", "m.dimensionId")
+      .leftJoin("materialForm as mf", "mf.id", "m.materialFormId")
+      .leftJoin("materialFinish as mfin", "mfin.id", "m.finishId")
+      .select([
+        "jm.jobOperationId",
+        "m.materialSubstanceId as substanceId",
+        "ms.name as substanceName",
+        "m.gradeId",
+        "mg.name as gradeName",
+        "m.dimensionId",
+        "md.name as dimensionName",
+        "m.materialFormId as formId",
+        "mf.name as formName",
+        "m.finishId",
+        "mfin.name as finishName"
+      ])
+      .where("jm.jobOperationId", "in", opIds)
+      .where("jm.companyId", "=", companyId)
+      .execute();
+
+    for (const row of materialRows) {
+      if (!row.jobOperationId) continue;
+      const chip = [
+        row.substanceName,
+        row.gradeName,
+        row.dimensionName,
+        row.formName,
+        row.finishName
+      ]
+        .filter(Boolean)
+        .join(" ");
+      if (!chip) continue;
+      const line: MaterialLine = {
+        substanceId: row.substanceId,
+        gradeId: row.gradeId,
+        dimensionId: row.dimensionId,
+        formId: row.formId,
+        finishId: row.finishId,
+        chip
+      };
+      const lines = materialLinesByOp.get(row.jobOperationId);
+      if (lines) lines.push(line);
+      else materialLinesByOp.set(row.jobOperationId, [line]);
+
+      if (row.substanceId && row.substanceName)
+        facetOptions.substanceId.set(row.substanceId, row.substanceName);
+      if (row.gradeId && row.gradeName)
+        facetOptions.gradeId.set(row.gradeId, row.gradeName);
+      if (row.dimensionId && row.dimensionName)
+        facetOptions.dimensionId.set(row.dimensionId, row.dimensionName);
+      if (row.formId && row.formName)
+        facetOptions.formId.set(row.formId, row.formName);
+      if (row.finishId && row.finishName)
+        facetOptions.finishId.set(row.finishId, row.finishName);
+    }
+  }
+
+  // Batch headers for collapsed cards (status + authoritative work center).
+  const batchIds = [
+    ...new Set(
+      (operations.data ?? [])
+        .map((op) => op.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const batchHeaders =
+    batchIds.length > 0
+      ? await client
+          .from("jobOperationBatch")
+          .select("id, readableId, status, workCenterId")
+          .in("id", batchIds)
+          .eq("companyId", companyId)
+      : { data: [] as never[], error: null };
+  const batchById = new Map((batchHeaders.data ?? []).map((b) => [b.id, b]));
+
   const activeWorkCenters = new Set();
 
   operations.data?.forEach((op) => {
@@ -183,6 +332,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  if (Object.keys(selectedMaterialFacets).length > 0) {
+    filteredOperations = filteredOperations.filter((op) => {
+      const lines = materialLinesByOp.get(op.id) ?? [];
+      return lines.some((line) =>
+        Object.entries(selectedMaterialFacets).every(([key, values]) => {
+          const id = line[key as keyof MaterialLine];
+          return typeof id === "string" && values.includes(id);
+        })
+      );
+    });
+  }
+
   if (search) {
     filteredOperations = filteredOperations.filter(
       (op) =>
@@ -210,6 +371,128 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return true;
     }) ?? [];
 
+  // Map EVERY op (not just the filtered ones) so a batch card can render its
+  // full membership. Member-level filters (material / tags / assignee / sales
+  // order) can match only some of a batch's members; collapsing from the
+  // filtered subset would misreport the member count, `priority` (min over the
+  // subset), and aggregated chips while the card still reassigns/dissolves the
+  // whole batch. So filtering decides which batches APPEAR; the members always
+  // come from the full set.
+  const allOperationItems = ((operations.data ?? []).map((op) => {
+    const operation = makeDurations(op);
+    return {
+      id: op.id,
+      columnId: op.workCenterId,
+      columnType: op.processId,
+      priority: op.priority,
+      title: op.jobReadableId,
+      link: op.parentMaterialId
+        ? path.to.jobMakeMethod(op.jobId, op.jobMakeMethodId)
+        : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
+      subtitle: op.itemReadableId,
+      assignee: op.assignee,
+      tags: op.tags,
+      description: op.description,
+      dueDate: op.operationDueDate,
+      projectedCompletionAt: op.projectedCompletionAt,
+      duration:
+        operation.setupDuration +
+        operation.laborDuration +
+        operation.machineDuration,
+      jobId: op.jobId,
+      jobReadableId: op.jobReadableId,
+      itemReadableId: op.itemReadableId,
+      itemDescription: op.itemDescription,
+      progress: 0,
+      deadlineType: op.jobDeadlineType,
+      customerId: op.jobCustomerId,
+      targetQuantity: op.targetQuantity,
+      quantity: op.operationQuantity,
+      quantityCompleted: op.quantityComplete,
+      quantityReworked: op.quantityReworked,
+      quantityScrapped: op.quantityScrapped,
+      reworkId: op.reworkId,
+      salesOrderReadableId: op.salesOrderReadableId,
+      salesOrderId: op.salesOrderId,
+      salesOrderLineId: op.salesOrderLineId,
+      status: op.operationStatus,
+      setupDuration: operation.setupDuration,
+      laborDuration: operation.laborDuration,
+      machineDuration: operation.machineDuration,
+      thumbnailPath: op.thumbnailPath,
+      hasConflict: op.hasConflict ?? undefined,
+      conflictReason: op.conflictReason ?? undefined,
+      processBatchable: op.processBatchable,
+      processName: processNameById.get(op.processId),
+      jobOperationBatchId: op.jobOperationBatchId,
+      batchReadableId: op.batchReadableId,
+      materialChips: [
+        ...new Set(
+          (materialLinesByOp.get(op.id) ?? []).map((line) => line.chip)
+        )
+      ]
+    };
+  }) ?? []) satisfies OperationItem[];
+
+  const filteredIds = new Set(filteredOperations.map((op) => op.id));
+
+  const isLiveBatch = (item: OperationItem) => {
+    const batch = item.jobOperationBatchId
+      ? batchById.get(item.jobOperationBatchId)
+      : undefined;
+    return batch && (batch.status === "Active" || batch.status === "Completing")
+      ? batch
+      : undefined;
+  };
+
+  // Full membership per live (Active/Completing) batch, from the UNFILTERED set.
+  const membersByBatch = new Map<string, OperationItem[]>();
+  for (const item of allOperationItems) {
+    const batch = isLiveBatch(item);
+    if (!batch) continue;
+    const members = membersByBatch.get(batch.id);
+    if (members) members.push(item);
+    else membersByBatch.set(batch.id, [item]);
+  }
+
+  // A batch card appears when at least one member survives filtering; it then
+  // renders ALL its members. Non-batch ops render individually when filtered in;
+  // an op whose batch header is missing/terminal is treated as unbatched.
+  const survivingBatchIds = new Set<string>();
+  const unbatchedItems: OperationItem[] = [];
+  for (const item of allOperationItems) {
+    if (!filteredIds.has(item.id)) continue;
+    const batch = isLiveBatch(item);
+    if (batch) {
+      survivingBatchIds.add(batch.id);
+    } else {
+      unbatchedItems.push(
+        item.jobOperationBatchId
+          ? { ...item, jobOperationBatchId: null, batchReadableId: null }
+          : item
+      );
+    }
+  }
+
+  const batchItems: BatchItem[] = [...survivingBatchIds].flatMap((batchId) => {
+    const batch = batchById.get(batchId);
+    const members = membersByBatch.get(batchId) ?? [];
+    if (!batch || members.length === 0) return [];
+    return [
+      {
+        id: `batch:${batchId}`,
+        batchId,
+        batchReadableId: batch.readableId,
+        batchStatus: batch.status as BatchItem["batchStatus"],
+        columnId: batch.workCenterId ?? members[0].columnId,
+        columnType: members[0].columnType,
+        priority: Math.min(...members.map((m) => m.priority)),
+        title: batch.readableId,
+        members
+      } satisfies BatchItem
+    ];
+  });
+
   return {
     columns: filteredWorkCenters
       .map((wc) => ({
@@ -222,52 +505,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
         blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
       }))
       .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-    items: (filteredOperations.map((op) => {
-      const operation = makeDurations(op);
-      return {
-        id: op.id,
-        columnId: op.workCenterId,
-        columnType: op.processId,
-        priority: op.priority,
-        title: op.jobReadableId,
-        link: op.parentMaterialId
-          ? path.to.jobMakeMethod(op.jobId, op.jobMakeMethodId)
-          : path.to.jobMethod(op.jobId, op.jobMakeMethodId),
-        subtitle: op.itemReadableId,
-        assignee: op.assignee,
-        tags: op.tags,
-        description: op.description,
-        dueDate: op.operationDueDate,
-        projectedCompletionAt: op.projectedCompletionAt,
-        duration:
-          operation.setupDuration +
-          operation.laborDuration +
-          operation.machineDuration,
-        jobId: op.jobId,
-        jobReadableId: op.jobReadableId,
-        itemReadableId: op.itemReadableId,
-        itemDescription: op.itemDescription,
-        progress: 0,
-        deadlineType: op.jobDeadlineType,
-        customerId: op.jobCustomerId,
-        targetQuantity: op.targetQuantity,
-        quantity: op.operationQuantity,
-        quantityCompleted: op.quantityComplete,
-        quantityReworked: op.quantityReworked,
-        quantityScrapped: op.quantityScrapped,
-        reworkId: op.reworkId,
-        salesOrderReadableId: op.salesOrderReadableId,
-        salesOrderId: op.salesOrderId,
-        salesOrderLineId: op.salesOrderLineId,
-        status: op.operationStatus,
-        setupDuration: operation.setupDuration,
-        laborDuration: operation.laborDuration,
-        machineDuration: operation.machineDuration,
-        thumbnailPath: op.thumbnailPath,
-        hasConflict: op.hasConflict ?? undefined,
-        conflictReason: op.conflictReason ?? undefined
-      };
-    }) ?? []) satisfies OperationItem[],
+    items: [...unbatchedItems, ...batchItems] satisfies Item[],
+    materialFacetOptions: Object.fromEntries(
+      Object.entries(facetOptions).map(([key, map]) => [
+        key,
+        [...map.entries()].map(([id, name]) => ({ id, name }))
+      ])
+    ),
     processes: processes.data ?? [],
     salesOrders: Object.entries(
       filteredOperations?.reduce(
@@ -293,7 +537,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     ).map(([tag]) => tag),
     tags: tags.data ?? [],
-    locationId
+    locationId,
+    companyHasWorkCenters
   };
 }
 
@@ -308,6 +553,7 @@ const defaultDisplaySettings: ScheduleDisplaySettings = {
   showDescription: true,
   showDueDate: true,
   showEmployee: true,
+  showMaterial: true,
   showProgress: true,
   showQuantity: true,
   showStatus: true,
@@ -321,30 +567,39 @@ function KanbanSchedule() {
   const {
     columns,
     items: initialItems,
+    materialFacetOptions,
     processes,
     salesOrders,
     availableTags,
     tags,
-    locationId
+    locationId,
+    companyHasWorkCenters
   } = useLoaderData<typeof loader>();
 
   const locations = useLocations();
 
-  const [items, setItems] = useState<OperationItem[]>(initialItems);
+  const [items, setItems] = useState<Item[]>(initialItems);
+  // Phones keep their own settings and start without the product image, so
+  // more than one card fits on a screen; the Thumbnail toggle still applies.
+  const { isPhone } = useViewport();
   const [displaySettings, setDisplaySettings] = useLocalStorage(
-    DISPLAY_SETTINGS_KEY,
-    defaultDisplaySettings
+    isPhone ? `${DISPLAY_SETTINGS_KEY}-compact` : DISPLAY_SETTINGS_KEY,
+    isPhone
+      ? { ...defaultDisplaySettings, showThumbnail: false }
+      : defaultDisplaySettings
   );
   const mergedDisplaySettings = useMemo(
     () => ({ ...defaultDisplaySettings, ...displaySettings }),
     [displaySettings]
   );
 
+  // A reload hands over new objects for every card. Keeping the ones that did
+  // not change lets their memoized cards skip the render.
   useEffect(() => {
-    setItems(initialItems);
+    setItems((previous) => replaceEqualDeep(previous, initialItems));
   }, [initialItems]);
 
-  const sortItems = useCallback((items: OperationItem[]) => {
+  const sortItems = useCallback((items: Item[]) => {
     return [...items].sort(comparePriorityThenId);
   }, []);
 
@@ -433,16 +688,53 @@ function KanbanSchedule() {
             value: tag
           }))
         }
-      }
+      },
+      // Material facets (nesting compatibility) — only the properties present
+      // on the current board's BOM lines are offered.
+      ...(
+        [
+          { accessorKey: "substanceId", header: "Substance" },
+          { accessorKey: "gradeId", header: "Grade" },
+          { accessorKey: "dimensionId", header: "Dimension" },
+          { accessorKey: "formId", header: "Form" },
+          { accessorKey: "finishId", header: "Finish" }
+        ] as const
+      )
+        .filter(
+          ({ accessorKey }) =>
+            (materialFacetOptions[accessorKey]?.length ?? 0) > 0
+        )
+        .map(({ accessorKey, header }) => ({
+          accessorKey,
+          header,
+          filter: {
+            type: "static" as const,
+            isArray: true,
+            options: (materialFacetOptions[accessorKey] ?? []).map((o) => ({
+              label: o.name,
+              value: o.id
+            }))
+          }
+        }))
     ];
-  }, [columns, processes, salesOrders, people, availableTags]);
+  }, [
+    columns,
+    processes,
+    salesOrders,
+    people,
+    availableTags,
+    materialFacetOptions
+  ]);
 
   return (
     <div className="flex flex-col h-full max-h-full  overflow-auto relative">
-      <HStack className="px-4 py-2 justify-between bg-card border-b border-border">
-        <HStack>
+      <HStack className="px-4 py-2 justify-between bg-card border-b border-border max-md:flex-wrap max-md:gap-y-2 max-md:[&_button]:h-11 max-md:[&_button]:min-w-11">
+        {/* Phones: search takes its own full-width row under the controls. */}
+        <HStack className="max-md:min-w-0 max-md:flex-1 max-md:flex-wrap max-md:gap-y-2">
           <ScheduleNavigation />
-          <SearchFilter param="search" size="sm" placeholder="Search" />
+          <div className="contents max-md:order-last max-md:block max-md:min-w-0 max-md:basis-full max-md:!mx-0">
+            <SearchFilter param="search" size="sm" placeholder="Search" />
+          </div>
           <Filter filters={filters} />
           <Tooltip>
             <TooltipTrigger tabIndex={-1} className="text-muted-foreground">
@@ -457,7 +749,7 @@ function KanbanSchedule() {
           </Tooltip>
         </HStack>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 max-md:self-start">
           <Popover>
             <PopoverTrigger asChild>
               <IconButton
@@ -521,6 +813,7 @@ function KanbanSchedule() {
                     { key: "showCustomer", label: t`Customer` },
                     { key: "showDueDate", label: t`Due Date` },
                     { key: "showDuration", label: t`Duration` },
+                    { key: "showMaterial", label: t`Material` },
                     { key: "showProgress", label: t`Progress` },
                     { key: "showQuantity", label: t`Quantity` },
                     { key: "showStatus", label: t`Status` },
@@ -580,6 +873,26 @@ function KanbanSchedule() {
                 <Trans>Clear Filters</Trans>
               </Button>
             </div>
+          ) : companyHasWorkCenters ? (
+            <div className="flex flex-col w-full h-full items-center justify-center gap-4">
+              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
+                <LuTriangleAlert className="h-6 w-6" />
+              </div>
+              <span className="text-xs font-mono font-light text-foreground uppercase">
+                <Trans>No work centers at this location</Trans>
+              </span>
+              <div className="w-64">
+                <Combobox
+                  asButton
+                  size="sm"
+                  value={locationId}
+                  options={locations}
+                  onChange={(selected) => {
+                    window.location.href = getLocationPath(selected);
+                  }}
+                />
+              </div>
+            </div>
           ) : (
             <div className="flex flex-col w-full h-full items-center justify-center gap-4">
               <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
@@ -616,9 +929,9 @@ export default function ScheduleRoute() {
 }
 
 function useProgressByOperation(
-  items: OperationItem[],
-  setItems: React.Dispatch<React.SetStateAction<OperationItem[]>>,
-  sortItems: (items: OperationItem[]) => OperationItem[]
+  items: Item[],
+  setItems: React.Dispatch<React.SetStateAction<Item[]>>,
+  sortItems: (items: Item[]) => Item[]
 ) {
   const {
     company: { id: companyId }
@@ -664,7 +977,10 @@ function useProgressByOperation(
   );
 
   useMount(() => {
-    getProductionEvents(items.map((item) => item.id));
+    // Only real operation ids — collapsed batch cards use synthetic ids.
+    getProductionEvents(
+      items.filter((item) => !isBatchItem(item)).map((item) => item.id)
+    );
   });
 
   const getProgress = useCallback(() => {
@@ -673,11 +989,18 @@ function useProgressByOperation(
 
     Object.entries(productionEventsByOperation).forEach(
       ([operationId, events]) => {
-        const operation = items.find((item) => item.id === operationId);
+        const found = items.find((item) => item.id === operationId);
+        const operation = found && !isBatchItem(found) ? found : undefined;
         const totalDuration =
-          (operation?.setupDuration ?? 0) +
-          (operation?.laborDuration ?? 0) +
-          (operation?.machineDuration ?? 0);
+          (operation && "setupDuration" in operation
+            ? (operation.setupDuration ?? 0)
+            : 0) +
+          (operation && "laborDuration" in operation
+            ? (operation.laborDuration ?? 0)
+            : 0) +
+          (operation && "machineDuration" in operation
+            ? (operation.machineDuration ?? 0)
+            : 0);
 
         let currentProgress = 0;
         let active = false;
@@ -730,95 +1053,58 @@ function useProgressByOperation(
     }
   }, [productionEventsByOperation]);
 
-  useRealtimeChannel({
-    topic: `kanban-schedule:${companyId}`,
-    setup(channel) {
-      return channel
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "jobOperation",
-            filter: `id=in.(${items.map((item) => item.id).join(",")})`
-          },
-          (payload) => {
-            switch (payload.eventType) {
-              case "UPDATE": {
-                const { new: updated } = payload;
-                setItems((prevItems: OperationItem[]) =>
-                  sortItems(
-                    prevItems.map((item: OperationItem) => {
-                      if (item.id === updated.id) {
-                        return {
-                          ...item,
-                          columnId: updated.workCenterId,
-                          priority: updated.priority
-                        };
-                      }
-                      return item;
-                    })
-                  )
-                );
-                break;
-              }
-              case "DELETE": {
-                const { old: deleted } = payload;
-                setItems((prevItems: OperationItem[]) =>
-                  sortItems(
-                    prevItems.filter(
-                      (item: OperationItem) => item.id !== deleted.id
-                    )
-                  )
-                );
-                break;
-              }
-            }
-          }
-        )
-        .on(
-          "postgres_changes",
-          {
-            event: "*",
-            schema: "public",
-            table: "productionEvent",
-            filter: `companyId=eq.${companyId}`
-          },
-          (payload) => {
-            if (payload.eventType === "INSERT") {
-              const { new: inserted } = payload;
-              if (inserted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [inserted.jobOperationId]: [
-                    ...(prevState[inserted.jobOperationId] ?? []),
-                    inserted
-                  ]
-                }));
-              }
-            } else if (payload.eventType === "UPDATE") {
-              const { new: updated } = payload;
-              if (updated.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [updated.jobOperationId]: (
-                    prevState[updated.jobOperationId] ?? []
-                  ).map((event) => (event.id === updated.id ? updated : event))
-                }));
-              }
-            } else if (payload.eventType === "DELETE") {
-              const { old: deleted } = payload;
-              if (deleted.jobOperationId) {
-                setProductionEventsByOperation((prevState) => ({
-                  ...prevState,
-                  [deleted.jobOperationId]: (
-                    prevState[deleted.jobOperationId] ?? []
-                  ).filter((event) => event.id !== deleted.id)
-                }));
-              }
-            }
-          }
+  useChangedRows<{ id: string; workCenterId: string; priority: number }>({
+    companyId,
+    table: "jobOperation",
+    columns: "id, workCenterId, priority",
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        setItems((prevItems: Item[]) =>
+          sortItems(prevItems.filter((item: Item) => !ids.includes(item.id)))
         );
+        return;
+      }
+      const changed = new Map(rows.map((row) => [row.id, row]));
+      setItems((prevItems: Item[]) =>
+        sortItems(
+          prevItems.map((item: Item) => {
+            const updated = changed.get(item.id);
+            return updated
+              ? {
+                  ...item,
+                  columnId: updated.workCenterId,
+                  priority: updated.priority
+                }
+              : item;
+          })
+        )
+      );
+    }
+  });
+
+  useChangedRows<Event>({
+    companyId,
+    table: "productionEvent",
+    onChange: ({ op, ids, rows }) => {
+      setProductionEventsByOperation((prev) => {
+        if (op === "DELETE") {
+          return Object.fromEntries(
+            Object.entries(prev).map(([operationId, events]) => [
+              operationId,
+              events.filter((event) => !ids.includes(event.id))
+            ])
+          );
+        }
+        const next = { ...prev };
+        for (const row of rows) {
+          if (!row.jobOperationId) continue;
+          const events = next[row.jobOperationId] ?? [];
+          next[row.jobOperationId] = events.some((event) => event.id === row.id)
+            ? events.map((event) => (event.id === row.id ? row : event))
+            : [...events, row];
+        }
+        return next;
+      });
     }
   });
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 // The deep subpath, not the `@carbon/ee` root: that barrel pulls in integration
@@ -10,7 +14,7 @@ import {
   readConnection,
   resolveConnectionAuth
 } from "@carbon/ee/integrations/connections";
-import type { ActionOutcome, RuntimeValue } from "@carbon/workflows";
+import type { ActionOutcome, RuntimeValue } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { allowlistEntry } from "../integrations/allowlist";
 import { buildPieceContext } from "../integrations/context";

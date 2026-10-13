@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { ValueType, WorkflowIssue } from "@carbon/ee/workflows";
 import {
   Button,
   Combobox,
@@ -12,7 +17,6 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import type { ValueType, WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";

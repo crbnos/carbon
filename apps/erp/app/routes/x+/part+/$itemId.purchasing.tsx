@@ -1,11 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Suspense } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { Await, redirect, useLoaderData, useParams } from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import { getBatchProperties } from "~/modules/inventory";
 import BatchPropertiesConfig from "~/modules/inventory/ui/Batches/BatchPropertiesConfig";
@@ -52,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -71,6 +76,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updatePartPurchasing = await upsertItemPurchasing(client, {
     ...validation.data,
     itemId,
+    companyId,
     updatedBy: userId
   });
   if (updatePartPurchasing.error) {
@@ -122,6 +128,7 @@ export default function PartPurchasingRoute() {
         allowedSuppliers={
           supplierParts.map((s) => s.supplierId).filter(Boolean) as string[]
         }
+        supplierParts={supplierParts}
       />
       <SupplierParts
         supplierParts={supplierParts}

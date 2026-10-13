@@ -1,5 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { useControlField, useField } from "@carbon/form";
+import { RefreshRate, useLoaderQuery } from "@carbon/query";
 import {
   Button,
   CreatableCombobox,
@@ -23,13 +28,11 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useDisclosure,
-  useMount
+  useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
-import { useFetcher } from "react-router";
 import ConsumableForm from "~/modules/items/ui/Consumables/ConsumableForm";
 import MaterialForm from "~/modules/items/ui/Materials/MaterialForm";
 import PartForm from "~/modules/items/ui/Parts/PartForm";
@@ -100,6 +103,35 @@ const useTranslatedItemType = () => {
   };
 };
 
+// Stable identity, so a picker with no quantities does not re-run its options
+// memo on every render.
+const NO_QUANTITIES: Record<string, number> = {};
+
+/**
+ * On-hand per item for the option badge, keyed by the location in play ("all"
+ * totals every location). This used to ride on the items store, which meant the
+ * whole `itemStockQuantities` table (item x location) was downloaded into the
+ * browser on every page load, re-polled every 10 minutes and re-read in full on
+ * every stock movement — to decorate a dropdown. Fetching it here means pages
+ * with no item picker fetch nothing, and the shared client dedupes across every
+ * picker on the page.
+ *
+ * An OBSERVED query, not the imperative `cachedApiQuery` read-through: a stock
+ * movement invalidates this entry (`RealtimeDataProvider`), and only an observer
+ * re-fetches and re-renders. Copying one result into state left an open picker
+ * showing yesterday's numbers until it remounted.
+ */
+function useItemQuantities(locationId?: string) {
+  const { data } = useLoaderQuery<{ data: Record<string, number> | null }>(
+    path.to.api.itemQuantities(locationId ?? "all"),
+    { staleTime: RefreshRate.High }
+  );
+
+  // A badge is decoration — a failed read leaves it off rather than breaking
+  // the picker.
+  return data?.data ?? NO_QUANTITIES;
+}
+
 const Item = ({
   name,
   label,
@@ -117,6 +149,7 @@ const Item = ({
   const { t } = useLingui();
   const translateItemType = useTranslatedItemType();
   const [items] = useItems();
+  const quantities = useItemQuantities(props.locationId);
 
   const options = useMemo(() => {
     let filtered = items.filter((item) => {
@@ -148,9 +181,7 @@ const Item = ({
     }
 
     let results = filtered.map((item) => {
-      const scopedQuantity = props.locationId
-        ? item.quantityByLocation?.[props.locationId]
-        : item.quantityOnHand;
+      const scopedQuantity = quantities[item.id];
       return {
         value: item.id,
         label: item.supersessionMode ? (
@@ -180,10 +211,10 @@ const Item = ({
     return results;
   }, [
     items,
+    quantities,
     props?.includeInactive,
     props.blacklist,
     props.latestRevisionOnly,
-    props.locationId,
     props.replenishmentSystem,
     props.whitelist,
     type,
@@ -296,6 +327,7 @@ const Item = ({
             ref={triggerRef}
             options={options}
             {...props}
+            isReadOnly={isReadOnly}
             inline={props.inline ? ItemPreview : undefined}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {
@@ -586,8 +618,6 @@ const Item = ({
             triggerRef.current?.click();
           }}
           initialValues={{
-            id: "",
-            revision: "0",
             name: created,
             description: "",
             itemTrackingType: "Non-Inventory",
@@ -638,13 +668,9 @@ Item.displayName = "Item";
 export default Item;
 
 export const useConfigurableItems = () => {
-  const configurableItemsLoader = useFetcher<{
+  const configurableItemsLoader = useLoaderQuery<{
     data: { itemId: string }[] | null;
-  }>();
-
-  useMount(() => {
-    configurableItemsLoader.load(path.to.api.itemConfigurable);
-  });
+  }>(path.to.api.itemConfigurable);
 
   const configurableItemIds = useMemo(() => {
     return (configurableItemsLoader.data?.data ?? []).map((c) => c.itemId);

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
 // Read by NAME off the allowlist row, so the mock is a bag of env vars rather
@@ -55,10 +59,10 @@ describe("resolveOAuthApp", () => {
 describe("buildConsentUrl", () => {
   const app = { clientId: "c", redirectUrl: "https://erp.test/cb" };
   const oauth = {
-    clientIdEnv: "X_ID",
-    clientSecretEnv: "X_SECRET",
-    redirectUrlEnv: "X_REDIRECT"
-  };
+    clientIdEnv: "GOOGLE_OAUTH_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_OAUTH_CLIENT_SECRET",
+    redirectUrlEnv: "GOOGLE_OAUTH_REDIRECT_URL"
+  } as const;
 
   it("uses the piece's own authUrl and scope when the row overrides nothing", () => {
     const url = new URL(

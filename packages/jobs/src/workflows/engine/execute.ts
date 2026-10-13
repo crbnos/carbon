@@ -1,5 +1,7 @@
-import { NotificationEvent } from "@carbon/notifications";
-import { datetime } from "@carbon/utils";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   batchCandidates,
   buildCatalogOverlay,
@@ -20,7 +22,10 @@ import {
   type WorkflowCatalog,
   type WorkflowDefinition,
   type WorkflowNode
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { workflowsEnabledForCompany } from "@carbon/ee/workflows.server";
+import { NotificationEvent } from "@carbon/notifications";
+import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { getJobDatabaseClient, type JobDatabase } from "../../db";
 import { buildNotificationLink } from "../../inngest/functions/notifications/content";
@@ -71,6 +76,7 @@ export interface EngineLogger {
 }
 
 const UNPUBLISHED = "This workflow was unpublished before the run started.";
+const NOT_ENTITLED = "Workflows are not enabled for this company's plan.";
 const NO_PERMISSIONS =
   "The permissions for the owner of this workflow could not be read.";
 const NOT_AVAILABLE = "This kind of step is not available yet.";
@@ -381,6 +387,20 @@ export async function executeWorkflowRun(params: {
     }
 
     const startedAt = datetime.timestamp();
+
+    // Commercial gate (DEGRADE, not throw): a run executes on a background event,
+    // bypassing the route-level `requireFeature`, so the lock is re-checked here.
+    // A queued run for a non-entitled company settles Skipped rather than firing.
+    if (!(await workflowsEnabledForCompany(payload.companyId))) {
+      await finishRun(db, {
+        runId: payload.runId,
+        companyId: payload.companyId,
+        status: "Skipped",
+        statusReason: NOT_ENTITLED,
+        startedAt
+      });
+      return { settled: "Skipped" as const };
+    }
 
     if (!context.workflowPublished) {
       await finishRun(db, {

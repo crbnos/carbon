@@ -155,23 +155,33 @@ Kysely **bypasses RLS** and **throws on rollback** (the route try/catches it). S
 
 ```typescript
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { updateSortOrder } from "../shared/sort-order";
 
 // real: updateQuoteLineOrder in sales.service.ts
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  quoteId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("quoteLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "quoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "quoteId", id: quoteId },
+    updates
   });
 }
 ```
+
+Because Kysely bypasses RLS, a Kysely service **always** scopes by `companyId` — and by the
+parent document id when the row ids come from the request — in the SQL itself. Never a per-row
+query in a loop: `updateSortOrder` (`modules/shared/sort-order.ts`) is one
+`UPDATE … FROM (VALUES …)` that throws, rolling back, if any id falls outside that scope. Name
+the tenant params `companyId` / `userId` so the API dispatcher injects them from the auth
+context rather than the body.
 
 A single write is already atomic — don't reach for a transaction.
 
@@ -191,8 +201,45 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
   (`~/modules/settings`) calls the `get_next_sequence` RPC and returns `{ data, error }`
   like any other service call — await and check `error` before using `data`. Note the arg
   order: `(client, table, companyId)`.
+  A caller-supplied number (custom ID, API, MCP) needs no counter code: the
+  `sync_advance_document_sequence` interceptor moves the sequence past any number saved
+  in its format.
 - **RPCs**: heavy/aggregate logic is `client.rpc("fn_name", { ... })`; the function is
   defined in a migration. See database-patterns.md.
+
+## Exposing a service function as an API tool
+
+An exported function of an ERP `{module}.service.ts` becomes an MCP / v1-API
+tool only when its doc comment declares it (`pnpm run generate:mcp` reads the
+tags; the function's name decides nothing but the tool's name):
+
+```ts
+/**
+ * Creates or updates a customer.
+ * @mcp upsert
+ */
+export async function upsertCustomer(…)
+```
+
+- **Verb**: `read`, `create`, `update`, `upsert`, `delete`, or `action` (a state
+  change that is not a row edit). It sets the permission the caller needs and the
+  audit fields the payload is handed. Add `destructive` after a write verb when
+  the call can remove rows the caller did not name.
+- Leave the tag off unless the function is safe to call with nothing but its
+  payload — whatever gate or orchestration its route performs does not run for
+  an API caller.
+- The first sentence of the doc comment is the tool's description. Write one.
+- An upsert that branches on `"createdBy" in payload` must let the API tell
+  create from update without being told: give the update shape an `id` the create
+  shape does not require, or declare the row it updates with
+  `@mcp key <table> <column>`.
+- Don't spread a payload into a write on a table the payload has extra keys for;
+  build the row. The dispatcher stamps `createdBy`/`updatedBy` onto the payload.
+- Generation fails, naming the function, when a declaration contradicts the body
+  (a `read` that writes, a delete without `destructive`).
+
+Full vocabulary: [mcp-tools-reference.md](mcp-tools-reference.md) and
+`apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts`.
 
 ## Naming conventions
 
@@ -204,7 +251,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 | Create-or-update | `upsertCustomer(client, data)` | client |
 | Insert-only | `insertCustomerContact(client, data)` | client |
 | Delete | `deleteCustomer(client, id)` | client |
-| Multi-row / reorder | `updateQuoteLineOrder(db, updates)` | `Kysely<KyselyDatabase>` |
+| Multi-row / reorder | `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)` | `Kysely<KyselyDatabase>` |
 
 ## Checklist
 

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { OAuth2RefreshConfig } from "@carbon/ee/integrations/connections";
 import { getEnv } from "@carbon/env";
 import { type AllowlistEntry, allowlistEntry } from "./allowlist";
@@ -30,12 +34,9 @@ export function resolveOAuthApp(pieceName: string): PieceOAuthApp {
     throw new Error(`No OAuth app is configured for ${pieceName}.`);
   }
 
-  const clientId = getEnv(entry.oauth.clientIdEnv, { isRequired: false });
-  const clientSecret = getEnv(entry.oauth.clientSecretEnv, {
-    isRequired: false,
-    isSecret: true
-  });
-  const redirectUrl = getEnv(entry.oauth.redirectUrlEnv, { isRequired: false });
+  const clientId = getEnv(entry.oauth.clientIdEnv);
+  const clientSecret = getEnv(entry.oauth.clientSecretEnv);
+  const redirectUrl = getEnv(entry.oauth.redirectUrlEnv);
 
   if (!clientId || !clientSecret || !redirectUrl) {
     throw new Error(`No OAuth app is configured for ${pieceName}.`);

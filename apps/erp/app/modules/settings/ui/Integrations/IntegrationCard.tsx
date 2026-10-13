@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Integration } from "@carbon/ee";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import {
@@ -8,19 +12,42 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  cn
+  cn,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  useRouteData
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useState } from "react";
 import { LuLock } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { path } from "~/utils/path";
 import { InstallButton } from "./InstallButton";
+import { InstallModeDialog } from "./InstallModeDialog";
+import { startOAuthConnect } from "./useIntegrationInstall";
+
+/** Mirrors `IntegrationHealthStatus` in settings.server (not importable here). */
+type IntegrationHealthStatus =
+  | "healthy"
+  | "unhealthy"
+  | "inactive"
+  | "sync-off";
 
 export type IntegrationHealth = {
   id: string;
   active: boolean;
-  health: "healthy" | "unhealthy" | "inactive";
+  health: IntegrationHealthStatus;
+  /** Why the last check failed, when the integration says. */
+  healthReason?: string | null;
+  /**
+   * Which install mode this one is in, resolved SERVER-side.
+   *
+   * The id alone, not the metadata it came from — the card needs to pick copy,
+   * not to see credentials.
+   */
+  installMode?: string;
 };
 
 export function IntegrationCard({
@@ -31,9 +58,52 @@ export function IntegrationCard({
   installed: IntegrationHealth | null;
 }) {
   const fetcher = useFetcher<{}>();
+  // The declared mode this install is in, if any. Undefined for every
+  // integration without modes, which then keeps its own description.
+  const installedMode = installed?.installMode
+    ? (
+        integration as unknown as {
+          modes?: Array<{
+            id: string;
+            description: string;
+            shortDescription?: string;
+          }>;
+        }
+      ).modes?.find((m) => m.id === installed.installMode)
+    : undefined;
+  const routeData = useRouteData<{
+    activeRoles: Record<string, string | null>;
+  }>(path.to.integrations);
+  const [showModeDialog, setShowModeDialog] = useState(false);
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
+
+  // At most one ACTIVE integration per provider role, enforced by a database
+  // trigger. Surfacing it here is what keeps a customer from meeting that
+  // refusal as a failed install — and it names the incumbent, so the next step
+  // is obvious.
+  const providerRole = (
+    integration as { providerRole?: "accounting" | "spend" }
+  ).providerRole;
+  const roleIncumbent = providerRole
+    ? (routeData?.activeRoles?.[providerRole] ?? null)
+    : null;
+  const modes =
+    (
+      integration as {
+        modes?: Array<{ id: string; label: string; description: string }>;
+      }
+    ).modes ?? [];
+
+  const conflictsWith =
+    roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
+
+  // An OAuth integration declaring install MODES needs that question answered
+  // before consent, because the mode decides which scopes are requested. Every
+  // other install goes through the shared `InstallButton`.
+  const needsModeChoice =
+    "oauth" in integration && !!integration.oauth && modes.length > 0;
 
   const handleUninstall = async () => {
     await integration?.onClientUninstall?.();
@@ -51,7 +121,7 @@ export function IntegrationCard({
           ) : null
         ) : (
           <Badge className="flex-shrink-0" variant="secondary">
-            <Trans>Coming soon</Trans>
+            <Trans>Not Configured</Trans>
           </Badge>
         )}
       </div>
@@ -63,7 +133,12 @@ export function IntegrationCard({
         </div>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground pb-4">
-        {integration.description}
+        {/* An installed integration describes the mode it is actually in. The
+            generic description covers every mode at once, so it is wrong for
+            each of them. */}
+        {installedMode?.shortDescription ??
+          installedMode?.description ??
+          integration.description}
       </CardContent>
       <CardFooter className="flex flex-end flex-row-reverse gap-2">
         {isStarterPlan ? (
@@ -105,53 +180,101 @@ export function IntegrationCard({
                 </Button>
               </fetcher.Form>
             ) : (
-              <InstallButton integration={integration} />
+              <InstallButton
+                integration={integration}
+                isDisabled={!!conflictsWith}
+                onInstall={
+                  needsModeChoice ? () => setShowModeDialog(true) : undefined
+                }
+              />
             )}
           </>
         )}
+        {conflictsWith && !installed && (
+          <span className="text-xs text-muted-foreground mr-auto">
+            <Trans>Uninstall {conflictsWith} first</Trans>
+          </span>
+        )}
         {installed && integration.active && (
-          <StatusBadge status={installed.health} />
+          <StatusBadge
+            status={installed.health}
+            reason={installed.healthReason}
+          />
         )}
       </CardFooter>
+      {showModeDialog && (
+        <InstallModeDialog
+          integrationName={integration.name}
+          modes={modes}
+          onClose={() => setShowModeDialog(false)}
+          onChoose={(mode) => startOAuthConnect(integration.id, mode)}
+        />
+      )}
     </Card>
   );
 }
 
 const StatusBadge = ({
-  status
+  status,
+  reason
 }: {
-  status: "healthy" | "unhealthy" | "inactive";
+  status: IntegrationHealthStatus;
+  reason?: string | null;
 }) => {
+  const { t } = useLingui();
+
   const colors = {
     healthy: "bg-green-500",
     unhealthy: "bg-red-500",
-    inactive: "bg-gray-400"
+    inactive: "bg-gray-400",
+    "sync-off": "bg-orange-500"
   } as const;
 
   const badgeVariants = {
     healthy: "green",
     unhealthy: "red",
-    inactive: "gray"
+    inactive: "gray",
+    "sync-off": "orange"
+  } as const;
+
+  const labels = {
+    healthy: t`Healthy`,
+    unhealthy: t`Unhealthy`,
+    inactive: t`Inactive`,
+    // Connected, but the accounting sync switch is off — a new connection
+    // still being set up, or one switched off since.
+    "sync-off": t`Sync Off`
   } as const;
 
   const ping = colors[status] || "text-gray-400";
-  return (
+  const badge = (
     <Badge
       variant={badgeVariants[status]}
       className="flex items-center mr-auto gap-x-2 py-0.5"
     >
       <span className="relative flex size-2">
-        <span
-          className={cn(
-            "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
-            ping
-          )}
-        />
+        {/* Nothing is moving while sync is off, so the dot holds still. */}
+        {status !== "sync-off" && (
+          <span
+            className={cn(
+              "absolute inline-flex h-full w-full animate-ping rounded-full opacity-75",
+              ping
+            )}
+          />
+        )}
         <span
           className={cn("relative inline-flex size-2 rounded-full", ping)}
         />
       </span>
-      {status}
+      {labels[status]}
     </Badge>
+  );
+
+  if (!reason) return badge;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{badge}</TooltipTrigger>
+      <TooltipContent className="max-w-xs">{reason}</TooltipContent>
+    </Tooltip>
   );
 };

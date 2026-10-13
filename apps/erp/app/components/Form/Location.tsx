@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CreatableComboboxProps } from "@carbon/form";
 import { CreatableCombobox } from "@carbon/form";
-import { useDisclosure, useMount } from "@carbon/react";
+import { useLoaderQuery } from "@carbon/query";
+import { useDisclosure } from "@carbon/react";
 import { getLocalTimeZone } from "@internationalized/date";
 import { useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
 import { useUser } from "~/hooks";
 import type { getLocationsList } from "~/modules/resources";
 import LocationForm from "~/modules/resources/ui/Locations/LocationForm";
@@ -86,12 +90,9 @@ Location.displayName = "Location";
 export default Location;
 
 export const useLocations = () => {
-  const locationFetcher =
-    useFetcher<Awaited<ReturnType<typeof getLocationsList>>>();
-
-  useMount(() => {
-    locationFetcher.load(path.to.api.locations);
-  });
+  const locationFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getLocationsList>>
+  >(path.to.api.locations);
 
   const options = useMemo(
     () =>

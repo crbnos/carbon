@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Byte-parity proof: the Rust FCL bridge must reproduce python-fcl's contacts
 //! and distances exactly (fixture generated from python-fcl 0.7.0.11 / FCL 0.7.0).
 

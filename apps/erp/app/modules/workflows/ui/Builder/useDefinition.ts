@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   AvailableVariable,
   BatchPlan,
@@ -5,13 +9,13 @@ import type {
   ValueType,
   WorkflowCatalog,
   WorkflowDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   availableVariables,
   batchPlan,
   createContext,
   variablesFromHandle
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { useCallback, useMemo } from "react";
 import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStoreApi, useBuilderStoreShallow } from "./context";

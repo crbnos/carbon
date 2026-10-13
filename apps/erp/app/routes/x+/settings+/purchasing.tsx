@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import {
   Input,
   PhoneInput,
@@ -17,7 +22,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   Label,
   ScrollArea,
@@ -25,15 +29,18 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import CompanyDefaultAttachmentsCard from "~/components/CompanyDefaultAttachmentsCard";
 import { EmailRecipients, Users } from "~/components/Form";
 import Country from "~/components/Form/Country";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
+import { useSavedToggle } from "~/hooks/useSavedToggle";
 import {
   accountsPayableBillingAddressValidator,
   defaultSupplierCcValidator,
@@ -47,6 +54,7 @@ import {
   updateDefaultSupplierCc,
   updateLeadTimesOnReceiptSetting,
   updatePurchasePriceUpdateTimingSetting,
+  updateRequireSupplierContactSetting,
   updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
 } from "~/modules/settings";
@@ -69,8 +77,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await Promise.all([
       getCompanySettings(client, companyId),
       getAccountsPayableBillingAddress(client, companyId),
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/default-attachments/company`)
     ]);
 
@@ -120,6 +128,25 @@ export async function action({ request }: ActionFunctionArgs) {
         success: true,
         message: `Accounts payable billing address ${apToggleEnabled ? "enabled" : "disabled"}`
       };
+
+    case "requireSupplierContactAndLocationToggle": {
+      const enabled = formData.get("enabled") === "true";
+      const result = await updateRequireSupplierContactSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error) {
+        logger.error("Failed to update require supplier contact", {
+          error: result.error
+        });
+        return { success: false, message: result.error.message };
+      }
+      return {
+        success: true,
+        message: `Supplier contact requirement ${enabled ? "enabled" : "disabled"}`
+      };
+    }
 
     case "purchasePriceUpdateTiming":
       const validation = await validator(
@@ -311,21 +338,34 @@ export default function PurchasingSettingsRoute() {
 
   const toggleFetcher = useFetcher<typeof action>();
 
-  const [apAddressEnabled, setApAddressEnabled] = useState(
+  const apAddressEnabled = useSavedToggle(
+    toggleFetcher,
+    "accountsPayableAddressToggle",
     companySettings.accountsPayableAddress ?? false
   );
 
-  const [leadTimesOnReceiptEnabled, setLeadTimesOnReceiptEnabled] = useState(
+  const requireSupplierContactAndLocation = useSavedToggle(
+    toggleFetcher,
+    "requireSupplierContactAndLocationToggle",
+    (companySettings as { requireSupplierContactAndLocation?: boolean })
+      .requireSupplierContactAndLocation ?? false
+  );
+
+  const leadTimesOnReceiptEnabled = useSavedToggle(
+    toggleFetcher,
+    "updateLeadTimesOnReceipt",
     (companySettings as { updateLeadTimesOnReceipt?: boolean })
       .updateLeadTimesOnReceipt ?? false
   );
 
-  const [showSupplierReadableIdEnabled, setShowSupplierReadableIdEnabled] =
-    useState(companySettings.showSupplierReadableId ?? false);
+  const showSupplierReadableIdEnabled = useSavedToggle(
+    toggleFetcher,
+    "showSupplierReadableIdToggle",
+    companySettings.showSupplierReadableId ?? false
+  );
 
   const handleShowSupplierReadableIdToggle = useCallback(
     (checked: boolean) => {
-      setShowSupplierReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -334,9 +374,21 @@ export default function PurchasingSettingsRoute() {
     [toggleFetcher]
   );
 
+  const handleRequireSupplierContactToggle = useCallback(
+    (checked: boolean) => {
+      toggleFetcher.submit(
+        {
+          intent: "requireSupplierContactAndLocationToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const handleApAddressToggle = useCallback(
     (checked: boolean) => {
-      setApAddressEnabled(checked);
       toggleFetcher.submit(
         { intent: "accountsPayableAddressToggle", enabled: checked.toString() },
         { method: "POST" }
@@ -347,7 +399,6 @@ export default function PurchasingSettingsRoute() {
 
   const handleLeadTimesOnReceiptToggle = useCallback(
     (checked: boolean) => {
-      setLeadTimesOnReceiptEnabled(checked);
       toggleFetcher.submit(
         {
           intent: "updateLeadTimesOnReceipt",
@@ -370,13 +421,10 @@ export default function PurchasingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Purchasing</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <SettingsSectionHeader>
           <Trans>Documents</Trans>
@@ -430,25 +478,96 @@ export default function PurchasingSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Require a Supplier Contact and Location</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A supplier must have at least one contact with an email address
+                and at least one location with a country — plus a state, for US
+                addresses — before its quotes, orders and invoices can be issued
+                or posted. Spend platforms cannot create a vendor without all of
+                them, so a supplier missing any has its bills rejected after the
+                fact.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Centralized Billing Address</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Route all AP invoices to one address (e.g. corporate
-                    headquarters) instead of individual purchasers.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireSupplierContactAndLocation ? (
+                    <Trans>A supplier contact and location are required</Trans>
+                  ) : (
+                    <Trans>A supplier contact and location are optional</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireSupplierContactAndLocation ? (
+                    <Trans>
+                      Quotes, orders and invoices are blocked until the supplier
+                      has a contact with an email address and a location with a
+                      country.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block issuing or posting for a supplier with no
+                      contact or no location.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireSupplierContactAndLocation}
+                onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Centralized Billing Address</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Route all AP invoices to one address (e.g. corporate
+                headquarters) instead of individual purchasers.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {apAddressEnabled ? (
+                    <Trans>Centralized billing is enabled</Trans>
+                  ) : (
+                    <Trans>Centralized billing is disabled</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {apAddressEnabled ? (
+                    <Trans>
+                      AP invoices are routed to a single billing address.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to route all AP invoices to a single billing
+                      address.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={apAddressEnabled}
                 onCheckedChange={handleApAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         {apAddressEnabled && (
           <Card>
@@ -568,24 +687,45 @@ export default function PurchasingSettingsRoute() {
         </Card>
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Automatic Lead Time Updates</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Update part lead times from posted purchase receipts.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Automatic Lead Time Updates</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Update part lead times from posted purchase receipts.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {leadTimesOnReceiptEnabled ? (
+                    <Trans>Lead time updates are enabled</Trans>
+                  ) : (
+                    <Trans>Lead time updates are disabled</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {leadTimesOnReceiptEnabled ? (
+                    <Trans>
+                      Part lead times update from posted purchase receipts.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to update part lead times from posted purchase
+                      receipts.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={leadTimesOnReceiptEnabled}
                 onCheckedChange={handleLeadTimesOnReceiptToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         <SettingsSectionHeader>
           <Trans>Suppliers</Trans>
@@ -593,26 +733,48 @@ export default function PurchasingSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Show Supplier IDs</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Show a readable Supplier ID column on the supplier list,
+                supplier forms, and dropdowns. Suppliers are still identified
+                internally either way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Show Supplier IDs</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Show a readable Supplier ID column on the supplier list,
-                    supplier forms, and dropdowns. Suppliers are still
-                    identified internally either way.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {showSupplierReadableIdEnabled ? (
+                    <Trans>Supplier IDs are shown</Trans>
+                  ) : (
+                    <Trans>Supplier IDs are hidden</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {showSupplierReadableIdEnabled ? (
+                    <Trans>
+                      A readable Supplier ID appears on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to show a readable Supplier ID on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={showSupplierReadableIdEnabled}
                 onCheckedChange={handleShowSupplierReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>
@@ -673,7 +835,7 @@ export default function PurchasingSettingsRoute() {
             </CardFooter>
           </ValidatedForm>
         </Card>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

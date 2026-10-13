@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * v5 reconciler decision core (spec:
  * .ai/specs/2026-08-12-accounting-sync-reconciler-unification.md, D1).
@@ -20,13 +24,16 @@
  * duplicates, and cooldown races unrepresentable rather than specially
  * handled.
  */
-import type { PostingSyncSettings } from "@carbon/ee/accounting";
+import type { ChargePolicyInput } from "@carbon/ee/accounting";
+import type { EffectivePostingSyncSettings } from "@carbon/ee/sync";
 import {
   MAX_REDRIVE_ATTEMPTS,
   planJournalPostingFromState,
   SWEPT_BILL_STATUSES,
+  SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
   SWEPT_PAYMENT_STATUSES,
+  SWEPT_REIMBURSEMENT_STATUSES,
   type SyncOperationRequest,
   shouldEnqueueMissingDocument,
   type TerminalSyncOperationRequest
@@ -37,12 +44,16 @@ export type ReconcileEntityType =
   | "journalEntry"
   | "bill"
   | "invoice"
+  | "charge"
+  | "reimbursement"
   | "payment"
   | "customer"
   | "vendor"
   | "item"
   | "purchaseOrder"
-  | "salesOrder";
+  | "salesOrder"
+  | "creditMemo"
+  | "supplierCredit";
 
 export type ReconcileRef = {
   entityType: ReconcileEntityType;
@@ -76,7 +87,14 @@ export type ReconcileEntityInput = {
   } | null;
   /** externalIntegrationMapping state for the entity (push identity). */
   hasMappingWithExternalId: boolean;
-  lastSyncedAt: string | null;
+  /** A native push mapping remains remotely active (including payment fan-out). */
+  hasUnvoidedPushMapping?: boolean;
+  /**
+   * `externalIntegrationMapping.lastSyncedAt`. Typed to admit a `Date`:
+   * the executor loads it through Kysely, where node-postgres decodes
+   * timestamptz as a Date regardless of what the generated types say.
+   */
+  lastSyncedAt: string | Date | null;
   /** A Pending/In Flight push op exists for the tuple. */
   hasLiveOperation: boolean;
   /** Newest push op for the tuple (by createdAt), live or terminal. */
@@ -86,6 +104,13 @@ export type ReconcileEntityInput = {
    * the `${id}:reversal` id (spec I1 coverage — one disposition each).
    */
   journalCoverage?: { normalCovered: boolean; reversalCovered: boolean };
+  /**
+   * journalEntry only, "Charge" source: the backing charge
+   * (`type` + whether it has a supplier). A Charge with a supplier is
+   * DOC_BACKED by the synced charge object when the charge entity is enabled;
+   * everything else keeps pushing as a journal entry.
+   */
+  charge?: ChargePolicyInput | null;
   /**
    * bill only: a posted "Purchase Invoice" journal exists for this bill —
    * the input the account-costed replay needs (the re-drive condition).
@@ -108,13 +133,29 @@ export type ReconcileContext = {
   entityPushEnabled: boolean;
   /** Rillet true — the only provider with outbound payment push. */
   providerSupportsPaymentPush: boolean;
+  /** Rillet supports native document/payment deletion; Xero/QBO support charge deletion. */
+  providerSupportsNativeVoid?: boolean;
   /** Inputs the journal policy core needs (planJournalPostingFromState). */
-  settings: PostingSyncSettings;
-  docSync: { invoiceEnabled: boolean; billEnabled: boolean };
+  /**
+   * Settings with ledger delegation applied. Branded so the pure decision core
+   * cannot be reached with raw settings — see `applyLedgerDelegation`.
+   */
+  settings: EffectivePostingSyncSettings;
+  docSync: {
+    invoiceEnabled: boolean;
+    billEnabled: boolean;
+    chargeEnabled: boolean;
+    chargeCreditEnabled: boolean;
+    creditMemoEnabled?: boolean;
+    supplierCreditEnabled?: boolean;
+    reimbursementEnabled?: boolean;
+  };
   inventoryAdjustmentEnabled: boolean;
   /** Resolved by the executor only for Payment-source journals when the
    * AR/AP family modes diverge (otherwise the side cannot matter). */
   paymentFamily: "ar" | "ap" | null;
+  /** Memo source types only: the backing memo's party (decides the family). */
+  memoParty?: "customer" | "supplier" | null;
 };
 
 export type ReconcileAction =
@@ -149,6 +190,19 @@ export function computeReconcileDecision(
       return reconcileJournal(input);
     case "bill":
     case "invoice":
+    case "charge":
+    // Every reimbursement is document-shaped (POSTING_POLICY.Reimbursement is
+    // `representation: "document"`), so there is no per-row charge-style
+    // analogue to resolve first — it always reconciles as a document.
+    case "reimbursement":
+    // Credit memos and supplier credits push as native provider documents too.
+    // They were wired into the entity union, the snapshot tables, the table map,
+    // the subscriptions and the outbound sweep — but not here, so every ref fell
+    // to `default` and returned "not reconciled": the document reached neither
+    // the provider's GL nor its subledger, while its journal was excluded as
+    // DOC_BACKED. Plumbed end to end except at the one place that decides.
+    case "creditMemo":
+    case "supplierCredit":
       return reconcileDocument(input);
     case "payment":
       return reconcilePayment(input);
@@ -203,8 +257,10 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
       settings: input.context.settings,
       docSync: input.context.docSync,
       paymentFamily: input.context.paymentFamily,
+      memoParty: input.context.memoParty ?? null,
       inventoryAdjustmentEntitySyncEnabled:
-        input.context.inventoryAdjustmentEnabled
+        input.context.inventoryAdjustmentEnabled,
+      charge: input.charge ?? null
     });
     if (planned.action === "push") {
       actions.push({ kind: "enqueue", request: planned.request });
@@ -224,7 +280,7 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
 
 /**
  * Documents (bills, invoices). Posted-set statuses only — the transient
- * mid-posting "Pending" is deliberately not reconciled (the posting edge
+ * mid-posting "Pending" is deliberately not reconciled (the posting server
  * function's own status flip re-raises the hint seconds later, after the
  * posting journal exists; this removes the F5 race at the source instead of
  * parking a premature Warning).
@@ -239,6 +295,90 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
  *    data-and-save retries without waiting for a human or the re-drive).
  * 4. Otherwise nothing — parked dispositions belong to humans/policy.
  */
+function reconcileNativeVoid(input: ReconcileEntityInput): ReconcileDecision {
+  if (!input.context.providerSupportsNativeVoid) {
+    return nothing("no active native push mapping to void");
+  }
+  if (input.hasLiveOperation)
+    return nothing("a live operation covers the void");
+  const latest = input.latestOperation;
+  if (!input.hasUnvoidedPushMapping) {
+    // A create may have reached the provider before its response or mapping
+    // persisted. Do not silently lose that remote GL effect when Carbon voids
+    // before a retry can recover the create identity. Never create just to void.
+    if (
+      input.entityType === "charge" &&
+      !input.hasMappingWithExternalId &&
+      latest &&
+      ["Failed", "Warning", "Completed"].includes(latest.status) &&
+      latest.errorCode !== "UNCONFIRMED_REMOTE_VOID"
+    ) {
+      return {
+        actions: [
+          {
+            kind: "record-terminal",
+            request: {
+              entityType: input.entityType,
+              entityId: input.entityId,
+              direction: "push-to-accounting",
+              status: "Warning",
+              errorCode: "UNCONFIRMED_REMOTE_VOID",
+              errorMessage:
+                "A card charge was voided after a sync attempt without a durable remote identity. Verify and remove any provider transaction before resolving this warning."
+            }
+          }
+        ]
+      };
+    }
+    return nothing("no active native push mapping to void");
+  }
+  if (latest?.status === "Failed" || latest?.status === "Warning") {
+    // A document can reach the provider before its payment void drains. Retry
+    // that transient ordering failure through the bounded ledger lifecycle.
+    return latest.attemptCount < MAX_REDRIVE_ATTEMPTS
+      ? { actions: [{ kind: "re-drive", operationId: latest.id }] }
+      : nothing("native void exhausted automatic retries");
+  }
+  return {
+    actions: [
+      {
+        kind: "enqueue",
+        request: {
+          entityType: input.entityType,
+          entityId: input.entityId,
+          direction: "push-to-accounting"
+        }
+      }
+    ]
+  };
+}
+
+/**
+ * Which statuses count as "posted" per document entity type.
+ *
+ * A lookup rather than a ternary chain: the chain's fallthrough was the bug
+ * surface — a type nobody added an arm for silently took the sales-invoice set,
+ * which never contains "Posted". Anything absent here is an invoice.
+ *
+ * `SWEPT_MEMO_STATUSES` is declared locally rather than beside its siblings in
+ * `accounting-sync-operations.ts` only to keep this change off a file another
+ * change is editing; fold it in there when convenient. It must NOT reuse
+ * `SWEPT_CHARGE_STATUSES` — the values coincide today and would silently follow
+ * any future change to charge statuses.
+ */
+const SWEPT_MEMO_STATUSES = ["Posted", "Voided"] as const;
+
+const DOCUMENT_POSTED_STATUSES: Partial<
+  Record<ReconcileEntityType, readonly string[]>
+> = {
+  bill: SWEPT_BILL_STATUSES,
+  charge: SWEPT_CHARGE_STATUSES,
+  reimbursement: SWEPT_REIMBURSEMENT_STATUSES,
+  creditMemo: SWEPT_MEMO_STATUSES,
+  supplierCredit: SWEPT_MEMO_STATUSES,
+  invoice: SWEPT_INVOICE_STATUSES
+};
+
 function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
   if (!snapshot) return nothing("entity not found");
@@ -247,8 +387,10 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
     return nothing(`${input.entityType} push is disabled in the sync config`);
   }
 
+  if (snapshot.status === "Voided") return reconcileNativeVoid(input);
+
   const postedStatuses: readonly string[] =
-    input.entityType === "bill" ? SWEPT_BILL_STATUSES : SWEPT_INVOICE_STATUSES;
+    DOCUMENT_POSTED_STATUSES[input.entityType] ?? SWEPT_INVOICE_STATUSES;
   if (!snapshot.status || !postedStatuses.includes(snapshot.status)) {
     return nothing(
       `${input.entityType} status '${snapshot.status ?? "unknown"}' is not posted`
@@ -318,12 +460,9 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
 }
 
 /**
- * Payments (Phase G — Rillet only). Strictest rule: only a Posted/Voided
- * payment with NO push operation at all enqueues (payment mapping ids are
- * composite, so a mapping-based phantom check does not apply; ineligible
- * payments park as Skipped on first drain and leave the set). A Voided
- * payment that already has operations records nothing — v1 has no void
- * echo (the syncer parks voids as Skipped by design).
+ * Payments (Rillet only). Posted payments enqueue once. Voided payments with
+ * active Carbon-originated mappings enqueue again, independently of the prior
+ * posting operation, until native deletion is durably recorded.
  */
 function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
@@ -331,6 +470,12 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
 
   if (!input.context.providerSupportsPaymentPush) {
     return nothing("provider has no outbound payment push");
+  }
+  if (
+    snapshot.status === "Voided" &&
+    input.context.providerSupportsNativeVoid
+  ) {
+    return reconcileNativeVoid(input);
   }
   const posted: readonly string[] = SWEPT_PAYMENT_STATUSES;
   if (!snapshot.status || !posted.includes(snapshot.status)) {
@@ -374,6 +519,24 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
 }
 
 /**
+ * Epoch ms for a timestamp that reached us as either an ISO string
+ * (supabase-js / PostgREST) or a `Date` (Kysely — node-postgres hands back
+ * a Date for timestamptz while the generated types say `string`). Null when
+ * it is neither, or unparseable.
+ *
+ * Comparing the two forms DIRECTLY is the trap: `string <= Date` coerces
+ * both toward numbers, the string becomes NaN, and every such comparison is
+ * false. That silently disabled the change check below, so every master-data
+ * row edited inside the sweep window re-enqueued a no-op push twice an hour
+ * for the whole 7-day window.
+ */
+function instantMs(value: string | Date | null | undefined): number | null {
+  if (value == null) return null;
+  const ms = value instanceof Date ? value.getTime() : Date.parse(value);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/**
  * Master data (customer/vendor/item/PO/SO). State-shaped change detection:
  * enqueue when nothing exists remotely, or when the row changed since the
  * last successful sync (updatedAt > mapping.lastSyncedAt). This REPLACES
@@ -381,6 +544,11 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
  * unchanged just-synced entity reconciles to nothing (no window to expire),
  * and a changed one enqueues immediately (no window to swallow it). The
  * drain's fast-bailout remains the backstop for false positives.
+ *
+ * The two timestamps are compared as INSTANTS, never as strings: they are
+ * loaded by different clients (see `instantMs`), and even two ISO strings
+ * disagree on fractional-digit count and `Z` vs `+00:00`, so lexicographic
+ * order is only accidentally right.
  */
 function reconcileMasterData(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
@@ -392,11 +560,13 @@ function reconcileMasterData(input: ReconcileEntityInput): ReconcileDecision {
   if (input.hasLiveOperation) {
     return nothing("a live operation already covers this entity");
   }
+  const lastSyncedMs = instantMs(input.lastSyncedAt);
+  const updatedMs = instantMs(snapshot.updatedAt);
   if (
     input.hasMappingWithExternalId &&
-    input.lastSyncedAt != null &&
-    snapshot.updatedAt != null &&
-    snapshot.updatedAt <= input.lastSyncedAt
+    lastSyncedMs != null &&
+    updatedMs != null &&
+    updatedMs <= lastSyncedMs
   ) {
     return nothing("unchanged since the last successful sync");
   }

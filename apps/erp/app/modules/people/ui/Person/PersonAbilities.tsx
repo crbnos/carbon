@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Card,
@@ -59,18 +63,26 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
                 employeeAbility.id
               );
 
+              // The ability's name IS the linked process's name.
+              const process = Array.isArray(employeeAbility.ability.process)
+                ? employeeAbility.ability.process[0]
+                : employeeAbility.ability.process;
+
               return (
                 <li key={employeeAbility.id}>
                   <HStack className="w-full justify-between">
-                    <HStack spacing={2}>
-                      <Link className="font-medium" to={editPath}>
-                        {employeeAbility.ability.name}
+                    <HStack spacing={2} className="max-md:min-w-0">
+                      <Link
+                        className="font-medium max-md:block max-md:min-w-0 max-md:truncate max-md:leading-[2.75rem]"
+                        to={editPath}
+                      >
+                        {process?.name}
                       </Link>
                       <EmployeeAbilityStatus
                         employeeAbility={employeeAbility}
                       />
                     </HStack>
-                    <HStack spacing={2}>
+                    <HStack spacing={2} className="max-md:shrink-0">
                       <p className="text-sm text-muted-foreground">
                         <DateTime
                           value={employeeAbility.lastTrainingDate}

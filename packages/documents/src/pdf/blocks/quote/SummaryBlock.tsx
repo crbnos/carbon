@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Text, View } from "@react-pdf/renderer";
 import { useTw } from "../tw";
 import type { QuoteData } from "./types";
@@ -31,7 +35,7 @@ export function QuoteSummaryBlock({ data }: { data: QuoteData }) {
           {numberFormatter.format(totals.shipping)}
         </Text>
       </View>
-      {totals.fees > 0 && (
+      {totals.fees > 0 ? (
         <View style={ROW}>
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
             Fees ({currencyCode})
@@ -40,7 +44,7 @@ export function QuoteSummaryBlock({ data }: { data: QuoteData }) {
             {numberFormatter.format(totals.fees)}
           </Text>
         </View>
-      )}
+      ) : null}
       <View style={ROW}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
           Taxes ({currencyCode})

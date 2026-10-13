@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import { ValidatedForm } from "@carbon/form";
 import {
@@ -16,6 +20,7 @@ import {
   HStack,
   IconButton,
   LabelWithHelp,
+  MENU_ITEM_SHORTCUTS,
   Modal,
   ModalBody,
   ModalContent,
@@ -208,7 +213,7 @@ const PriceOverrideForm = ({
                   companyId={company?.id}
                 />
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <BooleanField
                     name="active"
                     label={t`Active`}
@@ -222,7 +227,7 @@ const PriceOverrideForm = ({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 w-full">
+                <div className="grid grid-cols-2 gap-3 w-full max-md:grid-cols-1">
                   <DatePicker name="validFrom" label={t`Valid From`} />
                   <DatePicker
                     name="validTo"
@@ -350,7 +355,8 @@ function PriceBreaks({
         error: null,
         count: null,
         status: 200,
-        statusText: "OK"
+        statusText: "OK",
+        success: true
       }) as const,
     []
   );
@@ -389,6 +395,7 @@ function PriceBreaks({
                   <DropdownMenuContent>
                     {canShowHistory && row.original.id ? (
                       <DropdownMenuItem
+                        shortcut={MENU_ITEM_SHORTCUTS.view}
                         onClick={() =>
                           setHistoryBreakId(row.original.id ?? null)
                         }
@@ -398,6 +405,7 @@ function PriceBreaks({
                       </DropdownMenuItem>
                     ) : null}
                     <DropdownMenuItem
+                      shortcut={MENU_ITEM_SHORTCUTS.delete}
                       onClick={() =>
                         setPendingDelete({
                           index: row.index,

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // `<StorageUnit>` — the storage-unit (bin) picker. One component, two modes:
 // - with `name`    -> form-bound (`@carbon/form` CreatableCombobox)
 // - without `name` -> controlled (`value` + `onChange`) for table cells
@@ -10,15 +14,15 @@
 // single-purpose interaction handled by `StorageUnitParentSelect`, local to the
 // Storage Unit form.
 
+import type { TermId } from "@carbon/content/glossary";
 import { CreatableCombobox } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
+import { useLoaderQuery } from "@carbon/query";
 import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure
 } from "@carbon/react";
 import type { MouseEventHandler } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useFetcher } from "react-router";
+import { useMemo, useRef, useState } from "react";
 import type { getStorageUnitsList } from "~/modules/inventory";
 import StorageUnitForm from "~/modules/inventory/ui/StorageUnits/StorageUnitForm";
 import type { ListItem } from "~/types";
@@ -43,15 +47,10 @@ export type StorageUnitTreeRow = {
  * parent picker and storage-rule value inputs.
  */
 export function useStorageUnitsTree(locationId?: string | null) {
-  const fetcher = useFetcher<{
+  const fetcher = useLoaderQuery<{
     data: StorageUnitTreeRow[] | null;
     error: unknown;
-  }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity changes every render
-  useEffect(() => {
-    if (locationId) fetcher.load(path.to.api.storageUnitsTree(locationId));
-  }, [locationId]);
+  }>(locationId ? path.to.api.storageUnitsTree(locationId) : null);
 
   return fetcher.data?.data ?? [];
 }
@@ -61,22 +60,17 @@ export function useStorageUnitsTree(locationId?: string | null) {
  * helpers. Kept for non-leaf-aware callsites that pull their own options.
  */
 export function useStorageUnits(locationId?: string, itemId?: string) {
-  const storageUnitsFetcher =
-    useFetcher<Awaited<ReturnType<typeof getStorageUnitsList>>>();
-  const storageUnitsWithQuantitiesFetcher =
-    useFetcher<Awaited<ReturnType<typeof getStorageUnitsList>>>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
-  useEffect(() => {
-    if (locationId) {
-      if (itemId) {
-        storageUnitsWithQuantitiesFetcher.load(
-          path.to.api.storageUnitsWithQuantities(locationId, itemId)
-        );
-      }
-      storageUnitsFetcher.load(path.to.api.storageUnits(locationId));
-    }
-  }, [locationId, itemId]);
+  const storageUnitsFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getStorageUnitsList>>
+  >(locationId ? path.to.api.storageUnits(locationId) : null);
+  const storageUnitsWithQuantitiesFetcher = useLoaderQuery<
+    Awaited<ReturnType<typeof getStorageUnitsList>>
+  >(
+    locationId && itemId
+      ? path.to.api.storageUnitsWithQuantities(locationId, itemId)
+      : null,
+    { staleTime: 0 }
+  );
 
   const options = useMemo(() => {
     if (itemId && storageUnitsWithQuantitiesFetcher.data?.data) {
@@ -130,14 +124,12 @@ type StorageUnitOption = { value: string; label: string; helper?: string };
  * fetches when both ids are present, so item-less pickers don't pay for it.
  */
 function useStorageUnitQuantities(locationId?: string | null, itemId?: string) {
-  const fetcher = useFetcher<{ data: { id: string; quantity: number }[] }>();
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: fetcher identity changes every render
-  useEffect(() => {
-    if (locationId && itemId) {
-      fetcher.load(path.to.api.storageUnitsWithQuantities(locationId, itemId));
-    }
-  }, [locationId, itemId]);
+  const fetcher = useLoaderQuery<{ data: { id: string; quantity: number }[] }>(
+    locationId && itemId
+      ? path.to.api.storageUnitsWithQuantities(locationId, itemId)
+      : null,
+    { staleTime: 0 }
+  );
 
   return useMemo(() => {
     const m = new Map<string, number>();

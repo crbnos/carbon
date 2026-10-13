@@ -1,13 +1,19 @@
-import { VERCEL_URL } from "@carbon/auth";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationConfigById } from "@carbon/ee";
 import {
   exchangeCodeForTokens,
   getAccessibleResources
 } from "@carbon/ee/jira.server";
 import { getLogger } from "@carbon/logger";
+import { redirectExternal } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
@@ -34,12 +40,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { data: params } = jiraAuthResponse;
 
-  if (!params.state) {
-    return data({ error: "Invalid state parameter" }, { status: 400 });
+  // The state must be the one the integrations page issued to THIS browser
+  // for this user and company (IntegrationCard puts it on the authorize URL).
+  // Without the check anyone could send a victim a callback URL carrying the
+  // attacker's own authorization code, linking the victim's company to the
+  // attacker's Jira account. Single-use: consumed whether it matches or not.
+  const consumedState = await consumeOAuthState(request, params.state, {
+    integrationId: "jira",
+    userId,
+    companyId
+  });
+
+  if (!consumedState.valid) {
+    logger.error("Invalid Jira OAuth state", { companyId, userId });
+    return data(
+      { error: "Invalid state parameter" },
+      { status: 400, headers: { "Set-Cookie": consumedState.cookie } }
+    );
   }
 
   try {
-    const redirectUri = `${url.origin}/api/integrations/jira/oauth`;
+    // Must match the authorize-time redirect_uri, which IntegrationCard builds
+    // from `window.location.origin`. `new URL(request.url).origin` is the
+    // internal proxy address behind a TLS-terminating proxy (e.g. the portless
+    // dev proxy → http://127.0.0.1:<port>), which fails as a redirect_uri
+    // mismatch. `getAppUrl()` is the canonical public origin in dev/preview/prod.
+    const redirectUri = `${getAppUrl()}/api/integrations/jira/oauth`;
 
     // Exchange the authorization code for tokens
     const tokens = await exchangeCodeForTokens(params.code, redirectUri);
@@ -89,15 +115,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (await config.onInstall(companyId));
 
     if (createdJiraIntegration?.data?.metadata) {
-      const requestUrl = new URL(request.url);
-
-      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-        requestUrl.protocol = "http";
-      }
-
-      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
-
-      return redirect(redirectUrl);
+      // Redirect on the canonical public origin — `request.url`'s origin is the
+      // internal proxy address in dev, which would drop the session cookies.
+      return redirectExternal(`${getAppUrl()}${path.to.integrations}`, {
+        headers: { "Set-Cookie": consumedState.cookie }
+      });
     } else {
       return data(
         { error: "Failed to save Jira integration" },

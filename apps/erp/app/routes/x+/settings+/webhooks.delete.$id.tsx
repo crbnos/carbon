@@ -1,12 +1,19 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { deleteWebhook } from "@carbon/ee/webhooks.server";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
+import { useLoaderData, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteWebhook, getWebhook } from "~/modules/settings";
+import { getWebhook } from "~/modules/settings";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -35,7 +42,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "users"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -74,9 +81,9 @@ export default function DeleteWebhookRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const { t } = useLingui();
-  const onCancel = () => navigate(-1);
+  const onCancel = () => closeRoute();
 
   return (
     <ConfirmDelete

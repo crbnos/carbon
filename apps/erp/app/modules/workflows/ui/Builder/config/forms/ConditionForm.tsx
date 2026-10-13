@@ -1,5 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type {
+  Clause,
+  ConditionPath,
+  WorkflowIssue
+} from "@carbon/ee/workflows";
 import { Button, IconButton } from "@carbon/react";
-import type { Clause, ConditionPath, WorkflowIssue } from "@carbon/workflows";
 import {
   closestCenter,
   DndContext,
@@ -25,6 +33,10 @@ import ClauseRow from "../ClauseRow";
 import { CombinatorToggle } from "../CombinatorToggle";
 import { FormStack } from "../layout";
 import type { NodeFormProps } from "./index";
+
+// Module constants: a new options object makes a new sensor, and with it new
+// listeners for every draggable on every render.
+const POINTER_SENSOR_OPTIONS = { activationConstraint: { distance: 8 } };
 
 const newClause = (): Clause => ({
   left: {
@@ -216,7 +228,7 @@ export function ConditionForm({
   const context = { nodeId: node.id, inLoop: false };
 
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(PointerSensor, POINTER_SENSOR_OPTIONS),
     useSensor(KeyboardSensor)
   );
 

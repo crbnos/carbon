@@ -1,10 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { upsertQuoteLinePrices } from "~/modules/sales";
+import {
+  priceTraceStepValidator,
+  upsertQuoteLinePrices
+} from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-recalculate-price");
@@ -33,23 +40,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   const categoryMarkupsByQuantityValidator = z.record(
-    z.record(z.number().min(0))
+    z.string(),
+    z.record(z.string(), z.number().min(0))
   );
   const categoryMarkupsByQuantity =
     categoryMarkupsByQuantityValidator.safeParse(
       JSON.parse((formData.get("categoryMarkupsByQuantity") as string) ?? "{}")
     );
 
+  // The trace each price was resolved with, index-aligned with the prices.
+  const priceTracesByQuantity = z
+    .array(z.array(priceTraceStepValidator).nullable())
+    .safeParse(
+      JSON.parse((formData.get("priceTracesByQuantity") as string) ?? "[]")
+    );
+
   if (unitPricesByQuantity.success === false) {
     return data(
-      { data: null, errors: unitPricesByQuantity.error.errors?.[0].message },
+      { data: null, errors: unitPricesByQuantity.error.issues?.[0].message },
       { status: 400 }
     );
   }
 
   if (quantities.success === false) {
     return data(
-      { data: null, errors: quantities.error.errors?.[0].message },
+      { data: null, errors: quantities.error.issues?.[0].message },
       { status: 400 }
     );
   }
@@ -57,6 +72,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (categoryMarkupsByQuantity.success === false) {
     return data(
       { data: null, errors: "Invalid category markups" },
+      { status: 400 }
+    );
+  }
+
+  if (priceTracesByQuantity.success === false) {
+    return data(
+      { data: null, errors: "Invalid price traces" },
       { status: 400 }
     );
   }
@@ -75,6 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       quoteLineId: lineId,
       quantity,
       unitPrice,
+      priceTrace: priceTracesByQuantity.data[index] ?? null,
       createdBy: userId,
       // discountPercent / leadTime / shippingCost are intentionally omitted so
       // upsertQuoteLinePrices preserves the user-entered values for each quantity

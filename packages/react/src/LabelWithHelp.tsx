@@ -1,12 +1,15 @@
-import { getEntry, type TermId } from "@carbon/glossary";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { getEntry, type TermId } from "@carbon/content/glossary";
+import { docUrl } from "@carbon/content/links";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuInfo } from "react-icons/lu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
 import { cn } from "./utils/cn";
-
-const DOCS_BASE_URL = "https://docs.carbon.ms";
 
 type LabelWithHelpProps = {
   termId: TermId | undefined;
@@ -42,7 +45,8 @@ export function LabelWithHelp({
   const translatedTerm = entry === undefined ? "" : i18n._(entry.term);
   const translatedDefinition =
     entry === undefined ? (text ?? "") : i18n._(entry.definition);
-  const showLearnMore = entry?.href !== undefined;
+  const learnMoreUrl =
+    entry?.href === undefined ? undefined : docUrl(entry.href);
   const isInline = variant === "inline";
 
   // HoverCard (not Tooltip): the popup contains an interactive "Learn more"
@@ -68,7 +72,9 @@ export function LabelWithHelp({
             // -2px vertical margin collapses the button's margin-box back to
             // the text line height so the row height is identical either way;
             // the hover ring overhangs harmlessly and the icon stays in line.
-            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5"
+            isInline ? "h-4 w-4" : "h-5 w-5 -my-0.5",
+            // Tap target on phones: an invisible 44px hit area around the icon.
+            "max-md:hit-area"
           )}
         >
           <LuInfo
@@ -83,11 +89,11 @@ export function LabelWithHelp({
         className="w-auto max-w-xs p-3 text-xs text-pretty leading-relaxed text-muted-foreground"
       >
         {translatedDefinition}
-        {showLearnMore && (
+        {learnMoreUrl && (
           <>
             {" "}
             <a
-              href={`${DOCS_BASE_URL}${entry?.href}`}
+              href={learnMoreUrl}
               target="_blank"
               rel="noreferrer"
               className="text-primary font-medium underline decoration-dashed underline-offset-4 hover:decoration-solid"

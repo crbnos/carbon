@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import {
@@ -15,11 +19,13 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  useCloseRoute,
   VStack
 } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -101,14 +107,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 export default function ResetMfaRoute() {
   const { user, hasFactors } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const formFetcher = useFetcher<Result>();
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (!open) closeRoute();
       }}
     >
       <ModalOverlay />
@@ -148,7 +154,7 @@ export default function ResetMfaRoute() {
               <Button
                 type="button"
                 variant="secondary"
-                onClick={() => navigate(-1)}
+                onClick={() => closeRoute()}
               >
                 <Trans>Cancel</Trans>
               </Button>

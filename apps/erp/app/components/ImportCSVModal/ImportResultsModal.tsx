@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { downloadText } from "@carbon/files";
+import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import {
   Button,
   Count,
@@ -14,7 +20,6 @@ import {
   TabsTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import Papa from "papaparse";
 import { useState } from "react";
 import { LuCircleCheck, LuCircleX, LuDownload, LuInfo } from "react-icons/lu";
 
@@ -66,14 +71,11 @@ export const ImportResultsModal = ({
     const data = errors.map((issue) =>
       columns.map((column) => issue.values[column] ?? "")
     );
-    const csv = Papa.unparse({ fields: columns, data });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${table}-import-errors.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadText(
+      encodeCsvTable(columns, data),
+      `${table}-import-errors.csv`,
+      CSV_CONTENT_TYPE
+    );
   };
 
   return (

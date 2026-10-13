@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { useCloseRoute } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect, useNavigate, useSearchParams } from "react-router";
+import { data, useSearchParams } from "react-router";
 import { departmentValidator, upsertDepartment } from "~/modules/people";
 import { DepartmentForm } from "~/modules/people/ui/Departments";
 import { setCustomFields } from "~/utils/form";
@@ -61,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewDepartmentRoute() {
-  const navigate = useNavigate();
+  const closeRoute = useCloseRoute();
   const [searchParams] = useSearchParams();
   const parentDepartmentId =
     searchParams.get("parentDepartmentId") ?? undefined;
@@ -73,7 +79,7 @@ export default function NewDepartmentRoute() {
 
   return (
     <DepartmentForm
-      onClose={() => navigate(-1)}
+      onClose={() => closeRoute()}
       initialValues={initialValues}
     />
   );

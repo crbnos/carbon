@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_SYNC_CONFIG, ProviderID } from "../../../core/models";
 import type { ProviderCredentials } from "../../../core/types";
@@ -72,6 +76,50 @@ function requestInit(callIndex: number): RequestInit | undefined {
 }
 
 describe("QboProvider base URL", () => {
+  it("sends the caller's stable requestid on charge creates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "0" } })
+    );
+    const { provider } = makeProvider();
+    await provider.createPurchase(
+      { PaymentType: "CreditCard", AccountRef: { value: "card" }, Line: [] },
+      "stable-charge-request"
+    );
+    expect(requestUrl(0)).toContain("requestid=stable-charge-request");
+  });
+
+  it("deletes a purchase with its current SyncToken and validates the deletion response", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "7" } })
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", status: "Deleted" } })
+    );
+    const { provider } = makeProvider();
+    expect(provider.deletePurchase).toBeTypeOf("function");
+    await provider.deletePurchase("purchase-1");
+    expect(requestUrl(1)).toContain("/purchase?operation=delete");
+    expect(JSON.parse(String(requestInit(1)?.body))).toEqual({
+      Id: "purchase-1",
+      SyncToken: "7"
+    });
+  });
+
+  it.each([
+    404, 503
+  ])("does not treat an unreadable purchase (%s) as a successful delete", async (status) => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        { Fault: { Error: [{ code: "10000", Message: "Unavailable" }] } },
+        status
+      )
+    );
+    const { provider } = makeProvider();
+    expect(provider.deletePurchase).toBeTypeOf("function");
+    await expect(provider.deletePurchase("purchase-1")).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("targets the production host by default, under /v3/company/{realmId} with the pinned minorversion", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ QueryResponse: { Account: [] } })
@@ -103,10 +151,13 @@ describe("QboProvider base URL", () => {
     const { provider } = makeProvider();
     expect(provider.id).toBe(ProviderID.QUICKBOOKS);
     expect(provider.capabilities).toEqual({
+      role: "accounting",
       transport: "rest",
       supportsWebhooks: false,
       supportsJournalPush: true,
-      maxJournalDimensionSlots: 2
+      maxJournalDimensionSlots: 2,
+      searchableCounterparts: ["customer", "vendor"],
+      importableEntities: ["customer", "vendor"]
     });
   });
 });
@@ -655,5 +706,82 @@ describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
     expect(applied.entities.purchaseOrder).toEqual(
       DEFAULT_SYNC_CONFIG.entities.purchaseOrder
     );
+  });
+});
+
+describe("QboProvider counterpart candidates", () => {
+  it("queries the kind's entity by DisplayName and maps the rows", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [
+            { Id: "42", DisplayName: "Acme Tooling" },
+            // No Id — nothing to link to, so not a candidate.
+            { DisplayName: "Acme Tooling" }
+          ]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const candidates = await provider.findRemoteCandidates("vendor", {
+      name: "Acme Tooling"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Vendor WHERE DisplayName = 'Acme Tooling'"
+    );
+    expect(candidates).toEqual([{ remoteId: "42", name: "Acme Tooling" }]);
+  });
+
+  it("escapes single quotes in the WHERE clause", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ QueryResponse: {} }));
+
+    const { provider } = makeProvider();
+    await provider.findRemoteCandidates("customer", {
+      name: "O'Brien Metals"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Customer WHERE DisplayName = 'O\\'Brien Metals'"
+    );
+  });
+
+  it("does not call QBO without a name, or for an unsupported kind", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.findRemoteCandidates("vendor", { name: "" })).toEqual(
+      []
+    );
+    expect(
+      await provider.findRemoteCandidates("item", { name: "Widget" })
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("QboProvider master-data enumeration", () => {
+  it("selects the kind's entity unfiltered and returns its ids", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [{ Id: "1", DisplayName: "A" }, { DisplayName: "no id" }]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const ids = await provider.listRemoteEntityIds("vendor");
+
+    expect(requestUrl(0)).toContain("SELECT * FROM Vendor");
+    expect(requestUrl(0)).not.toContain("WHERE");
+    expect(ids).toEqual(["1"]);
+  });
+
+  it("returns nothing, without calling QBO, for a kind it cannot enumerate", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.listRemoteEntityIds("item")).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

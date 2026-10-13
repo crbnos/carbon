@@ -1,6 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { LEGACY_PRIVATE_BUCKET, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
+import { filterEmpty } from "@carbon/utils";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { purgeStaleAgentThreads } from "./agent-thread-retention";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
 // and the compact pipeline COPIES what must survive into `private` (never an
@@ -9,8 +18,44 @@ import { inngest } from "../../client";
 // stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
 
-// Agent chat threads are transient — purge after 30 days of inactivity.
-const AGENT_THREAD_TTL_DAYS = 30;
+// Everything under `{companyId}/tmp/` in the private bucket is transient by
+// contract: HEIC-conversion round-trip files (removed in a `finally`, but a
+// crash can leak them) and staged signed-URL uploads an MCP agent PUT but
+// never registered. One day is generous — both are seconds-to-minutes lived.
+const TMP_STAGING_TTL_HOURS = 24;
+
+async function listStorageObjects(where: ReturnType<typeof sql>) {
+  try {
+    const { rows } = await sql<{
+      name: string | null;
+      bucket_id: string | null;
+    }>`
+      SELECT name, bucket_id FROM storage.objects WHERE ${where} LIMIT 1000
+    `.execute(getJobDatabaseClient());
+    return { data: rows, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
+
+/**
+ * The staged names that also exist in their company's bucket or the legacy
+ * shared one. One query: probing each name over HTTP was two requests per
+ * object, every night, for objects that are referenced and never pruned.
+ */
+async function findDurableCopies(names: string[]) {
+  const buckets = [
+    LEGACY_PRIVATE_BUCKET,
+    ...new Set(filterEmpty(names.map((name) => name.split("/")[0])))
+  ];
+  const { rows } = await sql<{ name: string }>`
+    SELECT DISTINCT name FROM storage.objects
+    WHERE bucket_id = ANY(${buckets}::text[])
+      AND name = ANY(${names}::text[])
+      AND bucket_id IN (${LEGACY_PRIVATE_BUCKET}, split_part(name, '/', 1))
+  `.execute(getJobDatabaseClient());
+  return new Set(rows.map((row) => row.name));
+}
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -328,60 +373,15 @@ export const cleanupFunction = inngest.createFunction(
     });
 
     await step.run("purge-old-agent-threads", async () => {
-      logger.info("Purging agent chat threads older than 30 days...");
-      const cutoff = new Date(
-        Date.now() - AGENT_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      // Small batches: the ids ride in PostgREST query strings below, and the
-      // job runs 3×/day, so any backlog drains within a few runs.
-      const old = await serviceRole
-        .from("agentThread")
-        .select("id")
-        .lt("createdAt", cutoff)
-        .limit(200);
-      if (old.error) {
-        logger.error("Error fetching old agent threads", { error: old.error });
-        return;
-      }
-      const ids = old.data.map((t) => t.id);
-      if (ids.length === 0) {
-        logger.info("No old agent threads to purge");
-        return;
-      }
-
-      // Age by last activity, not creation — a thread the user is still
-      // talking in stays, even if it was started over 30 days ago.
-      const active = await serviceRole
-        .from("agentMessage")
-        .select("threadId")
-        .in("threadId", ids)
-        .gte("createdAt", cutoff);
-      if (active.error) {
-        logger.error("Error checking agent thread activity", {
-          error: active.error
-        });
-        return;
-      }
-      const activeIds = new Set(active.data.map((m) => m.threadId));
-      const purgeIds = ids.filter((id) => !activeIds.has(id));
-      if (purgeIds.length === 0) {
-        logger.info("No stale agent threads to purge", {
-          stillActive: activeIds.size
-        });
-        return;
-      }
-
-      // Messages and parts cascade with the thread.
-      const purged = await serviceRole
-        .from("agentThread")
-        .delete()
-        .in("id", purgeIds);
-      if (purged.error) {
-        logger.error("Error purging agent threads", { error: purged.error });
+      const result = await purgeStaleAgentThreads(getJobDatabaseClient());
+      if (result.drained) {
+        logger.info("Purged stale agent threads", { count: result.purged });
       } else {
-        logger.info("Purged stale agent threads", { count: purgeIds.length });
+        logger.warn("Stale agent threads remain after this run", {
+          count: result.purged
+        });
       }
+      return result;
     });
 
     await step.run("prune-staged-raw-models", async () => {
@@ -390,19 +390,16 @@ export const cleanupFunction = inngest.createFunction(
         Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const stale = await serviceRole
-        .schema("storage")
-        .from("objects")
-        .select("name")
-        .eq("bucket_id", "temp-staging")
-        .lt("created_at", cutoff)
-        .limit(1000);
+      // PostgREST only exposes `public`, so `storage.objects` is read directly.
+      const stale = await listStorageObjects(
+        sql`bucket_id = ${TEMP_STAGING_BUCKET} AND created_at < ${cutoff}`
+      );
 
       if (stale.error) {
         logger.error("Error listing stale staged raws", { error: stale.error });
         return;
       }
-      const staleNames = (stale.data ?? [])
+      const staleNames = stale.data
         .map((o) => o.name)
         .filter((n): n is string => Boolean(n));
       if (staleNames.length === 0) {
@@ -415,22 +412,16 @@ export const cleanupFunction = inngest.createFunction(
       // holding a temp-staging source pointer). Once the durable copy exists,
       // the staged one is redundant regardless of size or references: every
       // reader probes/falls back to `private`.
-      const relocated = new Set<string>();
-      const CHUNK = 20;
-      for (let i = 0; i < staleNames.length; i += CHUNK) {
-        const chunk = staleNames.slice(i, i + CHUNK);
-        const probes = await Promise.all(
-          chunk.map((name) =>
-            serviceRole.storage
-              .from("private")
-              .info(name)
-              .then((r) => (!r.error && r.data ? name : null))
-              .catch(() => null)
-          )
-        );
-        for (const name of probes) {
-          if (name) relocated.add(name);
-        }
+      // A durable copy may live in the company's own bucket (current pipeline)
+      // or the legacy shared `private` bucket (pre-migration relocations).
+      // Object keys start with the companyId segment, and a key without one
+      // can't have a durable copy anywhere.
+      let relocated: Set<string>;
+      try {
+        relocated = await findDurableCopies(staleNames);
+      } catch (error) {
+        logger.error("Error finding durable copies of staged raws", { error });
+        return;
       }
 
       // Rule 2 — ORPHANED: no modelUpload points at it via EITHER column
@@ -478,7 +469,7 @@ export const cleanupFunction = inngest.createFunction(
       }
 
       const removed = await serviceRole.storage
-        .from("temp-staging")
+        .from(TEMP_STAGING_BUCKET)
         .remove(toRemove);
       if (removed.error) {
         logger.error("Error pruning staged raws", { error: removed.error });
@@ -486,6 +477,74 @@ export const cleanupFunction = inngest.createFunction(
         logger.info("Pruned stale staged raws", {
           relocated: relocated.size,
           orphaned: orphans.length
+        });
+      }
+    });
+
+    await step.run("prune-tmp-staging", async () => {
+      logger.info("Pruning stale private-bucket tmp staging objects...");
+      const cutoff = new Date(
+        Date.now() - TMP_STAGING_TTL_HOURS * 60 * 60 * 1000
+      ).toISOString();
+
+      // Staging now lives in each company's own bucket (bucket id = companyId),
+      // with the legacy shared `private` bucket still holding pre-migration
+      // objects — so select the bucket alongside the name and prune per bucket
+      // rather than assuming one shared bucket.
+      const stale = await listStorageObjects(
+        sql`name LIKE '%/tmp/%' AND created_at < ${cutoff}`
+      );
+
+      if (stale.error) {
+        logger.error("Error listing stale tmp objects", { error: stale.error });
+        return;
+      }
+
+      // The LIKE matches "/tmp/" anywhere; only the SECOND segment being
+      // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
+      // folders are never named tmp, but don't rely on that for a delete.
+      const byBucket = new Map<string, string[]>();
+      for (const object of stale.data) {
+        const name = object.name;
+        const bucketId = object.bucket_id;
+        if (typeof name !== "string" || typeof bucketId !== "string") continue;
+        if (name.split("/")[1] !== "tmp") continue;
+        // A company bucket is named for its company, and its object keys keep
+        // the `{companyId}/` prefix — so a key whose first segment is not this
+        // bucket belongs to neither this company nor the legacy bucket layout.
+        if (
+          bucketId !== LEGACY_PRIVATE_BUCKET &&
+          name.split("/")[0] !== bucketId
+        )
+          continue;
+        const existing = byBucket.get(bucketId);
+        if (existing) existing.push(name);
+        else byBucket.set(bucketId, [name]);
+      }
+
+      const toRemoveCount = [...byBucket.values()].reduce(
+        (total, names) => total + names.length,
+        0
+      );
+      if (toRemoveCount === 0) {
+        logger.info("No stale tmp staging objects");
+        return;
+      }
+
+      let failed = false;
+      for (const [bucketId, names] of byBucket) {
+        const removed = await serviceRole.storage.from(bucketId).remove(names);
+        if (removed.error) {
+          failed = true;
+          logger.error("Error pruning tmp staging objects", {
+            bucket: bucketId,
+            error: removed.error
+          });
+        }
+      }
+      if (!failed) {
+        logger.info("Pruned stale tmp staging objects", {
+          count: toRemoveCount
         });
       }
     });

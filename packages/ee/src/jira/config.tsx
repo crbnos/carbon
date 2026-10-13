@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { JIRA_CLIENT_ID } from "@carbon/auth";
 import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
@@ -17,7 +21,17 @@ export const Jira = defineIntegration({
     "Sync quality issues and change notices from Carbon to Jira.",
   setupInstructions: SetupInstructions,
   images: [],
-  settings: [],
+  settings: [
+    {
+      name: "webhookSigningSecret",
+      label: "Webhook Secret",
+      description:
+        "Optional. When set, Carbon rejects webhook requests that are not signed with this secret.",
+      type: "secret",
+      required: false,
+      value: ""
+    }
+  ],
   oauth: {
     authUrl: "https://auth.atlassian.com/authorize",
     clientId: JIRA_CLIENT_ID!,
@@ -30,7 +44,11 @@ export const Jira = defineIntegration({
     ],
     tokenUrl: "https://auth.atlassian.com/oauth/token"
   },
-  schema: z.object({})
+  schema: z.object({
+    // Optional, vaulted (empty keeps the stored value). When set, the webhook
+    // route requires a valid `X-Hub-Signature` on every delivery.
+    webhookSigningSecret: z.string().optional()
+  })
 });
 
 function SetupInstructions({ companyId }: { companyId: string }) {
@@ -57,6 +75,11 @@ function SetupInstructions({ companyId }: { companyId: string }) {
       </InputGroup>
       <p className="text-sm text-muted-foreground">
         Select the following events: Issue updated, Issue deleted.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        In the webhook's "Secret" field, enter a long random value (or let Jira
+        generate one), then paste the same value into the "Webhook Secret" field
+        below so Carbon only accepts requests that Jira has signed.
       </p>
     </>
   );

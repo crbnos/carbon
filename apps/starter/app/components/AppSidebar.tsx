@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { useAccountSettings } from "@carbon/account";
 import {
   Avatar,
   Collapsible,
@@ -353,6 +358,7 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const openAccountSettings = useAccountSettings((s) => s.open);
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -404,7 +410,7 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openAccountSettings()}>
                 <DropdownMenuIcon icon={<LuBadgeCheck />} />
                 Account
               </DropdownMenuItem>

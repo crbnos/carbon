@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /** Structural shapes for the bits of an Activepieces piece Carbon actually reads.
  *
  * Declared here rather than imported from `@activepieces/pieces-framework`: the piece

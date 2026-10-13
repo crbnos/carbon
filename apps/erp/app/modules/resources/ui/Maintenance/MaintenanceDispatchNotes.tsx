@@ -1,5 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
+import {
+  convertKbToString,
+  downloadUrl,
+  isPreviewableDocumentType,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useRevalidator } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -11,9 +22,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   File,
-  generateHTML,
   HStack,
   IconButton,
+  MENU_ITEM_SHORTCUTS,
+  RichTextView,
   Skeleton,
   Table,
   Tbody,
@@ -22,23 +34,27 @@ import {
   Thead,
   Tr,
   toast,
-  useDebounce
+  useDebounce,
+  useViewport
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { convertKbToString } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { Suspense, useCallback, useState } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
-import { Await, useRevalidator } from "react-router";
+import { Await } from "react-router";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import {
+  useFileUpload,
+  useImageUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import type { StorageItem } from "~/types";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "maintenancedispatchnotes");
@@ -52,32 +68,13 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const [content, setContent] = useState(initialContent ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("maintenance");
 
   const onUpdateContent = useDebounce(
     async (content: JSONContent) => {
@@ -114,11 +111,9 @@ export function MaintenanceDispatchNotes({
             }}
           />
         ) : (
-          <div
-            className="prose dark:prose-invert"
-            dangerouslySetInnerHTML={{
-              __html: generateHTML(content as JSONContent)
-            }}
+          <RichTextView
+            content={content as JSONContent}
+            empty={<Trans>No notes</Trans>}
           />
         )}
       </CardContent>
@@ -192,6 +187,7 @@ function MaintenanceFilesContent({
   isReadOnly: boolean;
 }) {
   const { t } = useLingui();
+  const { isPhone } = useViewport();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const revalidator = useRevalidator();
@@ -203,32 +199,18 @@ function MaintenanceFilesContent({
     [company.id, dispatchId]
   );
 
+  const { upload: uploadToStorage } = useFileUpload();
   const upload = useCallback(
     async (filesToUpload: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      for (const file of filesToUpload) {
-        const filePath = getFilePath(file.name);
-
-        const result = await carbon.storage
-          .from("private")
-          .upload(filePath, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (result.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else {
+      await uploadToStorage(filesToUpload, {
+        getPath: (file) => getFilePath(file.name),
+        onSuccess: (file) => {
           toast.success(t`${file.name} uploaded successfully`);
         }
-      }
+      });
       revalidator.revalidate();
     },
-    [carbon, getFilePath, revalidator, t]
+    [uploadToStorage, getFilePath, revalidator, t]
   );
 
   const download = useCallback(
@@ -236,16 +218,7 @@ function MaintenanceFilesContent({
       const filePath = getFilePath(file.name);
       const url = path.to.file.previewFile(`private/${filePath}`);
       try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        await downloadUrl(url, file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -262,17 +235,19 @@ function MaintenanceFilesContent({
       }
 
       const filePath = getFilePath(file.name);
-      const result = await carbon.storage.from("private").remove([filePath]);
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([filePath]);
 
-      if (result.error) {
-        toast.error(result.error.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon, getFilePath, revalidator, t]
+    [carbon, company.id, getFilePath, revalidator, t]
   );
 
   const onDrop = useCallback(
@@ -321,7 +296,7 @@ function MaintenanceFilesContent({
                     <span
                       className="font-medium cursor-pointer"
                       onClick={() => {
-                        if (["PDF", "Image"].includes(type)) {
+                        if (isPreviewableDocumentType(type)) {
                           window.open(
                             path.to.file.previewFile(
                               `private/${getFilePath(file.name)}`
@@ -333,11 +308,10 @@ function MaintenanceFilesContent({
                         }
                       }}
                     >
-                      {["PDF", "Image"].includes(type) ? (
+                      {isPreviewableDocumentType(type) ? (
                         <DocumentPreview
                           bucket="private"
                           pathToFile={getFilePath(file.name)}
-                          // @ts-expect-error
                           type={type}
                         >
                           {file.name}
@@ -364,7 +338,10 @@ function MaintenanceFilesContent({
                         />
                       </DropdownMenuTrigger>
                       <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => download(file)}>
+                        <DropdownMenuItem
+                          shortcut={MENU_ITEM_SHORTCUTS.download}
+                          onClick={() => download(file)}
+                        >
                           <Trans>Download</Trans>
                         </DropdownMenuItem>
                         {!isReadOnly && (
@@ -394,7 +371,8 @@ function MaintenanceFilesContent({
           )}
         </Tbody>
       </Table>
-      {!isReadOnly && <FileDropzone onDrop={onDrop} />}
+      {/* Phones: the header Upload already opens the same picker. */}
+      {!isReadOnly && !isPhone && <FileDropzone onDrop={onDrop} />}
     </>
   );
 }

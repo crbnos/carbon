@@ -1,7 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { HTMLAttributes } from "react";
-import { createContext, forwardRef, useContext, useState } from "react";
+import {
+  createContext,
+  forwardRef,
+  useContext,
+  useMemo,
+  useState
+} from "react";
 import { LuChevronDown, LuChevronUp } from "react-icons/lu";
 import { IconButton } from "./IconButton";
+import { compactFooterClassName } from "./Modal";
 import { cn } from "./utils/cn";
 
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
@@ -33,20 +44,28 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
 
     const isCollapsed = controlledIsCollapsed ?? uncontrolledIsCollapsed;
 
-    const toggle = () => {
-      if (onCollapsedChange) {
-        onCollapsedChange(!isCollapsed);
-      } else {
-        setUncontrolledIsCollapsed(!isCollapsed);
-      }
-    };
+    // A stable value: an inline object re-rendered every consumer whenever the
+    // card's parent rendered.
+    const context = useMemo(
+      () => ({
+        isCollapsed,
+        toggle: () => {
+          if (onCollapsedChange) {
+            onCollapsedChange(!isCollapsed);
+          } else {
+            setUncontrolledIsCollapsed(!isCollapsed);
+          }
+        }
+      }),
+      [isCollapsed, onCollapsedChange]
+    );
 
     return (
-      <CardContext.Provider value={{ isCollapsed, toggle }}>
+      <CardContext.Provider value={context}>
         <div
           ref={ref}
           className={cn(
-            "relative flex flex-col rounded-xl shadow-button-base dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]  bg-accent dark:bg-card text-card-foreground p-0 w-full",
+            "relative flex flex-col rounded-xl border border-border bg-accent dark:bg-card text-card-foreground p-0 w-full",
             className
           )}
           {...props}
@@ -55,7 +74,7 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
             <IconButton
               aria-label={isCollapsed ? "Expand" : "Collapse"}
               variant="ghost"
-              onClick={toggle}
+              onClick={context.toggle}
               className="absolute right-2 top-2"
               icon={
                 isCollapsed ? (
@@ -78,7 +97,7 @@ const CardAction = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("flex flex-col py-2 px-4", className)}
+      className={cn("flex flex-col py-2 px-4 pr-6", className)}
       {...props}
     />
   )
@@ -92,7 +111,7 @@ const CardAttribute = forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex flex-row md:flex-col items-start justify-start gap-2",
+      "flex flex-row md:flex-col items-start justify-start gap-2 max-md:min-h-12 max-md:items-center max-md:justify-between",
       className
     )}
     {...props}
@@ -106,7 +125,7 @@ const CardAttributes = forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col md:flex-row gap-8", className)}
+    className={cn("flex flex-col md:flex-row gap-8 max-md:gap-0", className)}
     {...props}
   />
 ));
@@ -149,7 +168,7 @@ const CardHeader = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
       <div
         ref={ref}
         className={cn(
-          "flex flex-col gap-1 px-6 py-4 text-muted-foreground",
+          "flex flex-col gap-1 px-6 py-4 text-muted-foreground max-md:px-4 max-md:py-3",
           context?.isCollapsed && "cursor-pointer",
           className
         )}
@@ -168,7 +187,7 @@ const CardTitle = forwardRef<
   <h3
     ref={ref}
     className={cn(
-      "text-base font-medium font-headline leading-none tracking-tight text-foreground/90 text-pretty line-clamp-2",
+      "text-base font-medium leading-none tracking-tight text-foreground/90 text-pretty line-clamp-2",
       className
     )}
     {...props}
@@ -194,11 +213,14 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     if (context?.isCollapsed) {
       return null;
     }
+    // Phones square off the panel's top under its header. When the header
+    // before it is hidden on phones, the panel is the card's top edge, so it
+    // stays rounded.
     return (
       <div
         ref={ref}
         className={cn(
-          "flex flex-col flex-1 p-6 rounded-xl border border-border bg-card dark:bg-muted/40",
+          "flex flex-col flex-1 p-6 m-[-1px] rounded-xl border border-border bg-card dark:bg-muted/40 max-md:p-4 max-md:rounded-t-none max-md:[&:is([class~='max-md:hidden']+*)]:rounded-t-xl",
           className
         )}
         {...props}
@@ -208,8 +230,13 @@ const CardContent = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
 );
 CardContent.displayName = "CardContent";
 
-const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
-  ({ className, ...props }, ref) => {
+type CardFooterProps = HTMLAttributes<HTMLDivElement> & {
+  /** Phones: pin the footer's actions to the bottom of the screen. */
+  sticky?: boolean;
+};
+
+const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+  ({ className, sticky = false, ...props }, ref) => {
     const context = useContext(CardContext);
     if (context?.isCollapsed) {
       return null;
@@ -217,7 +244,14 @@ const CardFooter = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
     return (
       <div
         ref={ref}
-        className={cn("flex items-center py-4 px-6 gap-2", className)}
+        className={cn(
+          "flex items-center py-4 px-6 gap-2 max-md:px-4",
+          // Phones: the same full-width 44pt actions as a sheet footer.
+          sticky && compactFooterClassName,
+          sticky &&
+            "max-md:z-10 max-md:border-t max-md:border-border max-md:bg-card max-md:pb-safe-4",
+          className
+        )}
         {...props}
       />
     );

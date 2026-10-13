@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trigger } from "@carbon/jobs";
@@ -40,7 +44,8 @@ export async function action({ request }: ActionFunctionArgs) {
     await serviceRole
       .from("modelUpload")
       .update({ optimizeStatus: "Queued", optimizeError: null })
-      .eq("id", modelUploadId);
+      .eq("id", modelUploadId)
+      .eq("companyId", companyId);
   }
 
   await trigger("model-optimize", { modelUploadId, companyId, userId, force });

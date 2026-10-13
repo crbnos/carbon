@@ -1,4 +1,8 @@
-import { slugifyNodeName } from "@carbon/workflows";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import { slugifyNodeName } from "@carbon/ee/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuPencil } from "react-icons/lu";
@@ -96,7 +100,7 @@ export function InlineNodeName({ name, isReadOnly, isTaken, onCommit }: Props) {
         <span className="truncate text-xs font-semibold">
           {nodeNameLabel(name)}
         </span>
-        <LuPencil className="size-2.5 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/name:opacity-100" />
+        <LuPencil className="size-2.5 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/name:opacity-100" />
       </button>
     </div>
   );

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The hub store — a SERVER-DRIVEN distribution layer, not a client state owner.
 //
 // The React Router loader is the single source of truth. Each render the provider
@@ -69,8 +73,8 @@ export interface HubData {
   tier: Tier;
   status: HubStatus;
   exclusions: HubExclusions;
-  // Modules forced out of scope by app settings (e.g. "acc" while the company's
-  // accountingEnabled setting is off). Merged into the exclusions every view
+  // Modules forced out of scope by app settings (e.g. "acc" while the company
+  // has no accounting cutover). Merged into the exclusions every view
   // filters by, but never written back to the stored, staff-editable exclusions.
   forcedModules: Mod[];
   checkStates: CheckStateRow[];

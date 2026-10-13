@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -49,11 +53,15 @@ const AttributeForm = ({
   const { t } = useLingui();
   const permissions = usePermissions();
 
+  // Link is a custom field type only; person attributes have no Link input
+  // and no column to store one in.
   const options =
-    dataTypes?.map((dt) => ({
-      value: dt.id.toString(),
-      label: dt.label
-    })) ?? [];
+    dataTypes
+      ?.filter((dt) => dt.id !== DataType.Link)
+      .map((dt) => ({
+        value: dt.id.toString(),
+        label: dt.label
+      })) ?? [];
 
   const isEditing = initialValues.id !== undefined;
   const isDisabled = isEditing

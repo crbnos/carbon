@@ -1,18 +1,18 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { VStack } from "@carbon/react";
+import { getLogger } from "@carbon/logger";
+import { RecordOutlet, VStack } from "@carbon/react";
+import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import {
-  Await,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useParams
-} from "react-router";
+import { Await, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import {
   getChangeNoticesForNonConformance,
@@ -36,7 +36,19 @@ import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "issue-detail");
+
 export const handle: Handle = {
+  appBarSubtitle: msg`Issue`,
+  realtime: [
+    { table: "nonConformance", column: "id", param: "id" },
+    {
+      table: "nonConformanceActionTask",
+      column: "nonConformanceId",
+      param: "id"
+    },
+    { table: "nonConformanceItem", column: "nonConformanceId", param: "id" }
+  ],
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`Issues`, to: path.to.issues },
     (data) => data?.nonConformance?.nonConformanceId
@@ -77,6 +89,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (nonConformance.data.companyId !== companyId) {
+    logger.error("Issue is not in the caller's company", {
+      companyId,
+      issueId: id
+    });
+    throw redirect(path.to.issues);
+  }
+
   return {
     associations: getIssueAssociations(client, id, companyId),
     files: getItemFiles(client, id, companyId),
@@ -102,6 +124,7 @@ export default function IssueRoute() {
         <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
+              explorerLabel={t`Associations`}
               explorer={
                 <Suspense fallback={<IssueAssociationsSkeleton />}>
                   <Await resolve={associations}>
@@ -149,6 +172,21 @@ export default function IssueRoute() {
                           pluralName: t`Receipts`,
                           module: "receiving",
                           children: resolvedAssociations.receiptLines
+                        },
+                        {
+                          key: "salesReturnOrderLines",
+                          name: t`RMA Line`,
+                          pluralName: t`RMA Lines`,
+                          module: "sales",
+                          children: resolvedAssociations.salesReturnOrderLines
+                        },
+                        {
+                          key: "purchaseReturnOrderLines",
+                          name: t`Supplier Return Line`,
+                          pluralName: t`Supplier Return Lines`,
+                          module: "purchasing",
+                          children:
+                            resolvedAssociations.purchaseReturnOrderLines
                         },
                         {
                           key: "trackedEntities",
@@ -213,7 +251,7 @@ export default function IssueRoute() {
               content={
                 <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
-                    <Outlet />
+                    <RecordOutlet />
                   </VStack>
                 </div>
               }

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import {
   forwardRef,
@@ -36,10 +40,17 @@ import { indexAssemblyGraph } from "./graph";
 import { MotionPathEditor } from "./MotionPathEditor";
 import {
   buildStepClip,
+  CARRY_IN_GLIDE_SECONDS,
   displayMotionForStep,
   naturalizeMotion,
-  stepTimelineSeconds
+  stepClipTiming
 } from "./motion";
+import {
+  arrivalIndexByNode,
+  buildSubAssemblyPlan,
+  subAssemblyPartIds,
+  worldOf
+} from "./subassembly";
 import type {
   AssemblyGraph,
   AssemblyStep,
@@ -50,12 +61,23 @@ import type {
 import { useAssembly } from "./useAssembly";
 import { cn } from "./utils";
 import {
+  ASSEMBLY_VIEWS,
+  type AssemblyView,
   type ComponentVisual,
   type FutureComponentsMode,
+  type InstalledComponentsMode,
+  occluderWeight,
+  stepHiddenNodeIds,
+  VIEW_MODES,
+  viewForModes,
   visualForComponent
 } from "./visibility";
 
-export type { FutureComponentsMode } from "./visibility";
+export type {
+  AssemblyView,
+  FutureComponentsMode,
+  InstalledComponentsMode
+} from "./visibility";
 
 /** Marquee rectangle in canvas-local CSS pixels while box-selecting. */
 type BoxRect = { left: number; top: number; width: number; height: number };
@@ -88,8 +110,6 @@ export type AssemblyPlayerProps = {
    * Independent of click-selection.
    */
   highlightedNodeIds?: string[];
-  /** Components hidden from the viewer entirely (fixtures, reference geometry) */
-  hiddenNodeIds?: string[];
   /**
    * Isolate/focus set. When non-empty, ONLY these components render — everything
    * else is hidden so the user can inspect the selection in isolation. Empty =
@@ -110,6 +130,7 @@ export type AssemblyPlayerProps = {
   /** Initial render mode for future-step components. Shared by step selection
    * AND playback, so a ghosted default ghosts the animation too. */
   defaultFutureMode?: FutureComponentsMode;
+  defaultInstalledMode?: InstalledComponentsMode;
   /** Picking components to add to a step: ghost every not-yet-installed part so
    * un-animated parts are visible and clickable (x-ray). */
   componentPickerActive?: boolean;
@@ -144,6 +165,26 @@ export type AssemblyPlayerProps = {
    * caption is redundant there.
    */
   hideCaption?: boolean;
+  /**
+   * Plays only these steps (an opened sub-assembly): the timeline, counter and
+   * prev/next cover just them. Every step is still passed in `steps`, so parts
+   * built earlier render correctly. Without it every step plays, each
+   * sub-assembly's steps in turn before the build that receives it.
+   */
+  scopeStepIds?: string[] | null;
+  /**
+   * Play starts at this step instead of carrying on after the active one. Set
+   * while a sub-assembly row is selected: the player shows its finished unit,
+   * and Play builds it from its first step.
+   */
+  playFromStepIndex?: number | null;
+  /**
+   * Shown in a pill at the top of the canvas while the active step belongs to
+   * a sub-assembly (it is built on its own). The host translates it.
+   */
+  isolationLabel?: string | null;
+  /** Shown next to the isolation label while the active step carries a finished sub-assembly in. */
+  carryInLabel?: string | null;
   mode?: "dark" | "light";
   className?: string;
 };
@@ -182,18 +223,22 @@ export const AssemblyPlayer = forwardRef<
     onSelectComponents,
     onGraphLoaded,
     highlightedNodeIds,
-    hiddenNodeIds,
     focusedNodeIds,
     readOnly = false,
     editMotion,
     onMotionChange,
     defaultFutureMode = "hidden",
+    defaultInstalledMode = "solid",
     componentPickerActive = false,
     autoPlay = true,
     loop = false,
     units,
     suppressFallbackMotions = false,
     hideCaption = false,
+    scopeStepIds,
+    playFromStepIndex,
+    isolationLabel,
+    carryInLabel,
     mode = "dark",
     className
   },
@@ -216,8 +261,12 @@ export const AssemblyPlayer = forwardRef<
   const [cameraMode, setCameraMode] = useState<"auto" | "free">("auto");
   // Stable identity — the scene re-subscribes its controls listener otherwise.
   const handleFreeCamera = useCallback(() => setCameraMode("free"), []);
-  const [futureMode, setFutureMode] =
-    useState<FutureComponentsMode>(defaultFutureMode);
+  // Exposed as named views, not raw axes: six icon buttons made the reader
+  // learn a two-axis model to ask one question. A view is a derived pair.
+  const [view, setView] = useState<AssemblyView>(() =>
+    viewForModes(defaultInstalledMode, defaultFutureMode)
+  );
+  const { installedMode, futureMode } = VIEW_MODES[view];
   // Live marquee rectangle while box-selecting (drawn as a DOM overlay).
   const [boxRect, setBoxRect] = useState<BoxRect | null>(null);
 
@@ -301,6 +350,66 @@ export const AssemblyPlayer = forwardRef<
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [readOnly, onSelectComponents, graphIndex, nodesById]);
 
+  // --- Sub-assemblies ----------------------------------------------------
+  // A sub-assembly's steps are built on their own ("its world"); the finished
+  // unit is carried into the step that uses it, or into the main build at its
+  // header. Each part therefore arrives at a different step depending on which
+  // build is on screen — `arrivals` answers that per world.
+  const subPlan = useMemo(() => buildSubAssemblyPlan(steps), [steps]);
+  const stepWorlds = useMemo(
+    () => steps.map((step) => worldOf(steps, step.id)),
+    [steps]
+  );
+  const arrivals = useMemo(() => {
+    const byWorld = new Map<string | null, Map<string, number>>();
+    for (const world of new Set(stepWorlds)) {
+      byWorld.set(world, arrivalIndexByNode(steps, world));
+    }
+    return byWorld;
+  }, [steps, stepWorlds]);
+  /** Per step: the parts of the finished sub-assemblies it carries in. */
+  const carriedPartIds = useMemo(
+    () =>
+      steps.map((step) => {
+        const headers = subPlan.get(step.id)?.carriesIn ?? [];
+        return [
+          ...new Set(headers.flatMap((id) => subAssemblyPartIds(steps, id)))
+        ];
+      }),
+    [steps, subPlan]
+  );
+  const scopeSet = useMemo(
+    () => (scopeStepIds ? new Set(scopeStepIds) : null),
+    [scopeStepIds]
+  );
+  /** A used sub-assembly's header plays nothing; an opened one limits the rest. */
+  const playable = useMemo(
+    () =>
+      steps.map(
+        (step) =>
+          subPlan.get(step.id)?.plays !== false &&
+          (!scopeSet || scopeSet.has(step.id))
+      ),
+    [steps, subPlan, scopeSet]
+  );
+  const playableIndices = useMemo(
+    () => playable.flatMap((isPlayable, index) => (isPlayable ? [index] : [])),
+    [playable]
+  );
+  const nextPlayable = useCallback(
+    (from: number, direction: 1 | -1) => {
+      for (
+        let index = from + direction;
+        index >= 0 && index < playable.length;
+        index += direction
+      ) {
+        if (playable[index]) return index;
+      }
+      return -1;
+    },
+    [playable]
+  );
+
   // Display-only motion adjustments — the stored data is untouched:
   // 1. Non-flagged steps saved with motion "none" (legacy plans, manual
   //    steps) get an AABB-synthesized insertion so components never pop into
@@ -316,14 +425,29 @@ export const AssemblyPlayer = forwardRef<
       root.max[1] - root.min[1],
       root.max[2] - root.min[2]
     );
-    // Fallback synthesis sees only the components already installed by earlier
-    // steps — the parts actually on the canvas when this step plays
-    const present = new Set<string>();
-    return steps.map((step, index) => {
+    return steps.map((original, index) => {
+      // A step that carries a finished sub-assembly in moves its own parts AND
+      // the unit, so every per-step consumer (clip, fallback, framing, hidden
+      // list) sees the whole moving set.
+      const carried = carriedPartIds[index] ?? [];
+      let step = original;
+      if (carried.length > 0) {
+        step = {
+          ...step,
+          componentNodeIds: [...new Set([...step.componentNodeIds, ...carried])]
+        };
+      }
+
+      // Fallback synthesis sees only the parts already in this step's build —
+      // what is actually on the canvas when it plays.
+      const arrival = arrivals.get(stepWorlds[index] ?? null);
+      const world = new Set<string>();
+      for (const [nodeId, arrivedAt] of arrival ?? []) {
+        if (arrivedAt < index) world.add(nodeId);
+      }
       const baseMotion = suppressFallbackMotions
         ? step.motion
-        : displayMotionForStep(step, index, graphIndex, present);
-      for (const nodeId of step.componentNodeIds) present.add(nodeId);
+        : displayMotionForStep(step, index, graphIndex, world);
 
       let minBox: [number, number, number] | null = null;
       let maxBox: [number, number, number] | null = null;
@@ -363,12 +487,32 @@ export const AssemblyPlayer = forwardRef<
       );
       return motion === step.motion ? step : { ...step, motion };
     });
-  }, [steps, graphIndex, suppressFallbackMotions]);
+  }, [
+    steps,
+    graphIndex,
+    suppressFallbackMotions,
+    carriedPartIds,
+    arrivals,
+    stepWorlds
+  ]);
 
   // --- Continuous timeline ---------------------------------------------
+  // A carry-in step also spends the glide bringing the unit in. Steps that
+  // don't play (a used sub-assembly's header, or outside an opened
+  // sub-assembly) take no time.
   const segments = useMemo(
-    () => displaySteps.map(stepTimelineSeconds),
-    [displaySteps]
+    () =>
+      displaySteps.map((step, index) =>
+        playable[index]
+          ? stepClipTiming(
+              step,
+              (carriedPartIds[index]?.length ?? 0) > 0
+                ? CARRY_IN_GLIDE_SECONDS
+                : 0
+            ).total
+          : 0
+      ),
+    [displaySteps, playable, carriedPartIds]
   );
   const startTimes = useMemo(() => {
     let elapsed = 0;
@@ -432,13 +576,14 @@ export const AssemblyPlayer = forwardRef<
     // Auto-advance to the next step only during a continuous play-through. A
     // single-step play (from selecting a step) stops here, paused at the seated
     // pose.
-    if (continuous && clampedIndex < stepCount - 1) {
-      goToStep(clampedIndex + 1, { play: true });
+    const next = nextPlayable(clampedIndex, 1);
+    if (continuous && next >= 0) {
+      goToStep(next, { play: true });
     } else {
       setIsPlaying(false);
       setContinuous(false);
     }
-  }, [continuous, clampedIndex, stepCount, goToStep]);
+  }, [continuous, clampedIndex, nextPlayable, goToStep]);
 
   const onScrub = useCallback(
     (seconds: number) => {
@@ -450,6 +595,12 @@ export const AssemblyPlayer = forwardRef<
       ) {
         index++;
       }
+      // Steps that don't play take no time, so a boundary can land on one:
+      // settle on the playable step that owns this moment.
+      if (!playable[index]) {
+        const back = nextPlayable(index, -1);
+        index = back >= 0 ? back : Math.max(nextPlayable(index, 1), 0);
+      }
       seekRef.current = clamped - (startTimes[index] ?? 0);
       playheadRef.current = clamped;
       setDisplayTime(clamped);
@@ -459,8 +610,49 @@ export const AssemblyPlayer = forwardRef<
         setSeekVersion((version) => version + 1);
       }
     },
-    [totalSeconds, stepCount, startTimes, clampedIndex, onStepChange]
+    [
+      totalSeconds,
+      stepCount,
+      startTimes,
+      clampedIndex,
+      onStepChange,
+      playable,
+      nextPlayable
+    ]
   );
+
+  const activeInfo = activeStep ? subPlan.get(activeStep.id) : undefined;
+  const isolatePartIds = activeInfo?.isolatePartIds ?? null;
+  const activeCarried = carriedPartIds[clampedIndex] ?? NO_NODE_IDS;
+  const activeArrivals = arrivals.get(stepWorlds[clampedIndex] ?? null) ?? null;
+  // An isolated sub-assembly frames on its own parts, not the whole model.
+  const frameBounds = useMemo(() => {
+    const root = graphIndex?.graph.root.bbox ?? null;
+    if (!graphIndex || !isolatePartIds || isolatePartIds.length === 0) {
+      return root;
+    }
+    return unionBounds(isolatePartIds, graphIndex.nodesById) ?? root;
+  }, [graphIndex, isolatePartIds]);
+  // The carried unit glides in from beside the build that receives it.
+  const carryIn = useMemo(() => {
+    if (!graphIndex || activeCarried.length === 0 || !frameBounds) return null;
+    const unit = unionBounds(activeCarried, graphIndex.nodesById);
+    if (!unit) return null;
+    const diagonal = Math.hypot(
+      frameBounds.max[0] - frameBounds.min[0],
+      frameBounds.max[1] - frameBounds.min[1],
+      frameBounds.max[2] - frameBounds.min[2]
+    );
+    const offset: Vec3 = [
+      frameBounds.max[0] + diagonal * CARRY_IN_GAP_FRACTION - unit.min[0],
+      0,
+      0
+    ];
+    return { nodeIds: activeCarried, offset };
+  }, [graphIndex, activeCarried, frameBounds]);
+  const playablePosition = playableIndices.indexOf(clampedIndex);
+  const prevIndex = nextPlayable(clampedIndex, -1);
+  const nextIndex = nextPlayable(clampedIndex, 1);
 
   // Double-click a step → preview it: restart the active step from its start and
   // play just that one (not a continuous run-through). Skips the initial nonce
@@ -469,11 +661,11 @@ export const AssemblyPlayer = forwardRef<
   useEffect(() => {
     if (playStepNonce === playStepNonceRef.current) return;
     playStepNonceRef.current = playStepNonce;
-    if (isEditingMotionRef.current || stepCount === 0) return;
+    if (isEditingMotionRef.current || !playable[clampedIndex]) return;
     onScrub(startTimes[clampedIndex] ?? 0); // seek to the step's start
     setContinuous(false);
     setIsPlaying(true);
-  }, [playStepNonce, clampedIndex, stepCount, startTimes, onScrub]);
+  }, [playStepNonce, clampedIndex, playable, startTimes, onScrub]);
 
   return (
     <div className={cn("flex h-full w-full flex-col", className)}>
@@ -489,8 +681,8 @@ export const AssemblyPlayer = forwardRef<
               isPlaying={isPlaying}
               loop={loop}
               futureMode={futureMode}
+              installedMode={installedMode}
               highlightedNodeIds={highlightedNodeIds}
-              hiddenNodeIds={hiddenNodeIds}
               focusedNodeIds={isPlaying ? undefined : focusedNodeIds}
               readOnly={readOnly}
               onSelectComponents={onSelectComponents}
@@ -498,7 +690,7 @@ export const AssemblyPlayer = forwardRef<
               onMotionChange={onMotionChange}
               assemblyDiagonal={assemblyDiagonal}
               capturePoseRef={capturePoseRef}
-              assemblyBounds={graphIndex?.graph.root.bbox ?? null}
+              assemblyBounds={frameBounds}
               leafBounds={graphIndex?.leaves ?? null}
               seatedBoundsById={graphIndex?.nodesById ?? null}
               segments={segments}
@@ -511,9 +703,24 @@ export const AssemblyPlayer = forwardRef<
               cameraMode={cameraMode}
               onFreeCamera={handleFreeCamera}
               componentPickerActive={componentPickerActive}
+              installIndexByNode={activeArrivals}
+              isolateNodeIds={isolatePartIds}
+              carryIn={carryIn}
             />
           )}
         </AssemblyViewer>
+        {isolationLabel && isolatePartIds && (
+          <div className="pointer-events-none absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground shadow-lg">
+            <BoxesIcon />
+            <span>{isolationLabel}</span>
+            {carryInLabel && activeCarried.length > 0 && (
+              <>
+                <span aria-hidden className="h-3.5 w-px bg-border" />
+                <span className="text-muted-foreground">{carryInLabel}</span>
+              </>
+            )}
+          </div>
+        )}
         {cameraMode === "free" && (
           <button
             type="button"
@@ -580,29 +787,30 @@ export const AssemblyPlayer = forwardRef<
             <p className="text-sm text-destructive">{error.message}</p>
           </div>
         )}
-        {stepCount > 1 && (
+        {playableIndices.length > 1 && (
           <>
             <OverlayNavButton
               side="left"
               aria-label="Previous step"
-              disabled={clampedIndex <= 0}
-              onClick={() => goToStep(clampedIndex - 1)}
+              disabled={prevIndex < 0}
+              onClick={() => goToStep(prevIndex)}
             />
             <OverlayNavButton
               side="right"
               aria-label="Next step"
-              disabled={clampedIndex >= stepCount - 1}
-              onClick={() => goToStep(clampedIndex + 1)}
+              disabled={nextIndex < 0}
+              onClick={() => goToStep(nextIndex)}
             />
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-2 border-t border-border bg-background px-3 py-2">
+      {/* Wraps rather than clipping on the narrow MES panel. */}
+      <div className="flex flex-wrap items-center gap-2 border-t border-border bg-background px-3 py-2">
         <ControlButton
           aria-label="Previous step"
-          disabled={clampedIndex <= 0}
-          onClick={() => goToStep(clampedIndex - 1)}
+          disabled={prevIndex < 0}
+          onClick={() => goToStep(prevIndex)}
         >
           <ChevronLeftIcon />
         </ControlButton>
@@ -620,17 +828,28 @@ export const AssemblyPlayer = forwardRef<
             onSelectComponents?.([]);
             // Play = run on through the rest of the steps.
             const nextStart =
-              startTimes[clampedIndex + 1] ?? Number.POSITIVE_INFINITY;
+              nextIndex >= 0
+                ? (startTimes[nextIndex] ?? Number.POSITIVE_INFINITY)
+                : Number.POSITIVE_INFINITY;
             const currentStepFinished =
-              clampedIndex < stepCount - 1 &&
-              playheadRef.current >= nextStart - 0.05;
-            if (stepCount > 0 && playheadRef.current >= totalSeconds - 0.05) {
+              nextIndex >= 0 && playheadRef.current >= nextStart - 0.05;
+            if (playFromStepIndex != null && playable[playFromStepIndex]) {
+              goToStep(playFromStepIndex, { play: true });
+            } else if (!playable[clampedIndex]) {
+              // Sitting on a step that doesn't play (a used sub-assembly's
+              // header) → start from the next one that does.
+              const start = nextIndex >= 0 ? nextIndex : playableIndices[0];
+              if (start !== undefined) goToStep(start, { play: true });
+            } else if (
+              stepCount > 0 &&
+              playheadRef.current >= totalSeconds - 0.05
+            ) {
               // Parked at the very end → restart the whole sequence.
               onScrub(0);
             } else if (currentStepFinished) {
               // Current step already finished (e.g. after a single-step play) →
               // continue with the next one rather than replaying this one.
-              goToStep(clampedIndex + 1, { play: true });
+              goToStep(nextIndex, { play: true });
             } else {
               // Mid-step or a fresh step → (re)play it from the current position.
               setSeekVersion((version) => version + 1);
@@ -643,53 +862,60 @@ export const AssemblyPlayer = forwardRef<
         </ControlButton>
         <ControlButton
           aria-label="Next step"
-          disabled={clampedIndex >= stepCount - 1}
-          onClick={() => goToStep(clampedIndex + 1)}
+          disabled={nextIndex < 0}
+          onClick={() => goToStep(nextIndex)}
         >
           <ChevronRightIcon />
         </ControlButton>
         <TimelineScrubber
-          segments={segments}
-          startTimes={startTimes}
+          segments={playableIndices.map((index) => segments[index] ?? 0)}
+          startTimes={playableIndices.map((index) => startTimes[index] ?? 0)}
           totalSeconds={totalSeconds}
           displayTime={displayTime}
-          activeStepIndex={clampedIndex}
-          stepCount={stepCount}
+          activeStepIndex={playablePosition}
+          stepCount={playableIndices.length}
           onScrub={onScrub}
         />
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
           {stepCount > 0
-            ? `${formatTime(Math.min(displayTime, totalSeconds))} / ${formatTime(totalSeconds)}`
+            ? `${formatTime(
+                Math.min(displayTime, totalSeconds)
+              )} / ${formatTime(totalSeconds)}`
             : "–"}
         </span>
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
-          {stepCount > 0 ? `${clampedIndex + 1} / ${stepCount}` : ""}
+          {playableIndices.length > 0
+            ? `${playablePosition >= 0 ? playablePosition + 1 : "–"} / ${playableIndices.length}`
+            : ""}
         </span>
-        <div className="flex items-center rounded-md border border-border">
-          <ControlButton
-            aria-label="Show future components ghosted"
-            aria-pressed={futureMode === "ghost"}
-            isActive={futureMode === "ghost"}
-            onClick={() => setFutureMode("ghost")}
-          >
-            <GhostIcon />
-          </ControlButton>
-          <ControlButton
-            aria-label="Hide future components"
-            aria-pressed={futureMode === "hidden"}
-            isActive={futureMode === "hidden"}
-            onClick={() => setFutureMode("hidden")}
-          >
-            <HiddenIcon />
-          </ControlButton>
-          <ControlButton
-            aria-label="Show all components solid"
-            aria-pressed={futureMode === "solid"}
-            isActive={futureMode === "solid"}
-            onClick={() => setFutureMode("solid")}
-          >
-            <SolidIcon />
-          </ControlButton>
+        {/* Deliberately NOT gated on `readOnly`: an author and an operator ask
+            the same question of the model, so the control reads the same in
+            ERP and MES. Words over glyphs, and a bigger target for a glove. */}
+        <div
+          role="group"
+          aria-label="Component visibility"
+          className="flex shrink-0 items-center overflow-hidden rounded-md border border-border"
+        >
+          {ASSEMBLY_VIEWS.map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-label={VIEW_LABELS[option].description}
+              aria-pressed={view === option}
+              onClick={() => setView(option)}
+              className={cn(
+                "h-8 border-border px-2.5 text-xs font-medium transition-colors not-first:border-l",
+                // The selected view uses `primary`, not `accent`: `accent` is
+                // also the hover colour, so a selected-but-unhovered button was
+                // indistinguishable from an unselected one under the cursor.
+                view === option
+                  ? "bg-primary text-primary-foreground"
+                  : "text-foreground hover:bg-accent hover:text-accent-foreground"
+              )}
+            >
+              {VIEW_LABELS[option].label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -823,8 +1049,8 @@ function AssemblyScene({
   isPlaying,
   loop,
   futureMode,
+  installedMode,
   highlightedNodeIds,
-  hiddenNodeIds,
   focusedNodeIds,
   readOnly,
   onSelectComponents,
@@ -844,7 +1070,10 @@ function AssemblyScene({
   onBoxRect,
   cameraMode,
   onFreeCamera,
-  componentPickerActive
+  componentPickerActive,
+  installIndexByNode,
+  isolateNodeIds,
+  carryIn
 }: {
   scene: Object3D;
   nodesById: Map<string, Object3D>;
@@ -854,8 +1083,8 @@ function AssemblyScene({
   /** Loop the active step's animation continuously (MES playback) */
   loop: boolean;
   futureMode: FutureComponentsMode;
+  installedMode: InstalledComponentsMode;
   highlightedNodeIds?: string[];
-  hiddenNodeIds?: string[];
   focusedNodeIds?: string[];
   readOnly: boolean;
   onSelectComponents?: (nodeIds: string[]) => void;
@@ -902,6 +1131,16 @@ function AssemblyScene({
   /** Picking components to add to a step — ghost every not-yet-installed part so
    * un-animated parts are visible and clickable */
   componentPickerActive: boolean;
+  /**
+   * When each part arrives in the build on screen (see `arrivalIndexByNode`).
+   * Parts absent from it are not part of this build. `null` = derive from the
+   * steps as a flat sequence.
+   */
+  installIndexByNode: ReadonlyMap<string, number> | null;
+  /** The active step's sub-assembly parts: only these render (built on its own). */
+  isolateNodeIds: string[] | null;
+  /** A finished sub-assembly carried in at the active step, gliding from `offset`. */
+  carryIn: { nodeIds: string[]; offset: Vec3 } | null;
 }) {
   const camera = useThree((state) => state.camera);
   const controls = useThree(
@@ -992,10 +1231,9 @@ function AssemblyScene({
     () => new Set(focusedNodeIds ?? []),
     [focusedNodeIds]
   );
-  const hiddenSet = useMemo(
-    () => new Set(hiddenNodeIds ?? []),
-    [hiddenNodeIds]
-  );
+  // Re-derived per step, so playback hides and restores each step's list as it
+  // moves through the sequence.
+  const hiddenSet = useMemo(() => stepHiddenNodeIds(activeStep), [activeStep]);
 
   // Component picking is only meaningful in the editor (a selection callback,
   // not read-only) — the drill affordance is gated on it so pure playback stays
@@ -1029,17 +1267,29 @@ function AssemblyScene({
     const claim = (nodeId: string, index: number) => {
       if (!map.has(nodeId)) map.set(nodeId, index);
     };
+    const claimTree = (nodeId: string, index: number) => {
+      claim(nodeId, index);
+      nodesById.get(nodeId)?.traverse((descendant) => {
+        const childId = descendant.userData?.nodeId;
+        if (typeof childId === "string") claim(childId, index);
+      });
+    };
+    if (installIndexByNode) {
+      // Earliest arrival first, so a descendant claims its own arrival step.
+      const ordered = [...installIndexByNode].sort(([, a], [, b]) => a - b);
+      for (const [nodeId, index] of ordered) claimTree(nodeId, index);
+      return map;
+    }
     steps.forEach((step, index) => {
-      for (const nodeId of step.componentNodeIds) {
-        claim(nodeId, index);
-        nodesById.get(nodeId)?.traverse((descendant) => {
-          const childId = descendant.userData?.nodeId;
-          if (typeof childId === "string") claim(childId, index);
-        });
-      }
+      for (const nodeId of step.componentNodeIds) claimTree(nodeId, index);
     });
     return map;
-  }, [steps, nodesById]);
+  }, [steps, nodesById, installIndexByNode]);
+
+  const isolateSet = useMemo(
+    () => new Set(isolateNodeIds ?? []),
+    [isolateNodeIds]
+  );
 
   // --- Component visual states (visibility + material overrides) ---------------
 
@@ -1061,7 +1311,18 @@ function AssemblyScene({
     };
   }, []);
 
-  useEffect(() => {
+  // Seated fade-in: a step installing parts without an animation fades them in
+  // at the seated pose (see the fade effect below). While `fading`, the
+  // visual-state pass gives those meshes the fade material; the frame loop
+  // only drives its opacity.
+  const fadeRef = useRef<{
+    entries: { mesh: Mesh; fade: Material | Material[] }[];
+    materials: Material[];
+    seconds: number;
+    fading: boolean;
+  } | null>(null);
+
+  const applyVisuals = useCallback(() => {
     const overrides = overridesRef.current;
 
     // Reset: everything visible with its original material
@@ -1099,6 +1360,9 @@ function AssemblyScene({
     const effectiveFutureMode: FutureComponentsMode = componentPickerActive
       ? "ghost"
       : futureMode;
+    // A hidden component cannot be clicked, so picking forces installed solid.
+    const effectiveInstalledMode: InstalledComponentsMode =
+      componentPickerActive ? "solid" : installedMode;
 
     for (const [nodeId, stepIndex] of stepIndexByNode) {
       const node = nodesById.get(nodeId);
@@ -1106,7 +1370,8 @@ function AssemblyScene({
       const visual = visualForComponent(
         stepIndex,
         activeStepIndex,
-        effectiveFutureMode
+        effectiveFutureMode,
+        effectiveInstalledMode
       );
       // The active step's blue tint is a "what's animating now" cue — only
       // apply it during playback. Statically selecting/seating a step leaves
@@ -1150,26 +1415,32 @@ function AssemblyScene({
       });
     }
 
-    // Isolate/focus: when a focus set is active, ONLY the focused components
-    // render — everything else hides so the selection can be inspected alone.
-    // Keep the focused node's ANCESTORS visible too: three.js visibility is
-    // inherited, and every glTF node (including the root wrapper and assembly
-    // groups) carries a nodeId, so blindly hiding non-focused nodes would hide
-    // the focused leaf's parents and blank the whole model. Applied before the
-    // explicit-hide pass so a focused-but-manually-hidden component still hides.
-    if (focusedSet.size > 0) {
+    // Only one set of subtrees renders, everything else hides:
+    // - a Components-panel focus, to inspect the selection alone. It wins, and
+    //   forces its parts visible even where their step would hide them;
+    // - otherwise a sub-assembly's parts while one of its steps is active (it is
+    //   built on its own), unless picking components, which must reach any part.
+    // Ancestors are kept too: three.js visibility is inherited and every glTF
+    // node carries a nodeId, so hiding a kept leaf's parents would blank it.
+    // Only nodeId-stamped nodes are touched — the reset above restores exactly
+    // those. Applied before the explicit-hide pass, which still wins.
+    const keepOnly =
+      focusedSet.size > 0
+        ? focusedSet
+        : isolateSet.size > 0 && !componentPickerActive
+          ? isolateSet
+          : null;
+    if (keepOnly) {
       const keep = new Set<Object3D>();
-      for (const nodeId of focusedSet) {
+      for (const nodeId of keepOnly) {
         const node = nodesById.get(nodeId);
         if (!node) continue;
         for (let a: Object3D | null = node; a; a = a.parent) keep.add(a);
         node.traverse((descendant) => keep.add(descendant));
       }
-      // Only touch nodeId-stamped nodes — the reset above restores exactly these
-      // to visible, so meshes (which inherit) never get stranded hidden. Ancestor
-      // nodes stay in `keep`, so a focused leaf's parents don't blank it out.
+      const forceVisible = keepOnly === focusedSet;
       for (const node of nodesById.values()) {
-        node.visible = keep.has(node);
+        node.visible = keep.has(node) && (forceVisible || node.visible);
       }
     }
 
@@ -1196,6 +1467,15 @@ function AssemblyScene({
       });
     }
 
+    const fade = fadeRef.current;
+    if (fade?.fading) {
+      for (const { mesh, fade: material } of fade.entries) {
+        mesh.material = material;
+        // Draw after opaque components while transparent
+        mesh.renderOrder = 1;
+      }
+    }
+
     // Alt-hover x-ray drill: ghost the occluders in front of the pointer so the
     // innermost part they hide (the click target) shows through. Applied last so
     // it wins even over a selected occluder — you're deliberately looking past
@@ -1219,13 +1499,18 @@ function AssemblyScene({
     leafBounds,
     activeStepIndex,
     futureMode,
+    installedMode,
     isPlaying,
     componentPickerActive,
     highlightedSet,
     hiddenSet,
     focusedSet,
+    isolateSet,
     drill
   ]);
+  useEffect(() => applyVisuals(), [applyVisuals]);
+  const applyVisualsRef = useRef(applyVisuals);
+  applyVisualsRef.current = applyVisuals;
 
   // --- Animation -----------------------------------------------------------
 
@@ -1253,13 +1538,22 @@ function AssemblyScene({
   startTimesLiveRef.current = startTimes;
   const segmentsLiveRef = useRef(segments);
   segmentsLiveRef.current = segments;
+  const carryInLiveRef = useRef(carryIn);
+  carryInLiveRef.current = carryIn;
+  // The carry-in glide is part of the signature so a change rebuilds the clip.
+  const carryInKey = carryIn
+    ? JSON.stringify([carryIn.offset, carryIn.nodeIds.length])
+    : "";
   const clipKey = activeStep
     ? [
         activeStepIndex,
         activeStep.id,
         JSON.stringify(activeStep.motion),
         activeStep.componentNodeIds.join(","),
-        isEditingActive
+        activeStep.durationSeconds ?? "",
+        isEditingActive,
+        componentPickerActive,
+        carryInKey
       ].join("|")
     : `none|${activeStepIndex}`;
 
@@ -1282,7 +1576,23 @@ function AssemblyScene({
     // so the animation doesn't fight the drag handles.
     if (isEditingActive) return;
 
-    const clip = buildStepClip(step, nodesById);
+    // A carried-in sub-assembly glides in from beside the build first. Picking
+    // keeps everything seated: a click must select what the BOM tree shows.
+    const carry = componentPickerActive ? null : carryInLiveRef.current;
+    const timing = stepClipTiming(step, carry ? CARRY_IN_GLIDE_SECONDS : 0);
+    const clip = buildStepClip(step, nodesById, {
+      duration: timing.motion,
+      holdSeconds: timing.hold,
+      ...(carry
+        ? {
+            glide: {
+              offset: carry.offset,
+              seconds: timing.glide,
+              nodeIds: carry.nodeIds
+            }
+          }
+        : {})
+    });
     if (!clip) {
       // Nothing to animate (motion "none"), but a static selection must still
       // land on "step completed": the seated fade below reads this timer, and
@@ -1347,6 +1657,7 @@ function AssemblyScene({
     clipKey,
     activeStepIndex,
     isEditingActive,
+    componentPickerActive,
     loop,
     seekRef,
     playheadRef
@@ -1379,86 +1690,62 @@ function AssemblyScene({
   // --- Seated fade-in ---------------------------------------------------
   // Steps that install components without an animation fade them in at the
   // seated pose instead of popping: planner-flagged steps (no collision-free
-  // path exists) and any non-first step whose display motion resolved to
-  // "none" (no stored motion and no collision-free fallback). Runs after the
-  // visual-state pass, which assigns the base materials this overrides.
-  const fadeRef = useRef<{
-    meshes: Mesh[];
-    materials: Material[];
-    seconds: number;
-  } | null>(null);
-
+  // path exists) and any step whose display motion resolved to "none" (no
+  // stored motion and no collision-free fallback). Only the step's own parts
+  // fade: a carried-in unit glides in instead.
   useEffect(() => {
     const step = steps[activeStepIndex];
     // Editing this step: keep its components solid at the seated pose, no fade.
-    if (editMotion && step && editMotion.stepId === step.id) {
-      fadeRef.current = null;
-      return;
-    }
     const fadesIn =
       step &&
+      !(editMotion && editMotion.stepId === step.id) &&
       step.motion.type === "none" &&
-      step.componentNodeIds.length > 0 &&
-      (step.flagged || activeStepIndex > 0);
-    if (!fadesIn) {
-      fadeRef.current = null;
-      return;
-    }
+      step.componentNodeIds.length > 0;
+    if (!fadesIn) return;
 
     const overrides = overridesRef.current;
-    const meshes: Mesh[] = [];
+    const entries: { mesh: Mesh; fade: Material | Material[] }[] = [];
     const materials: Material[] = [];
+    const gliding = new Set(carryIn?.nodeIds);
     for (const nodeId of step.componentNodeIds) {
-      const node = nodesById.get(nodeId);
-      if (!node) continue;
-      node.traverse((object) => {
+      if (gliding.has(nodeId)) continue;
+      nodesById.get(nodeId)?.traverse((object) => {
         if (!(object as Mesh).isMesh) return;
         const mesh = object as Mesh;
-        const override = getOverride(mesh, overrides, "fade");
-        for (const material of Array.isArray(override)
-          ? override
-          : [override]) {
+        const fade = getOverride(mesh, overrides, "fade");
+        for (const material of Array.isArray(fade) ? fade : [fade]) {
           material.transparent = true;
-          material.opacity = 0;
           material.depthWrite = false;
           materials.push(material);
         }
-        mesh.material = override;
-        // Draw after opaque components while transparent
-        mesh.renderOrder = 1;
-        meshes.push(mesh);
+        entries.push({ mesh, fade });
       });
     }
-    if (meshes.length === 0) {
-      fadeRef.current = null;
-      return;
-    }
+    if (entries.length === 0) return;
 
     const segment = segments[activeStepIndex] ?? 0;
-    fadeRef.current = {
-      meshes,
-      materials,
-      seconds: segment > 0 ? Math.min(FADE_SECONDS, segment) : FADE_SECONDS
-    };
+    const seconds =
+      segment > 0 ? Math.min(FADE_SECONDS, segment) : FADE_SECONDS;
+    const progress = Math.min(localElapsedRef.current / seconds, 1);
+    for (const material of materials) material.opacity = progress;
+    fadeRef.current = { entries, materials, seconds, fading: progress < 1 };
+    applyVisualsRef.current();
 
     return () => {
       fadeRef.current = null;
-      // Materials are reassigned by the visual-state pass on step change
-      for (const mesh of meshes) mesh.renderOrder = 0;
+      applyVisualsRef.current();
     };
-  }, [steps, activeStepIndex, nodesById, segments, editMotion]);
+  }, [steps, activeStepIndex, nodesById, segments, editMotion, carryIn]);
 
   useFrame(() => {
     const fade = fadeRef.current;
     if (!fade) return;
-    const progress =
-      fade.seconds > 0
-        ? Math.min(localElapsedRef.current / fade.seconds, 1)
-        : 1;
-    for (const material of fade.materials) {
-      material.opacity = progress;
-      material.transparent = progress < 1;
-      material.depthWrite = progress >= 1;
+    const progress = Math.min(localElapsedRef.current / fade.seconds, 1);
+    for (const material of fade.materials) material.opacity = progress;
+    // Finished (or restarted by MES loop): the pass swaps the materials.
+    if (fade.fading !== progress < 1) {
+      fade.fading = progress < 1;
+      applyVisualsRef.current();
     }
   });
 
@@ -1661,7 +1948,10 @@ function AssemblyScene({
       JSON.stringify(step.componentNodeIds),
       JSON.stringify(step.motion),
       futureMode,
-      [...hiddenSet].sort().join(",")
+      installedMode,
+      [...hiddenSet].sort().join(","),
+      carryInKey,
+      isolateNodeIds?.length ?? 0
     ].join("|");
     if (framingKey === lastFramedKeyRef.current) return;
     lastFramedKeyRef.current = framingKey;
@@ -1690,15 +1980,8 @@ function AssemblyScene({
 
     if (step.componentNodeIds.length === 0) return;
 
-    const assemblyBox = getAssemblyBox();
+    const assemblyBox = getAssemblyBox().clone();
     if (assemblyBox.isEmpty()) return;
-    const center = assemblyBox.getCenter(new Vector3());
-    const radius = assemblyBox.getSize(new Vector3()).length() / 2;
-    const fov = camera instanceof PerspectiveCamera ? camera.fov : 45;
-    const distance = Math.max(
-      (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * 1.25,
-      radius * 2
-    );
 
     const componentBox = new Box3();
     for (const nodeId of step.componentNodeIds) {
@@ -1716,6 +1999,19 @@ function AssemblyScene({
       if (node) componentBox.expandByObject(node);
     }
     if (componentBox.isEmpty()) return;
+    // A carried-in unit starts beside the build: keep that spot in frame too.
+    const joinShift = carryIn ? new Vector3(...carryIn.offset) : null;
+    assemblyBox.union(componentBox);
+    if (joinShift) {
+      assemblyBox.union(componentBox.clone().translate(joinShift));
+    }
+    const center = assemblyBox.getCenter(new Vector3());
+    const radius = assemblyBox.getSize(new Vector3()).length() / 2;
+    const fov = camera instanceof PerspectiveCamera ? camera.fov : 45;
+    const distance = Math.max(
+      (radius / Math.tan(((fov / 2) * Math.PI) / 180)) * 1.25,
+      radius * 2
+    );
     const componentCenter = componentBox.getCenter(new Vector3());
 
     // Aim mostly at the assembly (context) with a nudge toward the component
@@ -1737,6 +2033,7 @@ function AssemblyScene({
     const lookPoints = [componentCenter];
     for (let i = 0; i < 8; i++) {
       lookPoints.push(boxCorner(componentBox, i, null));
+      if (joinShift) lookPoints.push(boxCorner(componentBox, i, joinShift));
     }
     if (startOffset) {
       lookPoints.push(
@@ -1760,12 +2057,18 @@ function AssemblyScene({
         if (stepComponents.has(leaf.nodeId)) continue;
         if (hiddenSet.has(leaf.nodeId)) continue;
         const leafStep = stepIndexByNode.get(leaf.nodeId);
-        const isFuture = leafStep !== undefined && leafStep > activeStepIndex;
-        if (isFuture && futureMode === "hidden") continue;
+        // Invisible geometry must not push the camera around.
+        const weight = occluderWeight(
+          leafStep,
+          activeStepIndex,
+          futureMode,
+          installedMode
+        );
+        if (weight === null) continue;
         occluders.push({
           min: new Vector3(...(leaf.bbox.min as [number, number, number])),
           max: new Vector3(...(leaf.bbox.max as [number, number, number])),
-          weight: isFuture && futureMode === "ghost" ? 0.3 : 1
+          weight
         });
       }
 
@@ -1838,6 +2141,7 @@ function AssemblyScene({
     const actionPoints: Vector3[] = [];
     for (let i = 0; i < 8; i++) {
       actionPoints.push(boxCorner(componentBox, i, null));
+      if (joinShift) actionPoints.push(boxCorner(componentBox, i, joinShift));
       if (startOffset)
         actionPoints.push(boxCorner(componentBox, i, startOffset));
     }
@@ -1881,7 +2185,11 @@ function AssemblyScene({
     hiddenSet,
     stepIndexByNode,
     futureMode,
-    cameraMode
+    installedMode,
+    cameraMode,
+    carryIn,
+    carryInKey,
+    isolateNodeIds
   ]);
 
   // --- Selection -------------------------------------------------------------
@@ -2591,59 +2899,72 @@ function PauseIcon() {
   );
 }
 
-function GhostIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect
-        x="4"
-        y="4"
-        width="16"
-        height="16"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeDasharray="3 2"
-      />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
+/**
+ * One-word labels so they fit the narrow MES column; `description` is the
+ * screen-reader text, since "Build" alone does not say what changes.
+ * English lives here because `@carbon/viewer` is deliberately i18n-free
+ * (see `packages/viewer/AGENTS.md`); the apps translate around it.
+ */
+const VIEW_LABELS: Record<
+  AssemblyView,
+  { label: string; description: string }
+> = {
+  build: {
+    label: "Build",
+    description: "Show the assembly as built so far, hiding later components"
+  },
+  focus: {
+    label: "Focus",
+    description:
+      "Focus this step by fading the already-installed components to see-through"
+  },
+  full: { label: "Full", description: "Show every component solid" }
+};
+
+/** Gap between a build and a carried-in unit's start, as a fraction of the build's diagonal. */
+const CARRY_IN_GAP_FRACTION = 0.25;
+
+/** Stable empty list, so memos keyed on "no ids" don't churn. */
+const NO_NODE_IDS: string[] = [];
+
+/** Seated world bounds of the given nodes, from graph.json; null when none resolve. */
+function unionBounds(
+  nodeIds: string[],
+  nodesById: ReadonlyMap<string, { bbox: { min: Vec3; max: Vec3 } }>
+): { min: Vec3; max: Vec3 } | null {
+  let min: Vec3 | null = null;
+  let max: Vec3 | null = null;
+  for (const nodeId of nodeIds) {
+    const node = nodesById.get(nodeId);
+    if (!node) continue;
+    if (!min || !max) {
+      min = [...node.bbox.min];
+      max = [...node.bbox.max];
+      continue;
+    }
+    for (let axis = 0; axis < 3; axis++) {
+      min[axis] = Math.min(min[axis] ?? 0, node.bbox.min[axis] ?? 0);
+      max[axis] = Math.max(max[axis] ?? 0, node.bbox.max[axis] ?? 0);
+    }
+  }
+  return min && max ? { min, max } : null;
 }
 
-function HiddenIcon() {
+function BoxesIcon() {
   return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3 3l18 18M10.6 5.1A9.8 9.8 0 0112 5c7 0 10 7 10 7a16.7 16.7 0 01-3.2 4.2M6.6 6.6A16.4 16.4 0 002 12s3 7 10 7a9.9 9.9 0 004.3-1"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M9.9 9.9a3 3 0 004.2 4.2"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function SolidIcon() {
-  return (
-    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M12 12l8-4.5M12 12L4 7.5M12 12v9"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
+    <svg
+      className="size-3.5"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2.97 12.92A2 2 0 0 0 2 14.63v3.24a2 2 0 0 0 .97 1.71l3 1.8a2 2 0 0 0 2.06 0L12 19v-5.5l-5-3-4.03 2.42Z" />
+      <path d="M12 13.5V19l3.97 2.38a2 2 0 0 0 2.06 0l3-1.8a2 2 0 0 0 .97-1.71v-3.24a2 2 0 0 0-.97-1.71L17 10.5l-5 3Z" />
+      <path d="M7.97 4.42A2 2 0 0 0 7 6.13v4.37l5 3 5-3V6.13a2 2 0 0 0-.97-1.71l-3-1.8a2 2 0 0 0-2.06 0l-3 1.8Z" />
     </svg>
   );
 }

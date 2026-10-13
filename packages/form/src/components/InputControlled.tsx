@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import { useFormContext } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   FormControl,
@@ -34,6 +38,8 @@ type FormInputControlledProps = Omit<InputProps, "value" | "onChange"> & {
   prefix?: string;
   suffix?: string;
   inline?: boolean;
+  /** Inline mode only: how the saved value is shown. Defaults to the plain text. */
+  renderInlineValue?: (value: string) => ReactNode;
   value: string;
   onChange?: (newValue: string) => void;
   onConfigure?: () => void;
@@ -57,6 +63,7 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
       onChange,
       isUppercase,
       inline = false,
+      renderInlineValue,
       isReadOnly: isReadOnlyProp,
       isDisabled: isDisabledProp,
       onBlur,
@@ -112,7 +119,9 @@ const InputControlled = forwardRef<HTMLInputElement, FormInputControlledProps>(
         )}
         <HStack spacing={0} className="w-full justify-between">
           {value && (
-            <span className="flex-grow text-sm line-clamp-1">{value}</span>
+            <span className="flex-grow text-sm line-clamp-1">
+              {renderInlineValue ? renderInlineValue(value) : value}
+            </span>
           )}
           <IconButton
             icon={value ? <LuSettings2 /> : <LuPlus />}

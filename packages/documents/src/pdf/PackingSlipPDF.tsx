@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { JSONContent } from "@carbon/react";
 import { Fragment } from "react";
@@ -9,7 +13,10 @@ import {
 } from "../template";
 import type { PDF } from "../types";
 import { resolveRegistrationLine } from "../utils/shared";
-import type { PackingSlipData } from "./blocks/packingSlip";
+import type {
+  PackingSlipData,
+  PackingSlipRentalUnit
+} from "./blocks/packingSlip";
 import {
   buildPackingSlipVars,
   packingSlipBlockRegistry
@@ -30,6 +37,7 @@ interface PackingSlipProps extends PDF {
   shippingMethod: { id: string; name: string };
   terms: JSONContent;
   trackedEntities: Database["public"]["Tables"]["trackedEntity"]["Row"][];
+  rentalUnits?: PackingSlipRentalUnit[];
   thumbnails?: Record<string, string | null>;
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
@@ -51,6 +59,7 @@ const PackingSlipPDF = ({
   title = "Packing Slip",
   locale,
   trackedEntities,
+  rentalUnits,
   thumbnails,
   template,
   sections = {}
@@ -79,6 +88,7 @@ const PackingSlipPDF = ({
   });
 
   const data: PackingSlipData = {
+    title,
     company,
     locale,
     customer,
@@ -92,6 +102,7 @@ const PackingSlipPDF = ({
     shippingMethod,
     terms,
     trackedEntities,
+    rentalUnits,
     thumbnails,
     theme,
     sections,

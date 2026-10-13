@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type {
   getActiveProductionEvents,
@@ -10,16 +14,15 @@ import type {
   getAssemblyInstructions,
   getAssemblyInstructionVersions,
   getAssemblyUnits,
-  getBalloons,
   getFailureMode,
   getFailureModes,
-  getInspectionDocument,
-  getInspectionDocuments,
-  getInspectionFeatures,
   getJob,
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
+  getJobOperationBatchEvents,
+  getJobOperationBatches,
+  getJobOperationBatchWithMembers,
   getJobOperations,
   getJobPurchaseOrderLines,
   getMaintenanceDispatch,
@@ -31,6 +34,7 @@ import type {
   getMaintenanceSchedule,
   getMaintenanceScheduleItems,
   getMaintenanceSchedules,
+  getPlanningActions,
   getProcedure,
   getProcedureParameters,
   getProcedureSteps,
@@ -39,7 +43,8 @@ import type {
   getProductionPlanning,
   getProductionProjections,
   getProductionQuantities,
-  getScrapReasons
+  getScrapReasons,
+  JobOperationBatchListMember
 } from "./production.service";
 
 export type ActiveProductionEvent = NonNullable<
@@ -139,6 +144,7 @@ export type ItemOrderStatus = {
   needsOrder: boolean;
   needsJob: boolean;
   shortfall: number;
+  substituteItemId: string | null;
   status: PurchaseOrderStatus | null;
   supplyJobStatus: JobStatus | null;
   coveredByOnHand: boolean;
@@ -161,6 +167,7 @@ export type JobOrderStatusCategory =
 export type ItemShortfall = {
   shortfall: number;
   coveredByOnHand: boolean;
+  substituteItemId?: string | null;
 };
 
 export type ProductionEvent = NonNullable<
@@ -187,13 +194,120 @@ export type Procedure = NonNullable<
   Awaited<ReturnType<typeof getProcedure>>["data"]
 >;
 
-export type ProductionPlanningItem = NonNullable<
-  Awaited<ReturnType<typeof getProductionPlanning>>["data"]
+/**
+ * The columns the planning grid RPCs add to the base planning row. Generated
+ * function return types mark every column non-null; these are not — an item
+ * with no group, no planning horizon, no negative week or nothing to order
+ * comes back NULL.
+ */
+export type PlanningGridColumns = {
+  itemPostingGroupId: string | null;
+  /** The item's saved planning horizon in days (item, else company default);
+   *  null when there is none — a saved 0 means "no fence" and reads as null. */
+  planningHorizonDays: number | null;
+  /** Today + the saved horizon; null when the item has no fence. */
+  timeFenceDate: string | null;
+  /** Start of the first week whose projected on-hand is below zero. */
+  firstNegativeDate: string | null;
+  /** Earliest order-by date among the item's open new-supply actions. */
+  latestOrderDate: string | null;
+  /** The quantity of the item's open new-supply actions (Order / Make) inside
+   *  its fence — what the Order / Make button offers, and the default sort.
+   *  The base RPC's `quantityToOrder` is a second sizing that misses what MRP
+   *  did after sizing. */
+  orderQuantity: number;
+};
+
+export type ProductionPlanningItem = Omit<
+  NonNullable<
+    Awaited<ReturnType<typeof getProductionPlanning>>["data"]
+  >[number],
+  keyof PlanningGridColumns
+> &
+  PlanningGridColumns;
+
+export type PlanningAction = NonNullable<
+  Awaited<ReturnType<typeof getPlanningActions>>["data"]
 >[number];
 
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
 >[number];
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatches>>["data"]
+>[number] & {
+  // Merged into the row by the batches loader (getJobOperationBatchMemberStats).
+  memberCount?: number;
+  totalQuantity?: number;
+  // Header work center, falling back to the members' shared one.
+  workCenterName?: string | null;
+  // Member rows for the expandable sub-list (getJobOperationBatchMembers).
+  members?: JobOperationBatchListMember[];
+};
+
+export type JobOperationBatchDetail = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchWithMembers>>["data"]
+>;
+
+export type JobOperationBatchEvent = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchEvents>>["data"]
+>[number];
+
+// Material properties of one BOM line, as returned by get_batchable_operations.
+export type BatchMaterial = {
+  itemReadableId: string | null;
+  description: string | null;
+  quantity: number | null;
+  formId: string | null;
+  formName: string | null;
+  substanceId: string | null;
+  substanceName: string | null;
+  gradeId: string | null;
+  gradeName: string | null;
+  dimensionId: string | null;
+  dimensionName: string | null;
+  finishId: string | null;
+  finishName: string | null;
+};
+
+// A candidate operation for the batch builder. The base shape is the
+// get_batchable_operations RPC row; the batchable-operations API route enriches
+// each with the op's setupTime/setupUnit/dueDate (for the setup-saving and
+// due-spread chips), which the RPC does not return.
+export type BatchCandidate = {
+  id: string;
+  jobId: string;
+  jobReadableId: string | null;
+  jobDueDate: string | null;
+  jobStatus: string | null;
+  itemId: string | null;
+  itemReadableId: string | null;
+  itemDescription: string | null;
+  // The produced item's lot tracking and the job's live WIP entity, whose
+  // readableId is the lot number (pre-fills the builder's Output card).
+  requiresBatchTracking: boolean | null;
+  trackedEntityId: string | null;
+  lotNumber: string | null;
+  description: string | null;
+  operationQuantity: number | null;
+  status: string | null;
+  workCenterId: string | null;
+  jobOperationBatchId: string | null;
+  batchReadableId: string | null;
+  batchStatus: "Active" | "Completing" | "Completed" | null;
+  batchWorkCenterId: string | null;
+  materials: BatchMaterial[];
+  // Enriched by the API route (absent on the raw RPC row).
+  setupTime: number | null;
+  setupUnit: string | null;
+  laborTime: number | null;
+  laborUnit: string | null;
+  machineTime: number | null;
+  machineUnit: string | null;
+  dueDate: string | null;
+  thumbnailPath: string | null;
+};
 
 // --- Assembly Instructions ---------------------------------------------
 
@@ -232,37 +346,3 @@ export type AssemblyUnit = NonNullable<
 export type AssemblyComponentMapping = NonNullable<
   Awaited<ReturnType<typeof getAssemblyComponentMappings>>["data"]
 >[number];
-
-// --- Inspection Documents -----------------------------------------------
-
-export type InspectionDocument = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
->[number];
-
-export type InspectionDocumentDetail = NonNullable<
-  Awaited<ReturnType<typeof getInspectionDocument>>["data"]
->;
-
-export type Balloon = NonNullable<
-  Awaited<ReturnType<typeof getBalloons>>["data"]
->[number];
-
-export type InspectionFeature = NonNullable<
-  Awaited<ReturnType<typeof getInspectionFeatures>>["data"]
->[number];
-
-export type BalloonFeature = {
-  id: string;
-  balloonNumber: number;
-  description: string;
-  nominalValue: number | null;
-  tolerancePlus: number | null;
-  toleranceMinus: number | null;
-  unitOfMeasureCode: string | null;
-};
-
-export type InspectionDocumentContent = {
-  pdfUrl: string | null;
-  drawingNumber: string | null;
-  features: BalloonFeature[];
-};

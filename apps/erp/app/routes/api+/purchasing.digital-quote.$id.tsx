@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
@@ -167,12 +171,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
         }
       }
 
+      // The line ids are caller-supplied and every write below runs as the
+      // service role, while the share link only authorizes THIS quote. Prove
+      // each line belongs to it before touching any price row — otherwise one
+      // supplier's link could rewrite another quote's (or company's) prices.
+      const lineIds = [
+        ...new Set(priceRecordsToProcess.map(({ lineId }) => lineId))
+      ];
+      if (lineIds.length > 0) {
+        const ownedLines = await serviceRole
+          .from("supplierQuoteLine")
+          .select("id")
+          .eq("supplierQuoteId", quote.data.id)
+          .eq("companyId", quote.data.companyId)
+          .in("id", lineIds);
+        if (
+          ownedLines.error ||
+          (ownedLines.data?.length ?? 0) !== lineIds.length
+        ) {
+          logger.error("Digital quote lines do not belong to the quote", {
+            quoteId: quote.data.id,
+            companyId: quote.data.companyId,
+            lineIds,
+            error: ownedLines.error
+          });
+          return { success: false, message: "Invalid selected lines data" };
+        }
+      }
+
       // Batch check which price records exist
       const existingPriceChecks = await Promise.all(
         priceRecordsToProcess.map(({ lineId, quantity }) =>
           serviceRole
             .from("supplierQuoteLinePrice")
             .select("id")
+            .eq("supplierQuoteId", quote.data.id)
             .eq("supplierQuoteLineId", lineId)
             .eq("quantity", quantity)
             .maybeSingle()
@@ -212,6 +245,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
                 updatedAt: new Date().toISOString(),
                 updatedBy: quote.data.createdBy
               })
+              .eq("supplierQuoteId", quote.data.id)
               .eq("supplierQuoteLineId", lineId)
               .eq("quantity", quantity)
           );
