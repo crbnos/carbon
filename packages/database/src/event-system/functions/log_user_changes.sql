@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.log_user_changes()
  SET search_path TO ''
 AS $function$
 DECLARE
-  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
+  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding', 'loadedJobOperationId', 'loadedAt'];
   changed_rows TEXT;
 BEGIN
   -- A person's name and avatar live on the global "user" row, which has no

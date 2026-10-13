@@ -801,7 +801,15 @@ export const auditConfig = {
   } satisfies Partial<Record<TableName, string>>,
 
   /** Fields to skip in diff computation */
-  skipFields: ["updatedAt", "updatedBy", "embedding"],
+  // loadedJobOperationId / loadedAt change on every timer start (workCenter);
+  // they are machine state, not an edit.
+  skipFields: [
+    "updatedAt",
+    "updatedBy",
+    "embedding",
+    "loadedJobOperationId",
+    "loadedAt"
+  ],
 
   /** Retention period before archival (days) */
   retentionDays: 30,

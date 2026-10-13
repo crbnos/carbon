@@ -5,7 +5,7 @@ CREATE OR REPLACE FUNCTION public.broadcast_user_changes()
  SET search_path TO ''
 AS $function$
 DECLARE
-  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding'];
+  ignored_columns CONSTANT TEXT[] := ARRAY['updatedAt', 'updatedBy', 'embedding', 'loadedJobOperationId', 'loadedAt'];
   changed_rows TEXT;
   rec RECORD;
 BEGIN
