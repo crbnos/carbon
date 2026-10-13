@@ -244,8 +244,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // If type is Machine, cancel all setup and labor production events for this operation
   const pressedAt = datetime.timestamp();
   if (type === "Machine") {
-    // A work center with a device: end its open Machine time at the press and
-    // record the press. A no-op when the work center has no device.
+    // A machine has one machine time: end every open Machine event on the work
+    // center at the press, from any operator or the sensor. With a device, also
+    // end the open unattributed time and record the press.
     const workCenterId = jobOperation.data.workCenterId;
     if (workCenterId) {
       try {

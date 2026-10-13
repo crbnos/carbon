@@ -156,7 +156,57 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
       expect(await endedAt("unattributedMachineTime", "other-wc")).toBeNull();
     });
 
-    it("does nothing on a work center with no device", async () => {
+    it("ends another operator's Machine event", async () => {
+      await seed();
+      await machineEvent("operator", { createdBy: operator });
+
+      await db.transaction().execute((trx) =>
+        recordManualMachinePress(trx, {
+          workCenterId,
+          companyId,
+          userId: id("other-operator"),
+          pressedAt: at
+        })
+      );
+
+      expect(await endedAt("productionEvent", "operator")).toBe(true);
+    });
+
+    it("does not end an event that starts after the press", async () => {
+      await seed();
+      await machineEvent("later", { startTime: after });
+
+      await db.transaction().execute((trx) =>
+        recordManualMachinePress(trx, {
+          workCenterId,
+          companyId,
+          userId: operator,
+          pressedAt: at
+        })
+      );
+
+      expect(await endedAt("productionEvent", "later")).toBeNull();
+    });
+
+    it("ends Machine events on a work center with no device", async () => {
+      await client.query("BEGIN");
+      await client.query("SET LOCAL session_replication_role = replica");
+      await machineEvent("running");
+
+      const result = await db.transaction().execute((trx) =>
+        recordManualMachinePress(trx, {
+          workCenterId,
+          companyId,
+          userId: operator,
+          pressedAt: at
+        })
+      );
+
+      expect(result.mapped).toBe(false);
+      expect(await endedAt("productionEvent", "running")).toBe(true);
+    });
+
+    it("leaves unattributed time on a work center with no device", async () => {
       await client.query("BEGIN");
       await client.query("SET LOCAL session_replication_role = replica");
       await unattributed("running");

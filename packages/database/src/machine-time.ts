@@ -60,12 +60,18 @@ export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {
 }
 
 /**
- * An operator pressed Machine Start or Stop on a work center. If the work
- * center has a device, end its open Machine events and unattributed time at
- * the press time and record the press, so an older sensor change never undoes
- * it. Without the unattributed close, a Start on a running machine with no
- * loaded operation counted the same minutes twice: once on the operator's
- * event and once in the supervisor queue.
+ * A machine has one machine time. An operator pressed Machine Start or Pause
+ * on a work center: separate operators share a single machine time, so on
+ * any work center, with or without a device, the press ends every open
+ * Machine event there at the press time — from any operator or the sensor.
+ * An event that starts after the press stays open. A Start then opens the
+ * new one.
+ *
+ * On a work center with a device, the press also ends the open unattributed
+ * time at the press time and records the press, so an older sensor change
+ * never undoes it. Without the unattributed close, a Start on a running
+ * machine with no loaded operation counted the same minutes twice: once on
+ * the operator's event and once in the supervisor queue.
  */
 export async function recordManualMachinePress(
   trx: KyselyTx,
@@ -76,9 +82,6 @@ export async function recordManualMachinePress(
     pressedAt: string;
   }
 ): Promise<{ mapped: boolean; endedEventIds: string[] }> {
-  const device = await lockWorkCenterDevice(trx, args);
-  if (!device) return { mapped: false, endedEventIds: [] };
-
   const ended = await trx
     .updateTable("productionEvent")
     .set({
@@ -90,8 +93,13 @@ export async function recordManualMachinePress(
     .where("companyId", "=", args.companyId)
     .where("type", "=", "Machine")
     .where("endTime", "is", null)
+    .where("startTime", "<=", args.pressedAt)
     .returning("id")
     .execute();
+  const endedEventIds = ended.map((row) => row.id);
+
+  const device = await lockWorkCenterDevice(trx, args);
+  if (!device) return { mapped: false, endedEventIds };
 
   await endOpenUnattributedTime(trx, {
     workCenterId: args.workCenterId,
@@ -111,5 +119,5 @@ export async function recordManualMachinePress(
     .where("companyId", "=", args.companyId)
     .execute();
 
-  return { mapped: true, endedEventIds: ended.map((row) => row.id) };
+  return { mapped: true, endedEventIds };
 }

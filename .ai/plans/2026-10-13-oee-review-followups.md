@@ -15,7 +15,7 @@
 - [x] Task 6: Fix the sync cursor, log late events, and close Canceled operations
 - [ ] Task 7: Test `syncOeeDevice` against the local database
 - [x] Task 8: Resolve an OEE provider in one place
-- [ ] Task 9: Make machine time one stream per work center
+- [x] Task 9: Make machine time one stream per work center
 - [ ] Task 10: End the MES event on its own work center
 - [x] Task 11: Hide a stale device state on the work center display
 - [ ] Task 12: Fix the machine time service reads
