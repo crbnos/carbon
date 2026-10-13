@@ -692,7 +692,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // The DECLARED role, not the display category and not an id literal.
   const providerRole = (
-    integration as { providerRole?: "accounting" | "spend" }
+    integration as { providerRole?: "accounting" | "spend" | "oee" }
   ).providerRole;
 
   const isAccountingInstalled =
@@ -702,8 +702,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // provider records its own inbound/outbound dispositions there — so it gets
   // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
   // surfaces stay gated on isAccountingInstalled below.
+  // OEE providers record their sync state on each device, not here.
   const producesSyncOperations =
-    providerRole !== undefined && integrationData.data.active;
+    providerRole !== undefined &&
+    providerRole !== "oee" &&
+    integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
   // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
@@ -1890,8 +1893,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // OAuth providers make the same decision in their callbacks.
   if (
     !wasInstalled &&
-    (integration as { providerRole?: "accounting" | "spend" }).providerRole ===
-      "accounting"
+    (integration as { providerRole?: "accounting" | "spend" | "oee" })
+      .providerRole === "accounting"
   ) {
     metadata.settings = {
       ...((metadata.settings as Record<string, unknown> | undefined) ?? {}),
@@ -1911,7 +1914,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "paperless-parts",
     "email",
     "ramp",
-    "rillet"
+    "rillet",
+    "sense"
   ]);
   if (
     FORM_SECRET_INTEGRATIONS.has(integrationId) ||

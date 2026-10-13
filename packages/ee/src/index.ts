@@ -115,7 +115,7 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
  * in the accounting layout, and `.eq("id","ramp")` in the Ramp sweep. A new
  * provider joins by declaring its role, not by being added to a list.
  */
-export type ProviderRole = "accounting" | "spend";
+export type ProviderRole = "accounting" | "spend" | "oee";
 
 /**
  * `integrations` is a union of concrete descriptor types, and only the four
