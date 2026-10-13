@@ -230,10 +230,6 @@ export default function GetStartedLayout() {
       exclusions:
         (loaderData.hub.exclusions as unknown as HubExclusions) ??
         EMPTY_EXCLUSIONS,
-      // The Accounting module shows before the cutover too: importing the
-      // chart and setting the defaults is what the company does before it
-      // activates accounting.
-      forcedModules: [],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
