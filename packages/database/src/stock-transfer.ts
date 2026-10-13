@@ -19,28 +19,27 @@ export type StockTransferLineDraft = {
 
 /**
  * A serial-tracked line moves one serial per line, so a line of quantity N is
- * split into N lines of quantity 1. A line with a non-integer quantity is
- * dropped, as `insertStockTransfer` always did. Every other line is kept.
+ * split into N lines of quantity 1. A serial cannot be split, so a
+ * serial-tracked line with a fractional quantity is refused with an error.
+ * Every other line is kept as it is, fractional quantities included (a batch
+ * or untracked item can move 2.5 kg).
  */
 export function expandSerialTrackedLines<T extends StockTransferLineDraft>(
   lines: T[]
 ): T[] {
-  return lines.reduce<T[]>((acc, line) => {
-    if (line.quantity && !Number.isInteger(line.quantity)) {
-      return acc;
-    }
-    if (line.requiresSerialTracking && line.quantity && line.quantity > 1) {
-      acc.push(
-        ...Array.from({ length: line.quantity }, () => ({
-          ...line,
-          quantity: 1
-        }))
+  return lines.flatMap((line) => {
+    if (!line.requiresSerialTracking || !line.quantity) return [line];
+    if (!Number.isInteger(line.quantity)) {
+      throw new Error(
+        `A serial-tracked line needs a whole quantity, not ${String(line.quantity)}`
       );
-    } else {
-      acc.push(line);
     }
-    return acc;
-  }, []);
+    if (line.quantity === 1) return [line];
+    return Array.from({ length: line.quantity }, () => ({
+      ...line,
+      quantity: 1
+    }));
+  });
 }
 
 /**

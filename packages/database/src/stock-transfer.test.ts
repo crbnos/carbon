@@ -33,8 +33,23 @@ it("keeps a batch-tracked line whole", () => {
   ]);
 });
 
-it("drops a line with a non-integer quantity", () => {
-  expect(expandSerialTrackedLines([{ ...line, quantity: 2.5 }])).toEqual([]);
+it("keeps an untracked or batch line with a fractional quantity", () => {
+  expect(expandSerialTrackedLines([{ ...line, quantity: 2.5 }])).toEqual([
+    { ...line, quantity: 2.5 }
+  ]);
+  expect(
+    expandSerialTrackedLines([
+      { ...line, quantity: 2.25, requiresBatchTracking: true }
+    ])
+  ).toEqual([{ ...line, quantity: 2.25, requiresBatchTracking: true }]);
+});
+
+it("refuses a serial-tracked line with a fractional quantity", () => {
+  expect(() =>
+    expandSerialTrackedLines([
+      { ...line, quantity: 2.5, requiresSerialTracking: true }
+    ])
+  ).toThrow("A serial-tracked line needs a whole quantity, not 2.5");
 });
 
 it("fires strictly below the replenishment level", () => {

@@ -4559,6 +4559,19 @@ export async function insertStockTransfer(
 }> {
   const { locationId, lines, companyId, createdBy, customFields } = input;
 
+  // Before the sequence, so a refused line does not use up a transfer number.
+  let linesWithExpandedSerialTracking: typeof lines;
+  try {
+    linesWithExpandedSerialTracking = expandSerialTrackedLines(lines);
+  } catch (err) {
+    return {
+      data: null,
+      error: {
+        message: getErrorMessage(err, "Failed to prepare stock transfer lines")
+      }
+    };
+  }
+
   let stockTransferId = input.stockTransferId;
   if (!stockTransferId) {
     const sequence = await client.rpc("get_next_sequence", {
@@ -4573,8 +4586,6 @@ export async function insertStockTransfer(
     }
     stockTransferId = sequence.data;
   }
-
-  const linesWithExpandedSerialTracking = expandSerialTrackedLines(lines);
 
   const createTransfer = await client
     .from("stockTransfer")
