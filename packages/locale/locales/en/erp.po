@@ -3506,6 +3506,12 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign"
+msgstr "Assign"
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -4254,6 +4260,9 @@ msgstr "Calendar"
 
 msgid "Calendar Month"
 msgstr "Calendar Month"
+
+msgid "Calibrated"
+msgstr "Calibrated"
 
 msgid "Calibration"
 msgstr "Calibration"
@@ -5351,6 +5360,9 @@ msgstr "Connect Jira issue"
 
 msgid "Connect Linear issue"
 msgstr "Connect Linear issue"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Connect Slack under Settings → Integrations first."
@@ -7579,6 +7591,9 @@ msgstr "Detected by the motion planner"
 
 msgid "Developer"
 msgstr "Developer"
+
+msgid "Devices"
+msgstr "Devices"
 
 msgid "Difference"
 msgstr "Difference"
@@ -10073,6 +10088,9 @@ msgstr "For <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr "For example warm-up, prove-out or maintenance"
 
 msgid "Forecast"
 msgstr "Forecast"
@@ -12607,6 +12625,9 @@ msgstr "Machine Costs"
 msgid "Machine Hours"
 msgstr "Machine Hours"
 
+msgid "Machine monitoring"
+msgstr "Machine monitoring"
+
 msgid "Machine rate"
 msgstr "Machine rate"
 
@@ -12799,6 +12820,9 @@ msgstr "manufacturing is blocked"
 
 msgid "Map accounts"
 msgstr "Map accounts"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Map Extracted Invoice Lines"
@@ -14183,6 +14207,9 @@ msgstr "No deposit has been received for this agreement."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 
+msgid "No devices found"
+msgstr "No devices found"
+
 msgid "No dimension slots configured"
 msgstr "No dimension slots configured"
 
@@ -14774,6 +14801,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
+
+msgid "Not calibrated"
+msgstr "Not calibrated"
 
 msgid "Not certified"
 msgstr "Not certified"
@@ -18381,6 +18411,9 @@ msgstr "Residual Value %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 
+msgid "Resolved"
+msgstr "Resolved"
+
 msgid "Resolved Price"
 msgstr "Resolved Price"
 
@@ -19713,6 +19746,9 @@ msgstr "Select value"
 msgid "Select values"
 msgstr "Select values"
 
+msgid "Select work center"
+msgstr "Select work center"
+
 msgid "Select…"
 msgstr "Select…"
 
@@ -19782,6 +19818,10 @@ msgstr "Sending defective units back to an earlier operation to be corrected ins
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr "Sense site is in {0}; Carbon uses {locationTimezone}"
 
 msgid "Sent at"
 msgstr "Sent at"
@@ -21393,6 +21433,10 @@ msgstr "Sync Tie-Out"
 msgid "Synced"
 msgstr "Synced"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr "Synced {0}"
+
 msgid "System"
 msgstr "System"
 
@@ -22223,6 +22267,9 @@ msgstr "The lot's per-characteristic sampling plan will be re-resolved from the 
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr "The machine is still running. Assign or dismiss this time after it stops."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "The machines, cells, and stations your work runs through"
@@ -23105,6 +23152,9 @@ msgstr "this supplier"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "This takes {employeeName} off the board for the day. Save again to confirm."
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr "This time was recorded as a machine production event on the job."
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "This tool is activated when change notice {activationLockId} is released."
 
@@ -23812,6 +23862,12 @@ msgstr "Unassign rule"
 
 msgid "Unassigned"
 msgstr "Unassigned"
+
+msgid "Unattributed machine time"
+msgstr "Unattributed machine time"
+
+msgid "Unattributed Machine Time"
+msgstr "Unattributed Machine Time"
 
 msgid "Unbalanced"
 msgstr "Unbalanced"
@@ -24569,6 +24625,9 @@ msgstr "View Journal Entry"
 
 msgid "View Lists"
 msgstr "View Lists"
+
+msgid "View Machine Time"
+msgstr "View Machine Time"
 
 msgid "View maintenance dispatch"
 msgstr "View maintenance dispatch"

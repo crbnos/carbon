@@ -3506,6 +3506,12 @@ msgstr "Cespiti"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
 
@@ -4254,6 +4260,9 @@ msgstr "Calendario"
 
 msgid "Calendar Month"
 msgstr "Mese Calendario"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "Taratura"
@@ -5351,6 +5360,9 @@ msgstr "Connetti problema Jira"
 
 msgid "Connect Linear issue"
 msgstr "Connetti problema Linear"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Connetti Slack in Impostazioni → Integrazioni prima."
@@ -7579,6 +7591,9 @@ msgstr "Rilevato dal pianificatore di movimento"
 
 msgid "Developer"
 msgstr "Sviluppatore"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "Differenza"
@@ -10073,6 +10088,9 @@ msgstr "Per <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "per qualsiasi cosa. Porteranno la persona giusta."
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Previsione"
@@ -12607,6 +12625,9 @@ msgstr "Costi macchina"
 msgid "Machine Hours"
 msgstr "Ore di macchina"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Tariffa macchina"
 
@@ -12799,6 +12820,9 @@ msgstr "La produzione è bloccata"
 
 msgid "Map accounts"
 msgstr "Mappa conti"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Associa righe fattura estratte"
@@ -14183,6 +14207,9 @@ msgstr "Nessun deposito è stato ricevuto per questo accordo."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Non viene eseguito nessun ammortamento prima della transizione contabile. Inserisci il fondo ammortamento di ogni asset al giorno precedente la transizione contabile."
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "Nessuno slot dimensionale configurato"
 
@@ -14774,6 +14801,9 @@ msgstr "Normale"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Non è una tabella ma un saldo della contabilità generale: il costo si accumula man mano che i materiali dell'ordine di produzione vengono emessi e si azzera quando l'ordine viene ricevuto in magazzino."
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "Non certificato"
@@ -18381,6 +18411,9 @@ msgstr "Valore residuo %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Risolvi questi prima di completare l'NCR: ogni riga deve avere una disposizione non in sospeso e le quantità delle entità collegate devono corrispondere alla quantità della riga."
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "Prezzo Risolto"
 
@@ -19713,6 +19746,9 @@ msgstr "Seleziona valore"
 msgid "Select values"
 msgstr "Seleziona valori"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "Seleziona…"
 
@@ -19782,6 +19818,10 @@ msgstr "Invio di unità difettose a un'operazione precedente per la correzione a
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Invia questo documento per l'approvazione prima che possa diventare attivo."
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Inviato il"
@@ -21393,6 +21433,10 @@ msgstr "Riconciliazione Sincronizzazione"
 msgid "Synced"
 msgstr "Sincronizzato"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "Sistema"
 
@@ -22223,6 +22267,9 @@ msgstr "Il piano di campionamento per caratteristica del lotto verrà nuovamente
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "L'importo minimo che questo fornitore addebiterà per questo processo, indipendentemente dalla quantità; gli ordini di produzione al di sotto del volume di pareggio costano ancora almeno questo importo."
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Le macchine, celle e stazioni attraverso cui passa il tuo lavoro"
@@ -23105,6 +23152,9 @@ msgstr "questo fornitore"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Questo toglie {employeeName} dalla programmazione per il giorno. Salva di nuovo per confermare."
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Questo attrezzo viene attivato quando l'avviso di modifica {activationLockId} viene rilasciato."
 
@@ -23812,6 +23862,12 @@ msgstr "Annulla assegnazione regola"
 
 msgid "Unassigned"
 msgstr "Non assegnato"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Sbilanciato"
@@ -24569,6 +24625,9 @@ msgstr "Visualizza riga di registrazione"
 
 msgid "View Lists"
 msgstr "Visualizza Elenchi"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "Visualizza intervento di manutenzione"

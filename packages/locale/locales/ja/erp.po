@@ -3506,6 +3506,12 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -4254,6 +4260,9 @@ msgstr "カレンダー"
 
 msgid "Calendar Month"
 msgstr "暦月"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "校正"
@@ -5351,6 +5360,9 @@ msgstr "Jira課題に接続"
 
 msgid "Connect Linear issue"
 msgstr "Linear イシューを接続"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "まず設定→連携の下でSlackに接続します。"
@@ -7579,6 +7591,9 @@ msgstr "モーションプランナーで検出されました"
 
 msgid "Developer"
 msgstr "開発者"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "差異"
@@ -10073,6 +10088,9 @@ msgstr "用<0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "予測"
@@ -12607,6 +12625,9 @@ msgstr "機械費"
 msgid "Machine Hours"
 msgstr "機械時間"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "機械費率"
 
@@ -12799,6 +12820,9 @@ msgstr "製造がブロックされています"
 
 msgid "Map accounts"
 msgstr "勘定をマップ"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "抽出された請求書明細をマップ"
@@ -14183,6 +14207,9 @@ msgstr "この契約の前受金が受け取られていません。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "会計開始日前には減価償却は実行されません。会計開始日の前日時点での各資産の減価償却累計額を入力してください。"
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "ディメンションスロットが構成されていません"
 
@@ -14774,6 +14801,9 @@ msgstr "通常"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "テーブルではなく総勘定元帳の残高です。指図材料が払い出されると原価が累積され、製造指図が在庫として受領されたときにクリアされます。"
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "認定されていない"
@@ -18381,6 +18411,9 @@ msgstr "残存価額 %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行に保留中ではない処置が必要で、リンクされたエンティティの数量は行の数量と一致する必要があります。"
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "解決済み価格"
 
@@ -19713,6 +19746,9 @@ msgstr "値を選択"
 msgid "Select values"
 msgstr "値を選択"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "選択…"
 
@@ -19782,6 +19818,10 @@ msgstr "不良ユニットをスクラップするのではなく、以前の操
 
 msgid "Sends this document for approval before it can go active."
 msgstr "この文書を有効にする前に承認用に送信します。"
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "送信日時"
@@ -21393,6 +21433,10 @@ msgstr "同期一致"
 msgid "Synced"
 msgstr "同期済み"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "システム"
 
@@ -22223,6 +22267,9 @@ msgstr "ロットの特性別抜取検査方式は選択された文書から再
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "この仕入先がこの工法に対して請求する最低金額（数量に関係なく）。損益分岐点量以下の製造指図でも、最低でもこの金額がかかります。"
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "あなたの仕事が実行される機械、セル、およびステーション"
@@ -23105,6 +23152,9 @@ msgstr "この仕入先"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "これは{employeeName}をその日のボードから削除します。確認するために再度保存します。"
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
 
@@ -23812,6 +23862,12 @@ msgstr "ルールの割り当てを解除"
 
 msgid "Unassigned"
 msgstr "未割り当て"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "差額有り"
@@ -24569,6 +24625,9 @@ msgstr "仕訳行を表示"
 
 msgid "View Lists"
 msgstr "リストを表示"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "保全指示を表示"

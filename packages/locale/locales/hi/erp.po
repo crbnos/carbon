@@ -3506,6 +3506,12 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -4254,6 +4260,9 @@ msgstr "कैलेंडर"
 
 msgid "Calendar Month"
 msgstr "कैलेंडर माह"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "अंशांकन"
@@ -5351,6 +5360,9 @@ msgstr "Jira समस्या से कनेक्ट करें"
 
 msgid "Connect Linear issue"
 msgstr "Linear समस्या से कनेक्ट करें"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "पहले सेटिंग्स → एकीकरण के तहत Slack कनेक्ट करें।"
@@ -7579,6 +7591,9 @@ msgstr "गति योजनाकार द्वारा पहचाना
 
 msgid "Developer"
 msgstr "डेवलपर"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "अंतर"
@@ -10073,6 +10088,9 @@ msgstr "के लिए <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "पूर्वानुमान"
@@ -12607,6 +12625,9 @@ msgstr "मशीन लागत"
 msgid "Machine Hours"
 msgstr "मशीन घंटे"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "मशीन दर"
 
@@ -12799,6 +12820,9 @@ msgstr "विनिर्माण अवरुद्ध है"
 
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "निकाली गई चालान पंक्तियों को मैप करें"
@@ -14183,6 +14207,9 @@ msgstr "इस समझौते के लिए कोई जमा राश
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "संक्रमण से पहले कोई मूल्यह्रास चलाया नहीं जाता। संक्रमण से पहले के दिन तक प्रत्येक परिसंपत्ति का संचित मूल्यह्रास दर्ज करें।"
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "कोई आयाम स्लॉट कॉन्फ़िगर नहीं किया गया"
 
@@ -14774,6 +14801,9 @@ msgstr "सामान्य"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य खाता बही शेष: लागत जमा होती है जब जॉब सामग्री जारी की जाती है और साफ़ होती है जब जॉब स्टॉक में प्राप्त होता है।"
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"
@@ -18381,6 +18411,9 @@ msgstr "अवशिष्ट मूल्य %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
 
@@ -19713,6 +19746,9 @@ msgstr "मान चुनें"
 msgid "Select values"
 msgstr "मान चुनें"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "चुनें…"
 
@@ -19782,6 +19818,10 @@ msgstr "दोषपूर्ण इकाइयों को उन्हें
 
 msgid "Sends this document for approval before it can go active."
 msgstr "यह दस्तावेज़ सक्रिय होने से पहले अनुमोदन के लिए भेजता है।"
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "भेजा गया:"
@@ -21393,6 +21433,10 @@ msgstr "सिंक समंजन"
 msgid "Synced"
 msgstr "सिंक किया गया"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "सिस्टम"
 
@@ -22223,6 +22267,9 @@ msgstr "लॉट की प्रति-विशेषता नमूना�
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "यह न्यूनतम राशि जो यह आपूर्तिकर्ता इस प्रक्रिया के लिए चार्ज करेगा, मात्रा की परवाह किए बिना; ब्रेकइवन वॉल्यूम के नीचे जॉब की लागत कम से कम यह राशि ही होगी।"
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "वे मशीनें, सेल और स्टेशन जिनके माध्यम से आपका काम चलता है"
@@ -23105,6 +23152,9 @@ msgstr "यह आपूर्तिकर्ता"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "यह {employeeName} को इस दिन के लिए बोर्ड से हटाता है। पुष्टि करने के लिए फिर से सहेजें।"
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "यह उपकरण तब सक्रिय होता है जब परिवर्तन सूचना {activationLockId} जारी की जाती है।"
 
@@ -23812,6 +23862,12 @@ msgstr "नियम को अनअसाइन करें"
 
 msgid "Unassigned"
 msgstr "अनुत्तरित"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "असंतुलित"
@@ -24569,6 +24625,9 @@ msgstr "जर्नल प्रविष्टि देखें"
 
 msgid "View Lists"
 msgstr "सूचियाँ देखें"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "रखरखाव कार्य देखें"

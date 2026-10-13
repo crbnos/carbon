@@ -814,6 +814,9 @@ msgstr "Hala Çalışıyorum"
 msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
+msgid "Idle"
+msgstr ""
+
 msgid "Idle for"
 msgstr "Boş olma süresi"
 
@@ -955,6 +958,9 @@ msgstr "Liste görünümü"
 
 msgid "Load list"
 msgstr "Listeyi yükle"
+
+msgid "Loaded: {loadedLabel}"
+msgstr ""
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
@@ -1276,6 +1282,9 @@ msgstr "OEM Gerekli"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/{0}"
+
+msgid "Offline"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "En eski önce"

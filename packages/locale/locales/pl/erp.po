@@ -3506,6 +3506,12 @@ msgstr "Aktywa"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Aktywa, pasywa i kapitał własny na określony dzień"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Przypisz drukarki do lokalizacji. Wysyłka, otrzymywanie i stanowiska robocze dziedziczą domyślne lokalizacje, chyba że nastąpi nadpisanie."
 
@@ -4254,6 +4260,9 @@ msgstr "Kalendarz"
 
 msgid "Calendar Month"
 msgstr "Miesiąc Kalendarzowy"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "Wzorcowanie"
@@ -5351,6 +5360,9 @@ msgstr "Połącz problem Jiry"
 
 msgid "Connect Linear issue"
 msgstr "Połącz problem Linear"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Najpierw połącz Slack w Ustawienia → Integracje."
@@ -7579,6 +7591,9 @@ msgstr "Wykryte przez planer ruchu"
 
 msgid "Developer"
 msgstr "Deweloper"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "Różnica"
@@ -10073,6 +10088,9 @@ msgstr "Dla <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "w sprawie czegokolwiek. Zaangażują odpowiednią osobę."
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Prognoza"
@@ -12607,6 +12625,9 @@ msgstr "Koszty maszyny"
 msgid "Machine Hours"
 msgstr "Godziny Maszyn"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Stawka maszyny"
 
@@ -12799,6 +12820,9 @@ msgstr "produkcja jest zablokowana"
 
 msgid "Map accounts"
 msgstr "Zmapuj konta"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Mapuj wyekstrahowane pozycje faktury"
@@ -14183,6 +14207,9 @@ msgstr "Nie otrzymano zaliczki dla tej umowy."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Żadne uruchomienie amortyzacji nie następuje przed zmianą. Wpisz umorzenie każdego składnika majątku na dzień przed zmianą."
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "Brak skonfigurowanych slotów wymiarów"
 
@@ -14774,6 +14801,9 @@ msgstr "Normalny"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "To nie jest tabela, lecz saldo konta głównego: koszt gromadzi się gdy materiały zlecenia produkcyjnego są wydawane i czyszczą się gdy zlecenie jest przyjęte do zapasów."
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "Nie certyfikowany"
@@ -18381,6 +18411,9 @@ msgstr "Wartość Rezydualna %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Rozwiąż to przed ukończeniem NCR: każdy wiersz musi mieć dyspozycję inną niż Oczekująca, a ilości połączonych jednostek muszą odpowiadać ilości wiersza."
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "Cena rozliczona"
 
@@ -19713,6 +19746,9 @@ msgstr "Wybierz wartość"
 msgid "Select values"
 msgstr "Wybierz wartości"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "Wybierz…"
 
@@ -19782,6 +19818,10 @@ msgstr "Odesłanie uszkodzonych jednostek do wcześniejszej operacji do poprawy 
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Wysyła ten dokument do zatwierdzenia, zanim będzie mógł zostać aktywny."
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Wysłane o"
@@ -21393,6 +21433,10 @@ msgstr "Wyrównanie synchronizacji"
 msgid "Synced"
 msgstr "Zsynchronizowano"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "System"
 
@@ -22223,6 +22267,9 @@ msgstr "Plan kontroli wyrywkowej dla każdej cechy partii zostanie ponownie usta
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Najniższa kwota, którą dostawca będzie pobierać za ten proces, niezależnie od ilości; zlecenia produkcyjne poniżej progu rentowności kosztują przynajmniej tyle."
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Maszyny, komórki i stanowiska, przez które przechodzi Twoja praca"
@@ -23105,6 +23152,9 @@ msgstr "ten dostawca"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "To usuwa {employeeName} z tablicy na dzień. Zapisz ponownie, aby potwierdzić."
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "To narzędzie jest aktywowane, gdy zawiadomienie o zmianie {activationLockId} zostanie zwolnione."
 
@@ -23812,6 +23862,12 @@ msgstr "Usuń przypisanie reguły"
 
 msgid "Unassigned"
 msgstr "Nieprzydzielone"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Niezrównoważony"
@@ -24569,6 +24625,9 @@ msgstr "Wyświetl zapis księgowy"
 
 msgid "View Lists"
 msgstr "Wyświetl listy"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "Wyświetl zlecenie utrzymania ruchu"

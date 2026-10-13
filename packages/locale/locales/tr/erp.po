@@ -3506,6 +3506,12 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
@@ -4254,6 +4260,9 @@ msgstr "Takvim"
 
 msgid "Calendar Month"
 msgstr "Takvim Ayı"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "Kalibrasyon"
@@ -5351,6 +5360,9 @@ msgstr "Jira sorununu bağla"
 
 msgid "Connect Linear issue"
 msgstr "Linear sorununu bağla"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Önce Ayarlar → Entegrasyonlar altında Slack'i bağlayın."
@@ -7579,6 +7591,9 @@ msgstr "Hareket planlayıcısı tarafından algılandı"
 
 msgid "Developer"
 msgstr "Geliştirici"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "Fark"
@@ -10073,6 +10088,9 @@ msgstr "İçin <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "Tahmin"
@@ -12607,6 +12625,9 @@ msgstr "Makine Maliyetleri"
 msgid "Machine Hours"
 msgstr "Makine Saatleri"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Makine oranı"
 
@@ -12799,6 +12820,9 @@ msgstr "üretim engellendi"
 
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Çıkarılan Fatura Satırlarını Eşle"
@@ -14183,6 +14207,9 @@ msgstr "Bu anlaşma için depozito alınmamıştır."
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "Kesme tarihinden önce amortisman çalışması yapılmaz. Her varlığın kesme tarihinden bir gün önceki birikmiş amortismanını girin."
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "Yapılandırılmış boyut yuvası yok"
 
@@ -14774,6 +14801,9 @@ msgstr "Normal"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Bir tablo değil, büyük defter bakiyesi: iş emri malzemeleri çıktıkça maliyet birikir ve iş emri stoka alındığında temizlenir."
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "Sertifikalı değil"
@@ -18381,6 +18411,9 @@ msgstr "Kalıntı Değer %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR'yi tamamlamadan önce bunları çöz: her satırın Bekleme Dışı bir Karar'ı olmalı ve onun bağlı varlık miktarları satır miktarıyla eşleşmeli."
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
 
@@ -19713,6 +19746,9 @@ msgstr "Değer seçin"
 msgid "Select values"
 msgstr "Değerleri seçin"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "Seç…"
 
@@ -19782,6 +19818,10 @@ msgstr "Hatalı ürünleri hurdalanması yerine, daha önceki bir operasyona dü
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Bu belge aktif hale gelmeden önce onay için gönderilir."
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "Gönderildi:"
@@ -21393,6 +21433,10 @@ msgstr "Senkronizasyon Uyumu"
 msgid "Synced"
 msgstr "Eşitlendi"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "Sistem"
 
@@ -22223,6 +22267,9 @@ msgstr "Lotun her karakteristiği için örnekleme planı seçilen belgeden yeni
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu Tedarikçinin bu Proses için Miktar ne olursa olsun talep edebileceği en düşük tutar; başabaş hacminin altındaki İş emirleri en az bu tutardan maliyetlidir."
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Çalışmanızın geçtiği makineler, hücreler ve istasyonlar"
@@ -23105,6 +23152,9 @@ msgstr "bu tedarikçi"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Bu, {employeeName} öğesini günlük panelden kaldırır. Onaylamak için yeniden kaydedin."
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
 
@@ -23812,6 +23862,12 @@ msgstr "Kuralı kaldır"
 
 msgid "Unassigned"
 msgstr "Atanmamış"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "Dengesiz"
@@ -24569,6 +24625,9 @@ msgstr "Yevmiye kaydını görüntüle"
 
 msgid "View Lists"
 msgstr "Listeleri Görüntüle"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "Bakım emrini görüntüle"

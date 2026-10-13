@@ -3506,6 +3506,12 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign"
+msgstr ""
+
+msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -4254,6 +4260,9 @@ msgstr "日历"
 
 msgid "Calendar Month"
 msgstr "日历 月"
+
+msgid "Calibrated"
+msgstr ""
 
 msgid "Calibration"
 msgstr "校准"
@@ -5351,6 +5360,9 @@ msgstr "连接 Jira 问题"
 
 msgid "Connect Linear issue"
 msgstr "连接 Linear 问题"
+
+msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
+msgstr ""
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "先在设置 → 集成中连接 Slack。"
@@ -7579,6 +7591,9 @@ msgstr "由运动规划器检测"
 
 msgid "Developer"
 msgstr "开发人员"
+
+msgid "Devices"
+msgstr ""
 
 msgid "Difference"
 msgstr "差异"
@@ -10073,6 +10088,9 @@ msgstr "对于 <0/>"
 
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
+
+msgid "For example warm-up, prove-out or maintenance"
+msgstr ""
 
 msgid "Forecast"
 msgstr "预测"
@@ -12607,6 +12625,9 @@ msgstr "机器成本"
 msgid "Machine Hours"
 msgstr "机器小时"
 
+msgid "Machine monitoring"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "机器费率"
 
@@ -12799,6 +12820,9 @@ msgstr "生产受阻"
 
 msgid "Map accounts"
 msgstr "映射科目"
+
+msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
+msgstr ""
 
 msgid "Map Extracted Invoice Lines"
 msgstr "映射提取的发票行项目"
@@ -14183,6 +14207,9 @@ msgstr "未收到此协议的押金。"
 msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
 msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的累计折旧。"
 
+msgid "No devices found"
+msgstr ""
+
 msgid "No dimension slots configured"
 msgstr "未配置维度插槽"
 
@@ -14774,6 +14801,9 @@ msgstr "正常"
 
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表，而是总账余额：成本随着工单物料的领料而累积，工单收到库存时清空。"
+
+msgid "Not calibrated"
+msgstr ""
 
 msgid "Not certified"
 msgstr "未认证"
@@ -18381,6 +18411,9 @@ msgstr "残值 %"
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
 
+msgid "Resolved"
+msgstr ""
+
 msgid "Resolved Price"
 msgstr "已解决价格"
 
@@ -19713,6 +19746,9 @@ msgstr "选择值"
 msgid "Select values"
 msgstr "选择值"
 
+msgid "Select work center"
+msgstr ""
+
 msgid "Select…"
 msgstr "选择…"
 
@@ -19782,6 +19818,10 @@ msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"
+
+#. placeholder {0}: device.siteTimezone
+msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
+msgstr ""
 
 msgid "Sent at"
 msgstr "发送于"
@@ -21393,6 +21433,10 @@ msgstr "同步对账"
 msgid "Synced"
 msgstr "已同步"
 
+#. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
+msgid "Synced {0}"
+msgstr ""
+
 msgid "System"
 msgstr "系统"
 
@@ -22223,6 +22267,9 @@ msgstr "该批次各特征的抽样方案将从所选文件重新确定。"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商对此工艺收费的最低金额，无论数量如何；低于盈亏平衡量的工单仍至少成本此金额。"
+
+msgid "The machine is still running. Assign or dismiss this time after it stops."
+msgstr ""
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "您的工作运行所经过的机器、单元和工作站"
@@ -23105,6 +23152,9 @@ msgstr "此供应商"
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
 
+msgid "This time was recorded as a machine production event on the job."
+msgstr ""
+
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活。"
 
@@ -23812,6 +23862,12 @@ msgstr "取消分配规则"
 
 msgid "Unassigned"
 msgstr "未分配"
+
+msgid "Unattributed machine time"
+msgstr ""
+
+msgid "Unattributed Machine Time"
+msgstr ""
 
 msgid "Unbalanced"
 msgstr "不平衡"
@@ -24569,6 +24625,9 @@ msgstr "查看日记账分录"
 
 msgid "View Lists"
 msgstr "查看列表"
+
+msgid "View Machine Time"
+msgstr ""
 
 msgid "View maintenance dispatch"
 msgstr "查看维护工单"

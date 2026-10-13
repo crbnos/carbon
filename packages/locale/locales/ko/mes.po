@@ -814,6 +814,9 @@ msgstr "아직 작업 중입니다"
 msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
+msgid "Idle"
+msgstr ""
+
 msgid "Idle for"
 msgstr "유휴 상태"
 
@@ -955,6 +958,9 @@ msgstr "목록 보기"
 
 msgid "Load list"
 msgstr "목록 불러오기"
+
+msgid "Loaded: {loadedLabel}"
+msgstr ""
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -1276,6 +1282,9 @@ msgstr "OEM 필요"
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
 msgstr "/{0}"
+
+msgid "Offline"
+msgstr ""
 
 msgid "Oldest first"
 msgstr "오래된순"
