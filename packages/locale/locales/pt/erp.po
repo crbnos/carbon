@@ -2642,6 +2642,9 @@ msgstr "Anual. Começa a partir da taxa de empréstimo incremental da empresa."
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Outro centro de custo ao qual este agrega, permitindo aninhar um subcentro de custo sob seu pai para relatórios de custo hierárquicos."
 
+msgid "Another job or operation"
+msgstr "Outro trabalho ou operação"
+
 msgid "Another spend integration is already active"
 msgstr "Outra integração de despesas já está ativa"
 
@@ -3512,9 +3515,6 @@ msgstr "Ativos"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Ativos, passivos e patrimônio líquido em uma data"
-
-msgid "Assign"
-msgstr "Atribuir"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Atribua o tempo de execução de máquina que nenhuma operação carregada reivindicou para a ordem de produção correta, ou descarte-o."
@@ -10099,9 +10099,6 @@ msgstr "Para <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "para qualquer coisa. Eles vão trazer a pessoa certa."
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "Por exemplo, aquecimento, teste ou manutenção"
-
 msgid "Forecast"
 msgstr "Previsão"
 
@@ -11838,6 +11835,9 @@ msgstr "Trabalho em andamento"
 
 msgid "Job Location"
 msgstr "Localização do Trabalho"
+
+msgid "Job locked"
+msgstr "Trabalho bloqueado"
 
 msgid "Job make method"
 msgstr "Método de fabricação da ordem"
@@ -14842,6 +14842,9 @@ msgstr "Dados de unidade insuficientes"
 msgid "Not feasible"
 msgstr "Não é viável"
 
+msgid "Not job time"
+msgstr "Não é tempo de trabalho"
+
 msgid "Not mapped"
 msgstr "Não mapeado"
 
@@ -14909,6 +14912,9 @@ msgstr "Nada concluído no MES ainda"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nada mais neste local tem estoque para puxar."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Nada mais funcionou em {workCenterName} nesse dia."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Nada aqui corresponde à sua pesquisa e filtros."
 
@@ -14965,6 +14971,9 @@ msgstr "Notificar"
 
 msgid "Notify someone"
 msgstr "Notificar alguém"
+
+msgid "now"
+msgstr "agora"
 
 msgid "Number"
 msgstr "Número"
@@ -17450,6 +17459,9 @@ msgstr "O Ramp não retornou um código de autorização"
 msgid "Ramp rejected the authorization"
 msgstr "O Ramp rejeitou a autorização"
 
+msgid "Ran at the time"
+msgstr "Funcionou nesse momento"
+
 msgid "Rate"
 msgstr "Taxa"
 
@@ -18432,9 +18444,6 @@ msgstr "Valor residual %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolva estes antes de concluir a NCR: cada linha deve ter uma disposição não-Pendente e suas quantidades de entidades vinculadas devem corresponder à quantidade da linha."
-
-msgid "Resolved"
-msgstr "Resolvido"
 
 msgid "Resolved Price"
 msgstr "Preço Resolvido"
@@ -19474,6 +19483,9 @@ msgstr "Pesquisar itens ou compartimentos"
 
 msgid "Search Job"
 msgstr "Pesquisar Trabalho"
+
+msgid "Search jobs and operations"
+msgstr "Pesquisar trabalhos e operações"
 
 msgid "Search jobs or items"
 msgstr "Pesquisar ordens de produção ou itens"
@@ -22286,8 +22298,8 @@ msgstr "O plano de amostragem por característica do lote será recalculado a pa
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "O menor valor que este fornecedor cobrará por este processo, independentemente da quantidade; ordens de produção abaixo do volume de equilíbrio ainda custarão no mínimo este valor."
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "A máquina ainda está em execução. Atribua ou descarte este tempo depois que ela parar."
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "A máquina ainda está em funcionamento. Atribua este tempo depois que ela parar."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "As máquinas, células e estações por onde seu trabalho passa"
@@ -23169,9 +23181,6 @@ msgstr "este fornecedor"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Isso remove {employeeName} da lista pelo dia. Salve novamente para confirmar."
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "Este tempo foi registrado como um evento de produção de máquina na ordem de produção."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Esta ferramenta é ativada quando o aviso de alteração {activationLockId} é liberado."
@@ -25331,6 +25340,9 @@ msgstr "Que tipo de solicitação enviar: GET lê algo, POST cria, PUT e PATCH a
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Qual evento de manufatura inicia o relógio de vida de prateleira — por exemplo, preenchimento, vedação ou Controle de Qualidade final."
+
+msgid "Which operation was this?"
+msgstr "Qual operação foi esta?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Enquanto este despacho estiver aberto, o centro de trabalho estará indisponível para o cronograma (até a hora de término planejada ou até que o despacho seja concluído)."

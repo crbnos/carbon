@@ -4,6 +4,16 @@ CREATE OR REPLACE FUNCTION public.sync_unload_work_center_operation(p_table text
  SET search_path TO 'public'
 AS $function$
 BEGIN
+  -- A deleted operation unloads too: the pointer has no foreign key, because
+  -- one would make PostgREST embeds of workCenter from jobOperation ambiguous.
+  IF p_operation = 'DELETE' THEN
+    UPDATE "workCenter"
+    SET "loadedJobOperationId" = NULL,
+        "loadedAt" = NULL
+    WHERE "loadedJobOperationId" = p_old->>'id';
+    RETURN;
+  END IF;
+
   IF p_operation != 'UPDATE' THEN RETURN; END IF;
   IF (p_new->>'status') NOT IN ('Done', 'Canceled') THEN RETURN; END IF;
   IF (p_old->>'status') = (p_new->>'status') THEN RETURN; END IF;

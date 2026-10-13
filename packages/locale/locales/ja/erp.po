@@ -2642,6 +2642,9 @@ msgstr "年間。会社の増分借入金利から開始します"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
 
+msgid "Another job or operation"
+msgstr "別のジョブまたは工程"
+
 msgid "Another spend integration is already active"
 msgstr "別の支出統合が既にアクティブです"
 
@@ -3512,9 +3515,6 @@ msgstr "資産"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
-
-msgid "Assign"
-msgstr "割り当て"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "読み込まれた工程に割り当てられていない機械加工時間を正しい製造指図に割り当てるか、却下してください。"
@@ -10099,9 +10099,6 @@ msgstr "用<0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "何でも構いません。彼らが適切な人を連れてきます。"
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "例えば、ウォームアップ、検証、または保全"
-
 msgid "Forecast"
 msgstr "予測"
 
@@ -11838,6 +11835,9 @@ msgstr "ジョブ進行中"
 
 msgid "Job Location"
 msgstr "ジョブロケーション"
+
+msgid "Job locked"
+msgstr "ジョブはロック済み"
 
 msgid "Job make method"
 msgstr "ジョブ製造方法"
@@ -14842,6 +14842,9 @@ msgstr "個データが不足しています"
 msgid "Not feasible"
 msgstr "実現不可能"
 
+msgid "Not job time"
+msgstr "ジョブの時間ではない"
+
 msgid "Not mapped"
 msgstr "未マッピング"
 
@@ -14909,6 +14912,9 @@ msgstr "MESでまだ何も完了していません"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "その日、{workCenterName} では他に何も稼働していません。"
+
 msgid "Nothing here matches your search and filters."
 msgstr "検索と絞り込み条件に一致するものがありません"
 
@@ -14965,6 +14971,9 @@ msgstr "通知"
 
 msgid "Notify someone"
 msgstr "誰かに通知"
+
+msgid "now"
+msgstr "現在"
 
 msgid "Number"
 msgstr "数字"
@@ -17450,6 +17459,9 @@ msgstr "Ramp が認可コードを返しませんでした"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp が認可を拒否しました"
 
+msgid "Ran at the time"
+msgstr "その時間に稼働"
+
 msgid "Rate"
 msgstr "レート"
 
@@ -18432,9 +18444,6 @@ msgstr "残存価額 %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCRを完了する前にこれらを解決してください。すべての行に保留中ではない処置が必要で、リンクされたエンティティの数量は行の数量と一致する必要があります。"
-
-msgid "Resolved"
-msgstr "解決済"
 
 msgid "Resolved Price"
 msgstr "解決済み価格"
@@ -19474,6 +19483,9 @@ msgstr "アイテムまたはビンを検索"
 
 msgid "Search Job"
 msgstr "ジョブを検索"
+
+msgid "Search jobs and operations"
+msgstr "ジョブと工程を検索"
 
 msgid "Search jobs or items"
 msgstr "製造指図または品目を検索"
@@ -22286,8 +22298,8 @@ msgstr "ロットの特性別抜取検査方式は選択された文書から再
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "この仕入先がこの工法に対して請求する最低金額（数量に関係なく）。損益分岐点量以下の製造指図でも、最低でもこの金額がかかります。"
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "機械はまだ実行中です。停止した後、この時間を割り当てるか却下してください。"
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "機械はまだ稼働中です。停止後にこの時間を割り当ててください。"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "あなたの仕事が実行される機械、セル、およびステーション"
@@ -23169,9 +23181,6 @@ msgstr "この仕入先"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "これは{employeeName}をその日のボードから削除します。確認するために再度保存します。"
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "この時間は製造指図の機械生産イベントとして記録されました。"
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "この工具は、変更通知 {activationLockId} がリリースされると有効になります。"
@@ -25331,6 +25340,9 @@ msgstr "送信するリクエストの種類を選択します：GETは何かを
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "どの製造イベントが保存期間時計を開始するか — たとえば、塗りつぶし、シール、または最終QC。"
+
+msgid "Which operation was this?"
+msgstr "これはどの工程でしたか?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "このディスパッチがオープンの間、作業区はスケジュールに対して利用できません（計画終了時刻まで、またはディスパッチが完了するまで）。"

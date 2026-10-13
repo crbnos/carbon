@@ -69925,14 +69925,9 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          dismissReason: string | null
           endTime: string | null
           id: string
-          productionEventId: string | null
-          resolvedAt: string | null
-          resolvedBy: string | null
           startTime: string
-          status: Database["public"]["Enums"]["unattributedMachineTimeStatus"]
           updatedAt: string | null
           updatedBy: string | null
           workCenterId: string
@@ -69941,14 +69936,9 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          dismissReason?: string | null
           endTime?: string | null
           id?: string
-          productionEventId?: string | null
-          resolvedAt?: string | null
-          resolvedBy?: string | null
           startTime: string
-          status?: Database["public"]["Enums"]["unattributedMachineTimeStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId: string
@@ -69957,14 +69947,9 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          dismissReason?: string | null
           endTime?: string | null
           id?: string
-          productionEventId?: string | null
-          resolvedAt?: string | null
-          resolvedBy?: string | null
           startTime?: string
-          status?: Database["public"]["Enums"]["unattributedMachineTimeStatus"]
           updatedAt?: string | null
           updatedBy?: string | null
           workCenterId?: string
@@ -70029,48 +70014,6 @@ export type Database = {
           {
             foreignKeyName: "unattributedMachineTime_createdBy_fkey"
             columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "userDefaults"
-            referencedColumns: ["userId"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_productionEventId_fkey"
-            columns: ["productionEventId"]
-            isOneToOne: false
-            referencedRelation: "productionEvent"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_resolvedBy_fkey"
-            columns: ["resolvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_resolvedBy_fkey"
-            columns: ["resolvedBy"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_resolvedBy_fkey"
-            columns: ["resolvedBy"]
-            isOneToOne: false
-            referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_resolvedBy_fkey"
-            columns: ["resolvedBy"]
-            isOneToOne: false
-            referencedRelation: "user"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_resolvedBy_fkey"
-            columns: ["resolvedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
@@ -71864,34 +71807,6 @@ export type Database = {
             columns: ["departmentId"]
             isOneToOne: false
             referencedRelation: "department"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationQueueTime"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithDependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {
@@ -91196,34 +91111,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationQueueTime"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithDependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "workCenter_locationId_fkey"
             columns: ["locationId"]
             isOneToOne: false
@@ -91380,34 +91267,6 @@ export type Database = {
             columns: ["departmentId"]
             isOneToOne: false
             referencedRelation: "department"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperation"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationQueueTime"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithDependencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "workCenter_loadedJobOperationId_fkey"
-            columns: ["loadedJobOperationId"]
-            isOneToOne: false
-            referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
           },
           {
@@ -95474,7 +95333,6 @@ export type Database = {
         | "Numerical"
       trainingStatus: "Draft" | "Active" | "Archived"
       trainingType: "Mandatory" | "Optional"
-      unattributedMachineTimeStatus: "Open" | "Assigned" | "Dismissed"
       warehouseTransferStatus:
         | "Draft"
         | "To Ship and Receive"
@@ -97055,7 +96913,6 @@ export const Constants = {
       ],
       trainingStatus: ["Draft", "Active", "Archived"],
       trainingType: ["Mandatory", "Optional"],
-      unattributedMachineTimeStatus: ["Open", "Assigned", "Dismissed"],
       warehouseTransferStatus: [
         "Draft",
         "To Ship and Receive",

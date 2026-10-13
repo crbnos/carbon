@@ -143,7 +143,6 @@ export async function syncOeeDevice({
           .select(["id", "startTime"])
           .where("workCenterId", "=", device.workCenterId)
           .where("companyId", "=", device.companyId)
-          .where("status", "=", "Open")
           .where("endTime", "is", null)
           .orderBy("startTime", "desc")
           .executeTakeFirst(),

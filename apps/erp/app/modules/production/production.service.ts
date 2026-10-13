@@ -6693,27 +6693,107 @@ export async function getUnattributedMachineTime(
 ) {
   return client
     .from("unattributedMachineTime")
-    .select("*, workCenter!inner(name, location(timezone))")
+    .select("*, workCenter!inner(name, locationId, location(timezone))")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
 }
 
-// The operations a supervisor can assign machine time on this work center to:
-// In Progress first, then the most recent production event at the work
-// center, then the description.
+// Where a row sits in the queue, in the list's order (newest start first):
+// its position, the total, and its neighbours above and below.
+export async function getUnattributedMachineTimeNeighbors(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; id: string; startTime: string }
+) {
+  const at = `"${args.startTime}"`;
+  const [total, above, previous, next] = await Promise.all([
+    client
+      .from("unattributedMachineTime")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", args.companyId),
+    client
+      .from("unattributedMachineTime")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", args.companyId)
+      .or(`startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`),
+    client
+      .from("unattributedMachineTime")
+      .select("id")
+      .eq("companyId", args.companyId)
+      .or(`startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`)
+      .order("startTime", { ascending: true })
+      .order("id", { ascending: true })
+      .limit(1),
+    client
+      .from("unattributedMachineTime")
+      .select("id")
+      .eq("companyId", args.companyId)
+      .or(`startTime.lt.${at},and(startTime.eq.${at},id.lt.${args.id})`)
+      .order("startTime", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1)
+  ]);
+
+  const error = total.error ?? above.error ?? previous.error ?? next.error;
+  if (error) return { data: null, error };
+
+  return {
+    data: {
+      position: (above.count ?? 0) + 1,
+      total: total.count ?? 0,
+      previousId: previous.data?.[0]?.id ?? null,
+      nextId: next.data?.[0]?.id ?? null
+    },
+    error: null
+  };
+}
+
+// Every production event on the work center that overlaps the day, with its
+// operation and job: what ran there, for the suggestion cards.
+export async function getWorkCenterDayEvents(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    workCenterId: string;
+    dayStart: string;
+    dayEnd: string;
+  }
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "jobOperationId, startTime, endTime, jobOperation(id, description, status, job(id, jobId, status, item(readableIdWithRevision)))"
+    )
+    .eq("companyId", args.companyId)
+    .eq("workCenterId", args.workCenterId)
+    .lt("startTime", args.dayEnd)
+    .or(`endTime.is.null,endTime.gt."${args.dayStart}"`)
+    .order("startTime", { ascending: true })
+    .limit(1000);
+}
+
+// The operations a supervisor can search to assign machine time to: open
+// operations on open jobs at the work center's location (or on the work
+// center itself when it has no location), this work center's first, In
+// Progress next, then the most recent production event there.
 export async function getMachineTimeOperationCandidates(
   client: SupabaseClient<Database>,
-  args: { workCenterId: string; companyId: string }
+  args: { workCenterId: string; locationId: string | null; companyId: string }
 ) {
+  let operationsQuery = client
+    .from("jobOperation")
+    .select(
+      "id, description, status, workCenterId, workCenter(name), job!inner(jobId, locationId, status)"
+    )
+    .eq("companyId", args.companyId)
+    .not("status", "in", "(Done,Canceled)")
+    .not("job.status", "in", "(Completed,Closed,Cancelled)");
+  operationsQuery = args.locationId
+    ? operationsQuery.eq("job.locationId", args.locationId)
+    : operationsQuery.eq("workCenterId", args.workCenterId);
+
   const [operations, events] = await Promise.all([
-    client
-      .from("jobOperation")
-      .select("id, description, status, job(jobId)")
-      .eq("workCenterId", args.workCenterId)
-      .eq("companyId", args.companyId)
-      .not("status", "in", "(Done,Canceled)")
-      .limit(500),
+    operationsQuery.limit(1000),
     client
       .from("productionEvent")
       .select("jobOperationId, startTime")
@@ -6735,9 +6815,15 @@ export async function getMachineTimeOperationCandidates(
     }
   }
 
+  const rank = (operation: (typeof operations.data)[number]) => [
+    operation.workCenterId === args.workCenterId ? 0 : 1,
+    operation.status === "In Progress" ? 0 : 1
+  ];
+
   const ranked = [...(operations.data ?? [])].sort((a, b) => {
-    const aInProgress = a.status === "In Progress" ? 0 : 1;
-    const bInProgress = b.status === "In Progress" ? 0 : 1;
+    const [aHere, aInProgress] = rank(a);
+    const [bHere, bInProgress] = rank(b);
+    if (aHere !== bHere) return aHere - bHere;
     if (aInProgress !== bInProgress) return aInProgress - bInProgress;
 
     const aStart = latestEventStart.get(a.id) ?? "";
@@ -6751,7 +6837,7 @@ export async function getMachineTimeOperationCandidates(
     data: ranked.map((operation) => ({
       value: operation.id,
       label: `${operation.job?.jobId ?? ""} · ${operation.description ?? ""}`,
-      helper: operation.status as string
+      helper: operation.workCenter?.name ?? (operation.status as string)
     })),
     error: null
   };

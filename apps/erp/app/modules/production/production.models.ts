@@ -1048,20 +1048,13 @@ export const productionEventValidator = z
     }
   );
 
-export const unattributedMachineTimeStatuses = [
-  "Open",
-  "Assigned",
-  "Dismissed"
-] as const satisfies readonly Database["public"]["Enums"]["unattributedMachineTimeStatus"][];
-
 export const assignMachineTimeValidator = z.object({
   intent: z.literal("assign"),
   jobOperationId: z.string().min(1, { message: "Operation is required" })
 });
 
 export const dismissMachineTimeValidator = z.object({
-  intent: z.literal("dismiss"),
-  dismissReason: z.string().min(1, { message: "Reason is required" })
+  intent: z.literal("dismiss")
 });
 
 export const productionOrderValidator = z.object({

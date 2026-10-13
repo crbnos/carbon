@@ -68,7 +68,11 @@ without a device.
   An event inserted with an `endTime` never loads. An older `startTime` never
   replaces a newer load.
 - **Unload.** A `jobOperation` status change to `Done` or `Canceled` clears
-  the load. A Pause does not unload.
+  the load, and so does deleting the operation. A Pause does not unload.
+- **No foreign key.** `loadedJobOperationId` has none (migration
+  `20261013172620`): a second `jobOperation`↔`workCenter` relationship made
+  PostgREST refuse every existing embed of one from the other (PGRST201), so
+  the unload interceptor also handles DELETE instead.
 
 Carbon never infers a job from the schedule. Only the load attributes time.
 
@@ -167,14 +171,33 @@ does not post at assign time.
 
 ## Unattributed machine time
 
+`unattributedMachineTime` is a review queue, not a record: it has no status
+(migration `20261013170425_unattributed-time-queue.sql`).
 `assignUnattributedMachineTime` inserts a Machine event for the row's
-interval and sets the row to `Assigned` with `productionEventId`.
-`dismissUnattributedMachineTime` sets `Dismissed` with a required
-`dismissReason`. Both refuse a row with no `endTime` ("The machine is still
-running") and a row that is not `Open`. Assign also refuses a `Done` or
-`Canceled` operation. The route refuses a locked job.
+interval and deletes the row; the event is the record.
+`dismissUnattributedMachineTime` deletes the row. Both refuse a row with no
+`endTime` ("The machine is still running"). Assign also refuses a `Done` or
+`Canceled` operation, and the route refuses a locked job. pg_cron
+`unattributed-machine-time-retention` (04:23 UTC) runs
+`util.purge_unattributed_machine_time()`, which deletes rows whose `endTime`
+is more than 30 days old. A running row is never purged.
 
-The list opens unfiltered. It has no default `Open` filter.
+The drawer (`x+/production+/machine-time.$id.tsx`, `MachineTimeDrawer.ee.tsx`)
+walks the queue in the list's order (`startTime` desc, then `id`):
+`getUnattributedMachineTimeNeighbors` gives the position and the rows above
+and below, and every answer redirects to the row below, else the row above,
+else the list. The suggestion cards come from `getWorkCenterDayEvents` (every
+production event on the work center overlapping the row's day, in the
+location's timezone) ranked by the pure `suggestMachineTimeOperations`
+(`machine-time-suggestions.ee.ts`, pinned by
+`apps/erp/test/machine-time-suggestions.ee.test.ts`): operations that can take
+the time first, then by the gap to the row's interval (0 when they overlap),
+then by time run that day; Done/Canceled operations and locked jobs show
+disabled. The search card reads `getMachineTimeOperationCandidates` (open
+operations on open jobs at the work center's location, this work center's
+first). Keys (`MACHINE_TIME_REVIEW_SHORTCUTS`): 1–9 assign a card, j/k move
+(the table behind binds the arrows); a repeated keydown is ignored and one
+answer per row is posted.
 
 ## Sense adapter
 

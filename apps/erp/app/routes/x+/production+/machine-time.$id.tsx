@@ -13,6 +13,11 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
+import {
+  parseAbsolute,
+  toCalendarDate,
+  toZoned
+} from "@internationalized/date";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import {
@@ -22,9 +27,16 @@ import {
   getJobOperation,
   getMachineTimeOperationCandidates,
   getUnattributedMachineTime,
+  getUnattributedMachineTimeNeighbors,
+  getWorkCenterDayEvents,
   isJobLocked
 } from "~/modules/production";
 import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
+import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTime/machine-time-suggestions.ee";
+import {
+  getCompanyTimeZone,
+  getLocationTimeZone
+} from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
@@ -40,22 +52,55 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
   if (machineTime.error || !machineTime.data) {
+    // Assigned, dismissed or aged out since the link was made.
     throw redirect(
-      path.to.unattributedMachineTimes,
-      await flash(
-        request,
-        error(machineTime.error, "Failed to get unattributed machine time")
-      )
+      `${path.to.unattributedMachineTimes}?${getParams(request)}`,
+      await flash(request, error(null, "That machine time is no longer open"))
     );
   }
 
-  const candidates = await getMachineTimeOperationCandidates(client, {
-    workCenterId: machineTime.data.workCenterId,
-    companyId
-  });
+  const { workCenterId, startTime, endTime, workCenter } = machineTime.data;
+  const timeZone = workCenter.locationId
+    ? await getLocationTimeZone(client, workCenter.locationId, companyId)
+    : await getCompanyTimeZone(client, companyId);
+
+  // The work center's calendar day the time started on.
+  const date = toCalendarDate(parseAbsolute(startTime, timeZone));
+  const day = {
+    start: toZoned(date, timeZone).toAbsoluteString(),
+    end: toZoned(date.add({ days: 1 }), timeZone).toAbsoluteString()
+  };
+
+  const [neighbors, events, candidates] = await Promise.all([
+    getUnattributedMachineTimeNeighbors(client, { companyId, id, startTime }),
+    getWorkCenterDayEvents(client, {
+      companyId,
+      workCenterId,
+      dayStart: day.start,
+      dayEnd: day.end
+    }),
+    getMachineTimeOperationCandidates(client, {
+      workCenterId,
+      locationId: workCenter.locationId,
+      companyId
+    })
+  ]);
 
   return {
     machineTime: machineTime.data,
+    timeZone,
+    queue: neighbors.data ?? {
+      position: 1,
+      total: 1,
+      previousId: null,
+      nextId: null
+    },
+    suggestions: suggestMachineTimeOperations({
+      events: events.data ?? [],
+      interval: { startTime, endTime },
+      day,
+      nowMs: Date.now()
+    }),
     operationOptions: candidates.data ?? []
   };
 }
@@ -69,8 +114,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const detailPath = `${path.to.unattributedMachineTime(id)}?${getParams(request)}`;
-  const listPath = `${path.to.unattributedMachineTimes}?${getParams(request)}`;
+  const query = getParams(request);
+  const detailPath = `${path.to.unattributedMachineTime(id)}?${query}`;
+  const listPath = `${path.to.unattributedMachineTimes}?${query}`;
 
   await requireFeature({
     request,
@@ -79,6 +125,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     feature: "INTEGRATIONS",
     redirectTo: listPath
   });
+
+  // Answering one moves on: to the row below, else the row above, else the
+  // list. Read before the write, which deletes this row.
+  const machineTime = await getUnattributedMachineTime(client, id, companyId);
+  const neighbors = machineTime.data
+    ? await getUnattributedMachineTimeNeighbors(client, {
+        companyId,
+        id,
+        startTime: machineTime.data.startTime
+      })
+    : null;
+  const nextId = neighbors?.data?.nextId ?? neighbors?.data?.previousId;
+  const nextPath = nextId
+    ? `${path.to.unattributedMachineTime(nextId)}?${query}`
+    : listPath;
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -134,8 +195,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     throw redirect(
-      listPath,
-      await flash(request, success("Assigned machine time"))
+      nextPath,
+      await flash(
+        request,
+        success(`Assigned to ${job.data?.jobId ?? "the job"}`)
+      )
     );
   }
 
@@ -150,12 +214,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     const dismissal = await dismissUnattributedMachineTime(
       client,
       getDatabaseClient(),
-      {
-        companyId,
-        userId,
-        unattributedMachineTimeId: id,
-        dismissReason: validation.data.dismissReason
-      }
+      { companyId, unattributedMachineTimeId: id }
     );
     if (dismissal.error) {
       return data(
@@ -170,23 +229,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    throw redirect(
-      listPath,
-      await flash(request, success("Dismissed machine time"))
-    );
+    throw redirect(nextPath, await flash(request, success("Dismissed")));
   }
 
   return data({}, await flash(request, error(null, "Unknown intent")));
 }
 
 export default function MachineTimeDetailRoute() {
-  const { machineTime, operationOptions } = useLoaderData<typeof loader>();
+  const { machineTime, timeZone, queue, suggestions, operationOptions } =
+    useLoaderData<typeof loader>();
   const closeRoute = useCloseRoute();
 
   return (
     <MachineTimeDrawer
       key={machineTime.id}
       machineTime={machineTime}
+      timeZone={timeZone}
+      queue={queue}
+      suggestions={suggestions}
       operationOptions={operationOptions}
       onClose={() => closeRoute()}
     />

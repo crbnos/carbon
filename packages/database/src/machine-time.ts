@@ -34,7 +34,6 @@ async function endOpenUnattributedTime(trx: KyselyTx, args: CloseArgs) {
     .set({ endTime: args.at, updatedBy: args.userId, updatedAt: args.at })
     .where("workCenterId", "=", args.workCenterId)
     .where("companyId", "=", args.companyId)
-    .where("status", "=", "Open")
     .where("endTime", "is", null)
     .where("startTime", "<=", args.at)
     .execute();
@@ -42,8 +41,8 @@ async function endOpenUnattributedTime(trx: KyselyTx, args: CloseArgs) {
 
 /**
  * A device leaves a work center (unmapped or remapped). End the time its
- * sensor opened there — Machine events created by `system` and unattributed
- * time — because no later sync of that device will close it. An operator's
+ * sensor opened there — Machine events created by `system` and running
+ * unattributed time — because no later sync of that device will close it. An operator's
  * own Machine event stays open. Call it under `lockWorkCenterDevice`.
  */
 export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {

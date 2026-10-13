@@ -17371,21 +17371,6 @@ export default {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
           },
           {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
           },
           {
@@ -17472,21 +17457,6 @@ export default {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
           },
           {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
           },
           {
@@ -17525,21 +17495,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
           },
           {
             $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
@@ -125467,7 +125422,6 @@ export default {
         "companyId",
         "workCenterId",
         "startTime",
-        "status",
         "createdBy",
         "createdAt"
       ],
@@ -125495,32 +125449,6 @@ export default {
           type: "string"
         },
         endTime: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        status: {
-          default: "Open",
-          enum: ["Open", "Assigned", "Dismissed"],
-          format: 'public."unattributedMachineTimeStatus"',
-          type: "string"
-        },
-        productionEventId: {
-          description:
-            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        dismissReason: {
-          format: "text",
-          type: "string"
-        },
-        resolvedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        resolvedAt: {
           format: "timestamp with time zone",
           type: "string"
         },
@@ -131900,8 +131828,6 @@ export default {
           type: "number"
         },
         loadedJobOperationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -159540,8 +159466,6 @@ export default {
           type: "number"
         },
         loadedJobOperationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -163264,8 +163188,6 @@ export default {
           type: "number"
         },
         loadedJobOperationId: {
-          description:
-            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -176145,36 +176067,6 @@ export default {
     },
     "rowFilter.unattributedMachineTime.endTime": {
       name: "endTime",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.unattributedMachineTime.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.unattributedMachineTime.productionEventId": {
-      name: "productionEventId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.unattributedMachineTime.dismissReason": {
-      name: "dismissReason",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.unattributedMachineTime.resolvedBy": {
-      name: "resolvedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.unattributedMachineTime.resolvedAt": {
-      name: "resolvedAt",
       required: false,
       in: "query",
       type: "string"

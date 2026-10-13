@@ -219,6 +219,11 @@ export async function deleteWorkCenterDevice(
   }
 }
 
+/**
+ * Assign unattributed time to an operation: insert a Machine event for its
+ * interval and delete the row. The event is the record; the row was only a
+ * question waiting for an answer.
+ */
 export async function assignUnattributedMachineTime(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -234,18 +239,12 @@ export async function assignUnattributedMachineTime(
     return await db.transaction().execute(async (trx) => {
       const row = await trx
         .selectFrom("unattributedMachineTime")
-        .select(["workCenterId", "startTime", "endTime", "status"])
+        .select(["workCenterId", "startTime", "endTime"])
         .where("id", "=", args.unattributedMachineTimeId)
         .where("companyId", "=", args.companyId)
         .forUpdate()
         .executeTakeFirst();
       if (!row) return { data: null, error: "Machine time not found" };
-      if (row.status !== "Open") {
-        return {
-          data: null,
-          error: `This machine time is already ${row.status}`
-        };
-      }
       if (!row.endTime) {
         return { data: null, error: "The machine is still running" };
       }
@@ -276,17 +275,8 @@ export async function assignUnattributedMachineTime(
         .returning("id")
         .executeTakeFirstOrThrow();
 
-      const now = datetime.timestamp();
       await trx
-        .updateTable("unattributedMachineTime")
-        .set({
-          status: "Assigned",
-          productionEventId: event.id,
-          resolvedBy: args.userId,
-          resolvedAt: now,
-          updatedBy: args.userId,
-          updatedAt: now
-        })
+        .deleteFrom("unattributedMachineTime")
         .where("id", "=", args.unattributedMachineTimeId)
         .where("companyId", "=", args.companyId)
         .execute();
@@ -298,55 +288,33 @@ export async function assignUnattributedMachineTime(
   }
 }
 
+/** Dismiss unattributed time: it was not job time, so the row is deleted. */
 export async function dismissUnattributedMachineTime(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
-    userId: string;
     unattributedMachineTimeId: string;
-    dismissReason: string;
   }
 ): Promise<Result<null>> {
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
-    return await db.transaction().execute(async (trx) => {
-      const row = await trx
-        .selectFrom("unattributedMachineTime")
-        .select(["status", "endTime"])
-        .where("id", "=", args.unattributedMachineTimeId)
-        .where("companyId", "=", args.companyId)
-        .forUpdate()
-        .executeTakeFirst();
-      if (!row) return { data: null, error: "Machine time not found" };
-      if (row.status !== "Open") {
-        return {
-          data: null,
-          error: `This machine time is already ${row.status}`
-        };
-      }
-      // A running row is still the sync's to close: dismissing it would let
-      // the next sync open the same time again.
-      if (!row.endTime) {
-        return { data: null, error: "The machine is still running" };
-      }
-
-      const now = datetime.timestamp();
-      await trx
-        .updateTable("unattributedMachineTime")
-        .set({
-          status: "Dismissed",
-          dismissReason: args.dismissReason,
-          resolvedBy: args.userId,
-          resolvedAt: now,
-          updatedBy: args.userId,
-          updatedAt: now
-        })
-        .where("id", "=", args.unattributedMachineTimeId)
-        .where("companyId", "=", args.companyId)
-        .execute();
-      return { data: null, error: null } as Result<null>;
-    });
+    // A running row is still the sync's to close: deleting it would let the
+    // next sync open the same time again.
+    const deleted = await db
+      .deleteFrom("unattributedMachineTime")
+      .where("id", "=", args.unattributedMachineTimeId)
+      .where("companyId", "=", args.companyId)
+      .where("endTime", "is not", null)
+      .returning("id")
+      .executeTakeFirst();
+    if (!deleted) {
+      return {
+        data: null,
+        error: "Machine time not found, or the machine is still running"
+      };
+    }
+    return { data: null, error: null } as Result<null>;
   } catch (error) {
     return fail(error);
   }

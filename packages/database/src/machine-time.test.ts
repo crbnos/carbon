@@ -182,7 +182,7 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
       await machineEvent("operator", { createdBy: operator });
       await machineEvent("other-wc", { workCenterId: otherWorkCenterId });
       await unattributed("running");
-      await unattributed("assigned", { status: "Assigned" });
+      await unattributed("stopped", { endTime: before });
 
       await db.transaction().execute((trx) =>
         endSensorMachineTime(trx, {
@@ -197,8 +197,8 @@ describe.skipIf(!url)("machine time against a migrated database", () => {
       expect(await endedAt("productionEvent", "operator")).toBeNull();
       expect(await endedAt("productionEvent", "other-wc")).toBeNull();
       expect(await endedAt("unattributedMachineTime", "running")).toBe(true);
-      // Not Open: a supervisor already resolved it.
-      expect(await endedAt("unattributedMachineTime", "assigned")).toBeNull();
+      // Already stopped: its end stays where the sync put it.
+      expect(await endedAt("unattributedMachineTime", "stopped")).toBe(false);
     });
   });
 });

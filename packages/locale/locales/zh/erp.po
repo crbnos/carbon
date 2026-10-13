@@ -2642,6 +2642,9 @@ msgstr "每年。从公司的增量借款利率开始"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
 
+msgid "Another job or operation"
+msgstr "其他工单或工序"
+
 msgid "Another spend integration is already active"
 msgstr "另一个支出集成已处于活跃状态"
 
@@ -3512,9 +3515,6 @@ msgstr "资产"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
-
-msgid "Assign"
-msgstr "分配"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "将未被加载工序认领的机器工时分配给正确的工单，或将其放弃。"
@@ -10099,9 +10099,6 @@ msgstr "对于 <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "例如热身、验证或维护"
-
 msgid "Forecast"
 msgstr "预测"
 
@@ -11838,6 +11835,9 @@ msgstr "作业进行中"
 
 msgid "Job Location"
 msgstr "工作地点"
+
+msgid "Job locked"
+msgstr "工单已锁定"
 
 msgid "Job make method"
 msgstr "工单制造方法"
@@ -14842,6 +14842,9 @@ msgstr "单位数据不足"
 msgid "Not feasible"
 msgstr "不可行"
 
+msgid "Not job time"
+msgstr "不是工单时间"
+
 msgid "Not mapped"
 msgstr "未映射"
 
@@ -14909,6 +14912,9 @@ msgstr "MES中尚未完成任何内容"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "当天 {workCenterName} 上没有其他运行记录。"
+
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
@@ -14965,6 +14971,9 @@ msgstr "通知"
 
 msgid "Notify someone"
 msgstr "通知某人"
+
+msgid "now"
+msgstr "现在"
 
 msgid "Number"
 msgstr "数字"
@@ -17450,6 +17459,9 @@ msgstr "Ramp 未返回授权代码"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp 拒绝了授权"
 
+msgid "Ran at the time"
+msgstr "当时在运行"
+
 msgid "Rate"
 msgstr "汇率"
 
@@ -18432,9 +18444,6 @@ msgstr "残值 %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
-
-msgid "Resolved"
-msgstr "已解决"
 
 msgid "Resolved Price"
 msgstr "已解决价格"
@@ -19474,6 +19483,9 @@ msgstr "搜索物料或料箱"
 
 msgid "Search Job"
 msgstr "搜索任务"
+
+msgid "Search jobs and operations"
+msgstr "搜索工单和工序"
 
 msgid "Search jobs or items"
 msgstr "搜索工单或物品"
@@ -22286,8 +22298,8 @@ msgstr "该批次各特征的抽样方案将从所选文件重新确定。"
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "此供应商对此工艺收费的最低金额，无论数量如何；低于盈亏平衡量的工单仍至少成本此金额。"
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "机器仍在运行。在它停止后，分配或放弃此时间。"
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "机器仍在运行。请在停止后分配此时间。"
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "您的工作运行所经过的机器、单元和工作站"
@@ -23169,9 +23181,6 @@ msgstr "此供应商"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "这将从今天的日程表中移除{employeeName}。再次保存以确认。"
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "此时间被记录为工单上的机器生产事件。"
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "当变更通知 {activationLockId} 已下达时，这个刀具被激活。"
@@ -25331,6 +25340,9 @@ msgstr "发送哪种类型的请求：GET 读取内容，POST 创建，PUT 和 P
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "哪个制造事件启动保质期时钟 — 例如填充、密封或最终QC。"
+
+msgid "Which operation was this?"
+msgstr "这是哪个工序?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "当此派遣打开时，工作中心对计划不可用（直到计划结束时间或派遣完成）。"

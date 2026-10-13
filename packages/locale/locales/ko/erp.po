@@ -2642,6 +2642,9 @@ msgstr "연간. 회사의 증분 차입 이율부터 시작합니다."
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "이 원가 센터가 롤업되는 다른 원가 센터로, 계층적 원가 보고를 위해 부서를 상위 항목 아래에 중첩시킬 수 있게 함"
 
+msgid "Another job or operation"
+msgstr "다른 작업 또는 공정"
+
 msgid "Another spend integration is already active"
 msgstr "다른 지출 통합이 이미 활성화되어 있습니다"
 
@@ -3512,9 +3515,6 @@ msgstr "자산"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
-
-msgid "Assign"
-msgstr "할당"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "로드된 공정이 청구하지 않은 기계 시간을 올바른 작업 지시에 할당하거나 거부하세요."
@@ -10099,9 +10099,6 @@ msgstr "대상 <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "무엇이든지요. 적임자를 연결해 드립니다."
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "예: 워밍업, 시운전 또는 유지보수"
-
 msgid "Forecast"
 msgstr "예측"
 
@@ -11838,6 +11835,9 @@ msgstr "진행 중인 작업"
 
 msgid "Job Location"
 msgstr "작업 위치"
+
+msgid "Job locked"
+msgstr "작업 잠김"
 
 msgid "Job make method"
 msgstr "작업 지시 생산 방법"
@@ -14842,6 +14842,9 @@ msgstr "개에 대한 데이터가 부족합니다."
 msgid "Not feasible"
 msgstr "불가능"
 
+msgid "Not job time"
+msgstr "작업 시간 아님"
+
 msgid "Not mapped"
 msgstr "매핑되지 않음"
 
@@ -14909,6 +14912,9 @@ msgstr "MES에서 아직 완료된 항목이 없습니다"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "그날 {workCenterName}에서 실행된 다른 것이 없습니다."
+
 msgid "Nothing here matches your search and filters."
 msgstr "검색 및 필터와 일치하는 항목이 없습니다."
 
@@ -14965,6 +14971,9 @@ msgstr "알림"
 
 msgid "Notify someone"
 msgstr "누군가에게 알림"
+
+msgid "now"
+msgstr "지금"
 
 msgid "Number"
 msgstr "번호"
@@ -17450,6 +17459,9 @@ msgstr "Ramp에서 인증 코드를 반환하지 않았습니다"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp에서 인증을 거부했습니다"
 
+msgid "Ran at the time"
+msgstr "해당 시간에 실행됨"
+
 msgid "Rate"
 msgstr "환율"
 
@@ -18432,9 +18444,6 @@ msgstr "잔존가액 %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR을 완료하기 전에 이를 해결합니다: 모든 행에는 대기 중이 아닌 처분 결정이 있어야 하고, 연결된 엔티티 수량이 행 수량과 일치해야 합니다."
-
-msgid "Resolved"
-msgstr "해결됨"
 
 msgid "Resolved Price"
 msgstr "확정 가격"
@@ -19474,6 +19483,9 @@ msgstr "품목 또는 빈 검색"
 
 msgid "Search Job"
 msgstr "작업 검색"
+
+msgid "Search jobs and operations"
+msgstr "작업 및 공정 검색"
 
 msgid "Search jobs or items"
 msgstr "작업 지시 또는 품목 검색"
@@ -22286,8 +22298,8 @@ msgstr "로트의 특성별 샘플링 계획은 선택한 문서에서 다시 �
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "이 공급업체가 수량과 관계없이 이 공법에 대해 청구할 최소 금액; 손익분기점 이하의 작업 지시도 최소한 이 금액이 들어갑니다."
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "기계가 여전히 작동 중입니다. 멈춘 후 이 시간을 할당하거나 거부하세요."
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "기계가 아직 가동 중입니다. 멈춘 후에 이 시간을 할당하세요."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "작업이 거쳐가는 기계, 셀, 스테이션"
@@ -23169,9 +23181,6 @@ msgstr "이 공급업체"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "이것은 {employeeName}을 그 날의 보드에서 제거합니다. 확인하려면 다시 저장하세요."
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "이 시간은 작업 지시에서 기계 생산 이벤트로 기록되었습니다."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "이 공구는 변경 통지 {activationLockId}이 릴리스될 때 활성화됩니다."
@@ -25331,6 +25340,9 @@ msgstr "전송할 요청의 종류: GET은 무언가를 읽고, POST는 생성�
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "유효기간 계산이 시작되는 제조 이벤트 — 예를 들어 충전, 밀봉, 또는 최종 품질검사."
+
+msgid "Which operation was this?"
+msgstr "어떤 공정이었나요?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "이 유지보수 지시가 열려 있는 동안 작업장은 일정에 사용할 수 없습니다(계획된 종료 시간까지 또는 지시가 완료될 때까지)."

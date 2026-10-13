@@ -2642,6 +2642,9 @@ msgstr "Ежегодно. Начинается с дополнительной �
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
 
+msgid "Another job or operation"
+msgstr "Другое задание или операция"
+
 msgid "Another spend integration is already active"
 msgstr "Другая интеграция расходов уже активна"
 
@@ -3512,9 +3515,6 @@ msgstr "Активы"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
-
-msgid "Assign"
-msgstr "Назначить"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Назначьте машинное время обработки, которое ни одна загруженная операция не требовала, правильному производственному заказу, или отклоните его."
@@ -10099,9 +10099,6 @@ msgstr "На <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "для чего угодно. Они привлекут нужного человека."
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "Например, разогрев, пробный запуск или техобслуживание"
-
 msgid "Forecast"
 msgstr "Прогноз"
 
@@ -11838,6 +11835,9 @@ msgstr "Задание в работе"
 
 msgid "Job Location"
 msgstr "Местоположение задания"
+
+msgid "Job locked"
+msgstr "Задание заблокировано"
 
 msgid "Job make method"
 msgstr "Метод производства заказа"
@@ -14842,6 +14842,9 @@ msgstr "Недостаточно данных единицы"
 msgid "Not feasible"
 msgstr "Невозможно выполнить"
 
+msgid "Not job time"
+msgstr "Не время задания"
+
 msgid "Not mapped"
 msgstr "Не сопоставлено"
 
@@ -14909,6 +14912,9 @@ msgstr "В MES пока ничего не завершено"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "В тот день на {workCenterName} больше ничего не работало."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Здесь нет ничего, соответствующего вашему поиску и фильтрам."
 
@@ -14965,6 +14971,9 @@ msgstr "Уведомить"
 
 msgid "Notify someone"
 msgstr "Уведомить кого-то"
+
+msgid "now"
+msgstr "сейчас"
 
 msgid "Number"
 msgstr "Число"
@@ -17450,6 +17459,9 @@ msgstr "Ramp не вернул код авторизации"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp отклонил авторизацию"
 
+msgid "Ran at the time"
+msgstr "Работало в это время"
+
 msgid "Rate"
 msgstr "Курс"
 
@@ -18432,9 +18444,6 @@ msgstr "Ликвидационная стоимость %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Решите эти вопросы перед завершением NCR: каждая строка должна иметь решение, которое не является Ожидающим, и количества связанных сущностей должны совпадать с количеством строки."
-
-msgid "Resolved"
-msgstr "Разрешено"
 
 msgid "Resolved Price"
 msgstr "Разрешённая цена"
@@ -19474,6 +19483,9 @@ msgstr "Поиск номенклатуры или ячеек"
 
 msgid "Search Job"
 msgstr "Поиск задания"
+
+msgid "Search jobs and operations"
+msgstr "Поиск заданий и операций"
 
 msgid "Search jobs or items"
 msgstr "Поиск производственных заказов или номенклатуры"
@@ -22286,8 +22298,8 @@ msgstr "План выборочного контроля для каждой х�
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Минимальная сумма, которую этот поставщик будет взимать за этот процесс, независимо от количества; производственные заказы ниже объема безубыточности все равно стоят как минимум столько."
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "Станок еще работает. Назначьте или отклоните это время после его остановки."
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "Машина ещё работает. Назначьте это время после её остановки."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Машины, ячейки и станции, через которые проходит ваша работа"
@@ -23169,9 +23181,6 @@ msgstr "этот поставщик"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Это удаляет {employeeName} с доски на день. Сохраните еще раз для подтверждения."
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "Это время было записано как производственное событие машины на производственном заказе."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Этот инструмент активизируется при запуске извещения об изменении {activationLockId}."
@@ -25331,6 +25340,9 @@ msgstr "Какой вид запроса отправить: GET читает ч
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Какое производственное событие запускает часы срока хранения — например, заполнение, уплотнение или окончательный контроль качества."
+
+msgid "Which operation was this?"
+msgstr "Какая это была операция?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Пока это отправление открыто, рабочий центр недоступен для расписания (до запланированного времени окончания или до завершения отправления)."

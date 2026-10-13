@@ -22,10 +22,6 @@ const mockRow = {
   companyId: "mock",
   createdAt: "2026-05-05T06:00:00Z",
   createdBy: "mock-user-1",
-  dismissReason: null,
-  productionEventId: null,
-  resolvedAt: null,
-  resolvedBy: null,
   updatedAt: null,
   updatedBy: null
 } as const;
@@ -37,8 +33,7 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     workCenterId: "mock-wc-1",
     workCenter: { name: "Haas VF-2", location: { timezone: "UTC" } },
     startTime: "2026-05-05T06:12:00Z",
-    endTime: "2026-05-05T07:47:00Z",
-    status: "Open"
+    endTime: "2026-05-05T07:47:00Z"
   },
   {
     ...mockRow,
@@ -46,8 +41,7 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     workCenterId: "mock-wc-2",
     workCenter: { name: "Mazak QTN-200", location: { timezone: "UTC" } },
     startTime: "2026-05-05T09:30:00Z",
-    endTime: "2026-05-05T09:52:00Z",
-    status: "Open"
+    endTime: "2026-05-05T09:52:00Z"
   },
   {
     ...mockRow,
@@ -55,8 +49,7 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     workCenterId: "mock-wc-1",
     workCenter: { name: "Haas VF-2", location: { timezone: "UTC" } },
     startTime: "2026-05-05T13:05:00Z",
-    endTime: null,
-    status: "Open"
+    endTime: null
   }
 ];
 

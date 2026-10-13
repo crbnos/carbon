@@ -2642,6 +2642,9 @@ msgstr "Annual. Starts from the company's incremental borrowing rate"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 
+msgid "Another job or operation"
+msgstr "Another job or operation"
+
 msgid "Another spend integration is already active"
 msgstr "Another spend integration is already active"
 
@@ -3512,9 +3515,6 @@ msgstr "Assets"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
-
-msgid "Assign"
-msgstr "Assign"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
@@ -10099,9 +10099,6 @@ msgstr "For <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "for anything. They'll pull in the right person."
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "For example warm-up, prove-out or maintenance"
-
 msgid "Forecast"
 msgstr "Forecast"
 
@@ -11838,6 +11835,9 @@ msgstr "Job in progress"
 
 msgid "Job Location"
 msgstr "Job Location"
+
+msgid "Job locked"
+msgstr "Job locked"
 
 msgid "Job make method"
 msgstr "Job make method"
@@ -14842,6 +14842,9 @@ msgstr "Not enough unit data"
 msgid "Not feasible"
 msgstr "Not feasible"
 
+msgid "Not job time"
+msgstr "Not job time"
+
 msgid "Not mapped"
 msgstr "Not mapped"
 
@@ -14909,6 +14912,9 @@ msgstr "Nothing completed in MES yet"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "Nothing else ran on {workCenterName} that day."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Nothing here matches your search and filters."
 
@@ -14965,6 +14971,9 @@ msgstr "Notify"
 
 msgid "Notify someone"
 msgstr "Notify someone"
+
+msgid "now"
+msgstr "now"
 
 msgid "Number"
 msgstr "Number"
@@ -17450,6 +17459,9 @@ msgstr "Ramp didn't return an authorization code"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp rejected the authorization"
 
+msgid "Ran at the time"
+msgstr "Ran at the time"
+
 msgid "Rate"
 msgstr "Rate"
 
@@ -18432,9 +18444,6 @@ msgstr "Residual Value %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
-
-msgid "Resolved"
-msgstr "Resolved"
 
 msgid "Resolved Price"
 msgstr "Resolved Price"
@@ -19474,6 +19483,9 @@ msgstr "Search items or bins"
 
 msgid "Search Job"
 msgstr "Search Job"
+
+msgid "Search jobs and operations"
+msgstr "Search jobs and operations"
 
 msgid "Search jobs or items"
 msgstr "Search jobs or items"
@@ -22286,8 +22298,8 @@ msgstr "The lot's per-characteristic sampling plan will be re-resolved from the 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "The machine is still running. Assign or dismiss this time after it stops."
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "The machine is still running. Assign this time after it stops."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "The machines, cells, and stations your work runs through"
@@ -23169,9 +23181,6 @@ msgstr "this supplier"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "This takes {employeeName} off the board for the day. Save again to confirm."
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "This time was recorded as a machine production event on the job."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "This tool is activated when change notice {activationLockId} is released."
@@ -25331,6 +25340,9 @@ msgstr "Which kind of request to send: GET reads something, POST creates, PUT an
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
+
+msgid "Which operation was this?"
+msgstr "Which operation was this?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."

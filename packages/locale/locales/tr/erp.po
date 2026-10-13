@@ -2642,6 +2642,9 @@ msgstr "Yıllık. Şirketin marjinal borçlanma oranından başlar"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Bu toplandığı başka bir maliyet merkezi, hiyerarşik maliyet raporlaması için bir alt maliyet merkezini ana kütesinin altında iç içe geçirmenizi sağlar."
 
+msgid "Another job or operation"
+msgstr "Başka bir iş veya operasyon"
+
 msgid "Another spend integration is already active"
 msgstr "Başka bir harcama entegrasyonu zaten etkin"
 
@@ -3512,9 +3515,6 @@ msgstr "Varlıklar"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
-
-msgid "Assign"
-msgstr "Ata"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
 msgstr "Yüklü bir operasyonun talep etmediği makine süresini doğru işe atayın veya göz ardı edin."
@@ -10099,9 +10099,6 @@ msgstr "İçin <0/>"
 msgid "for anything. They'll pull in the right person."
 msgstr "herhangi bir şey için. Doğru kişiyi çekerler."
 
-msgid "For example warm-up, prove-out or maintenance"
-msgstr "Örneğin ısıtma, kanıtlama veya bakım"
-
 msgid "Forecast"
 msgstr "Tahmin"
 
@@ -11838,6 +11835,9 @@ msgstr "İş devam ediyor"
 
 msgid "Job Location"
 msgstr "İş Yeri Konumu"
+
+msgid "Job locked"
+msgstr "İş kilitli"
 
 msgid "Job make method"
 msgstr "İş emri üretim yöntemi"
@@ -14842,6 +14842,9 @@ msgstr "Yetersiz adet verisi"
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
 
+msgid "Not job time"
+msgstr "İş süresi değil"
+
 msgid "Not mapped"
 msgstr "Eşlenmedi"
 
@@ -14909,6 +14912,9 @@ msgstr "MES'te henüz hiçbir şey tamamlanmadı"
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
+msgid "Nothing else ran on {workCenterName} that day."
+msgstr "O gün {workCenterName} üzerinde başka bir şey çalışmadı."
+
 msgid "Nothing here matches your search and filters."
 msgstr "Burada arama ve filtrelerinizle eşleşen hiçbir şey yok."
 
@@ -14965,6 +14971,9 @@ msgstr "Bildir"
 
 msgid "Notify someone"
 msgstr "Birisine bildir"
+
+msgid "now"
+msgstr "şimdi"
 
 msgid "Number"
 msgstr "Numara"
@@ -17450,6 +17459,9 @@ msgstr "Ramp bir yetkilendirme kodu döndürmedi"
 msgid "Ramp rejected the authorization"
 msgstr "Ramp yetkilendirmeyi reddetti"
 
+msgid "Ran at the time"
+msgstr "O sırada çalıştı"
+
 msgid "Rate"
 msgstr "Kur"
 
@@ -18432,9 +18444,6 @@ msgstr "Kalıntı Değer %"
 
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "NCR'yi tamamlamadan önce bunları çöz: her satırın Bekleme Dışı bir Karar'ı olmalı ve onun bağlı varlık miktarları satır miktarıyla eşleşmeli."
-
-msgid "Resolved"
-msgstr "Çözüldü"
 
 msgid "Resolved Price"
 msgstr "Belirlenmiş Fiyat"
@@ -19474,6 +19483,9 @@ msgstr "Stok kartlarını veya gözleri ara"
 
 msgid "Search Job"
 msgstr "İş Ara"
+
+msgid "Search jobs and operations"
+msgstr "İş ve operasyon ara"
 
 msgid "Search jobs or items"
 msgstr "İş emirlerini veya Stok kartlarını Ara"
@@ -22286,8 +22298,8 @@ msgstr "Lotun her karakteristiği için örnekleme planı seçilen belgeden yeni
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu Tedarikçinin bu Proses için Miktar ne olursa olsun talep edebileceği en düşük tutar; başabaş hacminin altındaki İş emirleri en az bu tutardan maliyetlidir."
 
-msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr "Makine hala çalışıyor. Bu süreyi durduktan sonra atayın veya göz ardı edin."
+msgid "The machine is still running. Assign this time after it stops."
+msgstr "Makine hâlâ çalışıyor. Bu süreyi makine durduktan sonra atayın."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Çalışmanızın geçtiği makineler, hücreler ve istasyonlar"
@@ -23169,9 +23181,6 @@ msgstr "bu tedarikçi"
 
 msgid "This takes {employeeName} off the board for the day. Save again to confirm."
 msgstr "Bu, {employeeName} öğesini günlük panelden kaldırır. Onaylamak için yeniden kaydedin."
-
-msgid "This time was recorded as a machine production event on the job."
-msgstr "Bu süre, iş için bir makine üretim olayı olarak kaydedildi."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Bu alet, {activationLockId} değişiklik bildirisi yayınlandığında etkinleştirilir."
@@ -25331,6 +25340,9 @@ msgstr "Gönderilecek isteğin türü: GET bir şey okur, POST oluşturur, PUT v
 
 msgid "Which manufacturing event starts the shelf-life clock — for example, fill, seal, or final QC."
 msgstr "Hangi üretim olayı raf ömrü saatini başlatır — örneğin, doldurma, mühürleme veya nihai QC."
+
+msgid "Which operation was this?"
+msgstr "Bu hangi operasyondu?"
 
 msgid "While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed)."
 msgstr "Bu sevkiyat açık olsa da, iş merkezi plana kullanılamaz (planlanan bitiş saatine veya sevkiyat tamamlanana kadar)."

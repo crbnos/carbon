@@ -95,17 +95,21 @@ Carbon cannot charge run time to an operation in three cases. Then the time goes
 
 Time also goes there when an operation finishes while the machine keeps running.
 
-Each row shows the work center, start, end, duration and status (**"Open"**, **"Assigned"** or **"Dismissed"**). Start and end show in the time zone of the work center's location. Open a row to resolve it:
+The list holds only time that still needs an answer. Each row shows the work center, start, end and duration, in the time zone of the work center's location. Select **Review**, or open a row, to work through the list one row at a time:
 
-- **Assign** creates a Machine production event for the row's interval. The **Operation** list shows the work center's operations that are not Done or Canceled, In Progress first.
-- **Dismiss** needs a **Reason**, such as warm-up, prove-out or maintenance.
+- **Which operation was this?** shows a card for each operation that ran on the same work center that day, best match first. An operation that ran during the time says **"Ran at the time"**. Select a card, or press its number key, to assign the time to it.
+- **Another job or operation** searches the open operations at the work center's location.
+- **Not job time** dismisses the time, for example warm-up, prove-out or maintenance.
+- **Skip**, or <kbd>J</kbd> and <kbd>K</kbd>, move to the next and previous row.
 
-You cannot assign or dismiss a row while the machine still runs. You cannot assign time to a locked job. Assign and dismiss need the `production` update permission.
+Each answer takes you to the next row. Assigning creates a Machine production event for the row's interval and removes the row. Dismissing removes the row. A row that nobody answers is removed 30 days after the machine stopped.
 
-<Screenshot label="Unattributed Time list with an Open row selected and its drawer showing the Operation picker and the Dismiss reason" />
+You cannot answer a row while the machine still runs. You cannot assign time to a Done or Canceled operation, or to a locked job. Answering needs the `production` update permission.
+
+<Screenshot label="Unattributed Time drawer with operation cards for the work center's day, the search card, and Not job time and Skip" />
 
 <AgentContext>
-Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (status `Open` / `Assigned` / `Dismissed`; `productionEventId` set on assign; `dismissReason` required on dismiss). `workCenter.loadedJobOperationId` and `workCenter.loadedAt` hold the loaded operation.
+Tables: `workCenterDevice` (one row per mapped device; `UNIQUE(workCenterId, companyId)` across every OEE integration; holds `currentState`, `currentStateAt`, `appliedThrough`, `lastEventAt`, `lastManualChangeAt`, `lastSyncedAt`, `lastSyncError`), `machineStateChange` (every state change read, unique per device and provider event id), `unattributedMachineTime` (a review queue: a row is deleted when it is assigned or dismissed, and 30 days after its `endTime`). `workCenter.loadedJobOperationId` and `workCenter.loadedAt` hold the loaded operation.
 
 Exact errors and causes:
 
@@ -114,7 +118,7 @@ Exact errors and causes:
 - A device row shows `Unknown Sense status: {status}`: Sense sent a status outside Active, Idle, Alert and Offline. The device keeps its cursor and retries on the next sync.
 - A device row shows "Station has no site": the Sense station is not in a site, so Carbon cannot read its events.
 - "The machine is still running": the unattributed row has no end time yet. Wait for the machine to stop.
-- "This machine time is already Assigned" / "already Dismissed": another user resolved the row.
+- "That machine time is no longer open": another user answered the row, or it aged out after 30 days.
 - "The operation is Done" / "The operation is Canceled": pick an open operation.
 - "Cannot modify a locked job. Reopen it first.": the operation's job is Completed, Closed or Cancelled.
 - No machine time appears after a Pause press while the machine runs: expected. The press wins until the station reports its next change to Running.
