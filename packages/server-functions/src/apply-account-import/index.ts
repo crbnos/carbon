@@ -169,6 +169,11 @@ const applyAccountImport = defineServerFn({
       await sql`SELECT cs."id" FROM "companySettings" cs
         JOIN "company" c ON c."id" = cs."id"
         WHERE c."companyGroupId" = ${groupId} FOR SHARE OF cs`.execute(trx);
+      // Lets the charge and reimbursement guards accept the account change
+      // of a posted row, for this transaction only (20261013035046).
+      await sql`SELECT set_config('app.account_import', 'true', true)`.execute(
+        trx
+      );
 
       const ctx = await loadAccountImportContext(trx, groupId, companyId);
       const plan = planAccountImport(chart, defaults, ctx, resolutions);

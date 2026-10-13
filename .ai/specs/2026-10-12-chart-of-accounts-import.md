@@ -71,7 +71,7 @@ The planner reads the importing company's defaults and fixed asset classes, in t
 1. **Claim.** The Carbon account behind a default becomes the chart row that the default names. If a later default names the same row through another Carbon account, that account merges into the row.
 2. **Match by number.** A Carbon account whose number matches a row that nothing claimed becomes that row.
 3. **The rest.** Every other leaf account goes:
-   - If no Draft or Provisional record uses it, the apply deletes it.
+   - If no document or journal uses it, the apply deletes it.
    - Else the review shows **"These accounts need a replacement"**. The specialist picks a chart row. The account then merges into that row.
 4. **Update.** A claimed account takes the row's number, name, class, type and group. The apply skips an account that does not change.
 5. **Create.** A row that no account became is a new account.
@@ -97,7 +97,7 @@ A required role is every `ACCOUNT_DEFAULT_COLUMNS` entry with no `DEFAULT_FALLBA
 | `duplicate-default` | defaults | One key on 2 lines. |
 | `default-not-in-chart` | defaults | An account number that is not in the chart file. |
 | `default-missing` | defaults | A required key that is absent or blank. |
-| `account-has-history` | – | An account to delete has Posted history. Before the cutover this cannot happen; the error is a guard. |
+| `account-has-history` | – | An account to delete has posted history: a period balance, a sync tie-out, a Posted journal line or a Posted recognition row. Before the cutover none exists; the error is a guard. |
 | `target-not-in-chart` | – | A picked replacement is no longer in the chart file. |
 
 ### Reference policy
@@ -108,16 +108,18 @@ When an account merges, every column that refers to it falls into one of the pol
 |---|---|
 | `shippingMethod.carrierAccountId` | re-point |
 | `purchaseOrderLine`, `salesOrderLine`, `supplierQuoteLine` `.accountId` | re-point |
-| `salesInvoiceLine`, `purchaseInvoiceLine` `.accountId` | re-point if the invoice is Draft |
-| `charge.*Account*`, `chargeLine.accountId` | re-point if the charge is Draft |
-| `reimbursement.payableAccountId`, `reimbursementLine.accountId` | re-point if the reimbursement is Draft |
-| `payment.bankAccount`, `memo.reasonAccount` | re-point if the document is Draft |
+| `salesInvoiceLine`, `purchaseInvoiceLine` `.accountId` | re-point, posted invoices included |
+| `charge.*Account*`, `chargeLine.accountId` | re-point, posted charges included |
+| `reimbursement.payableAccountId`, `reimbursementLine.accountId` | re-point, posted reimbursements included |
+| `payment.bankAccount`, `memo.reasonAccount` | re-point, posted documents included |
 | `revenueRecognitionSchedule.debitAccountId` / `creditAccountId` | re-point if the row is Planned |
 | `journalLine.accountId` | re-point if the journal is Draft or Provisional |
 | `intercompanyEliminationLine.accountId` (no FK) | re-point with its journal line |
 | `externalIntegrationMapping` (`entityType = 'account'`, no FK) | delete the source's row; the target keeps its own |
 | `companyIntegration.metadata.paymentFeeAccount` (no FK) | re-point |
 | `accountingPeriodBalance`, `accountingSyncTieOut` | never (history) |
+
+**Posted documents move.** Before the cutover a posted document's journal is Provisional. So the apply moves the document's account together with its journal lines, and the two stay consistent. The charge and reimbursement guards refuse every change to a non-Draft row. Migration `20261013035046` gives each guard one branch: while `app.account_import` is set, a row may change its account columns and nothing else. The branch never applies to an API role or to a company with a cutover. The apply sets the flag with `set_config(…, true)`, so it ends with the transaction. Payments, memos and invoice lines have no such guard.
 
 The `projects-wbs-research-spec` branch adds 5 more account columns. Whichever branch merges second adds them to `REFERENCE_POLICY`:
 
@@ -170,7 +172,8 @@ These things change with it:
 ## Data Model Changes
 
 1. **Foreign keys.** One migration swaps `ON DELETE SET NULL` for `ON DELETE RESTRICT` on the 6 columns listed under Delete safety. It drops and re-adds each constraint and changes no data.
-2. **`seed-company`.** A code change only, with no migration. Existing companies keep their current cutover state.
+2. **Charge and reimbursement guards.** Migration `20261013035046` adds the `app.account_import` branch to `check_charge_draft_mutation` and `check_reimbursement_draft_mutation`.
+3. **`seed-company`.** A code change only, with no migration. Existing companies keep their current cutover state.
 
 No new table.
 
@@ -230,6 +233,7 @@ The UI copies existing screens: the activation wizard's `SetupFrame` and `SetupF
 - [ ] 2 defaults naming one row: the first default's account takes the row, and the second merges into it. Its Provisional lines, open order lines and default roles move.
 - [ ] A Carbon account in neither file is deleted when nothing uses it.
 - [ ] A Carbon account in neither file that a Provisional journal line uses shows "needs a replacement". After a pick, the line moves and the account is deleted.
+- [ ] A merged account that a posted payment and a posted charge use moves to the target. Both documents stay Posted. Outside the import, the charge guard still refuses the change.
 - [ ] A required default left blank, or a number not in the chart, is an error with its line.
 - [ ] Any company of the group with a cutover refuses the import, on the review and in the apply.
 - [ ] After Apply, the leaf accounts match the chart file exactly.
@@ -266,3 +270,4 @@ The UI copies existing screens: the activation wizard's `SetupFrame` and `SetupF
 - 2026-10-12: Review fixes. An unclaimed account with movable references, a required role or a posted balance needs a target, and the pick makes it a merge source. The review page lists the touched companies.
 - 2026-10-12: Implementation notes. The import page is `x+/accounting+/chart-import.tsx`, not `charts.import.tsx`: under `charts` it would render in the chart page's drawer outlet. The reads live in `@carbon/database/account-import-reads`, so the client-safe planner never imports Kysely. `account` joins `GROUP_SCOPED_TABLES` in the `no-unscoped-kysely-write` check, because it has no `companyId`.
 - 2026-10-12: Redesign after user review. One sheet with a `Carbon Account` column became 2 required files: the customer's chart and the default accounts template. The import refuses once any company of the group has a cutover, so the reclass journal, deactivation, control-account rules, `CONTROL_ROLES` and inactive-account handling are gone. The Active switch, the "Show inactive" filter, the deactivate intent and the chart download are removed. The delete modal disables Delete for an account with journal lines. A setup page with no steps draws no rule under its header. A subsidiary also copies its fixed asset class accounts from the group.
+- 2026-10-13: Posted documents move with a merge. Before the cutover their journals are Provisional, so `REFERENCE_POLICY` re-points invoice lines, payments, memos, charges and reimbursements whatever their status. Before, a posted document made its account history, and the import refused. Migration `20261013035046` lets the charge and reimbursement guards accept the account change while `app.account_import` is set.

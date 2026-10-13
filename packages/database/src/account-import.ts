@@ -166,9 +166,6 @@ export type AccountReference = {
   dedupeOn?: readonly string[];
 };
 
-const draft = (table: string | null, column: string | null) =>
-  ({ table, column, statuses: ["Draft"] }) as const;
-
 /**
  * Every foreign key to `account` other than `accountDefault` and
  * `fixedAssetClass` (both set from the default accounts file) and
@@ -191,7 +188,8 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
   { table: "purchaseOrderLine", column: "accountId", policy: "repoint" },
   { table: "salesOrderLine", column: "accountId", policy: "repoint" },
   { table: "supplierQuoteLine", column: "accountId", policy: "repoint" },
-  // A Posted row's journal stays on the old account, so only Planned rows move.
+  // A Posted row's journal stays on the old account, so only Planned rows
+  // move. A run posts only after the cutover, so none is Posted here.
   {
     table: "revenueRecognitionSchedule",
     column: "debitAccountId",
@@ -204,60 +202,19 @@ export const REFERENCE_POLICY: readonly AccountReference[] = [
     policy: "repoint-if-draft",
     parent: { table: null, column: null, statuses: ["Planned"] }
   },
-  {
-    table: "salesInvoiceLine",
-    column: "accountId",
-    policy: "repoint-if-draft",
-    parent: draft("salesInvoice", "invoiceId")
-  },
-  {
-    table: "purchaseInvoiceLine",
-    column: "accountId",
-    policy: "repoint-if-draft",
-    parent: draft("purchaseInvoice", "invoiceId")
-  },
-  {
-    table: "chargeLine",
-    column: "accountId",
-    policy: "repoint-if-draft",
-    parent: draft("charge", "chargeId")
-  },
-  {
-    table: "charge",
-    column: "cardAccountId",
-    policy: "repoint-if-draft",
-    parent: draft(null, null)
-  },
-  {
-    table: "charge",
-    column: "offsetAccountId",
-    policy: "repoint-if-draft",
-    parent: draft(null, null)
-  },
-  {
-    table: "reimbursementLine",
-    column: "accountId",
-    policy: "repoint-if-draft",
-    parent: draft("reimbursement", "reimbursementId")
-  },
-  {
-    table: "reimbursement",
-    column: "payableAccountId",
-    policy: "repoint-if-draft",
-    parent: draft(null, null)
-  },
-  {
-    table: "payment",
-    column: "bankAccount",
-    policy: "repoint-if-draft",
-    parent: draft(null, null)
-  },
-  {
-    table: "memo",
-    column: "reasonAccount",
-    policy: "repoint-if-draft",
-    parent: draft(null, null)
-  },
+  // Posted documents move with their journal lines: the import runs only
+  // before the cutover, so their journals are Provisional. The charge and
+  // reimbursement guards let the import change these columns on a posted
+  // row (app.account_import, 20261013035046).
+  { table: "salesInvoiceLine", column: "accountId", policy: "repoint" },
+  { table: "purchaseInvoiceLine", column: "accountId", policy: "repoint" },
+  { table: "chargeLine", column: "accountId", policy: "repoint" },
+  { table: "charge", column: "cardAccountId", policy: "repoint" },
+  { table: "charge", column: "offsetAccountId", policy: "repoint" },
+  { table: "reimbursementLine", column: "accountId", policy: "repoint" },
+  { table: "reimbursement", column: "payableAccountId", policy: "repoint" },
+  { table: "payment", column: "bankAccount", policy: "repoint" },
+  { table: "memo", column: "reasonAccount", policy: "repoint" },
   {
     table: "journalLine",
     column: "accountId",
@@ -727,7 +684,7 @@ export function planAccountImport(
   }
 
   // 5. Every other Carbon account goes: deleted, or merged into the row the
-  // review picked when Draft or Provisional records still use it.
+  // review picked when documents or journals still use it.
   for (const leaf of leaves) {
     if (decided.has(leaf.id)) continue;
     const usage = usageOf(leaf.id);
@@ -888,7 +845,7 @@ export function planAccountImport(
     }
   }
 
-  // 10. The companies whose Draft or Provisional records move.
+  // 10. The companies whose documents or journals move.
   for (const company of ctx.companies) {
     let repointedReferences = 0;
     for (const merge of merges) {

@@ -239,9 +239,7 @@ function PlanErrorMessage({
     }
     case "account-has-history":
       return (
-        <Trans>
-          {account} has posted journal lines, so it cannot be removed.
-        </Trans>
+        <Trans>{account} has posted history, so it cannot be removed.</Trans>
       );
     case "target-not-in-chart":
       return (
@@ -336,9 +334,8 @@ export default function AccountImportReview({
           title={<Trans>These accounts need a replacement</Trans>}
           description={
             <Trans>
-              They are not in your chart, but draft documents or unposted
-              journals use them. Pick the account in your chart that replaces
-              each one.
+              They are not in your chart, but documents or journals use them.
+              Pick the account in your chart that replaces each one.
             </Trans>
           }
         >
@@ -396,8 +393,7 @@ export default function AccountImportReview({
           description={
             <Trans>
               The chart is shared by every company in the group. These companies
-              have draft documents or unposted journals that move to another
-              account.
+              have documents or journals that move to another account.
             </Trans>
           }
         >

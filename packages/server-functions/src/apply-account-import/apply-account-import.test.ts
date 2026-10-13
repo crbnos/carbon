@@ -3,7 +3,8 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 // The chart of accounts import against a real database: updates in place,
-// merges of Provisional records, deletes, the refusal after activation, and
+// merges of Provisional records and posted documents, deletes, the refusal
+// after activation, and
 // that REFERENCE_POLICY classifies every foreign key to `account`. Skips
 // without a local database.
 
@@ -215,6 +216,65 @@ async function fixture({ cutover = false } = {}) {
     });
   }
 
+  /** A posted supplier payment and a posted charge on one account. */
+  async function postedDocuments(accountId: string) {
+    const supplierId = `${prefix}-supplier`;
+    await db.transaction().execute(async (trx) => {
+      await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+      await trx
+        .insertInto("supplier")
+        .values({
+          id: supplierId,
+          name: `${prefix} Supplier`,
+          readableId: `${prefix}-S`,
+          companyId: companies[0]!,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("payment")
+        .values({
+          id: `${prefix}-payment`,
+          paymentId: `${prefix}-PAY`,
+          paymentType: "Disbursement",
+          paymentDate: "2026-01-15",
+          currencyCode: "USD",
+          totalAmount: 10,
+          bankAccount: accountId,
+          supplierId,
+          status: "Posted",
+          companyId: companies[0]!,
+          createdBy: USER
+        })
+        .execute();
+      await trx
+        .insertInto("charge")
+        .values({
+          id: `${prefix}-charge`,
+          chargeId: `${prefix}-CHG`,
+          cardAccountId: accountId,
+          transactionDate: "2026-01-15",
+          currencyCode: "USD",
+          amount: 10,
+          companyId: companies[0]!,
+          createdBy: USER
+        })
+        .execute();
+      // A charge is created Draft; the guard lets it post.
+      await trx
+        .updateTable("charge")
+        .set({
+          status: "Posted",
+          postingDate: "2026-01-15",
+          postedAt: "2026-01-15T00:00:00Z",
+          postedBy: USER
+        })
+        .where("id", "=", `${prefix}-charge`)
+        .where("companyId", "=", companies[0]!)
+        .execute();
+    });
+  }
+
   async function cleanup() {
     await db.transaction().execute(async (trx) => {
       await sql`SET LOCAL session_replication_role = replica`.execute(trx);
@@ -238,13 +298,34 @@ async function fixture({ cutover = false } = {}) {
         .deleteFrom("account")
         .where("companyGroupId", "=", groupId)
         .execute();
+      // Every other row of the scratch companies (the supplier's side rows).
+      const { rows: tables } = await sql<{ table: string }>`
+        SELECT c.table_name AS "table" FROM information_schema.columns c
+        JOIN information_schema.tables t
+          ON t.table_schema = c.table_schema AND t.table_name = c.table_name
+        WHERE c.table_schema = 'public' AND c.column_name = 'companyId'
+          AND t.table_type = 'BASE TABLE' AND c.table_name <> 'company'`.execute(
+        trx
+      );
+      for (const { table } of tables) {
+        await sql`DELETE FROM ${sql.table(table)}
+          WHERE "companyId" IN (${sql.join(companies)})`.execute(trx);
+      }
       await trx.deleteFrom("company").where("id", "in", companies).execute();
       await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();
     });
     await db.destroy();
   }
 
-  return { db, companies, account, ctx, provisionalLine, cleanup };
+  return {
+    db,
+    companies,
+    account,
+    ctx,
+    provisionalLine,
+    postedDocuments,
+    cleanup
+  };
 }
 
 type Fixture = Awaited<ReturnType<typeof fixture>>;
@@ -413,6 +494,63 @@ describe("apply-account-import", () => {
       const result = await applyAccountImport(f.ctx, input);
       expect(result.error).toBeNull();
       expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
+    }
+  );
+
+  databaseTest(
+    "a merge moves posted documents and their Provisional lines",
+    async () => {
+      f = await fixture();
+      await f.postedDocuments(f.account("1900"));
+      await f.provisionalLine(f.account("1900"), 10);
+      const chart = customerChart();
+      const input = {
+        chart,
+        defaults: defaultsFile(STANDARD, "10000"),
+        resolutions: { targets: {} as Record<string, number> }
+      };
+      // Posted documents are movable: the plan asks for a replacement
+      // instead of refusing the account as history.
+      const refused = await applyAccountImport(f.ctx, input);
+      expect(refused.error?.message).not.toContain("history");
+
+      input.resolutions.targets[f.account("1900")] = chart[0]!.line;
+      const result = await applyAccountImport(f.ctx, input);
+      expect(result.error).toBeNull();
+      expect(await accountRow(f.db, f.account("1900"))).toBeUndefined();
+      const payment = await f.db
+        .selectFrom("payment")
+        .select(["bankAccount", "status"])
+        .where("companyId", "=", f.companies[0]!)
+        .executeTakeFirstOrThrow();
+      expect(payment).toEqual({
+        bankAccount: f.account("1010"),
+        status: "Posted"
+      });
+      const charge = await f.db
+        .selectFrom("charge")
+        .select(["cardAccountId", "status"])
+        .where("companyId", "=", f.companies[0]!)
+        .executeTakeFirstOrThrow();
+      expect(charge).toEqual({
+        cardAccountId: f.account("1010"),
+        status: "Posted"
+      });
+    }
+  );
+
+  databaseTest(
+    "the charge guard refuses a posted account change outside the import",
+    async () => {
+      f = await fixture();
+      await f.postedDocuments(f.account("1900"));
+      await expect(
+        f.db
+          .updateTable("charge")
+          .set({ cardAccountId: f.account("1010") })
+          .where("companyId", "=", f.companies[0]!)
+          .execute()
+      ).rejects.toThrow(/cannot transition/);
     }
   );
 
