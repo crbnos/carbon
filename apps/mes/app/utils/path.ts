@@ -18,7 +18,6 @@ const display = "/display";
 
 export const path = {
   to: {
-    accountSettings: `${ERP_URL}/x/account`,
     acknowledge: `${x}/acknowledge`,
     active: `${x}/active`,
     addAndIssueMaintenanceDispatchItem: (dispatchId: string) =>
@@ -68,6 +67,9 @@ export const path = {
     displays: display,
     endOperation: (id: string) => generatePath(`${x}/end/${id}`),
     endShift: `${x}/end-shift`,
+    erpAccountSecurity: `${ERP_URL}/x/account/security`,
+    // The ERP's API routes, through the proxy (`x+/proxy.$.tsx`).
+    erpApi: `${x}/proxy/api`,
     file: {
       // The load-sheet route lives in ERP (like the traveler); MES links to it
       // cross-origin.

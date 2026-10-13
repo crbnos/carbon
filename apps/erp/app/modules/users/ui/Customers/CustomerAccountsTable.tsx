@@ -120,6 +120,7 @@ const CustomerAccountsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -153,6 +154,7 @@ const CustomerAccountsTable = memo(
           header: t`Customer`,
           cell: (item) => item.getValue(),
           meta: {
+            mobile: "P3",
             icon: <LuSquareUser />,
             filter: {
               type: "static",
@@ -186,6 +188,7 @@ const CustomerAccountsTable = memo(
           header: t`Active`,
           cell: (item) => <Checkbox isChecked={item.getValue<boolean>()} />,
           meta: {
+            mobile: "P2",
             icon: <LuUserCheck />,
             filter: {
               type: "static",

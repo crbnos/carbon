@@ -7,7 +7,7 @@ import {
   DrawerContent,
   DrawerTitle,
   ResizableHandle,
-  useIsMobile
+  useViewport
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -50,7 +50,7 @@ const SIDEBAR_PANEL_ID = "document-page-sidebar";
  * and collapsed state are shared by every document that uses this layout.
  */
 export function DocumentPage({ header, children, sidebar }: DocumentPageProps) {
-  const isMobile = useIsMobile();
+  const { isPhone: isMobile } = useViewport();
   const sidebarRef = useRef<ImperativePanelHandle>(null);
   // Desktop: mirrors the panel, which restores its own saved layout and
   // reports back through onCollapse / onExpand. Mobile: the drawer, closed

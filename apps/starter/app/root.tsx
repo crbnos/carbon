@@ -13,19 +13,31 @@ import {
 import { formBodyMiddleware } from "@carbon/auth/middleware/form-body.server";
 import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
+import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
-import { Button, Heading, Toaster, useMode } from "@carbon/react";
+import { createInvalidationMiddleware } from "@carbon/query/cache";
+import {
+  Button,
+  Heading,
+  OperatingSystemContextProvider,
+  Toaster,
+  useMode
+} from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import {
   colorSchemeHintScript,
+  getPreferenceHeaders,
   modeValidator,
   prefetchCacheMiddleware,
+  themeColorValidator,
   themes
 } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
+import { I18nProvider } from "@react-aria/i18n";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -41,13 +53,15 @@ import {
   Scripts,
   ScrollRestoration,
   UNSAFE_FrameworkContext,
-  useLoaderData
+  useLoaderData,
+  useRouteLoaderData
 } from "react-router";
+import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
-import { getTheme } from "./services/theme.server";
+import { getTheme, setTheme } from "./services/theme.server";
 
 export const middleware = [
   requestIdMiddleware,
@@ -56,7 +70,11 @@ export const middleware = [
   flashMiddleware,
   prefetchCacheMiddleware
 ];
-export const clientMiddleware = [flashClientMiddleware];
+export const clientMiddleware = [
+  flashClientMiddleware,
+  // After every action, cached API reads (the account settings panes) refetch.
+  createInvalidationMiddleware({ getCache: () => window.clientCache })
+];
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
@@ -84,6 +102,12 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     SUPABASE_ANON_KEY
   } = getBrowserEnv();
 
+  // The starter shares the ERP's catalog: the account settings modal and the
+  // @carbon/react components it renders are extracted into it.
+  const { locale, platform } = getPreferenceHeaders(request);
+  const appLanguage = resolveLanguage(locale);
+  await preloadCatalog(appLanguage);
+
   return data(
     {
       env: {
@@ -95,6 +119,11 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         SUPABASE_URL,
         SUPABASE_ANON_KEY
       },
+      appLanguage,
+      // React Aria formats dates and numbers in the full locale (en-GB).
+      locale,
+      // Shortcut hints (every Button) read it, on the server render too.
+      platform,
       ...getMode(request),
       theme: getTheme(request),
       result: context.get(flashResultContext)
@@ -114,9 +143,26 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid content type" }, { status: 400 });
   }
 
-  const validation = await validator(modeValidator).validate(
-    await request.formData()
-  );
+  const formData = await request.formData();
+
+  // The account settings Appearance pane posts its theme color here too.
+  if (formData.has("theme")) {
+    const themeValidation =
+      await validator(themeColorValidator).validate(formData);
+    if (themeValidation.error) {
+      return data(error(themeValidation.error, "Invalid theme"), {
+        status: 400
+      });
+    }
+    return data(
+      {},
+      {
+        headers: { "Set-Cookie": setTheme(themeValidation.data.theme) }
+      }
+    );
+  }
+
+  const validation = await validator(modeValidator).validate(formData);
 
   if (validation.error) {
     return data(error(validation.error, "Invalid mode"), {
@@ -136,12 +182,14 @@ function Document({
   children,
   title = "Carbon",
   mode = "light",
-  theme = "zinc"
+  theme = "zinc",
+  lang = "en"
 }: {
   children: React.ReactNode;
   title?: string;
   mode?: "light" | "dark";
   theme?: string;
+  lang?: string;
 }) {
   const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const selectedTheme = themes.find((t) => t.name === theme) as
@@ -174,7 +222,7 @@ function Document({
 
   return (
     <html
-      lang="en"
+      lang={lang}
       className={`${mode} h-full overflow-x-hidden`}
       style={themeStyle}
     >
@@ -192,7 +240,7 @@ function Document({
         <title>{title}</title>
         <Links />
       </head>
-      <body className="h-full bg-background antialiased selection:bg-primary/10 selection:text-primary">
+      <body className="h-full bg-card antialiased selection:bg-primary/10 selection:text-primary">
         {children}
         <Toaster position="bottom-right" visibleToasts={5} />
         <ScrollRestoration />
@@ -208,22 +256,52 @@ export default function App() {
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
+  const appLanguage = loaderData?.appLanguage ?? "en";
+  const locale = loaderData?.locale ?? appLanguage;
+  const catalog = useCatalog(appLanguage);
 
   /* Dark/Light Mode */
   const mode = useMode();
 
+  // One client for useQuery and for the invalidation middleware, which
+  // reaches it as window.clientCache.
+  const [queryClient] = useState(() => {
+    if (typeof window !== "undefined" && window.clientCache) {
+      return window.clientCache;
+    }
+    const client = new QueryClient({
+      defaultOptions: { queries: { refetchOnWindowFocus: false } }
+    });
+    if (typeof window !== "undefined") {
+      window.clientCache = client;
+    }
+    return client;
+  });
+
   return (
-    <Document mode={mode} theme={theme}>
-      <Outlet />
-      <script
-        // Server render only: on the client the nonce is undefined (and browsers hide it).
-        nonce={nonce}
-        suppressHydrationWarning
-        dangerouslySetInnerHTML={{
-          __html: `window.env = ${JSON.stringify(env)}`
-        }}
-      />
-    </Document>
+    <QueryClientProvider client={queryClient}>
+      <OperatingSystemContextProvider
+        platform={loaderData?.platform ?? "windows"}
+      >
+        <LocaleProvider locale={appLanguage} catalog={catalog}>
+          {/* Inside the root, so a language change re-renders it with the
+              new locale, as in the ERP and MES. */}
+          <I18nProvider locale={locale}>
+            <Document mode={mode} theme={theme} lang={appLanguage}>
+              <Outlet />
+              <script
+                // Server render only: on the client the nonce is undefined (and browsers hide it).
+                nonce={nonce}
+                suppressHydrationWarning
+                dangerouslySetInnerHTML={{
+                  __html: `window.env = ${JSON.stringify(env)}`
+                }}
+              />
+            </Document>
+          </I18nProvider>
+        </LocaleProvider>
+      </OperatingSystemContextProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -233,28 +311,33 @@ export function ErrorBoundary({ error }: { error: unknown }) {
     : error instanceof Error
       ? error.message
       : String(error);
+  // Undefined when the root loader itself failed or no route matched.
+  const platform =
+    useRouteLoaderData<typeof loader>("root")?.platform ?? "windows";
 
   return (
-    <Document title="Error!">
-      <div className="light">
-        <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
-          <img
-            src="/carbon-mark-light.svg"
-            alt="Carbon Logo"
-            className="block max-w-[60px] dark:hidden"
-          />
-          <img
-            src="/carbon-mark-dark.svg"
-            alt="Carbon Logo"
-            className="max-w-[60px] hidden dark:block"
-          />
-          <Heading size="h1">Something went wrong</Heading>
-          <p className="text-muted-foreground max-w-2xl">{message}</p>
-          <Button onClick={() => (window.location.href = "/")}>
-            Back Home
-          </Button>
+    <OperatingSystemContextProvider platform={platform}>
+      <Document title="Error!">
+        <div className="light">
+          <div className="flex flex-col w-full h-screen  items-center justify-center space-y-4 ">
+            <img
+              src="/carbon-mark-light.svg"
+              alt="Carbon Logo"
+              className="block max-w-[60px] dark:hidden"
+            />
+            <img
+              src="/carbon-mark-dark.svg"
+              alt="Carbon Logo"
+              className="max-w-[60px] hidden dark:block"
+            />
+            <Heading size="h1">Something went wrong</Heading>
+            <p className="text-muted-foreground max-w-2xl">{message}</p>
+            <Button onClick={() => (window.location.href = "/")}>
+              Back Home
+            </Button>
+          </div>
         </div>
-      </div>
-    </Document>
+      </Document>
+    </OperatingSystemContextProvider>
   );
 }

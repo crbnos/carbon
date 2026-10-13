@@ -14,7 +14,7 @@ Customer and supplier data live in PostgreSQL (Supabase). The two families are *
 ### `customer` / `supplier` (main entities)
 Key columns (both, unless noted):
 - `id` TEXT PK (default `uuid_generate_v4()`)
-- `readableId` TEXT NOT NULL — human-readable id (`CUS`/`SUP` prefix, size 6), per-company unique (`<entity>_readableId_companyId_unique`). Auto-filled by a BEFORE INSERT trigger via `get_next_sequence(...)` only when blank, so explicit values (CSV import) win.
+- `readableId` TEXT NOT NULL — human-readable id (`CUS`/`SUP` prefix, size 6), per-company unique (`<entity>_readableId_companyId_unique`). Auto-filled by a BEFORE INSERT trigger via `get_next_sequence(...)` only when blank, so explicit values (CSV import) win — and an explicit value in the sequence's format moves the counter past it (`sync_advance_document_sequence`).
 - `name` TEXT NOT NULL — unique per company (`<entity>_name_unique`)
 - `customerTypeId` / `supplierTypeId` TEXT → `customerType`/`supplierType`
 - **Status differs by entity (asymmetric):**

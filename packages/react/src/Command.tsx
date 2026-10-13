@@ -14,10 +14,11 @@ import type {
   HTMLAttributes
 } from "react";
 import { forwardRef } from "react";
+import { LuChevronDown } from "react-icons/lu";
 import { RxMagnifyingGlass } from "react-icons/rx";
-
 import { Modal, ModalContent, ModalTitle } from "./Modal";
 import { cn } from "./utils/cn";
+import { HitArea, useViewport } from "./Viewport";
 
 const Command = forwardRef<
   ElementRef<typeof CommandPrimitive>,
@@ -106,9 +107,9 @@ const commandInputTextFieldVariants = cva(
     variants: {
       size: {
         lg: "h-12 rounded-lg px-4 text-base",
-        md: "h-10 rounded-md px-4 text-sm",
-        sm: "h-8 rounded-md px-3 text-sm",
-        xs: "h-6 rounded px-2 text-sm"
+        md: "h-10 rounded-md px-4 text-sm max-md:h-11 max-md:text-base",
+        sm: "h-8 rounded-md px-3 text-sm max-md:h-11 max-md:text-base",
+        xs: "h-6 rounded px-2 text-sm max-md:h-11 max-md:text-base"
       },
       isInvalid: {
         true: "border-destructive ring-destructive focus-visible:ring-destructive",
@@ -283,15 +284,20 @@ const commandTriggerVariants = cva(
     variants: {
       size: {
         lg: "h-12 px-4 py-3 rounded-lg text-base space-x-4",
-        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3",
-        sm: "h-8 px-3 py-2 rounded-md text-sm space-x-2"
+        md: "h-10 px-3 py-2 rounded-md text-sm space-x-3 max-md:h-11 max-md:text-base",
+        sm: "h-8 px-3 py-2 rounded-md text-sm space-x-2 max-md:h-11 max-md:text-base"
       },
       asButton: {
         false:
           "text-foreground flex w-full whitespace-nowrap rounded-md border border-input shadow-xs data-[placeholder]:text-muted-foreground outline-none focus:border-ring focus:ring-[3px] focus:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 [&>span]:line-clamp-1 overflow-hidden",
-        true: "text-foreground relative font-medium shrink-0 group inline-flex select-none transform-gpu initial:border-none disabled:opacity-50 focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0 after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0 before:pointer-events-none before:bg-gradient-to-b before:transition-opacity before:from-white/[0.12] before:absolute before:inset-0 before:z-[1] before:rounded before:opacity-0 bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base hover:scale-100 focus-visible:scale-100 transition-[background-color,color,transform,box-shadow] duration-150 ease-in-out"
+        true: "text-foreground relative font-medium shrink-0 group inline-flex select-none transform-gpu initial:border-none disabled:opacity-50 focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0 after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0 before:pointer-events-none before:bg-gradient-to-b before:transition-opacity before:from-white/[0.12] before:absolute before:inset-0 before:z-[1] before:rounded before:opacity-0 bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 shadow-button-base hover:scale-100 focus-visible:scale-100 transition-[background-color,color,transform,box-shadow] duration-150 ease-in-out max-md:rounded-full max-md:overflow-visible"
       }
     },
+    compoundVariants: [
+      { size: "lg", asButton: true, class: "max-md:h-8 max-md:text-sm" },
+      { size: "md", asButton: true, class: "max-md:h-8 max-md:text-sm" },
+      { size: "sm", asButton: true, class: "max-md:h-8 max-md:text-sm" }
+    ],
     defaultVariants: {
       size: "md",
       asButton: false
@@ -305,8 +311,8 @@ export const multiSelectTriggerVariants = cva(
     variants: {
       size: {
         lg: "text-base",
-        md: "text-sm",
-        sm: "text-xs"
+        md: "text-sm max-md:text-base",
+        sm: "text-xs max-md:text-base"
       },
       hasSelections: {
         true: "h-full",
@@ -332,7 +338,7 @@ export const multiSelectTriggerVariants = cva(
       {
         size: "md",
         hasSelections: false,
-        class: "h-10"
+        class: "h-10 max-md:h-11"
       },
       {
         size: "sm",
@@ -342,7 +348,7 @@ export const multiSelectTriggerVariants = cva(
       {
         size: "sm",
         hasSelections: false,
-        class: "h-8"
+        class: "h-8 max-md:h-11"
       }
     ],
     defaultVariants: {
@@ -360,27 +366,38 @@ interface CommandTriggerProps
 }
 
 const CommandTrigger = forwardRef<ElementRef<"button">, CommandTriggerProps>(
-  ({ asButton = false, size, className, children, icon, ...props }, ref) => (
-    <button
-      ref={ref}
-      type="button"
-      className={cn(
-        commandTriggerVariants({
-          size,
-          asButton
-        }),
-        className
-      )}
-      {...props}
-    >
-      {children}
-      {icon ? (
-        icon
-      ) : (
-        <RxMagnifyingGlass className="size-4 flex-shrink-0 opacity-50" />
-      )}
-    </button>
-  )
+  ({ asButton = false, size, className, children, icon, ...props }, ref) => {
+    // Only mounted on phones: the trigger's `[&>span]:line-clamp-1` would
+    // otherwise un-hide the hit-area span on desktop.
+    const { isPhone } = useViewport();
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={cn(
+          commandTriggerVariants({
+            size,
+            asButton
+          }),
+          className
+        )}
+        {...props}
+      >
+        {asButton && isPhone && <HitArea />}
+        {children}
+        {icon ? (
+          icon
+        ) : (
+          <>
+            {/* Phones: a picker's trailing indicator is ⌄. It comes first so
+              the desktop magnifier stays the last child (space-x). */}
+            <LuChevronDown className="hidden size-4 flex-shrink-0 opacity-50 max-md:block" />
+            <RxMagnifyingGlass className="size-4 flex-shrink-0 opacity-50 max-md:hidden" />
+          </>
+        )}
+      </button>
+    );
+  }
 );
 CommandTrigger.displayName = "CommandTrigger";
 

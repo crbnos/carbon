@@ -7,9 +7,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
-  Heading,
   Input,
-  SidebarTrigger,
   Status,
   Table,
   Tbody,
@@ -17,15 +15,18 @@ import {
   Th,
   Thead,
   Tr,
+  useViewport,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
-import { LuSearch, LuTriangleAlert } from "react-icons/lu";
+import { LuSearch } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { DateTime } from "~/components";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
+import { MesAppBar, MesQueueHeader } from "~/components/MesAppBar";
+import { MesEmptyState } from "~/components/MesEmptyState";
 import { userContext } from "~/context";
 import {
   getOpenJobs,
@@ -105,6 +106,7 @@ function JobStatus({ status }: { status: string | null }) {
 }
 
 export default function JobsRoute() {
+  const { isPhone } = useViewport();
   const { t } = useLingui();
   const { jobs, trackedEntities } = useLoaderData<typeof loader>();
   const [searchTerm, setSearchTerm] = useState("");
@@ -121,15 +123,9 @@ export default function JobsRoute() {
   }, [jobs, searchTerm]);
 
   return (
-    <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
-        <div className="flex items-center gap-2 px-2">
-          <SidebarTrigger />
-          <Heading size="h4">
-            <Trans>Open Jobs</Trans>
-          </Heading>
-        </div>
-      </header>
+    <div className="flex flex-col flex-1 min-h-0">
+      <MesAppBar title={<Trans>Jobs</Trans>} />
+      <MesQueueHeader title={<Trans>Open Jobs</Trans>} />
 
       <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-accent scrollbar-track-transparent">
         <div className="p-4">
@@ -144,109 +140,166 @@ export default function JobsRoute() {
           </div>
 
           {filteredJobs.length > 0 ? (
-            <Table>
-              <Thead>
-                <Tr>
-                  <Th>
-                    <Trans>Job</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Item</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Quantity</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Tracking</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Assignee</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Due Date</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Deadline</Trans>
-                  </Th>
-                  <Th>
-                    <Trans>Status</Trans>
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {filteredJobs.map((job) => {
-                  const trackingId = job.jobMakeMethodId
-                    ? trackedEntities[job.jobMakeMethodId]
-                    : null;
+            <>
+              {isPhone ? (
+                <ul className="flex flex-col -mx-4 border-y divide-y">
+                  {filteredJobs.map((job) => {
+                    const trackingId = job.jobMakeMethodId
+                      ? trackedEntities[job.jobMakeMethodId]
+                      : null;
 
-                  return (
-                    <Tr key={job.id}>
-                      <Td>
+                    return (
+                      <li key={job.id}>
                         <Link
                           to={path.to.jobDag(job.id)}
-                          className="font-medium text-foreground hover:underline"
+                          className="flex flex-col gap-1 px-4 py-3 min-h-11"
                         >
-                          {job.jobId}
-                        </Link>
-                      </Td>
-                      <Td>
-                        <VStack spacing={0}>
-                          <span>{job.itemReadableIdWithRevision ?? "—"}</span>
-                          {job.name && (
-                            <span className="text-xs text-muted-foreground">
-                              {job.name}
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="flex min-w-0 items-baseline gap-2">
+                              <span className="font-medium text-foreground">
+                                {job.jobId}
+                              </span>
+                              {trackingId && (
+                                <span className="truncate text-xs text-muted-foreground">
+                                  {trackingId}
+                                </span>
+                              )}
                             </span>
-                          )}
-                        </VStack>
-                      </Td>
-                      <Td className="text-muted-foreground">
-                        {job.quantity ?? "—"}
-                      </Td>
-                      <Td className="text-muted-foreground">
-                        {trackingId ?? "—"}
-                      </Td>
-                      <Td>
-                        <EmployeeAvatar employeeId={job.assignee} />
-                      </Td>
-                      <Td className="text-muted-foreground">
-                        <DateTime
-                          value={job.dueDate}
-                          variant="date"
-                          fallback="—"
-                        />
-                      </Td>
-                      <Td className="text-muted-foreground">
-                        {job.deadlineType ?? "—"}
-                      </Td>
-                      <Td>
-                        <JobStatus status={job.status} />
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-            </Table>
+                            <span className="flex shrink-0 items-center gap-2">
+                              <EmployeeAvatar employeeId={job.assignee} />
+                              <span className="text-sm text-foreground tabular-nums">
+                                {job.quantity ?? "—"}
+                              </span>
+                            </span>
+                          </div>
+                          <div className="flex min-w-0 gap-1 text-sm">
+                            <span className="shrink-0">
+                              {job.itemReadableIdWithRevision ?? "—"}
+                            </span>
+                            {job.name && (
+                              <span className="truncate text-muted-foreground">
+                                · {job.name}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            <JobStatus status={job.status} />
+                            <span>{job.deadlineType ?? "—"}</span>
+                            <DateTime
+                              value={job.dueDate}
+                              variant="date"
+                              fallback="—"
+                            />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <div>
+                  <Table>
+                    <Thead>
+                      <Tr>
+                        <Th>
+                          <Trans>Job</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Item</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Quantity</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Tracking</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Assignee</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Due Date</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Deadline</Trans>
+                        </Th>
+                        <Th>
+                          <Trans>Status</Trans>
+                        </Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {filteredJobs.map((job) => {
+                        const trackingId = job.jobMakeMethodId
+                          ? trackedEntities[job.jobMakeMethodId]
+                          : null;
+
+                        return (
+                          <Tr key={job.id}>
+                            <Td>
+                              <Link
+                                to={path.to.jobDag(job.id)}
+                                className="font-medium text-foreground hover:underline"
+                              >
+                                {job.jobId}
+                              </Link>
+                            </Td>
+                            <Td>
+                              <VStack spacing={0}>
+                                <span>
+                                  {job.itemReadableIdWithRevision ?? "—"}
+                                </span>
+                                {job.name && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {job.name}
+                                  </span>
+                                )}
+                              </VStack>
+                            </Td>
+                            <Td className="text-muted-foreground">
+                              {job.quantity ?? "—"}
+                            </Td>
+                            <Td className="text-muted-foreground">
+                              {trackingId ?? "—"}
+                            </Td>
+                            <Td>
+                              <EmployeeAvatar employeeId={job.assignee} />
+                            </Td>
+                            <Td className="text-muted-foreground">
+                              <DateTime
+                                value={job.dueDate}
+                                variant="date"
+                                fallback="—"
+                              />
+                            </Td>
+                            <Td className="text-muted-foreground">
+                              {job.deadlineType ?? "—"}
+                            </Td>
+                            <Td>
+                              <JobStatus status={job.status} />
+                            </Td>
+                          </Tr>
+                        );
+                      })}
+                    </Tbody>
+                  </Table>
+                </div>
+              )}
+            </>
           ) : searchTerm ? (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
-              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuTriangleAlert className="h-6 w-6" />
-              </div>
-              <span className="text-xs font-mono font-light text-foreground uppercase">
-                <Trans>No results</Trans>
-              </span>
-              <Button onClick={() => setSearchTerm("")}>
-                <Trans>Clear Search</Trans>
-              </Button>
-            </div>
+            <MesEmptyState
+              className="py-16"
+              title={<Trans>No results</Trans>}
+              action={
+                <Button onClick={() => setSearchTerm("")}>
+                  <Trans>Clear Search</Trans>
+                </Button>
+              }
+            />
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 py-16">
-              <div className="flex justify-center items-center h-12 w-12 rounded-full bg-foreground text-background">
-                <LuTriangleAlert className="h-6 w-6" />
-              </div>
-              <span className="text-xs font-mono font-light text-foreground uppercase">
-                <Trans>No open jobs</Trans>
-              </span>
-            </div>
+            <MesEmptyState
+              className="py-16"
+              title={<Trans>No open jobs</Trans>}
+            />
           )}
         </div>
       </main>

@@ -36,7 +36,7 @@ export const capitalizeValidator = z.object({
   // unit that carries a cost: that value moves from inventory as it is.
   cost: z.number().positive().optional().nullable(),
   // The other side of an entered cost: where that value was booked when it
-  // was spent. Required with `cost` when accounting is enabled.
+  // was spent. Required with `cost`.
   offsetAccountId: z.string().optional().nullable()
 });
 

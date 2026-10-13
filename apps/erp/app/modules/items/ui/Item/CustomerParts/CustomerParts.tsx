@@ -25,6 +25,7 @@ import { useNavigate } from "react-router";
 import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
+import { NewPlacementContext } from "~/components/New";
 import { path } from "~/utils/path";
 import type { CustomerPart } from "../../../types";
 import useCustomerParts from "./useCustomerParts";
@@ -120,7 +121,11 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
           </CardTitle>
         </CardHeader>
         <CardAction>
-          {canEdit && <New to={path.to.newCustomerPart(itemId)} />}
+          {canEdit && (
+            <NewPlacementContext.Provider value="inline">
+              <New to={path.to.newCustomerPart(itemId)} />
+            </NewPlacementContext.Provider>
+          )}
         </CardAction>
       </HStack>
       <CardContent>

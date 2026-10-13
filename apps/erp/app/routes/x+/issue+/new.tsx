@@ -16,6 +16,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import { updateChangeNotice } from "~/modules/items";
 import {
@@ -289,14 +290,14 @@ export default function IssueNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <IssueForm
         initialValues={initialValues}
         nonConformanceWorkflows={workflows}
         nonConformanceTypes={types}
         requiredActions={requiredActions}
       />
-    </div>
+    </NewRecordPage>
   );
 }
 

@@ -53,7 +53,7 @@ pnpm --filter @carbon/erp test
 | `itemPostingGroup` | Maps item categories to GL accounts |
 | `unitOfMeasure` | UoM definitions |
 | `configurationParameter` / `configurationRule` / `configurationParameterGroup` | Product configurator |
-| `supplierPart` / `supplierPartPrice` | Supplier-item pricing with conversion factors and price breaks |
+| `supplierPart` / `supplierPartPrice` | Supplier-item pricing with conversion factors and price breaks. `supplierUnitPrice` is per purchase unit in `supplierPart.currencyCode` (NULL = base); readers convert at today's rate (`.claude/rules/purchasing-conversion-factors.md`) |
 | `pickMethod` | Default storage unit and pick strategy per item/location |
 | `itemShelfLife` | Shelf life tracking configuration per item |
 | `itemSupersession` | Item replacement chains |
@@ -70,7 +70,8 @@ pnpm --filter @carbon/erp test
 - `createRevision(client, db, args)` / `activateMethodVersion` — revision and version management; the revision's item row and the planning and purchasing setup it inherits from the source are written in one Kysely transaction, gated by `assert_company_access(companyId, 'parts_create')` through the caller's client
 - `updateItemMethodAndSourcing` — cascades replenishment/sourcing changes to Draft method materials
 - `getItemCost` / `getItemQuantities` / `getItemDemand` / `getItemSupply` — cost and planning reads
-- `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing
+- `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing (the latter two in base per inventory unit, for costing); `getSupplierPartPricing` — a part's price + breaks with its currency's current rate, for `resolveSupplierPrice` on a purchase document
+- `getSupplierPartsBySupplier` — every active supplier part naming one supplier, with its item embedded, paged past the 1000-row cap (`fetchAllRecords`); backs the supplier's **Parts** tab (`x+/supplier+/$supplierId.parts.tsx`, `purchasing/ui/Supplier/SupplierParts.tsx`, client-side search). Its New / edit drawers post to the picked item's own purchasing routes (`SupplierPartForm` with `selectItem`), so every item-type edit route returns `{ success }` instead of redirecting
 - `upsertPickMethodWithShelfLife` — pick method with shelf life configuration
 - `getConfigurationParameters` / `getConfigurationRules` — product configurator
 - `createItemDocumentUploadUrl` — MCP file upload (step 1): presigned URL for an item document (`parts/{itemId}` folder); pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
@@ -90,7 +91,7 @@ Engineering-change-order (ECO) workflow — a **top-to-bottom**, affected-items-
 
 Change-order code follows the one-service/models/server-per-module convention — it lives in the module's canonical files, NOT separate `changeNotice.*` files: `items.service.ts` holds header CRUD + guarded stage transition + Types config + affected-item CRUD + the CO-owned Draft orchestration (`createChangeNoticeDraftMethod` / `addChangeNoticeAffectedItem` / `updateChangeNoticeAffectedItemChangeType` / cutover + `mintPlaceholderPart` + `getTopLevelProductsForItems` rollup) + the `diffMethod` pure engine + `getChangeNoticeDiff` authoring-diff wrapper + item↔CO traceability reads (`findChangeNoticesForItem`, linked-NCR reverse) + freeform action-task CRUD; `items.server.ts` holds the server-only release path (`applyChangeNotice` orchestration + `releaseAffectedItem` + notifications); `items.models.ts` holds the validators + state machine + `changeNoticeChangeTypes` + diff types. Non-server exports come through the Items barrel — import from `~/modules/items`; the server file is imported directly from `~/modules/items/items.server`.
 
-**Approvals are not in V1.** No approval gate, reviewer/approval-task machinery, or toggle — stages advance freely; a CO reaches Done via `applyChangeNotice`. **Same-part parallel COs are now allowed** — the one-open-CO-per-part guard was dropped; `findOtherOpenChangeNoticesForItem` still exists but is advisory (no route/service enforces it).
+**Approval gate (optional, `APPROVAL_RULES` plan feature).** When the company has an enabled `changeOrder` approval rule (Settings → Approval Rules → Change Notices; amount-less, at most one rule), `Engineering Complete → Implementation` is gated. The CO code is wiring only; the lifecycle lives in the shared `@carbon/ee/approvals/document.server` helpers. `$id.status.tsx` calls `openApprovalRequests` and notifies the approvers instead of moving the status. `$id.approval.tsx` calls `decideApprovalRequest`; approving runs the CAS `Engineering Complete → Implementation` inside `approveRequest`, rejecting leaves the status. Cancel and delete call `cancelPendingApprovals`. The `$id` loader returns `approval` (`getDocumentApprovalState`, only at Engineering Complete). While a request is pending, engineering-scope edits are locked: `getChangeNoticeEngineeringLock` (items.server.ts) backs both `requireChangeNoticeEditable` and `checkRevisionLock`, and `useChangeNoticeEngineeringLock` (`ui/ChangeNotice/lock-ui.tsx`) is the UI half. Workflow scope stays editable. Without a rule, stages advance freely; a CO reaches Done via `applyChangeNotice`. **Same-part parallel COs are now allowed** — the one-open-CO-per-part guard was dropped; `findOtherOpenChangeNoticesForItem` still exists but is advisory (no route/service enforces it).
 
 ### Key CO concepts
 

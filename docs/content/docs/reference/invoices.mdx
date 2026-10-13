@@ -41,6 +41,7 @@ Most invoice line types populate details from an item. Sales and purchase invoic
 | Fixed Asset | Yes | Yes |
 | Rental (drafted from a rental agreement, read-only) | Yes | — |
 | G/L Account (charge straight to an account) | — | Yes |
+| Lease (a payment or charge of a lease you pay) | — | Yes |
 
 A sales invoice line can carry a **"Discount (%)"**. It discounts the line's quantity times unit price only: add-ons and shipping are charged in full, and tax is charged on the discounted amount. The line keeps its list unit price, and the invoice and its PDF show the discount beside it.
 
@@ -48,17 +49,19 @@ A **G/L Account** line lets a purchase invoice book a cost directly to a ledger 
 
 A **Fixed Asset** line exists on both sides: on a sales invoice it bills a capitalized asset, and on a purchase invoice (the line form's **"Asset"** tab) it buys an asset or adds cost to one under construction.
 
+A **Lease** line (the line form's **"Lease"** tab) names one of the supplier's [leases](/docs/reference/leases). The daily job drafts one per payment that falls due, with the lease and amount locked, and posting it reduces the lease liability. A Lease line you add by hand is a variable charge, such as maintenance or usage, and posts to Variable Lease Expense. Deleting a draft invoice, or voiding a posted one, returns its lease payments to Pending.
+
 <Screenshot label="Purchase invoice line form with the Item, GL Account and Asset tabs, the Asset tab selected" caption="A purchase invoice line picks its type by tab: an item, a ledger account, or a fixed asset." />
 
 A **Rental** line is never added by hand: [rental agreement](/docs/reference/rental-agreements) billing writes one per billing period or charge, with no item, and it posts to lease accounts rather than to sales.
 
-On a unit treated as a rental, rent posts to contract assets and deferred revenue, and the recognition run releases it across its period. An early-return credit is drafted as a credit memo, not an invoice line; posting it takes the credit off deferred revenue, and off rental income for any part already recognized.
+On a unit treated as a rental, rent posts to contract assets and deferred revenue, and the lease run releases it across its period. An early-return credit is drafted as a credit memo, not an invoice line; posting it takes the credit off deferred revenue, and off rental income for any part already recognized.
 
 On a unit treated as a sale, rent and the purchase option credit net investment in leases, and the purchase option also settles the rest of the unit's net investment: a shortfall to cost of goods sold, an excess to lease revenue. A charge posts to rental income either way.
 
 ## Posting
 
-When accounting is enabled, <Term id="posting">posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Posting also updates invoiced quantities on order lines and records the posting date.
+<Term id="posting">Posting</Term> creates general-ledger entries: receivables against sales for a sales invoice, or payables against inventory or WIP for a purchase invoice. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), those entries are Provisional and count in no balance. Posting also updates invoiced quantities on order lines and records the posting date.
 
 <Callout type="warn">
 Posting never marks an invoice **Paid** — it lands on **Submitted** or **Open**. Settling it is a separate, deliberate step. A posted invoice can't be deleted either; to undo one you **void** it, which writes reversing entries rather than erasing history.
@@ -107,8 +110,8 @@ Carbon forgives **dust**. When settlements leave a balance under one cent — sm
 
 Exact errors users hit when posting, voiding, deleting, or paying invoices.
 
-### "Invoice has recognized revenue; reverse the recognition journal first"
-Voiding a sales invoice (`post-sales-invoice` VOID) whose deferred rent or service revenue a Revenue Recognition run has already released. Reverse that run's journal, then void the invoice; the invoice's periods and charges return to unbilled.
+### "Invoice has recognized revenue; reverse the revenue recognition or lease run that posted it first"
+Voiding a sales invoice (`post-sales-invoice` VOID) whose deferred rent or service revenue a run has already released: a revenue recognition run for service revenue, a lease run for rental rent. Reverse that run, then void the invoice; the invoice's periods and charges return to unbilled.
 
 ### "Can only void posted purchase invoices"
 Voiding applies only after posting. A Draft invoice can simply be edited or deleted.

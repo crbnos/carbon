@@ -47,6 +47,7 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { getImplementationSignals } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -172,10 +173,7 @@ export default function GetStartedLayout() {
   const { company } = useUser();
   const { isInternal } = useFlags();
   const settings = useSettings();
-  // Same read as useAccountingSubmodules — the generated companySettings type
-  // doesn't carry the column yet.
-  const accountingEnabled =
-    (settings as { accountingEnabled?: boolean }).accountingEnabled ?? false;
+  const accountingSetUp = hasAccountingCutover(settings);
   const previewingAsCustomer = useCustomerPreview();
   useImplementationRealtime(company.id);
 
@@ -236,16 +234,16 @@ export default function GetStartedLayout() {
         (loaderData.hub.exclusions as unknown as HubExclusions) ??
         EMPTY_EXCLUSIONS,
       // The Accounting module only appears in the hub when the company has
-      // accounting enabled; forced here so it never persists into the stored
+      // an accounting cutover; forced here so it never persists into the stored
       // (staff-editable) exclusions.
-      forcedModules: accountingEnabled ? [] : ["acc"],
+      forcedModules: accountingSetUp ? [] : ["acc"],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
       signals: loaderData.signals
     }),
-    [loaderData, accountingEnabled]
+    [loaderData, accountingSetUp]
   );
 
   const flags = useMemo<HubFlags>(

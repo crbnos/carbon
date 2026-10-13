@@ -10,7 +10,8 @@ import {
   ScrollBar,
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
+  useViewport
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { useDndContext } from "@dnd-kit/core";
@@ -82,7 +83,7 @@ export function ColumnCard({
   };
 
   const variants = cva(
-    "w-[350px] max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r",
+    "group/column w-[350px] max-md:w-[300px] max-md:only:w-full max-w-full flex flex-col flex-shrink-0 snap-center rounded-none bg-card/30 border-0 border-r",
     {
       variants: {
         dragging: {
@@ -104,12 +105,15 @@ export function ColumnCard({
         })} flex flex-col p-[1px] pt-0`,
         currentFilters.length > 0
           ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height))]`
-          : `h-[calc(100dvh-var(--header-height)*2)]`
+          : `h-[calc(100dvh-var(--header-height)*2)]`,
+        // Phones: the column fills the board, so its header stays put while
+        // its cards scroll under it, as on desktop.
+        "max-md:h-full"
       )}
     >
       <div
         className={cn(
-          "p-4 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 z-1 border-b",
+          "p-4 max-md:py-2 w-full font-semibold text-left flex flex-row space-between items-center sticky top-0 z-1 border-b",
           column.isBlocked && column.blockingDispatchId
             ? "bg-destructive text-destructive-foreground"
             : "bg-card"
@@ -159,11 +163,11 @@ export function ColumnCard({
           variant={"ghost"}
           {...attributes}
           {...listeners}
-          className="cursor-grab relative"
+          className="cursor-grab relative max-md:hidden"
         />
       </div>
       <ScrollArea className="flex-grow">
-        <div className="flex flex-col gap-2 p-2">
+        <div className="flex flex-col gap-2 p-2 max-md:group-only/column:px-4 max-md:group-only/column:gap-3">
           <SortableContext items={itemsIds}>
             {items.map((item) => (
               <ItemCard
@@ -183,6 +187,7 @@ export function ColumnCard({
 
 export function BoardContainer({ children }: { children: React.ReactNode }) {
   const dndContext = useDndContext();
+  const { isPhone } = useViewport();
 
   const variations = cva("relative px-0 flex lg:justify-center", {
     variants: {
@@ -193,6 +198,24 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     }
   });
 
+  // Radix's ScrollArea viewport sizes its content to fit, so a lone column
+  // can't stretch to the screen; phones get a plain snap scroller instead.
+  if (isPhone) {
+    return (
+      <div
+        className={cn(
+          "flex h-full w-full overflow-x-auto scroll-px-4 scrollbar-hide",
+          dndContext.active ? "snap-none" : "snap-x snap-mandatory"
+        )}
+      >
+        {/* More than 1 column: keep the board off the screen edges. */}
+        <div className="flex h-full w-full gap-0 items-start flex-row justify-start p-0 [&:has(>:nth-child(2))]:px-4">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <ScrollArea
       className={variations({
@@ -202,7 +225,11 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
       <div className="flex gap-0 items-start flex-row justify-start p-0">
         {children}
       </div>
-      <ScrollBar orientation="horizontal" forceMount className="h-5" />
+      <ScrollBar
+        orientation="horizontal"
+        forceMount
+        className="h-5 max-md:hidden"
+      />
     </ScrollArea>
   );
 }

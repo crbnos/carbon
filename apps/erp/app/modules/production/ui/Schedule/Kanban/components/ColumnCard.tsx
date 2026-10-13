@@ -107,6 +107,8 @@ export function ColumnCard<T extends Item = Item>({
         `${variants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined
         })} flex flex-col p-[1px] pt-0`,
+        // Phones: one column with a peek of the next.
+        "max-md:w-[300px]",
         currentFilters.length > 0
           ? `h-[calc(100dvh-var(--header-height)*2-var(--filters-height))]`
           : `h-[calc(100dvh-var(--header-height)*2)]`
@@ -212,7 +214,7 @@ export function BoardContainer({ children }: { children: React.ReactNode }) {
     >
       {/* min-w-max: the row must span the full scroll width so a sticky
           column keeps sticking past the first viewport-width of scrolling */}
-      <div className="flex min-w-max gap-0 items-start flex-row justify-start p-0">
+      <div className="flex min-w-max gap-0 items-start flex-row justify-start p-0 max-md:px-4">
         {children}
       </div>
       <ScrollBar orientation="horizontal" forceMount className="h-5" />

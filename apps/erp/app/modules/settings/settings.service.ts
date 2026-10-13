@@ -1028,18 +1028,6 @@ export async function updateDigitalQuoteSetting(
 // would pull the service-role client into the browser bundle (Vite blocks it).
 
 /** @mcp update */
-export async function updateAccountingEnabledSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  accountingEnabled: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ accountingEnabled }))
-    .eq("id", companyId);
-}
-
-/** @mcp update */
 export async function updateAssetTaxDepreciationSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1054,8 +1042,10 @@ export async function updateAssetTaxDepreciationSettings(
     .eq("id", companyId);
 }
 
-/** The ASC 842 classification thresholds and the default lessor discount
- *  rate, all percentage points (75, 90, 6). * @mcp update
+/** The ASC 842 classification thresholds, the default lessor discount rate
+ *  and the lessee incremental borrowing rate, all percentage points (75, 90,
+ *  6, 6); the lessee short-term lease expedient; and how many days before a
+ *  lease's notice or end date its owner is reminded. * @mcp update
  */
 export async function updateLeasePolicySettings(
   client: SupabaseClient<Database>,
@@ -1064,6 +1054,9 @@ export async function updateLeasePolicySettings(
     leaseMajorPartThresholdPercent: number;
     leaseSubstantiallyAllThresholdPercent: number;
     leaseDefaultDiscountRate: number;
+    leaseIncrementalBorrowingRate: number;
+    leaseShortTermExpedient: boolean;
+    leaseReminderDays: number;
   }
 ) {
   return client

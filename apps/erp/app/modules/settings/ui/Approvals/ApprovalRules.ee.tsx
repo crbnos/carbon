@@ -30,10 +30,16 @@ type ApprovalRulesProps = {
   poRules: ApprovalRule[];
   qdRules: ApprovalRule[];
   supplierRules: ApprovalRule[];
+  changeOrderRules: ApprovalRule[];
 };
 
 const ApprovalRules = memo(
-  ({ poRules, qdRules, supplierRules }: ApprovalRulesProps) => {
+  ({
+    poRules,
+    qdRules,
+    supplierRules,
+    changeOrderRules
+  }: ApprovalRulesProps) => {
     const permissions = usePermissions();
     const canCreate = permissions.can("update", "settings");
 
@@ -48,8 +54,8 @@ const ApprovalRules = memo(
 
     return (
       <ScrollArea className="h-full w-full">
-        <div className="py-12 px-4 max-w-[60rem] mx-auto">
-          <div className="mb-8">
+        <div className="py-12 px-4 max-w-[60rem] mx-auto max-md:py-3">
+          <div className="mb-8 max-md:hidden">
             <Heading size="h2">
               <Trans>Approval Rules</Trans>
             </Heading>
@@ -58,7 +64,7 @@ const ApprovalRules = memo(
           <VStack spacing={4}>
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Purchase Orders</Trans>
@@ -101,7 +107,7 @@ const ApprovalRules = memo(
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Quality Documents</Trans>
@@ -146,7 +152,7 @@ const ApprovalRules = memo(
 
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between max-md:flex-col max-md:items-start max-md:gap-3">
                   <div>
                     <CardTitle className="text-lg">
                       <Trans>Suppliers</Trans>
@@ -178,6 +184,48 @@ const ApprovalRules = memo(
                           key={rule.id}
                           rule={rule}
                           documentType="supplier"
+                        />
+                      ))}
+                  </VStack>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">
+                      <Trans>Change Notices</Trans>
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      <Trans>
+                        Require approval before change notices move to
+                        Implementation
+                      </Trans>
+                    </CardDescription>
+                  </div>
+                  {canCreate && changeOrderRules.length === 0 && (
+                    <Button variant="primary" leftIcon={<LuPlus />} asChild>
+                      <Link to={path.to.newApprovalRule("changeOrder")}>
+                        <Trans>New Rule</Trans>
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {changeOrderRules.length === 0 ? (
+                  <Empty className="my-4" />
+                ) : (
+                  <VStack spacing={3} className="items-stretch">
+                    {changeOrderRules
+                      .filter((r) => r.id)
+                      .map((rule) => (
+                        <ApprovalRuleCard
+                          key={rule.id}
+                          rule={rule}
+                          documentType="changeOrder"
                         />
                       ))}
                   </VStack>

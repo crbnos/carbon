@@ -74,6 +74,7 @@ const SalesReturnOrdersTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -84,6 +85,7 @@ const SalesReturnOrdersTable = memo(
             <CustomerAvatar customerId={row.original.customerId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: customers?.map((customer) => ({
@@ -104,6 +106,7 @@ const SalesReturnOrdersTable = memo(
             <SalesReturnOrderStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: salesReturnOrderStatusType.map((status) => ({

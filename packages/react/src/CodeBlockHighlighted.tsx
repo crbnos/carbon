@@ -73,7 +73,7 @@ const CodeBlockHighlighted = ({
       </ShikiHighlighter>
 
       {showCopy && (
-        <div className="invisible absolute right-0 top-0 opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
+        <div className="invisible absolute right-0 top-0 md:opacity-0 transition-opacity group-hover:visible group-hover:opacity-100">
           <Button size="sm" onClick={handleCopyCode}>
             {showCopied ? "Copied" : "Copy"}
           </Button>

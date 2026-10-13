@@ -11,6 +11,7 @@ import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useUrlParams, useUser } from "~/hooks";
 import {
   CONSTRUCTION_IN_PROGRESS_ENABLED,
@@ -222,12 +223,12 @@ export default function JobNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <JobForm
         initialValues={initialValues}
         fixedAssetClasses={fixedAssetClasses}
         underConstructionAssets={underConstructionAssets}
       />
-    </div>
+    </NewRecordPage>
   );
 }

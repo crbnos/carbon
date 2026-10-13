@@ -167,6 +167,9 @@ export default function EditPurchaseInvoiceLineRoute() {
     taxPercent: purchaseInvoiceLine?.taxPercent ?? 0,
     assetReadableId: (purchaseInvoiceLine as any)?.assetReadableId ?? "",
     assetName: (purchaseInvoiceLine as any)?.assetName ?? "",
+    leaseId: purchaseInvoiceLine?.leaseId ?? "",
+    leasePaymentId: purchaseInvoiceLine?.leasePaymentId ?? "",
+    leaseReadableId: purchaseInvoiceLine?.leaseReadableId ?? "",
     ...getCustomFields(purchaseInvoiceLine?.customFields)
   };
 

@@ -99,7 +99,13 @@ export async function rentalFixture(options?: {
       .values([
         { table: "shipment", name: "Shipment", prefix: "SHP-", companyId },
         { table: "receipt", name: "Receipt", prefix: "RCV-", companyId },
-        { table: "fixedAsset", name: "Fixed Asset", prefix: "FA", companyId }
+        { table: "fixedAsset", name: "Fixed Asset", prefix: "FA", companyId },
+        {
+          table: "journalEntry",
+          name: "Journal Entry",
+          prefix: "JE-",
+          companyId
+        }
       ])
       .execute();
     await trx

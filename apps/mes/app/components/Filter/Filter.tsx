@@ -116,13 +116,16 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
     return hasFilters && !open && trigger !== "icon" ? (
       <HStack>
         <Button
-          rightIcon={<LuX />}
+          rightIcon={<LuX className="max-md:ml-0" />}
           ref={ref}
           variant="secondary"
           onClick={clearFilters}
+          className="max-md:size-10 max-md:px-0"
           {...props}
         >
-          <Trans>Clear Filters</Trans>
+          <span className="max-md:sr-only">
+            <Trans>Clear Filters</Trans>
+          </span>
         </Button>
       </HStack>
     ) : (
@@ -142,17 +145,19 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
             </Button>
           ) : (
             <Button
-              rightIcon={<LuListFilter />}
+              rightIcon={<LuListFilter className="max-md:ml-0" />}
               role="combobox"
               ref={ref}
               variant="secondary"
               onClick={() => {
                 setOpen(true);
               }}
-              className={"!border-dashed border-border"}
+              className="!border-dashed border-border max-md:size-10 max-md:px-0"
               {...props}
             >
-              <Trans>Filter</Trans>
+              <span className="max-md:sr-only">
+                <Trans>Filter</Trans>
+              </span>
             </Button>
           )}
         </PopoverTrigger>

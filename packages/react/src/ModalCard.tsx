@@ -123,15 +123,15 @@ ModalCardDescription.displayName = "ModalCardDescription";
 
 const ModalCardFooter = forwardRef<
   ElementRef<typeof ModalFooter> | ElementRef<typeof CardFooter>,
-  | ComponentPropsWithoutRef<typeof ModalFooter>
-  | ComponentPropsWithoutRef<typeof CardFooter>
->((props, ref) => {
+  ComponentPropsWithoutRef<typeof CardFooter>
+>(({ sticky, ...props }, ref) => {
   const type = useModalCardType();
 
   if (type === "card") {
-    return <CardFooter {...props} ref={ref} />;
+    return <CardFooter {...props} sticky={sticky} ref={ref} />;
   }
 
+  // A modal's footer is already pinned on phones.
   return <ModalFooter {...props} />;
 });
 ModalCardFooter.displayName = "ModalCardFooter";

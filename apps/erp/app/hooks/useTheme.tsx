@@ -9,7 +9,12 @@ import { path } from "~/utils/path";
 
 export function useOptimisticTheme() {
   const fetchers = useFetchers();
-  const themeFetcher = fetchers.find((f) => f.formAction === path.to.theme);
+  // The account settings Appearance pane posts to the root action instead.
+  const themeFetcher = fetchers.find(
+    (f) =>
+      f.formAction === path.to.theme ||
+      (f.formAction === path.to.root && f.formData?.has("theme"))
+  );
 
   if (themeFetcher && themeFetcher.formData) {
     const theme = { theme: themeFetcher.formData.get("theme") };

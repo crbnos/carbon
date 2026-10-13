@@ -69,7 +69,7 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
             <Enumerable value={row.original.name} />
           </Hyperlink>
         ),
-        meta: { icon: <LuShieldCheck /> }
+        meta: { mobile: "P1", icon: <LuShieldCheck /> }
       },
       {
         accessorKey: "targetType",
@@ -78,7 +78,8 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
           <Badge variant="secondary">
             {TARGET_TYPE_LABELS[row.original.targetType]}
           </Badge>
-        )
+        ),
+        meta: { mobile: "P3" }
       },
       {
         accessorKey: "severity",
@@ -116,7 +117,8 @@ const StorageRulesTable = memo(({ data, count }: StorageRulesTableProps) => {
             <Status color="gray">
               <Trans>Inactive</Trans>
             </Status>
-          )
+          ),
+        meta: { mobile: "P2" }
       },
       {
         accessorKey: "assignmentCount",

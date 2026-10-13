@@ -105,13 +105,14 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             {row.original.paymentId}
           </Hyperlink>
         ),
-        meta: { icon: <LuHash /> }
+        meta: { icon: <LuHash />, mobile: "P1" }
       },
       {
         accessorKey: "paymentType",
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.paymentType} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",
@@ -133,6 +134,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
             <SupplierAvatar supplierId={row.original.supplierId} />
           ) : null,
         meta: {
+          mobile: "P3",
           icon: <LuUser />,
           filter: {
             type: "static",
@@ -169,6 +171,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuCoins />,
           renderTotal: true,
           formatter: currencyFormatter.format
@@ -184,6 +187,7 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <PaymentStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleDot />,
           filter: {
             type: "static",

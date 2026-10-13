@@ -2,51 +2,72 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { error } from "@carbon/auth";
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  getLegacyDocumentCounts,
+  hasLegacyDocuments
+} from "@carbon/database/accounting-cutover-reads";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useAction } from "@carbon/query";
 import {
-  Badge,
+  Alert,
+  AlertDescription,
+  Button,
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   ScrollArea,
   Switch,
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT, INPUT_STEP, redirect } from "@carbon/utils";
+import { serverFns } from "@carbon/server-functions";
+import {
+  getErrorMessage,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  redirect
+} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
+import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { data, Link, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Account,
+  Boolean as BooleanInput,
   Hidden,
   Number as NumberInput,
   Submit
 } from "~/components/Form";
-import { useFlags } from "~/hooks";
+import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
+import { useDateFormatter, usePermissions } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { getDefaultAccounts } from "~/modules/accounting";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getCompanySettings,
-  updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings,
   updateLeasePolicySettings,
   updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings/accounting");
+
+const JOURNAL_LEGACY_INTENT = "journal-legacy";
 
 const taxDepreciationSettingsValidator = z.object({
   intent: z.literal("assetTaxDepreciation"),
@@ -75,6 +96,16 @@ const leasePolicySettingsValidator = z.object({
   ),
   leaseDefaultDiscountRate: zfd.numeric(
     z.number().min(0, { message: "Discount rate cannot be negative" })
+  ),
+  leaseIncrementalBorrowingRate: zfd.numeric(
+    z.number().min(0, { message: "Borrowing rate cannot be negative" })
+  ),
+  leaseShortTermExpedient: zfd.checkbox(),
+  leaseReminderDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Reminder days must be a whole number" })
+      .min(0, { message: "Reminder days cannot be negative" })
   )
 });
 
@@ -102,9 +133,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     );
 
+  // Documents posted on or after the cutover with no journal: a company
+  // enabled before the enable wrote them. Whether there are any is awaited:
+  // it decides whether the repair alert exists, and an alert that arrives
+  // after the first paint pushes the cards below it down. The count only
+  // fills in the alert's text, so it is streamed.
+  const cutoverDate = companySettings.data.accountingCutoverDate;
+  const db = getDatabaseClient();
+  const hasLegacy = cutoverDate
+    ? await hasLegacyDocuments(db, { companyId, cutoverDate })
+    : false;
+
   return {
     companySettings: companySettings.data,
-    accountDefaults: accountDefaults.data
+    accountDefaults: accountDefaults.data,
+    legacyDocumentsExist: hasLegacy,
+    legacyDocumentCount:
+      hasLegacy && cutoverDate
+        ? getLegacyDocumentCounts(db, { companyId, cutoverDate }).then(
+            (counts) =>
+              Object.values(counts).reduce((sum, count) => sum + count, 0)
+          )
+        : null
   };
 }
 
@@ -116,15 +166,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
   const intent = formData.get("intent");
 
-  if (intent === "accountingEnabled") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateAccountingEnabledSetting(
-      client,
-      companyId,
-      enabled
-    );
-    if (update.error) return { success: false, message: update.error.message };
-    return { success: true, message: "Accounting settings updated" };
+  if (intent === JOURNAL_LEGACY_INTENT) {
+    return journalLegacyDocuments(request);
   }
 
   if (intent === "showCurrencyTrailingZeros") {
@@ -205,8 +248,59 @@ export async function action({ request }: ActionFunctionArgs) {
   return { success: false, message: "Unknown intent" };
 }
 
+/** Writes the journals the enable would have written for legacy documents. */
+async function journalLegacyDocuments(request: Request) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "accounting"
+  });
+  const result = await serverFns
+    .as({ client, db: getDatabaseClient(), companyId, userId })
+    .invoke("journal-legacy-documents", {});
+  if (result.error) {
+    logger.error("Failed to write the missing journals", {
+      companyId,
+      error: result.error
+    });
+    // The flash carries the message; the other intents' toast stays quiet.
+    return data(
+      { success: false, message: null },
+      await flash(
+        request,
+        error(
+          result.error,
+          getErrorMessage(result.error, "Failed to write the missing journals")
+        )
+      )
+    );
+  }
+  const { movementCostRows: _, ...families } = result.data.legacyJournals;
+  const documents = Object.values(families).reduce(
+    (sum, count) => sum + count,
+    0
+  );
+  return data(
+    { success: true, message: null },
+    await flash(
+      request,
+      success(
+        documents === 1
+          ? "Wrote the missing journal of 1 document"
+          : `Wrote the missing journals of ${documents} documents`
+      )
+    )
+  );
+}
+
 export default function AccountingSettingsRoute() {
-  const { companySettings, accountDefaults } = useLoaderData<typeof loader>();
+  const {
+    companySettings,
+    accountDefaults,
+    legacyDocumentsExist,
+    legacyDocumentCount: legacyDocumentCountPromise
+  } = useLoaderData<typeof loader>();
+  const legacyDocumentCount = useResolved(legacyDocumentCountPromise, null);
+  const permissions = usePermissions();
+  const legacyFetcher = useFetcher<typeof action>();
   const fetcher = useAction<typeof action>({
     onSettled: (data) => {
       if (data && "success" in data) {
@@ -243,20 +337,13 @@ export default function AccountingSettingsRoute() {
       }
     }
   });
-  const { isInternal } = useFlags();
   const { t } = useLingui();
+  const { formatDate } = useDateFormatter();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
 
-  const handleAccountingToggle = useCallback(
-    (checked: boolean) => {
-      fetcher.submit(
-        { intent: "accountingEnabled", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [fetcher]
-  );
+  const accountingSetUp = hasAccountingCutover(companySettings);
+  const cutoverDate = formatDate(companySettings.accountingCutoverDate);
 
   const handleTrailingZerosToggle = useCallback(
     (showTrailingZeros: boolean) => {
@@ -283,13 +370,10 @@ export default function AccountingSettingsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
-        <Heading size="h3">
+      <SettingsPage className="gap-4">
+        <SettingsPageHeading>
           <Trans>Accounting</Trans>
-        </Heading>
+        </SettingsPageHeading>
 
         <Card>
           <CardHeader>
@@ -298,46 +382,88 @@ export default function AccountingSettingsRoute() {
             </CardTitle>
             <CardDescription>
               <Trans>
-                Enable full accrual accounting with journal entries, financial
-                reports, and general ledger posting.
+                Accrual accounting with journal entries, financial reports, and
+                general ledger posting.
               </Trans>
             </CardDescription>
           </CardHeader>
           <CardContent>
             <HStack className="justify-between items-center">
               <VStack className="items-start" spacing={1}>
-                <HStack className="items-center gap-2">
-                  <span className="font-medium">
-                    {companySettings.accountingEnabled ? (
-                      <Trans>Accounting is enabled</Trans>
-                    ) : (
-                      <Trans>Accounting is disabled</Trans>
-                    )}
-                  </span>
-                  <Badge variant="red">
-                    <Trans>Alpha</Trans>
-                  </Badge>
-                </HStack>
+                <span className="font-medium">
+                  {accountingSetUp ? (
+                    <Trans>Accounting since {cutoverDate}</Trans>
+                  ) : (
+                    <Trans>Accounting is not set up</Trans>
+                  )}
+                </span>
                 <span className="text-sm text-muted-foreground">
-                  {companySettings.accountingEnabled ? (
+                  {accountingSetUp ? (
                     <Trans>
                       Transactions will create journal entries and update the
                       general ledger.
                     </Trans>
                   ) : (
                     <Trans>
-                      Enable to automatically post transactions to the general
-                      ledger.
+                      Transactions post provisional journal entries until you
+                      set up accounting.
                     </Trans>
                   )}
                 </span>
               </VStack>
-              <Switch
-                checked={companySettings.accountingEnabled ?? false}
-                onCheckedChange={handleAccountingToggle}
-                disabled={!isInternal}
-              />
+              {!accountingSetUp && (
+                <Button asChild>
+                  <Link to={path.to.accountingActivation}>
+                    <Trans>Set up accounting</Trans>
+                  </Link>
+                </Button>
+              )}
             </HStack>
+            {accountingSetUp && legacyDocumentsExist && (
+              // The icon keeps the Alert's icon column; the text and the
+              // button share the description, one row centred on the icon.
+              <Alert variant="warning" className="mt-4 items-center">
+                <LuTriangleAlert />
+                <AlertDescription className="flex items-center justify-between gap-4 text-sm">
+                  <span>
+                    {legacyDocumentCount === null ? (
+                      <Trans>
+                        Documents posted before Carbon kept journals have no
+                        journal.
+                      </Trans>
+                    ) : (
+                      <Plural
+                        value={legacyDocumentCount}
+                        one="# document posted before Carbon kept journals has no journal."
+                        other="# documents posted before Carbon kept journals have no journal."
+                      />
+                    )}
+                  </span>
+                  <legacyFetcher.Form method="post" className="shrink-0">
+                    <input
+                      type="hidden"
+                      name="intent"
+                      value={JOURNAL_LEGACY_INTENT}
+                    />
+                    {/* A secondary button sets no text colour of its own, so
+                        it would take the alert's amber. */}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="text-foreground"
+                      isLoading={legacyFetcher.state !== "idle"}
+                      isDisabled={
+                        legacyFetcher.state !== "idle" ||
+                        !permissions.can("update", "settings") ||
+                        !permissions.can("update", "accounting")
+                      }
+                    >
+                      <Trans>Write missing journals</Trans>
+                    </Button>
+                  </legacyFetcher.Form>
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
@@ -397,19 +523,26 @@ export default function AccountingSettingsRoute() {
               companySettings.leaseMajorPartThresholdPercent,
             leaseSubstantiallyAllThresholdPercent:
               companySettings.leaseSubstantiallyAllThresholdPercent,
-            leaseDefaultDiscountRate: companySettings.leaseDefaultDiscountRate
+            leaseDefaultDiscountRate: companySettings.leaseDefaultDiscountRate,
+            leaseIncrementalBorrowingRate:
+              companySettings.leaseIncrementalBorrowingRate,
+            leaseShortTermExpedient: companySettings.leaseShortTermExpedient,
+            leaseReminderDays: companySettings.leaseReminderDays
           }}
         >
-          <Card>
+          {/* Linked from a lease that needs the short-term expedient. */}
+          <Card id="lease-classification">
             <CardHeader>
               <CardTitle>
                 <Trans>Lease Classification</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  A rental line is a sales-type lease when any ASC 842 test is
-                  met. These thresholds set tests (c) and (d); the discount rate
-                  is the default for new rental agreements.
+                  A lease is a sales-type (lessor) or finance (lessee) lease
+                  when any ASC 842 test is met. These thresholds set tests (c)
+                  and (d). The lessor discount rate is the default for new
+                  rental agreements; the incremental borrowing rate is the
+                  default for new leases.
                 </Trans>
               </CardDescription>
             </CardHeader>
@@ -434,10 +567,28 @@ export default function AccountingSettingsRoute() {
                 />
                 <NumberInput
                   name="leaseDefaultDiscountRate"
-                  label={t`Default Discount Rate (%)`}
+                  label={t`Lessor Discount Rate (%)`}
                   minValue={0}
                   step={INPUT_STEP.percent}
                   formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseIncrementalBorrowingRate"
+                  label={t`Incremental Borrowing Rate (%)`}
+                  minValue={0}
+                  step={INPUT_STEP.percent}
+                  formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseReminderDays"
+                  label={t`Lease Reminder Days`}
+                  minValue={0}
+                  helperText={t`Days before a lease's notice or end date that its owner is reminded.`}
+                />
+                <BooleanInput
+                  name="leaseShortTermExpedient"
+                  label={t`Short-Term Lease Expedient`}
+                  description={t`Leases of 12 months or less with no reasonably certain purchase option are expensed as paid.`}
                 />
               </div>
             </CardContent>
@@ -528,7 +679,7 @@ export default function AccountingSettingsRoute() {
             )}
           </Card>
         </ValidatedForm>
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

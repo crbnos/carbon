@@ -116,6 +116,7 @@ const GaugeCalibrationRecordsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -126,6 +127,7 @@ const GaugeCalibrationRecordsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "dateRange"
             },
@@ -141,6 +143,7 @@ const GaugeCalibrationRecordsTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCheck />,
             filter: {
               type: "static",
@@ -232,6 +235,7 @@ const GaugeCalibrationRecordsTable = memo(
             <SupplierAvatar supplierId={row.original.supplierId} />
           ),
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers?.map((supplier) => ({

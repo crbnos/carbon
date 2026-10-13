@@ -67,6 +67,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -75,7 +76,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
         header: t`Item`,
         cell: ({ row }) => (
           <div className="flex flex-col gap-0">
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium max-md:text-[13px] max-md:font-normal">
               {getItemReadableId(items, (row.original as any).itemId) ??
                 (row.original as any).itemReadableId ??
                 ""}
@@ -86,6 +87,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuBookMarked />,
           filter: {
             type: "static",
@@ -143,7 +145,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
         cell: ({ row }) => (
           <span className="text-sm">{(row.original as any).lotSize ?? 0}</span>
         ),
-        meta: { icon: <LuBlocks /> }
+        meta: { mobile: "P2", mobileLabel: true, icon: <LuBlocks /> }
       },
       {
         accessorKey: "sampleSize",
@@ -167,6 +169,7 @@ const InspectionsTable = memo(({ data, count }: InspectionsTableProps) => {
           </Badge>
         ),
         meta: {
+          mobile: "P2",
           icon: <LuClipboardCheck />,
           filter: {
             type: "static",

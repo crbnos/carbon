@@ -175,7 +175,7 @@ than from config.
 
 - `apps/erp/app/routes/x+/settings+/audit-logs.tsx` — settings (enable/disable, download), syncs subscriptions.
 - `apps/erp/app/routes/x+/settings+/audit-logs.details.tsx` — full-screen filtered table (`getGlobalAuditLog`).
-- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint.
+- `apps/erp/app/routes/api+/audit-log.ts` — entity-scoped entries endpoint (50 newest; `all=true` pages through every live entry, capped at 10,000 with `truncated: true` when the history is longer (the download warns), for the drawer's opt-in CSV Download — `useAuditLog({ downloadable, downloadName })`, built client-side by `components/AuditLog/useAuditLogDownload.ts` with the pure row builder `buildAuditLogCsvRows` in `components/AuditLog/utils.ts`; a failed `all=true` read answers 500).
 
 ## Key migrations (newest = truth)
 

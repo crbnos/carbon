@@ -80,6 +80,7 @@ export const ID_REF_COLUMNS: Partial<Record<string, readonly string[]>> = {
   jobOperationStep: ["nonConformanceInvestigationId"],
   journalLine: ["documentId"],
   journalLineDimension: ["valueId"],
+  leasePayment: ["purchaseInvoiceLineId", "voidedPurchaseInvoiceId"],
   nonConformance: ["requiredActionIds"],
   nonConformancePurchaseReturnOrderLine: ["purchaseReturnOrderId"],
   nonConformanceSalesReturnOrderLine: ["salesReturnOrderId"],

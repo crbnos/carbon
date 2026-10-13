@@ -38,7 +38,7 @@ export function HiddenModulesPopover({
             className={cn(
               "min-w-[128px] text-sm",
               "absolute left-7 group-data-[state=expanded]:left-12",
-              "opacity-0 group-data-[state=expanded]:opacity-100"
+              "md:opacity-0 group-data-[state=expanded]:opacity-100"
             )}
           >
             Add module

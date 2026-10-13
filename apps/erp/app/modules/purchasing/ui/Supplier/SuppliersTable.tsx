@@ -135,6 +135,7 @@ const SuppliersTable = memo(function SuppliersTable({
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -146,6 +147,7 @@ const SuppliersTable = memo(function SuppliersTable({
           <SupplierStatusIndicator status={item.getValue<string>()} />
         ),
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: supplierStatusType.map((status) => ({
@@ -161,6 +163,7 @@ const SuppliersTable = memo(function SuppliersTable({
         header: t`Type`,
         cell: ({ row }) => <Enumerable value={row.original.type ?? ""} />,
         meta: {
+          mobile: "P2",
           icon: <LuShapes />,
           sortBy: "type",
           exportValue: (row) => row.type,
@@ -484,7 +487,12 @@ const SuppliersTable = memo(function SuppliersTable({
         primaryAction={
           permissions.can("create", "purchasing") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuShapes />} asChild>
+              <Button
+                className="max-md:hidden"
+                variant="secondary"
+                leftIcon={<LuShapes />}
+                asChild
+              >
                 <Link to={path.to.supplierTypes}>
                   <Trans>Supplier Types</Trans>
                 </Link>

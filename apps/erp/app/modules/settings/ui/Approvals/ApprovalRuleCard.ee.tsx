@@ -5,7 +5,6 @@
 import {
   type ApprovalDocumentType,
   type ApprovalRule,
-  approvalDocumentTypeLabel,
   approvalDocumentTypesWithAmounts
 } from "@carbon/ee/approvals";
 import {
@@ -50,6 +49,14 @@ const ApprovalRuleCard = memo(
     const currencyFormatter = useCurrencyFormatter({ compact: true });
     const deleteDisclosure = useDisclosure();
 
+    const documentTypeLabels: Record<ApprovalDocumentType, string> = {
+      purchaseOrder: t`Purchase Order`,
+      qualityDocument: t`Quality Document`,
+      supplier: t`Supplier`,
+      changeOrder: t`Change Notice`
+    };
+    const documentTypeLabel = documentTypeLabels[documentType];
+
     const canEdit = permissions.can("update", "settings");
     const canDelete = permissions.can("update", "settings");
 
@@ -74,10 +81,14 @@ const ApprovalRuleCard = memo(
           <Accordion type="multiple" className="w-full">
             <AccordionItem value={rule.id} className="border-none">
               <div className="relative">
-                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full">
+                <AccordionTrigger className="px-6 py-8 hover:no-underline w-full max-md:px-4 max-md:py-4">
                   <HStack spacing={4} className="flex-1 justify-between pr-12">
-                    <Heading size="h4" as="h3">
-                      {approvalDocumentTypeLabel[documentType]}
+                    <Heading
+                      size="h4"
+                      as="h3"
+                      className="max-md:text-left max-md:min-w-0"
+                    >
+                      {documentTypeLabel}
                       {approvalDocumentTypesWithAmounts.includes(
                         documentType
                       ) &&
@@ -87,7 +98,7 @@ const ApprovalRuleCard = memo(
                     </Heading>
                     <Status
                       color={rule.enabled ? "green" : "gray"}
-                      className="text-xs font-medium"
+                      className="text-xs font-medium max-md:shrink-0"
                     >
                       {rule.enabled ? (
                         <Trans>Enabled</Trans>
@@ -149,11 +160,7 @@ const ApprovalRuleCard = memo(
         <ConfirmDelete
           action={path.to.deleteApprovalRule(rule.id)}
           isOpen={deleteDisclosure.isOpen}
-          name={
-            documentType === "purchaseOrder"
-              ? t`Purchase Order approval rule`
-              : t`Quality Document approval rule`
-          }
+          name={t`${documentTypeLabel} approval rule`}
           text={t`Are you sure you want to delete this approval rule? This cannot be undone.`}
           onCancel={deleteDisclosure.onClose}
           onSubmit={handleDeleteConfirm}

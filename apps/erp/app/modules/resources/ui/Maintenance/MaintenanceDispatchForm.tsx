@@ -205,7 +205,7 @@ const MaintenanceDispatchForm = ({
 
               <Boolean
                 bordered
-                className="col-span-2"
+                className="col-span-2 max-md:col-span-1"
                 name="takesWorkCenterOffline"
                 label={t`Takes work center offline`}
                 description={t`While this dispatch is open, the work center is unavailable to the schedule (until the planned end time, or until the dispatch is completed).`}

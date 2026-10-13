@@ -11,6 +11,7 @@ import { validationError, validator } from "@carbon/form";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { useCompanyToday, useUrlParams, useUser } from "~/hooks";
 import { upsertDocument } from "~/modules/documents";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
@@ -214,8 +215,8 @@ export default function SalesRFQNewRoute() {
   };
 
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <SalesRFQForm initialValues={initialValues} />
-    </div>
+    </NewRecordPage>
   );
 }

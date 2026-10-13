@@ -11,7 +11,6 @@ import * as React from "react";
 import { LuPanelLeft } from "react-icons/lu";
 import type { Button } from "./Button";
 import { Drawer, DrawerContent } from "./Drawer";
-import { useIsMobile } from "./hooks";
 import { useShortcutKeys } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import { Input } from "./Input";
@@ -25,6 +24,7 @@ import {
   TooltipTrigger
 } from "./Tooltip";
 import { cn } from "./utils/cn";
+import { useViewport } from "./Viewport";
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state";
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
@@ -81,7 +81,7 @@ const SidebarProvider = React.forwardRef<
     },
     ref
   ) => {
-    const isMobile = useIsMobile();
+    const { isPhone: isMobile } = useViewport();
     const [openMobile, setOpenMobile] = React.useState(false);
 
     // This is the internal state of the sidebar.

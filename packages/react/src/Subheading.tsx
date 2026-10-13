@@ -9,11 +9,11 @@ import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
 
-const subheadingVariants = cva("text-sm", {
+const subheadingVariants = cva("text-muted-foreground", {
   variants: {
     variant: {
-      heavy: "font-medium text-muted-foreground",
-      light: "font-light text-foreground/70"
+      heavy: "font-medium text-sm",
+      light: "font-normal text-xs"
     }
   },
   defaultVariants: {

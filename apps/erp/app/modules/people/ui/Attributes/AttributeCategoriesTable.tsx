@@ -55,6 +55,7 @@ const AttributeCategoriesTable = memo(
         {
           accessorKey: "name",
           header: t`Category`,
+          meta: { mobile: "P1" },
           cell: ({ row }) => (
             <Hyperlink to={row.original.id} className="flex items-center gap-2">
               {row.original.emoji ? (
@@ -68,6 +69,7 @@ const AttributeCategoriesTable = memo(
         },
         {
           header: t`Attributes`,
+          meta: { mobile: "P3" },
           cell: ({ row }) => (
             <HStack className="text-xs text-muted-foreground">
               <LuListChecks />
@@ -77,9 +79,12 @@ const AttributeCategoriesTable = memo(
                   : 0}{" "}
                 <Trans>Attributes</Trans>
               </span>
+              {/* Phones: line 2 sits under the row link, so this button is
+                  hidden; the row menu's View Attributes opens the same list. */}
               <Button
                 variant="secondary"
                 size="sm"
+                className="max-md:hidden"
                 onClick={() => {
                   navigate(
                     `${path.to.attributeCategoryList(
@@ -105,6 +110,7 @@ const AttributeCategoriesTable = memo(
             );
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [

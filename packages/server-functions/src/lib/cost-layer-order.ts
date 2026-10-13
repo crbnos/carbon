@@ -2,37 +2,15 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-// The order calculateCOGS consumes open FIFO / LIFO cost layers in, kept pure
-// so it can be tested without a database.
-//
-// Specific identification for serial units: a layer booked for ONE serial
-// (`trackedEntityId` set, e.g. a fixed asset returned to stock at its net book
-// value) belongs to that unit. The unit leaving is relieved from its own layer
-// first; every other consumer takes the unstamped layers in FIFO / LIFO order
-// and reaches a layer stamped for a DIFFERENT unit only when the unstamped
-// ones run out — relieving another unit's value beats relieving value that
-// isn't on the books, but it is the last resort.
+// The order calculateCOGS consumes open FIFO / LIFO cost layers in, with
+// serial units relieved from their own layers first (specific
+// identification), lives with the relief arithmetic in
+// @carbon/database/cost-relief.
 
-export interface OrderableCostLayer {
-  trackedEntityId: string | null;
-}
-
-export function orderLayersForConsumption<T extends OrderableCostLayer>(
-  // Already in FIFO / LIFO order.
-  layers: T[],
-  trackedEntityIds: readonly string[] = []
-): T[] {
-  const leaving = new Set(trackedEntityIds);
-  const own: T[] = [];
-  const unstamped: T[] = [];
-  const others: T[] = [];
-  for (const layer of layers) {
-    if (layer.trackedEntityId === null) unstamped.push(layer);
-    else if (leaving.has(layer.trackedEntityId)) own.push(layer);
-    else others.push(layer);
-  }
-  return [...own, ...unstamped, ...others];
-}
+export {
+  type OrderableCostLayer,
+  orderLayersForConsumption
+} from "@carbon/database/cost-relief";
 
 // The tracked entities an item's outgoing ledger rows name — the ids to pass
 // calculateCOGS as `trackedEntityIds`. Batch ids come along harmlessly: only

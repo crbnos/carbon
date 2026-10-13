@@ -566,6 +566,7 @@ const PlanningTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -640,12 +641,24 @@ const PlanningTable = memo(
           header: t`Supplier`,
           cell: ({ row }) => {
             const supplierId = suppliersMap[row.original.id];
-            if (!supplierId)
-              return <Status color="red">{t`No Supplier`}</Status>;
+            const onHand = formatQuantity(row.original.quantityOnHand);
 
-            return <SupplierAvatar supplierId={supplierId} />;
+            // Phones: on hand follows the supplier on the row's second line.
+            return (
+              <div className="contents max-md:flex max-md:min-w-0 max-md:items-center max-md:gap-1.5">
+                {supplierId ? (
+                  <SupplierAvatar supplierId={supplierId} />
+                ) : (
+                  <Status color="red">{t`No Supplier`}</Status>
+                )}
+                <span className="shrink-0 md:hidden">
+                  · <Trans>{onHand} on hand</Trans>
+                </span>
+              </div>
+            );
           },
           meta: {
+            mobile: "P3",
             filter: {
               type: "static",
               options: suppliers.map((supplier) => ({
@@ -729,6 +742,9 @@ const PlanningTable = memo(
                 </Button>
               </div>
             );
+          },
+          meta: {
+            mobile: "action"
           }
         }
       ];
@@ -857,6 +873,7 @@ const PlanningTable = memo(
               <mrpFetcher.Form
                 method="post"
                 action={path.to.api.mrp(locationId)}
+                className="max-md:hidden"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -873,7 +890,24 @@ const PlanningTable = memo(
                   <TooltipContent>{mrpScheduleDescription}</TooltipContent>
                 </Tooltip>
               </mrpFetcher.Form>
+              <p className="basis-full text-xs text-muted-foreground md:hidden">
+                {mrpScheduleDescription}
+              </p>
             </div>
+          }
+          mobileMenuItems={
+            <DropdownMenuItem
+              disabled={mrpFetcher.state !== "idle"}
+              onSelect={() =>
+                mrpFetcher.submit(
+                  {},
+                  { method: "post", action: path.to.api.mrp(locationId) }
+                )
+              }
+            >
+              <DropdownMenuIcon icon={<LuCirclePlay />} />
+              <Trans>Recalculate</Trans>
+            </DropdownMenuItem>
           }
           renderActions={renderActions}
           renderExpandedRow={renderExpandedRow}

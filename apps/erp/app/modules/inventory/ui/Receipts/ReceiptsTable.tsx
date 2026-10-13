@@ -35,6 +35,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
+import { NewAction } from "~/components/New";
 import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { Receipt } from "~/modules/inventory";
@@ -48,17 +49,26 @@ import { path } from "~/utils/path";
 
 function NewReceipt() {
   const fetcher = useFetcher();
+  const { t } = useLingui();
   return (
-    <fetcher.Form method="post" action={path.to.newReceipt}>
-      <Button
-        type="submit"
-        leftIcon={<LuCirclePlus />}
-        variant="primary"
-        isLoading={fetcher.state !== "idle"}
-      >
-        <Trans>Add Receipt</Trans>
-      </Button>
-    </fetcher.Form>
+    <NewAction
+      label={t`Add Receipt`}
+      isDisabled={fetcher.state !== "idle"}
+      onClick={() =>
+        fetcher.submit(null, { method: "post", action: path.to.newReceipt })
+      }
+    >
+      <fetcher.Form method="post" action={path.to.newReceipt}>
+        <Button
+          type="submit"
+          leftIcon={<LuCirclePlus />}
+          variant="primary"
+          isLoading={fetcher.state !== "idle"}
+        >
+          <Trans>Add Receipt</Trans>
+        </Button>
+      </fetcher.Form>
+    </NewAction>
   );
 }
 
@@ -91,6 +101,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -99,6 +110,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
         header: t`Source Document`,
         cell: (item) => <Enumerable value={item.getValue<string>()} />,
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: receiptSourceDocumentType.map((type) => ({
@@ -170,6 +182,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           return <ReceiptStatus status={status} />;
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: receiptStatusType.map((type) => ({
@@ -235,6 +248,7 @@ const ReceiptsTable = memo(({ data, count }: ReceiptsTableProps) => {
           return <SupplierAvatar supplierId={row.original.supplierId} />;
         },
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: suppliers?.map((supplier) => ({

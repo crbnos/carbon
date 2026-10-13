@@ -23,12 +23,15 @@ const Hyperlink = ({
     <span className="contents">
       <PrefetchLink
         className={cn(
-          "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-start gap-3",
+          "group/hyperlink text-foreground font-medium cursor-pointer flex flex-row items-center justify-start gap-3 max-md:min-w-0",
           className
         )}
         {...props}
       >
-        <span className="flex flex-row items-center gap-1">{children}</span>
+        {/* Phones: a block so long names end in an ellipsis (flex boxes clip). */}
+        <span className="flex flex-row items-center gap-1 max-md:block max-md:min-w-0 max-md:truncate">
+          {children}
+        </span>
         {props.to && props.to !== "#" && (
           <Button
             rightIcon={<LuPanelRight />}
@@ -37,7 +40,7 @@ const Hyperlink = ({
             // click navigates in-tab, a Cmd/Ctrl (or middle) click opens a new tab.
             // A real <button> here would otherwise swallow the anchor's native
             // modifier-click behavior and always open in the same tab.
-            className="flex-shrink-0 opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline pointer-events-none"
+            className="flex-shrink-0 md:opacity-0 transition-opacity duration-200 group-hover/hyperlink:opacity-100 no-underline pointer-events-none max-md:hidden"
             size="sm"
             tabIndex={-1}
           >

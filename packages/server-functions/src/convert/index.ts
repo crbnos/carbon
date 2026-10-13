@@ -23,10 +23,12 @@ import {
   getRemainingQuantityToInvoice
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import getMethod from "../get-method";
+import { getSupplierPartPriceConverter } from "../lib/supplier-part-currency";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");
@@ -1821,107 +1823,110 @@ const convert = defineServerFn({
             }
           }
 
-          // Create a map to deduplicate supplier parts by itemId and supplierId
-          const supplierPartMap = new Map();
-
-          quoteLines.data
-            .filter(
-              (line) =>
-                !!line.itemId &&
-                line.id &&
-                selectedLines &&
-                line.id in selectedLines
-            )
-            .forEach((line) => {
-              const key = `${line.itemId}-${quote.data.supplierId}`;
-              const selectedLine = selectedLines![line.id!];
-              const exchangeRate = quote.data.exchangeRate ?? 1;
-              const unitPriceInInventoryUnit =
-                selectedLine!.supplierUnitPrice /
-                (exchangeRate === 0 ? 1 : exchangeRate) /
-                (line.conversionFactor ?? 1);
-              supplierPartMap.set(key, {
-                companyId,
-                supplierId: quote.data?.supplierId!,
-                supplierPartId: line.supplierPartId!,
-                supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-                conversionFactor: line.conversionFactor,
-                itemId: line.itemId!,
-                createdBy: userId,
-                unitPrice: unitPriceInInventoryUnit
-              });
-            });
-
-          const supplierPartToItemInserts = Array.from(
-            supplierPartMap.values()
+          // Record the ordered prices in the supplier's price list, as quoted:
+          // per purchase unit, in the quote's currency. A part created here
+          // takes that currency; an existing part keeps its own and gets the
+          // price converted into it.
+          const pricedLines = quoteLines.data.filter(
+            (line) =>
+              !!line.itemId &&
+              line.id &&
+              selectedLines &&
+              line.id in selectedLines
           );
 
-          if (supplierPartToItemInserts.length > 0) {
+          // One supplier part per item; the later line wins.
+          const supplierPartInserts = [
+            ...new Map(
+              pricedLines.map((line) => [
+                line.itemId!,
+                {
+                  companyId,
+                  supplierId: quote.data.supplierId,
+                  supplierPartId: line.supplierPartId,
+                  supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+                  conversionFactor: line.conversionFactor ?? 1,
+                  currencyCode: quote.data.currencyCode,
+                  itemId: line.itemId!,
+                  createdBy: userId
+                }
+              ])
+            ).values()
+          ];
+
+          if (supplierPartInserts.length > 0) {
             await trx
               .insertInto("supplierPart")
-              .values(supplierPartToItemInserts)
+              .values(supplierPartInserts)
               .onConflict((oc) =>
                 oc
                   .columns(["itemId", "supplierId", "companyId"])
                   .doUpdateSet((eb) => ({
-                    supplierPartId: eb.ref("excluded.supplierPartId"),
-                    unitPrice: eb.ref("excluded.unitPrice")
+                    supplierPartId: eb.ref("excluded.supplierPartId")
                   }))
               )
               .execute();
 
             const supplierParts = await trx
               .selectFrom("supplierPart")
-              .select(["id", "itemId"])
+              .select(["id", "itemId", "currencyCode"])
               .where("supplierId", "=", quote.data.supplierId)
               .where("companyId", "=", companyId)
               .where(
                 "itemId",
                 "in",
-                supplierPartToItemInserts.map(
-                  (i: { itemId: string }) => i.itemId
-                )
+                supplierPartInserts.map((insert) => insert.itemId)
               )
               .execute();
-
-            const supplierPartIdByItemId = new Map(
-              supplierParts.map((sp) => [sp.itemId, sp.id])
+            const supplierPartByItemId = new Map(
+              supplierParts.map((sp) => [sp.itemId, sp])
             );
 
-            for (const line of quoteLines.data.filter(
-              (l) =>
-                !!l.itemId && l.id && selectedLines && l.id in selectedLines
-            )) {
-              const spId = supplierPartIdByItemId.get(line.itemId!);
-              if (!spId) continue;
+            const converter = await getSupplierPartPriceConverter(
+              trx,
+              companyId,
+              {
+                currencyCode: quote.data.currencyCode,
+                exchangeRate: quote.data.exchangeRate ?? 1
+              },
+              supplierParts.map((sp) => sp.currencyCode)
+            );
 
-              const selectedLine = selectedLines![line.id!];
-              const exchangeRate = quote.data.exchangeRate ?? 1;
-              const conversionFactor = line.conversionFactor ?? 1;
-              const unitPriceInInventoryUnit =
-                selectedLine!.supplierUnitPrice /
-                (exchangeRate === 0 ? 1 : exchangeRate) /
-                conversionFactor;
+            // One break per (part, quantity); the later line wins.
+            const priceBreaks = new Map<
+              string,
+              Database["public"]["Tables"]["supplierPartPrice"]["Insert"]
+            >();
+            for (const line of pricedLines) {
+              const supplierPart = supplierPartByItemId.get(line.itemId!);
+              if (!supplierPart) continue;
+              const selectedLine = selectedLines![line.id!]!;
+              priceBreaks.set(`${supplierPart.id}:${selectedLine.quantity}`, {
+                supplierPartId: supplierPart.id,
+                quantity: selectedLine.quantity,
+                supplierUnitPrice: converter.toPartCurrency(
+                  selectedLine.supplierUnitPrice,
+                  supplierPart.currencyCode
+                ),
+                leadTime: selectedLine.leadTime ?? 0,
+                sourceType: "Purchase Order",
+                sourceDocumentId: insertedPurchaseOrderId,
+                companyId,
+                createdBy: userId,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              });
+            }
 
+            if (priceBreaks.size > 0) {
               await trx
                 .insertInto("supplierPartPrice")
-                .values({
-                  supplierPartId: spId,
-                  quantity: selectedLine!.quantity,
-                  unitPrice: unitPriceInInventoryUnit,
-                  leadTime: selectedLine!.leadTime ?? 0,
-                  sourceType: "Purchase Order",
-                  sourceDocumentId: insertedPurchaseOrderId,
-                  companyId,
-                  createdBy: userId,
-                  updatedBy: userId,
-                  updatedAt: datetime.timestamp()
-                })
+                .values([...priceBreaks.values()])
                 .onConflict((oc) =>
                   oc
                     .columns(["supplierPartId", "quantity"])
                     .doUpdateSet((eb) => ({
-                      unitPrice: eb.ref("excluded.unitPrice"),
+                      supplierUnitPrice: eb.ref("excluded.supplierUnitPrice"),
                       leadTime: eb.ref("excluded.leadTime"),
                       sourceType: eb.ref("excluded.sourceType"),
                       sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
@@ -1932,25 +1937,25 @@ const convert = defineServerFn({
                 .execute();
             }
 
-            for (const [, spId] of supplierPartIdByItemId) {
-              const bestTier = await trx
-                .selectFrom("supplierPartPrice")
-                .select(["unitPrice", "quantity"])
-                .where("supplierPartId", "=", spId)
-                .orderBy("unitPrice", "asc")
-                .executeTakeFirst();
-
-              if (bestTier) {
-                await trx
-                  .updateTable("supplierPart")
-                  .set({
-                    unitPrice: Number(bestTier.unitPrice),
-                    minimumOrderQuantity: Number(bestTier.quantity)
-                  })
-                  .where("id", "=", spId)
-                  .where("companyId", "=", companyId)
-                  .execute();
-              }
+            // Each part's own price and minimum order quantity follow its
+            // cheapest break.
+            const supplierPartIds = supplierParts.map((sp) => sp.id);
+            if (supplierPartIds.length > 0) {
+              await sql`
+                UPDATE "supplierPart" sp
+                SET "supplierUnitPrice" = best."supplierUnitPrice",
+                    "minimumOrderQuantity" = best."quantity"
+                FROM (
+                  SELECT DISTINCT ON ("supplierPartId")
+                    "supplierPartId", "supplierUnitPrice", "quantity"
+                  FROM "supplierPartPrice"
+                  WHERE "supplierPartId" = ANY(${supplierPartIds}::text[])
+                    AND "companyId" = ${companyId}
+                  ORDER BY "supplierPartId", "supplierUnitPrice" ASC
+                ) best
+                WHERE sp."id" = best."supplierPartId"
+                  AND sp."companyId" = ${companyId}
+              `.execute(trx);
             }
           }
         });

@@ -348,6 +348,7 @@ export type Database = {
         Row: {
           accumulatedDepreciationAccount: string
           accumulatedDepreciationOnDisposalAccount: string
+          accumulatedRightOfUseAmortizationAccount: string | null
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
@@ -375,12 +376,16 @@ export type Database = {
           inventoryAdjustmentVarianceAccount: string
           laborAbsorptionAccount: string | null
           laborAndMachineVarianceAccount: string
+          leaseInterestExpenseAccount: string | null
           leaseInterestIncomeAccount: string | null
+          leaseLiabilityAccount: string | null
           leaseRevenueAccount: string | null
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount: string | null
           netInvestmentInLeasesAccount: string | null
+          operatingLeaseExpenseAccount: string | null
           overheadAbsorptionAccount: string | null
           overheadVarianceAccount: string
           payablesAccount: string
@@ -394,6 +399,8 @@ export type Database = {
           rentalIncomeAccount: string | null
           retainedEarningsAccount: string
           reverseChargeSalesTaxPayableAccount: string
+          rightOfUseAmortizationExpenseAccount: string | null
+          rightOfUseAssetAccount: string | null
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
@@ -407,11 +414,13 @@ export type Database = {
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
           updatedBy: string | null
+          variableLeaseExpenseAccount: string | null
           workInProgressAccount: string
         }
         Insert: {
           accumulatedDepreciationAccount: string
           accumulatedDepreciationOnDisposalAccount: string
+          accumulatedRightOfUseAmortizationAccount?: string | null
           assetAquisitionCostAccount: string
           assetAquisitionCostOnDisposalAccount: string
           assetDepreciationExpenseAccount: string
@@ -439,12 +448,16 @@ export type Database = {
           inventoryAdjustmentVarianceAccount: string
           laborAbsorptionAccount?: string | null
           laborAndMachineVarianceAccount: string
+          leaseInterestExpenseAccount?: string | null
           leaseInterestIncomeAccount?: string | null
+          leaseLiabilityAccount?: string | null
           leaseRevenueAccount?: string | null
           lotSizeVarianceAccount: string
           maintenanceAccount: string
           materialVarianceAccount: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
+          operatingLeaseExpenseAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount: string
           payablesAccount: string
@@ -458,6 +471,8 @@ export type Database = {
           rentalIncomeAccount?: string | null
           retainedEarningsAccount: string
           reverseChargeSalesTaxPayableAccount: string
+          rightOfUseAmortizationExpenseAccount?: string | null
+          rightOfUseAssetAccount?: string | null
           roundingAccount: string
           salesAccount: string
           salesDiscountAccount: string
@@ -471,11 +486,13 @@ export type Database = {
           supplierPrepaymentAccount: string
           supplierWriteOffAccount: string
           updatedBy?: string | null
+          variableLeaseExpenseAccount?: string | null
           workInProgressAccount: string
         }
         Update: {
           accumulatedDepreciationAccount?: string
           accumulatedDepreciationOnDisposalAccount?: string
+          accumulatedRightOfUseAmortizationAccount?: string | null
           assetAquisitionCostAccount?: string
           assetAquisitionCostOnDisposalAccount?: string
           assetDepreciationExpenseAccount?: string
@@ -503,12 +520,16 @@ export type Database = {
           inventoryAdjustmentVarianceAccount?: string
           laborAbsorptionAccount?: string | null
           laborAndMachineVarianceAccount?: string
+          leaseInterestExpenseAccount?: string | null
           leaseInterestIncomeAccount?: string | null
+          leaseLiabilityAccount?: string | null
           leaseRevenueAccount?: string | null
           lotSizeVarianceAccount?: string
           maintenanceAccount?: string
           materialVarianceAccount?: string
+          migrationClearingAccount?: string | null
           netInvestmentInLeasesAccount?: string | null
+          operatingLeaseExpenseAccount?: string | null
           overheadAbsorptionAccount?: string | null
           overheadVarianceAccount?: string
           payablesAccount?: string
@@ -522,6 +543,8 @@ export type Database = {
           rentalIncomeAccount?: string | null
           retainedEarningsAccount?: string
           reverseChargeSalesTaxPayableAccount?: string
+          rightOfUseAmortizationExpenseAccount?: string | null
+          rightOfUseAssetAccount?: string | null
           roundingAccount?: string
           salesAccount?: string
           salesDiscountAccount?: string
@@ -535,6 +558,7 @@ export type Database = {
           supplierPrepaymentAccount?: string
           supplierWriteOffAccount?: string
           updatedBy?: string | null
+          variableLeaseExpenseAccount?: string | null
           workInProgressAccount?: string
         }
         Relationships: [
@@ -562,6 +586,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_accumulatedDepreciationOnDisposalAccount_fkey"
             columns: ["accumulatedDepreciationOnDisposalAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_accumulatedRightOfUseAmortizationAccount_fkey"
+            columns: ["accumulatedRightOfUseAmortizationAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_accumulatedRightOfUseAmortizationAccount_fkey"
+            columns: ["accumulatedRightOfUseAmortizationAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -959,6 +997,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "accountDefault_leaseInterestExpenseAccount_fkey"
+            columns: ["leaseInterestExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_leaseInterestExpenseAccount_fkey"
+            columns: ["leaseInterestExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "accountDefault_leaseInterestIncomeAccount_fkey"
             columns: ["leaseInterestIncomeAccount"]
             isOneToOne: false
@@ -968,6 +1020,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_leaseInterestIncomeAccount_fkey"
             columns: ["leaseInterestIncomeAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_leaseLiabilityAccount_fkey"
+            columns: ["leaseLiabilityAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_leaseLiabilityAccount_fkey"
+            columns: ["leaseLiabilityAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -1038,6 +1104,20 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_netInvestmentInLeasesAccount_fkey"
             columns: ["netInvestmentInLeasesAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_operatingLeaseExpenseAccount_fkey"
+            columns: ["operatingLeaseExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_operatingLeaseExpenseAccount_fkey"
+            columns: ["operatingLeaseExpenseAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -1220,6 +1300,34 @@ export type Database = {
           {
             foreignKeyName: "accountDefault_reverseChargeSalesTaxPayableAccount_fkey"
             columns: ["reverseChargeSalesTaxPayableAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_rightOfUseAmortizationExpenseAccount_fkey"
+            columns: ["rightOfUseAmortizationExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_rightOfUseAmortizationExpenseAccount_fkey"
+            columns: ["rightOfUseAmortizationExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_rightOfUseAssetAccount_fkey"
+            columns: ["rightOfUseAssetAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_rightOfUseAssetAccount_fkey"
+            columns: ["rightOfUseAssetAccount"]
             isOneToOne: false
             referencedRelation: "accounts"
             referencedColumns: ["id"]
@@ -1426,6 +1534,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "accountDefault_variableLeaseExpenseAccount_fkey"
+            columns: ["variableLeaseExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "accountDefault_variableLeaseExpenseAccount_fkey"
+            columns: ["variableLeaseExpenseAccount"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "accountDefault_workInProgressAccount_fkey"
@@ -7420,6 +7542,7 @@ export type Database = {
           countryCode: string | null
           createdAt: string
           customIndustryDescription: string | null
+          dimensions: Json
           email: string | null
           eori: string | null
           fax: string | null
@@ -7458,6 +7581,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
@@ -7496,6 +7620,7 @@ export type Database = {
           countryCode?: string | null
           createdAt?: string
           customIndustryDescription?: string | null
+          dimensions?: Json
           email?: string | null
           eori?: string | null
           fax?: string | null
@@ -8056,6 +8181,9 @@ export type Database = {
       }
       companySettings: {
         Row: {
+          accountingActivatedAt: string | null
+          accountingActivatedBy: string | null
+          accountingCutoverDate: string | null
           accountingEnabled: boolean
           accountsPayableAddress: boolean | null
           accountsPayableEmail: string | null
@@ -8088,7 +8216,10 @@ export type Database = {
           invoiceNotificationGroup: string[]
           kanbanOutput: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate: number
+          leaseIncrementalBorrowingRate: number
           leaseMajorPartThresholdPercent: number
+          leaseReminderDays: number
+          leaseShortTermExpedient: boolean
           leaseSubstantiallyAllThresholdPercent: number
           maintenanceDispatchNotificationGroup: string[] | null
           materialGeneratedIds: boolean
@@ -8123,6 +8254,9 @@ export type Database = {
           useMetric: boolean
         }
         Insert: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8155,7 +8289,10 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
+          leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
+          leaseReminderDays?: number
+          leaseShortTermExpedient?: boolean
           leaseSubstantiallyAllThresholdPercent?: number
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
@@ -8190,6 +8327,9 @@ export type Database = {
           useMetric?: boolean
         }
         Update: {
+          accountingActivatedAt?: string | null
+          accountingActivatedBy?: string | null
+          accountingCutoverDate?: string | null
           accountingEnabled?: boolean
           accountsPayableAddress?: boolean | null
           accountsPayableEmail?: string | null
@@ -8222,7 +8362,10 @@ export type Database = {
           invoiceNotificationGroup?: string[]
           kanbanOutput?: Database["public"]["Enums"]["kanbanOutput"]
           leaseDefaultDiscountRate?: number
+          leaseIncrementalBorrowingRate?: number
           leaseMajorPartThresholdPercent?: number
+          leaseReminderDays?: number
+          leaseShortTermExpedient?: boolean
           leaseSubstantiallyAllThresholdPercent?: number
           maintenanceDispatchNotificationGroup?: string[] | null
           materialGeneratedIds?: boolean
@@ -8257,6 +8400,41 @@ export type Database = {
           useMetric?: boolean
         }
         Relationships: [
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companySettings_accountingActivatedBy_fkey"
+            columns: ["accountingActivatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
           {
             foreignKeyName: "companySettings_companyId_fkey"
             columns: ["id"]
@@ -30285,6 +30463,7 @@ export type Database = {
       }
       journalLine: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean
           amount: number
@@ -30309,6 +30488,7 @@ export type Database = {
           updatedBy: string | null
         }
         Insert: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount: number
@@ -30333,6 +30513,7 @@ export type Database = {
           updatedBy?: string | null
         }
         Update: {
+          accountDefaultRole?: string | null
           accountId?: string | null
           accrual?: boolean
           amount?: number
@@ -30870,6 +31051,1139 @@ export type Database = {
           },
           {
             foreignKeyName: "kanban_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      lease: {
+        Row: {
+          activatedAt: string | null
+          annualEscalationPercent: number
+          assignee: string | null
+          closedAt: string | null
+          commencementDate: string
+          commencementJournalId: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          customFields: Json | null
+          description: string | null
+          discountRate: number
+          endDate: string | null
+          endRemindedFor: string | null
+          id: string
+          invoiceFromDate: string
+          leaseId: string
+          locationId: string | null
+          name: string | null
+          noticeDate: string | null
+          noticeRemindedFor: string | null
+          paymentFrequency: Database["public"]["Enums"]["leasePaymentFrequency"]
+          paymentTiming: Database["public"]["Enums"]["rentalBillingTiming"]
+          status: Database["public"]["Enums"]["leaseStatus"]
+          supplierContactId: string | null
+          supplierId: string
+          supplierLocationId: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          activatedAt?: string | null
+          annualEscalationPercent?: number
+          assignee?: string | null
+          closedAt?: string | null
+          commencementDate: string
+          commencementJournalId?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          customFields?: Json | null
+          description?: string | null
+          discountRate: number
+          endDate?: string | null
+          endRemindedFor?: string | null
+          id?: string
+          invoiceFromDate: string
+          leaseId: string
+          locationId?: string | null
+          name?: string | null
+          noticeDate?: string | null
+          noticeRemindedFor?: string | null
+          paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]
+          paymentTiming?: Database["public"]["Enums"]["rentalBillingTiming"]
+          status?: Database["public"]["Enums"]["leaseStatus"]
+          supplierContactId?: string | null
+          supplierId: string
+          supplierLocationId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          activatedAt?: string | null
+          annualEscalationPercent?: number
+          assignee?: string | null
+          closedAt?: string | null
+          commencementDate?: string
+          commencementJournalId?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          customFields?: Json | null
+          description?: string | null
+          discountRate?: number
+          endDate?: string | null
+          endRemindedFor?: string | null
+          id?: string
+          invoiceFromDate?: string
+          leaseId?: string
+          locationId?: string | null
+          name?: string | null
+          noticeDate?: string | null
+          noticeRemindedFor?: string | null
+          paymentFrequency?: Database["public"]["Enums"]["leasePaymentFrequency"]
+          paymentTiming?: Database["public"]["Enums"]["rentalBillingTiming"]
+          status?: Database["public"]["Enums"]["leaseStatus"]
+          supplierContactId?: string | null
+          supplierId?: string
+          supplierLocationId?: string | null
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "lease_commencementJournalId_fkey"
+            columns: ["commencementJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_commencementJournalId_fkey"
+            columns: ["commencementJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "lease_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierContactId_fkey"
+            columns: ["supplierContactId"]
+            isOneToOne: false
+            referencedRelation: "supplierContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierLocationId_fkey"
+            columns: ["supplierLocationId"]
+            isOneToOne: false
+            referencedRelation: "supplierLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      leaseEvent: {
+        Row: {
+          classificationAfter: Database["public"]["Enums"]["lesseeClassification"]
+          classificationBefore: Database["public"]["Enums"]["lesseeClassification"]
+          companyId: string
+          createdAt: string
+          createdBy: string
+          effectiveDate: string
+          eventType: Database["public"]["Enums"]["leaseEventType"]
+          fixedAssetId: string | null
+          gainLoss: number
+          id: string
+          journalId: string | null
+          leaseId: string
+          leaseLineId: string
+          liabilityAfter: number
+          liabilityBefore: number
+          notes: string | null
+          rouAssetAfter: number
+          rouAssetBefore: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          classificationAfter: Database["public"]["Enums"]["lesseeClassification"]
+          classificationBefore: Database["public"]["Enums"]["lesseeClassification"]
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          effectiveDate: string
+          eventType: Database["public"]["Enums"]["leaseEventType"]
+          fixedAssetId?: string | null
+          gainLoss?: number
+          id?: string
+          journalId?: string | null
+          leaseId: string
+          leaseLineId: string
+          liabilityAfter: number
+          liabilityBefore: number
+          notes?: string | null
+          rouAssetAfter: number
+          rouAssetBefore: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          classificationAfter?: Database["public"]["Enums"]["lesseeClassification"]
+          classificationBefore?: Database["public"]["Enums"]["lesseeClassification"]
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          effectiveDate?: string
+          eventType?: Database["public"]["Enums"]["leaseEventType"]
+          fixedAssetId?: string | null
+          gainLoss?: number
+          id?: string
+          journalId?: string | null
+          leaseId?: string
+          leaseLineId?: string
+          liabilityAfter?: number
+          liabilityBefore?: number
+          notes?: string | null
+          rouAssetAfter?: number
+          rouAssetBefore?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaseEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_leaseLine_fkey"
+            columns: ["leaseLineId", "leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "leaseId", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseEvent_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      leaseLine: {
+        Row: {
+          classificationInputs: Json | null
+          classificationOverride:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason: string | null
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string
+          economicLifeMonths: number | null
+          fairValue: number | null
+          fixedAssetId: string | null
+          id: string
+          initialLiability: number | null
+          initialRouAsset: number | null
+          leaseId: string
+          lesseeClassification:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId: string | null
+          ownershipTransfers: boolean
+          paymentAmount: number
+          purchaseOptionAmount: number | null
+          purchaseOptionReasonablyCertain: boolean
+          rouAssetCost: number | null
+          serialNumber: string | null
+          sortOrder: number
+          specializedAsset: boolean
+          status: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          classificationInputs?: Json | null
+          classificationOverride?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason?: string | null
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description: string
+          economicLifeMonths?: number | null
+          fairValue?: number | null
+          fixedAssetId?: string | null
+          id?: string
+          initialLiability?: number | null
+          initialRouAsset?: number | null
+          leaseId: string
+          lesseeClassification?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId?: string | null
+          ownershipTransfers?: boolean
+          paymentAmount?: number
+          purchaseOptionAmount?: number | null
+          purchaseOptionReasonablyCertain?: boolean
+          rouAssetCost?: number | null
+          serialNumber?: string | null
+          sortOrder?: number
+          specializedAsset?: boolean
+          status?: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          classificationInputs?: Json | null
+          classificationOverride?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          classificationOverrideReason?: string | null
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string
+          economicLifeMonths?: number | null
+          fairValue?: number | null
+          fixedAssetId?: string | null
+          id?: string
+          initialLiability?: number | null
+          initialRouAsset?: number | null
+          leaseId?: string
+          lesseeClassification?:
+            | Database["public"]["Enums"]["lesseeClassification"]
+            | null
+          locationId?: string | null
+          ownershipTransfers?: boolean
+          paymentAmount?: number
+          purchaseOptionAmount?: number | null
+          purchaseOptionReasonablyCertain?: boolean
+          rouAssetCost?: number | null
+          serialNumber?: string | null
+          sortOrder?: number
+          specializedAsset?: boolean
+          status?: Database["public"]["Enums"]["leaseLineStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "leaseLine_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fixedAsset"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_fixedAssetId_fkey"
+            columns: ["fixedAssetId"]
+            isOneToOne: false
+            referencedRelation: "fleetAssets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseLine_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      leasePayment: {
+        Row: {
+          amount: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          dueDate: string
+          id: string
+          leaseId: string
+          leaseLineId: string
+          paymentType: Database["public"]["Enums"]["leasePaymentType"]
+          periodEnd: string
+          periodStart: string
+          purchaseInvoiceLineId: string | null
+          status: Database["public"]["Enums"]["leasePaymentStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+          voidedPurchaseInvoiceId: string | null
+        }
+        Insert: {
+          amount: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          dueDate: string
+          id?: string
+          leaseId: string
+          leaseLineId: string
+          paymentType?: Database["public"]["Enums"]["leasePaymentType"]
+          periodEnd: string
+          periodStart: string
+          purchaseInvoiceLineId?: string | null
+          status?: Database["public"]["Enums"]["leasePaymentStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          voidedPurchaseInvoiceId?: string | null
+        }
+        Update: {
+          amount?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          dueDate?: string
+          id?: string
+          leaseId?: string
+          leaseLineId?: string
+          paymentType?: Database["public"]["Enums"]["leasePaymentType"]
+          periodEnd?: string
+          periodStart?: string
+          purchaseInvoiceLineId?: string | null
+          status?: Database["public"]["Enums"]["leasePaymentStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+          voidedPurchaseInvoiceId?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leasePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leasePayment_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leasePayment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "leasePayment_leaseLine_fkey"
+            columns: ["leaseLineId", "leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "leaseId", "companyId"]
+          },
+          {
+            foreignKeyName: "leasePayment_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leasePayment_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leasePayment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leasePayment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      leaseScheduleLine: {
+        Row: {
+          closingLiability: number
+          closingRouAsset: number
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          interestAmount: number
+          journalId: string | null
+          leaseCost: number
+          leaseId: string
+          leaseLineId: string
+          openingLiability: number
+          paymentAmount: number
+          periodDate: string
+          postedAt: string | null
+          principalAmount: number
+          rouAmortization: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          closingLiability: number
+          closingRouAsset: number
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          interestAmount: number
+          journalId?: string | null
+          leaseCost: number
+          leaseId: string
+          leaseLineId: string
+          openingLiability: number
+          paymentAmount: number
+          periodDate: string
+          postedAt?: string | null
+          principalAmount: number
+          rouAmortization: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          closingLiability?: number
+          closingRouAsset?: number
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          interestAmount?: number
+          journalId?: string | null
+          leaseCost?: number
+          leaseId?: string
+          leaseLineId?: string
+          openingLiability?: number
+          paymentAmount?: number
+          periodDate?: string
+          postedAt?: string | null
+          principalAmount?: number
+          rouAmortization?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "leaseScheduleLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_journalId_fkey"
+            columns: ["journalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_leaseLine_fkey"
+            columns: ["leaseLineId", "leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseLine"
+            referencedColumns: ["id", "leaseId", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "leaseScheduleLine_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -45439,6 +46753,8 @@ export type Database = {
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId: string | null
           jobOperationId: string | null
+          leaseId: string | null
+          leasePaymentId: string | null
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
@@ -45483,6 +46799,8 @@ export type Database = {
           invoiceLineType: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
           jobOperationId?: string | null
+          leaseId?: string | null
+          leasePaymentId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
@@ -45527,6 +46845,8 @@ export type Database = {
           invoiceLineType?: Database["public"]["Enums"]["payableLineType"]
           itemId?: string | null
           jobOperationId?: string | null
+          leaseId?: string | null
+          leasePaymentId?: string | null
           locationId?: string | null
           modelUploadId?: string | null
           ownerId?: string | null
@@ -45601,6 +46921,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "jobOperationsWithMakeMethods"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_leasePayment_fkey"
+            columns: ["leasePaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leasePayment"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
@@ -49117,6 +50458,106 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "supplierQuotes"
             referencedColumns: ["id"]
+          }
+        ]
+      }
+      pushSubscription: {
+        Row: {
+          auth: string
+          companyId: string
+          createdAt: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updatedAt: string
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          auth: string
+          companyId: string
+          createdAt?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          auth?: string
+          companyId?: string
+          createdAt?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          updatedAt?: string
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pushSubscription_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -53880,6 +55321,7 @@ export type Database = {
           createdBy: string
           description: string
           id: string
+          invoiceSeparately: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId: string | null
           taxPercent: number
@@ -53896,6 +55338,7 @@ export type Database = {
           createdBy: string
           description: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -53912,6 +55355,7 @@ export type Database = {
           createdBy?: string
           description?: string
           id?: string
+          invoiceSeparately?: boolean
           rentalAgreementLineId?: string
           salesInvoiceLineId?: string | null
           taxPercent?: number
@@ -55124,6 +56568,7 @@ export type Database = {
           postedBy: string | null
           runId: string
           status: string
+          type: Database["public"]["Enums"]["runType"]
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -55138,6 +56583,7 @@ export type Database = {
           postedBy?: string | null
           runId: string
           status?: string
+          type?: Database["public"]["Enums"]["runType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -55152,6 +56598,7 @@ export type Database = {
           postedBy?: string | null
           runId?: string
           status?: string
+          type?: Database["public"]["Enums"]["runType"]
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -55469,6 +56916,8 @@ export type Database = {
           debitAccountId: string
           id: string
           journalId: string | null
+          leaseId: string | null
+          leaseScheduleLineId: string | null
           memoId: string | null
           periodEnd: string
           periodStart: string
@@ -55496,6 +56945,8 @@ export type Database = {
           debitAccountId: string
           id?: string
           journalId?: string | null
+          leaseId?: string | null
+          leaseScheduleLineId?: string | null
           memoId?: string | null
           periodEnd: string
           periodStart: string
@@ -55523,6 +56974,8 @@ export type Database = {
           debitAccountId?: string
           id?: string
           journalId?: string | null
+          leaseId?: string | null
+          leaseScheduleLineId?: string | null
           memoId?: string | null
           periodEnd?: string
           periodStart?: string
@@ -55662,6 +57115,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "journalEntries"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "revenueRecognitionSchedule_leaseScheduleLine_fkey"
+            columns: ["leaseScheduleLineId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leaseScheduleLine"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "revenueRecognitionSchedule_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "revenueRecognitionSchedule_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "revenueRecognitionSchedule_memo_fkey"
@@ -63889,6 +65363,7 @@ export type Database = {
           conversionFactor: number
           createdAt: string
           createdBy: string
+          currencyCode: string | null
           customFields: Json | null
           id: string
           itemId: string
@@ -63897,8 +65372,8 @@ export type Database = {
           supplierId: string
           supplierPartId: string | null
           supplierUnitOfMeasureCode: string | null
+          supplierUnitPrice: number | null
           tags: string[] | null
-          unitPrice: number | null
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -63908,6 +65383,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId: string
@@ -63916,8 +65392,8 @@ export type Database = {
           supplierId: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -63927,6 +65403,7 @@ export type Database = {
           conversionFactor?: number
           createdAt?: string
           createdBy?: string
+          currencyCode?: string | null
           customFields?: Json | null
           id?: string
           itemId?: string
@@ -63935,8 +65412,8 @@ export type Database = {
           supplierId?: string
           supplierPartId?: string | null
           supplierUnitOfMeasureCode?: string | null
+          supplierUnitPrice?: number | null
           tags?: string[] | null
-          unitPrice?: number | null
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64101,6 +65578,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "supplierPart_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
           }
         ]
       }
@@ -64114,7 +65598,7 @@ export type Database = {
           sourceDocumentId: string | null
           sourceType: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt: string | null
           updatedBy: string | null
         }
@@ -64127,7 +65611,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId: string
-          unitPrice: number
+          supplierUnitPrice: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -64140,7 +65624,7 @@ export type Database = {
           sourceDocumentId?: string | null
           sourceType?: Database["public"]["Enums"]["supplierPartPriceSourceType"]
           supplierPartId?: string
-          unitPrice?: number
+          supplierUnitPrice?: number
           updatedAt?: string | null
           updatedBy?: string | null
         }
@@ -77701,6 +79185,7 @@ export type Database = {
       }
       journalLines: {
         Row: {
+          accountDefaultRole: string | null
           accountId: string | null
           accrual: boolean | null
           amount: number | null
@@ -78127,6 +79612,255 @@ export type Database = {
           },
           {
             foreignKeyName: "kanban_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      leases: {
+        Row: {
+          activatedAt: string | null
+          annualEscalationPercent: number | null
+          assetCount: number | null
+          assignee: string | null
+          classification: string | null
+          closedAt: string | null
+          commencementDate: string | null
+          commencementJournalId: string | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          currencyCode: string | null
+          currentLiability: number | null
+          customFields: Json | null
+          description: string | null
+          discountRate: number | null
+          endDate: string | null
+          endRemindedFor: string | null
+          id: string | null
+          invoiceFromDate: string | null
+          leaseId: string | null
+          locationId: string | null
+          name: string | null
+          nextDueDate: string | null
+          noticeDate: string | null
+          noticeRemindedFor: string | null
+          paymentAmount: number | null
+          paymentFrequency:
+            | Database["public"]["Enums"]["leasePaymentFrequency"]
+            | null
+          paymentTiming:
+            | Database["public"]["Enums"]["rentalBillingTiming"]
+            | null
+          status: Database["public"]["Enums"]["leaseStatus"] | null
+          supplierContactId: string | null
+          supplierId: string | null
+          supplierLocationId: string | null
+          supplierName: string | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_assignee_fkey"
+            columns: ["assignee"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "lease_commencementJournalId_fkey"
+            columns: ["commencementJournalId"]
+            isOneToOne: false
+            referencedRelation: "journal"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_commencementJournalId_fkey"
+            columns: ["commencementJournalId"]
+            isOneToOne: false
+            referencedRelation: "journalEntries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "lease_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "lease_locationId_fkey"
+            columns: ["locationId"]
+            isOneToOne: false
+            referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierContactId_fkey"
+            columns: ["supplierContactId"]
+            isOneToOne: false
+            referencedRelation: "supplierContact"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "contractors"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "partners"
+            referencedColumns: ["supplierId"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "purchaseOrderSuppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "supplier"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierId_fkey"
+            columns: ["supplierId"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_supplierLocationId_fkey"
+            columns: ["supplierLocationId"]
+            isOneToOne: false
+            referencedRelation: "supplierLocation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lease_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -79964,9 +81698,14 @@ export type Database = {
           itemName: string | null
           itemReadableId: string | null
           jobOperationId: string | null
+          leaseId: string | null
+          leaseName: string | null
+          leasePaymentId: string | null
+          leaseReadableId: string | null
           locationId: string | null
           modelUploadId: string | null
           ownerId: string | null
+          projectId: string | null
           purchaseOrderId: string | null
           purchaseOrderLineId: string | null
           purchaseUnitOfMeasureCode: string | null
@@ -80042,6 +81781,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "purchaseInvoiceLine_leasePayment_fkey"
+            columns: ["leasePaymentId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leasePayment"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "lease"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_lease_fkey"
+            columns: ["leaseId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "leases"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
             foreignKeyName: "purchaseInvoiceLine_modelUploadId_fkey"
             columns: ["modelUploadId"]
             isOneToOne: false
@@ -80096,6 +81856,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "purchaseInvoiceLine_projectId_fkey"
+            columns: ["projectId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "project"
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "purchaseInvoiceLine_storageUnitId_fkey"
@@ -89657,9 +91424,11 @@ export type Database = {
           p_exclude_allocated?: boolean
           p_exclude_line_id?: string
           p_exclude_lineside?: boolean
+          p_filter_storage_unit?: boolean
           p_item_id: string
           p_location_id: string
           p_sort_method?: string
+          p_storage_unit_id?: string
         }
         Returns: {
           availableQuantity: number
@@ -91623,6 +93392,10 @@ export type Database = {
           similarity: number
         }[]
       }
+      journal_posting_status: {
+        Args: { p_company_id: string }
+        Returns: Database["public"]["Enums"]["journalEntryStatus"]
+      }
       journalDimensionPivot: {
         Args: {
           p_account_classes?: string[]
@@ -91937,6 +93710,10 @@ export type Database = {
           operation: string
           table_name: string
         }
+        Returns: undefined
+      }
+      sync_advance_document_sequence: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
       sync_archive_other_procedures: {
@@ -92312,7 +94089,11 @@ export type Database = {
         | "Other Expense"
         | "Tax"
         | "Investments"
-      approvalDocumentType: "purchaseOrder" | "qualityDocument" | "supplier"
+      approvalDocumentType:
+        | "purchaseOrder"
+        | "qualityDocument"
+        | "supplier"
+        | "changeOrder"
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
@@ -92694,7 +94475,13 @@ export type Database = {
         | "Revenue Recognition"
         | "Asset Transfer"
         | "Lease"
-      journalEntryStatus: "Draft" | "Posted" | "Reversed"
+        | "Lease Run"
+      journalEntryStatus:
+        | "Draft"
+        | "Posted"
+        | "Reversed"
+        | "Provisional"
+        | "Superseded"
       journalLineDocumentType:
         | "Receipt"
         | "Invoice"
@@ -92725,8 +94512,22 @@ export type Database = {
         | "Asset Transfer"
         | "Rental Agreement"
         | "Contract"
+        | "Lease"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
+      leaseEventType: "Modification" | "Termination" | "Purchase"
+      leaseLineStatus: "Active" | "Terminated" | "Purchased" | "Expired"
+      leasePaymentFrequency: "Monthly" | "Quarterly" | "Annual"
+      leasePaymentStatus: "Pending" | "Invoiced" | "Skipped"
+      leasePaymentType: "Rent" | "Purchase Option" | "Termination Penalty"
+      leaseStatus:
+        | "Draft"
+        | "Active"
+        | "Expired"
+        | "Terminated"
+        | "Purchased"
+        | "Cancelled"
+      lesseeClassification: "Operating" | "Finance" | "Short-Term"
       lessorClassification: "Rental" | "Sale" | "Financing"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
@@ -92827,6 +94628,7 @@ export type Database = {
         | "Service"
         | "Consumable"
         | "Fixture"
+        | "Lease"
       paymentStatus: "Draft" | "Posted" | "Voided"
       paymentTermCalculationMethod: "Net" | "End of Month" | "Day of Month"
       paymentType: "Receipt" | "Disbursement"
@@ -92942,7 +94744,7 @@ export type Database = {
       rentalRateUnit: "Day" | "Week" | "Month"
       reportViewVisibility: "Private" | "Company"
       revenueScheduleStatus: "Planned" | "Posted"
-      revenueScheduleType: "Deferral" | "Accrual" | "Interest"
+      revenueScheduleType: "Deferral" | "Accrual" | "Interest" | "Amortization"
       riskRegisterType: "Risk" | "Opportunity"
       riskSource:
         | "Customer"
@@ -92954,6 +94756,7 @@ export type Database = {
         | "Work Center"
       riskStatus: "Open" | "In Review" | "Mitigating" | "Closed" | "Accepted"
       role: "customer" | "employee" | "supplier"
+      runType: "Revenue Recognition" | "Lease"
       salesInvoiceLineType:
         | "Comment"
         | "Part"
@@ -93790,7 +95593,12 @@ export const Constants = {
         "Tax",
         "Investments",
       ],
-      approvalDocumentType: ["purchaseOrder", "qualityDocument", "supplier"],
+      approvalDocumentType: [
+        "purchaseOrder",
+        "qualityDocument",
+        "supplier",
+        "changeOrder",
+      ],
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
@@ -94207,8 +96015,15 @@ export const Constants = {
         "Revenue Recognition",
         "Asset Transfer",
         "Lease",
+        "Lease Run",
       ],
-      journalEntryStatus: ["Draft", "Posted", "Reversed"],
+      journalEntryStatus: [
+        "Draft",
+        "Posted",
+        "Reversed",
+        "Provisional",
+        "Superseded",
+      ],
       journalLineDocumentType: [
         "Receipt",
         "Invoice",
@@ -94239,9 +96054,24 @@ export const Constants = {
         "Asset Transfer",
         "Rental Agreement",
         "Contract",
+        "Lease",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
+      leaseEventType: ["Modification", "Termination", "Purchase"],
+      leaseLineStatus: ["Active", "Terminated", "Purchased", "Expired"],
+      leasePaymentFrequency: ["Monthly", "Quarterly", "Annual"],
+      leasePaymentStatus: ["Pending", "Invoiced", "Skipped"],
+      leasePaymentType: ["Rent", "Purchase Option", "Termination Penalty"],
+      leaseStatus: [
+        "Draft",
+        "Active",
+        "Expired",
+        "Terminated",
+        "Purchased",
+        "Cancelled",
+      ],
+      lesseeClassification: ["Operating", "Finance", "Short-Term"],
       lessorClassification: ["Rental", "Sale", "Financing"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
       macrsPropertyClass: ["3", "5", "7", "10", "15", "20", "27.5", "39"],
@@ -94352,6 +96182,7 @@ export const Constants = {
         "Service",
         "Consumable",
         "Fixture",
+        "Lease",
       ],
       paymentStatus: ["Draft", "Posted", "Voided"],
       paymentTermCalculationMethod: ["Net", "End of Month", "Day of Month"],
@@ -94478,7 +96309,7 @@ export const Constants = {
       rentalRateUnit: ["Day", "Week", "Month"],
       reportViewVisibility: ["Private", "Company"],
       revenueScheduleStatus: ["Planned", "Posted"],
-      revenueScheduleType: ["Deferral", "Accrual", "Interest"],
+      revenueScheduleType: ["Deferral", "Accrual", "Interest", "Amortization"],
       riskRegisterType: ["Risk", "Opportunity"],
       riskSource: [
         "Customer",
@@ -94491,6 +96322,7 @@ export const Constants = {
       ],
       riskStatus: ["Open", "In Review", "Mitigating", "Closed", "Accepted"],
       role: ["customer", "employee", "supplier"],
+      runType: ["Revenue Recognition", "Lease"],
       salesInvoiceLineType: [
         "Comment",
         "Part",

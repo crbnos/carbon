@@ -77,6 +77,11 @@ const JournalEntryDocuments = () => {
       to: path.to.rentalAgreementDetails,
       icon: "Lease"
     },
+    lease: {
+      label: t`Lease`,
+      to: path.to.leaseDetails,
+      icon: "Lease"
+    },
     job: { label: t`Job`, to: path.to.jobDetails, icon: "Job Receipt" },
     fixedAsset: {
       label: t`Fixed Asset`,
@@ -120,6 +125,11 @@ const JournalEntryDocuments = () => {
       label: t`Revenue Recognition Run`,
       to: path.to.revenueRecognitionRun,
       icon: "Revenue Recognition"
+    },
+    leaseRun: {
+      label: t`Lease Run`,
+      to: path.to.revenueRecognitionRun,
+      icon: "Lease Run"
     }
   };
   const closeStatusLabels: Record<PeriodCloseStatus, string> = {

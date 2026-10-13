@@ -24,6 +24,7 @@ import {
   postBulkCompletion,
   postSerialCompletions
 } from "~/services/quality.server";
+import { readOrigin, withOrigin } from "~/utils/origin";
 import { path } from "~/utils/path";
 
 // One decision surface: the quality verdict carries its physical outcome.
@@ -63,7 +64,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     laborProductionEventId,
     machineProductionEventId
   };
-  const returnTo = path.to.inspection(operationId);
+  // The page the inspection was opened from; Back keeps returning there.
+  const origin = readOrigin(formData);
+  const returnTo = withOrigin(path.to.inspection(operationId), origin);
   const fail = async (err: unknown, message: string): Promise<never> => {
     throw redirect(returnTo, await flash(request, error(err, message)));
   };
@@ -391,7 +394,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (warnings.length > 0) {
     throw redirect(
-      willBeFinished ? path.to.operations : returnTo,
+      willBeFinished ? (origin ?? path.to.operations) : returnTo,
       await flash(
         request,
         error(null, `${message}, but ${warnings.join("; ")}`)
@@ -400,7 +403,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    willBeFinished ? path.to.operations : returnTo,
+    willBeFinished ? (origin ?? path.to.operations) : returnTo,
     await flash(request, success(message))
   );
 }

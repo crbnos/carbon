@@ -79,7 +79,7 @@ const SequenceOrCustomId = forwardRef<
             <Button
               size="md"
               variant="outline"
-              className="flex-grow bg-transparent text-muted-foreground justify-start pr-4 h-10 w-full hover:scale-100 focus-visible:scale-100"
+              className="flex-grow bg-transparent text-muted-foreground justify-start pr-4 h-10 w-full hover:scale-100 focus-visible:scale-100 max-md:h-11 max-md:text-base"
             >
               {placeholder}
             </Button>
@@ -88,7 +88,8 @@ const SequenceOrCustomId = forwardRef<
             aria-label={t`Toggle`}
             className={cn(
               "bg-card absolute right-0 top-0",
-              "flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border-none -ml-px shadow-button-base"
+              "flex-shrink-0 h-10 w-10 px-3 rounded-l-none before:rounded-l-none border-none -ml-px shadow-button-base",
+              "max-md:h-11 max-md:w-11"
             )}
             icon={isCustom ? <LuToggleLeft /> : <LuToggleRight />}
             variant="secondary"

@@ -72,7 +72,7 @@ function EditableNumberCell({
       className="group/edit flex w-full cursor-pointer items-center gap-1.5 text-left text-sm"
     >
       <span>{display}</span>
-      <LuPencil className="size-3 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/edit:opacity-100" />
+      <LuPencil className="size-3 shrink-0 text-muted-foreground md:opacity-0 transition-opacity group-hover/edit:opacity-100" />
     </button>
   );
 }

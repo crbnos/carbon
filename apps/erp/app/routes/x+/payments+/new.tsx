@@ -25,6 +25,7 @@ import { Trans } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
+import { NewRecordPage } from "~/components/NewRecordPage";
 import { getCurrencyByCode, getDefaultAccounts } from "~/modules/accounting";
 import {
   computeEarlyPaymentDiscounts,
@@ -382,7 +383,7 @@ export default function NewPaymentRoute() {
   const { initialValues, seedInvoiceIds, depositDocuments } =
     useLoaderData<typeof loader>();
   return (
-    <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
+    <NewRecordPage>
       <Card>
         <CardHeader>
           <CardTitle>
@@ -404,6 +405,6 @@ export default function NewPaymentRoute() {
           />
         </CardContent>
       </Card>
-    </div>
+    </NewRecordPage>
   );
 }

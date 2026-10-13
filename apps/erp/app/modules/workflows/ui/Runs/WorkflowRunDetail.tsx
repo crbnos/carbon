@@ -57,7 +57,7 @@ function RunIdentifiers({ run }: { run: WorkflowRunDetailType }) {
     <div className="space-y-1">
       <button
         type="button"
-        className="text-xs text-muted-foreground underline underline-offset-2"
+        className="text-xs text-muted-foreground underline underline-offset-2 max-md:hit-area"
         onClick={() => setRaw((p) => !p)}
       >
         {raw ? t`Hide raw` : t`Show raw`}

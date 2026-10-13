@@ -14,6 +14,11 @@ import {
   single,
   updateRows
 } from "./rows.ts";
+import {
+  buildSupplierPriceMap,
+  type SupplierPriceBreak,
+  type SupplierPriceMap
+} from "./supplier-part-price.ts";
 import type { Database } from "./types.ts";
 import { type AnyPostgresClient, isKysely } from "./utils.ts";
 
@@ -344,14 +349,6 @@ export const getRatesFromSupplierProcesses =
     };
   };
 
-type SupplierPriceMap = Record<
-  string,
-  {
-    priceBreaks: { quantity: number; unitPrice: number }[];
-    fallbackUnitPrice: number | null;
-  }
->;
-
 type CostCategoryKey =
   | "materialCost"
   | "partCost"
@@ -377,6 +374,12 @@ const costCategoryKeys: CostCategoryKey[] = [
 
 type CostEffects = Record<CostCategoryKey, ((qty: number) => number)[]>;
 
+/**
+ * Mirror of `getSupplierPriceBreaksForItems` in
+ * `apps/erp/app/modules/items/items.service.ts` — keep both in sync. Prices
+ * are converted to base per inventory unit at today's rates by the shared
+ * `buildSupplierPriceMap`.
+ */
 async function getSupplierPriceBreaksForItems(
   client: AnyPostgresClient,
   itemIds: string[]
@@ -388,61 +391,115 @@ async function getSupplierPriceBreaksForItems(
         client,
         "supplierPart",
         { itemId: itemIds },
-        { columns: ["id", "itemId", "unitPrice"] }
+        {
+          columns: [
+            "id",
+            "itemId",
+            "companyId",
+            "currencyCode",
+            "conversionFactor",
+            "supplierUnitPrice"
+          ]
+        }
       )
     : await client
         .from("supplierPart")
-        .select("id, itemId, unitPrice")
+        .select(
+          "id, itemId, companyId, currencyCode, conversionFactor, supplierUnitPrice"
+        )
         .in("itemId", itemIds);
 
   if (!supplierParts.data?.length) return {};
 
+  const companyId = supplierParts.data[0]!.companyId;
   const supplierPartIds = supplierParts.data.map((sp) => sp.id);
 
-  const prices = isKysely(client)
-    ? await many(
+  const [prices, rates] = await Promise.all([
+    isKysely(client)
+      ? many(
+          client,
+          "supplierPartPrice",
+          { supplierPartId: supplierPartIds },
+          { columns: ["supplierPartId", "quantity", "supplierUnitPrice"] }
+        )
+      : client
+          .from("supplierPartPrice")
+          .select("supplierPartId, quantity, supplierUnitPrice")
+          .in("supplierPartId", supplierPartIds),
+    getExchangeRatesByCode(client, companyId)
+  ]);
+
+  const breaksByPart = new Map<string, SupplierPriceBreak[]>();
+  for (const price of prices.data ?? []) {
+    const breaks = breaksByPart.get(price.supplierPartId) ?? [];
+    breaks.push({
+      quantity: Number(price.quantity),
+      supplierUnitPrice: Number(price.supplierUnitPrice)
+    });
+    breaksByPart.set(price.supplierPartId, breaks);
+  }
+
+  return buildSupplierPriceMap(
+    supplierParts.data.map((sp) => ({
+      itemId: sp.itemId,
+      currencyCode: sp.currencyCode,
+      conversionFactor: sp.conversionFactor,
+      supplierUnitPrice: sp.supplierUnitPrice,
+      priceBreaks: breaksByPart.get(sp.id) ?? []
+    })),
+    rates.exchangeRates,
+    rates.baseCurrencyCode
+  );
+}
+
+/** Today's foreign-per-base rate for every currency configured for the company. */
+async function getExchangeRatesByCode(
+  client: AnyPostgresClient,
+  companyId: string
+): Promise<{
+  baseCurrencyCode: string;
+  exchangeRates: Record<string, number | null>;
+}> {
+  const rows: { currencyCode: string; rate: number | null; source: string }[] =
+    isKysely(client)
+      ? (
+          await sql<{
+            currencyCode: string;
+            rate: number | null;
+            source: string;
+          }>`
+            SELECT "currencyCode", "rate", "source"
+            FROM get_exchange_rates(${companyId})
+          `.execute(client)
+        ).rows
+      : ((await client.rpc("get_exchange_rates", { p_company_id: companyId }))
+          .data ?? []);
+
+  const company = isKysely(client)
+    ? await single(
         client,
-        "supplierPartPrice",
-        { supplierPartId: supplierPartIds },
-        {
-          columns: ["supplierPartId", "quantity", "unitPrice"],
-          orderBy: ["quantity"]
-        }
+        "company",
+        { id: companyId },
+        { columns: ["baseCurrencyCode"] }
       )
     : await client
-        .from("supplierPartPrice")
-        .select("supplierPartId, quantity, unitPrice")
-        .in("supplierPartId", supplierPartIds)
-        .order("quantity", { ascending: true });
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", companyId)
+        .single();
 
-  const spToItem = new Map<string, string>();
-  for (const sp of supplierParts.data) {
-    spToItem.set(sp.id, sp.itemId);
-  }
-
-  const result: SupplierPriceMap = {};
-
-  for (const sp of supplierParts.data) {
-    if (!result[sp.itemId]) {
-      result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
-    }
-    const current = result[sp.itemId]!.fallbackUnitPrice;
-    if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId]!.fallbackUnitPrice = sp.unitPrice;
-    }
-  }
-
-  for (const price of prices.data ?? []) {
-    const itemId = spToItem.get(price.supplierPartId);
-    if (itemId && result[itemId]) {
-      result[itemId].priceBreaks.push({
-        quantity: price.quantity,
-        unitPrice: price.unitPrice
-      });
-    }
-  }
-
-  return result;
+  return {
+    baseCurrencyCode:
+      company.data?.baseCurrencyCode ??
+      rows.find((row) => row.source === "base")?.currencyCode ??
+      "USD",
+    exchangeRates: Object.fromEntries(
+      rows.map((row) => [
+        row.currencyCode,
+        row.rate == null ? null : Number(row.rate)
+      ])
+    )
+  };
 }
 
 function lookupPriceFromBreaks(

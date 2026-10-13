@@ -287,7 +287,7 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
             </div>
           </VStack>
         </CardContent>
-        <CardFooter>
+        <CardFooter sticky={!isEditing}>
           <Submit
             isDisabled={
               isEditing

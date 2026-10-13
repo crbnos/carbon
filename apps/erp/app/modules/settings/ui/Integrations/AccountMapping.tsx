@@ -346,14 +346,14 @@ export function AccountMapping({
         </div>
 
         {grouped.length === 0 ? (
-          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground">
+          <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
             <Trans>No accounts match your search</Trans>
           </div>
         ) : (
           grouped.map((group) => (
             <div key={group.class} className="flex w-full flex-col gap-1">
               <Subheading variant="heavy">{group.class}</Subheading>
-              <div className="w-full rounded-lg border border-border">
+              <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
                 <div className="flex w-full flex-col divide-y divide-border">
                   {group.accounts.map((account) => {
                     const mapping = mappedById.get(account.id);
@@ -624,7 +624,7 @@ function MatchByCodeDrawer({
               <Trans>No unmapped accounts match a provider code</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>
@@ -800,7 +800,7 @@ function AiSuggestModal({
               <Trans>AI couldn't confidently match any accounts</Trans>
             </div>
           ) : (
-            <div className="w-full rounded-lg border border-border">
+            <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
               <Table>
                 <Thead>
                   <Tr>

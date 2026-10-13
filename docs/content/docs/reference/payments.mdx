@@ -75,7 +75,7 @@ Only a **Draft** can be deleted; a **Posted** payment or memo must be voided ins
 
 ## What posts to the general ledger
 
-Posting only touches the ledger when accounting is enabled for the company; otherwise the document still moves to **Posted** and its settlements still apply, but no journal is written.
+Posting always writes a journal and applies the settlements. Before the company has [set up accounting](/docs/reference/accounting#setting-up-accounting), the journal is Provisional and counts in no balance.
 
 - **A payment** books the **bank account** against the **AR or AP control account** (receivables for a customer, payables for a supplier), split per application. Each settlement's discount goes to the discount account and its write-off to the write-off account. Realized FX is computed **per application** — the carrying value released from the funding source, less the base principal relieved on the target — and stored on that settlement row as `fxGainLossAmount`. The journal then books the **net** of those to the realized exchange gain or loss account as one line.
 - **A memo** books a balanced two-line entry: the **control account** against the derived **reason account**. Applying a balance-reducing memo to an invoice afterward is GL-neutral — both sit in AR/AP — and realizes no FX, because Carbon only lets you apply a credit whose exchange rate matches the invoice's.
@@ -149,6 +149,6 @@ The payment applies more than its cash, and the shortfall exceeds the party's un
 ### "Cannot post payment: memo … is … (must be Posted)" / "Staged credit … exceeds remaining amount … on memo …"
 A credit staged on this payment draws on a memo that was voided, or already drawn down, since staging. Post or re-select an available credit memo.
 
-### "Accounting is enabled but this company has no account defaults configured"
-Posting a payment or memo to the GL needs the company's account defaults (control, discount, write-off, realized-FX, and — for memos — the reason account). Configure account defaults in accounting settings.
+### "Accounting defaults are required before posting"
+Posting a payment or memo needs the company's account defaults (control, discount, write-off, realized-FX, and — for memos — the reason account). Configure account defaults in accounting settings.
 </AgentContext>

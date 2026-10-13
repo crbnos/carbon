@@ -24,13 +24,14 @@ export type Timing = "Advance" | "Arrears";
 
 export type LessorClassification = "Rental" | "Sale";
 
-/** Periodic rate from an annual percentage: 6 (%) → 0.005 per month. */
-const monthlyRate = (annualRate: number): number => annualRate / 100 / 12;
+/** Periodic rate from an annual percentage: 6 (%) → 0.005 per month. Shared
+ *  with the lessee's `presentValueOfPayments` (`lease-math`), so both sides of
+ *  a lease discount at the same monthly rate. */
+export const monthlyRate = (annualRate: number): number =>
+  annualRate / 100 / 12;
 
-function assertLeaseInputs(periods: number, annualRate: number): void {
-  if (!Number.isInteger(periods) || periods < 1) {
-    throw new Error(`A lease needs a whole number of periods, got ${periods}`);
-  }
+/** Refuses a discount rate that is not a finite number of zero or more. */
+export function assertDiscountRate(annualRate: number): void {
   if (!Number.isFinite(annualRate) || annualRate < 0) {
     throw new Error(
       `The discount rate must be zero or more, got ${annualRate}`
@@ -38,8 +39,16 @@ function assertLeaseInputs(periods: number, annualRate: number): void {
   }
 }
 
-/** Discount factor for an amount `n` periods out: (1 + r)^−n. */
-const discount = (r: number, n: number): number => (1 + r) ** -n;
+function assertLeaseInputs(periods: number, annualRate: number): void {
+  if (!Number.isInteger(periods) || periods < 1) {
+    throw new Error(`A lease needs a whole number of periods, got ${periods}`);
+  }
+  assertDiscountRate(annualRate);
+}
+
+/** Discount factor for an amount `n` periods out at periodic rate `r`:
+ *  (1 + r)^−n. */
+export const discountFactor = (r: number, n: number): number => (1 + r) ** -n;
 
 /** PV of `periods` equal payments: annuity-immediate when billed in arrears
  *  (first payment one period out), annuity-due in advance (first payment
@@ -51,7 +60,7 @@ function annuity(
   timing: Timing
 ): number {
   if (r === 0) return payment * periods;
-  const immediate = (payment * (1 - discount(r, periods))) / r;
+  const immediate = (payment * (1 - discountFactor(r, periods))) / r;
   return timing === "Advance" ? immediate * (1 + r) : immediate;
 }
 
@@ -81,7 +90,7 @@ export function presentValue(args: {
   const { payment, periods, annualRate, timing } = args;
   assertLeaseInputs(periods, annualRate);
   const r = monthlyRate(annualRate);
-  const atTermEnd = discount(r, periods);
+  const atTermEnd = discountFactor(r, periods);
 
   const rent = annuity(payment, periods, r, timing);
   const payments =

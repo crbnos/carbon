@@ -121,6 +121,7 @@ const EmployeesTable = memo(
           ),
 
           meta: {
+            mobile: "P1",
             icon: <LuUser />
           }
         },
@@ -156,6 +157,7 @@ const EmployeesTable = memo(
             return email;
           },
           meta: {
+            mobile: "P3",
             icon: <LuMail />
           }
         },
@@ -170,6 +172,7 @@ const EmployeesTable = memo(
             />
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: employeeTypes.map((type) => ({
@@ -194,6 +197,7 @@ const EmployeesTable = memo(
             return <Badge variant="secondary">{t`Inactive`}</Badge>;
           },
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: [

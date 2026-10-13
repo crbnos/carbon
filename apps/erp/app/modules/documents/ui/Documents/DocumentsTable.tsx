@@ -21,7 +21,8 @@ import {
   PopoverContent,
   PopoverTrigger,
   PrefetchLink,
-  useDisclosure
+  useDisclosure,
+  useViewport
 } from "@carbon/react";
 import { filterEmpty } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -66,6 +67,7 @@ type DocumentsTableProps = {
 const DocumentsTable = memo(
   ({ data, count, labels, extensions }: DocumentsTableProps) => {
     const { t } = useLingui();
+    const { isPhone } = useViewport();
     const permissions = usePermissions();
     const revalidator = useRevalidator();
     const [params] = useUrlParams();
@@ -207,6 +209,7 @@ const DocumentsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuBookMarked />
           }
         },
@@ -225,7 +228,7 @@ const DocumentsTable = memo(
                 className="group flex items-center gap-1"
               >
                 <Enumerable value={row.original.sourceDocument} />{" "}
-                <span className="group-hover:opacity-100 opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
+                <span className="group-hover:opacity-100 md:opacity-0 transition-opacity duration-200 w-4 h-4 text-foreground">
                   <LuExternalLink />
                 </span>
               </PrefetchLink>
@@ -304,6 +307,7 @@ const DocumentsTable = memo(
           header: t`Size`,
           cell: ({ row }) => convertKbToString(row.original.size ?? 0),
           meta: {
+            mobile: "P2",
             icon: <LuRuler />
           }
         },
@@ -396,6 +400,7 @@ const DocumentsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuFileText />
           }
         },
@@ -506,7 +511,11 @@ const DocumentsTable = memo(
           data={rows}
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
-            permissions.can("create", "documents") && <DocumentCreateForm />
+            permissions.can("create", "documents") &&
+            // Phones: uploading neither pins a file nor fills the trash.
+            !(isPhone && (filter === "starred" || filter === "trash")) && (
+              <DocumentCreateForm />
+            )
           }
           renderContextMenu={renderContextMenu}
           title={t`Documents`}

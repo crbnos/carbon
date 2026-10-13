@@ -2,6 +2,12 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  BuyPriceBreak,
+  CurrencyRate,
+  SupplierPriceBreak,
+  SupplierPriceMap
+} from "@carbon/database/supplier-part-price";
 import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -444,15 +450,17 @@ export const standardFactorType = [
   "Total Minutes"
 ] as const;
 
-export type PriceBreak = {
-  quantity: number;
-  unitPrice: number;
-};
+/** A costing break: inventory quantity, base-currency price per inventory unit. */
+export type PriceBreak = BuyPriceBreak;
 
-export type SupplierPriceMap = Record<
-  string,
-  {
-    priceBreaks: PriceBreak[];
-    fallbackUnitPrice: number | null;
-  }
->;
+export type { SupplierPriceMap };
+
+/**
+ * A supplier part's pricing as the supplier quoted it — per purchase unit, in
+ * `currency.currencyCode` — with that currency's current rate.
+ */
+export type SupplierPartPricing = {
+  priceBreaks: SupplierPriceBreak[];
+  supplierUnitPrice: number | null;
+  currency: CurrencyRate;
+};

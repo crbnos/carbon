@@ -12,8 +12,13 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import {
+  DOCUMENT_SEQUENCE_SYNCED,
+  findUnsyncedDocumentSequences
+} from "./conformance/document-sequence-synced";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 import { indexRedirectBeforeLoaders } from "./conformance/index-redirect-before-loaders";
+import { journalStatusFilter } from "./conformance/journal-status-filter";
 import { moduleShape } from "./conformance/module-shape";
 import {
   MANAGED_FUNCTION_SETS,
@@ -53,6 +58,7 @@ import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
 import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import { loadDbTableColumns } from "./sources/db-columns";
+import { loadDocumentSequenceSources } from "./sources/document-sequences";
 import {
   loadEdgeFunctions,
   loadServerFunctions
@@ -72,7 +78,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noLegacyRls,
   noDerivedPercentColumn,
   noRequiredColumnWithoutDefault,
-  noViewWithoutInvoker
+  noViewWithoutInvoker,
+  journalStatusFilter
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -92,7 +99,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noUnscopedKyselyWrite,
   noUnguardedSubmit,
   noNoopOpenChange,
-  noPostgresChanges
+  noPostgresChanges,
+  journalStatusFilter
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */
@@ -189,6 +197,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader]),
     ...findDuplicatedAppFiles(loadTypescriptFiles(root, SHARED_APP_DIRS)).map(
       (violation) => ({ checkId: NO_DUPLICATED_APP_FILE, violation })
+    ),
+    ...findUnsyncedDocumentSequences(loadDocumentSequenceSources(root)).map(
+      (violation) => ({ checkId: DOCUMENT_SEQUENCE_SYNCED, violation })
     )
   ];
 }

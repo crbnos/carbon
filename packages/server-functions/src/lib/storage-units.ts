@@ -3,8 +3,12 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { KyselyDatabase as DB } from "@carbon/database/client";
-import { datetime } from "@carbon/utils";
-import type { Transaction } from "kysely";
+import {
+  datetime,
+  resolveTrackedEntityBins,
+  type TrackedEntityBin
+} from "@carbon/utils";
+import type { Kysely, Transaction } from "kysely";
 
 export async function getStorageUnitId(
   trx: Transaction<DB>,
@@ -27,6 +31,61 @@ export async function getStorageUnitId(
     await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
 
   return storageUnitWithHighestQuantity ?? undefined;
+}
+
+/**
+ * Where each tracked entity holds stock, and how much, per location (see
+ * `resolveTrackedEntityBins`: `null` is the unassigned bin). The lookup returns
+ * `undefined` for an entity with no positive bin at that location.
+ */
+export async function getTrackedEntityBins(
+  db: Kysely<DB>,
+  args: { trackedEntityIds: string[]; locationIds: string[]; companyId: string }
+): Promise<
+  (trackedEntityId: string, locationId: string) => TrackedEntityBin | undefined
+> {
+  if (args.trackedEntityIds.length === 0 || args.locationIds.length === 0) {
+    return () => undefined;
+  }
+
+  const rows = await db
+    .selectFrom("itemLedger")
+    .where("trackedEntityId", "in", args.trackedEntityIds)
+    .where("locationId", "in", args.locationIds)
+    .where("companyId", "=", args.companyId)
+    .select(["trackedEntityId", "locationId", "storageUnitId", "quantity"])
+    .execute();
+
+  const binsByLocation = new Map<string, Map<string, TrackedEntityBin>>();
+  for (const locationId of args.locationIds) {
+    binsByLocation.set(
+      locationId,
+      resolveTrackedEntityBins(rows.filter((r) => r.locationId === locationId))
+    );
+  }
+  return (trackedEntityId, locationId) =>
+    binsByLocation.get(locationId)?.get(trackedEntityId);
+}
+
+/** A tracked entity's on-hand in one bin; `null` is the unassigned bin. */
+export async function getTrackedEntityOnHandInBin(
+  trx: Transaction<DB>,
+  args: {
+    trackedEntityId: string;
+    locationId: string;
+    storageUnitId: string | null;
+    companyId: string;
+  }
+): Promise<number> {
+  const row = await trx
+    .selectFrom("itemLedger")
+    .where("trackedEntityId", "=", args.trackedEntityId)
+    .where("locationId", "=", args.locationId)
+    .where("storageUnitId", "is not distinct from", args.storageUnitId)
+    .where("companyId", "=", args.companyId)
+    .select((eb) => eb.fn.sum<number>("quantity").as("onHand"))
+    .executeTakeFirst();
+  return Number(row?.onHand ?? 0);
 }
 
 // Utility function to get the storage unit with the highest quantity

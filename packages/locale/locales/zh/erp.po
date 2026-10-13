@@ -48,8 +48,18 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+msgid "(inactive account)"
+msgstr "（已停用账户）"
+
 msgid "(Inactive)"
 msgstr "(已停用)"
+
+msgid "(not an Equity posting account)"
+msgstr "（非所有者权益过账账户）"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {# blocking record} other {# blocking records}}"
+msgstr "{0, plural, one {# 条阻止记录} other {# 条阻止记录}}"
 
 #. placeholder {0}: memberIds.length
 msgid "{0, plural, one {# component in this group} other {# components in this group}}"
@@ -69,7 +79,7 @@ msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时
 
 #. placeholder {0}: issues.length
 msgid "{0, plural, one {# record needs attention} other {# records need attention}}"
-msgstr "{0, plural, one {# 条记录需要注意} other {# 条记录需要注意}}"
+msgstr "{0, plural, one {# 条记录需要关注} other {# 条记录需要关注}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -82,6 +92,18 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。�
 #. placeholder {0}: item.demandAccumulationPeriod
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
+msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。} other {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。}}"
+
+#. placeholder {0}: Number(lease.assetCount)
+msgid "{0, plural, one {for # asset} other {for # assets}}"
+msgstr "{0, plural, one {针对 # 项资产} other {针对 # 项资产}}"
+
+#. placeholder {0}: check.count
+msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
+msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
 
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -110,6 +132,10 @@ msgstr "{0} 已在批次中"
 #. placeholder {0}: hidden.started
 msgid "{0} already started"
 msgstr "{0} 已启动"
+
+#. placeholder {0}: lines.length
+msgid "{0} assets"
+msgstr "{0} 项资产"
 
 #. placeholder {0}: due.count
 msgid "{0} assets to depreciate · {amount}"
@@ -153,6 +179,10 @@ msgstr "{0} 已成功删除"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
+
+#. placeholder {0}: due.count
+msgid "{0} entries to post · {amount}"
+msgstr "{0} 张凭证待过账 · {amount}"
 
 #. placeholder {0}: due.count
 msgid "{0} entries to recognize · {amount}"
@@ -208,6 +238,15 @@ msgstr "{0} 行待映射"
 msgid "{0} months"
 msgstr "{0} 个月"
 
+#. placeholder {0}: currencyFormatter.format(actualTotalCost)
+#. placeholder {0}: currencyFormatter.format(materialsTotals.actualCost)
+#. placeholder {0}: duration(actual[key])
+#. placeholder {1}: currencyFormatter.format(estimatedTotalCost)
+#. placeholder {1}: currencyFormatter.format(materialsTotals.estimatedCost)
+#. placeholder {1}: duration(estimated[key])
+msgid "{0} of {1}"
+msgstr "{0}/{1}"
+
 #. placeholder {0}: mappingReadiness.mapped
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
@@ -243,6 +282,10 @@ msgstr "{0} 道工序 · {1} 件"
 msgid "{0} orders"
 msgstr "{0} 个订单"
 
+#. placeholder {0}: payments.length
+msgid "{0} payments"
+msgstr "{0}份付款"
+
 #. placeholder {0}: issues.length
 msgid "{0} problems — not published"
 msgstr "{0}个问题——未发布"
@@ -273,6 +316,7 @@ msgid "{0} scrapped"
 msgstr "{0} 报废"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedRows.length
 msgid "{0} selected"
 msgstr "{0} 已选择"
 
@@ -323,6 +367,14 @@ msgstr "{0} 将被保存为 {name}"
 msgid "{0}-Year"
 msgstr "{0} 年"
 
+#. placeholder {0}: blocker.description
+msgid "{0}: the payment due {dueDate} is marked paid outside Carbon, but nothing would relieve it from the lease liability. Set Invoice From on or before {dueDate} so it is invoiced."
+msgstr "{0}: 应付日期为 {dueDate} 的付款标记为在 Carbon 外支付，但这不会减少租赁负债。在 {dueDate} 当日或之前设置发票来源，以便开票。"
+
+#. placeholder {0}: line.description
+msgid "{0}: the treatment cannot be worked out. {message}"
+msgstr "{0}: 无法确定处理方式。{message}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}天"
@@ -362,11 +414,17 @@ msgstr "应付款项的{apOverduePct}%"
 msgid "{arOverduePct}% of receivables"
 msgstr "应收款项的{arOverduePct}%"
 
+msgid "{asset}: the payment due {dueDate} is Skipped (paid outside Carbon), so nothing would take it off the lease liability. Set Invoice From on or before {dueDate}."
+msgstr "{asset}: 应付日期为 {dueDate} 的付款已跳过（在 Carbon 外支付），所以不会减少租赁负债。在 {dueDate} 当日或之前设置发票来源。"
+
 msgid "{assetCount} Assets"
 msgstr "{assetCount} 个资产"
 
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。考虑直接将此零件指向最终后继物料。"
+
+msgid "{completedLines} of {lines} lines complete"
+msgstr "{completedLines}的{lines}行已完成"
 
 msgid "{componentCount, plural, one {# component} other {# components}}"
 msgstr "{componentCount, plural, one {# 个组件} other {# 个组件}}"
@@ -374,8 +432,8 @@ msgstr "{componentCount, plural, one {# 个组件} other {# 个组件}}"
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 个冲突"
 
-msgid "{count, plural, one {# account with a balance} other {# accounts with a balance}}"
-msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的账户}}"
+msgid "{count, plural, one {# asset} other {# assets}}"
+msgstr "{count, plural, one {# 项资产} other {# 项资产}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
@@ -405,7 +463,7 @@ msgid "{count} units"
 msgstr "{count} 件"
 
 msgid "{created} created, {updated} updated."
-msgstr "{created} 已创建，{updated} 已更新。"
+msgstr "已创建 {created} 条，已更新 {updated} 条。"
 
 msgid "{days}d"
 msgstr "{days}天"
@@ -418,6 +476,9 @@ msgstr "{discount} 折扣"
 
 msgid "{dismissed} dismissed"
 msgstr "{dismissed} 已忽略"
+
+msgid "{documentTypeLabel} approval rule"
+msgstr "{documentTypeLabel}审批规则"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
@@ -432,7 +493,7 @@ msgid "{from}–{to} of {count} operations"
 msgstr "第{from}–{to}个工序（共{count}个）"
 
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
-msgstr "{hidden, plural, one {还有 # 条更多记录。} other {还有 # 条更多记录。}}"
+msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
 msgid "{hiddenCount} more: {hiddenNames}"
 msgstr "还有{hiddenCount}个：{hiddenNames}"
@@ -445,11 +506,17 @@ msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已�
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#天}}"
 
+msgid "{legacyDocumentCount, plural, one {# document posted before Carbon kept journals has no journal.} other {# documents posted before Carbon kept journals have no journal.}}"
+msgstr "{legacyDocumentCount, plural, one {在 Carbon 记录凭证前过账的 # 份文件没有凭证。} other {在 Carbon 记录凭证前过账的 # 份文件没有凭证。}}"
+
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
 msgid "{load} in queue"
 msgstr "{load} 在队列中"
+
+msgid "{locationName} (the lease's)"
+msgstr "{locationName}（该租赁的地点）"
 
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
@@ -503,12 +570,21 @@ msgstr "{off} 折扣"
 msgid "{off} off until {0}"
 msgstr "{off} 折扣至 {0}"
 
+msgid "{onHand} on hand"
+msgstr "{onHand}库存"
+
 #. placeholder {0}: (routeData?.purchaseOrder?.revisionId ?? 0) + 1
 msgid "{orderLabel} will be reopened for editing as revision {0}. The document already sent to the supplier is unchanged until you finalize and resend the order."
 msgstr "{orderLabel} 将被重新打开以作为修订版本 {0} 进行编辑。已发送给供应商的文件在您完成并重新发送订单前保持不变。"
 
 msgid "{partCount, plural, one {# part} other {# parts}}"
 msgstr "{partCount, plural, one {# 零件} other {# 零件}}"
+
+msgid "{passing} of {total} assets"
+msgstr "{passing} 项，共 {total} 项资产"
+
+msgid "{percent} picked"
+msgstr "{percent}已拣货"
 
 msgid "{purgeRowCount, plural, one {Permanently delete # row?} other {Permanently delete # rows?}}"
 msgstr "{purgeRowCount, plural, one {永久删除 # 行？} other {永久删除 # 行？}}"
@@ -533,6 +609,9 @@ msgstr "{sectionLineCount} 行"
 
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
+
+msgid "{termMonths, plural, one {# month} other {# months}}"
+msgstr "{termMonths, plural, one {# 个月} other {# 个月}}"
 
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
@@ -566,6 +645,9 @@ msgstr "{unitCount}件"
 
 msgid "{unmappedRequiredCount, plural, one {Map the # remaining required account first.} other {Map the # remaining required accounts first.}}"
 msgstr "{unmappedRequiredCount, plural, one {先映射剩余的 # 个必需账户。} other {先映射剩余的 # 个必需账户。}}"
+
+msgid "{unread} unread"
+msgstr "{unread} 条未读"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
@@ -616,6 +698,9 @@ msgstr "0 代表为任何日期差异建议移动。"
 msgid "0-4 weeks"
 msgstr "0-4 周"
 
+msgid "1 asset"
+msgstr "1 项资产"
+
 msgid "1 Asset"
 msgstr "1 个资产"
 
@@ -637,6 +722,9 @@ msgstr "1 天"
 msgid "1 draft journal entry"
 msgstr "1个草稿分录"
 
+msgid "1 entry to post · {amount}"
+msgstr "1 张凭证待过账 · {amount}"
+
 msgid "1 entry to recognize · {amount}"
 msgstr "1 项待确认分录 · {amount}"
 
@@ -654,6 +742,9 @@ msgstr "1个零件已跳过——它已有未结的工单"
 
 msgid "1 part skipped — nothing to make"
 msgstr "1 个零件已跳过 — 没有需要生产的"
+
+msgid "1 payment"
+msgstr "1份付款"
 
 msgid "1 planned invoice is removed."
 msgstr "1 个已计划发票已移除。"
@@ -709,11 +800,17 @@ msgstr "3D 模型"
 msgid "3h"
 msgstr "3小时"
 
+msgid "4 years"
+msgstr "4 年"
+
 msgid "4h"
 msgstr "4小时"
 
 msgid "5 user minimum"
 msgstr "最少需要5个用户"
+
+msgid "5 years"
+msgstr "5 年"
 
 msgid "5-8 weeks"
 msgstr "5-8 周"
@@ -932,6 +1029,12 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A lease is a sales-type (lessor) or finance (lessee) lease when any ASC 842 test is met. These thresholds set tests (c) and (d). The lessor discount rate is the default for new rental agreements; the incremental borrowing rate is the default for new leases."
+msgstr "租赁根据 ASC 842 测试确定为售后租回式（出租人）或融资租赁（承租人）。这些阈值设置测试 (c) 和 (d)。出租人折扣率是新租赁协议的默认值；增量借款利率是新租赁的默认值。"
+
+msgid "A lease must be in the company's base currency to be activated."
+msgstr "租赁必须采用公司基础货币才能激活。"
+
 msgid "A line settles more than its invoice's open balance"
 msgstr "某行结算金额超过其发票的未结余额"
 
@@ -1027,8 +1130,14 @@ msgstr "租赁协议上的价格，客户可以按此购买该件设备。该价
 msgid "A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled."
 msgstr "一份标价的销售报价单；草稿 → 已发送 → 已订购，或结束为丢单、已过期或已取消。"
 
+msgid "A Provisional journal dated before the cutover date; setting up accounting replaces it with the opening journal, and it can never change again."
+msgstr "一份日期在截断日期前的临时凭证；设置会计时，它将被期初凭证替换，之后永远无法更改。"
+
 msgid "A purchase invoice is a document that specifies the products or services purchased by a customer and the corresponding cost."
 msgstr "采购发票是一份文件，用于说明客户购买的产品或服务以及相应的成本。"
+
+msgid "A purchase invoice is drafted for each due date, with a line for each asset's payment."
+msgstr "每个付款到期日草拟一份采购发票，每项资产的付款对应一行。"
 
 msgid "A purchase invoice is posted"
 msgstr "采购发票已过账"
@@ -1117,6 +1226,9 @@ msgstr "可读的客户ID出现在列表、表单和下拉列表中。"
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
 msgstr "可读的供应商ID出现在列表、表单和下拉列表中。"
 
+msgid "A readiness check fails. <0>Go to Readiness</0>"
+msgstr "准备检查失败。<0>转到准备就绪</0>"
+
 msgid "A receipt is created"
 msgstr "收据已创建"
 
@@ -1149,9 +1261,6 @@ msgstr "收据的供应商已更改"
 
 msgid "A rental agreement must be in the company's base currency to be activated. Change the agreement currency first."
 msgstr "租赁协议必须使用公司的基础货币才能启用。请先更改协议的货币。"
-
-msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
-msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些阈值设置了测试(c)和(d)；折扣率是新租赁协议的默认值。"
 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
@@ -1276,8 +1385,17 @@ msgstr "发货单的状态已更改"
 msgid "A shipment's tracking number changes"
 msgstr "发货的跟踪号变更"
 
-msgid "A single balanced journal entry will be posted as of the date below, with the difference offset to Retained Earnings."
-msgstr "一条平衡的分录将以下面的日期过账，差额冲至未分配利润。"
+msgid "A short-term asset cannot run past 12 months from the commencement. End it and enter the extension as a new lease."
+msgstr "短期资产不能超过开始日期后的 12 个月。结束它并将延期作为新租赁输入。"
+
+msgid "A short-term asset has no schedule: only its payment rows change, and no journal is posted."
+msgstr "短期资产没有排程：只有其付款行会变化，不过账任何凭证。"
+
+msgid "A short-term asset posts no journal at activation. Each invoice is expensed when it posts."
+msgstr "短期资产在激活时不过账任何凭证。每份发票在过账时作为费用处理。"
+
+msgid "A short-term lease has no schedule. Each invoice is expensed."
+msgstr "短期租赁无排程。每份发票作为费用处理。"
 
 msgid "A step needs a name."
 msgstr "步骤需要一个名称。"
@@ -1403,6 +1521,9 @@ msgstr "已接受 {0}"
 msgid "Account"
 msgstr "账户"
 
+msgid "Account {accountNumber} is not an active posting account."
+msgstr "账户 {accountNumber} 不是启用的过账账户。"
+
 msgid "Account & Details"
 msgstr "账户和详细信息"
 
@@ -1442,6 +1563,9 @@ msgstr "账户名称"
 msgid "Account Number"
 msgstr "账户编号"
 
+msgid "Account settings"
+msgstr "账户设置"
+
 msgid "Account Settings"
 msgstr "账户设置"
 
@@ -1457,17 +1581,14 @@ msgstr "会计"
 msgid "Accounting"
 msgstr "会计"
 
-msgid "Accounting is currently in beta. Request access to enable reporting, journal entries, accounting periods, fixed assets, and more."
-msgstr "会计模块当前处于测试版。请求访问权限以启用报告、凭证、会计期间、固定资产等。"
+msgid "Accounting cutover"
+msgstr "会计截断"
 
-msgid "Accounting is disabled"
-msgstr "会计已禁用"
+msgid "Accounting is not set up"
+msgstr "会计未设置"
 
-msgid "Accounting is disabled for this company."
-msgstr "此公司已禁用会计功能。"
-
-msgid "Accounting is enabled"
-msgstr "会计已启用"
+msgid "Accounting is not set up for this company."
+msgstr "此公司未设置会计。"
 
 msgid "Accounting period"
 msgstr "会计期间"
@@ -1477,6 +1598,12 @@ msgstr "会计期间"
 
 msgid "Accounting Periods"
 msgstr "会计期间"
+
+msgid "Accounting setup"
+msgstr "会计设置"
+
+msgid "Accounting since {cutoverDate}"
+msgstr "自{cutoverDate}以来的会计"
 
 msgid "Accounting Treatment"
 msgstr "会计处理"
@@ -1508,6 +1635,9 @@ msgstr "客户应付金额的应收账款。"
 msgid "Accrual"
 msgstr "应计"
 
+msgid "Accrual accounting with journal entries, financial reports, and general ledger posting."
+msgstr "应收会计，包括凭证条目、财务报告和总账过账。"
+
 msgid "Accruals"
 msgstr "应计项"
 
@@ -1519,6 +1649,9 @@ msgstr "累积折旧"
 
 msgid "Accum. Tax Depr."
 msgstr "累积税收折旧"
+
+msgid "Accumulated Amortization – Right-of-Use Assets"
+msgstr "使用权资产累计摊销"
 
 msgid "Accumulated Depreciation"
 msgstr "累计折旧"
@@ -1532,11 +1665,18 @@ msgstr "累计折旧（期初）"
 msgid "Accumulated Depreciation Account"
 msgstr "累计折旧账户"
 
+#. placeholder {0}: asset.fixedAssetId
+msgid "Accumulated depreciation for {0}"
+msgstr "{0}的累计折旧"
+
 msgid "Accumulated Depreciation on Disposal"
 msgstr "处置时累计折旧"
 
 msgid "Accumulated Depreciation on Disposal (default)"
 msgstr "处置时累计折旧（默认）"
+
+msgid "Accumulated ROU Amortization"
+msgstr "ROU 累计摊销"
 
 msgid "Accumulation Period (Weeks)"
 msgstr "累积期（周）"
@@ -1598,8 +1738,17 @@ msgstr "激活工作中心"
 msgid "Activating checks every unit is available, classifies each unit's accounting treatment and cuts the first billing periods at each unit's rate. The terms and lines are fixed afterwards."
 msgstr "启用时检查每个单元是否可用，对每个单元的会计处理进行分类，并按每个单元的费率生成第一个计费周期。之后条款和行将被固定。"
 
+msgid "Activating classifies each asset, books its right-of-use asset and lease liability, and writes its monthly schedule. The terms and payment rows are fixed afterwards."
+msgstr "激活对每项资产进行分类，记录其使用权资产和租赁负债，并生成其每月排程。条款和付款行之后固定。"
+
+msgid "Activating fixes the terms and the payment rows, classifies each asset and books it. After that, purchase invoices are drafted automatically as payments come due."
+msgstr "激活固定条款和付款行，对每项资产进行分类并记录。之后，在付款到期时自动草拟采购发票。"
+
 msgid "Activating fixes the terms and units, classifies each unit and cuts the first billing periods. After that, invoices are created automatically as periods come due."
 msgstr "激活将确定条款和单位、对每件进行分类并切割第一个计费周期。之后，当周期到期时会自动生成发票。"
+
+msgid "Activating fixes the terms. The next payment row is cut as each period comes due."
+msgstr "激活后条款即被固定。每个期间到期时会生成下一行付款。"
 
 msgid "Activation fee · we advise"
 msgstr "激活费 · 我们建议"
@@ -1621,6 +1770,10 @@ msgstr "活动"
 
 msgid "Actual"
 msgstr "实际"
+
+#. placeholder {0}: duration(actual.total)
+msgid "Actual <0>{0}</0>"
+msgstr "实际<0>{0}</0>"
 
 msgid "Actual Cost"
 msgstr "实际成本"
@@ -1717,6 +1870,18 @@ msgstr "添加关于您的决定的任何备注..."
 msgid "Add Approval Requirement"
 msgstr "添加审批要求"
 
+msgid "Add Asset"
+msgstr "添加资产"
+
+msgid "Add Asset Class"
+msgstr "添加资产类别"
+
+msgid "Add at least one asset before activating."
+msgstr "激活前请至少添加一项资产。"
+
+msgid "Add at least one asset."
+msgstr "请至少添加一项资产。"
+
 msgid "Add at least one service."
 msgstr "至少添加一项服务。"
 
@@ -1765,6 +1930,9 @@ msgstr "添加员工"
 msgid "Add Entry"
 msgstr "添加条目"
 
+msgid "Add Fixed Asset"
+msgstr "添加固定资产"
+
 msgid "Add from library…"
 msgstr "从库中添加…"
 
@@ -1785,6 +1953,9 @@ msgstr "添加发票"
 
 msgid "Add Item"
 msgstr "添加项目"
+
+msgid "Add Journal Entry"
+msgstr "添加分录"
 
 msgid "Add Line"
 msgstr "添加行"
@@ -1853,6 +2024,9 @@ msgstr "添加通行密钥"
 msgid "Add path"
 msgstr "添加路径"
 
+msgid "Add Payment"
+msgstr "添加付款"
+
 msgid "Add Permissions"
 msgstr "添加权限"
 
@@ -1913,6 +2087,9 @@ msgstr "添加备件"
 msgid "Add station"
 msgstr "添加工位"
 
+msgid "Add step"
+msgstr "添加步骤"
+
 msgid "Add Step"
 msgstr "添加步骤"
 
@@ -1925,8 +2102,20 @@ msgstr "添加库存转移"
 msgid "Add Supplier"
 msgstr "添加供应商"
 
+msgid "Add the leased assets to see how each one is accounted for."
+msgstr "添加租赁资产以查看每项资产的核算方式。"
+
+msgid "Add the materials this item uses."
+msgstr "添加该物料使用的原材料。"
+
+msgid "Add the materials this job uses."
+msgstr "添加该工单使用的原材料。"
+
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "在同一系统上添加下一个功能，而不是购买另一个工具。"
+
+msgid "Add the operations that make this item."
+msgstr "添加制造该物料的工序。"
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
@@ -1996,9 +2185,6 @@ msgstr "地址行1"
 msgid "Address line2"
 msgstr "地址行2"
 
-msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none."
-msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。"
-
 msgid "Adds cost the asset was never charged with, such as the labor and material of a job that recorded none. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "为资产添加未曾计入的成本，例如未记录任何成本的工单的人工和材料。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
 
@@ -2029,6 +2215,9 @@ msgstr "高级"
 msgid "Affected item not found."
 msgstr "未找到受影响的项目。"
 
+msgid "Affected Items"
+msgstr "受影响的物料"
+
 msgid "After"
 msgstr "之后"
 
@@ -2051,6 +2240,9 @@ msgid "Agreed deposit:"
 msgstr "约定 保证金："
 
 msgid "Agreement"
+msgstr "协议"
+
+msgid "Agreements"
 msgstr "协议"
 
 msgid "AI couldn't confidently match any accounts"
@@ -2127,6 +2319,9 @@ msgstr "全部自制 {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
+msgid "All modules"
+msgstr "所有模块"
+
 msgid "All open jobs"
 msgstr "所有未结工单"
 
@@ -2172,9 +2367,6 @@ msgstr "已分配"
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
 
-msgid "Alpha"
-msgstr "Alpha"
-
 msgid "also at {otherStationNames}"
 msgstr "也在 {otherStationNames}"
 
@@ -2202,6 +2394,12 @@ msgstr "修订"
 
 msgid "Amendments"
 msgstr "修订"
+
+msgid "Amortization"
+msgstr "摊销"
+
+msgid "Amortization – Right-of-Use Assets"
+msgstr "使用权资产摊销"
 
 msgid "Amount"
 msgstr "金额"
@@ -2243,8 +2441,20 @@ msgstr "一个提醒，表示某件事需要个人关注，从carbon/notify事�
 msgid "An approval requirement on a non-conformance whose reviewers (seeded Engineering and Quality) must sign off before the issue can close."
 msgstr "不合格上的审批要求，其审核人（默认的工程和质量部门）必须签字才能关闭问题"
 
+msgid "An asset is a finance lease when any of these is true, and an operating lease when none is."
+msgstr "当以下任一情况为真时，资产为融资租赁；当都不为真时，则为经营租赁。"
+
+msgid "An asset leased for 12 months or less with no purchase option reasonably certain is short-term. Otherwise it is a finance lease when any of these is true, and an operating lease when none is."
+msgstr "租赁期为 12 个月或更短且没有合理确定的购买选项的资产为短期资产。否则，当以下任一情况为真时为融资租赁，当都不为真时为经营租赁。"
+
+msgid "An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization."
+msgstr "公司从供应商租赁的资产，按ASC 842会计处理：激活时分类为运营、融资或短期租赁，并入账其使用权资产和租赁负债，其付款行草拟为采购发票，租赁周期运行将其月度利息和摊销过账。"
+
 msgid "An asset's acquisition cost minus accumulated depreciation — what it's still worth on the books, and the figure it's disposed at."
 msgstr "资产的购置成本减去累计折旧——其在账面上的剩余价值，以及处置时的价值。"
+
+msgid "An automatic journal written before the company sets up accounting: it records the document's accounting but has no accounting period and counts in no balance or report."
+msgstr "在公司设置会计之前自动生成的凭证：它记录了文件的会计信息，但没有会计期间，不计入任何余额或报告。"
 
 msgid "An automation you build on a canvas: one trigger, then steps that check conditions, look records up, and act — notifying someone, creating or updating a record, or calling an outside URL."
 msgstr "您在画布上构建的自动化：一个触发器，然后是检查条件、查找记录和执行操作的步骤——通知某人、创建或更新记录或调用外部URL。"
@@ -2339,6 +2549,12 @@ msgstr "无固定期限的协议始终是租赁。设置结束日期以使用这
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "无固定期限的协议始终作为租赁处理：销售需要结束日期。"
 
+msgid "An open-ended lease can be ended on notice, so it is a short-term lease. This company does not account for short-term leases off the balance sheet, so it cannot be activated. Either:"
+msgstr "无期限租赁可随时终止，因此属于短期租赁。该公司不在资产负债表外确认短期租赁，无法激活。选择以下任一项："
+
+msgid "An open-ended lease is short-term: activating it posts no journal, and each invoice is expensed."
+msgstr "无期限租赁属于短期租赁：激活时不会过账凭证，每份发票均作为费用处理。"
+
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
 
@@ -2373,6 +2589,10 @@ msgstr "且"
 msgid "And {0} more — resolve these to see the rest."
 msgstr "还有 {0} 份 — 解决这些以查看其余部分。"
 
+#. placeholder {0}: check.count - check.items.length
+msgid "And {0} more. Resolve these to see the rest."
+msgstr "还有{0}个。解决这些以查看其余部分。"
+
 msgid "and {hidden} more"
 msgstr "以及{hidden}个更多"
 
@@ -2397,8 +2617,20 @@ msgstr "注释文本是必需的"
 msgid "Annotation updated"
 msgstr "注释已更新"
 
+msgid "Annual"
+msgstr "每年"
+
+msgid "Annual Escalation"
+msgstr "年度递增"
+
+msgid "Annual Escalation (%)"
+msgstr "年度递增(%)"
+
 msgid "Annual rate the rent is discounted at"
 msgstr "租赁折扣的年费率"
+
+msgid "Annual. Starts from the company's incremental borrowing rate"
+msgstr "每年。从公司的增量借款利率开始"
 
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
@@ -2475,15 +2707,11 @@ msgstr "外观"
 msgid "Applied"
 msgstr "已应用"
 
-#. placeholder {0}: r.invoiceId
-msgid "Applied amount for {0}"
-msgstr "已应用金额 {0}"
-
 msgid "Applied amounts are in company base currency ({baseCurrency})."
 msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
 
-msgid "Applied Date"
-msgstr "应用日期"
+msgid "Applied on each anniversary of the commencement date"
+msgstr "在开始日期每周年应用"
 
 msgid "Applied To"
 msgstr "应用于"
@@ -2533,6 +2761,10 @@ msgstr "应用建议"
 msgid "Apply To"
 msgstr "应用于"
 
+#. placeholder {0}: row.original.invoiceId
+msgid "Apply to {0}"
+msgstr "应用于{0}"
+
 msgid "Apply to invoice"
 msgstr "应用到发票"
 
@@ -2557,6 +2789,9 @@ msgstr "审批日期"
 msgid "Approval is required at or above this amount, up to the next rule's minimum"
 msgstr "此金额及以上需要审批，直到下一规则的最小值"
 
+msgid "Approval Rejected"
+msgstr "审批已拒绝"
+
 msgid "Approval requirements"
 msgstr "审批要求"
 
@@ -2571,6 +2806,16 @@ msgstr "审批"
 
 msgid "Approve"
 msgstr "审批"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Approve {0}"
+msgstr "审批{0}"
+
+msgid "Approve {changeOrderId}"
+msgstr "审批{changeOrderId}"
+
+msgid "Approve {displayName}"
+msgstr "审批{displayName}"
 
 msgid "Approved By"
 msgstr "批准人"
@@ -2630,6 +2875,15 @@ msgstr "您确定要激活流程：{name}？它将再次出现在下拉菜单中
 
 msgid "Are you sure you want to activate this gauge?."
 msgstr "确定要启用此量具吗？"
+
+msgid "Are you sure you want to approve this change notice? This moves it to Implementation."
+msgstr "你确定要审批此变更通知吗？这将使其进入实施阶段。"
+
+msgid "Are you sure you want to approve this quality document? This will make it active."
+msgstr "你确定要审批此质量文件吗？这将使其启用。"
+
+msgid "Are you sure you want to approve this supplier? This will make it active."
+msgstr "你确定要审批此供应商吗？这将使其启用。"
 
 #. placeholder {0}: routeData?.changeNotice?.changeOrderId ?? ""
 msgid "Are you sure you want to cancel {0}? It will be closed and read-only until you reopen it."
@@ -2725,6 +2979,10 @@ msgstr "您确定要删除 {orderLabel} 吗？此操作无法撤销。"
 
 msgid "Are you sure you want to delete {readableId}? This cannot be undone."
 msgstr "确定要删除 {readableId} 吗？此操作无法撤销。"
+
+#. placeholder {0}: deleting.number
+msgid "Are you sure you want to delete payment {0}?"
+msgstr "您确定要删除付款{0}吗？"
 
 #. placeholder {0}: activeView.name
 #. placeholder {0}: viewPendingDelete.name
@@ -3032,11 +3290,24 @@ msgstr "你确定要过账此收据吗？"
 msgid "Are you sure you want to post this shipment?"
 msgstr "你确定要过账此发货单吗？"
 
+msgid "Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again."
+msgstr "你确定要拒绝此变更通知吗？它将保持在工程完成状态，以便修改和重新提交。"
+
+msgid "Are you sure you want to reject this quality document? The document will remain in draft status."
+msgstr "你确定要拒绝此质量文件吗？该文件将保持草稿状态。"
+
 msgid "Are you sure you want to reject this quote?"
 msgstr "你确定要拒绝此报价吗？"
 
+msgid "Are you sure you want to reject this supplier?"
+msgstr "你确定要拒绝此供应商吗？"
+
 msgid "Are you sure you want to release this job? It will become available to the shop floor, and drive purchasing and production."
 msgstr "确定要下达此工单吗？它将对车间可用，并驱动采购和生产。"
+
+#. placeholder {0}: deleting.description
+msgid "Are you sure you want to remove {0} and its payment rows from this lease?"
+msgstr "您确定要从此租赁中移除 {0} 及其付款行吗？"
 
 #. placeholder {0}: supplierName(deleteTarget.supplierId)
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
@@ -3122,8 +3393,8 @@ msgstr "截至"
 msgid "As of {0}"
 msgstr "截至 {0}"
 
-msgid "As of date"
-msgstr "截至日期"
+msgid "As of <0/>, the last month a lease run posted."
+msgstr "截至 <0/>，最后一个月过账的租赁运行。"
 
 msgid "As of:"
 msgstr "截至："
@@ -3142,14 +3413,20 @@ msgstr "请求具有{0}权限的管理员添加第一个{1}。"
 msgid "Asks depreciation what a new run for this period would depreciate now, and checks for Draft runs ending in the period. Create the run and post it so the period has its depreciation expense and accumulated depreciation. Skip with a reason if depreciation doesn't apply this period."
 msgstr "向折旧查询本期的新运行现在会折旧什么，并检查本期结束的草稿运行。创建运行并过账，以便本期具有其折旧费用和累计折旧。如果本期不适用折旧，请跳过并说明理由。"
 
-msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
-msgstr "向收入确认查询本期的新运行现在会确认什么——递延发票收入、应计租金和合同收入——并检查本期结束前应收收入的草稿运行。创建运行并过账，以便收入进入账簿。如果不应确认任何内容，请跳过并说明理由。"
+msgid "Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized."
+msgstr "询问收入确认本期的新运行现在应确认什么——递延发票收入和合同收入——并检查是否有在期末前应确认收入的草稿运行。创建运行并过账，以便收入到达总账。如果不应确认任何内容，请跳过并说明原因。"
+
+msgid "Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted."
+msgstr "询问租赁运行本期间的新运行现在将过账的内容——租赁利息和使用权资产摊销、待摊或应计的租赁费用和售后租回式租赁利息——并检查截至期间结束需提交条目的草稿租赁运行。创建运行并过账以使条目到达凭证。如果无需过账任何内容，请以原因跳过。"
 
 msgid "Assemblies"
 msgstr "装配件"
 
 msgid "Assembly"
 msgstr "装配"
+
+msgid "assembly instruction"
+msgstr "装配说明"
 
 msgid "Assembly instruction"
 msgstr "装配说明"
@@ -3208,6 +3485,18 @@ msgstr "销售型租赁开始时确认的资产总账科目，记录付款和残
 msgid "Asset ID"
 msgstr "资产ID"
 
+msgid "Asset Inputs"
+msgstr "资产信息"
+
+msgid "Asset Name"
+msgstr "资产名称"
+
+msgid "Asset recognized at lease commencement for the right to use a leased asset"
+msgstr "在租赁开始时确认的使用被租赁资产权利的资产"
+
+msgid "Asset scrap disposals"
+msgstr "资产报废处置"
+
 msgid "Asset Under Construction"
 msgstr "在建资产"
 
@@ -3256,6 +3545,9 @@ msgstr "将此存储单元分配给工作中心（线边）"
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "将此库位分配给工作中心以进行线边物料管理，使操作员能在生产视图上看到；从父库位继承该设置。"
 
+msgid "Associations"
+msgstr "关联"
+
 msgid "Assumptions"
 msgstr "假设"
 
@@ -3264,6 +3556,9 @@ msgstr "在 {locationName}"
 
 msgid "At Commencement"
 msgstr "在开始时"
+
+msgid "At commencement. No lease run has posted yet."
+msgstr "在开始时。尚未过账任何租赁运行。"
 
 msgid "At each gate"
 msgstr "在每个关卡"
@@ -3450,6 +3745,9 @@ msgstr "头像网址"
 msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
 msgstr "头像来自 {1} 的 <0>{0}</0>，采用 <1>{2}</1> 许可。"
 
+msgid "Average"
+msgstr "平均"
+
 msgid "Avg Days to Close"
 msgstr "平均关闭天数"
 
@@ -3458,6 +3756,9 @@ msgstr "等待审批"
 
 msgid "Back"
 msgstr "返回"
+
+msgid "Back to menu"
+msgstr "返回菜单"
 
 msgid "Back to traceability"
 msgstr "返回可追溯性"
@@ -3609,6 +3910,12 @@ msgstr "待退货的生产批次"
 msgid "Batching"
 msgstr "分批"
 
+msgid "Before cutover"
+msgstr "过账前"
+
+msgid "Before cutover (journal)"
+msgstr "截断前（凭证）"
+
 msgid "Before You Activate"
 msgstr "激活前"
 
@@ -3756,6 +4063,9 @@ msgstr "被 {0} 阻止"
 msgid "Blocking sync"
 msgstr "阻止同步"
 
+msgid "Blocks"
+msgstr "阻挡"
+
 msgid "Blocks Machine"
 msgstr "阻止机器"
 
@@ -3827,6 +4137,12 @@ msgstr "浏览库"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "浏览已发布版本（只读）。您仍然可以重新排列步骤来整理布局。"
+
+msgid "Browser notifications"
+msgstr "浏览器通知"
+
+msgid "Browser notifications are on for this browser."
+msgstr "此浏览器的浏览器通知已启用。"
 
 msgid "BSB"
 msgstr "BSB"
@@ -3917,6 +4233,9 @@ msgstr "按位置"
 
 msgid "By signing in, you agree to the <0>Terms of Service</0> and <1>Privacy Policy.</1>"
 msgstr "通过登录，您同意<0>服务条款</0>和<1>隐私政策。</1>"
+
+msgid "By you · edited <0/>"
+msgstr "由你·编辑于<0/>"
 
 msgid "CAD Model"
 msgstr "CAD 模型"
@@ -4024,6 +4343,9 @@ msgstr "取消工作"
 msgid "Cancel job {target}"
 msgstr "取消工单 {target}"
 
+msgid "Cancel Lease"
+msgstr "取消租赁"
+
 msgid "Cancel Order"
 msgstr "取消订单"
 
@@ -4068,6 +4390,9 @@ msgstr "已取消"
 
 msgid "Cancelling voids the agreement and releases its units. An agreement with a unit on rent or an invoiced period cannot be cancelled."
 msgstr "取消将作废协议并释放其件。包含正在出租的件或已开票期间的协议无法取消。"
+
+msgid "Cancelling voids the lease's journal and removes the schedule. Once a payment is invoiced, a lease run has posted, or the lease has been modified or an asset ended, it cannot be cancelled; terminate its assets instead."
+msgstr "取消会作废租赁的凭证并移除排程。一旦付款已开票、租赁运行已过账、或租赁已修改或资产已结束，就无法取消；请改为终止其资产。"
 
 msgid "Cannot add parameters to unsaved operation"
 msgstr "无法向未保存的操作添加参数"
@@ -4168,8 +4493,17 @@ msgstr "Carbon 标志"
 msgid "Carbon only"
 msgstr "仅限 Carbon"
 
+msgid "Carbon opens this account from its open items. The amount here is only compared on Migration Clearing."
+msgstr "Carbon从其未结项目中开设此账户。此处的金额仅在迁移清算时比较。"
+
 msgid "Carbon Posted"
 msgstr "Carbon已过账"
+
+msgid "Carbon posts every document dated on or after this day. Choose the first day of the current period or of one of the 3 periods before it."
+msgstr "Carbon过账所有日期在此日期或之后的文档。选择当前期间或其前3个期间之一的第一天。"
+
+msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
+msgstr "Carbon过账开盘凭证，过账所有日期在过账日期或之后的凭证，并关闭其前的期间。"
 
 msgid "Carbon value"
 msgstr "Carbon 值"
@@ -4180,6 +4514,9 @@ msgstr "碳值"
 #. placeholder {0}: unmapped.length
 msgid "Carbon will use AI to guess a provider account for each of your {0} unmapped accounts. Suggestions are a starting point — you can review them before anything is saved."
 msgstr "Carbon将使用AI为您的{0}个未映射账户各猜测一个供应商账户。建议是一个起点 — 您可以在保存前审查它们。"
+
+msgid "Carbon writes their journals when you enable accounting, with today's accounts and costs."
+msgstr "启用会计时，Carbon将使用今天的账户和成本编写其凭证。"
 
 msgid "Carbon-only"
 msgstr "仅限Carbon"
@@ -4222,6 +4559,12 @@ msgstr "承运商账户"
 
 msgid "Cash & Banking"
 msgstr "现金和银行"
+
+msgid "Cash paid: finance leases"
+msgstr "现金支付：融资租赁"
+
+msgid "Cash paid: operating leases"
+msgstr "现金支付：经营租赁"
 
 msgid "Categories that classify how stock is stored"
 msgstr "分类库存存储方式"
@@ -4434,17 +4777,26 @@ msgstr "选择序列号"
 msgid "choose a supplier for {0} on the job"
 msgstr "为工单上的{0}选择供应商"
 
+msgid "Choose an option"
+msgstr "选择一个选项"
+
 msgid "Choose another file"
 msgstr "选择另一个文件"
 
 msgid "Choose avatar"
 msgstr "选择头像"
 
+msgid "Choose how Carbon reaches you."
+msgstr "选择 Carbon 联系您的方式。"
+
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
 msgid "Choose Return To for {unitName}"
 msgstr "为 {unitName} 选择返还至"
+
+msgid "Choose the first day of the current period or of one of the 3 periods before it."
+msgstr "选择当前期间或之前 3 个期间中任意一个的第一天。"
 
 msgid "Choose the fleet units this agreement rents. Each starts at its rate on file for the frequency; change it in the grid."
 msgstr "选择本协议租赁的设备。每件在频率的文件费率开始；在网格中更改。"
@@ -4490,6 +4842,9 @@ msgstr "清除"
 
 msgid "Clear due date"
 msgstr "清除到期日"
+
+msgid "Clear filters"
+msgstr "清除筛选"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
@@ -4562,6 +4917,9 @@ msgstr "关闭日期"
 
 msgid "Close Date"
 msgstr "关闭日期"
+
+msgid "Close menu"
+msgstr "关闭菜单"
 
 msgid "Close Period"
 msgstr "关闭期间"
@@ -4640,6 +4998,10 @@ msgstr "收起换型"
 msgid "Collapse subtree"
 msgstr "折叠子树"
 
+#. placeholder {0}: index + 1
+msgid "Column {0} of {count}"
+msgstr "第{0}列，共{count}列"
+
 msgid "Column dimension"
 msgstr "列维度"
 
@@ -4663,6 +5025,12 @@ msgstr "即将推出"
 
 msgid "comma-separated values"
 msgstr "逗号分隔的值"
+
+msgid "Commencement"
+msgstr "开始"
+
+msgid "Commencement Date"
+msgstr "开始日期"
 
 msgid "Comment"
 msgstr "评论"
@@ -4723,6 +5091,11 @@ msgstr "兼容性规则"
 
 msgid "Complete"
 msgstr "完成"
+
+#. placeholder {0}: getCompleteQuantity(operation)
+#. placeholder {1}: operation.targetQuantity ?? operation.operationQuantity ?? 0
+msgid "Complete {0}/{1}"
+msgstr "完成{0}/{1}"
 
 msgid "Complete All"
 msgstr "全部完成"
@@ -5087,6 +5460,9 @@ msgstr "继续"
 msgid "Continue Setup"
 msgstr "继续配置"
 
+msgid "Contra-asset account for the amortization of right-of-use assets"
+msgstr "使用权资产摊销的对资产账户"
+
 msgid "Contra-asset account for total depreciation of fixed assets"
 msgstr "固定资产累计折旧对冲资产账户"
 
@@ -5146,6 +5522,12 @@ msgstr "外协人员"
 
 msgid "Contractors"
 msgstr "外协人员"
+
+msgid "Control"
+msgstr "控制"
+
+msgid "Control Account"
+msgstr "控制账户"
 
 msgid "Control design changes with revisions / ECOs"
 msgstr "通过修订版/ECO控制设计变更"
@@ -5216,6 +5598,9 @@ msgstr "已复制链接到剪贴板"
 msgid "Copied setup prompt to your clipboard"
 msgstr "已将换型提示复制到剪贴板"
 
+msgid "Copied to clipboard"
+msgstr "已复制到剪贴板"
+
 msgid "Copied!"
 msgstr "已复制！"
 
@@ -5282,6 +5667,9 @@ msgstr "复制工作单号"
 msgid "Copy job unique identifier"
 msgstr "复制工单唯一标识符"
 
+msgid "Copy lease number"
+msgstr "复制租赁编号"
+
 msgid "Copy link"
 msgstr "复制链接"
 
@@ -5308,6 +5696,9 @@ msgstr "复制问题链接"
 
 msgid "Copy link to Job"
 msgstr "复制工作链接"
+
+msgid "Copy link to lease"
+msgstr "复制租赁链接"
 
 msgid "Copy link to material"
 msgstr "复制原材料链接"
@@ -5622,8 +6013,7 @@ msgstr "覆盖范围"
 msgid "Create"
 msgstr "创建"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "创建 {0}"
 
@@ -5946,8 +6336,15 @@ msgstr "当制造成本吸收入在制品时使用的贷方科目"
 msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
 msgstr "抵扣金额以公司基本货币（{currency}）表示。此付款过账后，抵扣才会生效。"
 
+msgid "Credit and debit memos"
+msgstr "贷方和借方备忘录"
+
 msgid "Credit applied"
 msgstr "已应用信用"
+
+#. placeholder {0}: account.name
+msgid "Credit for {0}"
+msgstr "{0}的贷方"
 
 msgid "Credit Memo"
 msgstr "贷项凭证"
@@ -6030,6 +6427,9 @@ msgstr "当前账面净值："
 
 msgid "Current Password"
 msgstr "当前密码"
+
+msgid "Current portion"
+msgstr "流动部分"
 
 msgid "Current projection"
 msgstr "当前预测"
@@ -6238,6 +6638,12 @@ msgstr "切换系统，冻结旧系统，并确认您已在 Carbon 上线。"
 msgid "Cutover checklist"
 msgstr "转换检查清单"
 
+msgid "Cutover date"
+msgstr "过账日期"
+
+msgid "Cutover Date"
+msgstr "过账日期"
+
 msgid "Cutover step"
 msgstr "转换步骤"
 
@@ -6258,6 +6664,9 @@ msgstr "当您的班组在实时系统上适应时的每日检查"
 
 msgid "Daily summary"
 msgstr "每日汇总"
+
+msgid "Daily usage"
+msgstr "每日使用量"
 
 msgid "Daily Usage"
 msgstr "每日使用"
@@ -6344,6 +6753,9 @@ msgstr "日常问题和上线后的超级护理"
 msgid "Days"
 msgstr "天数"
 
+msgid "Days before a lease's notice or end date that its owner is reminded."
+msgstr "在租赁的通知或结束日期前多少天提醒其负责人。"
+
 msgid "Days Discount"
 msgstr "折扣天数"
 
@@ -6402,9 +6814,6 @@ msgstr "截止日期类型"
 msgid "Deadline Type"
 msgstr "截止日期类型"
 
-msgid "Deals"
-msgstr "交易"
-
 msgid "Debit"
 msgstr "借方"
 
@@ -6414,6 +6823,10 @@ msgstr "借方 ({0})"
 
 msgid "Debit Account"
 msgstr "借方账户"
+
+#. placeholder {0}: account.name
+msgid "Debit for {0}"
+msgstr "{0}的借方"
 
 msgid "Debit Memo"
 msgstr "借方备忘录"
@@ -6429,6 +6842,12 @@ msgstr "决定当操作员在车间按下完成时且原材料仍未拣货时发
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库。"
+
+msgid "Decided for each asset when the lease is activated, from its payment rows and its classification inputs."
+msgstr "在租赁激活时为每项资产决定，基于其付款行和分类输入。"
+
+msgid "Decided for each asset when the lease is activated, from its payment rows and the inputs below."
+msgstr "在租赁激活时为每项资产决定，基于其付款行和下方的输入。"
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -6466,6 +6885,9 @@ msgstr "业务费用的默认账户"
 msgid "Default accounts for customer transactions and receivables"
 msgstr "客户交易和应收款项的默认科目"
 
+msgid "Default accounts for leases the company pays, under ASC 842"
+msgstr "公司承租租赁的默认账户，按照ASC 842"
+
 msgid "Default accounts for long-term assets and depreciation"
 msgstr "长期资产和折旧的默认账户"
 
@@ -6495,9 +6917,6 @@ msgstr "默认抄送"
 
 msgid "Default CC Recipients"
 msgstr "默认抄送收件人"
-
-msgid "Default Discount Rate (%)"
-msgstr "默认折扣率(%)"
 
 msgid "Default GL account credited when a fixed-asset disposal results in a gain."
 msgstr "固定资产处置获利时贷记的默认GL账户。"
@@ -6751,6 +7170,9 @@ msgstr "删除假期"
 msgid "Delete Inspection Plan"
 msgstr "删除检验计划"
 
+msgid "Delete Instruction"
+msgstr "删除说明"
+
 msgid "Delete Invoice"
 msgstr "删除发票"
 
@@ -6760,8 +7182,14 @@ msgstr "删除问题"
 msgid "Delete Item Group"
 msgstr "删除物品组"
 
+msgid "Delete Job"
+msgstr "删除工单"
+
 msgid "Delete Journal Entry"
 msgstr "删除分录"
+
+msgid "Delete Lease"
+msgstr "删除租赁"
 
 msgid "Delete line"
 msgstr "删除行"
@@ -6951,6 +7379,9 @@ msgstr "删除 {0} 发票"
 msgid "Delete the price break for quantity {0}? This can't be undone."
 msgstr "删除数量{0}的价格阶梯？此操作无法撤销。"
 
+msgid "Delete this line?"
+msgstr "删除此行？"
+
 msgid "Delete this sub-assembly and all of its steps? This cannot be undone."
 msgstr "删除此子装配及其所有步骤？这无法撤销。"
 
@@ -6992,6 +7423,9 @@ msgstr "删除 Webhook"
 
 msgid "Delete Workflow"
 msgstr "删除工作流"
+
+msgid "Deleted"
+msgstr "已删除"
 
 msgid "Deliver"
 msgstr "交付"
@@ -7107,6 +7541,9 @@ msgstr "固定资产已处置时的折旧冲销"
 msgid "Depreciation Run"
 msgstr "折旧运行"
 
+msgid "Depreciation runs"
+msgstr "折旧处理"
+
 msgid "Depreciation Start"
 msgstr "折旧开始"
 
@@ -7115,6 +7552,9 @@ msgstr "折旧开始日期"
 
 msgid "Derive this item's shelf life from the shortest shelf life of its components, ignoring the Days field above."
 msgstr "从其组件的最短保质期推导该物料的保质期，忽略上面的天数字段。"
+
+msgid "Descending"
+msgstr "降序"
 
 msgid "Description"
 msgstr "描述"
@@ -7142,6 +7582,9 @@ msgstr "由运动规划器检测"
 
 msgid "Developer"
 msgstr "开发人员"
+
+msgid "Difference"
+msgstr "差异"
 
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "与选择不同 — 允许，但请确认它们能够嵌套在一起"
@@ -7197,6 +7640,9 @@ msgstr "方向"
 msgid "Directions"
 msgstr "方向"
 
+msgid "Disable"
+msgstr "禁用"
+
 msgid "Disabled"
 msgstr "已禁用"
 
@@ -7239,15 +7685,14 @@ msgstr "折扣天数（{selectedCalculationMethod}之后）"
 msgid "Discount Ends On"
 msgstr "折扣结束日期"
 
-#. placeholder {0}: r.invoiceId
-msgid "Discount for {0}"
-msgstr "{0}的折扣"
-
 msgid "Discount Percent"
 msgstr "折扣百分比"
 
 msgid "Discount Percentage"
 msgstr "折扣百分比"
+
+msgid "Discount Rate"
+msgstr "折扣率"
 
 msgid "Discount Rate (%)"
 msgstr "折扣率(%)"
@@ -7361,6 +7806,12 @@ msgstr "文档"
 msgid "Documents and activity"
 msgstr "文档和活动"
 
+msgid "Documents Posted Before Carbon Kept Journals"
+msgstr "Carbon 开始保留凭证前已过账的文档"
+
+msgid "Documents posted before Carbon kept journals have no journal."
+msgstr "Carbon 开始保留凭证前已过账的文档没有对应的凭证。"
+
 msgid "Documents pushes invoices, bills and payments as native provider documents; their journals are recorded as covered by the document. It also pulls payments recorded in the provider back into Carbon, closing the matching invoice or bill and posting a Carbon GL journal. Off records them as deliberately excluded."
 msgstr "文档推送发票、账单和付款作为本地提供商文件；其凭证被记录为由该文件覆盖。它还将在提供商中记录的付款拉回到Carbon，关闭匹配的发票或账单并过账一个Carbon总账凭证。关闭时将其记录为故意排除。"
 
@@ -7436,6 +7887,9 @@ msgstr "草稿分录"
 
 msgid "Draft only"
 msgstr "仅限草稿"
+
+msgid "Draft purchase invoices are created every day for the payments that are due. Use this to draft the due payments right away."
+msgstr "每天为到期付款创建草稿采购发票。使用此选项立即生成到期付款的草稿。"
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "为结束日期之后已开票的时间起草贷项凭证"
@@ -7513,7 +7967,7 @@ msgstr "截止期限（按截止日期）"
 msgid "due {0}"
 msgstr "截止 {0}"
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(dueDate) )
+#. placeholder {0}: formatRelativeTime(convertDateStringToIsoString(dueDate))
 msgid "Due {0}"
 msgstr "截止日期 {0}"
 
@@ -7640,11 +8094,26 @@ msgstr "例如前3到4周"
 msgid "e.g. Zebra 2x1"
 msgstr "例如 Zebra 2x1"
 
+msgid "Each active asset's remaining payments are cut again from these terms and discounted at the revised rate. Its right-of-use asset moves by the same amount as its liability."
+msgstr "每项活跃资产的剩余付款将根据这些条款重新生成，并按修订后的利率进行折现。其使用权资产的移动额等于其负债的移动额。"
+
 msgid "Each amount starts at what the line has left to invoice."
 msgstr "每个金额从该行剩余的待开票部分开始"
 
 msgid "Each amount starts at what the line has left to recognize."
 msgstr "每个金额从该行剩余的待确认部分开始"
+
+msgid "Each asset is accounted for on its own, at its own payment. Click a cell to change it."
+msgstr "每项资产独立核算，在其付款处。点击单元格可更改。"
+
+msgid "Each asset is accounted for on its own. Its payment rows are cut from the lease's payment terms."
+msgstr "每项资产独立核算。其付款行从租赁的付款条件中生成。"
+
+msgid "Each asset's classification and the tests behind it are on the <0>lease's details</0>."
+msgstr "每项资产的分类及其背后的测试在<0>租赁详情</0>中。"
+
+msgid "Each asset's payment rows below are cut from these terms at its own payment. Changing a term cuts them again."
+msgstr "下方每项资产的付款行从这些条款在其付款处生成。更改条款将重新生成。"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
@@ -7673,8 +8142,17 @@ msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删
 msgid "Each line shows its item ID and revision."
 msgstr "每行显示其物料 ID 和修订版。"
 
+msgid "Each month the lease run posts each asset's interest and right-of-use amortization."
+msgstr "每月租赁运行过账每项资产的利息和使用权摊销。"
+
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "每个工序的未使用原材料在工序完成后立即退回。"
+
+msgid "Each payment is due on the first day of its period."
+msgstr "每个付款在其期间的第一天到期。"
+
+msgid "Each payment is due on the last day of its period."
+msgstr "每个付款在其期间的最后一天到期。"
 
 msgid "Each period is 28 days from the start date."
 msgstr "每个周期从开始日期起28天。"
@@ -8082,6 +8560,15 @@ msgstr "编辑工作中心"
 msgid "Edited"
 msgstr "已编辑"
 
+msgid "edited <0/>"
+msgstr "编辑于<0/>"
+
+msgid "Effective"
+msgstr "生效"
+
+msgid "Effective Date"
+msgstr "生效日期"
+
 msgid "Eliminated"
 msgstr "已消除"
 
@@ -8154,14 +8641,23 @@ msgstr "空列表"
 msgid "Empty work centers"
 msgstr "空的工作中心"
 
+msgid "Enable"
+msgstr "启用"
+
+msgid "Enable accounting"
+msgstr "启用会计"
+
+msgid "Enable Accounting"
+msgstr "启用会计"
+
 msgid "Enable audit logging in settings to start tracking changes to your data."
 msgstr "在设置中启用审计日志以开始跟踪数据的更改。"
 
+msgid "Enable browser notifications"
+msgstr "启用浏览器通知"
+
 msgid "Enable digital quotes for your company. This will allow you to send digital quotes to your customers, and allow them to accept them online."
 msgstr "为您的公司启用数字报价。这将允许您向客户发送数字报价，并允许他们在线接受。"
-
-msgid "Enable full accrual accounting with journal entries, financial reports, and general ledger posting."
-msgstr "启用完整权责发生制会计，包括凭证、财务报告和总账过账。"
 
 msgid "Enable in Settings"
 msgstr "在设置中启用"
@@ -8186,9 +8682,6 @@ msgstr "启用以允许物料编号中的小写字符。"
 
 msgid "Enable to allow shared workstation mode."
 msgstr "启用以允许共享工作站模式。"
-
-msgid "Enable to automatically post transactions to the general ledger."
-msgstr "启用以自动将交易过账到总账。"
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
 msgstr "启用以阻止为没有联系人或地点的客户发出或过账。"
@@ -8362,11 +8855,11 @@ msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 msgstr "输入您的私有 OAuth 应用程序的 Onshape URL、客户端 ID 和客户端密钥，然后保存。"
 
+msgid "Enter the prior system's trial balance as of the day before the cutover, for every account."
+msgstr "输入前系统在过账前一天的试算平衡余额，用于每个账户。"
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
-
-msgid "Enter what it cost to make."
-msgstr "输入该资产的制造成本。"
 
 msgid "Enter what it cost to make. The value is booked to the asset from the account it was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "输入该资产的制造成本。该成本将从其原支出账户计入资产：上年度的未分配利润或本年度的人工、材料费用。"
@@ -8421,6 +8914,12 @@ msgstr "所有者权益科目，用于累计利润或损失"
 
 msgid "Equity account for currency translation adjustments (CTA)"
 msgstr "所有者权益科目，用于货币折算调整(CTA)"
+
+msgid "Equity account that offsets the opening balances when accounting is set up. It must total zero."
+msgstr "权益账户，在设置会计时抵消开盘余额。其总额必须为零。"
+
+msgid "Equity account the opening journal posts against when accounting is set up; it holds any difference between the prior trial balance and Carbon's records, and must total zero before you can enable."
+msgstr "设置会计时期初凭证过账到的所有者权益账户；它保持先前试算平衡与 Carbon 记录之间的任何差异，启用前必须总计为零。"
 
 msgid "Error"
 msgstr "错误"
@@ -8488,11 +8987,18 @@ msgstr "升级"
 msgid "Est. Duration"
 msgstr "预计时长"
 
+msgid "Estimate"
+msgstr "估算"
+
 msgid "Estimated"
 msgstr "估计的"
 
 msgid "Estimated — no capacity reservation"
 msgstr "估计 — 无产能预留"
+
+#. placeholder {0}: duration(estimated.total)
+msgid "Estimated <0>{0}</0>"
+msgstr "预估<0>{0}</0>"
 
 msgid "Estimated Duration"
 msgstr "预计时长"
@@ -8535,6 +9041,21 @@ msgstr "事件"
 
 msgid "Every 3 hours"
 msgstr "每3小时"
+
+msgid "Every account default is set"
+msgstr "已设置每个账户默认值"
+
+msgid "Every asset needs a payment row before activating."
+msgstr "激活前每项资产需要一行付款。"
+
+msgid "Every asset's payment rows are cut again from the payment terms. Rows you edited, added or deleted are replaced."
+msgstr "每项资产的付款行将从付款条件中重新生成。您编辑、添加或删除的行将被替换。"
+
+msgid "Every change to an active lease, with the amounts before and after."
+msgstr "对启用租赁的每项更改，显示更改前后的金额。"
+
+msgid "Every check must pass before accounting can be enabled."
+msgstr "启用会计之前，每个检查都必须通过。"
 
 msgid "Every company-scoped record. Credentials, integration tokens and webhooks are never included."
 msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不包含在内。"
@@ -8623,6 +9144,16 @@ msgstr "豁免证书"
 msgid "Exemption Reason"
 msgstr "豁免原因"
 
+msgid "Exercise Date"
+msgstr "行使日期"
+
+msgid "Exercise Purchase Option"
+msgstr "行使购买选权"
+
+#. placeholder {0}: line.description
+msgid "Exercise Purchase Option: {0}"
+msgstr "行使购买选项：{0}"
+
 msgid "Existing"
 msgstr "现有"
 
@@ -8631,6 +9162,9 @@ msgstr "现有映射。选择不同的提供商选项进行重新映射。"
 
 msgid "Existing Stripe customer"
 msgstr "现有 Stripe 客户"
+
+msgid "Exp. <0/>"
+msgstr "预期<0/>"
 
 msgid "Expand"
 msgstr "展开"
@@ -8787,9 +9321,6 @@ msgstr "有效期从选定的流程开始时开始。"
 
 msgid "Expiry trace"
 msgstr "有效期追踪"
-
-msgid "Explorer"
-msgstr "浏览器"
 
 msgid "Export"
 msgstr "导出"
@@ -9003,8 +9534,17 @@ msgstr "创建工作中心失败：{0}"
 msgid "Failed to delete file from old location"
 msgstr "删除旧位置的文件失败"
 
+msgid "Failed to disable browser notifications"
+msgstr "禁用浏览器通知失败"
+
 msgid "Failed to download file for moving"
 msgstr "无法下载文件以进行移动"
+
+msgid "Failed to download history"
+msgstr "下载历史记录失败"
+
+msgid "Failed to enable browser notifications"
+msgstr "启用浏览器通知失败"
 
 msgid "Failed to fetch item costs"
 msgstr "获取物料成本失败"
@@ -9163,6 +9703,9 @@ msgstr "保存幻灯片失败"
 msgid "Failed to save the change"
 msgstr "保存更改失败"
 
+msgid "Failed to save the cost"
+msgstr "保存成本失败"
+
 msgid "Failed to save tools"
 msgstr "保存工具失败"
 
@@ -9241,6 +9784,9 @@ msgstr "上传缩略图失败"
 msgid "Failed to upload: {reason}"
 msgstr "上传失败：{reason}"
 
+msgid "Failing"
+msgstr "失败"
+
 msgid "Failure"
 msgstr "故障"
 
@@ -9282,6 +9828,9 @@ msgstr "字段映射"
 
 msgid "Fields"
 msgstr "字段"
+
+msgid "FIFO"
+msgstr "先进先出"
 
 msgid "File deleted successfully"
 msgstr "文件删除成功"
@@ -9330,8 +9879,17 @@ msgstr "可组成一个生产批次"
 msgid "Filter"
 msgstr "筛选"
 
+msgid "Filter & sort"
+msgstr "筛选&排序"
+
+msgid "Filter and sort"
+msgstr "筛选和排序"
+
 msgid "Filter by…"
 msgstr "按…筛选"
+
+msgid "Filters"
+msgstr "筛选"
 
 msgid "Finalize"
 msgstr "完成"
@@ -9339,11 +9897,26 @@ msgstr "完成"
 msgid "Finalizing a fiscal month through the Open → Locked → Closed lifecycle; a closed period is frozen and its balances snapshotted, reversible only by explicit reopen."
 msgstr "通过未结 → 已锁定 → 已关闭的生命周期来最终化会计期间；已关闭的期间被冻结并且其余额被快照处理，仅通过明确的重新打开才可以逆转。"
 
+msgid "Finance"
+msgstr "融资"
+
+msgid "Finance lease: amortization of ROU assets"
+msgstr "融资租赁：使用权资产摊销"
+
+msgid "Finance lease: interest on lease liabilities"
+msgstr "融资租赁：租赁负债利息"
+
 msgid "Financial Statements"
 msgstr "财务报表"
 
 msgid "Financing"
 msgstr "融资"
+
+msgid "Find company…"
+msgstr "查找公司…"
+
+msgid "Find module…"
+msgstr "查找模块…"
 
 msgid "finish"
 msgstr "成品"
@@ -9413,6 +9986,9 @@ msgstr "会计年度"
 
 msgid "Fiscal Year"
 msgstr "会计年度"
+
+msgid "Fiscal year and base currency are set"
+msgstr "会计年度和基础货币已设置"
 
 msgid "Fiscal Year Settings"
 msgstr "会计年度设置"
@@ -9609,8 +10185,14 @@ msgstr "已提足折旧"
 msgid "FX G/L"
 msgstr "外汇损益"
 
+msgid "FX Gain/Loss"
+msgstr "汇兑收益/损失"
+
 msgid "FY {year}"
 msgstr "会计年度 {year}"
+
+msgid "Gain (Loss)"
+msgstr "利得（损失）"
 
 msgid "Gain on Disposal"
 msgstr "处置获利"
@@ -9620,6 +10202,12 @@ msgstr "处置获利（默认）"
 
 msgid "Gain on Disposal Account"
 msgstr "处置获利账户"
+
+msgid "Gain on Lease Modification"
+msgstr "租赁修改利得"
+
+msgid "Gain on Lease Termination"
+msgstr "租赁终止利得"
 
 msgid "Gain/Loss"
 msgstr "收益/损失"
@@ -9720,6 +10308,9 @@ msgstr "开始使用"
 msgid "Get Started"
 msgstr "开始使用"
 
+msgid "Get your Carbon notifications as they happen."
+msgstr "实时获取您的 Carbon 通知。"
+
 msgid "Gets the summary for every agreement"
 msgstr "获取每个协议的汇总"
 
@@ -9729,8 +10320,14 @@ msgstr "在 Carbon 中导航"
 msgid "Getting set up"
 msgstr "正在设置"
 
+msgid "Give every asset a payment."
+msgstr "为每项资产分配付款。"
+
 msgid "Give it an owner and a date"
 msgstr "给它分配一个负责人和截止日期"
+
+msgid "Give the lease a <0>fixed duration on its Details step</0>."
+msgstr "在其详细信息步骤中为租赁指定<0>固定期限</0>。"
 
 msgid "GL"
 msgstr "总账"
@@ -9868,6 +10465,9 @@ msgstr "转到折旧运行"
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
+msgid "Go to lease runs"
+msgstr "转到租赁运行"
+
 msgid "Go to module"
 msgstr "转到模块"
 
@@ -9997,6 +10597,9 @@ msgstr "有无法排程的工序"
 msgid "Headers"
 msgstr "标头"
 
+msgid "Heading {level}"
+msgstr "标题{level}"
+
 msgid "Healthy"
 msgstr "健康"
 
@@ -10072,6 +10675,9 @@ msgstr "假期名称"
 msgid "Holidays"
 msgstr "假期"
 
+msgid "Home"
+msgstr "首页"
+
 msgid "Home Phone"
 msgstr "家庭电话"
 
@@ -10137,6 +10743,9 @@ msgstr "物料的单位成本估价方法：标准成本、平均成本、先进
 
 msgid "How are these hours calculated?"
 msgstr "这些小时数是如何计算的？"
+
+msgid "How Carbon looks in this browser."
+msgstr "Carbon 在此浏览器中的外观"
 
 msgid "How coverage is worked out"
 msgstr "如何计算覆盖范围"
@@ -10387,6 +10996,9 @@ msgstr "实施主管"
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+msgid "Import CSV"
+msgstr "导入CSV"
+
 msgid "Import results"
 msgstr "导入结果"
 
@@ -10397,8 +11009,14 @@ msgstr "导入您的BOM"
 msgid "in {0}"
 msgstr "{0} 后"
 
+msgid "in advance"
+msgstr "预付"
+
 msgid "In an open menu"
 msgstr "在打开的菜单中"
+
+msgid "in arrears"
+msgstr "后付"
 
 msgid "In Maintenance"
 msgstr "维护中"
@@ -10541,6 +11159,9 @@ msgstr "增加工单 {target} 至 {amount}"
 msgid "Increase purchase order {target} to {amount}"
 msgstr "增加采购订单 {target} 至 {amount}"
 
+msgid "Incremental Borrowing Rate (%)"
+msgstr "增量借款利率（%）"
+
 msgid "Indirect"
 msgstr "间接"
 
@@ -10582,6 +11203,12 @@ msgstr "从父组继承。"
 
 msgid "inherits {inheritedName}"
 msgstr "继承自 {inheritedName}"
+
+msgid "Initial Liability"
+msgstr "初始负债"
+
+msgid "Initial Liability:"
+msgstr "初始负债："
 
 msgid "Input"
 msgstr "输入"
@@ -10704,6 +11331,9 @@ msgstr "利息"
 msgid "Interest (default)"
 msgstr "利息（默认）"
 
+msgid "Interest Expense – Leases"
+msgstr "利息费用 – 租赁"
+
 msgid "Interest Income – Leases"
 msgstr "利息收入 – 租赁"
 
@@ -10712,6 +11342,9 @@ msgstr "利息收入 – 租赁（默认）"
 
 msgid "Interest income or expense from banking activities"
 msgstr "银行活动产生的利息收益或费用"
+
+msgid "Interest on finance lease liabilities"
+msgstr "融资租赁负债利息"
 
 msgid "Internal"
 msgstr "内部"
@@ -10728,9 +11361,6 @@ msgstr "内部备注"
 msgid "inv"
 msgstr "库存"
 
-msgid "Inv Rate"
-msgstr "发票汇率"
-
 msgid "Invalid applications"
 msgstr "无效应用"
 
@@ -10743,6 +11373,9 @@ msgstr "库存管理"
 msgid "Inventory"
 msgstr "库存管理"
 
+msgid "Inventory Account"
+msgstr "存货帐户"
+
 msgid "Inventory accuracy"
 msgstr "库存管理准确性"
 
@@ -10754,6 +11387,9 @@ msgstr "库存调整"
 
 msgid "Inventory Adjustment (default)"
 msgstr "库存调整（默认）"
+
+msgid "Inventory adjustments and scrap"
+msgstr "库存调整和报废"
 
 msgid "Inventory and purchasing, with automated planning"
 msgstr "库存管理和采购，具有自动化计划"
@@ -10768,6 +11404,9 @@ msgid "Inventory control and counts"
 msgstr "库存管理控制和盘点"
 
 msgid "Inventory Count"
+msgstr "库存盘点"
+
+msgid "Inventory counts"
 msgstr "库存盘点"
 
 msgid "Inventory History"
@@ -10787,9 +11426,6 @@ msgstr "库存数量"
 
 msgid "Inventory Quantities"
 msgstr "库存数量"
-
-msgid "Inventory Tracking"
-msgstr "库存跟踪"
 
 msgid "Inventory Unit of Measure"
 msgstr "库存计量单位"
@@ -10854,17 +11490,29 @@ msgstr "发票客户位置"
 msgid "Invoice Date"
 msgstr "发票日期"
 
+msgid "Invoice From"
+msgstr "发票来自"
+
 msgid "Invoice ID"
 msgstr "发票ID"
 
 msgid "Invoice Location"
 msgstr "发票地点"
 
+msgid "Invoice Now"
+msgstr "立即开票"
+
 msgid "Invoice Number"
 msgstr "发票号码"
 
+msgid "Invoice Rate"
+msgstr "发票汇率"
+
 msgid "Invoice schedule"
 msgstr "发票日程表"
+
+msgid "Invoice Separately"
+msgstr ""
 
 msgid "Invoice settlement"
 msgstr "发票结算"
@@ -10895,6 +11543,9 @@ msgstr "已开票"
 
 msgid "Invoiced Amount:"
 msgstr "已开票金额："
+
+msgid "Invoiced separately"
+msgstr ""
 
 msgid "Invoiced Statuses"
 msgstr "已开票状态"
@@ -11148,6 +11799,9 @@ msgstr "工作"
 msgid "Job · {itemReadableId}"
 msgstr "工单 · {itemReadableId}"
 
+msgid "Job completions"
+msgstr "工单完成"
+
 msgid "Job ID"
 msgstr "工作ID"
 
@@ -11159,6 +11813,9 @@ msgstr "工作地点"
 
 msgid "Job make method"
 msgstr "工单制造方法"
+
+msgid "Job material issues"
+msgstr "工单物料领料"
 
 msgid "Job Materials"
 msgstr "工单物料"
@@ -11223,6 +11880,9 @@ msgstr "日记账行"
 
 msgid "Journal Preview"
 msgstr "凭证预览"
+
+msgid "Journals"
+msgstr "凭证"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
@@ -11392,7 +12052,7 @@ msgid "Last push {when} failed: {0}"
 msgstr "上次推送 {when} 失败：{0}"
 
 msgid "Last push {when}:"
-msgstr "上次推送 {when}："
+msgstr "最后一次推送 {when}："
 
 msgid "Last Quarter"
 msgstr "上一季度"
@@ -11401,7 +12061,7 @@ msgid "Last Run"
 msgstr "最后运行"
 
 msgid "Last scheduled push {when}:"
-msgstr "上次计划推送 {when}："
+msgstr "最后一次计划推送 {when}："
 
 msgid "Last synced: <0/>"
 msgstr "上次同步: <0/>"
@@ -11457,14 +12117,69 @@ msgstr "学习"
 msgid "Learn more"
 msgstr "了解更多"
 
+msgid "Lease"
+msgstr "租赁"
+
+msgid "Lease (lessee)"
+msgstr "租赁（承租人）"
+
+msgid "Lease charges that are not part of the fixed payments, such as usage or maintenance"
+msgstr "不属于固定付款一部分的租赁费用，如使用费或维护费。"
+
 msgid "Lease Classification"
 msgstr "租赁分类"
+
+msgid "Lease Cost"
+msgstr "租赁成本"
+
+msgid "Lease Liabilities"
+msgstr "租赁负债"
+
+msgid "Lease liability"
+msgstr "租赁负债"
+
+msgid "Lease Liability"
+msgstr "租赁负债"
+
+msgid "Lease Liability:"
+msgstr "租赁负债:"
+
+msgid "Lease Reminder Days"
+msgstr "租赁提醒天数"
 
 msgid "Lease Revenue"
 msgstr "租赁收入"
 
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
+
+msgid "Lease run"
+msgstr "租赁周期运行"
+
+msgid "Lease Run"
+msgstr "租赁批次"
+
+msgid "Lease run entries and posted lease invoice lines in the period."
+msgstr "期间内的租赁批次条目和已过账租赁发票行。"
+
+msgid "Lease Runs"
+msgstr "租赁批次"
+
+#. placeholder {0}: formatDate(leaseRunPostedThrough)
+msgid "Lease runs are posted through {0}"
+msgstr "租赁运行已过账至 {0}"
+
+msgid "Lease setup"
+msgstr "租赁换型"
+
+msgid "Leases"
+msgstr "租赁"
+
+msgid "Leases (Lessee)"
+msgstr "租赁（承租人）"
+
+msgid "Leases of 12 months or less with no reasonably certain purchase option are expensed as paid."
+msgstr "12个月或更短期限且没有合理确定购买选项的租赁作为已支付费用处理。"
 
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
@@ -11499,6 +12214,9 @@ msgstr "检测到剩余零件"
 msgid "Leftover staged material returns when the whole job completes."
 msgstr "当整个工单完成时，剩余的暂存原材料将被退回。"
 
+msgid "Less imputed interest"
+msgstr "减：应计利息"
+
 msgid "Less manual work"
 msgstr "更少的手动工作"
 
@@ -11507,6 +12225,15 @@ msgstr "更少的手动工作，更少的错误"
 
 msgid "Less overtime"
 msgstr "较少加班"
+
+msgid "Lessee lease balances, maturity analysis and lease cost"
+msgstr "承租人租赁余额、到期日分析和租赁成本"
+
+msgid "Lessor"
+msgstr "出租人"
+
+msgid "Lessor Discount Rate (%)"
+msgstr "出租人折现率(%)"
 
 msgid "Let members sign in through your identity provider with SAML."
 msgstr "允许成员通过您的身份提供商使用 SAML 登录。"
@@ -11528,6 +12255,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Liability"
+msgstr "负债"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 msgstr "员工费用报销应付账户。如未设置，则回退到应付款项"
@@ -11556,8 +12286,14 @@ msgstr "生命周期使用情况（单位）"
 msgid "Lifetime Usage (Units)"
 msgstr "生命周期使用情况（单位）"
 
+msgid "LIFO"
+msgstr "后进先出"
+
 msgid "Light"
 msgstr "浅色"
+
+msgid "Light, dark, or follow your system setting."
+msgstr "浅色、深色或跟随系统设置"
 
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
@@ -11574,6 +12310,24 @@ msgstr "行"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "行 {0}"
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr "行 {line}（{accountNumber}）：贷方「{value}」包含逗号。使用小数点表示小数，不使用千位分隔符，例如 1234.56。"
+
+msgid "Line {line} ({accountNumber}): the credit \"{value}\" is not a positive number."
+msgstr "行 {line}（{accountNumber}）：贷方「{value}」不是正数。"
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
+msgstr "行 {line}（{accountNumber}）：借方「{value}」包含逗号。使用小数点表示小数，不使用千位分隔符，例如 1234.56。"
+
+msgid "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive number."
+msgstr "行 {line}（{accountNumber}）：借方「{value}」不是正数。"
+
+msgid "Line {line} has no account number."
+msgstr "行 {line} 没有账户编号。"
+
+msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
+msgstr "行 {line}：账户 {accountNumber} 已在行 {firstLine} 上。请将每个账户放在单独的一行。"
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -11670,6 +12424,9 @@ msgstr "列表参数"
 msgid "List view"
 msgstr "列表视图"
 
+msgid "List View"
+msgstr "列表视图"
+
 #. placeholder {0}: inputLabel(batch.first)
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
@@ -11683,6 +12440,9 @@ msgstr "实时重新加载"
 
 msgid "Load"
 msgstr "负荷"
+
+msgid "Load more"
+msgstr "加载更多"
 
 msgid "Load newer"
 msgstr "加载更新"
@@ -11753,6 +12513,9 @@ msgstr "锁定期间"
 msgid "Locked"
 msgstr "已锁定"
 
+msgid "Locked while the quote is {quoteStatus}. Reopen it to edit."
+msgstr "当报价单为 {quoteStatus} 时已锁定。重新打开以编辑。"
+
 msgid "Locking makes the period read-only for operational documents (receipts, shipments, invoices) while still allowing accounting adjustments like depreciation and disposals. A period must be locked before it can be closed."
 msgstr "锁定使该期间对运营凭证（收货、发货、发票）为只读，同时仍允许会计调整（如折旧和处置）。期间必须先锁定才能关闭。"
 
@@ -11790,9 +12553,6 @@ msgstr "前瞻（周）"
 msgid "Look back (weeks)"
 msgstr "回顾（周）"
 
-msgid "Looks empty here"
-msgstr "看起来这里是空的"
-
 msgid "Loss on Disposal"
 msgstr "处置亏损"
 
@@ -11801,6 +12561,9 @@ msgstr "处置亏损（默认）"
 
 msgid "Loss on Disposal Account"
 msgstr "处置亏损账户"
+
+msgid "Loss on Lease Termination"
+msgstr "租赁终止损失"
 
 msgid "Losses recognized on disposal of fixed assets"
 msgstr "固定资产处置认可的亏损"
@@ -11886,6 +12649,9 @@ msgstr "MACRS资产类别"
 msgid "Magic link"
 msgstr "魔法链接"
 
+msgid "Main"
+msgstr "主"
+
 msgid "Main build (after its last step)"
 msgstr "主装配（在其最后一步后）"
 
@@ -11909,6 +12675,9 @@ msgstr "维护费用"
 
 msgid "Maintenance Expense (default)"
 msgstr "维护费用 (默认)"
+
+msgid "Maintenance parts"
+msgstr "维护零件"
 
 msgid "Maintenance Schedules"
 msgstr "维护排程"
@@ -11979,6 +12748,10 @@ msgstr "按订单生产"
 msgid "Make tracked entities available again"
 msgstr "使跟踪的实体再次可用"
 
+#. placeholder {0}: instruction.version
+msgid "Make version {0} active? This publishes it, archives the currently active version, and repoints in-flight job operations to it."
+msgstr "将版本 {0} 设为启用？这将发布它，存档当前启用的版本，并将进行中的工单工序指向该版本。"
+
 msgid "Makes this document active again."
 msgstr "再次启用此文件。"
 
@@ -11993,6 +12766,9 @@ msgstr "管理您公司的身份验证和登录要求。"
 
 msgid "Manage how shelf life is tracked, computed, and enforced across inventory."
 msgstr "管理保质期在库存管理中的跟踪、计算和执行方式。"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "管理您登录 Carbon 的方式。"
 
 msgid "Manage Ownership"
 msgstr "管理所有权"
@@ -12055,17 +12831,11 @@ msgstr "标记缺席"
 msgid "Mark all as configured"
 msgstr "全部标记为已配置"
 
-msgid "Mark as Paid"
-msgstr "标记为已支付"
-
 msgid "Mark as Planned"
 msgstr "标记为已计划"
 
 msgid "Mark as read"
 msgstr "标记为已读"
-
-msgid "Mark as Unpaid"
-msgstr "标记为未支付"
 
 msgid "Mark checkpoint passed"
 msgstr "标记检查点已通过"
@@ -12265,6 +13035,9 @@ msgstr "未包含原材料"
 msgid "Matrix"
 msgstr "矩阵"
 
+msgid "Maturity Analysis"
+msgstr "到期日分析"
+
 msgid "Max Qty"
 msgstr "最大数量"
 
@@ -12321,6 +13094,9 @@ msgstr "备忘录日期"
 
 msgid "Memo ID"
 msgstr "备忘录 ID"
+
+msgid "Menu"
+msgstr "菜单"
 
 msgid "Merchant"
 msgstr "商家"
@@ -12385,6 +13161,15 @@ msgstr "迁移数据"
 
 msgid "Migrating from another system?"
 msgstr "从另一个系统迁移？"
+
+msgid "Migration Clearing"
+msgstr "迁差账户"
+
+msgid "Migration Clearing (default)"
+msgstr "迁移清算（默认）"
+
+msgid "Migration Clearing must total zero. <0>Go to Trial Balance</0>"
+msgstr "迁移清算必须总计为零。<0>转到试算表</0>"
 
 msgid "min {minimumBatchQuantity} — met"
 msgstr "最小 {minimumBatchQuantity} — 已达到"
@@ -12454,6 +13239,9 @@ msgstr "混合材料：{0}{1}。确认它们在此运行中可以相互嵌套。
 msgid "Mobile Phone"
 msgstr "手机"
 
+msgid "Mode"
+msgstr "模式"
+
 msgid "Model Number"
 msgstr "型号"
 
@@ -12475,8 +13263,21 @@ msgstr "模型已从行中移除"
 msgid "Model upload"
 msgstr "模型上传"
 
+msgid "Modification"
+msgstr "修改"
+
 msgid "Modified"
 msgstr "已修改"
+
+msgid "Modify"
+msgstr "修改"
+
+#. placeholder {0}: lease.leaseId
+msgid "Modify {0}"
+msgstr "修改{0}"
+
+msgid "Modify Lease"
+msgstr "修改租赁"
 
 msgid "Module"
 msgstr "模块"
@@ -12505,6 +13306,9 @@ msgstr "你欠的钱"
 msgid "Month"
 msgstr "月"
 
+msgid "Month Ending"
+msgstr "期末月份"
+
 msgid "Month Rate"
 msgstr "月费率"
 
@@ -12519,6 +13323,9 @@ msgstr "每月租赁"
 
 msgid "Monthly Rent:"
 msgstr "每月租金："
+
+msgid "Months Left"
+msgstr "剩余月份"
 
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "该资产按税务目的折旧的月数（不使用MACRS时）。"
@@ -12551,7 +13358,7 @@ msgid "More overtime"
 msgstr "更多加班"
 
 msgid "More records are waiting. Push again to continue."
-msgstr "还有更多记录在等待。再次推送以继续。"
+msgstr "还有更多记录在等待。请再次推送以继续。"
 
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
@@ -12566,7 +13373,7 @@ msgid "Motion"
 msgstr "运动"
 
 msgid "Mount has {matches} records with this identifier. Delete or merge the extra ones in Mount, then push again."
-msgstr "Mount 有 {matches} 条具有此标识符的记录。在 Mount 中删除或合并多余的，然后再次推送。"
+msgstr "Mount 中有 {matches} 条记录使用此标识符。请在 Mount 中删除或合并多余的记录，然后重新推送。"
 
 msgid "Move"
 msgstr "移动"
@@ -12742,6 +13549,15 @@ msgstr "租赁净投资"
 msgid "Net Investment in Leases (default)"
 msgstr "租赁净投资（默认）"
 
+msgid "Net right-of-use asset"
+msgstr "使用权资产净额"
+
+msgid "Net Right-of-Use Asset:"
+msgstr "使用权资产净额:"
+
+msgid "Net ROU Asset"
+msgstr "净ROU资产"
+
 msgid "Net Unit Price"
 msgstr "净单价"
 
@@ -12886,14 +13702,14 @@ msgstr "新建项目组"
 msgid "New Kanban"
 msgstr "新看板"
 
+msgid "New Lease"
+msgstr "新租赁"
+
 msgid "New line"
 msgstr "新行"
 
 msgid "New Line"
 msgstr "新行"
-
-msgid "New Line Item"
-msgstr "新建行项目"
 
 msgid "New Location"
 msgstr "新位置"
@@ -13069,6 +13885,9 @@ msgstr "新建调拨行"
 msgid "New Unit of Measure"
 msgstr "新计量单位"
 
+msgid "New Value"
+msgstr "新值"
+
 msgid "New Version"
 msgstr "新版本"
 
@@ -13104,6 +13923,9 @@ msgstr "下次校准"
 
 msgid "Next Calibration Date"
 msgstr "下次校准日期"
+
+msgid "Next column"
+msgstr "下一列"
 
 msgid "Next Date"
 msgstr "下一个日期"
@@ -13147,6 +13969,9 @@ msgstr "下一份发票 {date} 将自动创建，然后过账。"
 msgid "Next page"
 msgstr "下一页"
 
+msgid "Next Payment:"
+msgstr "下次付款:"
+
 msgid "Next Sequence"
 msgstr "下一个编号规则"
 
@@ -13180,6 +14005,9 @@ msgstr "无{0}个同步操作"
 msgid "No {0} yet"
 msgstr "还没有{0}"
 
+msgid "No {title} yet"
+msgstr "暂无 {title}"
+
 msgid "No abilities added"
 msgstr "没有添加技能"
 
@@ -13197,6 +14025,9 @@ msgstr "未找到操作。"
 
 msgid "No actions selected"
 msgstr "未选择任何操作"
+
+msgid "No actions yet."
+msgstr "暂无操作。"
 
 msgid "No active jobs found for this sales order. The order will be cancelled directly."
 msgstr "未找到此销售订单的活跃工单。订单将直接取消。"
@@ -13222,12 +14053,18 @@ msgstr "无修正案。"
 msgid "No applications. Payment will be on-account."
 msgstr "无应用。付款将按账户处理。"
 
+msgid "No approval requirements yet."
+msgstr "暂无审批要求。"
+
 #. placeholder {0}: auditConfig.retentionDays
 msgid "No archived logs yet. Logs older than {0} days will be automatically archived and available for download here."
 msgstr "暂无已归档日志。超过{0}天的日志将自动归档，并可在此下载。"
 
 msgid "No assets to depreciate for this period."
 msgstr "本期没有要折旧的资产。"
+
+msgid "No assets yet. Add each asset the lease covers, with what it pays for it."
+msgstr "还无资产。添加租赁涵盖的每项资产及其付款。"
 
 msgid "No attachments."
 msgstr "没有附件。"
@@ -13268,6 +14105,9 @@ msgstr "未记录任何更改"
 msgid "No changes yet."
 msgstr "还没有变更。"
 
+msgid "No changes yet. Once the lease is active, Modify is in the header and Terminate and Purchase are on each asset's page."
+msgstr "暂无更改。租赁启用后，修改在页眉中，终止和购买在每个资产的页面上。"
+
 msgid "No charges. Mileage, damage, delivery or cleaning charges ride the next invoice."
 msgstr "无费用。里程、损毁、交付或清洁费用计入下一张发票。"
 
@@ -13283,8 +14123,11 @@ msgstr "没有无碰撞路径"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No companies found"
+msgstr "未找到公司"
+
 msgid "No companies match \"{query}\""
-msgstr "没有公司匹配 \"{query}\""
+msgstr "没有公司与 \"{query}\" 匹配"
 
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
@@ -13300,6 +14143,9 @@ msgstr "还没有组件"
 
 msgid "No condition may match"
 msgstr "没有条件可以匹配"
+
+msgid "No control account has a balance at the cutover."
+msgstr "截至结转日期，无控制帐户有余额"
 
 msgid "No conversion is required"
 msgstr "不需要转换"
@@ -13323,7 +14169,10 @@ msgid "No Data"
 msgstr "无数据"
 
 msgid "No data exists"
-msgstr "没有数据存在"
+msgstr "不存在数据"
+
+msgid "No data yet"
+msgstr "暂无数据"
 
 msgid "No days off scheduled"
 msgstr "未安排休息日"
@@ -13333,6 +14182,9 @@ msgstr "还没有默认附件。"
 
 msgid "No deposit has been received for this agreement."
 msgstr "未收到此协议的押金。"
+
+msgid "No depreciation run happens before the cutover. Enter each asset's accumulated depreciation as of the day before the cutover."
+msgstr "在截断前不进行折旧计算。输入每项资产截断前一天的累计折旧。"
 
 msgid "No dimension slots configured"
 msgstr "未配置维度插槽"
@@ -13354,6 +14206,9 @@ msgstr "没有可用的草稿版本"
 
 msgid "No due date"
 msgstr "没有到期日"
+
+msgid "No economic life entered, counts as not met"
+msgstr "未输入经济寿命，视为不符合"
 
 msgid "No editable properties for this item."
 msgstr "此项目没有可编辑的属性。"
@@ -13379,6 +14234,9 @@ msgstr "无结束"
 msgid "No events found."
 msgstr "未找到事件。"
 
+msgid "No external notes"
+msgstr "暂无外部备注"
+
 msgid "No extra cutover steps yet. Add anything specific to this customer."
 msgstr "还没有额外的切换步骤。添加特定于此客户的任何内容。"
 
@@ -13394,6 +14252,9 @@ msgstr "还没有额外的换型物料。添加特定于此客户的任何内容
 msgid "No failure path — the run stops here and is marked failed"
 msgstr "无失败路径 — 运行在此停止并标记为失败"
 
+msgid "No fair value entered, counts as not met"
+msgstr "未输入公允价值，视为不符合"
+
 msgid "No fields found."
 msgstr "未找到字段。"
 
@@ -13405,6 +14266,9 @@ msgstr "此项目没有文件。"
 
 msgid "No files uploaded"
 msgstr "未上传任何文件"
+
+msgid "No fixed asset was acquired before the cutover date."
+msgstr "在结转日期之前没有获取固定资产"
 
 msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
 msgstr "没有可用的车队件。当序列化物料从库存中进行资本化或为车队而制造时，该件就会加入车队，请在 <0>Fleet</0> 页面上进行。"
@@ -13430,6 +14294,9 @@ msgstr "没有图像"
 msgid "No inspection plans"
 msgstr "无检验计划"
 
+msgid "No internal notes"
+msgstr "暂无内部备注"
+
 msgid "No invoices planned after the change."
 msgstr "更改后未计划发票。"
 
@@ -13444,6 +14311,9 @@ msgstr "未配置问题类型"
 
 msgid "No issues yet"
 msgstr "尚无问题"
+
+msgid "No item has stock on hand at the cutover date."
+msgstr "在结转日期，没有物料有库存"
 
 msgid "No items"
 msgstr "没有物料"
@@ -13462,6 +14332,9 @@ msgstr "没有创建工单"
 
 msgid "No journal lines in scope for this period"
 msgstr "此期间范围内没有凭证行"
+
+msgid "No lease run is posted yet"
+msgstr "尚未过账租赁运行"
 
 msgid "No lines"
 msgstr "无行项"
@@ -13502,11 +14375,20 @@ msgstr "没有匹配的操作"
 msgid "No materials"
 msgstr "无物料"
 
+msgid "No materials yet"
+msgstr "暂无原材料"
+
+msgid "No modules found"
+msgstr "未找到模块"
+
 msgid "No new notifications"
 msgstr "没有新通知"
 
 msgid "No notes"
 msgstr "没有备注"
+
+msgid "No notes were given."
+msgstr "未提供备注。"
 
 msgid "No one assigned"
 msgstr "没有人员配备"
@@ -13522,6 +14404,9 @@ msgstr "该地点在接下来{horizon}天内没有计划完成的销售订单相
 
 msgid "No open jobs for sales orders at this location."
 msgstr "此地点没有销售订单相关的未结工单。"
+
+msgid "No open jobs with costs from before Carbon recorded them"
+msgstr "没有在 Carbon 记录成本之前已产生成本的未结工单"
 
 msgid "No open lines. Add a service to amend."
 msgstr "没有未结行。添加服务以进行修改。"
@@ -13550,6 +14435,9 @@ msgstr "此地点没有工序需要拣货"
 
 msgid "No operations selected"
 msgstr "未选择操作"
+
+msgid "No operations yet"
+msgstr "暂无工序"
 
 msgid "No operators."
 msgstr "没有操作员。"
@@ -13587,6 +14475,15 @@ msgstr "还没有已登记的通行密钥。"
 msgid "No payables"
 msgstr "没有应付款项"
 
+msgid "No payment"
+msgstr "无付款"
+
+msgid "No payment rows yet. Give each asset its payment on the Assets step, or add a row."
+msgstr "暂无付款行。在资产步骤中为每项资产分配付款，或添加一行。"
+
+msgid "No payment rows."
+msgstr "无付款行。"
+
 msgid "No payments yet."
 msgstr "还没有付款。"
 
@@ -13601,6 +14498,9 @@ msgstr "没有计划数据"
 
 msgid "No posted journals in this period for this account"
 msgstr "此期间此账户没有已过账的凭证"
+
+msgid "No posted opening balance"
+msgstr "没有已过账的期初余额"
 
 msgid "No pricing for selected quantity"
 msgstr "所选数量无定价"
@@ -13683,11 +14583,17 @@ msgstr "没有可退货的行与您的搜索匹配"
 msgid "No revenue to recognize for this period."
 msgstr "此期间无收入要确认。"
 
+msgid "No risks"
+msgstr "无风险"
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
 msgid "No rules assigned"
 msgstr "没有已分配的规则"
+
+msgid "No schedule lines."
+msgstr "无日程行。"
 
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
@@ -13746,6 +14652,12 @@ msgstr "没有存储单元或追踪号与之匹配。"
 msgid "No Supplier"
 msgstr "无供应商"
 
+msgid "No supplier parts have been added yet."
+msgstr "尚未添加供应商零件。"
+
+msgid "No supplier parts match \"{searchText}\"."
+msgstr "没有供应商零件与 \"{searchText}\" 匹配。"
+
 msgid "No suppliers yet"
 msgstr "还没有供应商"
 
@@ -13778,6 +14690,9 @@ msgstr "没有未映射的账户与提供商代码匹配"
 
 msgid "No unmapped values match a provider option name"
 msgstr "没有未映射的值与提供商选项名称匹配"
+
+msgid "No unposted documents dated before the cutover"
+msgstr "没有日期在结转之前的未过账文档"
 
 msgid "No unstarted, unbatched operations on this process at this location."
 msgstr "此位置此工序上没有未开始、未批处理的操作。"
@@ -13827,14 +14742,20 @@ msgstr "不合格工作流"
 msgid "Non-conformance (issue)"
 msgstr "不合格(领料)"
 
+msgid "Non-conformance and inspection scrap"
+msgstr "不合格和检验报废"
+
 msgid "Non-conformances"
 msgstr "不合格项"
 
+msgid "Non-Current"
+msgstr "非流动"
+
+msgid "Non-current portion"
+msgstr "非流动部分"
+
 msgid "Non-Inventory"
 msgstr "非库存"
-
-msgid "Non-Inventory Tracking"
-msgstr "非库存追踪"
 
 msgid "Non-operating expense account debited when an asset in this class is sold or scrapped below its net book value."
 msgstr "本类资产出售或报废价值低于账面净值时计入的非营业费用账户"
@@ -13877,6 +14798,9 @@ msgstr "单位数据不足"
 
 msgid "Not feasible"
 msgstr "不可行"
+
+msgid "Not now"
+msgstr "暂不"
 
 msgid "Not reached"
 msgstr "未到达"
@@ -13942,6 +14866,9 @@ msgstr "此位置没有其他可提取的库存。"
 msgid "Nothing here matches your search and filters."
 msgstr "没有与您的搜索和过滤条件匹配的内容。"
 
+msgid "Nothing here yet"
+msgstr "暂无内容"
+
 msgid "Nothing in the archive"
 msgstr "存档中没有任何内容"
 
@@ -13960,11 +14887,17 @@ msgstr "未安排任何事项——在下方添加工位。"
 msgid "Nothing selected yet"
 msgstr "尚未选择任何内容"
 
+msgid "Nothing to post for this period."
+msgstr "此期间无内容待过账。"
+
 msgid "Nothing to recognize yet. Revenue follows what the invoices bill."
 msgstr "暂无待确认。收入遵循发票开票的内容。"
 
 msgid "Nothing yet. A step only offers values once it is configured."
 msgstr "暂无内容。步骤配置后才会提供值。"
+
+msgid "Notice Date"
+msgstr "通知日期"
 
 msgid "Notification"
 msgstr "通知"
@@ -13977,6 +14910,9 @@ msgstr "通知类型"
 
 msgid "Notifications"
 msgstr "通知"
+
+msgid "Notifications are blocked for Carbon in this browser's site settings."
+msgstr "在此浏览器的网站设置中,Carbon 的通知被阻止。"
 
 msgid "Notify"
 msgstr "通知"
@@ -14036,6 +14972,9 @@ msgstr "确定"
 msgid "OK"
 msgstr "确定"
 
+msgid "Old Value"
+msgstr "旧值"
+
 msgid "Oldest first"
 msgstr "最早优先"
 
@@ -14044,6 +14983,9 @@ msgstr "开"
 
 msgid "On {sentDate}"
 msgstr "打开"
+
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgstr "在控制帐户上，Carbon从其自身的未结项目、库存和固定资产获取余额。试算平衡表必须一致：每项差异保留在迁差账户上，该账户必须合计为零。"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "在转移看板上，指目标存储单元的最小数量。当现有库存加上未完成的入库调拨降至此水位以下时，Carbon 会创建一个已下达的库存调拨，调拨数量为看板数量。"
@@ -14145,6 +15087,15 @@ msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，
 
 msgid "One or more quantities cannot meet this date"
 msgstr "一个或多个数量无法满足此日期"
+
+msgid "One payment for each month of the term."
+msgstr "期限内每个月一笔付款。"
+
+msgid "One payment for each year of the term."
+msgstr "期限内每年一笔付款。"
+
+msgid "One payment for every three months."
+msgstr "每三个月一笔付款。"
 
 msgid "One row per invoice, one column per line. Change a date or an amount, add an invoice or delete one."
 msgstr "每张发票一行，每行一列。更改日期或金额，添加或删除一张发票。"
@@ -14248,6 +15199,9 @@ msgstr "哎呀！您尝试访问的链接无效。"
 msgid "Open"
 msgstr "未结"
 
+msgid "Open ({paymentCurrency})"
+msgstr "未结 ({paymentCurrency})"
+
 msgid "Open a change notice"
 msgstr "打开变更通知"
 
@@ -14296,6 +15250,9 @@ msgstr "在 MES 中打开"
 msgid "Open Issues"
 msgstr "未结领料"
 
+msgid "Open items"
+msgstr "未结项目"
+
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "未结工单需求加上从此料箱转出的未清调拨"
 
@@ -14307,9 +15264,6 @@ msgstr "未结工单"
 
 msgid "Open menu"
 msgstr "打开菜单"
-
-msgid "Open navigation"
-msgstr "打开导航"
 
 msgid "Open Orders"
 msgstr "未结订单"
@@ -14353,6 +15307,9 @@ msgstr "打开子装配"
 msgid "Open task details"
 msgstr "打开任务详情"
 
+msgid "Open the books at a cutover date. Enabling accounting is one-way."
+msgstr "在结转日期打开账簿。启用会计是单向的。"
+
 msgid "Open the Onshape Government integration and save its settings to connect again."
 msgstr "打开 Onshape Government 集成并保存其设置以重新连接。"
 
@@ -14383,18 +15340,17 @@ msgstr "期初"
 msgid "Opening an operation starts its timer, so time is tracked from the moment work begins."
 msgstr "打开一个操作会启动其计时器，因此从工作开始时起就跟踪时间。"
 
-msgid "Opening Balance"
-msgstr "期初余额"
-
-#. placeholder {0}: account.name
-msgid "Opening balance for {0}"
-msgstr "{0}的期初余额"
-
 msgid "Opening balance of depreciation already booked before this asset was added to Carbon (use 0 for new acquisitions)."
 msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（新购置的情况下使用0）。"
 
-msgid "Opening Balances"
-msgstr "期初余额"
+msgid "Opening balances as of"
+msgstr "期初余额截至"
+
+msgid "Opening Value"
+msgstr "期初价值"
+
+msgid "Operating"
+msgstr "经营"
 
 msgid "Operating Expenses"
 msgstr "运营费用"
@@ -14407,6 +15363,12 @@ msgstr "营运收益"
 
 msgid "Operating lease"
 msgstr "经营租赁"
+
+msgid "Operating lease cost"
+msgstr "经营租赁成本"
+
+msgid "Operating Lease Expense"
+msgstr "经营租赁费用"
 
 msgid "operation"
 msgstr "工序"
@@ -14662,6 +15624,9 @@ msgstr "产出的有效期永远不会超过其原材料的有效期。当没有
 msgid "Outside operation"
 msgstr "间接费用差异"
 
+msgid "Outside Processing"
+msgstr "委外加工"
+
 msgid "Outstanding"
 msgstr "未清结"
 
@@ -14707,6 +15672,10 @@ msgstr "覆盖"
 msgid "Override Classification"
 msgstr "覆盖分类"
 
+#. placeholder {0}: line.description
+msgid "Override Classification of {0}"
+msgstr "覆盖 {0} 的分类"
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
 
@@ -14719,6 +15688,10 @@ msgstr "为单个客户覆盖价格"
 msgid "Override price for all customers of a type"
 msgstr "为所有该类型的客户覆盖价格"
 
+#. placeholder {0}: asset.line.classificationOverrideReason
+msgid "Override reason: {0}"
+msgstr "覆盖原因：{0}"
+
 msgid "Override reason: {overrideReason}"
 msgstr "覆盖原因：{overrideReason}"
 
@@ -14727,6 +15700,9 @@ msgstr "覆盖 {label} 上的过期日期。"
 
 msgid "Overtime"
 msgstr "加班"
+
+msgid "Overview"
+msgstr "概览"
 
 msgid "Overwrite Existing"
 msgstr "覆盖现有"
@@ -14749,11 +15725,20 @@ msgstr "负责人（成本中心）"
 msgid "Ownership"
 msgstr "所有权"
 
+msgid "Ownership passes to you at the end of the lease, for nothing. The leased asset becomes a fixed asset that depreciates from the end date. The lease's other assets do not change."
+msgstr "在租赁末期，所有权转移给您，无需支付。租赁资产成为固定资产，从终止日期起折旧。租赁的其他资产不变。"
+
 msgid "Ownership transfers"
+msgstr "所有权转移"
+
+msgid "Ownership Transfers"
 msgstr "所有权转移"
 
 msgid "Ownership transfers to the customer"
 msgstr "所有权转移给客户"
+
+msgid "Ownership transfers to you by the end of the term"
+msgstr "所有权在租赁期末转移给您"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -14776,6 +15761,9 @@ msgstr "已支付金额："
 
 msgid "Paid Date"
 msgstr "支付日期"
+
+msgid "Paid outside Carbon"
+msgstr "在 Carbon 外已支付"
 
 msgid "Paid up front; record it as a payment once received"
 msgstr "预付款；收到后将其记录为付款"
@@ -14915,14 +15903,14 @@ msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML
 msgid "Path"
 msgstr "路径"
 
+msgid "Pause"
+msgstr "暂停"
+
 msgid "Pay"
 msgstr "支付"
 
 msgid "Pay expense"
 msgstr "支付费用"
-
-msgid "Pay Rate"
-msgstr "支付汇率"
 
 msgid "Payables"
 msgstr "应付款项"
@@ -14939,17 +15927,40 @@ msgstr "应付款项账龄"
 msgid "Payment"
 msgstr "付款"
 
+#. placeholder {0}: line.description
+msgid "Payment — {0}"
+msgstr "付款 — {0}"
+
+#. placeholder {0}: deleting.number
+msgid "payment {0}"
+msgstr "付款{0}"
+
+msgid "Payment Amount"
+msgstr "付款金额"
+
 msgid "Payment Applications"
 msgstr "付款应用"
 
 msgid "Payment Date"
 msgstr "付款日期"
 
+msgid "Payment Frequency"
+msgstr "付款频率"
+
 msgid "Payment from Customer"
 msgstr "来自客户的付款"
 
 msgid "Payment ID"
 msgstr "付款ID"
+
+msgid "Payment Rate"
+msgstr "付款汇率"
+
+msgid "Payment Rows"
+msgstr "付款行"
+
+msgid "Payment rows are cut from this date"
+msgstr "从此日期开始切割付款行"
 
 msgid "payment term"
 msgstr "付款条件"
@@ -14969,6 +15980,9 @@ msgstr "付款条件"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "付款条件，如净30天或收货即付"
 
+msgid "Payment Timing"
+msgstr "付款时间"
+
 msgid "Payment to Supplier"
 msgstr "向供应商付款"
 
@@ -14977,6 +15991,9 @@ msgstr "付款"
 
 msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
 msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
+
+msgid "Payments due before this date were paid outside Carbon"
+msgstr "此日期前应支付的款项已在Carbon外支付"
 
 msgid "Pays the deposit held for this document back out of customer prepayments."
 msgstr "从客户预付款中支付为此文件持有的押金。"
@@ -15002,6 +16019,9 @@ msgstr "PDF 水印"
 msgid "Pending"
 msgstr "待处理"
 
+msgid "Pending Approval"
+msgstr "待处理审批"
+
 msgid "people"
 msgstr "人员"
 
@@ -15016,6 +16036,9 @@ msgstr "每天"
 
 msgid "per month"
 msgstr "每月"
+
+msgid "Per purchase unit"
+msgstr "每采购单位"
 
 msgid "per quarter"
 msgstr "每季度"
@@ -15058,6 +16081,9 @@ msgstr "期末"
 
 msgid "Period lock policy"
 msgstr "期间锁定政策"
+
+msgid "Period Start"
+msgstr "期间开始"
 
 msgid "Periodic depreciation expense for fixed assets"
 msgstr "固定资产的定期折旧费用"
@@ -15406,9 +16432,6 @@ msgstr "过账发票"
 msgid "Post journal entries with proper account and description codes"
 msgstr "使用正确的科目和描述代码过账凭证。"
 
-msgid "Post opening balances"
-msgstr "过账期初余额"
-
 msgid "Post Receipt"
 msgstr "过账收据"
 
@@ -15496,6 +16519,12 @@ msgstr "预付款（默认）"
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "付款现值至少为公允价值的{threshold}({actual})"
 
+msgid "Present value of the lease payments not yet paid, reduced by each lease invoice"
+msgstr "未支付租赁付款的现值，每次租赁发票后减少"
+
+msgid "Present value of the payments is at least {threshold} of the fair value"
+msgstr "付款现值至少为公允价值的 {threshold}"
+
 msgid "Present value of the rent is at least {threshold} of a unit's fair value"
 msgstr "租赁的现值至少为一个单位公平价值的 {threshold}"
 
@@ -15504,6 +16533,9 @@ msgstr "本周"
 
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "在任意页面上按 ? 打开此列表。在字段中输入时快捷键被忽略。"
+
+msgid "Press '/' for commands"
+msgstr "按 '/' 查看命令"
 
 msgid "Prev"
 msgstr "上一页"
@@ -15534,6 +16566,9 @@ msgstr "预览取消…"
 
 msgid "Previous"
 msgstr "上一步"
+
+msgid "Previous column"
+msgstr "上一列"
 
 msgid "Previous Date"
 msgstr "上一个日期"
@@ -15623,6 +16658,9 @@ msgstr "打印生产批次列表"
 
 msgid "Print Jobs"
 msgstr "打印工单"
+
+msgid "Print label"
+msgstr "打印标签"
 
 msgid "Print Label"
 msgstr "打印标签"
@@ -15870,6 +16908,12 @@ msgstr "提供商账户"
 msgid "Provider option"
 msgstr "提供商选项"
 
+msgid "Provisional"
+msgstr "临时"
+
+msgid "Provisional journal"
+msgstr "临时凭证"
+
 msgid "Public"
 msgstr "公开"
 
@@ -15913,6 +16957,9 @@ msgstr "采购"
 msgid "Purchase & manufacture from MRP"
 msgstr "从 MRP 采购和制造"
 
+msgid "Purchase Asset"
+msgstr "购买资产"
+
 msgid "Purchase History"
 msgstr "采购历史记录"
 
@@ -15934,6 +16981,12 @@ msgstr "采购发票"
 msgid "Purchase Invoices"
 msgstr "采购发票"
 
+msgid "Purchase invoices are drafted automatically for each payment once the lease is active."
+msgstr "租赁生效后，将为每笔付款自动生成采购发票。"
+
+msgid "Purchase journal (the asset account comes from the asset class):"
+msgstr "采购凭证（资产账户来自资产类别）："
+
 msgid "Purchase option"
 msgstr "购置选择权"
 
@@ -15954,9 +17007,6 @@ msgstr "采购订单金额"
 
 msgid "Purchase Order Approval"
 msgstr "采购订单审批"
-
-msgid "Purchase Order approval rule"
-msgstr "采购订单审批规则"
 
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
@@ -15991,6 +17041,9 @@ msgstr "采购订单必需"
 msgid "Purchase planning"
 msgstr "采购计划"
 
+msgid "Purchase Price"
+msgstr "采购价格"
+
 msgid "Purchase price variance"
 msgstr "采购价格差异"
 
@@ -16002,6 +17055,9 @@ msgstr "采购价格差异（默认）"
 
 msgid "Purchase Qty"
 msgstr "采购数量"
+
+msgid "Purchase receipts"
+msgstr "采购收货"
 
 msgid "Purchase Return"
 msgstr "采购退货"
@@ -16075,6 +17131,9 @@ msgstr "发布不包含维度的凭证"
 msgid "Push to accounting"
 msgstr "推送到会计系统"
 
+msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
+msgstr ""
+
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
@@ -16096,6 +17155,12 @@ msgstr "二维码用于启动此看板的下一个操作"
 
 msgid "Qty"
 msgstr "数量"
+
+msgid "Qty {jobQuantity}"
+msgstr "数量 {jobQuantity}"
+
+msgid "Qty {quantity}"
+msgstr "数量 {quantity}"
 
 msgid "Qty On Hand"
 msgstr "现有数量"
@@ -16127,8 +17192,8 @@ msgstr "质量"
 msgid "Quality"
 msgstr "质量"
 
-msgid "Quality Document approval rule"
-msgstr "质量文件审批规则"
+msgid "Quality Document"
+msgstr "质量文件"
 
 msgid "Quality Documents"
 msgstr "质量文档"
@@ -16231,6 +17296,9 @@ msgstr "每季度"
 msgid "Question"
 msgstr "问题"
 
+msgid "Questions"
+msgstr "问题"
+
 msgid "Queued"
 msgstr "排队中"
 
@@ -16306,6 +17374,9 @@ msgstr "报价单、订单和发票被阻止，直到供应商有一个带有电
 msgid "Quotes, orders, invoices and RFQs"
 msgstr "报价单、订单、发票和询价单"
 
+msgid "Quoting"
+msgstr "报价"
+
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
 
@@ -16375,6 +17446,9 @@ msgstr "原材料"
 msgid "Raw Materials (default)"
 msgstr "原材料（默认）"
 
+msgid "Re-convert Model"
+msgstr "重新转换模型"
+
 msgid "Re-date to first open day"
 msgstr "重新日期至第一个开放日"
 
@@ -16404,6 +17478,9 @@ msgstr "可读ID"
 
 msgid "Readable id with revision"
 msgstr "可读ID与修订版"
+
+msgid "Readiness"
+msgstr "就绪"
 
 msgid "Reading the document..."
 msgstr "正在读取文件..."
@@ -16449,6 +17526,9 @@ msgstr "拒绝原因（可选）"
 
 msgid "Reason for skipping (required)"
 msgstr "跳过原因（必填）"
+
+msgid "Reasonably Certain"
+msgstr "合理确定"
 
 msgid "Reasons"
 msgstr "原因"
@@ -16625,6 +17705,9 @@ msgstr "记录已删除"
 msgid "Record Deposit"
 msgstr "记录押金"
 
+msgid "Record ID"
+msgstr "记录 ID"
+
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
@@ -16710,6 +17793,12 @@ msgstr "向客户退款"
 msgid "Regenerate"
 msgstr "重新生成"
 
+msgid "Regenerate from Terms"
+msgstr "从条款重新生成"
+
+msgid "Regenerate payments from the terms?"
+msgstr "从条款重新生成付款？"
+
 msgid "Regenerate the schedule for this location now. It also runs automatically about 30 seconds after the last scheduling change (edits are batched, so several quick changes trigger a single regeneration)."
 msgstr "立即为该地点重新生成排程。它也会在最后一次排程变化后约30秒自动运行（编辑是批处理的，因此几次快速变化会触发单次重新生成）。"
 
@@ -16751,6 +17840,16 @@ msgstr "报销"
 
 msgid "Reject"
 msgstr "拒绝"
+
+#. placeholder {0}: routeData?.supplier?.name ?? ""
+msgid "Reject {0}"
+msgstr "拒绝{0}"
+
+msgid "Reject {changeOrderId}"
+msgstr "拒绝{changeOrderId}"
+
+msgid "Reject {displayName}"
+msgstr "拒绝{displayName}"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
@@ -16842,6 +17941,9 @@ msgstr "剩余"
 msgid "Remaining after split stays on the original row."
 msgstr "拆分后的剩余部分保留在原始行上。"
 
+msgid "Remeasurement journal (the effective date and the classification are checked when you confirm):"
+msgstr "重新计量凭证（确认时检查生效日期和分类）："
+
 msgid "Remove"
 msgstr "移除"
 
@@ -16873,6 +17975,9 @@ msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
+
+msgid "Remove Asset"
+msgstr "移除资产"
 
 msgid "Remove authenticator app"
 msgstr "移除身份验证器应用"
@@ -16915,6 +18020,9 @@ msgstr "移除行"
 
 msgid "Remove order"
 msgstr "移除订单"
+
+msgid "Remove Override"
+msgstr "移除覆盖"
 
 msgid "Remove pair"
 msgstr "移除配对"
@@ -17134,9 +18242,6 @@ msgstr "重新打印"
 msgid "Request a new invite"
 msgstr "请求新邀请"
 
-msgid "Request access"
-msgstr "请求访问"
-
 msgid "Request Approval"
 msgstr "请求审批"
 
@@ -17158,6 +18263,9 @@ msgstr "排程前需要已分配的操作员才能在地点安排工作。启用
 msgid "Require an authenticator app before anyone can open this company. Their other companies are unaffected. Visit the <0>employee accounts page</0> to see each person's status."
 msgstr "需要身份验证应用程序才能打开此公司。他们的其他公司不受影响。访问<0>员工账户页面</0>以查看每个人的状态。"
 
+msgid "Require approval before change notices move to Implementation"
+msgstr "变更通知进入实施前需要审批"
+
 msgid "Require approval before suppliers can be set to Active"
 msgstr "供应商设置为启用前需要审批"
 
@@ -17173,8 +18281,8 @@ msgstr "必需匹配"
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
 
-msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr "根据金额阈值和批准人组，对采购订单、质量文档和供应商要求分级批准。"
+msgid "Require tiered sign-off on purchase orders, quality documents, suppliers, and change notices based on amount thresholds and approver groups."
+msgstr "根据金额阈值和审批人组对采购订单、质量文档、供应商和变更通知进行分级审批。"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -17361,6 +18469,9 @@ msgstr "结果"
 msgid "Results per page"
 msgstr "每页结果数"
 
+msgid "Resume"
+msgstr "恢复"
+
 msgid "Resume Receiving"
 msgstr "恢复接收"
 
@@ -17409,6 +18520,9 @@ msgstr "退货原因"
 msgid "Return Reasons"
 msgstr "退货原因"
 
+msgid "Return shipments"
+msgstr "退货发货"
+
 msgid "Return To"
 msgstr "返回至"
 
@@ -17456,6 +18570,9 @@ msgstr "返回："
 
 msgid "Rev {revision}"
 msgstr "修订版 {revision}"
+
+msgid "Rev {revisionId}"
+msgstr "修订 {revisionId}"
 
 msgid "Reveal account number"
 msgstr "显示账户号码"
@@ -17513,6 +18630,9 @@ msgstr "收入确认"
 
 msgid "Revenue Recognition Run"
 msgstr "收入确认运行"
+
+msgid "Revenue recognition runs"
+msgstr "收入确认处理"
 
 msgid "Revenue recognized at commencement of a sales-type lease"
 msgstr "在销售型租赁开始时确认的收入"
@@ -17666,6 +18786,15 @@ msgstr "Rider v{0}"
 msgid "Right item"
 msgstr "右项"
 
+msgid "Right-of-use asset"
+msgstr "使用权资产"
+
+msgid "Right-of-Use Asset"
+msgstr "使用权资产"
+
+msgid "Right-of-Use Assets"
+msgstr "使用权资产"
+
 msgid "Risk"
 msgstr "风险"
 
@@ -17713,6 +18842,12 @@ msgstr "为新员工设置默认权限的角色"
 
 msgid "Room to grow without bolting on more tools"
 msgstr "无需添加更多工具即可扩展"
+
+msgid "ROU Amortization"
+msgstr "ROU 摊销"
+
+msgid "ROU Asset"
+msgstr "使用权资产"
 
 msgid "Rounding Account"
 msgstr "舍入账户"
@@ -17837,6 +18972,9 @@ msgstr "运行至结束日期。期后仍未归还的设备继续计费。"
 msgid "Runs unattended around the clock, ignoring shift calendars."
 msgstr "无人值守全天候运行，忽略班次日历。"
 
+msgid "Runs until it is ended on notice. Every asset is short-term: nothing goes on the balance sheet."
+msgstr "持续运行，直至随时终止。所有资产为短期资产：不计入资产负债表。"
+
 msgid "S-1 (coarsest special)"
 msgstr "S-1（最粗特殊）"
 
@@ -17958,6 +19096,9 @@ msgstr "销售人员"
 msgid "Sales Return"
 msgstr "销售退货"
 
+msgid "Sales return receipts"
+msgstr "销售退货收货"
+
 msgid "Sales Revenue"
 msgstr "销售收入"
 
@@ -17976,6 +19117,9 @@ msgstr "销售规则"
 
 msgid "Sales Rules"
 msgstr "销售规则"
+
+msgid "Sales shipments"
+msgstr "销售发货"
 
 msgid "Sales Tax Payable"
 msgstr "应付销售税"
@@ -18056,11 +19200,11 @@ msgstr "保存草稿"
 msgid "Save Method"
 msgstr "保存方法"
 
-msgid "Save Rate"
-msgstr "保存汇率"
-
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
+
+msgid "Save Trial Balance"
+msgstr "保存试算平衡表"
 
 msgid "Save view"
 msgstr "保存视图"
@@ -18073,6 +19217,9 @@ msgstr "已保存"
 
 msgid "Saved view"
 msgstr "已保存视图"
+
+msgid "Saved views"
+msgstr "已保存的视图"
 
 msgid "Saved Views"
 msgstr "已保存的视图"
@@ -18179,6 +19326,10 @@ msgstr "范围"
 msgid "Scrap"
 msgstr "报废"
 
+#. placeholder {0}: getScrapQuantity(operation)
+msgid "Scrap {0}"
+msgstr "报废 {0}"
+
 msgid "Scrap / Cost of Quality"
 msgstr "报废/质量成本"
 
@@ -18220,6 +19371,9 @@ msgstr "搜索"
 
 msgid "Search {gaugeTypeName}..."
 msgstr "搜索{gaugeTypeName}..."
+
+msgid "Search {title}"
+msgstr "搜索 {title}"
 
 msgid "Search accounts"
 msgstr "搜索账户"
@@ -18305,6 +19459,9 @@ msgstr "搜索相关物料..."
 msgid "Search storage units and tracking numbers"
 msgstr "搜索存储单元和追踪号"
 
+msgid "Search supplier parts"
+msgstr "搜索供应商零件"
+
 msgid "Search suppliers..."
 msgstr "搜索供应商..."
 
@@ -18332,9 +19489,6 @@ msgstr "密码已复制到剪贴板"
 msgid "Section"
 msgstr "部分"
 
-msgid "Sections"
-msgstr "部分"
-
 msgid "Secure your account with 2FA"
 msgstr "使用2FA保护您的账户"
 
@@ -18343,6 +19497,10 @@ msgstr "安全"
 
 msgid "See a live capacity forecast of every work center — when each job is projected to run and finish across your shop."
 msgstr "查看每个工作中心的实时产能预测 — 每个工单预计在整个车间运行和完成的时间。"
+
+#. placeholder {0}: lines.length
+msgid "See all {0}"
+msgstr "查看全部 {0}"
 
 msgid "Segments that drive customer pricing and terms"
 msgstr "驱动客户定价和条款的细分市场"
@@ -18539,6 +19697,9 @@ msgstr "选择数量"
 
 msgid "Select Reason"
 msgstr "选择原因"
+
+msgid "Select row"
+msgstr "选择行"
 
 msgid "Select Row"
 msgstr "选择行"
@@ -18766,6 +19927,9 @@ msgstr "为此退货指定供应商以从其收货中添加"
 msgid "Set a target"
 msgstr "设置目标"
 
+msgid "Set at activation"
+msgstr "在激活时设置"
+
 msgid "Set Carbon up around how your company runs: sites, parts, BOMs, Bill of Process, and the flows you use."
 msgstr "根据公司运营方式设置 Carbon：地点、零件、BOM、工序清单和您使用的流程。"
 
@@ -18793,8 +19957,32 @@ msgstr "设置数量"
 msgid "Set the agreement's start date to see the accounting treatment."
 msgstr "设置协议的开始日期以查看会计处理。"
 
+msgid "Set the base currency."
+msgstr "设置基础货币。"
+
+msgid "Set the commencement date, the end date and the payment terms to see the accounting treatment."
+msgstr "设置开始日期、结束日期和付款条件以查看会计处理。"
+
+msgid "Set the fiscal year settings."
+msgstr "设置会计年度。"
+
+msgid "Set the Migration Clearing account to an active Equity account that is not a group."
+msgstr "将迁移清算账户设置为启用的非组所有者权益账户。"
+
 msgid "Set the time you stopped working, or acknowledge that you're still working."
 msgstr "设置你停止工作的时间，或确认你仍在工作。"
+
+msgid "Set these account defaults to an active account."
+msgstr "将这些帐户默认值设置为启用的帐户"
+
+msgid "Set up accounting"
+msgstr "设置会计"
+
+msgid "Set Up Accounting"
+msgstr "设置会计"
+
+msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
@@ -18820,9 +20008,6 @@ msgstr "将版本 {0} 设置为启用版本？"
 
 msgid "Set your default location in profile settings to pick a storage unit."
 msgstr "在个人资料设置中设置默认地点以选择存储单元。"
-
-msgid "Sets what this unit is carried at in inventory."
-msgstr "设置此项在库存中的账面价值。"
 
 msgid "Sets what this unit is carried at in inventory. The difference is booked between inventory and the account the cost was spent from: Retained Earnings for an earlier year, or this year's labor or material expense."
 msgstr "设置此项在库存中的账面价值。差异将在库存和原支出账户之间记账：上年度的未分配利润或本年度的人工、材料费用。"
@@ -18994,6 +20179,9 @@ msgstr "发运数量超过工单数量"
 msgid "Shipping"
 msgstr "运输"
 
+msgid "Shipping & Receiving"
+msgstr "发货与收货"
+
 msgid "Shipping Address"
 msgstr "收货地址"
 
@@ -19075,6 +20263,15 @@ msgstr "简短描述"
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
+msgid "Short-Term"
+msgstr "短期"
+
+msgid "Short-term lease cost"
+msgstr "短期租赁成本"
+
+msgid "Short-Term Lease Expedient"
+msgstr "短期租赁豁免"
+
 msgid "Shortcuts"
 msgstr "快捷键"
 
@@ -19088,6 +20285,9 @@ msgstr "显示 {0}"
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
 msgstr "显示{0}个更多"
+
+msgid "Show {count} results"
+msgstr "显示 {count} 条结果"
 
 msgid "Show {label}"
 msgstr "显示 {label}"
@@ -19165,6 +20365,9 @@ msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
 #. placeholder {0}: visible.length
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
+
+msgid "Showing {firstShown}–{lastShown} of {total}"
+msgstr "显示 {firstShown}–{lastShown}（共 {total} 条）"
 
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
@@ -19416,6 +20619,9 @@ msgstr "备件成本"
 msgid "Spec"
 msgstr "规范"
 
+msgid "Specialized"
+msgstr "专用"
+
 msgid "Specialized asset"
 msgstr "专用资产"
 
@@ -19529,7 +20735,7 @@ msgid "Started"
 msgstr "开始于"
 
 msgid "Starting"
-msgstr "启动中"
+msgstr "开始中"
 
 msgid "Starting…"
 msgstr "正在启动…"
@@ -19635,6 +20841,9 @@ msgstr "步骤独自构建，然后作为一个整体拼接：在使用它的步
 msgid "Still dark out on the floor."
 msgstr "车间仍在黑暗中。"
 
+msgid "Stock"
+msgstr "库存"
+
 msgid "Stock Availability"
 msgstr "库存可用性"
 
@@ -19643,6 +20852,9 @@ msgstr "库存移动已修正"
 
 msgid "Stock size — e.g. sheet thickness or bar diameter"
 msgstr "库存尺寸 — 例如 板材厚度或棒材直径"
+
+msgid "Stock Transfer"
+msgstr "库存调拨"
 
 msgid "Stock Transfer ID"
 msgstr "库存转移ID"
@@ -19691,6 +20903,9 @@ msgstr "在此日期之后停止旧零件的新采购建议。"
 msgid "Storage client not available"
 msgstr "存储客户端不可用"
 
+msgid "Storage Rule"
+msgstr "存储规则"
+
 msgid "Storage Rules"
 msgstr "存储规则"
 
@@ -19736,6 +20951,12 @@ msgstr "在此物料上存储固定天数。在收到每个生产批次或序列
 msgid "Straight line"
 msgstr "直线法"
 
+msgid "Straight-line amortization of finance lease right-of-use assets"
+msgstr "融资租赁使用权资产的直线摊销"
+
+msgid "Straight-line lease cost of operating leases, and the payments of short-term leases"
+msgstr "经营租赁直线租赁成本和短期租赁付款"
+
 msgid "Stripe"
 msgstr "Stripe"
 
@@ -19756,6 +20977,9 @@ msgstr "Stripe还没有为此Carbon客户创建对应的客户。确认将在您
 
 msgid "Stripe has no customer for this Carbon customer yet. Posting will create one on your connected account."
 msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接账户上创建一个。"
+
+msgid "Structure"
+msgstr "结构"
 
 msgid "Style default"
 msgstr "风格默认"
@@ -19819,14 +21043,14 @@ msgstr "匿名提交"
 msgid "Submit for approval"
 msgstr "提交以审批"
 
+msgid "Submit for Approval"
+msgstr "提交审批"
+
 msgid "Submit Inspection"
 msgstr "提交检验"
 
 msgid "Submitted By"
 msgstr "提交者"
-
-msgid "Submodules"
-msgstr "子模块"
 
 msgid "substance"
 msgstr "物质"
@@ -19912,6 +21136,9 @@ msgstr "建议通知"
 msgid "Suggestions"
 msgstr "建议"
 
+msgid "Summary"
+msgstr "摘要"
+
 msgid "Sunday"
 msgstr "星期日"
 
@@ -19989,6 +21216,9 @@ msgstr "供应商概览"
 
 msgid "Supplier Part"
 msgstr "供应商零件"
+
+msgid "Supplier part actions"
+msgstr "供应商零件操作"
 
 msgid "Supplier Part ID"
 msgstr "供应商料号"
@@ -20101,6 +21331,9 @@ msgstr "供应商"
 msgid "Supply"
 msgstr "供应"
 
+msgid "Supply / demand"
+msgstr "供应/需求"
+
 msgid "Supply & Demand"
 msgstr "供应与需求"
 
@@ -20138,6 +21371,12 @@ msgstr "切换"
 
 msgid "Switch a module off to remove it everywhere: Requirements, Data, Training, Scope."
 msgstr "关闭一个模块以从所有位置移除它：要求、数据、培训、范围。"
+
+msgid "Switch company"
+msgstr "切换公司"
+
+msgid "Switch module"
+msgstr "切换模块"
 
 msgid "Switch to pan mode"
 msgstr "切换到平移模式"
@@ -20195,6 +21434,13 @@ msgstr "停用"
 
 msgid "Take Out of Service"
 msgstr "停用"
+
+msgid "Take Ownership"
+msgstr "取得所有权"
+
+#. placeholder {0}: line.description
+msgid "Take Ownership: {0}"
+msgstr "取得所有权：{0}"
 
 msgid "Take the shortest remaining shelf life across the materials consumed to make this item. Use when the product's expiry depends on its ingredients."
 msgstr "采用制造此物料所消耗的原材料中最短的保质期。当产品的有效期取决于其成分时使用。"
@@ -20385,8 +21631,36 @@ msgstr "条款"
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "期限至少为该单位经济寿命的 {threshold}"
 
+msgid "Term is at least {threshold} of the economic life"
+msgstr "租赁期至少为经济寿命的 {threshold}"
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "租赁期至少为经济寿命的{threshold}({actual})"
+
+msgid "Terminate"
+msgstr "终止"
+
+#. placeholder {0}: line.description
+msgid "Terminate {0}"
+msgstr "终止 {0}"
+
+msgid "Terminate Asset"
+msgstr "终止资产"
+
+msgid "Terminated"
+msgstr "已终止"
+
+msgid "Termination"
+msgstr "终止"
+
+msgid "Termination Date"
+msgstr "终止日期"
+
+msgid "Termination journal:"
+msgstr "终止凭证："
+
+msgid "Termination Penalty"
+msgstr "终止违约金"
 
 msgid "Terms"
 msgstr "条款"
@@ -20431,6 +21705,9 @@ msgstr "\"{0}\"阶段已完成——其\"{1}\"检查点已通过。"
 msgid "The {0} phases to go live, each ending at a checkpoint. Tick off each task as you complete it."
 msgstr "达成上线的{0}个阶段，每个阶段以检查点结束。当您完成每个任务时，将其勾选。"
 
+msgid "The accent color used across Carbon."
+msgstr "整个 Carbon 中使用的强调色"
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "对物料进行分类以用于报告和分析的会计维度。"
 
@@ -20458,6 +21735,9 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "资产进入其在用资产类别，并从在用日期开始折旧。"
 
+msgid "The asset would have a negative cost. Check the purchase price."
+msgstr "资产成本为负数。请检查购买价格。"
+
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
 msgstr "授权在 Onshape 中被拒绝。保存集成设置以重试。"
 
@@ -20466,6 +21746,9 @@ msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
 msgid "The authorization was refused in Ramp. Try connecting again."
 msgstr "授权在 Ramp 中被拒绝。请重新连接。"
+
+msgid "The average cost of the item. Changing it needs permission to edit parts."
+msgstr "物料的平均成本。修改此项需要编辑零件的权限。"
 
 msgid "The backup job reported this error."
 msgstr "备份工作报告了此错误。"
@@ -20479,8 +21762,8 @@ msgstr "生产批次送往车间。其工单已下达。"
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
-msgid "The book of all posted journal lines, summed by account — written only when the company has accounting enabled."
-msgstr "所有已过账凭证行的汇总簿，按账户汇总——仅当公司启用会计时才编制。"
+msgid "The book of all posted journal lines, summed by account. Provisional journals from before the company sets up accounting are not in it."
+msgstr "所有已过账凭证行的汇总，按帐户汇总。来自公司设置会计前的临时凭证不包括在内。"
 
 msgid "The buckets you track costs against"
 msgstr "您用来追踪成本的分类"
@@ -20554,6 +21837,12 @@ msgstr "打印在看板卡上的代码，操作员扫码以标记工单完成；
 msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 msgstr "用于在国际范围内识别银行的代码，包含8个或11个字符。没有该代码，跨境付款将无法正确路由，而国内转账通常使用本地路由代码进行。"
 
+msgid "The company already has a posted opening balance journal."
+msgstr "公司已有一份已过账的期初余额凭证。"
+
+msgid "The company has no account defaults."
+msgstr "公司没有账户默认值。"
+
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
 
@@ -20571,6 +21860,18 @@ msgstr "外协人员的预期每周可用性；排程在整周将此外协人员
 
 msgid "The corrected expiration for this lot/serial; existing on-hand stock is re-evaluated against shelf-life policy after the change."
 msgstr "此批次/序列号的修正有效期；更改后，现有库存会根据保质期政策重新评估。"
+
+msgid "The CSV file is empty."
+msgstr "CSV 文件为空。"
+
+msgid "The CSV has no {columns} column."
+msgstr "CSV 没有「{columns}」列。"
+
+msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "CSV 需要包含 accountNumber、借方 和 贷方 列。导入将替换整个试算平衡表。"
+
+msgid "The CSV was not imported"
+msgstr "CSV 未被导入"
 
 msgid "The currencies you trade in and their rates"
 msgstr "您交易的货币及其汇率"
@@ -20608,6 +21909,18 @@ msgstr "上线最快的客户能很好地掌握这些。完整的我们的/你�
 
 msgid "The customers you sell and ship to"
 msgstr "您销售和运送的客户"
+
+msgid "The cutover date cannot be after today."
+msgstr "截断日期不能晚于今天。"
+
+msgid "The cutover date is not a valid date."
+msgstr "启用日期不是有效日期。"
+
+msgid "The cutover date is valid"
+msgstr "启用日期有效"
+
+msgid "The cutover date must be the first day of a period."
+msgstr "启用日期必须是会计期间的第一天。"
 
 msgid "The dashed threshold you don't want inventory to fall below."
 msgstr "你不希望库存跌破的虚线阈值。"
@@ -20675,6 +21988,12 @@ msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而
 msgid "The employee accountable for this cost center — when purchase order approvals are on, they're the approver for spend posted against it."
 msgstr "对此成本中心负责的员工 — 当启用采购订单审批时，他们是针对其发生的支出的批准人。"
 
+msgid "The enable resets each item's stock to its on-hand quantity at the cutover date, at the unit cost below. Review the cost of every Average item."
+msgstr "启用将重置每个物料的库存为启用日期的现有数量，使用以下单位成本。评审每个平均成本物料的成本。"
+
+msgid "The end date of the lease"
+msgstr "租赁的终止日期"
+
 msgid "The end-to-end commercial flow from quoting a customer to collecting payment: RFQ to quote to sales order, then shipment, invoice, and settled payment."
 msgstr "从客户报价到收款的端到端商业流程：询价到报价到销售订单，然后发货、发票和已结清的付款。"
 
@@ -20701,6 +22020,12 @@ msgstr "您上传的文件和已完成的映射将会丢失。"
 
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"
+
+msgid "The first day a company keeps its books in Carbon, set once when accounting is set up and never changed; from then on every posting writes a Posted journal."
+msgstr "公司在 Carbon 中开始记账的第一天，在设置会计时设置一次并永不更改；从那时起，每次过账都会生成一张已过账的凭证。"
+
+msgid "The first day of a lease month (day {commencementDay}) where a payment period starts, after the last posted lease run"
+msgstr "租赁月份的第一天（第 {commencementDay} 天），即付款期开始的日期，在最后一次已过账的租赁运行之后"
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "从每批前面检查的固定单位数，与批量大小无关。"
@@ -20792,6 +22117,9 @@ msgstr "贸易术语规则（FOB、DAP、EXW、CIF 等），规定在发往此�
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "发货过账时确认的库存管理成本，按物料的成本核算方法计值。"
 
+msgid "The invoice for this payment is drafted on this date"
+msgstr "此付款的发票在此日期草稿完成"
+
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
@@ -20822,14 +22150,40 @@ msgstr "此属性接受的值类型（文本、数字、日期、布尔值、列
 msgid "The label and document printers your company prints to"
 msgstr "您公司打印至的标签和文件打印机"
 
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run"
+msgstr "租赁月最后一天（第{commencementDay}天之前的日期），在最后一次已过账租赁运行之后"
+
+msgid "The last day of a lease month (the day before day {commencementDay}), after the last posted lease run and on or before the end date"
+msgstr "租赁月最后一天（第{commencementDay}天之前的日期），在最后一次已过账租赁运行之后且不晚于终止日期"
+
+msgid "The last day to give renewal or termination notice"
+msgstr "给出续约或终止通知的最后期限"
+
 msgid "The latest date to place this PO so it arrives by the need-by date, given the supplier's lead time."
 msgstr "放置此采购订单的最迟日期，以便在给定供应商提前期的情况下按需要日期到达。"
+
+#. placeholder {0}: formatDate(firstUnpostedLeaseMonth)
+#. placeholder {1}: formatDate(asOf)
+msgid "The lease entries from {0} to {1} are not in the general ledger yet. These figures follow the lease schedules, so they will not tie to the ledger until a lease run posts them."
+msgstr "租赁条目从 {0} 到 {1} 尚未在总账中。这些数字跟随租赁排程，所以在租赁运行过账它们之前不会与总账匹配。"
+
+msgid "The lease is ready to activate."
+msgstr "租赁就绪激活。"
+
+msgid "The lease's"
+msgstr "该租赁的"
+
+msgid "The leased asset becomes a fixed asset that depreciates from the exercise date. Its payments due after it are removed. The lease's other assets do not change."
+msgstr "租赁资产变成固定资产，从行使日期开始折旧。其之后应付的付款被移除。该租赁的其他资产不变。"
 
 msgid "The legal entity to bill, when different from the customer who receives the goods — for parent / subsidiary or third-party billing arrangements."
 msgstr "要开票的法律实体，当不同于接收商品的客户时 — 用于母公司/子公司或第三方开票安排。"
 
 msgid "The legal entity to bill, when different from the supplier who delivers the goods — for parent / subsidiary or factoring arrangements."
 msgstr "要开票的法律实体，当不同于交付商品的供应商时 — 用于母公司/子公司或保理安排。"
+
+msgid "The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run."
+msgstr "承租人的资产用于使用权，在运营或融资租赁激活时按租赁付款现值入账，并由租赁周期运行每月摊销。"
 
 msgid "The lessor's asset on a sales-type lease: the present value of the lease payments and the unguaranteed residual, grown each month by lease interest and reduced by each rent and purchase option invoice."
 msgstr "销售型租赁中出租人的资产：租赁付款和无保障残值的现值，每月因租赁利息增加，因每笔租金和购买选择权发票而减少。"
@@ -20906,6 +22260,9 @@ msgstr "财政年度开始的月份；期间从该月份开始编号。"
 msgid "The month your tax year begins; may differ from the fiscal year in some jurisdictions."
 msgstr "你的税年开始的月份；在某些司法管辖区可能与会计年度不同。"
 
+msgid "The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals."
+msgstr "每月期间运行，过账租赁凭证：承租人租赁利息和使用权摊销、待摊或应计的租赁租金以及销售型租赁利息，作为租赁运行凭证。"
+
 msgid "The monthly periods you post into and close"
 msgstr "您过账和关闭的每月期间"
 
@@ -20965,6 +22322,10 @@ msgstr "Onshape连接已过期"
 msgid "The Onshape Government connection expired"
 msgstr "Onshape Government 连接已过期"
 
+#. placeholder {0}: formatDate(dayBeforeCutover(cutoverDate))
+msgid "The opening balances are as of the end of {0}."
+msgstr "期初余额截止至 {0} 末。"
+
 msgid "The operations and steps your parts move through"
 msgstr "您的零件所经历的工序和步骤"
 
@@ -20997,6 +22358,9 @@ msgstr "构建其父级时，从现有库存中获取该零件 - 无新工作或
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
 msgstr "此步骤的组件在回放期间进入位置的路径；从模型中计算得出，或使用「编辑路径」手绘。"
+
+msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
+msgstr "自生效日期起的付款。在开始日期的每个周年日，升级仍会增加"
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "Carbon 方面将运行您的实施的人员，以及如何联系他们。"
@@ -21046,6 +22410,13 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
 
+#. placeholder {0}: formatter.format(invoicedOption)
+msgid "The purchase option is already invoiced at {0}. Exercise it at that price, or delete the invoice first."
+msgstr "购买选项已按 {0} 开票。按该价格行使它，或先删除发票。"
+
+msgid "The purchase option is already invoiced; its invoice settles the price"
+msgstr "购买选项已开票；其发票结算价格"
+
 msgid "The purchase order"
 msgstr "采购订单"
 
@@ -21053,13 +22424,13 @@ msgid "The push to Mount did not start. Try again."
 msgstr "推送到 Mount 未启动。请重试。"
 
 msgid "The push to Mount failed"
-msgstr "推送到 Mount 失败"
+msgstr "推送至 Mount 失败"
 
 msgid "The push to Mount finished"
-msgstr "推送到 Mount 已完成"
+msgstr "推送至 Mount 已完成"
 
 msgid "The push to Mount finished. Some records need attention"
-msgstr "推送到 Mount 已完成。有些记录需要注意"
+msgstr "推送至 Mount 已完成。某些记录需要关注"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"
@@ -21081,6 +22452,12 @@ msgstr "报价单将使用修订版后缀进行复制"
 
 msgid "The Ramp connection expired"
 msgstr "Ramp 连接已过期"
+
+msgid "The rate at the effective date"
+msgstr "生效日期的利率"
+
+msgid "The rate every asset's payments are discounted at."
+msgstr "用于折现每项资产付款的利率"
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "您购买和消耗的原材料库存及物料主档"
@@ -21137,6 +22514,9 @@ msgstr "结果不会出现在运行页面上。"
 msgid "The revision number of the part"
 msgstr "零件的修订版号"
 
+msgid "The right-of-use asset and the lease liability are on the balance sheet, and one straight-line lease cost is booked each month."
+msgstr "使用权资产和租赁负债在资产负债表上列示，每月预提一笔直线租赁成本。"
+
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "为供应而创建此作业的销售订单行，将作业与其后的客户需求联系起来。"
 
@@ -21148,6 +22528,9 @@ msgstr "您的身份提供商发布的 SAML 元数据 URL"
 
 msgid "The schedule could not be updated after the release"
 msgstr "下达后无法更新排程。"
+
+msgid "The schedule is written when the lease is activated."
+msgstr "租赁激活时编制排程。"
 
 msgid "The schedule used to spread this asset's cost over its useful life (straight-line, declining balance, units of production)."
 msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、余额递减法、生产单位法）。"
@@ -21169,6 +22552,9 @@ msgstr "库存实际存放的货架和料箱"
 
 msgid "The shop supplies and consumables you keep on hand"
 msgstr "你随时拥有的耗材和消耗品"
+
+msgid "The short-term lease expedient is off"
+msgstr "短期租赁豁免已禁用"
 
 msgid "The sign-offs every issue using this workflow needs before it can be closed."
 msgstr "使用此工作流的每个问题被关闭前需要的签核。"
@@ -21199,6 +22585,9 @@ msgstr "此收货过账的特定采购单、退货或调拨；可用的 ID 取�
 
 msgid "The specific SO, transfer, or RMA this shipment posts against; available IDs depend on the source document type above."
 msgstr "此发货过账的特定销售订单、调拨或 RMA；可用的 ID 取决于上述源单据类型。"
+
+msgid "The standard cost of the item."
+msgstr "物料的标准成本。"
 
 msgid "The standard dimensions your materials are stocked in"
 msgstr "您的原材料储存的标准尺寸"
@@ -21344,6 +22733,9 @@ msgstr "美国税务折旧系统,包含国税局资产等级表,作为独立的�
 msgid "The users in this group; group-scoped permissions and notifications apply to each member, and users may belong to multiple groups (effective permissions are the union)."
 msgstr "此组中的用户；组范围的权限和通知适用于每个成员，用户可以属于多个组（有效权限是并集）。"
 
+msgid "The value of the cost layers dated before the cutover."
+msgstr "启用前的成本层的价值。"
+
 msgid "The version of the new document"
 msgstr "新文件的版本"
 
@@ -21380,6 +22772,9 @@ msgstr "其日期和拆分从行中重新计划。"
 msgid "Theme"
 msgstr "主题"
 
+msgid "Theme color"
+msgstr "主题色"
+
 msgid "Theme Color"
 msgstr "主题颜色"
 
@@ -21409,6 +22804,9 @@ msgstr "这些工序上没有换型、人工或机器工时，因此没有任何
 
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "没有可应用这些贷方的未结款项。"
+
+msgid "Thereafter"
+msgstr "其后"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "这些自定义字段仅对具有相同标签的实体可用"
@@ -21463,14 +22861,23 @@ msgstr "这也下达了{0}个工单({1})。它们对车间可用，并驱动采�
 msgid "This amendment cannot be made"
 msgstr "无法进行此修正案"
 
+msgid "This asset's payments due after the termination date are removed. Invoiced payments stay. The lease's other assets do not change."
+msgstr "终止日期之后该资产的应付付款被移除。已开票的付款保留。该租赁的其他资产不变。"
+
 msgid "This backup could not be completed."
 msgstr "无法完成此备份。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
 
+msgid "This browser does not support push notifications. On iPhone or iPad, add Carbon to the Home Screen first."
+msgstr "此浏览器不支持推送通知。在 iPhone 或 iPad 上,请先将 Carbon 添加到主屏幕。"
+
 msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
 msgstr "这无法在之后更改 — {integrationName} 仅允许一个连接的会计系统，因此您的选择决定了 Carbon 被允许执行的操作。要切换，您需要卸载并重新连接。"
+
+msgid "This cannot be undone."
+msgstr "此操作无法撤销。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
@@ -21480,6 +22887,9 @@ msgstr "此变更通知正在实施中，因此其更改已锁定。重新打开
 
 msgid "This change notice is closed, so its changes are read-only."
 msgstr "此变更通知已关闭，因此其更改为只读。"
+
+msgid "This change notice is waiting for approval. Its changes are locked until it is approved or rejected."
+msgstr "此变更通知待审批。其变更已锁定，直到被审批或拒绝。"
 
 msgid "This company's data is replaced with the contents of this backup. Today's data is saved first, so you can revert."
 msgstr "此公司的数据将替换为此备份的内容。首先保存今天的数据，以便您可以恢复。"
@@ -21514,8 +22924,15 @@ msgstr "此会计年度"
 msgid "This has no effect until an email domain is verified below."
 msgstr "在下面验证电子邮件域之前，这不会产生任何影响。"
 
+#. placeholder {0}: entries.length
+msgid "This history is too long to download in full. The file has the {0} most recent entries."
+msgstr "历史记录过长，无法完整下载。该文件包含最近的{0}条记录。"
+
 msgid "This information will be used on document headers"
 msgstr "此信息将用于文件标题"
+
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "此信息将对所有用户可见，请谨慎分享。"
 
 msgid "this inspection plan"
 msgstr "这个检验计划"
@@ -21574,6 +22991,13 @@ msgstr "此工作将不再在车间可用。"
 
 msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
+
+msgid "This lease is open-ended: it can be ended on notice, so its term is short and every asset is short-term. Nothing goes on the balance sheet, and each invoice is expensed."
+msgstr "该租赁为无期限租赁：可随时终止，因此其期限较短，所有资产为短期资产。不计入资产负债表，每份发票均作为费用处理。"
+
+#. placeholder {0}: formatDate(cutoverDate, undefined, locale)
+msgid "This lease started before accounting was set up. Activating it posts an opening balance on {0} (or the start of the first open period after it): each asset's right-of-use asset, its amortization and its lease liability as of that date, with the difference to retained earnings. The months before are marked as posted."
+msgstr "该租赁在会计设置前开始。激活它在 {0}（或之后的第一个未结期间的开始）过账期初余额：每项资产的使用权资产、其摊销和该日期的租赁负债，差额计入未分配利润。前面的月份标记为已过账。"
 
 msgid "This line has no routing to schedule."
 msgstr "此行没有要排程的工艺路线。"
@@ -21741,6 +23165,14 @@ msgid "This will create a draft depreciation run for the period ending {0}. All 
 msgstr "这将为期末为 {0} 的期间创建草稿折旧运行。所有启用的固定资产将自动计算。"
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
+msgid "This will create a draft lease run for the next period, ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr "这将为下一期间创建草稿租赁运行，截止日期为{0}。将包括在该日期当日或之前到期的所有租赁和租赁排程行。"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft lease run for the period ending {0}. Every lease and rental schedule row due on or before that date will be included."
+msgstr "这将为截止日期为{0}的期间创建草稿租赁运行。将包括在该日期当日或之前到期的所有租赁和租赁排程行。"
+
+#. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
 msgstr "这将为下一期创建收入确认草稿运行，结束日期为 {0}。所有应收日期在该日期或之前的行都将被包括。"
 
@@ -21764,15 +23196,15 @@ msgstr "这将覆盖现有的制造方法和所有子组件的最新版本。"
 msgid "This will overwrite the existing quote method"
 msgstr "这将覆盖现有的报价方法"
 
+#. placeholder {0}: run.runId
+#. placeholder {1}: formatDate(run.periodEnd)
+msgid "This will rebuild {0} from its schedule as it is now: every schedule row due on or before {1} that no other run holds."
+msgstr "这将从其当前排程重建{0}：在{1}当日或之前到期、没有其他运行保留的每个排程行。"
+
 #. placeholder {0}: run.depreciationRunId
 #. placeholder {1}: formatDate(run.periodEnd)
 msgid "This will rebuild {0} from the fixed assets as they are now: every active asset not covered by another run for the period ending {1}."
 msgstr "这将从固定资产现有状态重建 {0}：每个未被另一运行覆盖、截至 {1} 期间的活跃资产。"
-
-#. placeholder {0}: run.runId
-#. placeholder {1}: formatDate(run.periodEnd)
-msgid "This will rebuild {0} from the revenue schedule as it is now: every schedule row due on or before {1} that no other run holds."
-msgstr "这将从收入排程现有状态重建 {0}：每个应在 {1} 日期或之前、没有其他运行持有的排程行。"
 
 msgid "This will recalculate the unit cost from the active make method's bill of materials and processes using the batch size. The current cost will be overwritten. Do you want to continue?"
 msgstr "这将根据启用的制造方法的物料清单和工艺使用生产批次重新计算单位成本。当前成本将被覆盖。您想继续吗？"
@@ -21925,6 +23357,9 @@ msgstr "至位置"
 msgid "To next week"
 msgstr "至下周"
 
+msgid "To pick"
+msgstr "拣货"
+
 msgid "To reactivate, use the row menu and choose Send Invite. The employee becomes active once they accept."
 msgstr "要重新激活，请使用行菜单并选择发送邀请。员工接受后将变为启用。"
 
@@ -22030,8 +23465,15 @@ msgstr "顶级分类（资产/负债/所有者权益/收入/费用）；仅在�
 msgid "Topic"
 msgstr "主题"
 
+msgid "Topics"
+msgstr "主题"
+
 msgid "Total"
 msgstr "总计"
+
+#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
+msgid "Total (out of balance by {0})"
+msgstr "总计（差额 {0}）"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"
@@ -22070,6 +23512,9 @@ msgstr "总计小时"
 msgid "Total Indirect Cost"
 msgstr "总间接成本"
 
+msgid "Total lease cost"
+msgstr "租赁总成本"
+
 msgid "Total Material Cost"
 msgstr "总原材料成本"
 
@@ -22078,6 +23523,9 @@ msgstr "总计分钟"
 
 msgid "Total Outside Cost"
 msgstr "总外协成本"
+
+msgid "Total Payments"
+msgstr "总付款"
 
 msgid "Total Price"
 msgstr "总价格"
@@ -22106,6 +23554,9 @@ msgstr "总报废数量"
 msgid "Total tax"
 msgstr "总税额"
 
+msgid "Total undiscounted payments"
+msgstr "总未折现支付"
+
 msgid "Total Value"
 msgstr "总价值"
 
@@ -22120,9 +23571,6 @@ msgstr "总计"
 
 msgid "Traceability"
 msgstr "可追溯性"
-
-msgid "Track"
-msgstr "追踪"
 
 msgid "Track changes to key business entities including invoices, orders, customers, suppliers, and more."
 msgstr "跟踪关键业务实体的变化，包括发票、订单、客户、供应商等。"
@@ -22223,6 +23671,9 @@ msgstr "交易日期"
 msgid "Transaction ID"
 msgstr "交易ID"
 
+msgid "Transactions post provisional journal entries until you set up accounting."
+msgstr "交易过账为临时凭证，直到设置会计。"
+
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "交易将创建凭证并更新总账。"
 
@@ -22262,6 +23713,12 @@ msgstr "中转与机构"
 msgid "Trash"
 msgstr "垃圾桶"
 
+msgid "Treatment"
+msgstr "处理"
+
+msgid "Tree View"
+msgstr "树形视图"
+
 msgid "Trial Balance"
 msgstr "试算平衡表"
 
@@ -22278,13 +23735,19 @@ msgid "Triggers"
 msgstr "触发器"
 
 msgid "Try a different name."
-msgstr "尝试使用不同的名称。"
+msgstr "请尝试其他名称。"
 
 msgid "Tuesday"
 msgstr "星期二"
 
+msgid "Turn on <0>Short-Term Lease Expedient in Settings → Accounting</0>, or"
+msgstr "启用<0>设置 → 会计中的短期租赁豁免</0>，或"
+
 msgid "Turn on the built-in pieces"
 msgstr "启用内置功能"
+
+msgid "Twelve months or less. Nothing goes on the balance sheet; each invoice is expensed."
+msgstr "十二个月或以内。资产负债表上无记录；每张发票均作为费用记录。"
 
 msgid "Two-Factor"
 msgstr "双因素"
@@ -22318,6 +23781,10 @@ msgstr "类型"
 
 msgid "Type '{' for a variable"
 msgstr "输入 '{' 以表示变量"
+
+#. placeholder {0}: company.name
+msgid "Type {0} to confirm"
+msgstr "输入 {0} 以确认"
 
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "输入 {TRIGGER} 以插入变量"
@@ -22354,9 +23821,6 @@ msgstr "未应用"
 
 msgid "Unapplied cash is held as a customer prepayment for this document instead of on-account credit."
 msgstr "未应用的现金作为本文件的客户预付款而不是账户信用存储。"
-
-msgid "Unapplied:"
-msgstr "未应用："
 
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
@@ -22400,6 +23864,9 @@ msgstr "在固定再订货量下，每次达到再订货点时计划订购的确
 msgid "Under Maximum Quantity policy, planning orders up to this on-hand level when the reorder point trips."
 msgstr "在最大数量政策下，当达到再订货点时，计划订购至此现有量水平。"
 
+msgid "Undiscounted payments still to come, by fiscal year, less the interest the remaining months will charge."
+msgstr "仍待支付的未折现支付额，按会计年度列示，扣除剩余月份将收取的利息。"
+
 msgid "Undo"
 msgstr "撤销"
 
@@ -22432,6 +23899,10 @@ msgstr "件操作"
 
 msgid "Unit Cost"
 msgstr "单位成本"
+
+#. placeholder {0}: item.readableId
+msgid "Unit cost for {0}"
+msgstr "{0} 的单位成本"
 
 msgid "Unit Inputs"
 msgstr "单位信息"
@@ -22483,6 +23954,9 @@ msgstr "未知错误"
 
 msgid "Unknown gauge"
 msgstr "未知量具"
+
+msgid "Unknown Job"
+msgstr "未知工单"
 
 msgid "unknown location"
 msgstr "未知位置"
@@ -22942,6 +24416,12 @@ msgstr "价值采用今日的单位成本应用于历史数量。"
 msgid "Values in this run have been summarised. Full detail is kept for 7 days."
 msgstr "该运行中的值已汇总。完整详情保留 7 天。"
 
+msgid "Variable lease cost"
+msgstr "可变租赁成本"
+
+msgid "Variable Lease Expense"
+msgstr "可变租赁费用"
+
 msgid "Variables"
 msgstr "变量"
 
@@ -22968,6 +24448,9 @@ msgstr "委外加工成本的差异"
 
 msgid "Variance only"
 msgstr "仅差异"
+
+msgid "Varies by asset"
+msgstr "按资产而异"
 
 msgid "VAT Number"
 msgstr "增值税号"
@@ -22998,6 +24481,12 @@ msgstr "验证您的电子邮件"
 
 msgid "Version"
 msgstr "版本"
+
+#. placeholder {0}: current.versionNumber
+#. placeholder {0}: instruction.version
+#. placeholder {0}: v.versionNumber
+msgid "Version {0}"
+msgstr "版本 {0}"
 
 #. placeholder {0}: published.versionNumber
 msgid "Version {0} is published now and will be replaced."
@@ -23086,6 +24575,9 @@ msgstr "在项目计划中查看"
 
 msgid "View Issue"
 msgstr "查看问题"
+
+msgid "View Item"
+msgstr "查看物料"
 
 msgid "View Item Master"
 msgstr "查看物料主数据"
@@ -23421,6 +24913,12 @@ msgstr "加权平均"
 msgid "Weighted average cost over last year calculated when the invoice is posted"
 msgstr "上年加权平均成本在发票过账时计算"
 
+msgid "Weighted-average discount rate"
+msgstr "加权平均折现率"
+
+msgid "Weighted-average remaining term (years)"
+msgstr "加权平均剩余期限（年）"
+
 msgid "Welcome back, {name}."
 msgstr "欢迎回来，{name}。"
 
@@ -23451,6 +24949,12 @@ msgstr "什么数据"
 msgid "What drove inventory up or down, by any dimension"
 msgstr "什么驱动库存管理增加或减少，按任何维度"
 
+msgid "What each asset is worth, how long it lasts, and what happens to it at the end of the term. A purchase option that is reasonably certain becomes a payment row. Click a cell to change it."
+msgstr "每项资产的价值、使用期限以及租期结束时的处理方式。合理确定的购买选择权变成付款行。点击单元格更改。"
+
+msgid "What each period's payment is for this asset in the first year"
+msgstr "第一年内该资产每个期间的付款是多少"
+
 msgid "What happens to an invoice once it is created"
 msgstr "发票创建后会发生什么"
 
@@ -23471,6 +24975,9 @@ msgstr "此物料实际拣货到线边的零件。拣货可能会使用与物料
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
+
+msgid "What is leased, for example Forklift FL-12"
+msgstr "租赁的资产是什么，例如叉车 FL-12"
 
 msgid "What it is"
 msgstr "它是什么"
@@ -23498,6 +25005,12 @@ msgstr "客户预付的款项、租赁税和发票到期时间。"
 
 msgid "What the due-date countdown starts from (invoice date, end of month, etc.)."
 msgstr "到期日期倒计时从何开始(发票日期、月末等)。"
+
+msgid "What the lease pays and when. Activation values the lease liability from these rows. Click a cell to change it."
+msgstr "租赁如何付款及何时付款。激活从这些行计算租赁负债价值。点击单元格进行更改。"
+
+msgid "What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment."
+msgstr "承租人在租赁上的欠款：未来付款的现值，每月按租赁折扣率增加利息，并由每份账单付款的租赁发票减少。"
 
 msgid "What these rows mean"
 msgstr "这些行的含义"
@@ -23625,6 +25138,9 @@ msgstr "货物实际到达时;在收据上记录,用于供应商准时交货评�
 msgid "When the kanban card is scanned, the job is automatically moved out of draft and released to the floor."
 msgstr "当扫描看板卡时，工单自动从草稿移出并已下达到工厂。"
 
+msgid "When the lease starts and how long it runs, including renewals that are reasonably certain."
+msgstr "租赁何时开始及其持续多久，包括有合理确定性的续约。"
+
 msgid "When the projected quantity in the To storage unit drops below this level, a Released stock transfer for Quantity is created. Leave blank for scan-only."
 msgstr "当目标存储单元中的预计数量降至此水位以下时，会创建一个已下达的库存调拨，调拨数量等于看板数量。留空表示仅扫描模式。"
 
@@ -23690,6 +25206,9 @@ msgstr "库存存放位置及其发货方式。"
 
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "受影响的物料在整个系统中的使用位置。仅供参考——此处没有任何内容阻止已下达。"
+
+msgid "Where the assets are used. An asset can have its own."
+msgstr "资产的使用地点。一项资产可以拥有自己的地点。"
 
 msgid "Where the service is delivered"
 msgstr "服务交付的位置"
@@ -23775,6 +25294,9 @@ msgstr "谁必须审批报价单、订单和采购——以及何时"
 msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继承其地点。最具体的分配优先，每个物料可以在其计划选项卡上覆盖。"
 
+msgid "Who owns the lease here: they get the invoice digest and the date reminders."
+msgstr "谁拥有此租赁：他们获得发票摘要和日期提醒。"
+
 msgid "Who receives the invoices, where, and on what terms."
 msgstr "谁接收发票、在哪里以及按什么条款。"
 
@@ -23822,6 +25344,9 @@ msgstr "谁出售的、以什么货币计费以及任何备注。"
 
 msgid "Who sold it, what it belongs to, and when it closed."
 msgstr "谁出售、所有权及何时已关闭。"
+
+msgid "Who the company leases from, who to call there, and where the assets are used."
+msgstr "公司的租赁出租方、该出租方的联系方式以及资产的使用地点。"
 
 msgid "Who the contract is with and what it is called."
 msgstr "合同对方及合同名称。"
@@ -23966,6 +25491,12 @@ msgstr "配置和数据工作会议"
 msgid "Worst Performing Machines"
 msgstr "性能最差的机器"
 
+msgid "Write a note…"
+msgstr "输入备注…"
+
+msgid "Write missing journals"
+msgstr "编制缺失凭证"
+
 msgid "Write-Down Account"
 msgstr "减值账户"
 
@@ -23977,10 +25508,6 @@ msgstr "核销"
 
 msgid "Write-Off Account"
 msgstr "核销账户"
-
-#. placeholder {0}: r.invoiceId
-msgid "Write-off for {0}"
-msgstr "{0}的核销"
 
 msgid "Write-off of stock scrapped or returned via inspection rejects and NCR dispositions"
 msgstr "库存核销报废或通过检验拒收和 NCR 处置退回"
@@ -24046,6 +25573,9 @@ msgstr "您没有权限查看历史记录。"
 
 msgid "You drive it; we make sure it's done right. Expert eyes on your setup, data, and go-live."
 msgstr "您来驾驶；我们确保做得正确。专家的目光关注您的设置、数据和上线。"
+
+msgid "You effectively buy the asset. Interest and amortization of the right-of-use asset are booked separately each month."
+msgstr "您实际上购买该资产。使用权资产的利息和摊销每月分别记录。"
 
 #. placeholder {0}: unmappedLines.length
 msgid "You have {0} lines extracted from a PDF that are not mapped to any inventory items."
@@ -24114,6 +25644,9 @@ msgstr "您的数据可访问且相对干净"
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "您的数据未被更改——如果还原无法完成,它会在修改任何内容之前停止。"
 
+msgid "Your data will appear here once you create or import your first records"
+msgstr "创建或导入第一批记录后，数据将显示在此处"
+
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 — 如果是这样，只需输入它之前的部分（例如 _carbon-challenge 加上任何子域）。"
 
@@ -24155,6 +25688,9 @@ msgstr "您的零件编号"
 
 msgid "Your part numbers and the item master behind them"
 msgstr "您的零件编号和背后的物料主数据"
+
+msgid "Your profile could not be loaded."
+msgstr "无法加载您的个人资料。"
 
 msgid "Your project end to end: the plan, the gates, and go-live"
 msgstr "您的项目端到端：计划、关卡和上线"

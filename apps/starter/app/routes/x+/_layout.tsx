@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { AccountSettings } from "@carbon/account/ui";
 import {
   CarbonProvider,
   getAppUrl,
@@ -13,6 +14,7 @@ import {
   destroyAuthSession,
   requireAuthSession
 } from "@carbon/auth/session.server";
+import { setClientCompanyId } from "@carbon/query/cache";
 import { Toaster, useNProgress } from "@carbon/react";
 import { redirectExternal } from "@carbon/utils";
 import type {
@@ -64,13 +66,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
-  const { session } = useLoaderData<typeof loader>();
+  const { session, company, user } = useLoaderData<typeof loader>();
+  // During render, not in an effect: the cached API reads key on the company.
+  setClientCompanyId(company?.id ?? null, user?.id ?? null);
 
   useNProgress();
 
   return (
     <CarbonProvider session={session}>
       <Outlet />
+      {user && company?.id && (
+        <AccountSettings
+          api={path.to.erpApi}
+          user={user}
+          companyId={company.id}
+        />
+      )}
       <Toaster position="bottom-right" />
     </CarbonProvider>
   );

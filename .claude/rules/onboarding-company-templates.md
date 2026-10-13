@@ -45,7 +45,7 @@ await applyDataset(pgClient, { companyId, userId, dataset, timeZone, tiers?, log
 ```
 
 It resolves today in the company's timezone, builds the context, opens ONE transaction,
-sets `app.sync_in_progress`, ensures sequences, runs the selected tiers in order, and
+sets `app.sync_in_progress` and `app.dataset_apply`, ensures sequences, runs the selected tiers in order, and
 commits — or rolls the whole thing back. A half-seeded company is not a possible outcome.
 
 `wipeFirst` clears the company's existing business data inside that same transaction,
@@ -91,7 +91,8 @@ around its generic FK-null + topological delete, all inside the apply transactio
    type (invoices, payments, memos, receipts, shipments, `Inventory Adjustment`) whose
    lines — or `payment`/`memo.journalId` — point at a row it is about to delete gets a
    negated Posted `VOID …` entry dated today, the original left Posted, as the posting
-   functions void.
+   functions void. The select takes `status = 'Posted'` only: a `Provisional` journal of a
+   company with no cutover yet is neither voided nor deleted (`journal` is preserved).
 1. **Non-Draft `salesInvoice` / `purchaseInvoice` rows are set back to `Draft`.** The
    `prevent_posted_{sales,purchase}_invoice_deletion` sync interceptors refuse deleting any
    other status and run even under `app.sync_in_progress`. This is a re-seed clear, not an
@@ -326,6 +327,40 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## The company has an accounting cutover
+
+Tier 01 sets `companySettings.accountingCutoverDate` to the first day of the earliest seeded
+period (`monthBack(anchor, SEEDED_PERIOD_MONTHS - 1)`), `accountingActivatedAt` to the
+timestamp of the anchor day at `00:00:00Z` (`resolveTimestamp(anchor, 0, "00:00:00")`), and
+`accountingActivatedBy` to the applying user. So every seeded journal is on or after the
+cutover and none is `Provisional`: the document journals are `Posted`, and the authored manual
+entries include a `Draft` one (`JE-SEED-001`) and a `Reversed` one (`JE-SEED-004`, with its
+Posted reversal). The validator's `journalStatus` coverage set is the enum minus
+`Provisional` and `Superseded`. Every document the user posts afterwards writes a `Posted`
+journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cutover).
+
+It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
+no `WHERE`), even when the company already has a cutover.
+A company always has one by then: `seed-company` stamps the first day of the current month
+(onboarding runs it before the template job), and an app-created company applied through
+Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
+seeded Posted journals before the cutover, where a void is refused and the readers above
+assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
+`companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
+runs `check_accounting_config_locked()` (redefined in
+`20261009145057_accounting-cutover-guards.sql`), which refuses a change of
+`accountingCutoverDate`, `accountingActivatedAt` or `accountingActivatedBy` once the OLD row's
+`accountingActivatedAt` is set, unless the transaction has set `app.dataset_apply` and the
+role is not an API role (`anon` / `authenticated`). `applyDatasetTiers` sets it with
+`SET LOCAL`, next to `app.sync_in_progress`, so the bypass ends with the apply's
+transaction and covers the cutover columns only — the base currency and fiscal year locks
+still hold. Pinned by `packages/database/supabase/tests/accounting-cutover-guards.test.sql`.
+
+Demo-template companies that predate the cutover got theirs from section 7 of
+`20261009004448_accounting-cutover.sql`, which selects them by their `JE-SEED-%` journal (the
+same test the accounting reset used to spare them), not by `accountingEnabled`. The
+`accountingEnabled` column is not seeded; no code reads it.
+
 ## Make methods stay Draft
 
 Every seeded make method is left `Draft` — the item interceptor's default — so a demo user can
@@ -363,14 +398,13 @@ in the same tier. Conventions, each mirroring the real code path:
   shipments and scrapped lots carry GL and `costLedger` rows (below); other inventory
   postings (RMA receipts, returns, jobs, adjustments, opening stock) carry none — opening
   stock value sits in the authored Opening Balance entry.
-- **Posted documents carry their journal, as with accounting enabled** — tier 09
+- **Posted documents carry their journal** — tier 09
   (`helpers/post-documents.ts`) journals every non-Draft sales/purchase invoice (plus a
   `VOID` entry for a Voided one), Posted memo, Posted payment (`payment.journalId` /
   `memo.journalId` set), posted PO receipt (plus its FIFO `costLedger` layer) and SO
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
-  shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the server functions'
+  shape, CR inventory / DR `scrapAccount`), all `Posted`, through the server functions'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,

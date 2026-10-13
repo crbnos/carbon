@@ -67,6 +67,10 @@ msgstr "{0} из {1} завершено"
 msgid "{0} queued"
 msgstr "{0} в очереди"
 
+#. placeholder {0}: result.credentialName ?? "Passkey"
+msgid "{0} registered"
+msgstr "{0} зарегистрировано"
+
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
 msgstr "{0} выполняется"
@@ -89,6 +93,9 @@ msgstr "{completions} пройденных единиц будут заверш�
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} записанных отказов будут НЕ завершены — разрешите их из меню действий."
 
+msgid "{maxSizeMB}MB limit"
+msgstr "Ограничение {maxSizeMB}МБ"
+
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
 msgstr "{recorded}/{0} производственных заказов"
@@ -110,6 +117,12 @@ msgstr "Принять партию"
 
 msgid "Accept lot?"
 msgstr "Принять партию?"
+
+msgid "Account"
+msgstr "Учетная запись"
+
+msgid "Account settings"
+msgstr "Настройки учетной записи"
 
 msgid "Account Settings"
 msgstr "Настройки аккаунта"
@@ -136,14 +149,23 @@ msgstr "Добавить и выдать"
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Добавьте принтер в настройки печати, чтобы печатать наклейки непосредственно."
 
+msgid "Add Authenticator App"
+msgstr "Добавить приложение аутентификатора"
+
 msgid "Add Inventory"
 msgstr "Добавить запас"
+
+msgid "Add Passkey"
+msgstr "Добавить ключ доступа"
 
 msgid "Add Sample"
 msgstr "Добавить образец"
 
 msgid "Add Spare Part"
 msgstr "Добавить запасную часть"
+
+msgid "Added"
+msgstr "Добавлено"
 
 msgid "All"
 msgstr "Все"
@@ -179,6 +201,12 @@ msgstr "Распределить единицы"
 msgid "Appearance"
 msgstr "Внешний вид"
 
+msgid "Approvals"
+msgstr "Утверждения"
+
+msgid "Are you sure you want to delete this passkey? You won't be able to use it to sign in anymore."
+msgstr "Вы уверены, что хотите удалить этот ключ доступа? Вы больше не сможете использовать его для входа."
+
 msgid "Are you sure you want to delete this step?"
 msgstr "Вы уверены, что хотите удалить этот шаг?"
 
@@ -209,14 +237,39 @@ msgstr "Исполнитель"
 msgid "Authentication Error"
 msgstr "Ошибка аутентификации"
 
+msgid "Authenticator app"
+msgstr "Приложение аутентификатора"
+
+msgid "Authenticator QR code"
+msgstr "QR-код аутентификатора"
+
 msgid "available"
 msgstr "доступно"
 
 msgid "Available"
 msgstr "Доступно"
 
+#. placeholder {0}: index + 1
+msgid "Avatar option {0}"
+msgstr "Вариант аватара {0}"
+
+msgid "Avatar style"
+msgstr "Стиль аватара"
+
+#. placeholder {0}: info.source.name
+#. placeholder {1}: info.creator
+#. placeholder {2}: info.license.name
+msgid "Avatars from <0>{0}</0> by {1}, licensed under <1>{2}</1>."
+msgstr "Аватары из <0>{0}</0> от {1}, лицензировано под <1>{2}</1>."
+
+msgid "Back"
+msgstr "Назад"
+
 msgid "Back to batch"
 msgstr "Вернуться к серии"
+
+msgid "Background"
+msgstr "Фон"
 
 msgid "Batch"
 msgstr "Партия"
@@ -280,6 +333,12 @@ msgstr "Логотип Carbon"
 msgid "Cards"
 msgstr "Карточки"
 
+msgid "Change"
+msgstr "Изменить"
+
+msgid "Changelog newsletter"
+msgstr "Рассылка журнала изменений"
+
 msgid "Characteristic"
 msgstr "Характеристика"
 
@@ -294,6 +353,15 @@ msgstr "Проверьте вашу электронную почту"
 
 msgid "Choose a job"
 msgstr "Выбрать производственный заказ"
+
+msgid "Choose an option"
+msgstr "Выберите вариант"
+
+msgid "Choose avatar"
+msgstr "Выбрать аватар"
+
+msgid "Choose how Carbon reaches you."
+msgstr "Выберите, как Carbon будет вас уведомлять."
 
 msgid "Clear"
 msgstr "Очистить"
@@ -360,6 +428,10 @@ msgstr "Организация"
 msgid "Complete"
 msgstr "Завершить"
 
+#. placeholder {0}: dispatch.maintenanceDispatchId
+msgid "Complete {0}?"
+msgstr "Завершить {0}?"
+
 msgid "Complete All"
 msgstr "Завершить все"
 
@@ -406,8 +478,7 @@ msgstr "Копировать в буфер обмена"
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
 
-#. placeholder {0}: search.trim() === "" ? (createLabel ?? label) : search
-#. placeholder {0}: search.trim() === "" ? label : search
+#. placeholder {0}: search.trim() === "" ? createLabel : search
 msgid "Create {0}"
 msgstr "Создать {0}"
 
@@ -443,6 +514,12 @@ msgstr "Единица хранения по умолчанию"
 
 msgid "Delete"
 msgstr "Удалить"
+
+msgid "Delete passkey"
+msgstr "Удалить ключ доступа"
+
+msgid "Delete Passkey"
+msgstr "Удалить ключ доступа"
 
 msgid "Delete Step"
 msgstr "Удалить шаг"
@@ -510,8 +587,8 @@ msgid "Due"
 msgstr "Срок"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.jobDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
 msgid "Due {0}"
 msgstr "Срок {0}"
 
@@ -543,11 +620,23 @@ msgstr "Выход каждого производственного заказ�
 msgid "Edit"
 msgstr "Изменить"
 
+msgid "Edit Passkey"
+msgstr "Изменить ключ доступа"
+
 msgid "Elapsed"
 msgstr "Прошедшее время"
 
+msgid "email"
+msgstr "электронная почта"
+
+msgid "Email"
+msgstr "Электронная почта"
+
 msgid "Email Address"
 msgstr "Адрес электронной почты"
+
+msgid "Email notifications are not included in your company's current plan; email preferences will apply if they are enabled."
+msgstr "Уведомления по электронной почте не включены в текущий план вашей организации; предпочтения электронной почты будут применены, если они включены."
 
 msgid "Empty work centers"
 msgstr "Пустые рабочие центры"
@@ -620,8 +709,14 @@ msgstr "Не удалось загрузить активные операции
 msgid "Failed to fetch storageUnits"
 msgstr "Не удалось получить единицы хранения"
 
+msgid "Failed to get options"
+msgstr "Не удалось получить параметры"
+
 msgid "Failed to record gauge"
 msgstr "Не удалось записать средство измерения"
+
+msgid "Failed to register passkey"
+msgstr "Не удалось зарегистрировать ключ доступа"
 
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
@@ -668,6 +763,12 @@ msgstr "Завершить с неподобранным материалом?"
 msgid "First due {0}"
 msgstr "Первый срок {0}"
 
+msgid "First Name"
+msgstr "Имя"
+
+msgid "Fit"
+msgstr "По размеру"
+
 msgid "Fix the highlighted quantities before completing."
 msgstr "Исправьте выделенные количества перед завершением."
 
@@ -689,8 +790,14 @@ msgstr "Вернуться к операции"
 msgid "Go to onboarding"
 msgstr "Перейти к первоначальной настройке"
 
+msgid "Heading {level}"
+msgstr "Заголовок {level}"
+
 msgid "Hide description"
 msgstr "Скрыть описание"
+
+msgid "How Carbon looks in this browser."
+msgstr "Внешний вид Carbon в этом браузере."
 
 msgid "How many were actually picked?"
 msgstr "Сколько было фактически собрано?"
@@ -726,6 +833,12 @@ msgstr "В открытом меню"
 msgid "In Progress"
 msgstr "В работе"
 
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email or Slack."
+msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны поступать вам по электронной почте или Slack."
+
+msgid "In-app notifications are always delivered. Choose which topics also reach you by email."
+msgstr "Уведомления в приложении всегда доставляются. Выберите, какие темы также должны поступать вам по электронной почте."
+
 msgid "Inspect Item"
 msgstr "Проверить элемент"
 
@@ -737,6 +850,9 @@ msgstr "Инструкции"
 
 msgid "Insufficient quantity"
 msgstr "Недостаточное количество"
+
+msgid "Inventory"
+msgstr "Запасы"
 
 msgid "Inventory adjustment completed"
 msgstr "Корректировка запасов выполнена"
@@ -774,6 +890,9 @@ msgstr "Номенклатура"
 msgid "Item Master"
 msgstr "Карточка номенклатуры"
 
+msgid "Items"
+msgstr "Номенклатура"
+
 msgid "Job"
 msgstr "Задание"
 
@@ -801,6 +920,12 @@ msgstr "Трудозатраты"
 msgid "Last completed"
 msgstr "Последнее завершено"
 
+msgid "Last Name"
+msgstr "Фамилия"
+
+msgid "Last used"
+msgstr "Последнее использование"
+
 msgid "Learn more"
 msgstr "Узнать больше"
 
@@ -810,11 +935,17 @@ msgstr "Оставьте операцию на 0, чтобы пропустит�
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
+msgid "Left to Right"
+msgstr "Слева направо"
+
 msgid "Let's build something"
 msgstr "Давайте создадим что-то"
 
 msgid "Light"
 msgstr "Светлый"
+
+msgid "Light, dark, or follow your system setting."
+msgstr "Светлая, тёмная или согласно параметрам системы."
 
 msgid "lines"
 msgstr "строки"
@@ -879,6 +1010,9 @@ msgstr "Станок"
 msgid "Machine down for maintenance now?"
 msgstr "Станок на техобслуживание сейчас?"
 
+msgid "Main"
+msgstr "Основное"
+
 msgid "Maintenance"
 msgstr "Техобслуживание"
 
@@ -890,6 +1024,9 @@ msgstr "Техобслуживание просрочено"
 
 msgid "Make a replacement"
 msgstr "Создать замену"
+
+msgid "Manage how you sign in to Carbon."
+msgstr "Управляйте способом входа в Carbon."
 
 msgid "Manually add items to inventory"
 msgstr "Добавить номенклатуру на склад вручную"
@@ -928,8 +1065,14 @@ msgstr "Достигнуто максимальное количество за�
 msgid "Metric"
 msgstr "Метрическая"
 
+msgid "Mode"
+msgstr "Режим"
+
 msgid "Model"
 msgstr "Модель"
+
+msgid "More"
+msgstr "Ещё"
 
 msgid "More actions"
 msgstr "Дополнительные действия"
@@ -1046,6 +1189,9 @@ msgstr "Опция не найдена."
 msgid "No options found."
 msgstr "Варианты не найдены."
 
+msgid "No passkeys registered yet."
+msgstr "Пока нет зарегистрированных ключей доступа."
+
 msgid "No picking lists assigned"
 msgstr "Листы отбора не назначены"
 
@@ -1118,6 +1264,9 @@ msgstr "Ничего не запланировано на этом рабоче�
 msgid "Nothing to scrap"
 msgstr "Нечего браковать"
 
+msgid "Notifications"
+msgstr "Уведомления"
+
 msgid "OEE Impact"
 msgstr "Влияние на OEE"
 
@@ -1168,6 +1317,7 @@ msgid "Open sub-assembly {0}: {1}"
 msgstr "Открыть под-узел {0}: {1}"
 
 #. placeholder {0}: formatDate( operation.operationDueDate )
+#. placeholder {0}: formatDate( operation.operationDueDate )
 msgid "Operation needed by {0}"
 msgstr "Операция нужна к {0}"
 
@@ -1186,8 +1336,14 @@ msgstr "Выполнено оператором"
 msgid "Optional"
 msgstr "Опционально"
 
+msgid "Options"
+msgstr "Параметры"
+
 msgid "or"
 msgstr "или"
+
+msgid "Or enter this secret manually:"
+msgstr "Или введите этот секрет вручную:"
 
 msgid "Out of calibration"
 msgstr "Вне калибровки"
@@ -1219,11 +1375,29 @@ msgstr "Прошла контроль"
 msgid "Passed Inspection"
 msgstr "Контроль пройден"
 
+msgid "Passkey name"
+msgstr "Название ключа доступа"
+
 msgid "Passkey unlock failed"
 msgstr "Не удалось разблокировать ключ доступа"
 
+msgid "Passkeys"
+msgstr "Ключи доступа"
+
+msgid "Passkeys are disabled"
+msgstr "Ключи доступа отключены"
+
 msgid "Pause"
 msgstr "Приостановить"
+
+msgid "Pause timer"
+msgstr "Приостановить таймер"
+
+msgid "Phone"
+msgstr "Телефон"
+
+msgid "Photo uploaded successfully"
+msgstr "Фото успешно загружено"
 
 msgid "Pick"
 msgstr "Выбрать"
@@ -1231,6 +1405,9 @@ msgstr "Выбрать"
 #. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Отобрать {0}"
+
+msgid "Pick a style and an avatar, or shuffle for new ones."
+msgstr "Выберите стиль и аватар или перемешайте для новых."
 
 msgid "Pick tracked item"
 msgstr "Выбрать отслеживаемый товар"
@@ -1280,6 +1457,9 @@ msgstr "График обслуживания истек"
 msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
 msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
 
+msgid "Press '/' for commands"
+msgstr "Нажмите «/» для команд"
+
 msgid "Prev"
 msgstr "Назад"
 
@@ -1316,8 +1496,17 @@ msgstr "Параметры процесса"
 msgid "Processes"
 msgstr "Процессы"
 
+msgid "Profile"
+msgstr "Профиль"
+
 msgid "Progress"
 msgstr "Прогресс"
+
+msgid "Purchasing"
+msgstr "Закупки"
+
+msgid "Quality"
+msgstr "Качество"
 
 msgid "Quality Issue"
 msgstr "Проблема качества"
@@ -1333,6 +1522,9 @@ msgstr "Количество должно быть больше 0"
 
 msgid "Queue empty"
 msgstr "Очередь пуста"
+
+msgid "Quotes"
+msgstr "Коммерческие предложения"
 
 msgid "Reason for rework"
 msgstr "Причина доработки"
@@ -1363,6 +1555,9 @@ msgstr "Записать частичный результат"
 msgid "Recorded"
 msgstr "Записано"
 
+msgid "Registration failed"
+msgstr "Регистрация не удалась"
+
 msgid "Reject"
 msgstr "Отклонить"
 
@@ -1375,6 +1570,9 @@ msgstr "Запущено"
 msgid "Remove"
 msgstr "Убрать"
 
+msgid "Remove authenticator app"
+msgstr "Убрать приложение аутентификации"
+
 msgid "Remove filter"
 msgstr "Убрать фильтр"
 
@@ -1384,14 +1582,23 @@ msgstr "Убрать запасы"
 msgid "Remove part"
 msgstr "Убрать деталь"
 
+msgid "Remove two-factor authentication"
+msgstr "Убрать двухфакторную аутентификацию"
+
 msgid "Rename"
 msgstr "Переименовать"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Открыть заново узел и создать единицу для замены"
 
+msgid "Require a 6-digit code from an authenticator app when signing in."
+msgstr "Требуется 6-значный код из приложения аутентификации при входе."
+
 msgid "Required"
 msgstr "Требуется"
+
+msgid "Reset"
+msgstr "Сбросить"
 
 msgid "Result"
 msgstr "Результат"
@@ -1410,6 +1617,9 @@ msgstr "Количество для доработки"
 
 msgid "Running"
 msgstr "Работает"
+
+msgid "Sales"
+msgstr "Продажи"
 
 msgid "Sales Order"
 msgstr "Заказ покупателя"
@@ -1443,6 +1653,9 @@ msgstr "Сканировать или найти серийный номер..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
 msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
+
+msgid "Scan this QR code with your authenticator app (e.g. Google Authenticator or 1Password), then enter the 6-digit code it shows."
+msgstr "Отсканируйте этот QR код с помощью приложения аутентификации (например, Google Authenticator или 1Password), затем введите 6-значный код, который оно покажет."
 
 msgid "Schedule"
 msgstr "Расписание"
@@ -1491,6 +1704,12 @@ msgstr "Поиск операторов..."
 
 msgid "Search..."
 msgstr "Поиск..."
+
+msgid "Secret copied to clipboard"
+msgstr "Секрет скопирован в буфер обмена"
+
+msgid "Security"
+msgstr "Безопасность"
 
 msgid "Select"
 msgstr "Выбрать"
@@ -1582,6 +1801,9 @@ msgstr "Установите время окончания работы или �
 msgid "Set up in Carbon"
 msgstr "Настроить в Carbon"
 
+msgid "Set up two-factor authentication"
+msgstr "Настроить двухфакторную аутентификацию"
+
 msgid "Set when the batch was planned."
 msgstr "Установлено при планировании серии."
 
@@ -1602,6 +1824,12 @@ msgstr "Показать описание"
 
 msgid "Show keyboard shortcuts"
 msgstr "Показать горячие клавиши"
+
+msgid "Shuffle"
+msgstr "Перемешать"
+
+msgid "Sign in with biometrics instead of a magic link. Passkeys are secured by Face ID, Touch ID, or your device PIN."
+msgstr "Войдите с помощью биометрии вместо волшебной ссылки. Ключи доступа защищены с помощью Face ID, Touch ID или PIN вашего устройства."
 
 msgid "Sign in with Google"
 msgstr "Войти через Google"
@@ -1624,8 +1852,14 @@ msgstr "Вместо этого выйдите"
 msgid "Signed in as {stationName}"
 msgstr "Вход выполнен как {stationName}"
 
+msgid "Signing in will no longer require a code. Enter the current 6-digit code from your authenticator app to confirm."
+msgstr "Вход больше не будет требовать код. Введите текущий 6-значный код из приложения аутентификации для подтверждения."
+
 msgid "Size"
 msgstr "Размер"
+
+msgid "Slack"
+msgstr "Slack"
 
 msgid "Source"
 msgstr "Источник"
@@ -1645,6 +1879,9 @@ msgstr "Начать {0}"
 
 msgid "Start or pause the operation"
 msgstr "Запустить или приостановить операцию"
+
+msgid "Start timer"
+msgstr "Запустить таймер"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1674,6 +1911,9 @@ msgstr "Шаги не заполнены"
 msgid "Storage Unit"
 msgstr "Единица хранения"
 
+msgid "Style default"
+msgstr "Стиль по умолчанию"
+
 msgid "Sub-Assembly"
 msgstr "Под-узел"
 
@@ -1695,17 +1935,26 @@ msgstr "Отправить анонимно"
 msgid "Suggestion"
 msgstr "Предложение"
 
+msgid "Suggestions"
+msgstr "Предложения"
+
 msgid "Support Required"
 msgstr "Требуется поддержка"
 
 msgid "Switch Operator"
 msgstr "Сменить оператора"
 
+msgid "Synced"
+msgstr "Синхронизировано"
+
 msgid "System"
 msgstr "Система"
 
 msgid "Tag"
 msgstr "Тег"
+
+msgid "The accent color used across Carbon."
+msgstr "Цвет акцента, используемый во всём Carbon."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
@@ -1726,6 +1975,9 @@ msgstr "Партия все еще будет распределена, но NCR
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
 
+msgid "Theme color"
+msgstr "Цвет темы"
+
 msgid "then"
 msgstr "затем"
 
@@ -1741,8 +1993,14 @@ msgstr "Эти позиции еще содержат материал для о
 msgid "This batch has no work instructions."
 msgstr "Эта серия не имеет рабочих инструкций."
 
+msgid "This information will be visible to all users, so be careful what you share."
+msgstr "Эта информация будет видна всем пользователям, поэтому будьте осторожны с тем, что вы делитесь."
+
 msgid "This lot is expired and can't be picked."
 msgstr "Срок этой партии истек, и она не может быть отобрана."
+
+msgid "This marks the dispatch as completed."
+msgstr "Это отмечает заявку на техобслуживание как завершённую."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
@@ -1778,11 +2036,29 @@ msgstr "Для запуска"
 msgid "Today"
 msgstr "Сегодня"
 
+msgid "Toggle labor"
+msgstr "Переключить труд"
+
+msgid "Toggle machine"
+msgstr "Переключить станок"
+
+msgid "Toggle setup"
+msgstr "Переключить наладку"
+
 msgid "Toggle the sidebar"
 msgstr "Открыть/закрыть боковую панель"
 
 msgid "Tools"
 msgstr "Инструменты"
+
+msgid "Top to Bottom"
+msgstr "Сверху вниз"
+
+msgid "Topic"
+msgstr "Тема"
+
+msgid "Topics"
+msgstr "Темы"
 
 msgid "Total"
 msgstr "Итого"
@@ -1807,8 +2083,20 @@ msgstr "отслеживаемые строки"
 msgid "Tracking"
 msgstr "Отслеживание"
 
+msgid "Training"
+msgstr "Обучение"
+
 msgid "Two-factor authentication"
 msgstr "Двухфакторная аутентификация"
+
+msgid "Two-factor authentication disabled"
+msgstr "Двухфакторная аутентификация отключена"
+
+msgid "Two-factor authentication enabled"
+msgstr "Двухфакторная аутентификация включена"
+
+msgid "Two-factor authentication is not enabled."
+msgstr "Двухфакторная аутентификация не включена."
 
 msgid "Two-factor authentication required"
 msgstr "Требуется двухфакторная аутентификация"
@@ -1867,10 +2155,17 @@ msgstr "Обновлено {0}"
 msgid "Updated successfully"
 msgstr "Успешно обновлено"
 
+msgid "Upload"
+msgstr "Загрузить"
+
+msgid "Upload completed but no file path returned"
+msgstr "Загрузка завершена, но путь файла не возвращен"
+
 #. placeholder {0}: fileUpload.name
 msgid "Uploaded: {0}"
 msgstr "Загружено: {0}"
 
+#. placeholder {0}: avatarFile.name
 #. placeholder {0}: fileUpload.name
 msgid "Uploading {0}"
 msgstr "Загрузка {0}"
@@ -1888,6 +2183,9 @@ msgstr "Использует {0} · {1}"
 
 msgid "Value"
 msgstr "Значение"
+
+msgid "Verification failed"
+msgstr "Проверка не удалась"
 
 msgid "Verify"
 msgstr "Подтвердить"
@@ -1919,6 +2217,9 @@ msgstr "Дисплеи рабочего центра"
 msgid "Work instructions"
 msgstr "Рабочие инструкции"
 
+msgid "Write a note…"
+msgstr "Напишите примечание…"
+
 msgid "Yes"
 msgstr "Да"
 
@@ -1930,6 +2231,9 @@ msgstr "Ваша учетная запись еще не входит ни в о
 
 msgid "Your organization requires an authenticator app. Set it up in Carbon, then come back here."
 msgstr "Ваша организация требует приложения аутентификатора. Настройте его в Carbon, а затем вернитесь сюда."
+
+msgid "Your profile could not be loaded."
+msgstr "Не удалось загрузить ваш профиль."
 
 msgid "Your session was locked after inactivity."
 msgstr "Ваш сеанс был заблокирован после неактивности."

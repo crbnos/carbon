@@ -6,11 +6,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { ScrollArea, VStack } from "@carbon/react";
+import { ScrollArea } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
+import { SettingsPage } from "~/components/SettingsPage";
 import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
 import {
@@ -103,17 +104,14 @@ export default function AccountDefaultsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <VStack
-        spacing={4}
-        className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
-      >
+      <SettingsPage className="gap-4">
         <AccountDefaultsForm
           balanceSheetAccounts={routeData?.balanceSheetAccounts ?? []}
           incomeStatementAccounts={routeData?.incomeStatementAccounts ?? []}
           // @ts-expect-error TS2322 - TODO: fix type
           initialValues={defaultAccounts}
         />
-      </VStack>
+      </SettingsPage>
     </ScrollArea>
   );
 }

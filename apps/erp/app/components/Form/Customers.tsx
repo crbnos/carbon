@@ -9,6 +9,7 @@ import { useMemo, useRef, useState } from "react";
 import { useUser } from "~/hooks";
 import CustomerForm from "~/modules/sales/ui/Customer/CustomerForm";
 import { useCustomers } from "~/stores";
+import CustomerAvatar from "../CustomerAvatar";
 import { useEmptyState } from "./emptyStates";
 
 type CustomerSelectProps = Omit<CreatableMultiSelectProps, "options">;
@@ -26,7 +27,8 @@ const Customers = (props: CustomerSelectProps) => {
     () =>
       customers.map((c) => ({
         value: c.id,
-        label: c.name
+        label: <CustomerAvatar customerId={c.id} />,
+        keywords: c.name
       })) ?? [],
     [customers]
   );

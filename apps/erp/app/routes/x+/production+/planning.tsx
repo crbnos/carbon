@@ -36,6 +36,7 @@ const WEEKS_TO_PLAN = 12 * 4;
 const logger = getLogger("erp", "production", "planning");
 
 export const handle: Handle = {
+  appBarSubtitle: msg`Production`,
   realtime: ["job"],
   breadcrumb: msg`Material Planning`,
   to: path.to.productionPlanning
@@ -184,7 +185,7 @@ export default function ProductionPlanningRoute() {
 
   return (
     <VStack spacing={0} className="h-full ">
-      <ResizablePanelGroup direction="horizontal">
+      <ResizablePanelGroup direction="horizontal" stackOnCompact>
         <ResizablePanel
           defaultSize={50}
           maxSize={70}

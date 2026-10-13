@@ -106,7 +106,7 @@ export function useLineOrderEditMode<T extends ReorderableLine>({
   useEffect(() => {
     if (!isEditing) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") cancelEditMode();
+      if (e.key === "Escape" && !e.defaultPrevented) cancelEditMode();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);

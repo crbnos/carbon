@@ -80,6 +80,7 @@ const JobOperationStepRecordsTable = memo(
           header: t`Step`,
           cell: ({ row }) => row.original.name,
           meta: {
+            mobile: "P1",
             icon: <LuClipboardList />
           }
         },
@@ -175,6 +176,7 @@ const JobOperationStepRecordsTable = memo(
             }
           },
           meta: {
+            mobile: "P2",
             icon: <LuFileText />
           }
         },
@@ -188,6 +190,7 @@ const JobOperationStepRecordsTable = memo(
             </div>
           ),
           meta: {
+            mobile: "P2",
             icon: <LuList />,
             filter: {
               type: "static",
@@ -213,6 +216,7 @@ const JobOperationStepRecordsTable = memo(
             />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />
           }
         },

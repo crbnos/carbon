@@ -12,16 +12,14 @@ import {
   CardTitle,
   Checkbox,
   cn,
-  HStack,
-  NumberField,
-  NumberInput,
-  NumberInputGroup
+  HStack
 } from "@carbon/react";
 import {
   allocatePaymentFunding,
   EPSILON,
   type FundingScope,
   type FundingSource,
+  formatDate,
   fundableDocumentAmounts,
   fundingScopeCovers,
   INPUT_FORMAT,
@@ -30,11 +28,15 @@ import {
   toDocumentAmount
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { CSSProperties } from "react";
-import { useCallback, useMemo, useState } from "react";
+import { useLocale } from "@react-aria/i18n";
+import type { PostgrestSingleResponse } from "@supabase/supabase-js";
+import type { ColumnDef } from "@tanstack/react-table";
+import type { CSSProperties, ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuListChecks, LuRotateCcw, LuSave } from "react-icons/lu";
 import { useFetcher } from "react-router";
-import { DateTime } from "~/components";
+import { EditableNumber } from "~/components/Editable";
+import Grid from "~/components/Grid";
 import {
   useCompanyToday,
   useCurrencyDecimals,
@@ -125,39 +127,28 @@ type PaymentApplyTableProps = {
   existingApplications: ExistingApplication[];
 };
 
-// Shared grid template so the header labels stay aligned with the rows. Wide
-// enough to scroll horizontally on small screens rather than cramp the inputs.
-const GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem_8rem_8rem] gap-3";
-const REFUND_GRID = "grid grid-cols-[2rem_minmax(9rem,1fr)_7rem_8rem] gap-3";
+// An amount cell edits local state; Save applications is what persists it, so
+// the cell's own "save" always succeeds.
+const APPLIED = {
+  data: null,
+  error: null,
+  count: null,
+  status: 200,
+  statusText: "OK"
+} as unknown as PostgrestSingleResponse<unknown>;
 
-// Compact, right-aligned numeric input for the editable amount cells.
-const AmountInput = ({
-  value,
-  onChange,
-  isDisabled,
-  label,
-  currency,
-  currencyDecimals
-}: {
-  value: number;
-  onChange: (value: number) => void;
-  isDisabled: boolean;
-  label: string;
-  currency: string;
-  currencyDecimals: number;
-}) => (
-  <NumberField
-    aria-label={label}
-    value={value}
-    onChange={(v) => onChange(Number.isNaN(v) ? 0 : v)}
-    minValue={0}
-    isDisabled={isDisabled}
-    formatOptions={INPUT_FORMAT.money(currency, currencyDecimals)}
-  >
-    <NumberInputGroup>
-      <NumberInput className="text-right tabular-nums" />
-    </NumberInputGroup>
-  </NumberField>
+// About eight invoices tall; past it the rows scroll under a pinned header and
+// only the rows in view are rendered. The grid's layout is then fixed, so each
+// column's `size` is its width.
+const APPLY_GRID_MAX_HEIGHT = 400;
+
+// Amounts read and edit right-aligned, the way a spreadsheet lines up figures.
+const AmountHeader = ({ children }: { children: ReactNode }) => (
+  <span className="w-full text-right">{children}</span>
+);
+
+const AmountCell = ({ children }: { children: ReactNode }) => (
+  <span className="block text-right tabular-nums">{children}</span>
 );
 
 const PaymentApplyTable = ({
@@ -179,6 +170,7 @@ const PaymentApplyTable = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher();
+  const { locale } = useLocale();
   const currencyFormatter = useCurrencyFormatter({ currency: paymentCurrency });
   const baseFormatter = useCurrencyFormatter({ currency: baseCurrency });
   const baseDecimals = useCurrencyDecimals(baseCurrency);
@@ -186,7 +178,6 @@ const PaymentApplyTable = ({
   const isReceipt = paymentType === "Receipt";
   // Discount and write-off only exist on a trade invoice settlement.
   const hasAdjustments = !isRefund && !isReimbursement;
-  const grid = hasAdjustments ? GRID : REFUND_GRID;
   const canEdit = permissions.can("update", "invoicing");
   const seed = useMemo<ApplyRow[]>(() => {
     const byInvoice = new Map<
@@ -458,6 +449,157 @@ const PaymentApplyTable = ({
       ),
     [currencyDecimals]
   );
+
+  // Each `EditableNumber` call returns a new component, and rebuilding one
+  // remounts the open editor mid-typing, so the editors are built once per
+  // currency and reach the latest `updateAmount` through a ref.
+  const latestUpdateAmount = useRef(updateAmount);
+  useEffect(() => {
+    latestUpdateAmount.current = updateAmount;
+  });
+  const editableComponents = useMemo(() => {
+    const applyCell = async (
+      accessorKey: string,
+      value: string,
+      row: ApplyRow
+    ) => {
+      latestUpdateAmount.current(
+        row.id,
+        accessorKey as AmountField,
+        Number(value) || 0
+      );
+      return APPLIED;
+    };
+    const editor = EditableNumber<ApplyRow>(
+      applyCell,
+      {
+        minValue: 0,
+        formatOptions: INPUT_FORMAT.money(baseCurrency, baseDecimals)
+      },
+      { inputClassName: "text-right tabular-nums" }
+    );
+    return {
+      appliedAmount: editor,
+      discountAmount: editor,
+      writeOffAmount: editor
+    };
+  }, [baseCurrency, baseDecimals]);
+
+  const showsDocumentAmount = paymentCurrency !== baseCurrency;
+  const columns = useMemo<ColumnDef<ApplyRow>[]>(() => {
+    const amount = (
+      accessorKey: AmountField,
+      header: string
+    ): ColumnDef<ApplyRow> => ({
+      accessorKey,
+      header: () => <AmountHeader>{header}</AmountHeader>,
+      size: 120,
+      cell: ({ row }) => (
+        <AmountCell>
+          {baseFormatter.format(row.original[accessorKey])}
+        </AmountCell>
+      )
+    });
+
+    return [
+      {
+        id: "select",
+        header: "",
+        size: 48,
+        cell: ({ row }) => (
+          <div className="flex items-center justify-center">
+            <Checkbox
+              aria-label={t`Apply to ${row.original.invoiceId}`}
+              checked={row.original.checked}
+              onCheckedChange={(checked) =>
+                toggleRow(row.original.id, Boolean(checked))
+              }
+              disabled={!canEdit}
+            />
+          </div>
+        )
+      },
+      {
+        id: "invoice",
+        header: isReimbursement
+          ? t`Reimbursement`
+          : isRefund
+            ? t`Memo`
+            : t`Invoice`,
+        size: 150,
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.invoiceId}</span>
+        )
+      },
+      {
+        id: "dateDue",
+        header: t`Due Date`,
+        size: 120,
+        cell: ({ row }) => {
+          const { dateDue } = row.original;
+          if (!dateDue) return "—";
+          return (
+            <span
+              className={cn(
+                "tabular-nums",
+                // an open invoice due before today is overdue
+                dateDue < today && "font-medium text-red-500"
+              )}
+            >
+              {formatDate(dateDue, undefined, locale)}
+            </span>
+          );
+        }
+      },
+      {
+        id: "balance",
+        header: () => <AmountHeader>{t`Open`}</AmountHeader>,
+        size: 120,
+        cell: ({ row }) => (
+          <AmountCell>{baseFormatter.format(row.original.balance)}</AmountCell>
+        )
+      },
+      // The same open amount in the payment's own currency, when it differs
+      // from the base currency the editable columns are entered in.
+      ...(showsDocumentAmount
+        ? [
+            {
+              id: "remainingDocument",
+              header: () => (
+                <AmountHeader>{t`Open (${paymentCurrency})`}</AmountHeader>
+              ),
+              size: 120,
+              cell: ({ row }) => (
+                <AmountCell>
+                  {currencyFormatter.format(row.original.remainingDocument)}
+                </AmountCell>
+              )
+            } satisfies ColumnDef<ApplyRow>
+          ]
+        : []),
+      amount("appliedAmount", t`Applied`),
+      ...(hasAdjustments
+        ? [
+            amount("discountAmount", t`Discount`),
+            amount("writeOffAmount", t`Write-off`)
+          ]
+        : [])
+    ];
+  }, [
+    baseFormatter,
+    currencyFormatter,
+    canEdit,
+    hasAdjustments,
+    isRefund,
+    isReimbursement,
+    locale,
+    paymentCurrency,
+    showsDocumentAmount,
+    t,
+    today,
+    toggleRow
+  ]);
+
   const onAutoApply = useCallback(
     () =>
       setRows((prev) => {
@@ -623,114 +765,15 @@ const PaymentApplyTable = ({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <div className="min-w-[44rem]">
-              <div
-                className={cn(grid, "px-2 pb-2 text-xs text-muted-foreground")}
-              >
-                <span aria-hidden />
-                <span>
-                  {isReimbursement ? (
-                    <Trans>Reimbursement</Trans>
-                  ) : isRefund ? (
-                    <Trans>Memo</Trans>
-                  ) : (
-                    <Trans>Invoice</Trans>
-                  )}
-                </span>
-                <span className="text-right">
-                  <Trans>Open</Trans>
-                </span>
-                <span className="text-right">
-                  <Trans>Applied</Trans>
-                </span>
-                {hasAdjustments && (
-                  <>
-                    <span className="text-right">
-                      <Trans>Discount</Trans>
-                    </span>
-                    <span className="text-right">
-                      <Trans>Write-off</Trans>
-                    </span>
-                  </>
-                )}
-              </div>
-              <div className="border-t border-border/70 divide-y divide-border/70">
-                {rows.map((r) => (
-                  <div
-                    key={r.id}
-                    className={cn(
-                      grid,
-                      "items-center px-2 py-2 transition-colors",
-                      r.checked ? "bg-muted/50" : "hover:bg-muted/30"
-                    )}
-                  >
-                    <div className="flex items-center justify-center">
-                      <Checkbox
-                        checked={r.checked}
-                        onCheckedChange={(checked) =>
-                          toggleRow(r.id, Boolean(checked))
-                        }
-                        disabled={!canEdit}
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-foreground truncate">
-                        {r.invoiceId}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {r.dateDue ? (
-                          <DateTime value={r.dateDue} variant="date" />
-                        ) : (
-                          t`No due date`
-                        )}
-                        {" · "}
-                        {r.currencyCode}
-                      </div>
-                    </div>
-                    <div className="text-right tabular-nums text-sm text-muted-foreground self-center">
-                      {baseFormatter.format(Number(r.balance))}
-                      <div className="text-xs">
-                        {currencyFormatter.format(r.remainingDocument)}
-                      </div>
-                    </div>
-                    <AmountInput
-                      label={t`Applied amount for ${r.invoiceId}`}
-                      value={r.appliedAmount}
-                      isDisabled={!canEdit}
-                      currency={baseCurrency}
-                      currencyDecimals={baseDecimals}
-                      onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
-                    />
-                    {hasAdjustments && (
-                      <>
-                        <AmountInput
-                          label={t`Discount for ${r.invoiceId}`}
-                          value={r.discountAmount}
-                          isDisabled={!canEdit}
-                          currency={baseCurrency}
-                          currencyDecimals={baseDecimals}
-                          onChange={(v) =>
-                            updateAmount(r.id, "discountAmount", v)
-                          }
-                        />
-                        <AmountInput
-                          label={t`Write-off for ${r.invoiceId}`}
-                          value={r.writeOffAmount}
-                          isDisabled={!canEdit}
-                          currency={baseCurrency}
-                          currencyDecimals={baseDecimals}
-                          onChange={(v) =>
-                            updateAmount(r.id, "writeOffAmount", v)
-                          }
-                        />
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <Grid<ApplyRow>
+            data={rows}
+            columns={columns}
+            canEdit={canEdit}
+            editableComponents={editableComponents}
+            contained={false}
+            withSimpleSorting={false}
+            maxHeight={APPLY_GRID_MAX_HEIGHT}
+          />
         )}
       </CardContent>
       <CardFooter className="flex-col items-stretch gap-4">

@@ -3,13 +3,22 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  fetchAllFromTable,
+  fetchAllRecords,
+  getCompanyTimeZone
+} from "@carbon/database";
 import type {
   ExpressionBuilder,
   Kysely,
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import {
+  buildSupplierPriceMap,
+  type SupplierPriceBreak,
+  supplierPartCurrency
+} from "@carbon/database/supplier-part-price";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
@@ -35,8 +44,8 @@ import {
   lookupBuyPriceFromMap,
   type MethodType,
   normalizeOperationSourceIds,
-  type PriceBreak,
   type SourcingType,
+  type SupplierPartPricing,
   type SupplierPriceMap
 } from "../shared";
 import { updateSortOrder } from "../shared/sort-order";
@@ -329,7 +338,8 @@ async function copyItemPlanningAndPurchasing(
       "minimumOrderQuantity",
       "orderMultiple",
       "conversionFactor",
-      "unitPrice",
+      "supplierUnitPrice",
+      "currencyCode",
       "active",
       "customFields",
       "tags",
@@ -347,7 +357,8 @@ async function copyItemPlanningAndPurchasing(
           "minimumOrderQuantity",
           "orderMultiple",
           "conversionFactor",
-          "unitPrice",
+          "supplierUnitPrice",
+          "currencyCode",
           "active",
           "customFields",
           "tags",
@@ -367,7 +378,7 @@ async function copyItemPlanningAndPurchasing(
     .columns([
       "supplierPartId",
       "quantity",
-      "unitPrice",
+      "supplierUnitPrice",
       "leadTime",
       "sourceType",
       "sourceDocumentId",
@@ -390,7 +401,7 @@ async function copyItemPlanningAndPurchasing(
         .select((eb) => [
           "target.id as supplierPartId",
           "price.quantity",
-          "price.unitPrice",
+          "price.supplierUnitPrice",
           "price.leadTime",
           "price.sourceType",
           "price.sourceDocumentId",
@@ -2485,6 +2496,26 @@ export async function getSupplierParts(
     .eq("active", true)
     .eq("itemId", id)
     .eq("companyId", companyId);
+}
+
+/** @mcp read */
+export async function getSupplierPartsBySupplier(
+  client: SupabaseClient<Database>,
+  supplierId: string,
+  companyId: string
+) {
+  // Paged past PostgREST's 1000-row cap: a distributor can supply thousands of parts.
+  return fetchAllRecords(() =>
+    client
+      .from("supplierPart")
+      .select(
+        "*, item(id, readableIdWithRevision, name, type, thumbnailPath, unitOfMeasureCode)"
+      )
+      .eq("active", true)
+      .eq("supplierId", supplierId)
+      .eq("companyId", companyId)
+      .order("id")
+  );
 }
 
 /** @mcp read */
@@ -6633,11 +6664,13 @@ export async function upsertTool(
 }
 
 /**
- * Batch pre-fetch supplier price breaks for multiple items.
- * Builds a SupplierPriceMap keyed by itemId, pooling price break
- * tiers from ALL suppliers for each item.
+ * Batch pre-fetch supplier pricing for multiple items, for costing.
+ * Builds a SupplierPriceMap keyed by itemId, pooling the price breaks of ALL
+ * suppliers for each item, converted to base currency per INVENTORY unit at
+ * today's exchange rates (`buildSupplierPriceMap`).
  *
  * Used by the quote loader to pre-load pricing data for BOM costing.
+ * Mirrored in `packages/database/src/methods.ts`.
  * @mcp read
  */
 export async function getSupplierPriceBreaksForItems(
@@ -6648,55 +6681,59 @@ export async function getSupplierPriceBreaksForItems(
 
   const supplierParts = await client
     .from("supplierPart")
-    .select("id, itemId, unitPrice")
+    .select(
+      "id, itemId, companyId, currencyCode, conversionFactor, supplierUnitPrice"
+    )
     .in("itemId", itemIds);
 
   if (!supplierParts.data?.length) return {};
 
+  const companyId = supplierParts.data[0].companyId;
   const supplierPartIds = supplierParts.data.map((sp) => sp.id);
 
-  const prices = await client
-    .from("supplierPartPrice")
-    .select("supplierPartId, quantity, unitPrice")
-    .in("supplierPartId", supplierPartIds)
-    .order("quantity", { ascending: true });
+  const [prices, rates, company] = await Promise.all([
+    client
+      .from("supplierPartPrice")
+      .select("supplierPartId, quantity, supplierUnitPrice")
+      .in("supplierPartId", supplierPartIds)
+      .eq("companyId", companyId),
+    client.rpc("get_exchange_rates", { p_company_id: companyId }),
+    client
+      .from("company")
+      .select("baseCurrencyCode")
+      .eq("id", companyId)
+      .single()
+  ]);
 
-  // Build a lookup from supplierPartId → itemId
-  const spToItem = new Map<string, string>();
-  for (const sp of supplierParts.data) {
-    spToItem.set(sp.id, sp.itemId);
-  }
-
-  const result: SupplierPriceMap = {};
-
-  // Initialize entries with fallback prices
-  for (const sp of supplierParts.data) {
-    if (!result[sp.itemId]) {
-      result[sp.itemId] = { priceBreaks: [], fallbackUnitPrice: null };
-    }
-    const current = result[sp.itemId].fallbackUnitPrice;
-    if (sp.unitPrice != null && (current === null || sp.unitPrice < current)) {
-      result[sp.itemId].fallbackUnitPrice = sp.unitPrice;
-    }
-  }
-
-  // Add price breaks
+  const breaksByPart = new Map<string, SupplierPriceBreak[]>();
   for (const price of prices.data ?? []) {
-    const itemId = spToItem.get(price.supplierPartId);
-    if (itemId && result[itemId]) {
-      result[itemId].priceBreaks.push({
-        quantity: price.quantity,
-        unitPrice: price.unitPrice
-      });
-    }
+    const breaks = breaksByPart.get(price.supplierPartId) ?? [];
+    breaks.push({
+      quantity: price.quantity,
+      supplierUnitPrice: price.supplierUnitPrice
+    });
+    breaksByPart.set(price.supplierPartId, breaks);
   }
 
-  return result;
+  return buildSupplierPriceMap(
+    supplierParts.data.map((sp) => ({
+      itemId: sp.itemId,
+      currencyCode: sp.currencyCode,
+      conversionFactor: sp.conversionFactor,
+      supplierUnitPrice: sp.supplierUnitPrice,
+      priceBreaks: breaksByPart.get(sp.id) ?? []
+    })),
+    Object.fromEntries(
+      (rates.data ?? []).map((rate) => [rate.currencyCode, rate.rate])
+    ),
+    company.data?.baseCurrencyCode ?? "USD"
+  );
 }
 
 /**
- * Async price lookup across ALL suppliers for an item.
- * Delegates to getSupplierPriceBreaksForItems + lookupBuyPriceFromMap.
+ * Async price lookup across ALL suppliers for an item, in base currency per
+ * inventory unit. Delegates to getSupplierPriceBreaksForItems +
+ * lookupBuyPriceFromMap.
  *
  * Used in quote creation where the specific supplier isn't known.
  * @mcp read
@@ -6712,23 +6749,82 @@ export async function lookupBuyPrice(
 }
 
 /**
- * Fetch price breaks array for a specific supplier part.
- * Used by PO and Invoice forms to cache breaks in state.
+ * A supplier part's pricing for a purchase document: its price and breaks as
+ * the supplier quoted them (per purchase unit, in the part's currency), with
+ * that currency's CURRENT exchange rate, so `resolveSupplierPrice` can convert
+ * them into the document's currency. A part in the document's own currency
+ * needs no rate; a missing rate is an error, never par.
+ * @mcp read
+ */
+export async function getSupplierPartPricing(
+  client: SupabaseClient<Database>,
+  supplierPart: {
+    id: string;
+    companyId: string;
+    currencyCode: string | null;
+    supplierUnitPrice: number | null;
+  },
+  baseCurrencyCode: string,
+  documentCurrencyCode: string
+): Promise<
+  | { data: SupplierPartPricing; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const currencyCode = supplierPartCurrency(
+    supplierPart.currencyCode,
+    baseCurrencyCode
+  );
+  const needsRate =
+    currencyCode !== baseCurrencyCode && currencyCode !== documentCurrencyCode;
+
+  const [priceBreaks, rate] = await Promise.all([
+    getSupplierPartPriceBreaks(client, supplierPart.id),
+    needsRate
+      ? client.rpc("get_exchange_rate", {
+          p_company_id: supplierPart.companyId,
+          p_currency_code: currencyCode
+        })
+      : Promise.resolve({ data: 1, error: null })
+  ]);
+
+  if (rate.error || !rate.data) {
+    return {
+      data: null,
+      error: {
+        message: rate.error?.message ?? `No exchange rate for ${currencyCode}`
+      }
+    };
+  }
+
+  return {
+    data: {
+      priceBreaks,
+      supplierUnitPrice: supplierPart.supplierUnitPrice,
+      currency: { currencyCode, exchangeRate: Number(rate.data) }
+    },
+    error: null
+  };
+}
+
+/**
+ * Fetch price breaks array for a specific supplier part, as the supplier
+ * quoted them: purchase quantity and price per purchase unit, in the supplier
+ * part's currency. Used by PO and Invoice forms to cache breaks in state.
  * @mcp read
  */
 export async function getSupplierPartPriceBreaks(
   client: SupabaseClient<Database>,
   supplierPartId: string
-): Promise<PriceBreak[]> {
+): Promise<SupplierPriceBreak[]> {
   const result = await client
     .from("supplierPartPrice")
-    .select("quantity, unitPrice")
+    .select("quantity, supplierUnitPrice")
     .eq("supplierPartId", supplierPartId)
     .order("quantity", { ascending: true });
 
   return (result.data ?? []).map((pb) => ({
     quantity: pb.quantity,
-    unitPrice: pb.unitPrice
+    supplierUnitPrice: pb.supplierUnitPrice
   }));
 }
 // =============================================================================

@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261009141827",
+  "schemaVersion": "20261012232520",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-09T07:57:25.150Z",
+  "exportedAt": "2026-10-13T00:04:42.459Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -99,7 +99,15 @@
         "rentalIncomeAccount",
         "leaseRevenueAccount",
         "leaseInterestIncomeAccount",
-        "netInvestmentInLeasesAccount"
+        "netInvestmentInLeasesAccount",
+        "migrationClearingAccount",
+        "rightOfUseAssetAccount",
+        "accumulatedRightOfUseAmortizationAccount",
+        "leaseLiabilityAccount",
+        "operatingLeaseExpenseAccount",
+        "variableLeaseExpenseAccount",
+        "rightOfUseAmortizationExpenseAccount",
+        "leaseInterestExpenseAccount"
       ]
     },
     {
@@ -454,7 +462,13 @@
         "leaseSubstantiallyAllThresholdPercent",
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
-        "invoiceNotificationGroup"
+        "invoiceNotificationGroup",
+        "accountingCutoverDate",
+        "accountingActivatedAt",
+        "accountingActivatedBy",
+        "leaseIncrementalBorrowingRate",
+        "leaseShortTermExpedient",
+        "leaseReminderDays"
       ]
     },
     {
@@ -1119,7 +1133,8 @@
         "updatedAt",
         "updatedBy",
         "intercompanyPartnerId",
-        "createdBy"
+        "createdBy",
+        "accountDefaultRole"
       ]
     },
     {
@@ -2081,7 +2096,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "type"
       ]
     },
     {
@@ -2251,26 +2267,6 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
-      ]
-    },
-    {
-      "name": "stockTransfer",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "locationId",
-        "status",
-        "completedAt",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "assignee",
-        "customFields",
-        "tags"
       ]
     },
     {
@@ -4317,7 +4313,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "voidedSalesInvoiceId"
+        "voidedSalesInvoiceId",
+        "invoiceSeparately"
       ]
     },
     {
@@ -5346,29 +5343,6 @@
       ]
     },
     {
-      "name": "stockTransferLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "jobId",
-        "jobMaterialId",
-        "itemId",
-        "fromStorageUnitId",
-        "toStorageUnitId",
-        "quantity",
-        "pickedQuantity",
-        "trackedEntityId",
-        "requiresBatchTracking",
-        "requiresSerialTracking",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
       "name": "jobMaterialStep",
       "rows": 0,
       "columns": ["jobMaterialId", "jobOperationStepId", "quantity"]
@@ -5686,7 +5660,158 @@
         "autoStartJob",
         "completedBarcodeOverride",
         "jobId",
-        "fromStorageUnitId"
+        "fromStorageUnitId",
+        "replenishmentLevel"
+      ]
+    },
+    {
+      "name": "stockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "locationId",
+        "status",
+        "completedAt",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "assignee",
+        "customFields",
+        "tags",
+        "kanbanId"
+      ]
+    },
+    {
+      "name": "stockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "jobId",
+        "jobMaterialId",
+        "itemId",
+        "fromStorageUnitId",
+        "toStorageUnitId",
+        "quantity",
+        "pickedQuantity",
+        "trackedEntityId",
+        "requiresBatchTracking",
+        "requiresSerialTracking",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
+      ]
+    },
+    {
+      "name": "leaseLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "description",
+        "serialNumber",
+        "locationId",
+        "paymentAmount",
+        "fairValue",
+        "economicLifeMonths",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "lesseeClassification",
+        "classificationInputs",
+        "classificationOverride",
+        "classificationOverrideReason",
+        "initialLiability",
+        "initialRouAsset",
+        "rouAssetCost",
+        "fixedAssetId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "leaseEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "eventType",
+        "effectiveDate",
+        "liabilityBefore",
+        "liabilityAfter",
+        "rouAssetBefore",
+        "rouAssetAfter",
+        "gainLoss",
+        "classificationBefore",
+        "classificationAfter",
+        "fixedAssetId",
+        "journalId",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leasePayment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "paymentType",
+        "periodStart",
+        "periodEnd",
+        "dueDate",
+        "amount",
+        "status",
+        "purchaseInvoiceLineId",
+        "voidedPurchaseInvoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leaseScheduleLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "periodDate",
+        "openingLiability",
+        "paymentAmount",
+        "interestAmount",
+        "principalAmount",
+        "closingLiability",
+        "leaseCost",
+        "rouAmortization",
+        "closingRouAsset",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
       ]
     },
     {
@@ -6455,37 +6580,6 @@
       ]
     },
     {
-      "name": "revenueRecognitionSchedule",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "type",
-        "status",
-        "salesInvoiceLineId",
-        "rentalAgreementLineId",
-        "rentalLeaseScheduleLineId",
-        "periodStart",
-        "periodEnd",
-        "scheduledDate",
-        "accountingPeriodId",
-        "amount",
-        "debitAccountId",
-        "creditAccountId",
-        "runLineId",
-        "journalId",
-        "billedBySalesInvoiceLineId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customerContractLineId",
-        "customerContractRevenueId",
-        "contractAmount",
-        "memoId"
-      ]
-    },
-    {
       "name": "salesInvoice",
       "rows": 0,
       "columns": [
@@ -6888,6 +6982,42 @@
       ]
     },
     {
+      "name": "lease",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "status",
+        "name",
+        "description",
+        "supplierId",
+        "supplierLocationId",
+        "supplierContactId",
+        "locationId",
+        "assignee",
+        "commencementDate",
+        "endDate",
+        "noticeDate",
+        "invoiceFromDate",
+        "paymentFrequency",
+        "paymentTiming",
+        "annualEscalationPercent",
+        "discountRate",
+        "currencyCode",
+        "commencementJournalId",
+        "noticeRemindedFor",
+        "endRemindedFor",
+        "activatedAt",
+        "closedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
       "name": "purchaseInvoice",
       "rows": 0,
       "columns": [
@@ -6998,7 +7128,9 @@
         "requiredDate",
         "ownerId",
         "sortOrder",
-        "projectId"
+        "projectId",
+        "leaseId",
+        "leasePaymentId"
       ]
     },
     {
@@ -7168,6 +7300,39 @@
       ]
     },
     {
+      "name": "revenueRecognitionSchedule",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "status",
+        "salesInvoiceLineId",
+        "rentalAgreementLineId",
+        "rentalLeaseScheduleLineId",
+        "periodStart",
+        "periodEnd",
+        "scheduledDate",
+        "accountingPeriodId",
+        "amount",
+        "debitAccountId",
+        "creditAccountId",
+        "runLineId",
+        "journalId",
+        "billedBySalesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customerContractLineId",
+        "customerContractRevenueId",
+        "contractAmount",
+        "memoId",
+        "leaseId",
+        "leaseScheduleLineId"
+      ]
+    },
+    {
       "name": "supplierPart",
       "rows": 0,
       "columns": [
@@ -7185,9 +7350,10 @@
         "updatedBy",
         "updatedAt",
         "customFields",
-        "unitPrice",
+        "supplierUnitPrice",
         "tags",
-        "orderMultiple"
+        "orderMultiple",
+        "currencyCode"
       ]
     },
     {
@@ -7196,7 +7362,7 @@
       "columns": [
         "supplierPartId",
         "quantity",
-        "unitPrice",
+        "supplierUnitPrice",
         "sourceType",
         "sourceDocumentId",
         "companyId",
@@ -7476,6 +7642,7 @@
     "oauthClient",
     "oauthCode",
     "oauthToken",
+    "pushSubscription",
     "ssoConnection",
     "ssoDomain",
     "tableChange",

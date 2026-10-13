@@ -162,6 +162,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           </HStack>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />,
           // The accessor is the raw item id — export the readable id
           // the cell shows instead of a UUID.
@@ -182,6 +183,7 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuAlignJustify />
         }
       },
@@ -192,6 +194,8 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
           <Enumerable value={row.original.materialSubstance} />
         ),
         meta: {
+          mobile: "P2",
+          mobilePill: true,
           filter: {
             type: "fetcher",
             endpoint: path.to.api.materialSubstances,
@@ -763,7 +767,12 @@ const MaterialsTable = memo(({ data, tags, count }: MaterialsTableProps) => {
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">
-              <Button variant="secondary" leftIcon={<LuGroup />} asChild>
+              <Button
+                variant="secondary"
+                leftIcon={<LuGroup />}
+                className="max-md:hidden"
+                asChild
+              >
                 <Link to={path.to.itemPostingGroups}>
                   <Trans>Item Groups</Trans>
                 </Link>

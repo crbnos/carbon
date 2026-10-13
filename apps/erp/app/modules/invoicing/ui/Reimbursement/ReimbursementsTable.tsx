@@ -52,7 +52,7 @@ const ReimbursementsTable = memo(
               {row.original.reimbursementId}
             </Hyperlink>
           ),
-          meta: { icon: <LuHash /> }
+          meta: { icon: <LuHash />, mobile: "P1" }
         },
         {
           accessorKey: "status",
@@ -61,6 +61,7 @@ const ReimbursementsTable = memo(
             <ReimbursementStatus status={row.original.status} />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCircleDot />,
             filter: {
               type: "static",
@@ -79,6 +80,7 @@ const ReimbursementsTable = memo(
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             filter: {
               type: "static",
@@ -119,7 +121,7 @@ const ReimbursementsTable = memo(
               </span>
             );
           },
-          meta: { icon: <LuCoins /> }
+          meta: { icon: <LuCoins />, mobile: "P2" }
         },
         {
           accessorKey: "journalId",

@@ -1161,7 +1161,7 @@ function UnitListRow({
             icon={<LuPencil />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               onEdit();
@@ -1174,7 +1174,7 @@ function UnitListRow({
             icon={<LuTrash />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
+            className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               deleteFetcher.submit(new FormData(), {
@@ -1664,7 +1664,7 @@ function ComponentRow({
               icon={<LuSettings />}
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+              className="md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
               onClick={(event) => event.stopPropagation()}
             />
           </PopoverTrigger>
@@ -1751,7 +1751,7 @@ function HideToggle({
         "focus:opacity-100",
         isMarked
           ? "opacity-100 text-muted-foreground"
-          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          : "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
       )}
       onClick={(event) => {
         event.stopPropagation();
@@ -1768,7 +1768,7 @@ function HideToggle({
           className={cn(
             "inline-flex",
             !isMarked &&
-              "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+              "md:opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
           )}
         >
           {button}

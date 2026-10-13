@@ -6,14 +6,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
-  canApproveRequest,
-  createApprovalRequest,
-  getApprovalRuleByAmount,
-  getApproverUserIdsForRule,
-  getLatestApprovalRequestForDocument,
-  hasPendingApproval,
-  isApprovalRequired
-} from "@carbon/ee/approvals.server";
+  cancelPendingApprovals,
+  openApprovalRequests
+} from "@carbon/ee/approvals/document.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -27,11 +22,9 @@ const logger = getLogger("erp", "update");
 type DocRow = { id: string; status: string | null };
 
 /**
- * Process transition to Active from Draft or Archived.
- * When approval rules apply: create request and use Draft as "in progress".
- * - Draft → submit: stay Draft until approved, then Draft → Active.
- * - Archived → submit: move to Draft, create request; when approved, Draft → Active.
- * Otherwise: update to Active immediately.
+ * Draft or Archived → Active. With an approval rule, each document opens a
+ * request and waits in Draft (an Archived one moves to Draft) until it is
+ * approved; without one it goes Active at once.
  */
 async function processToActive(
   client: SupabaseClient<Database>,
@@ -41,87 +34,69 @@ async function processToActive(
   docList: DocRow[],
   ids: string[]
 ) {
-  const idsToSkipActive: string[] = [];
-  const archivedIdsToMoveToDraft: string[] = [];
-  const canTransitionToActive = (s: string | null) =>
-    s === "Draft" || s === "Archived";
-  // The same answer for every document: read once, and only when one needs it.
-  const transitioning = docList.filter((doc) =>
-    canTransitionToActive(doc.status)
+  const transitioning = docList.filter(
+    (doc) => doc.status === "Draft" || doc.status === "Archived"
   );
-  const approvalRequired =
-    transitioning.length > 0 &&
-    (await isApprovalRequired(
-      serviceRole,
-      "qualityDocument",
-      companyId,
-      undefined
-    ));
-  let approvers: Promise<string[]> | undefined;
-  const getApprovers = () => {
-    approvers ??= getApprovalRuleByAmount(
-      serviceRole,
-      "qualityDocument",
-      companyId,
-      undefined
-    ).then((rule) =>
-      rule.data ? getApproverUserIdsForRule(serviceRole, rule.data) : []
-    );
-    return approvers;
-  };
-  for (const doc of approvalRequired ? transitioning : []) {
-    const hasPending = await hasPendingApproval(
-      serviceRole,
-      "qualityDocument",
-      doc.id
-    );
-    if (hasPending) {
-      idsToSkipActive.push(doc.id);
-      continue;
-    }
-    await createApprovalRequest(serviceRole, {
-      documentType: "qualityDocument",
-      documentId: doc.id,
-      companyId,
-      requestedBy: userId,
-      createdBy: userId,
-      amount: undefined
-    });
+  const opened =
+    transitioning.length > 0
+      ? await openApprovalRequests(serviceRole, {
+          documentType: "qualityDocument",
+          documentIds: transitioning.map((doc) => doc.id),
+          companyId,
+          userId
+        })
+      : ({ status: "not-required" } as const);
 
-    const approverIds = await getApprovers();
+  if (opened.status === "failed") {
+    return {
+      data: null,
+      error: { message: "Failed to submit for approval" }
+    } as const;
+  }
 
-    if (approverIds.length > 0) {
-      try {
+  const awaitingApproval = new Set(
+    opened.status === "opened" ? transitioning.map((doc) => doc.id) : []
+  );
+
+  if (opened.status === "opened" && opened.requested.length > 0) {
+    if (opened.approverIds.length > 0) {
+      for (const documentId of opened.requested) {
         await trigger("notify", {
           event: NotificationEvent.ApprovalRequested,
           companyId,
-          documentId: doc.id,
+          documentId,
           documentType: "qualityDocument",
-          recipient: { type: "users", userIds: approverIds },
+          recipient: { type: "users", userIds: opened.approverIds },
           from: userId
-        });
-      } catch (e) {
-        logger.error("Failed to trigger approval notification", { error: e });
+        }).catch((e) =>
+          logger.error("Failed to trigger approval notification", {
+            companyId,
+            documentId,
+            error: e
+          })
+        );
       }
     }
 
-    idsToSkipActive.push(doc.id);
-    if (doc.status === "Archived") {
-      archivedIdsToMoveToDraft.push(doc.id);
+    const archivedToDraft = transitioning
+      .filter(
+        (doc) => doc.status === "Archived" && opened.requested.includes(doc.id)
+      )
+      .map((doc) => doc.id);
+    if (archivedToDraft.length > 0) {
+      await client
+        .from("qualityDocument")
+        .update({
+          status: "Draft",
+          updatedBy: userId,
+          updatedAt: new Date().toISOString()
+        })
+        .in("id", archivedToDraft)
+        .eq("companyId", companyId);
     }
   }
-  for (const docId of archivedIdsToMoveToDraft) {
-    await client
-      .from("qualityDocument")
-      .update({
-        status: "Draft",
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", docId)
-      .eq("companyId", companyId);
-  }
-  const idsToUpdateToActive = ids.filter((id) => !idsToSkipActive.includes(id));
+
+  const idsToUpdateToActive = ids.filter((id) => !awaitingApproval.has(id));
   if (idsToUpdateToActive.length === 0) {
     return { data: null, error: null } as const;
   }
@@ -134,59 +109,6 @@ async function processToActive(
     })
     .in("id", idsToUpdateToActive)
     .eq("companyId", companyId);
-}
-
-/**
- * Cancels pending approval requests when changing status to Archived or Draft.
- * - Archived: any user with update quality may archive; pending requests are cancelled.
- * - Draft: only the requester or an approver may change to Draft (withdraw); others get an error.
- */
-async function cancelPendingApprovalsForArchiveOrDraft(
-  serviceRole: SupabaseClient<Database>,
-  userId: string,
-  docList: DocRow[],
-  allowAnyUpdater: boolean
-): Promise<{ message: string } | null> {
-  const toCancel: { id: string }[] = [];
-  for (const doc of docList) {
-    const latest = await getLatestApprovalRequestForDocument(
-      serviceRole,
-      "qualityDocument",
-      doc.id
-    );
-    const req = latest.data;
-    if (!req || req.status !== "Pending") continue;
-    if (!allowAnyUpdater) {
-      const isRequester = req.requestedBy === userId;
-      const isApprover = await canApproveRequest(
-        serviceRole,
-        {
-          amount: req.amount,
-          documentType: req.documentType,
-          companyId: req.companyId
-        },
-        userId
-      );
-      if (!isRequester && !isApprover) {
-        return {
-          message:
-            "Only the requester or an approver can change status to Draft when there is a pending approval request"
-        };
-      }
-    }
-    if (req.id) toCancel.push({ id: req.id });
-  }
-  for (const { id: reqId } of toCancel) {
-    await serviceRole
-      .from("approvalRequest")
-      .update({
-        status: "Cancelled",
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", reqId);
-  }
-  return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -250,15 +172,23 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      if (statusValue === "Archived" || statusValue === "Draft") {
-        const allowAnyUpdater = statusValue === "Archived";
-        const err = await cancelPendingApprovalsForArchiveOrDraft(
-          serviceRole,
+      // Archiving withdraws a pending request for anyone who may update the
+      // document; sending it back to Draft is a withdrawal only the requester
+      // or an approver may make.
+      if (
+        (statusValue === "Archived" || statusValue === "Draft") &&
+        docList.length > 0
+      ) {
+        const cancelled = await cancelPendingApprovals(serviceRole, {
+          documentType: "qualityDocument",
+          documentIds: docList.map((doc) => doc.id),
+          companyId,
           userId,
-          docList,
-          allowAnyUpdater
-        );
-        if (err) return { error: { message: err.message }, data: null };
+          onlyRequesterOrApprover: statusValue === "Draft"
+        });
+        if (cancelled.error) {
+          return { error: { message: cancelled.error.message }, data: null };
+        }
       }
 
       return await client

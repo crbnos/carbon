@@ -84,6 +84,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           </Hyperlink>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuBookMarked />
         }
       },
@@ -93,6 +94,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         header: t`Status`,
         cell: ({ row }) => <IssueStatus status={row.original.status} />,
         meta: {
+          mobile: "P2",
           icon: <LuCircleGauge />,
           filter: {
             type: "static",
@@ -116,6 +118,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           />
         ),
         meta: {
+          mobile: "P2",
           icon: <LuOctagonX />,
           filter: {
             type: "static",
@@ -219,6 +222,7 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
           <EmployeeAvatar employeeId={row.original.assignee} />
         ),
         meta: {
+          mobile: "P3",
           filter: {
             type: "static",
             options: people.map((employee) => ({

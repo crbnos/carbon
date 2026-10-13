@@ -8,12 +8,19 @@ import { createContext, useContext, useMemo, useRef } from "react";
 import type { DisplaySettings } from "../types";
 import { useScheduleToday } from "../useScheduleToday";
 
+/** Tap-to-move for a card (phones): its target columns and the drop's move. */
+export type KanbanMoveTo = {
+  targetsFor: (itemId: string) => { id: string; title: string }[];
+  onMove: (itemId: string, columnId: string) => void;
+};
+
 interface KanbanContextType {
   displaySettings: DisplaySettings;
   selectedGroup: string | null;
   setSelectedGroup: (jobId: string | null) => void;
   tags: { name: string }[];
   columnIds?: string[];
+  moveTo?: KanbanMoveTo;
   /** Today on the board's calendar; see `useScheduleToday`. */
   scheduleToday: string;
 }
@@ -27,6 +34,7 @@ interface KanbanProviderProps {
   setSelectedGroup: (jobId: string | null) => void;
   tags: { name: string }[];
   columnIds?: string[];
+  moveTo?: KanbanMoveTo;
 }
 
 export function KanbanProvider({
@@ -35,7 +43,8 @@ export function KanbanProvider({
   selectedGroup,
   setSelectedGroup,
   tags,
-  columnIds
+  columnIds,
+  moveTo
 }: KanbanProviderProps) {
   // Every card reads this context, so its value must change only when its
   // contents do. The board passes the display settings as a fresh object on
@@ -46,6 +55,22 @@ export function KanbanProvider({
   // Read once for the board. In each card it subscribed the card to the
   // router: every fetcher and revalidation state change re-rendered them all.
   const scheduleToday = useScheduleToday();
+  // The board builds `moveTo` on every render; cards call it lazily (when the
+  // menu opens or a target is picked), so read the latest one through a ref.
+  const moveToRef = useRef(moveTo);
+  moveToRef.current = moveTo;
+  const hasMoveTo = !!moveTo;
+  const stableMoveTo = useMemo<KanbanMoveTo | undefined>(
+    () =>
+      hasMoveTo
+        ? {
+            targetsFor: (itemId) => moveToRef.current?.targetsFor(itemId) ?? [],
+            onMove: (itemId, columnId) =>
+              moveToRef.current?.onMove(itemId, columnId)
+          }
+        : undefined,
+    [hasMoveTo]
+  );
   const value = useMemo(
     () => ({
       displaySettings: stableSettings,
@@ -53,6 +78,7 @@ export function KanbanProvider({
       setSelectedGroup,
       tags: stableTags,
       columnIds: stableColumnIds,
+      moveTo: stableMoveTo,
       scheduleToday
     }),
     [
@@ -61,6 +87,7 @@ export function KanbanProvider({
       setSelectedGroup,
       stableTags,
       stableColumnIds,
+      stableMoveTo,
       scheduleToday
     ]
   );

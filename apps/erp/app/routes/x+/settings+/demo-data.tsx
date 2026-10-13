@@ -8,12 +8,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { DATASETS, datasetKeys } from "@carbon/database/datasets";
 import { useRevalidator } from "@carbon/query";
-import { Heading, toast, VStack } from "@carbon/react";
+import { toast, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useFetcher, useLoaderData } from "react-router";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import type { CompanyTemplateRun } from "~/modules/settings";
 import { getCompanyTemplateRun } from "~/modules/settings";
 import { purgeCorruptedRows } from "~/modules/settings/backups.server";
@@ -301,11 +302,11 @@ export default function DemoDataRoute() {
   );
 
   return (
-    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto">
+    <VStack spacing={4} className="p-8 w-full max-w-4xl mx-auto max-md:p-4">
       <VStack spacing={1}>
-        <Heading size="h3">
+        <SettingsPageHeading>
           <Trans>Demo Data</Trans>
-        </Heading>
+        </SettingsPageHeading>
         <p className="text-muted-foreground text-sm">
           <Trans>
             Fill this company with a realistic industry story so every screen

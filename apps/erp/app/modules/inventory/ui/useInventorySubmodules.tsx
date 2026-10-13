@@ -19,6 +19,7 @@ import {
   LuTruck,
   LuWarehouse
 } from "react-icons/lu";
+import { GroupedContentSidebar } from "~/components/Layout";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
@@ -31,8 +32,22 @@ export default function useInventorySubmodules() {
 
   const inventoryRoutes: AuthenticatedRouteGroup[] = [
     {
-      name: t`Manage`,
+      name: t`Stock`,
       routes: [
+        {
+          name: t`Quantities`,
+          to: path.to.inventory,
+          role: "employee",
+          icon: <LuTally5 />,
+          table: "inventory"
+        },
+        {
+          name: t`Movements`,
+          to: path.to.stockMovements,
+          role: "employee",
+          icon: <LuArrowDownUp />,
+          table: "itemLedger"
+        },
         {
           name: t`Inventory Count`,
           to: path.to.inventoryCounts,
@@ -40,10 +55,16 @@ export default function useInventorySubmodules() {
           table: "inventoryCount"
         },
         {
-          name: t`Picking Lists`,
-          to: path.to.pickingLists,
-          icon: <LuClipboardList />
-        },
+          name: t`Kanbans`,
+          to: path.to.kanbans,
+          role: "employee",
+          icon: <LuScanQrCode />
+        }
+      ]
+    },
+    {
+      name: t`Shipping & Receiving`,
+      routes: [
         {
           name: t`Receipts`,
           to: path.to.receipts,
@@ -55,6 +76,16 @@ export default function useInventorySubmodules() {
           to: path.to.shipments,
           icon: <LuTruck />,
           table: "shipment"
+        }
+      ]
+    },
+    {
+      name: t`Transfers`,
+      routes: [
+        {
+          name: t`Picking Lists`,
+          to: path.to.pickingLists,
+          icon: <LuClipboardList />
         },
         {
           name: t`Stock Transfers`,
@@ -71,28 +102,8 @@ export default function useInventorySubmodules() {
       ]
     },
     {
-      name: t`Track`,
+      name: t`Traceability`,
       routes: [
-        {
-          name: t`Kanbans`,
-          to: path.to.kanbans,
-          role: "employee",
-          icon: <LuScanQrCode />
-        },
-        {
-          name: t`Movements`,
-          to: path.to.stockMovements,
-          role: "employee",
-          icon: <LuArrowDownUp />,
-          table: "itemLedger"
-        },
-        {
-          name: t`Quantities`,
-          to: path.to.inventory,
-          role: "employee",
-          icon: <LuTally5 />,
-          table: "inventory"
-        },
         {
           name: t`Tracked Entities`,
           to: path.to.trackedEntities,
@@ -166,4 +177,11 @@ export default function useInventorySubmodules() {
           .map(addSavedViewsToRoutes)
       }))
   };
+}
+
+/** Phones: the module's section switcher, for routes outside the module's
+ *  own layout (`handle.compactSidebar`). */
+export function InventorySections() {
+  const { groups } = useInventorySubmodules();
+  return <GroupedContentSidebar groups={groups} />;
 }

@@ -276,6 +276,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           );
         },
         meta: {
+          mobile: "P2",
           filter: {
             type: "static",
             options: [
@@ -297,6 +298,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </div>
         ),
         meta: {
+          mobile: "P1",
           icon: <LuFileText />
         }
       },
@@ -369,6 +371,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
           </span>
         ),
         meta: {
+          mobile: "P3",
           icon: <LuCalendar />
         }
       }

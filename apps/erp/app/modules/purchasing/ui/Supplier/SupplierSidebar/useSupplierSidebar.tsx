@@ -11,6 +11,7 @@ import {
   LuLandmark,
   LuLayoutList,
   LuMapPin,
+  LuPackage,
   LuPackageSearch,
   LuReceipt,
   LuRedoDot,
@@ -26,9 +27,10 @@ import { path } from "~/utils/path";
 type Props = {
   contacts: number;
   locations: number;
+  parts: number;
 };
 
-export function useSupplierSidebar({ contacts, locations }: Props) {
+export function useSupplierSidebar({ contacts, locations, parts }: Props) {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { supplierId } = useParams();
@@ -84,6 +86,13 @@ export function useSupplierSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       icon: <LuRedoDot />,
       shortcut: DETAIL_TAB_SHORTCUTS.processes
+    },
+    {
+      name: t`Parts`,
+      to: path.to.supplierParts(supplierId),
+      role: ["employee"],
+      count: parts,
+      icon: <LuPackage />
     },
     {
       name: t`Documents`,

@@ -4,12 +4,14 @@
 
 import type { Database, Json } from "@carbon/database";
 import {
+  fetchAllByIds,
   fetchAllFromTable,
   fetchAllRecords,
   getCompanyTimeZone
 } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
+import type { RunType } from "@carbon/database/run-type";
 import { type ServerFnInput, serverFns } from "@carbon/server-functions";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
@@ -18,6 +20,7 @@ import {
   daysBetweenInclusive,
   earnsInterest,
   fiscalYearAndPeriodFor,
+  GL_JOURNAL_STATUSES,
   getDateNYearsAgo,
   isBalanced,
   isUniqueViolation,
@@ -70,10 +73,19 @@ import {
 import {
   buildDepreciationLines,
   type DepreciationLine,
+  depreciationFloor,
   diffJournalLines,
+  hasAccountingCutover,
   monthEndOf,
   usageKey
 } from "./accounting.utils";
+import {
+  type LeaseCostSummary,
+  type LeaseLiabilitySummary,
+  leaseLiabilityAssets,
+  summarizeLeaseCosts,
+  summarizeLeaseLiabilities
+} from "./lease-liabilities";
 import type {
   AccountLedgerLine,
   ChartPeriodSeries,
@@ -202,15 +214,11 @@ export async function getAccountLedger(
     offset: number;
   }
 ) {
-  // Draft journals are excluded so the lines shown always sum to the balances
-  // from accountTreeBalancesByCompany, which excludes them too — unposted
-  // entries belong in the Journal Entries list, not the account ledger.
   // TODO: remove the cast once cloud-generated DB types include the view.
   let query = client
     .from("journalLines" as any)
     .select("*", { count: "exact" })
     .eq("accountId", args.accountId)
-    .neq("status", "Draft")
     .gte(
       "postingDate",
       args.startDate ?? getDateNYearsAgo(50).toISOString().split("T")[0]
@@ -1296,6 +1304,62 @@ export async function upsertReportPin(
     },
     { onConflict: "reportKey,userId,companyId" }
   );
+}
+
+// -- Accounting cutover --
+
+// Manual accounting work — journal entries, period lock and close,
+// depreciation and recognition runs, intercompany matching and eliminations —
+// runs only after the company's accounting cutover. Before it, journals are
+// Provisional and count nowhere, so this work would have no effect
+// (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 1).
+export const ACCOUNTING_NOT_STARTED =
+  "Set up accounting before you post journals, runs or period closes.";
+
+export async function requireAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ error: { message: string } | null }> {
+  const settings = await client
+    .from("companySettings")
+    .select("accountingCutoverDate")
+    .eq("id", companyId)
+    .maybeSingle();
+  if (settings.error) return { error: settings.error };
+  if (!hasAccountingCutover(settings.data)) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
+}
+
+/**
+ * The group form: every operating company of the group must have a cutover.
+ * The group's elimination entity never sets up accounting, so it is left out.
+ * A company with no settings row counts as not set up: the check compares
+ * the companies with a cutover against all of them, so it fails closed.
+ */
+export async function requireGroupAccountingCutover(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+): Promise<{ error: { message: string } | null }> {
+  const companies = await client
+    .from("company")
+    .select("id")
+    .eq("companyGroupId", companyGroupId)
+    .eq("isEliminationEntity", false);
+  if (companies.error) return { error: companies.error };
+  const ids = (companies.data ?? []).map((company) => company.id);
+  if (ids.length === 0) return { error: null };
+  const withCutover = await client
+    .from("companySettings")
+    .select("id", { count: "exact", head: true })
+    .in("id", ids)
+    .not("accountingCutoverDate", "is", null);
+  if (withCutover.error) return { error: withCutover.error };
+  if ((withCutover.count ?? 0) !== ids.length) {
+    return { error: { message: ACCOUNTING_NOT_STARTED } };
+  }
+  return { error: null };
 }
 
 // -- Dimensional analytics (pivot) reports --
@@ -2619,9 +2683,12 @@ export async function getFiscalCalendarCommitted(
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
       .neq("closeStatus", "Open"),
+    // A Provisional journal (before the accounting cutover) has no period
+    // and must not commit the calendar the cutover will be set up on.
     (client.from("journal") as any)
       .select("id", { count: "exact", head: true })
       .eq("companyId", companyId)
+      .in("status", [...GL_JOURNAL_STATUSES])
   ]);
   if (nonOpen.error) return { data: null, error: nonOpen.error };
   if (journals.error) return { data: null, error: journals.error };
@@ -2639,6 +2706,8 @@ export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -2717,6 +2786,8 @@ export async function closeAccountingPeriod(
   },
   previewRuns: PeriodRunPreviewer = runPreviewer(client, db, args)
 ) {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const period = await getAccountingPeriodById(
     client,
     args.periodId,
@@ -3191,6 +3262,7 @@ export type RunPreview = {
  */
 export type PeriodRunPreview = {
   revenue: RunPreview;
+  lease: RunPreview;
   depreciation: RunPreview;
 };
 
@@ -3230,20 +3302,17 @@ export async function getPeriodRunPreview(
   }
 ): Promise<PeriodRunPreview> {
   const { companyId, companyGroupId, userId, periodEnd } = args;
-  const [revenue, depreciation] = await Promise.all([
+  const previewRun = (type: RunType, fallback: string): Promise<RunPreview> =>
     serverFns
       .system({ db, companyId, userId })
-      .invoke("preview-revenue-recognition-run", { periodEnd })
+      .invoke("preview-revenue-recognition-run", { periodEnd, type })
       .then(
         (result): RunPreview =>
           result.error
             ? {
                 count: 0,
                 amount: 0,
-                error: previewError(
-                  result.error,
-                  "Failed to preview revenue recognition"
-                )
+                error: previewError(result.error, fallback)
               }
             : { ...result.data, error: null }
       )
@@ -3251,9 +3320,12 @@ export async function getPeriodRunPreview(
         (error): RunPreview => ({
           count: 0,
           amount: 0,
-          error: previewError(error, "Failed to preview revenue recognition")
+          error: previewError(error, fallback)
         })
-      ),
+      );
+  const [revenue, lease, depreciation] = await Promise.all([
+    previewRun("Revenue Recognition", "Failed to preview revenue recognition"),
+    previewRun("Lease", "Failed to preview the lease run"),
     buildDepreciationRunLines(client, { companyId, companyGroupId, periodEnd })
       .then((result): RunPreview => {
         if (!result.data) {
@@ -3284,7 +3356,7 @@ export async function getPeriodRunPreview(
         })
       )
   ]);
-  return { revenue, depreciation };
+  return { revenue, lease, depreciation };
 }
 
 /** The previewer the close checklist uses outside tests. */
@@ -3431,13 +3503,18 @@ export async function computePeriodReadiness(
   // Planned rows due on or before the period end that a Draft run holds.
   // The preview counts only the rows no run holds. Not bounded below: an
   // overdue row from an earlier period is still unrecognized revenue.
-  const heldRevenueRows = await fetchAllFromTable<{
+  const heldRunRows = await fetchAllFromTable<{
     amount: number;
-    run: { id: string; runId: string; periodEnd: string };
+    run: {
+      id: string;
+      runId: string;
+      periodEnd: string;
+      type: RunType;
+    };
   }>(
     client,
     "revenueRecognitionRunLine",
-    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, periodEnd, status), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
+    "amount, run:revenueRecognitionRun!revenueRecognitionRunLine_run_fkey!inner(id, runId, periodEnd, status, type), schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey!inner(scheduledDate, status)",
     (query: any) =>
       query
         .eq("companyId", companyId)
@@ -3447,24 +3524,33 @@ export async function computePeriodReadiness(
         .order("id")
   );
 
-  // Revenue: what a new run would claim, plus what Draft runs hold.
-  const revenueDraftRuns = new Map<
-    string,
-    { id: string; readableId: string; periodEnd: string }
-  >();
-  let heldRevenueAmount = 0;
-  for (const line of heldRevenueRows.data ?? []) {
-    revenueDraftRuns.set(line.run.id, {
-      id: line.run.id,
-      readableId: line.run.runId,
-      periodEnd: line.run.periodEnd
-    });
-    heldRevenueAmount += Number(line.amount);
-  }
-  const heldRevenueCount = heldRevenueRows.error
-    ? 1
-    : (heldRevenueRows.data ?? []).length;
-  const revenueCount = runPreview.revenue.count + heldRevenueCount;
+  // Each run type: what a new run would claim, plus what its Draft runs hold.
+  const heldByType = (type: RunType) => {
+    const draftRuns = new Map<
+      string,
+      { id: string; readableId: string; periodEnd: string }
+    >();
+    let amount = 0;
+    let count = 0;
+    for (const line of heldRunRows.data ?? []) {
+      if (line.run.type !== type) continue;
+      draftRuns.set(line.run.id, {
+        id: line.run.id,
+        readableId: line.run.runId,
+        periodEnd: line.run.periodEnd
+      });
+      amount += Number(line.amount);
+      count += 1;
+    }
+    // A failed read fails both checks closed.
+    return { draftRuns, amount, count: heldRunRows.error ? 1 : count };
+  };
+  const heldRevenue = heldByType("Revenue Recognition");
+  const revenueDraftRuns = heldRevenue.draftRuns;
+  const heldRevenueAmount = heldRevenue.amount;
+  const revenueCount = runPreview.revenue.count + heldRevenue.count;
+  const heldLease = heldByType("Lease");
+  const leaseCount = runPreview.lease.count + heldLease.count;
 
   // Depreciation: the assets a new run would depreciate, plus Draft runs.
   const depreciationDraftRuns = draftDepreciationRuns.data ?? [];
@@ -3613,6 +3699,17 @@ export async function computePeriodReadiness(
       amount: round(runPreview.revenue.amount + heldRevenueAmount),
       due: runPreview.revenue,
       draftRuns: [...revenueDraftRuns.values()]
+    },
+    {
+      autoCheckKey: "unposted-lease-schedules",
+      severity: "Warning",
+      label:
+        "Lease and rental entries a lease run would post by this period end, and lease Draft runs hold",
+      failing: leaseCount > 0 || runPreview.lease.error !== null,
+      count: leaseCount,
+      amount: round(runPreview.lease.amount + heldLease.amount),
+      due: runPreview.lease,
+      draftRuns: [...heldLease.draftRuns.values()]
     },
     {
       autoCheckKey: "unmatched-ic",
@@ -5599,6 +5696,8 @@ export async function runIntercompanyMatching(
   client: SupabaseClient<Database>,
   companyGroupId: string
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("matchIntercompanyTransactions", {
     p_company_group_id: companyGroupId
   });
@@ -5611,6 +5710,8 @@ export async function generateEliminations(
   userId: string,
   regenerate = false
 ) {
+  const cutover = await requireGroupAccountingCutover(client, companyGroupId);
+  if (cutover.error) return { data: null, error: cutover.error };
   return client.rpc("generateEliminationEntries", {
     p_company_group_id: companyGroupId,
     p_user_id: userId,
@@ -5674,11 +5775,28 @@ export async function getJournalEntries(
   }
 
   if (args.status) {
-    query = query.eq("status", args.status as "Draft" | "Posted" | "Reversed");
+    query = query.eq(
+      "status",
+      args.status as Database["public"]["Enums"]["journalEntryStatus"]
+    );
   }
 
+  // A Superseded journal is a Provisional one the opening journal replaced at
+  // the cutover. It stays out of the list unless a status filter asks for it.
+  const filtersOnStatus =
+    Boolean(args.status) ||
+    (args.filters ?? []).some(
+      (filter) => filter.column === "status" && Boolean(filter.value)
+    );
+  if (!filtersOnStatus) {
+    query = query.neq("status", "Superseded");
+  }
+
+  // The enable writes many journals in one transaction, so they share a
+  // createdAt; the entry number breaks the tie.
   query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
+    { column: "createdAt", ascending: false },
+    { column: "journalEntryId", ascending: false }
   ]);
 
   return query;
@@ -5710,6 +5828,7 @@ export type JournalSourceDocument = {
     | "salesInvoice"
     | "purchaseInvoice"
     | "rentalAgreement"
+    | "lease"
     | "job"
     | "fixedAsset"
     | "inventoryCount"
@@ -5721,7 +5840,8 @@ export type JournalSourceDocument = {
     | "payment"
     | "memo"
     | "depreciationRun"
-    | "revenueRecognitionRun";
+    | "revenueRecognitionRun"
+    | "leaseRun";
   id: string;
   readableId: string;
 };
@@ -5853,6 +5973,20 @@ export async function getJournalEntryRelatedItems(
               kind: "rentalAgreement" as const,
               id: r.id,
               readableId: r.rentalAgreementId
+            }))
+          )
+      : none,
+    idsOf("Lease").length > 0
+      ? client
+          .from("lease")
+          .select("id, leaseId")
+          .in("id", idsOf("Lease"))
+          .eq("companyId", companyId)
+          .then(({ data }) =>
+            (data ?? []).map((r) => ({
+              kind: "lease" as const,
+              id: r.id,
+              readableId: r.leaseId
             }))
           )
       : none,
@@ -6084,7 +6218,8 @@ export async function getJournalEntryRelatedItems(
       : none,
     // A run posts one journal per month, so the run is found through the
     // schedule rows the journal posted, not the run's own journalId.
-    journal.sourceType === "Revenue Recognition"
+    journal.sourceType === "Revenue Recognition" ||
+    journal.sourceType === "Lease Run"
       ? client
           .from("revenueRecognitionSchedule")
           .select(
@@ -6105,7 +6240,10 @@ export async function getJournalEntryRelatedItems(
               }
             }
             return [...runs].map(([id, runId]) => ({
-              kind: "revenueRecognitionRun" as const,
+              kind:
+                journal.sourceType === "Lease Run"
+                  ? ("leaseRun" as const)
+                  : ("revenueRecognitionRun" as const),
               id,
               readableId: runId
             }));
@@ -6385,6 +6523,8 @@ export async function postJournalEntry(
   // 1. Fetch entry + lines
   const entry = await getJournalEntry(client, id);
   if (entry.error) return entry;
+  const cutover = await requireAccountingCutover(client, entry.data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   if (entry.data.status !== "Draft") {
     return {
       data: null,
@@ -6464,200 +6604,6 @@ export async function postJournalEntry(
     .single();
 }
 
-// Returns `{ id }` of the company's current posted Opening Balance journal
-// entry, or null. Callers only need existence — this is the re-entry gate. Only
-// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
-// one.
-/** @mcp read */
-export async function getExistingOpeningBalanceEntry(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  const entry = await client
-    .from("journal")
-    .select("id")
-    .eq("companyId", companyId)
-    .eq("sourceType", "Opening Balance")
-    .eq("status", "Posted")
-    .order("createdAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (entry.error) return { data: null, error: entry.error };
-  return { data: entry.data ? { id: entry.data.id } : null, error: null };
-}
-
-// Posts the company's opening balances as a single balanced journal entry
-// (sourceType 'Opening Balance'). Each `balances` row carries one signed
-// natural-balance amount for a posting account; the net difference is plugged to
-// the Retained Earnings default account so debits equal credits. Reuses the
-// manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
-// postJournalEntry (which validates the balance and resolves the period).
-/** @mcp create destructive */
-export async function createOpeningBalanceJournal(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    companyGroupId: string;
-    userId: string;
-    postingDate: string;
-    balances: Array<{ accountId: string; amount: number }>;
-  }
-) {
-  const { companyId, companyGroupId, userId, postingDate, balances } = args;
-
-  const entered = balances.filter((b) => b.amount !== 0);
-  if (entered.length === 0) {
-    return { data: null, error: { message: "No opening balances entered" } };
-  }
-
-  // Guard here — not only in the route — so every caller (the route action AND
-  // the MCP-exposed tool) is protected. Opening balances are entered once; an
-  // un-reversed posted entry must be reversed before a new set is posted.
-  const existing = await getExistingOpeningBalanceEntry(client, companyId);
-  if (existing.error) return { data: null, error: existing.error };
-  if (existing.data) {
-    return {
-      data: null,
-      error: {
-        message:
-          "An opening balance entry already exists — reverse it before entering new balances"
-      }
-    };
-  }
-
-  // Retained Earnings is the balancing plug.
-  const defaults = await getDefaultAccounts(client, companyId);
-  if (defaults.error) return { data: null, error: defaults.error };
-  const retainedEarningsAccount = defaults.data?.retainedEarningsAccount;
-  if (!retainedEarningsAccount) {
-    return {
-      data: null,
-      error: {
-        message:
-          "No Retained Earnings account is configured in Default Accounts"
-      }
-    };
-  }
-
-  // Account classes turn each signed natural-balance amount into debit/credit
-  // (saveJournalEntryWithLines re-derives the stored amount from debit/credit).
-  const accountIds = [...new Set(entered.map((b) => b.accountId))];
-  const accounts = await client
-    .from("account")
-    .select("id, class")
-    .in("id", accountIds)
-    // Scope to the caller's chart of accounts (company-group). A foreign id then
-    // resolves to no class and aborts below with "Account not found", so a
-    // crafted payload can't post against another tenant's accounts.
-    .eq("companyGroupId", companyGroupId);
-  if (accounts.error) return { data: null, error: accounts.error };
-  const classById = new Map(
-    accounts.data.map((a) => [
-      a.id,
-      a.class as Database["public"]["Enums"]["glAccountClass"]
-    ])
-  );
-
-  const isNaturalDebit = (cls: Database["public"]["Enums"]["glAccountClass"]) =>
-    cls === "Asset" || cls === "Expense";
-
-  // Sum in "debit positive" space so the plug's sign is unambiguous.
-  let netDebitMinusCredit = 0;
-  const lines: Array<{ accountId: string; debit: number; credit: number }> = [];
-  for (const b of entered) {
-    const cls = classById.get(b.accountId);
-    if (!cls) {
-      return {
-        data: null,
-        error: { message: `Account not found: ${b.accountId}` }
-      };
-    }
-    const isDebit = isNaturalDebit(cls) ? b.amount >= 0 : b.amount < 0;
-    const magnitude = Math.abs(b.amount);
-    const debit = isDebit ? magnitude : 0;
-    const credit = isDebit ? 0 : magnitude;
-    netDebitMinusCredit += debit - credit;
-    lines.push({ accountId: b.accountId, debit, credit });
-  }
-
-  // Plug to Retained Earnings unless the entered lines already balance (shared
-  // tolerance, no literal). More debit ⇒ the plug is a credit, and vice-versa.
-  if (!isBalanced(netDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
-    lines.push({
-      accountId: retainedEarningsAccount,
-      debit: netDebitMinusCredit < 0 ? -netDebitMinusCredit : 0,
-      credit: netDebitMinusCredit > 0 ? netDebitMinusCredit : 0
-    });
-  }
-
-  const journalEntryId = await getNextSequence(
-    client,
-    "journalEntry",
-    companyId
-  );
-  if (journalEntryId.error || !journalEntryId.data) {
-    return {
-      data: null,
-      error: journalEntryId.error ?? {
-        message: "Failed to allocate journal entry number"
-      }
-    };
-  }
-
-  const created = await createJournalEntry(client, {
-    journalEntryId: journalEntryId.data as string,
-    sourceType: "Opening Balance",
-    companyId,
-    createdBy: userId,
-    postingDate,
-    description: "Opening balances"
-  });
-  if (created.error || !created.data) {
-    return {
-      data: null,
-      error: created.error ?? { message: "Failed to create journal entry" }
-    };
-  }
-  const id = created.data.id;
-
-  // No transaction spans create → save → post (these reuse the supabase-client
-  // JE helpers), so on any failure roll back the Draft header we just created —
-  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
-  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
-  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
-  const rollbackDraft = () =>
-    client.from("journal").delete().eq("id", id).eq("status", "Draft");
-
-  const saved = await saveJournalEntryWithLines(client, {
-    journalEntryId: id,
-    postingDate,
-    description: "Opening balances",
-    updatedBy: userId,
-    lines,
-    companyId,
-    companyGroupId
-  });
-  if (saved.error) {
-    await rollbackDraft();
-    return { data: null, error: saved.error };
-  }
-
-  const posted = await postJournalEntry(client, id, userId);
-  if (posted.error) {
-    await rollbackDraft();
-    // A unique violation on journal_one_posted_opening_balance_per_company means
-    // a concurrent request already posted the company's opening balances — the
-    // atomic backstop for the check-then-post race.
-    const message = isUniqueViolation(posted.error)
-      ? "An opening balance entry already exists — reverse it before entering new balances"
-      : posted.error.message;
-    return { data: null, error: { message } };
-  }
-
-  return { data: { id }, error: null };
-}
-
 /** @mcp action */
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
@@ -6668,6 +6614,9 @@ export async function reverseJournalEntry(
     userId: string;
   }
 ) {
+  const cutover = await requireAccountingCutover(client, data.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
+
   // 1. Fetch original
   const original = await getJournalEntry(client, id);
   if (original.error) return original;
@@ -7240,7 +7189,7 @@ export async function buildDepreciationRunLines(
   ] = await Promise.all([
     client
       .from("companySettings")
-      .select("assetTaxDepreciationEnabled")
+      .select("assetTaxDepreciationEnabled, accountingCutoverDate")
       .eq("id", companyId)
       .single(),
     client
@@ -7298,7 +7247,14 @@ export async function buildDepreciationRunLines(
   }
   if (assets.error || !assets.data) return { data: null, error: assets.error };
 
-  const lastPostedPeriodEnd = lastPosted.data?.periodEnd ?? null;
+  // Depreciation before the accounting cutover is in the prior system and in
+  // each asset's accumulated depreciation at the cutover, never in a Carbon
+  // run. So with no run posted after it, a run starts at the cutover month,
+  // not at the asset's depreciation start date.
+  const lastPostedPeriodEnd = depreciationFloor(
+    lastPosted.data?.periodEnd ?? null,
+    settings.data?.accountingCutoverDate ?? null
+  );
 
   // A run can cover several months (a picked later period), so units of
   // production sums every usage log since the last posted run.
@@ -7379,6 +7335,8 @@ export async function createDepreciationRun(
   | { data: { id: string; depreciationRunId: string }; error: null }
   | { data: null; error: { message: string } }
 > {
+  const cutover = await requireAccountingCutover(client, args.companyId);
+  if (cutover.error) return { data: null, error: cutover.error };
   const proposal = await buildDepreciationRunLines(client, args);
   if (!proposal.data) {
     return {
@@ -7489,14 +7447,16 @@ export async function getDepreciationRunLines(
 export async function getRevenueRecognitionRuns(
   client: SupabaseClient<Database>,
   companyId: string,
+  type: Database["public"]["Enums"]["runType"],
   args: GenericQueryFilters & { search: string | null }
 ) {
   let query = client
     .from("revenueRecognitionRun")
-    .select("id, runId, periodEnd, status, postedAt, journalId", {
+    .select("id, runId, type, periodEnd, status, postedAt, journalId", {
       count: "exact"
     })
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .eq("type", type);
 
   if (args.search) {
     query = query.ilike("runId", `%${args.search}%`);
@@ -7534,7 +7494,7 @@ export async function getRevenueRecognitionRunLines(
   return client
     .from("revenueRecognitionRunLine")
     .select(
-      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, journalId)"
+      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, leaseId, journalId)"
     )
     .eq("runId", runId)
     .eq("companyId", companyId);
@@ -7630,6 +7590,8 @@ export async function getDeferredRevenueWaterfall(
       query
         .eq("companyId", companyId)
         .eq("status", "Planned")
+        // Lessee lease rows are expense, not revenue.
+        .is("leaseId", null)
         .gte("scheduledDate", asOf)
         .order("id", { ascending: true })
   );
@@ -8205,6 +8167,254 @@ export async function getLeaseNetInvestment(
       asOf,
       fiscalYears: [...fiscalYears].sort((a, b) => a - b),
       rows
+    },
+    error: null
+  };
+}
+
+export type LeaseLiabilities = LeaseLiabilitySummary & {
+  from: string;
+  to: string;
+  costs: LeaseCostSummary;
+  /** The latest lessee month a lease run posted; null before the first. */
+  leaseRunPostedThrough: string | null;
+  /** The earliest lessee month due by `asOf` that no lease run has posted;
+   *  null when every one has. */
+  firstUnpostedLeaseMonth: string | null;
+};
+
+/**
+ * The lessee's Lease Liabilities report (spec §11, ASC 842-20-50): the
+ * balances, maturity analysis and weighted averages as of `asOf`
+ * (`summarizeLeaseLiabilities`), and the lease cost and cash paid for
+ * `[from, to]` (`summarizeLeaseCosts`). `from` defaults to the first day of
+ * the fiscal year `asOf` falls in, `to` to `asOf`. Cost reads the lease rows
+ * the lease run posted (status Posted, dated in the range) and the Lease
+ * lines of posted purchase invoices (posting date in the range). Schedule
+ * lines, payments and events are read for the Operating and Finance assets
+ * of leases past Draft only, every read paged. Reads the lease tables, whose
+ * RLS is `purchasing_view` — a caller without purchasing view gets an empty
+ * report, so the report route requires it.
+ * @mcp read
+ */
+export async function getLeaseLiabilities(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { asOf: string; from?: string; to?: string }
+): Promise<{
+  data: LeaseLiabilities | null;
+  error: PostgrestError | null;
+}> {
+  const { asOf } = args;
+  const fiscalYear = await client
+    .from("fiscalYearSettings")
+    .select("startMonth")
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fiscalYear.error) return { data: null, error: fiscalYear.error };
+  const startMonth = fiscalYear.data?.startMonth
+    ? (MONTH_NUMBER[fiscalYear.data.startMonth] ?? 1)
+    : 1;
+
+  // The fiscal year `asOf` falls in starts in `startMonth` of this calendar
+  // year, or of the year before when `asOf` is earlier in the calendar year.
+  const asOfDate = parseDate(asOf);
+  const fiscalYearStart = asOfDate
+    .set({ month: startMonth, day: 1 })
+    .subtract({ years: asOfDate.month >= startMonth ? 0 : 1 })
+    .toString();
+  const from = args.from ?? fiscalYearStart;
+  const to = args.to ?? asOf;
+
+  const [
+    leases,
+    assets,
+    scheduleRows,
+    invoiceLines,
+    postedThrough,
+    firstUnposted
+  ] = await Promise.all([
+    fetchAllRecords(() =>
+      client
+        .from("lease")
+        .select(
+          "id, leaseId, name, status, commencementDate, discountRate, supplier(name)"
+        )
+        .eq("companyId", companyId)
+        .not("status", "in", '("Draft","Cancelled")')
+        .order("id", { ascending: true })
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("leaseLine")
+        .select(
+          "id, leaseId, description, status, lesseeClassification, initialLiability, initialRouAsset"
+        )
+        .eq("companyId", companyId)
+        .not("lesseeClassification", "is", null)
+        .order("id", { ascending: true })
+    ),
+    fetchAllRecords(() =>
+      client
+        .from("revenueRecognitionSchedule")
+        .select(
+          "type, amount, leaseScheduleLine!revenueRecognitionSchedule_leaseScheduleLine_fkey(leaseLineId)"
+        )
+        .eq("companyId", companyId)
+        .not("leaseId", "is", null)
+        .eq("status", "Posted")
+        .gte("scheduledDate", from)
+        .lte("scheduledDate", to)
+        .order("id", { ascending: true })
+    ),
+    // Typed by hand: the inferred type of this embed is too deep for tsc.
+    fetchAllFromTable<{
+      leasePaymentId: string | null;
+      extendedPrice: number | null;
+      leasePayment: { leaseLineId: string } | null;
+    }>(
+      client,
+      "purchaseInvoiceLine",
+      "leasePaymentId, extendedPrice, purchaseInvoice!inner(status, postingDate), leasePayment!purchaseInvoiceLine_leasePayment_fkey(leaseLineId)",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("invoiceLineType", "Lease")
+          .not("leaseId", "is", null)
+          .not("purchaseInvoice.status", "in", '("Draft","Pending","Voided")')
+          .gte("purchaseInvoice.postingDate", from)
+          .lte("purchaseInvoice.postingDate", to)
+          .order("id", { ascending: true })
+    ),
+    // The figures are the schedule's. When a lessee month due by `asOf` is
+    // not posted yet, the report says how far the lease run has posted.
+    client
+      .from("revenueRecognitionSchedule")
+      .select("scheduledDate")
+      .eq("companyId", companyId)
+      .not("leaseId", "is", null)
+      .eq("status", "Posted")
+      .order("scheduledDate", { ascending: false })
+      .limit(1),
+    client
+      .from("revenueRecognitionSchedule")
+      .select("scheduledDate")
+      .eq("companyId", companyId)
+      .not("leaseId", "is", null)
+      .eq("status", "Planned")
+      .lte("scheduledDate", asOf)
+      .order("scheduledDate", { ascending: true })
+      .limit(1)
+  ]);
+  for (const result of [
+    leases,
+    assets,
+    scheduleRows,
+    invoiceLines,
+    postedThrough,
+    firstUnposted
+  ]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // Only an Operating or Finance asset of a lease past Draft (and not
+  // Cancelled: its assets never were on the books) has a schedule and a
+  // liability. Read the schedule lines, payments and events of those alone.
+  const leaseRows = (leases.data ?? []).map(({ supplier, ...lease }) => ({
+    ...lease,
+    name: lease.name ?? "",
+    supplierName: supplier?.name ?? null
+  }));
+  const readLeaseIds = new Set(leaseRows.map((lease) => lease.id));
+  const capitalizedIds = (assets.data ?? [])
+    .filter(
+      (asset) =>
+        readLeaseIds.has(asset.leaseId) &&
+        (asset.lesseeClassification === "Operating" ||
+          asset.lesseeClassification === "Finance")
+    )
+    .map((asset) => asset.id);
+  const [lines, payments, events] = await Promise.all([
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leaseScheduleLine")
+        .select(
+          "leaseLineId, periodDate, principalAmount, closingLiability, closingRouAsset"
+        )
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leasePayment")
+        .select("leaseLineId, dueDate, amount")
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .order("id", { ascending: true })
+    ),
+    fetchAllByIds(capitalizedIds, (batch) =>
+      client
+        .from("leaseEvent")
+        .select("leaseLineId, eventType, effectiveDate")
+        .eq("companyId", companyId)
+        .in("leaseLineId", batch)
+        .in("eventType", ["Termination", "Purchase"])
+        .order("id", { ascending: true })
+    )
+  ]);
+  for (const result of [lines, payments, events]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // One entry per classified asset, with its lease's terms and its own end.
+  const assetRows = leaseLiabilityAssets(
+    leaseRows,
+    assets.data ?? [],
+    events.data ?? []
+  );
+  const summary = summarizeLeaseLiabilities(
+    assetRows,
+    lines.data ?? [],
+    payments.data ?? [],
+    { asOf, startMonth }
+  );
+
+  const classificationByAsset = new Map(
+    assetRows.flatMap((asset) =>
+      asset.classification
+        ? [[asset.leaseLineId, asset.classification] as const]
+        : []
+    )
+  );
+  const costs = summarizeLeaseCosts(
+    classificationByAsset,
+    (scheduleRows.data ?? []).flatMap((row) =>
+      row.leaseScheduleLine
+        ? [
+            {
+              leaseLineId: row.leaseScheduleLine.leaseLineId,
+              type: row.type,
+              amount: row.amount
+            }
+          ]
+        : []
+    ),
+    (invoiceLines.data ?? []).map((line) => ({
+      leaseLineId: line.leasePayment?.leaseLineId ?? null,
+      leasePaymentId: line.leasePaymentId,
+      amount: line.extendedPrice ?? 0
+    }))
+  );
+
+  return {
+    data: {
+      ...summary,
+      from,
+      to,
+      costs,
+      leaseRunPostedThrough: postedThrough.data?.[0]?.scheduledDate ?? null,
+      firstUnpostedLeaseMonth: firstUnposted.data?.[0]?.scheduledDate ?? null
     },
     error: null
   };

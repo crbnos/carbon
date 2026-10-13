@@ -11,6 +11,7 @@ Carbon is a manufacturing ERP/MES/QMS. It contains apps for ERP, MES, academy, a
 - Preserve behavior unless the user or a spec explicitly asks for a behavior change.
 - Keep changes minimal, focused, and integrated through real call sites.
 - Use existing components — grep `packages/react/src/` and `apps/erp/app/components/` before writing UI.
+- A new record type copies its closest sibling — the record users would call the same kind of thing (lease ↔ rental agreement ↔ contract, sales order ↔ purchase order, RMA ↔ supplier return) — routes and UI file for file. Name the sibling in the spec and the plan. Ask before you deviate from it (see `.ai/lessons.md` → "A new record type copies its sibling's UI").
 - Enter plan mode for non-trivial tasks (3+ steps or architectural decisions).
 - Use subagents liberally to keep the main context window clean.
 - Run `pnpm run generate:types` after schema/migration changes, BEFORE typechecking.
@@ -85,6 +86,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` |
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
+| Account settings modal (ERP, MES, starter) | `packages/account/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
 | Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
 | Adding a Deno edge function (embedding only) | `.claude/rules/workflow-edge-function.md` |
@@ -113,6 +115,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Rental agreements / leases / revenue recognition | `apps/erp/app/modules/sales/AGENTS.md` (Rentals) + `apps/erp/app/modules/accounting/AGENTS.md` (Revenue recognition, Sales-type leases) + `.claude/rules/fixed-asset-lifecycle.md` + `.claude/rules/accounting-sync-handlers.md` |
+| Lessee leases (ASC 842, leases the company pays) / lease runs | `apps/erp/app/modules/purchasing/AGENTS.md` (Leases) + `apps/erp/app/modules/accounting/AGENTS.md` (Run types, Lessee leases, Lease Liabilities report, Lessee cutover) + `apps/erp/app/modules/invoicing/AGENTS.md` (Lease line) + `.claude/rules/fixed-asset-lifecycle.md` (purchase option) |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
 | File uploads, images, HEIC, MIME types, CAD formats | `packages/files/AGENTS.md` |
@@ -211,7 +214,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 29 under `packages/` — auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
+- **Packages**: 30 under `packages/` — account, auth, database, lib, react, query, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger, server-functions, planning, api, viewer, workflows-core — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

@@ -223,7 +223,7 @@ databaseTest(
 );
 
 databaseTest(
-  "memo currency and tenant checks still apply when accounting is disabled",
+  "memo currency and tenant checks still apply with no cutover, which posts a Provisional journal",
   async () => {
     const f = await paymentFixture();
     const other = await paymentFixture();
@@ -231,7 +231,7 @@ databaseTest(
       const memoId = await memoFixture(f);
       await f.db
         .updateTable("companySettings")
-        .set({ accountingEnabled: false })
+        .set({ accountingCutoverDate: null })
         .where("id", "=", f.companyId)
         .execute();
       await f.db
@@ -262,18 +262,25 @@ databaseTest(
         .set({ amount: 0.01, exchangeRate: 16001 })
         .where("id", "=", memoId)
         .execute();
-      expect(await postMemoTransaction(f.db, { ...f.args, memoId })).toEqual({
-        journalId: null
+      const { journalId } = await postMemoTransaction(f.db, {
+        ...f.args,
+        memoId
       });
       expect(
-        (
-          await f.db
-            .selectFrom("memo")
-            .select("status")
-            .where("id", "=", memoId)
-            .executeTakeFirstOrThrow()
-        ).status
-      ).toEqual("Posted");
+        await f.db
+          .selectFrom("journal")
+          .select(["status", "accountingPeriodId"])
+          .where("id", "=", journalId!)
+          .where("companyId", "=", f.companyId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: "Provisional", accountingPeriodId: null });
+      expect(
+        await f.db
+          .selectFrom("memo")
+          .select(["status", "journalId"])
+          .where("id", "=", memoId)
+          .executeTakeFirstOrThrow()
+      ).toEqual({ status: "Posted", journalId });
     } finally {
       await f.cleanup();
       await other.cleanup();

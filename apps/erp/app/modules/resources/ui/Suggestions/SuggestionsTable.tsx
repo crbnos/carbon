@@ -64,6 +64,7 @@ const SuggestionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuFileText />
           }
         },
@@ -81,6 +82,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P3",
             icon: <LuUser />,
             exportValue: (row) => row.employeeName,
             filter: {
@@ -105,6 +107,7 @@ const SuggestionsTable = memo(
             </HStack>
           ),
           meta: {
+            mobile: "P2",
             filter: {
               type: "static",
               options: tags?.map((tag) => ({
@@ -123,6 +126,7 @@ const SuggestionsTable = memo(
             <DateTime value={item.getValue<string>()} variant="date" />
           ),
           meta: {
+            mobile: "P2",
             icon: <LuCalendar />
           }
         }

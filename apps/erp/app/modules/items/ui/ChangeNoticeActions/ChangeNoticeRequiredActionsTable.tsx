@@ -42,6 +42,7 @@ const ChangeNoticeRequiredActionsTable = memo(
             </Hyperlink>
           ),
           meta: {
+            mobile: "P1",
             icon: <LuListChecks />
           }
         },

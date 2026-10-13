@@ -2,31 +2,14 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { ERP_URL } from "~/utils/path";
+import { proxyToErp } from "@carbon/auth/erp-proxy.server";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 
-const log = getLogger("mes");
+// The ERP's API routes, reached from the MES: `path.to.erpApi`.
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  return proxyToErp(request, params["*"]);
+}
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const path = params["*"];
-
-  // Create new headers without host header to avoid connection refused
-  const headers = new Headers(request.headers);
-  headers.delete("host");
-  headers.delete("origin");
-
-  try {
-    const response = await fetch(`${ERP_URL}/${path}`, {
-      method: request.method,
-      body: request.body,
-      headers,
-      duplex: "half" // Add duplex option when sending body
-    } as RequestInit);
-
-    return response;
-  } catch (error) {
-    log.error("Proxy request failed", { error });
-    return new Response("Proxy request failed", { status: 500 });
-  }
+  return proxyToErp(request, params["*"]);
 }

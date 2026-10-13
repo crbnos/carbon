@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  let reversed: { runId: string };
+  let reversed: { runId: string; deleted: boolean };
   try {
     reversed = await reverseRevenueRecognitionRun(getDatabaseClient(), {
       runId,
@@ -84,6 +84,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
           err instanceof RunReversalError
             ? err.message
             : "Failed to reverse revenue recognition run"
+        )
+      )
+    );
+  }
+
+  // A revenue run that held only rental rows gives them to the lease run.
+  if (reversed.deleted) {
+    throw redirect(
+      path.to.leaseRuns,
+      await flash(
+        request,
+        success(
+          `Reversed ${reversed.runId}. Its rows now belong to the next lease run.`
         )
       )
     );

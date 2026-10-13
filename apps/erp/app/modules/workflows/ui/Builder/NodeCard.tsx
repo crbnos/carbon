@@ -124,6 +124,8 @@ export function NodeCard({
     <div
       className={cn(
         "relative rounded-lg border bg-card shadow-sm transition-[box-shadow,opacity]",
+        // Phones: a card is at most the screen wide, whatever its inline width.
+        "max-md:max-w-[calc(100vw-32px)]",
         isSelected && "border-primary ring-2 ring-primary/20",
         connectionState === "compatible" &&
           "border-primary ring-2 ring-primary/40",

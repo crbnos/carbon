@@ -28,7 +28,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  Heading,
   HStack,
   ScrollArea,
   toast,
@@ -45,6 +44,7 @@ import { data, useFetcher, useFetchers, useLoaderData } from "react-router";
 import { z } from "zod";
 import { DateTime } from "~/components";
 import { Confirm } from "~/components/Modals";
+import { SettingsPageHeading } from "~/components/SettingsPage";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
@@ -596,8 +596,10 @@ export default function BackupsRoute() {
 
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
-      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4">
-        <Heading size="h3">Backups</Heading>
+      <div className="py-12 px-4 max-w-[72rem] mx-auto flex flex-col gap-4 max-md:py-3">
+        <SettingsPageHeading>
+          <Trans>Backups</Trans>
+        </SettingsPageHeading>
 
         {/* Create + Restore — equal-height cards, footers aligned. */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
@@ -859,7 +861,7 @@ export default function BackupsRoute() {
                   <button
                     type="button"
                     onClick={openExportProgress}
-                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                    className="flex w-full items-center justify-between rounded-lg border p-3 text-left transition-colors hover:bg-muted/50 max-md:border-0 max-md:p-0 max-md:rounded-none"
                   >
                     <VStack spacing={0}>
                       <span className="text-sm font-medium">
@@ -914,7 +916,7 @@ function BackupRow({ file }: { file: CompanyBackupSummary }) {
 
   return (
     <HStack
-      className={`w-full justify-between border rounded-lg p-3 ${
+      className={`w-full justify-between border rounded-lg p-3 max-md:border-0 max-md:p-0 max-md:rounded-none ${
         file.status === "pending" || isDeleting ? "opacity-70" : ""
       }`}
     >
