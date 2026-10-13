@@ -1919,6 +1919,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
         : await deleteWorkCenterDevice(client, getDatabaseClient(), {
             companyId,
+            userId,
             integration: integrationId,
             externalDeviceId
           });

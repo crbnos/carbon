@@ -17,10 +17,56 @@ export async function lockWorkCenterDevice(
     .executeTakeFirst();
 }
 
+type CloseArgs = {
+  workCenterId: string;
+  companyId: string;
+  userId: string;
+  at: string;
+};
+
+/**
+ * End the work center's open unattributed time at `at`. A row that starts
+ * after `at` stays open for the sync to close.
+ */
+async function endOpenUnattributedTime(trx: KyselyTx, args: CloseArgs) {
+  await trx
+    .updateTable("unattributedMachineTime")
+    .set({ endTime: args.at, updatedBy: args.userId, updatedAt: args.at })
+    .where("workCenterId", "=", args.workCenterId)
+    .where("companyId", "=", args.companyId)
+    .where("status", "=", "Open")
+    .where("endTime", "is", null)
+    .where("startTime", "<=", args.at)
+    .execute();
+}
+
+/**
+ * A device leaves a work center (unmapped or remapped). End the time its
+ * sensor opened there — Machine events created by `system` and unattributed
+ * time — because no later sync of that device will close it. An operator's
+ * own Machine event stays open. Call it under `lockWorkCenterDevice`.
+ */
+export async function endSensorMachineTime(trx: KyselyTx, args: CloseArgs) {
+  await trx
+    .updateTable("productionEvent")
+    .set({ endTime: args.at, updatedBy: args.userId, updatedAt: args.at })
+    .where("workCenterId", "=", args.workCenterId)
+    .where("companyId", "=", args.companyId)
+    .where("type", "=", "Machine")
+    .where("createdBy", "=", "system")
+    .where("endTime", "is", null)
+    .where("startTime", "<=", args.at)
+    .execute();
+  await endOpenUnattributedTime(trx, args);
+}
+
 /**
  * An operator pressed Machine Start or Stop on a work center. If the work
- * center has a device, end its open Machine events at the press time and
- * record the press, so an older sensor change never undoes it.
+ * center has a device, end its open Machine events and unattributed time at
+ * the press time and record the press, so an older sensor change never undoes
+ * it. Without the unattributed close, a Start on a running machine with no
+ * loaded operation counted the same minutes twice: once on the operator's
+ * event and once in the supervisor queue.
  */
 export async function recordManualMachinePress(
   trx: KyselyTx,
@@ -47,6 +93,13 @@ export async function recordManualMachinePress(
     .where("endTime", "is", null)
     .returning("id")
     .execute();
+
+  await endOpenUnattributedTime(trx, {
+    workCenterId: args.workCenterId,
+    companyId: args.companyId,
+    userId: args.userId,
+    at: args.pressedAt
+  });
 
   await trx
     .updateTable("workCenterDevice")

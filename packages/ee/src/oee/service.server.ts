@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { endSensorMachineTime } from "@carbon/database/machine-time";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EntitlementError, requireEntitlement } from "../entitlements.server";
@@ -137,8 +138,16 @@ export async function upsertWorkCenterDevice(
         };
       }
 
-      // A remap starts fresh: a new mapping time and no applied state.
+      // A remap starts fresh: a new mapping time and no applied state. The
+      // time the device opened on its old work center ends now; no later
+      // sync of the old mapping will close it.
       if (current) {
+        await endSensorMachineTime(trx, {
+          workCenterId: current.workCenterId,
+          companyId: args.companyId,
+          userId: args.userId,
+          at: datetime.timestamp()
+        });
         await trx
           .deleteFrom("workCenterDevice")
           .where("id", "=", current.id)
@@ -170,16 +179,40 @@ export async function upsertWorkCenterDevice(
 export async function deleteWorkCenterDevice(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  args: { companyId: string; integration: string; externalDeviceId: string }
+  args: {
+    companyId: string;
+    userId: string;
+    integration: string;
+    externalDeviceId: string;
+  }
 ): Promise<Result<null>> {
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
-    await db
-      .deleteFrom("workCenterDevice")
-      .where("integration", "=", args.integration)
-      .where("externalDeviceId", "=", args.externalDeviceId)
-      .where("companyId", "=", args.companyId)
-      .execute();
+    await db.transaction().execute(async (trx) => {
+      const device = await trx
+        .selectFrom("workCenterDevice")
+        .select(["id", "workCenterId"])
+        .where("integration", "=", args.integration)
+        .where("externalDeviceId", "=", args.externalDeviceId)
+        .where("companyId", "=", args.companyId)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!device) return;
+
+      // Nothing syncs this work center after the delete, so the time its
+      // sensor opened ends now instead of staying open forever.
+      await endSensorMachineTime(trx, {
+        workCenterId: device.workCenterId,
+        companyId: args.companyId,
+        userId: args.userId,
+        at: datetime.timestamp()
+      });
+      await trx
+        .deleteFrom("workCenterDevice")
+        .where("id", "=", device.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
     return { data: null, error: null } as Result<null>;
   } catch (error) {
     return fail(error);

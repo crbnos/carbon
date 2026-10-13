@@ -37,7 +37,7 @@ most one device across every OEE provider.
 | `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/2 * * * *`. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `carbon/oee-sync`, concurrency 1 per company. Syncs every device of the integration in ONE `step.run` |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock |
-| `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row) and `recordManualMachinePress`. Shared by the sync and the MES |
+| `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `recordManualMachinePress` and `endSensorMachineTime`. Shared by the sync, the MES and the device mapping writes. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: loads the operation onto the work center |
 | `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE: unloads the operation when it becomes Done or Canceled |
 
@@ -101,6 +101,13 @@ before the mapping as the start state, at the mapping time. The engine never
 charges time before the mapping. A remap deletes the row and inserts a new one, so
 the mapping time and the applied state start again.
 
+**Unmap and remap.** No later sync closes time on a work center the device
+has left. So `deleteWorkCenterDevice` and the remap path of
+`upsertWorkCenterDevice` first call `endSensorMachineTime` on the OLD work
+center, under the device row lock: it ends, at now, the open Machine events
+created by `system` and the `Open` unattributed rows with no `endTime`. An
+operator's own open Machine event stays open.
+
 **Steady state.** After the changes, if the device is `Running`,
 `currentStateAt > lastManualChangeAt`, and nothing is open, the engine opens
 time again. The start is the latest Machine `endTime` on the work center, or
@@ -115,10 +122,13 @@ next `Running` change goes to the new one.
 
 A "Start" or "Pause" press with "Machine" selected calls
 `recordManualMachinePress` inside a Kysely transaction. The function takes the
-same device lock as the sync. It does 2 things:
+same device lock as the sync. It does 3 things:
 
 1. It ends every open Machine event on the work center at the press time.
-2. It sets `workCenterDevice.lastManualChangeAt` to the press time.
+2. It ends the work center's open unattributed time at the press time. Without
+   this, a Start on a running machine with no loaded operation counted the
+   same minutes on the operator's event and in the supervisor queue.
+3. It sets `workCenterDevice.lastManualChangeAt` to the press time.
 
 A Start then inserts the operator's Machine event, which loads the operation.
 If the work center has no device, the function does nothing, and the MES
