@@ -54,6 +54,9 @@ msgstr "(निष्क्रिय खाता)"
 msgid "(Inactive)"
 msgstr "(निष्क्रिय)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(एक से अधिक Carbon खातों में मैप किया गया)"
+
 msgid "(not an Equity posting account)"
 msgstr "(इक्विटी पोस्टिंग खाता नहीं है)"
 
@@ -2804,6 +2807,9 @@ msgstr "चालानों पर लागू करें"
 msgid "Apply to reimbursements"
 msgstr "प्रतिपूर्ति में लागू करें"
 
+msgid "Apply to Trial Balance"
+msgstr "Trial Balance पर लागू करें"
+
 msgid "Applying"
 msgstr "लागू कर रहे हैं"
 
@@ -3811,6 +3817,10 @@ msgstr "बैकअप"
 
 msgid "Balance"
 msgstr "शेष राशि"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "{0} के लिए शेष राशि"
 
 msgid "Balance Sheet"
 msgstr "तुलन पत्र"
@@ -6399,10 +6409,6 @@ msgstr "जमा और नामे मेमो"
 msgid "Credit applied"
 msgstr "जमा लागू किया गया"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "{0} के लिए जमा"
-
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
 
@@ -6883,10 +6889,6 @@ msgstr "नामे ({0})"
 
 msgid "Debit Account"
 msgstr "नामे खाता"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "{0} के लिए नामे"
 
 msgid "Debit Memo"
 msgstr "डेबिट नोट"
@@ -8912,6 +8914,12 @@ msgstr "PO के विरुद्ध विक्रेता बिलों
 msgid "Enter at least one debit and credit"
 msgstr "कम से कम एक नामे और जमा दर्ज करें"
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "डेबिट्स को सकारात्मक और क्रेडिट्स को नकारात्मक राशि के रूप में दर्ज करें। CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। एक आयात या {providerName} से खींचना पूरे trial balance को प्रतिस्थापित करता है।"
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "डेबिट्स को सकारात्मक और क्रेडिट्स को नकारात्मक राशि के रूप में दर्ज करें। CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। एक आयात पूरे trial balance को प्रतिस्थापित करता है।"
+
 msgid "Enter number…"
 msgstr "संख्या दर्ज करें…"
 
@@ -10726,6 +10734,9 @@ msgstr "इस चरण पर चयनित को छिपाएँ"
 msgid "Hide system quantities until the review step"
 msgstr "समीक्षा चरण तक सिस्टम मात्रा को छिपाएं"
 
+msgid "Hide the items on {label}"
+msgstr "{label} पर आइटम्स को छिपाएं"
+
 msgid "Hide, pin and reorder columns"
 msgstr "कॉलम को छिपाएं, पिन करें और पुनः क्रमित करें"
 
@@ -11058,6 +11069,9 @@ msgstr "IFSC कोड"
 
 msgid "Ignore"
 msgstr "अनदेखा करें"
+
+msgid "Ignored"
+msgstr "अनदेखा किया गया"
 
 msgid "II (normal default)"
 msgstr "II (सामान्य डिफ़ॉल्ट)"
@@ -12939,6 +12953,10 @@ msgstr "निकाली गई लाइनों को मैप करे�
 
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
+
+#. placeholder {0}: puller.data?.providerName
+msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgstr "{0} एकीकरण सेटिंग्स में इन खातों को मैप करें और फिर से खींचें, या नीचे उनकी शेष राशि दर्ज करें।"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "अपने खातों का चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
@@ -15115,8 +15133,8 @@ msgstr "चालू"
 msgid "On {sentDate}"
 msgstr "{sentDate} को"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "एक नियंत्रण खाते पर, कार्बन अपने खुली आइटम, इन्वेंटरी और अचल संपत्ति से शेष राशि खोलता है। ट्रायल बैलेंस सहमत होना चाहिए: हर अंतर माइग्रेशन साफी पर रहता है, जो शून्य होना चाहिए।"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "एक नियंत्रण खाते पर, Carbon अपने खुले आइटम्स, इन्वेंटरी और अचल संपत्ति से शेष राशि निकालता है। Trial balance सहमत होना चाहिए: हर अंतर Migration Clearing पर रहता है, जो शून्य होना चाहिए। एक खाता खोलें इसके आइटम्स को देखने के लिए, और एक चालान को अनदेखा करें जो पूर्व प्रणाली पहले ही निपटा चुकी है।"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "एक स्थानांतरण कानबान पर, To भंडारण इकाई के लिए न्यूनतम मात्रा। जब हाथ पर प्लस खुली आने वाली स्थानांतरण इससे नीचे चली जाती है, तो Carbon कानबान मात्रा के लिए एक जारी स्टॉक स्थानांतरण बनाता है।"
@@ -17084,6 +17102,9 @@ msgstr "खींचें"
 
 msgid "Pull From"
 msgstr "से खींचें"
+
+msgid "Pull from {providerName}"
+msgstr "{providerName} से खींचें"
 
 msgid "Pull from accounting"
 msgstr "लेखांकन से खींचें"
@@ -20176,6 +20197,9 @@ msgstr "यह निर्धारित करता है कि यह इ
 msgid "Settings"
 msgstr "सेटिंग्स"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "कटऑफ से पहले बहीयां रखने वाली प्रणाली में निपटाए गए। Carbon उन्हें अपने योग से बाहर छोड़ देता है और कटऑफ से एक दिन पहले उन्हें भुगतान किया गया के रूप में चिह्नित करता है जब आप लेखांकन सेटअप करते हैं।"
+
 msgid "Setup"
 msgstr "सेटअप"
 
@@ -20516,6 +20540,9 @@ msgstr "आपूर्तिकर्ता आईडी दिखाएं"
 msgid "Show sync options"
 msgstr "सिंक विकल्प दिखाएं"
 
+msgid "Show the items on {label}"
+msgstr "{label} पर आइटम्स दिखाएं"
+
 msgid "Show Trailing Zeros"
 msgstr "अनुगामी शून्य दिखाएं"
 
@@ -20674,6 +20701,9 @@ msgstr "बेचा गया"
 
 msgid "Solutions Engineer"
 msgstr "समाधान इंजीनियर"
+
+msgid "Some balances have no Carbon account"
+msgstr "कुछ शेष राशियों के लिए कोई Carbon खाता नहीं है"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "कुछ पंक्तियों को उनकी कुल से अधिक या कम के लिए चालान दिया गया है। पुष्टि करने से पहले राशियों को ठीक करें।"
@@ -22042,9 +22072,6 @@ msgstr "CSV फ़ाइल खाली है।"
 
 msgid "The CSV has no {columns} column."
 msgstr "CSV के पास कोई {columns} कॉलम नहीं है।"
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "CSV को accountNumber, नामे और जमा कॉलम की आवश्यकता है। आयात पूरे trial balance को बदल देता है।"
 
 msgid "The CSV was not imported"
 msgstr "CSV को आयात नहीं किया गया था।"
@@ -23677,9 +23704,8 @@ msgstr "विषय"
 msgid "Total"
 msgstr "कुल"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "कुल (असंतुलित {0} द्वारा)"
+msgid "Total (out of balance)"
+msgstr "कुल (असंतुलित)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

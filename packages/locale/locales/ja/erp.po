@@ -54,6 +54,9 @@ msgstr "(無効な勘定)"
 msgid "(Inactive)"
 msgstr "(無効)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(複数のCarbonアカウントにマップされています)"
+
 msgid "(not an Equity posting account)"
 msgstr "(純資産転記勘定科目ではありません)"
 
@@ -2804,6 +2807,9 @@ msgstr "請求書に適用"
 msgid "Apply to reimbursements"
 msgstr "払戻に充当する"
 
+msgid "Apply to Trial Balance"
+msgstr "試算表に適用"
+
 msgid "Applying"
 msgstr "適用中"
 
@@ -3811,6 +3817,10 @@ msgstr "バックアップ"
 
 msgid "Balance"
 msgstr "残高"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "{0}の残高"
 
 msgid "Balance Sheet"
 msgstr "貸借対照表"
@@ -6399,10 +6409,6 @@ msgstr "クレジットメモとデビットメモ"
 msgid "Credit applied"
 msgstr "貸方が適用されました"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "{0}の貸方"
-
 msgid "Credit Memo"
 msgstr "クレジットメモ"
 
@@ -6883,10 +6889,6 @@ msgstr "借方 ({0})"
 
 msgid "Debit Account"
 msgstr "借方勘定"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "{0}の借方"
 
 msgid "Debit Memo"
 msgstr "借方メモ"
@@ -8912,6 +8914,12 @@ msgstr "発注書に対する仕入先請求書を入力して承認します（
 msgid "Enter at least one debit and credit"
 msgstr "少なくとも1つの借方と貸方を入力してください"
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "借方を正の数で、貸方を負の数で入力してください。CSVには accountNumber、debit、credit の列が必要です。インポートまたは{providerName}からのプルにより、試算表全体が置き換わります。"
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "借方を正の数で、貸方を負の数で入力してください。CSVには accountNumber、debit、credit の列が必要です。インポートにより、試算表全体が置き換わります。"
+
 msgid "Enter number…"
 msgstr "数字を入力..."
 
@@ -10726,6 +10734,9 @@ msgstr "選択したものをこのステップで非表示"
 msgid "Hide system quantities until the review step"
 msgstr "レビューステップまでシステム数量を非表示にする"
 
+msgid "Hide the items on {label}"
+msgstr "{label}の品目を非表示にする"
+
 msgid "Hide, pin and reorder columns"
 msgstr "列を非表示、ピン留め、並び替え"
 
@@ -11057,6 +11068,9 @@ msgid "IFSC Code"
 msgstr "IFSC コード"
 
 msgid "Ignore"
+msgstr "無視"
+
+msgid "Ignored"
 msgstr "無視"
 
 msgid "II (normal default)"
@@ -12939,6 +12953,10 @@ msgstr "抽出行をマップ"
 
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
+
+#. placeholder {0}: puller.data?.providerName
+msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgstr "これらのアカウントを{0}の連携設定でマップしてからもう一度プルするか、以下に残高を入力してください。"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "勘定科目表をプロバイダーの表にマップしてください。転記用デフォルト科目と費用科目は「必須」とマークされています。転記済の仕訳はマップされたプロバイダー科目を使用して送信されます。"
@@ -15115,8 +15133,8 @@ msgstr "オン"
 msgid "On {sentDate}"
 msgstr "{sentDate}に送信"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "管理勘定では、Carbonが未決済品目、在庫、固定資産から残高を決定します。試算表は一致する必要があります。すべての差異はマイグレーションクリアリングに留まり、合計はゼロである必要があります。"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "管理勘定では、Carbonはその独自のオープン品目、在庫管理、および固定資産から残高を開きます。試算表は一致する必要があります。すべての差異は移行クリアリングに留まり、合計がゼロになる必要があります。勘定を開いてその品目を確認し、前のシステムで既に決済された請求書を無視してください。"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "転送かんばんでは、宛先保管ユニットの最小数量です。手持ちプラス未処理の受信転送がそれ以下に落ちると、Carbon はかんばん数量のためにリリース済の在庫転送を作成します。"
@@ -17084,6 +17102,9 @@ msgstr "プル"
 
 msgid "Pull From"
 msgstr "から取得"
+
+msgid "Pull from {providerName}"
+msgstr "{providerName}からプル"
 
 msgid "Pull from accounting"
 msgstr "会計から引き出す"
@@ -20176,6 +20197,9 @@ msgstr "この個が在庫で計上されている価値を設定します。差
 msgid "Settings"
 msgstr "設定"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "カットオーバー前に帳簿をつけていたシステムで決済されています。Carbonはそれらを合計から除外し、会計をセットアップするときにカットオーバーの前日に支払い済みとしてマークします。"
+
 msgid "Setup"
 msgstr "セットアップ"
 
@@ -20516,6 +20540,9 @@ msgstr "仕入先IDを表示"
 msgid "Show sync options"
 msgstr "同期オプションを表示"
 
+msgid "Show the items on {label}"
+msgstr "{label}の品目を表示"
+
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
 
@@ -20674,6 +20701,9 @@ msgstr "売却"
 
 msgid "Solutions Engineer"
 msgstr "ソリューションズエンジニア"
+
+msgid "Some balances have no Carbon account"
+msgstr "いくつかの残高にはCarbonアカウントがありません"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "いくつかの明細は、合計より多くまたは少なく請求されています。確認する前に金額を修正してください。"
@@ -22042,9 +22072,6 @@ msgstr "CSV ファイルが空です。"
 
 msgid "The CSV has no {columns} column."
 msgstr "CSV に {columns} 列がありません。"
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "CSVには、accountNumber、借方、貸方のカラムが必要です。インポートは試算表全体を置き換えます。"
 
 msgid "The CSV was not imported"
 msgstr "CSVはインポートされませんでした。"
@@ -23677,9 +23704,8 @@ msgstr "トピック"
 msgid "Total"
 msgstr "合計"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "合計（{0}だけ不一致）"
+msgid "Total (out of balance)"
+msgstr "合計(残高不一致)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

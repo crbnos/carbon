@@ -239,7 +239,12 @@ spec's section 5 numbering, as the code comments do:
    Posted with no journal.
 6. Fixed assets: no write. The register already holds the values at the cutover.
 7. Deletes the Draft trial balance journal and posts the opening journal
-   (`buildOpeningJournalLines`), Posted, dated the day before the cutover.
+   (`buildOpeningJournalLines`), Posted, dated the day before the cutover. Before
+   that, `markIgnoredInvoicesPaid` sets every invoice ignored on Migration Clearing
+   (`clearing.ignoredItems`, rows of `accountingCutoverIgnoredInvoice` still open at
+   the cutover) to `Paid` with `datePaid` the day before the cutover, with
+   `app.sync_in_progress` on so no workflow, webhook or provider push fires. They are
+   not in the opening journal, and the AR/AP readers treat a Paid invoice as closed.
 8. `assignPeriods` gives each Provisional journal dated on or after the cutover the
    period of its date.
 9. `repointStandInLines` moves each stand-in line to the default it names (or that

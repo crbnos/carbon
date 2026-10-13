@@ -741,7 +741,9 @@ databaseTest(
         documentType: "Invoice",
         documentId: invoiceId,
         documentLineReference: null,
-        description: "Accounts Receivable"
+        description: "Accounts Receivable",
+        reference: expect.any(String),
+        partyName: expect.any(String)
       });
       expect(items).toContainEqual({
         openItemType: "Received Not Invoiced",
@@ -772,7 +774,9 @@ databaseTest(
         documentType: "Invoice",
         documentId: purchaseInvoiceId,
         documentLineReference: null,
-        description: "Accounts Payable"
+        description: "Accounts Payable",
+        reference: expect.any(String),
+        partyName: expect.any(String)
       });
 
       // 10 received, 4 shipped: 6 on hand at the receipt's layer cost; the

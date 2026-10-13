@@ -26805,6 +26805,159 @@ export default {
         tags: ["nonConformanceReceiptLine"]
       }
     },
+    "/accountingCutoverIgnoredInvoice": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingCutoverIgnoredInvoice"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingCutoverIgnoredInvoice"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingCutoverIgnoredInvoice"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      }
+    },
     "/webhookTable": {
       get: {
         parameters: [
@@ -129545,6 +129698,49 @@ export default {
       },
       type: "object"
     },
+    accountingCutoverIgnoredInvoice: {
+      required: ["id", "companyId", "invoiceId", "createdBy", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('acii'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        invoiceId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     webhookTable: {
       required: ["table", "module", "name"],
       properties: {
@@ -180564,6 +180760,57 @@ export default {
     },
     "rowFilter.nonConformanceReceiptLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.accountingCutoverIgnoredInvoice": {
+      name: "accountingCutoverIgnoredInvoice",
+      description: "accountingCutoverIgnoredInvoice",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingCutoverIgnoredInvoice"
+      }
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

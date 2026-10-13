@@ -54,6 +54,9 @@ msgstr "(inactive account)"
 msgid "(Inactive)"
 msgstr "(Inactive)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(mapped to more than one Carbon account)"
+
 msgid "(not an Equity posting account)"
 msgstr "(not an Equity posting account)"
 
@@ -2804,6 +2807,9 @@ msgstr "Apply to invoices"
 msgid "Apply to reimbursements"
 msgstr "Apply to reimbursements"
 
+msgid "Apply to Trial Balance"
+msgstr "Apply to Trial Balance"
+
 msgid "Applying"
 msgstr "Applying"
 
@@ -3811,6 +3817,10 @@ msgstr "Backups"
 
 msgid "Balance"
 msgstr "Balance"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "Balance for {0}"
 
 msgid "Balance Sheet"
 msgstr "Balance Sheet"
@@ -6399,10 +6409,6 @@ msgstr "Credit and debit memos"
 msgid "Credit applied"
 msgstr "Credit applied"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "Credit for {0}"
-
 msgid "Credit Memo"
 msgstr "Credit Memo"
 
@@ -6883,10 +6889,6 @@ msgstr "Debit ({0})"
 
 msgid "Debit Account"
 msgstr "Debit Account"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "Debit for {0}"
 
 msgid "Debit Memo"
 msgstr "Debit Memo"
@@ -8912,6 +8914,12 @@ msgstr "Enter and approve vendor bills against a PO (three-way match)"
 msgid "Enter at least one debit and credit"
 msgstr "Enter at least one debit and credit"
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+
 msgid "Enter number…"
 msgstr "Enter number…"
 
@@ -10726,6 +10734,9 @@ msgstr "Hide selected on this step"
 msgid "Hide system quantities until the review step"
 msgstr "Hide system quantities until the review step"
 
+msgid "Hide the items on {label}"
+msgstr "Hide the items on {label}"
+
 msgid "Hide, pin and reorder columns"
 msgstr "Hide, pin and reorder columns"
 
@@ -11058,6 +11069,9 @@ msgstr "IFSC Code"
 
 msgid "Ignore"
 msgstr "Ignore"
+
+msgid "Ignored"
+msgstr "Ignored"
 
 msgid "II (normal default)"
 msgstr "II (normal default)"
@@ -12939,6 +12953,10 @@ msgstr "Map Extracted Lines"
 
 msgid "Map Lines Now"
 msgstr "Map Lines Now"
+
+#. placeholder {0}: puller.data?.providerName
+msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgstr "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
@@ -15115,8 +15133,8 @@ msgstr "On"
 msgid "On {sentDate}"
 msgstr "On {sentDate}"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
@@ -17084,6 +17102,9 @@ msgstr "Pull"
 
 msgid "Pull From"
 msgstr "Pull From"
+
+msgid "Pull from {providerName}"
+msgstr "Pull from {providerName}"
 
 msgid "Pull from accounting"
 msgstr "Pull from accounting"
@@ -20176,6 +20197,9 @@ msgstr "Sets what this unit is carried at in inventory. The difference is booked
 msgid "Settings"
 msgstr "Settings"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+
 msgid "Setup"
 msgstr "Setup"
 
@@ -20516,6 +20540,9 @@ msgstr "Show Supplier IDs"
 msgid "Show sync options"
 msgstr "Show sync options"
 
+msgid "Show the items on {label}"
+msgstr "Show the items on {label}"
+
 msgid "Show Trailing Zeros"
 msgstr "Show Trailing Zeros"
 
@@ -20674,6 +20701,9 @@ msgstr "Sold"
 
 msgid "Solutions Engineer"
 msgstr "Solutions Engineer"
+
+msgid "Some balances have no Carbon account"
+msgstr "Some balances have no Carbon account"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
@@ -22042,9 +22072,6 @@ msgstr "The CSV file is empty."
 
 msgid "The CSV has no {columns} column."
 msgstr "The CSV has no {columns} column."
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
 
 msgid "The CSV was not imported"
 msgstr "The CSV was not imported"
@@ -23677,9 +23704,8 @@ msgstr "Topics"
 msgid "Total"
 msgstr "Total"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "Total (out of balance by {0})"
+msgid "Total (out of balance)"
+msgstr "Total (out of balance)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

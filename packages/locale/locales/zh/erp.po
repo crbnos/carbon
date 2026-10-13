@@ -54,6 +54,9 @@ msgstr "（已停用账户）"
 msgid "(Inactive)"
 msgstr "(已停用)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "（映射到多个 Carbon 账户）"
+
 msgid "(not an Equity posting account)"
 msgstr "（非所有者权益过账账户）"
 
@@ -2804,6 +2807,9 @@ msgstr "应用于发票"
 msgid "Apply to reimbursements"
 msgstr "应用到报销单"
 
+msgid "Apply to Trial Balance"
+msgstr "应用到试算表"
+
 msgid "Applying"
 msgstr "正在应用"
 
@@ -3811,6 +3817,10 @@ msgstr "备份"
 
 msgid "Balance"
 msgstr "余额"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "{0} 的余额"
 
 msgid "Balance Sheet"
 msgstr "资产负债表"
@@ -6399,10 +6409,6 @@ msgstr "贷方和借方备忘录"
 msgid "Credit applied"
 msgstr "已应用信用"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "{0}的贷方"
-
 msgid "Credit Memo"
 msgstr "贷项凭证"
 
@@ -6883,10 +6889,6 @@ msgstr "借方 ({0})"
 
 msgid "Debit Account"
 msgstr "借方账户"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "{0}的借方"
 
 msgid "Debit Memo"
 msgstr "借方备忘录"
@@ -8912,6 +8914,12 @@ msgstr "输入和审批供应商账单与采购单进行三单匹配"
 msgid "Enter at least one debit and credit"
 msgstr "至少输入一个借方和贷方"
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "输入借方为正数，贷方为负数。CSV 需要包含以下列：accountNumber、借方 和 贷方。从 {providerName} 导入或拉取会替换整个试算表。"
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "输入借方为正数，贷方为负数。CSV 需要包含以下列：accountNumber、借方 和 贷方。导入会替换整个试算表。"
+
 msgid "Enter number…"
 msgstr "输入数字…"
 
@@ -10726,6 +10734,9 @@ msgstr "隐藏此步骤中的选定项"
 msgid "Hide system quantities until the review step"
 msgstr "在评审步骤前隐藏系统数量"
 
+msgid "Hide the items on {label}"
+msgstr "隐藏 {label} 上的物料"
+
 msgid "Hide, pin and reorder columns"
 msgstr "隐藏、固定和重新排序列"
 
@@ -11058,6 +11069,9 @@ msgstr "IFSC代码"
 
 msgid "Ignore"
 msgstr "忽略"
+
+msgid "Ignored"
+msgstr "已忽略"
 
 msgid "II (normal default)"
 msgstr "II（正常默认值）"
@@ -12939,6 +12953,10 @@ msgstr "映射提取的行"
 
 msgid "Map Lines Now"
 msgstr "立即映射行"
+
+#. placeholder {0}: puller.data?.providerName
+msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgstr "在 {0} 集成设置中映射这些账户并重新拉取，或在下方输入它们的余额。"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "将您的会计科目表映射到提供商的。过账默认账户和费用账户标记为必需；已过账凭证使用映射的提供商账户代码进行推送。"
@@ -15115,8 +15133,8 @@ msgstr "开"
 msgid "On {sentDate}"
 msgstr "打开"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "在控制帐户上，Carbon从其自身的未结项目、库存和固定资产获取余额。试算平衡表必须一致：每项差异保留在迁差账户上，该账户必须合计为零。"
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "对于控制账户，Carbon 从其自己的未结项目、库存和固定资产中获取期初余额。试算表必须一致：每个差异都保留在迁移清除账户上，必须合计为零。打开一个账户来查看其项目明细，并忽略先前系统已经结清的发票。"
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "在转移看板上，指目标存储单元的最小数量。当现有库存加上未完成的入库调拨降至此水位以下时，Carbon 会创建一个已下达的库存调拨，调拨数量为看板数量。"
@@ -17084,6 +17102,9 @@ msgstr "拉取"
 
 msgid "Pull From"
 msgstr "从以下位置提取"
+
+msgid "Pull from {providerName}"
+msgstr "从 {providerName} 拉取"
 
 msgid "Pull from accounting"
 msgstr "从会计系统拉取"
@@ -20176,6 +20197,9 @@ msgstr "设置此项在库存中的账面价值。差异将在库存和原支出
 msgid "Settings"
 msgstr "设置"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "在先前系统中已结清。Carbon 将它们排除在总计之外，并在设置会计时将它们标记为在截断日期前一天已付款。"
+
 msgid "Setup"
 msgstr "换型"
 
@@ -20516,6 +20540,9 @@ msgstr "显示供应商ID"
 msgid "Show sync options"
 msgstr "显示同步选项"
 
+msgid "Show the items on {label}"
+msgstr "显示 {label} 上的物料"
+
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
 
@@ -20674,6 +20701,9 @@ msgstr "已售出"
 
 msgid "Solutions Engineer"
 msgstr "解决方案工程师"
+
+msgid "Some balances have no Carbon account"
+msgstr "某些余额没有 Carbon 账户"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "某些行的开票金额比总额多或少。确认前修复金额。"
@@ -22042,9 +22072,6 @@ msgstr "CSV 文件为空。"
 
 msgid "The CSV has no {columns} column."
 msgstr "CSV 没有「{columns}」列。"
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "CSV 需要包含 accountNumber、借方 和 贷方 列。导入将替换整个试算平衡表。"
 
 msgid "The CSV was not imported"
 msgstr "CSV 未被导入"
@@ -23677,9 +23704,8 @@ msgstr "主题"
 msgid "Total"
 msgstr "总计"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "总计（差额 {0}）"
+msgid "Total (out of balance)"
+msgstr "总计（未平衡）"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

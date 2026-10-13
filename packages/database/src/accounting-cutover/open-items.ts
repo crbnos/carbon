@@ -69,6 +69,9 @@ export type DraftItem = {
   accrual?: boolean;
   /** How the part settled before the cutover is keyed, when not the default. */
   settledLine?: OpenItem["settled"];
+  /** For the wizard only. */
+  reference?: string | null;
+  partyName?: string | null;
 };
 
 type OpenDocumentRow = {
@@ -212,7 +215,7 @@ async function getReceivableAndPayableItems(
     customerIds.length
       ? db
           .selectFrom("customer")
-          .select(["id", "intercompanyCompanyId"])
+          .select(["id", "name", "intercompanyCompanyId"])
           .where("companyId", "=", companyId)
           .where("id", "in", [...new Set(customerIds)])
           .execute()
@@ -220,12 +223,15 @@ async function getReceivableAndPayableItems(
     supplierIds.length
       ? db
           .selectFrom("supplier")
-          .select(["id", "intercompanyCompanyId"])
+          .select(["id", "name", "intercompanyCompanyId"])
           .where("companyId", "=", companyId)
           .where("id", "in", [...new Set(supplierIds)])
           .execute()
       : Promise.resolve([])
   ]);
+  const partyNames = new Map<string, string>(
+    [...customers, ...suppliers].map((row) => [row.id, row.name])
+  );
   const intercompanyCustomers = new Set(
     customers.filter((row) => row.intercompanyCompanyId).map((row) => row.id)
   );
@@ -309,7 +315,9 @@ async function getReceivableAndPayableItems(
       documentType: isInvoice ? "Invoice" : "Memo",
       documentId: row.documentId,
       documentLineReference: null,
-      description
+      description,
+      reference: row.documentNumber,
+      partyName: row.partyId ? (partyNames.get(row.partyId) ?? null) : null
     });
   };
   for (const row of receivables.rows) build(row, true);
@@ -1613,7 +1621,9 @@ export async function finishItems(
       description: draft.description,
       ...(draft.quantity != null ? { quantity: draft.quantity } : {}),
       ...(draft.accrual ? { accrual: true } : {}),
-      ...(draft.settledLine ? { settled: draft.settledLine } : {})
+      ...(draft.settledLine ? { settled: draft.settledLine } : {}),
+      ...(draft.reference ? { reference: draft.reference } : {}),
+      ...(draft.partyName ? { partyName: draft.partyName } : {})
     });
   }
   return items;

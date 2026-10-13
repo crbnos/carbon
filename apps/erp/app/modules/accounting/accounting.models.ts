@@ -1179,6 +1179,19 @@ export const openingTrialBalanceImportValidator = z.object({
   csv: z.string().min(1, { message: "The CSV file is empty" })
 });
 
+/** Ignore an invoice on Migration Clearing, or stop ignoring it. */
+export const cutoverIgnoredInvoiceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  invoiceId: z.string().min(1, { message: "Invoice is required" }),
+  ignored: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+/** A trial balance step action that needs only the cutover date: apply
+ *  Carbon's totals, or pull the provider's trial balance. */
+export const cutoverStepValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
 /** The enable: the cutover date and the company name typed to confirm. */
 export const activateAccountingValidator = z.object({
   cutoverDate: cutoverDateField,

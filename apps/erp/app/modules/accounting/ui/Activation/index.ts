@@ -10,15 +10,20 @@ import ActivationSteps, {
 } from "./ActivationSteps";
 import FixedAssetDepreciationTable from "./FixedAssetDepreciationTable";
 import InventoryCostTable from "./InventoryCostTable";
-import MigrationClearingTable from "./MigrationClearingTable";
+import MigrationClearingTable, {
+  type MigrationClearingItem
+} from "./MigrationClearingTable";
 import ReadinessChecklist from "./ReadinessChecklist";
 import TrialBalanceEditor, {
-  type TrialBalanceImportResult
+  type TrialBalanceImportResult,
+  type TrialBalancePullResult
 } from "./TrialBalanceEditor";
 
 export {
   type ActivationStep,
+  type MigrationClearingItem,
   type TrialBalanceImportResult,
+  type TrialBalancePullResult,
   ActivationFooter,
   ActivationSteps,
   activationStepPath,

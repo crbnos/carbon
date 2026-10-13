@@ -54,6 +54,9 @@ msgstr "(비활성 계정)"
 msgid "(Inactive)"
 msgstr "(비활성)"
 
+msgid "(mapped to more than one Carbon account)"
+msgstr "(하나 이상의 Carbon 계정에 매핑됨)"
+
 msgid "(not an Equity posting account)"
 msgstr "(자본 전기 계정이 아님)"
 
@@ -2804,6 +2807,9 @@ msgstr "송장에 적용"
 msgid "Apply to reimbursements"
 msgstr "환급금에 배정"
 
+msgid "Apply to Trial Balance"
+msgstr "시산표에 적용"
+
 msgid "Applying"
 msgstr "적용 중"
 
@@ -3811,6 +3817,10 @@ msgstr "백업"
 
 msgid "Balance"
 msgstr "잔액"
+
+#. placeholder {0}: account.name
+msgid "Balance for {0}"
+msgstr "{0}의 잔액"
 
 msgid "Balance Sheet"
 msgstr "재무상태표"
@@ -6399,10 +6409,6 @@ msgstr "신용 메모 및 차변 메모"
 msgid "Credit applied"
 msgstr "대변 적용됨"
 
-#. placeholder {0}: account.name
-msgid "Credit for {0}"
-msgstr "{0}의 대변"
-
 msgid "Credit Memo"
 msgstr "대변전표"
 
@@ -6883,10 +6889,6 @@ msgstr "차변 ({0})"
 
 msgid "Debit Account"
 msgstr "차변 계정"
-
-#. placeholder {0}: account.name
-msgid "Debit for {0}"
-msgstr "{0}의 차변"
 
 msgid "Debit Memo"
 msgstr "차변전표"
@@ -8912,6 +8914,12 @@ msgstr "PO에 대한 공급업체 청구서를 입력하고 승인하세요 (3�
 msgid "Enter at least one debit and credit"
 msgstr "차변과 대변을 각각 하나 이상 입력하세요."
 
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import or a pull from {providerName} replaces the whole trial balance."
+msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 accountNumber, debit, credit 열이 필요합니다. 가져오기 또는 {providerName}에서 끌어오기는 전체 시산표를 바꿉니다."
+
+msgid "Enter debits as positive and credits as negative amounts. The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
+msgstr "차변을 양수로, 대변을 음수로 입력하세요. CSV는 accountNumber, debit, credit 열이 필요합니다. 가져오기는 전체 시산표를 바꿉니다."
+
 msgid "Enter number…"
 msgstr "숫자 입력…"
 
@@ -10726,6 +10734,9 @@ msgstr "이 단계에서 선택된 항목 숨기기"
 msgid "Hide system quantities until the review step"
 msgstr "검토 단계 전까지 시스템 수량 숨기기"
 
+msgid "Hide the items on {label}"
+msgstr "{label}의 항목 숨기기"
+
 msgid "Hide, pin and reorder columns"
 msgstr "열 숨기기, 고정, 순서 변경"
 
@@ -11058,6 +11069,9 @@ msgstr "IFSC 코드"
 
 msgid "Ignore"
 msgstr "무시"
+
+msgid "Ignored"
+msgstr "무시됨"
 
 msgid "II (normal default)"
 msgstr "II(일반 기본값)"
@@ -12939,6 +12953,10 @@ msgstr "추출된 라인 매핑"
 
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
+
+#. placeholder {0}: puller.data?.providerName
+msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgstr "이 계정들을 {0} 연동 설정에서 매핑한 후 다시 끌어오기하거나, 아래에 잔액을 입력하세요."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비용 계정은 필수로 표시되며, 전기된 전표는 매핑된 공급자 계정 코드를 사용하여 전송됩니다."
@@ -15115,8 +15133,8 @@ msgstr "켜짐"
 msgid "On {sentDate}"
 msgstr "켬"
 
-msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero."
-msgstr "제어 계정에서 Carbon은 자신의 미결 항목, 재고 및 고정자산에서 잔액을 개설합니다. 시산표가 일치해야 합니다. 모든 차이는 마이그레이션 정산에 유지되며, 이는 합계가 0이어야 합니다."
+msgid "On a control account, Carbon opens the balance from its own open items, inventory and fixed assets. The trial balance must agree: every difference stays on Migration Clearing, which must total zero. Open an account to see its items, and ignore an invoice the prior system already settled."
+msgstr "통제 계정에서 Carbon은 자신의 미결 항목, 재고 관리 및 고정자산에서 잔액을 가져옵니다. 시산표는 일치해야 합니다. 모든 차이는 Migration Clearing에 남으며, 이는 총계가 0이어야 합니다. 계정을 열어 항목을 확인하고, 이전 시스템에서 이미 정산된 송장은 무시하세요."
 
 msgid "On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity."
 msgstr "이송 칸반에서 도착 보관 단위의 최소 수량입니다. 현재 재고와 미결 인바운드 이송의 합이 이 수준 아래로 내려가면, Carbon은 칸반 수량만큼의 릴리스됨 재고 이송을 생성합니다."
@@ -17084,6 +17102,9 @@ msgstr "가져오기"
 
 msgid "Pull From"
 msgstr "가져오기 출처"
+
+msgid "Pull from {providerName}"
+msgstr "{providerName}에서 끌어오기"
 
 msgid "Pull from accounting"
 msgstr "회계에서 가져오기"
@@ -20176,6 +20197,9 @@ msgstr "이 자산의 재고 계상 금액을 설정합니다. 차이는 재고�
 msgid "Settings"
 msgstr "설정"
 
+msgid "Settled in the system that kept the books before the cutover. Carbon leaves them out of its totals and marks them Paid on the day before the cutover when you set up accounting."
+msgstr "전환 전에 장부를 관리하던 시스템에서 정산됨. Carbon은 이들을 총계에서 제외하고, 회계를 설정할 때 전환 전날에 결제됨으로 표시합니다."
+
 msgid "Setup"
 msgstr "설정"
 
@@ -20516,6 +20540,9 @@ msgstr "공급업체 ID 표시"
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
 
+msgid "Show the items on {label}"
+msgstr "{label}의 항목 표시"
+
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
 
@@ -20674,6 +20701,9 @@ msgstr "판매됨"
 
 msgid "Solutions Engineer"
 msgstr "솔루션 엔지니어"
+
+msgid "Some balances have no Carbon account"
+msgstr "일부 잔액에는 Carbon 계정이 없습니다"
 
 msgid "Some lines are invoiced for more or less than they total. Fix the amounts before confirming."
 msgstr "일부 라인의 송장 발행액이 총계보다 많거나 적습니다. 확인하기 전에 금액을 수정하세요."
@@ -22042,9 +22072,6 @@ msgstr "CSV 파일이 비어있습니다."
 
 msgid "The CSV has no {columns} column."
 msgstr "CSV에 {columns} 열이 없습니다."
-
-msgid "The CSV needs the columns accountNumber, debit and credit. An import replaces the whole trial balance."
-msgstr "CSV에는 accountNumber, 차변, 대변 열이 필요합니다. 가져오기는 전체 시산표를 교체합니다."
 
 msgid "The CSV was not imported"
 msgstr "CSV를 가져오지 못했습니다."
@@ -23677,9 +23704,8 @@ msgstr "주제"
 msgid "Total"
 msgstr "합계"
 
-#. placeholder {0}: formatter.format(round(totalDebit - totalCredit))
-msgid "Total (out of balance by {0})"
-msgstr "총계 ({0}만큼 차이남)"
+msgid "Total (out of balance)"
+msgstr "총계 (불균형)"
 
 #. placeholder {0}: total.className
 msgid "Total {0}"

@@ -10,7 +10,9 @@
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import {
+  applyCarbonToTrialBalance,
   dayBeforeCutover,
+  isIgnorableOpenItem,
   type MigrationClearingAccount,
   type MigrationClearingRow,
   migrationClearingByAccount,
@@ -104,6 +106,12 @@ async function openingTrialBalanceFor(
 export type CutoverOpeningInputs = {
   /** Open items, inventory per account and fixed assets per class account. */
   items: OpenItem[];
+  /**
+   * Invoices open in Carbon that the user ignored on Migration Clearing. They
+   * are not in `items`; the enable marks them Paid as of the day before the
+   * cutover.
+   */
+  ignoredItems: OpenItem[];
   trialBalance: TrialBalanceLine[];
   /** Accounts whose opening balance comes from Carbon, not the trial balance. */
   controlAccountIds: Set<string>;
@@ -128,7 +136,7 @@ export async function getCutoverOpeningInputs(
 ): Promise<CutoverOpeningInputs> {
   const context = await loadCutoverContext(db, args);
   const { companyId, company, defaults } = context;
-  const [openItems, inventory, fixedAssets, classes, trialBalance] =
+  const [openItems, inventory, fixedAssets, classes, trialBalance, ignored] =
     await Promise.all([
       openItemsFor(db, context),
       inventoryFor(db, context),
@@ -138,8 +146,12 @@ export async function getCutoverOpeningInputs(
         .select(["assetAccountId", "accumulatedDepreciationAccountId"])
         .where("companyId", "=", companyId)
         .execute(),
-      openingTrialBalanceFor(db, company)
+      openingTrialBalanceFor(db, company),
+      getIgnoredInvoiceIds(db, companyId)
     ]);
+  const isIgnored = (item: OpenItem) =>
+    isIgnorableOpenItem(item) && ignored.has(item.documentId ?? "");
+  const ignoredItems = openItems.filter(isIgnored);
 
   const costByAccount = new Map<string, number>();
   const depreciationByAccount = new Map<string, number>();
@@ -195,7 +207,7 @@ export async function getCutoverOpeningInputs(
     )
   ];
   const items = [
-    ...openItems,
+    ...openItems.filter((item) => !isIgnored(item)),
     ...(await finishItems(db, company.companyGroupId, drafts))
   ];
 
@@ -245,6 +257,7 @@ export async function getCutoverOpeningInputs(
 
   return {
     items,
+    ignoredItems,
     trialBalance: trialBalance.lines,
     controlAccountIds,
     migrationClearingAccountId,
@@ -384,5 +397,70 @@ export async function saveOpeningTrialBalance(
       await trx.insertInto("journalLine").values(inserts).execute();
     }
     return { journalId };
+  });
+}
+
+/** The invoices the user ignored on Migration Clearing. */
+async function getIgnoredInvoiceIds(
+  db: CutoverDb,
+  companyId: string
+): Promise<Set<string>> {
+  const rows = await db
+    .selectFrom("accountingCutoverIgnoredInvoice")
+    .select("invoiceId")
+    .where("companyId", "=", companyId)
+    .execute();
+  return new Set(rows.map((row) => row.invoiceId));
+}
+
+/**
+ * Ignores an invoice on Migration Clearing, or stops ignoring it. Refused
+ * after the cutover: the enable has already applied the list.
+ */
+export async function setCutoverInvoiceIgnored(
+  db: CutoverDb,
+  {
+    companyId,
+    userId,
+    invoiceId,
+    ignored
+  }: { companyId: string; userId: string; invoiceId: string; ignored: boolean }
+): Promise<void> {
+  await withTransaction(db, async (trx) => {
+    await refuseAfterCutover(trx, companyId);
+    if (ignored) {
+      await trx
+        .insertInto("accountingCutoverIgnoredInvoice")
+        .values({ companyId, invoiceId, createdBy: userId })
+        .onConflict((oc) => oc.columns(["companyId", "invoiceId"]).doNothing())
+        .execute();
+    } else {
+      await trx
+        .deleteFrom("accountingCutoverIgnoredInvoice")
+        .where("companyId", "=", companyId)
+        .where("invoiceId", "=", invoiceId)
+        .execute();
+    }
+  });
+}
+
+/**
+ * Sets every control account on the trial balance to Carbon's opening total
+ * for it, keeping every other row (`applyCarbonToTrialBalance`).
+ */
+export async function applyCarbonToOpeningTrialBalance(
+  db: CutoverDb,
+  args: CutoverArgs & { userId: string }
+): Promise<{ journalId: string }> {
+  return withTransaction(db, async (trx) => {
+    const clearing = await getMigrationClearing(trx, args);
+    return saveOpeningTrialBalance(trx, {
+      ...args,
+      lines: applyCarbonToTrialBalance(
+        clearing.trialBalance,
+        clearing.rows,
+        clearing.controlAccountIds
+      )
+    });
   });
 }

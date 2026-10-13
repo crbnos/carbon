@@ -9,6 +9,11 @@ import type {
   RemoteCandidate
 } from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
+import {
+  parseXeroTrialBalance,
+  type RemoteTrialBalanceRow,
+  type XeroTrialBalanceResponse
+} from "../../core/trial-balance";
 import type {
   AccountingEntityType,
   AuthProvider,
@@ -543,6 +548,25 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     }
 
     return response.data?.ManualJournals?.[0] ?? null;
+  }
+
+  /**
+   * The trial balance as at `date` (YYYY-MM-DD), one row per account
+   * (GET /Reports/TrialBalance). Needs the `accounting.reports.trialbalance.read`
+   * scope; a token minted before Carbon requested it gets a 401/403, thrown
+   * as an AccountingApiError carrying that status.
+   */
+  async getTrialBalance(date: string): Promise<RemoteTrialBalanceRow[]> {
+    const response = await this.request<XeroTrialBalanceResponse>(
+      "GET",
+      `/Reports/TrialBalance?date=${encodeURIComponent(date)}`
+    );
+
+    if (response.error || !response.data) {
+      throwXeroApiError("read trial balance", response);
+    }
+
+    return parseXeroTrialBalance(response.data);
   }
 
   /**
