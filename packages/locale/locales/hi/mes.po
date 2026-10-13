@@ -399,6 +399,9 @@ msgstr "बंद करें"
 msgid "Collapse characteristics table"
 msgstr "विशेषताएं तालिका संपीड़ित करें"
 
+msgid "Collapse navigation"
+msgstr "नेविगेशन संक्षिप्त करें"
+
 msgid "Collapse panel"
 msgstr "पैनल संक्षिप्त करें"
 
@@ -421,6 +424,9 @@ msgstr "कॉलम: {0}"
 
 msgid "Columns"
 msgstr "कॉलम"
+
+msgid "Companies"
+msgstr "कंपनियां"
 
 msgid "Company"
 msgstr "कंपनी"
@@ -905,6 +911,9 @@ msgstr "जॉब ट्रैवलर"
 msgid "Jobs"
 msgstr "जॉब"
 
+msgid "Keep navigation open"
+msgstr "नेविगेशन खुला रखें"
+
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
 
@@ -1307,6 +1316,9 @@ msgstr "इस बैच में एक जॉब खोलें"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
+
+msgid "Open ERP"
+msgstr "ERP खोलें"
 
 msgid "Open Jobs"
 msgstr "खुले जॉब"

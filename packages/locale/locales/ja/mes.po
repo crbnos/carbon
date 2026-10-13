@@ -399,6 +399,9 @@ msgstr "閉じる"
 msgid "Collapse characteristics table"
 msgstr "特性テーブルを折りたたむ"
 
+msgid "Collapse navigation"
+msgstr "ナビゲーションを折りたたむ"
+
 msgid "Collapse panel"
 msgstr "パネルを折りたたむ"
 
@@ -421,6 +424,9 @@ msgstr "カラム: {0}"
 
 msgid "Columns"
 msgstr "列"
+
+msgid "Companies"
+msgstr "会社"
 
 msgid "Company"
 msgstr "会社"
@@ -905,6 +911,9 @@ msgstr "製造指図現品票"
 msgid "Jobs"
 msgstr "製造指図"
 
+msgid "Keep navigation open"
+msgstr "ナビゲーションを開いたままにする"
+
 msgid "Keep picking"
 msgstr "ピッキングを続ける"
 
@@ -1307,6 +1316,9 @@ msgstr "このバッチの製造指図を開く"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを開く"
+
+msgid "Open ERP"
+msgstr "ERP を開く"
 
 msgid "Open Jobs"
 msgstr "オープン製造指図"

@@ -5043,6 +5043,9 @@ msgstr "Comprimi riga"
 msgid "Collapse Machine"
 msgstr "Comprimi macchina"
 
+msgid "Collapse navigation"
+msgstr "Comprimi navigazione"
+
 msgid "Collapse row"
 msgstr "Comprimi riga"
 
@@ -12030,6 +12033,9 @@ msgstr "Mantieni la determinazione dei prezzi esistente, aggiungi solo nuovi art
 
 msgid "Keep Line"
 msgstr "Mantieni riga"
+
+msgid "Keep navigation open"
+msgstr "Mantieni navigazione aperta"
 
 msgid "Keep only items where…"
 msgstr "Mantieni solo gli elementi dove…"

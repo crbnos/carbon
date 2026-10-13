@@ -5043,6 +5043,9 @@ msgstr "Réduire la ligne"
 msgid "Collapse Machine"
 msgstr "Réduire Machine"
 
+msgid "Collapse navigation"
+msgstr "Réduire la navigation"
+
 msgid "Collapse row"
 msgstr "Réduire la ligne"
 
@@ -12030,6 +12033,9 @@ msgstr "Conserver la tarification existante, ajouter uniquement les nouveaux art
 
 msgid "Keep Line"
 msgstr "Conserver la ligne"
+
+msgid "Keep navigation open"
+msgstr "Garder la navigation ouverte"
 
 msgid "Keep only items where…"
 msgstr "Garder uniquement les articles où…"

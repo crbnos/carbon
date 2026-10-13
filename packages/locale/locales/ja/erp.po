@@ -5043,6 +5043,9 @@ msgstr "明細を折りたたむ"
 msgid "Collapse Machine"
 msgstr "機械を折りたたむ"
 
+msgid "Collapse navigation"
+msgstr "ナビゲーションを折りたたむ"
+
 msgid "Collapse row"
 msgstr "行を折りたたむ"
 
@@ -12030,6 +12033,9 @@ msgstr "既存の価格設定を保持し、新しい品目のみを追加"
 
 msgid "Keep Line"
 msgstr "明細を維持"
+
+msgid "Keep navigation open"
+msgstr "ナビゲーションを開いたままにする"
 
 msgid "Keep only items where…"
 msgstr "以下の条件を満たすアイテムのみを保持…"

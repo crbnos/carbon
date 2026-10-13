@@ -399,6 +399,9 @@ msgstr "Kapat"
 msgid "Collapse characteristics table"
 msgstr "Özellikler tablosunu daralt"
 
+msgid "Collapse navigation"
+msgstr "Gezinmeyi daralt"
+
 msgid "Collapse panel"
 msgstr "Paneli daralt"
 
@@ -421,6 +424,9 @@ msgstr "Sütun: {0}"
 
 msgid "Columns"
 msgstr "Sütunlar"
+
+msgid "Companies"
+msgstr "Şirketler"
 
 msgid "Company"
 msgstr "Şirket"
@@ -905,6 +911,9 @@ msgstr "İş emri takip kartı"
 msgid "Jobs"
 msgstr "İş emirleri"
 
+msgid "Keep navigation open"
+msgstr "Gezinmeyi açık tut"
+
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
 
@@ -1307,6 +1316,9 @@ msgstr "Bu partizeki bir iş emrini aç"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB kararı için NCR aç"
+
+msgid "Open ERP"
+msgstr "ERP'yi aç"
 
 msgid "Open Jobs"
 msgstr "Açık İş emirleri"

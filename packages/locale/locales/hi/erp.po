@@ -5043,6 +5043,9 @@ msgstr "पंक्ति को संपीड़न करें"
 msgid "Collapse Machine"
 msgstr "मशीन को संक्षिप्त करें"
 
+msgid "Collapse navigation"
+msgstr "नेविगेशन संक्षिप्त करें"
+
 msgid "Collapse row"
 msgstr "पंक्ति संक्षिप्त करें"
 
@@ -12030,6 +12033,9 @@ msgstr "मौजूदा मूल्य निर्धारण रखें
 
 msgid "Keep Line"
 msgstr "पंक्ति रखें"
+
+msgid "Keep navigation open"
+msgstr "नेविगेशन खुला रखें"
 
 msgid "Keep only items where…"
 msgstr "केवल आइटम रखें जहां…"

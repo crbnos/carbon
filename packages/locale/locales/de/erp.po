@@ -5043,6 +5043,9 @@ msgstr "Position einklappen"
 msgid "Collapse Machine"
 msgstr "Maschine einklappen"
 
+msgid "Collapse navigation"
+msgstr "Navigation einklappen"
+
 msgid "Collapse row"
 msgstr "Zeile einklappen"
 
@@ -12030,6 +12033,9 @@ msgstr "Behalte bestehende Preise, nur neue Artikel hinzufügen"
 
 msgid "Keep Line"
 msgstr "Position behalten"
+
+msgid "Keep navigation open"
+msgstr "Navigation geöffnet lassen"
 
 msgid "Keep only items where…"
 msgstr "Nur Artikel behalten, bei denen…"

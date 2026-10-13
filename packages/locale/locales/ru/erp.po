@@ -5043,6 +5043,9 @@ msgstr "Свернуть строку"
 msgid "Collapse Machine"
 msgstr "Свернуть станок"
 
+msgid "Collapse navigation"
+msgstr "Свернуть навигацию"
+
 msgid "Collapse row"
 msgstr "Свернуть строку"
 
@@ -12030,6 +12033,9 @@ msgstr "Сохранить существующее ценообразовани
 
 msgid "Keep Line"
 msgstr "Оставить строку"
+
+msgid "Keep navigation open"
+msgstr "Не сворачивать навигацию"
 
 msgid "Keep only items where…"
 msgstr "Оставить только элементы где…"

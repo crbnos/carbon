@@ -5043,6 +5043,9 @@ msgstr "라인 접기"
 msgid "Collapse Machine"
 msgstr "기계 접기"
 
+msgid "Collapse navigation"
+msgstr "탐색 접기"
+
 msgid "Collapse row"
 msgstr "행 접기"
 
@@ -12030,6 +12033,9 @@ msgstr "기존 가격 책정을 유지하고 새 품목만 추가합니다."
 
 msgid "Keep Line"
 msgstr "라인 유지"
+
+msgid "Keep navigation open"
+msgstr "탐색 열어 두기"
 
 msgid "Keep only items where…"
 msgstr "...인 항목만 유지"

@@ -5043,6 +5043,9 @@ msgstr "Contraer línea"
 msgid "Collapse Machine"
 msgstr "Contraer máquina"
 
+msgid "Collapse navigation"
+msgstr "Contraer navegación"
+
 msgid "Collapse row"
 msgstr "Contraer fila"
 
@@ -12030,6 +12033,9 @@ msgstr "Mantener fijación de precios existente, solo agregar artículos nuevos"
 
 msgid "Keep Line"
 msgstr "Mantener línea"
+
+msgid "Keep navigation open"
+msgstr "Mantener navegación abierta"
 
 msgid "Keep only items where…"
 msgstr "Mantener solo elementos donde..."

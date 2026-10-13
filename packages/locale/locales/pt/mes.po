@@ -399,6 +399,9 @@ msgstr "Fechar"
 msgid "Collapse characteristics table"
 msgstr "Recolher tabela de características"
 
+msgid "Collapse navigation"
+msgstr "Recolher navegação"
+
 msgid "Collapse panel"
 msgstr "Recolher painel"
 
@@ -421,6 +424,9 @@ msgstr "Coluna: {0}"
 
 msgid "Columns"
 msgstr "Colunas"
+
+msgid "Companies"
+msgstr "Empresas"
 
 msgid "Company"
 msgstr "Empresa"
@@ -905,6 +911,9 @@ msgstr "Ficha de acompanhamento"
 msgid "Jobs"
 msgstr "Ordens de produção"
 
+msgid "Keep navigation open"
+msgstr "Manter navegação aberta"
+
 msgid "Keep picking"
 msgstr "Continuar separação"
 
@@ -1307,6 +1316,9 @@ msgstr "Abrir uma ordem de produção neste lote de produção"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir um NCR para disposição MRB"
+
+msgid "Open ERP"
+msgstr "Abrir ERP"
 
 msgid "Open Jobs"
 msgstr "Ordens de Produção Abertas"

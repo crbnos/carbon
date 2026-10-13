@@ -5043,6 +5043,9 @@ msgstr "折叠行"
 msgid "Collapse Machine"
 msgstr "折叠机器"
 
+msgid "Collapse navigation"
+msgstr "收起导航"
+
 msgid "Collapse row"
 msgstr "折叠行"
 
@@ -12030,6 +12033,9 @@ msgstr "保留现有定价，仅添加新物料"
 
 msgid "Keep Line"
 msgstr "保留行"
+
+msgid "Keep navigation open"
+msgstr "保持导航展开"
 
 msgid "Keep only items where…"
 msgstr "仅保留满足以下条件的物料…"
