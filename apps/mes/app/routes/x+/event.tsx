@@ -46,12 +46,18 @@ export async function action({ request }: ActionFunctionArgs) {
   // One press time for the device rules and the event itself.
   const pressedAt = datetime.timestamp();
 
-  // A Machine press on a work center with a device ends the work center's open
-  // Machine time at the press and records it, so an older sensor change cannot
-  // undo it. A work center without a device is left as it is.
-  const recordMachinePress = async () => {
-    if (d.type !== "Machine" || !d.workCenterId) return;
-    const workCenterId = d.workCenterId;
+  // A machine has one machine time. A Machine press ends every open Machine
+  // event on the work center at the press, from any operator or the sensor.
+  // On a work center with a device it also ends the open unattributed time and
+  // records the press, so an older sensor change cannot undo it.
+  const recordMachinePress = async ({
+    type,
+    workCenterId
+  }: {
+    type: string | null;
+    workCenterId: string | null | undefined;
+  }) => {
+    if (type !== "Machine" || !workCenterId) return;
     await getDatabaseClient()
       .transaction()
       .execute((trx) =>
@@ -135,7 +141,10 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     try {
-      await recordMachinePress();
+      await recordMachinePress({
+        type: d.type,
+        workCenterId: d.workCenterId
+      });
     } catch (err) {
       return data(
         {},
@@ -171,8 +180,25 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!id) {
       return data({}, await flash(request, error("No event id provided")));
     }
+    // End on the event's own work center and type, not the form's.
+    const event = await client
+      .from("productionEvent")
+      .select("workCenterId, type")
+      .eq("id", id)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (event.error || !event.data) {
+      return data(
+        {},
+        await flash(request, error(event.error, "Failed to end event"))
+      );
+    }
+
     try {
-      await recordMachinePress();
+      await recordMachinePress({
+        type: event.data.type,
+        workCenterId: event.data.workCenterId
+      });
     } catch (err) {
       return data({}, await flash(request, error(err, "Failed to end event")));
     }
