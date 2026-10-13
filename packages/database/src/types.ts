@@ -32449,31 +32449,24 @@ export type Database = {
           },
           {
             foreignKeyName: "machineStateChange_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "machineStateChange_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenter"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "machineStateChange_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenters"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "machineStateChange_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
@@ -70078,31 +70071,24 @@ export type Database = {
           },
           {
             foreignKeyName: "unattributedMachineTime_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "unattributedMachineTime_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenter"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "unattributedMachineTime_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenters"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "unattributedMachineTime_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
