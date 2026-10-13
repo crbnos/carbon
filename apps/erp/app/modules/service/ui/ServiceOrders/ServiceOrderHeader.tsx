@@ -3,26 +3,17 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  Button,
-  Copy,
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  Heading,
-  HStack,
-  IconButton,
+  DropdownMenuSeparator,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCircleCheck,
   LuCircleStop,
-  LuEllipsisVertical,
   LuFileText,
   LuLock,
-  LuPanelRight,
   LuPause,
   LuPlay,
   LuPrinter,
@@ -34,6 +25,7 @@ import {
 import { Link, useFetcher, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
 import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
+import { RecordHeader } from "~/components/Layout/RecordHeader";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import { usePermissions, useRouteData } from "~/hooks";
 import { path } from "~/utils/path";
@@ -49,9 +41,12 @@ import CompleteRefurbishmentModal from "./CompleteRefurbishmentModal";
 import { useServiceOrderNavigation } from "./useServiceOrderNavigation";
 
 /**
- * The order's header strip: identity and status on the left, the lifecycle
- * on the right. The next step is the one primary button. Every move posts to
- * the status route, which checks the move again.
+ * The order's header strip, as the project header: identity and status on
+ * the left; the route tabs, the copy button and the ⋯ menu at the right
+ * end. There is no primary button (Brad, 2026-10-13): the menu opens with
+ * the status transitions, the next step first (Complete when it applies),
+ * then the links. Every move posts to the status route, which checks the
+ * move again.
  */
 const ServiceOrderHeader = () => {
   const { t } = useLingui();
@@ -102,64 +97,131 @@ const ServiceOrderHeader = () => {
   const returnOrder = order.salesReturnOrderLine?.salesReturnOrder ?? null;
   const canShipBack = isDepotRepair && isReadyToShipBack(order);
 
+  // The next step first: Complete on an open order, Resume on hold, then
+  // Create Invoice or Close on a completed one.
+  const transitions = (
+    <>
+      {isOpen && (
+        <DropdownMenuItem
+          disabled={!can("Completed")}
+          onClick={completeDisclosure.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuCircleCheck />} />
+          <Trans>Complete</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "On Hold" && (
+        <DropdownMenuItem
+          disabled={!can("Draft")}
+          onClick={() => move("Draft")}
+        >
+          <DropdownMenuIcon icon={<LuPlay />} />
+          <Trans>Resume</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "Completed" && unbilledCount > 0 && (
+        <DropdownMenuItem
+          disabled={!canInvoice || isMoving}
+          onClick={invoiceDisclosure.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuFileText />} />
+          <Trans>Create Invoice</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "Completed" && unbilledCount === 0 && (
+        <DropdownMenuItem
+          disabled={!can("Closed")}
+          onClick={closeDisclosure.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuLock />} />
+          <Trans>Close</Trans>
+        </DropdownMenuItem>
+      )}
+      {canShipBack && returnOrder && (
+        <DropdownMenuItem asChild>
+          <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
+            <DropdownMenuIcon icon={<LuTruck />} />
+            <Trans>Ship Back</Trans>
+          </Link>
+        </DropdownMenuItem>
+      )}
+      {isOpen && (
+        <DropdownMenuItem
+          disabled={!can("On Hold")}
+          onClick={() => move("On Hold")}
+        >
+          <DropdownMenuIcon icon={<LuPause />} />
+          <Trans>Put on Hold</Trans>
+        </DropdownMenuItem>
+      )}
+      {status === "Completed" && !isRefurbishment && (
+        <DropdownMenuItem
+          disabled={!can("Draft")}
+          onClick={() => move("Draft")}
+        >
+          <DropdownMenuIcon icon={<LuRotateCcw />} />
+          <Trans>Reopen</Trans>
+        </DropdownMenuItem>
+      )}
+      {(isOpen || status === "On Hold") && (
+        <DropdownMenuItem
+          destructive
+          disabled={!can("Cancelled")}
+          onClick={cancelDisclosure.onOpen}
+        >
+          <DropdownMenuIcon icon={<LuCircleStop />} />
+          <Trans>Cancel</Trans>
+        </DropdownMenuItem>
+      )}
+    </>
+  );
+  const hasTransitions =
+    isOpen || status === "On Hold" || status === "Completed" || canShipBack;
+
+  const menu = (
+    <>
+      {transitions}
+      {hasTransitions && <DropdownMenuSeparator />}
+      {order.customerAssetId && (
+        <DropdownMenuItem asChild>
+          <Link to={path.to.customerAsset(order.customerAssetId)}>
+            <DropdownMenuIcon icon={<LuServer />} />
+            <Trans>View Unit</Trans>
+          </Link>
+        </DropdownMenuItem>
+      )}
+      {returnOrder && (
+        <DropdownMenuItem asChild>
+          <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
+            <DropdownMenuIcon icon={<LuUndo2 />} />
+            <Trans>View Return Order</Trans>
+          </Link>
+        </DropdownMenuItem>
+      )}
+      <DropdownMenuItem asChild>
+        <a
+          href={path.to.serviceOrderEstimate(id)}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <DropdownMenuIcon icon={<LuPrinter />} />
+          <Trans>Print Estimate</Trans>
+        </a>
+      </DropdownMenuItem>
+    </>
+  );
+
   return (
     <>
-      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
-        <HStack className="w-full justify-between">
-          <HStack>
-            <Link to={path.to.serviceOrderDetails(id)}>
-              <Heading size="h4" className="whitespace-nowrap">
-                {order.serviceOrderId}
-              </Heading>
-            </Link>
-            <Copy text={order.serviceOrderId} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <IconButton
-                  aria-label={t`More options`}
-                  icon={<LuEllipsisVertical />}
-                  variant="secondary"
-                  size="sm"
-                />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                {order.customerAssetId && (
-                  <DropdownMenuItem asChild>
-                    <Link to={path.to.customerAsset(order.customerAssetId)}>
-                      <DropdownMenuIcon icon={<LuServer />} />
-                      <Trans>View Unit</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {returnOrder && (
-                  <DropdownMenuItem asChild>
-                    <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
-                      <DropdownMenuIcon icon={<LuUndo2 />} />
-                      <Trans>View Return Order</Trans>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuItem asChild>
-                  <a
-                    href={path.to.serviceOrderEstimate(id)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuPrinter />} />
-                    <Trans>Print Estimate</Trans>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  disabled={
-                    status !== "Completed" || isRefurbishment || !can("Draft")
-                  }
-                  onClick={() => move("Draft")}
-                >
-                  <DropdownMenuIcon icon={<LuRotateCcw />} />
-                  <Trans>Reopen</Trans>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+      <RecordHeader
+        title={
+          <span className="whitespace-nowrap">{order.serviceOrderId}</span>
+        }
+        titleTo={path.to.serviceOrderDetails(id)}
+        copyValue={order.serviceOrderId}
+        menu={menu}
+        status={
+          <>
             <ServiceOrderStatus status={status} />
             {isDepotRepair && order.customerAsset?.status === "At Depot" && (
               <CustomerAssetStatus status="At Depot" />
@@ -175,102 +237,14 @@ const ServiceOrderHeader = () => {
                 {returnOrder.salesReturnOrderId}
               </Link>
             )}
-          </HStack>
-          <HStack>
-            {navigation.length > 1 && <DetailTopbar links={navigation} />}
-
-            {isOpen && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuPause />}
-                isDisabled={!can("On Hold")}
-                isLoading={
-                  isMoving &&
-                  statusFetcher.formData?.get("status") === "On Hold"
-                }
-                onClick={() => move("On Hold")}
-              >
-                <Trans>Put on Hold</Trans>
-              </Button>
-            )}
-
-            {status === "On Hold" && (
-              <Button
-                variant="primary"
-                leftIcon={<LuPlay />}
-                isDisabled={!can("Draft")}
-                isLoading={isMoving}
-                onClick={() => move("Draft")}
-              >
-                <Trans>Resume</Trans>
-              </Button>
-            )}
-
-            {isOpen && (
-              <Button
-                variant={
-                  status === "In Progress" || isDepotRepair || isRefurbishment
-                    ? "primary"
-                    : "secondary"
-                }
-                leftIcon={<LuCircleCheck />}
-                isDisabled={!can("Completed")}
-                onClick={completeDisclosure.onOpen}
-              >
-                <Trans>Complete</Trans>
-              </Button>
-            )}
-
-            {canShipBack && returnOrder && (
-              <Button variant="secondary" leftIcon={<LuTruck />} asChild>
-                <Link to={path.to.salesReturnOrderDetails(returnOrder.id)}>
-                  <Trans>Ship Back</Trans>
-                </Link>
-              </Button>
-            )}
-
-            {status === "Completed" && unbilledCount > 0 && (
-              <Button
-                variant="primary"
-                leftIcon={<LuFileText />}
-                isDisabled={!canInvoice || isMoving}
-                onClick={invoiceDisclosure.onOpen}
-              >
-                <Trans>Create Invoice</Trans>
-              </Button>
-            )}
-
-            {status === "Completed" && unbilledCount === 0 && (
-              <Button
-                variant="primary"
-                leftIcon={<LuLock />}
-                isDisabled={!can("Closed")}
-                onClick={closeDisclosure.onOpen}
-              >
-                <Trans>Close</Trans>
-              </Button>
-            )}
-
-            {(isOpen || status === "On Hold") && (
-              <Button
-                variant="secondary"
-                leftIcon={<LuCircleStop />}
-                isDisabled={!can("Cancelled")}
-                onClick={cancelDisclosure.onOpen}
-              >
-                <Trans>Cancel</Trans>
-              </Button>
-            )}
-
-            <IconButton
-              aria-label={t`Toggle Properties`}
-              icon={<LuPanelRight />}
-              onClick={toggleProperties}
-              variant="ghost"
-            />
-          </HStack>
-        </HStack>
-      </div>
+          </>
+        }
+        aside={
+          navigation.length > 1 ? <DetailTopbar links={navigation} /> : null
+        }
+        onToggleProperties={toggleProperties}
+        toolsPlacement="end"
+      />
 
       {completeDisclosure.isOpen && isRefurbishment && (
         <CompleteRefurbishmentModal

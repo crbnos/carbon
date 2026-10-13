@@ -246,7 +246,7 @@ back. The unit never enters company stock or stock value. Every branch keys on
 - **UI**: the RMA line links its orders, the explorer shows their count and
   `worstServiceOrderStatus`, and the header's Ship shows for an order that
   `isReadyToShipBack`. A Depot Repair order's header links the RMA, shows the At Depot pill,
-  makes Complete the next step (no visit) and offers Ship Back.
+  offers Complete with no visit and offers Ship Back in its ⋯ menu.
 
 Pinned by `post-receipt/sales-return-repair.test.ts` and
 `post-shipment/sales-return-repair.test.ts` (fixture `lib/sales-return-test-fixture.ts`).
