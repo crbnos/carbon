@@ -62,8 +62,15 @@ export type EarnedValueData =
       warnings: string[];
     };
 
-const NAME_CELL = "min-w-0 flex-1 px-4";
+const NAME_CELL = "min-w-0 flex-1 overflow-hidden px-4";
 const FIGURE_CELL = "w-24 shrink-0 px-2 text-right tabular-nums";
+/**
+ * The table fits the Costs pane (its `@container`): planned value, earned
+ * value, actual cost, CPI, SPI and EAC always show; BAC and VAC from 60rem;
+ * CV and SV, which the others give, from 72rem.
+ */
+const WIDE_CELL = cn(FIGURE_CELL, "hidden @min-[60rem]:block");
+const WIDEST_CELL = cn(FIGURE_CELL, "hidden @min-[72rem]:block");
 const CURRENT = "current";
 
 /**
@@ -132,12 +139,12 @@ function EarnedValueTable({
     const indexes = performanceIndexes(values);
     return (
       <>
-        <span className={FIGURE_CELL}>{money(values.bac)}</span>
+        <span className={WIDE_CELL}>{money(values.bac)}</span>
         <span className={FIGURE_CELL}>{money(values.bcws)}</span>
         <span className={FIGURE_CELL}>{money(values.bcwp)}</span>
         <span className={FIGURE_CELL}>{money(values.acwp)}</span>
-        <span className={FIGURE_CELL}>{money(indexes.cv)}</span>
-        <span className={FIGURE_CELL}>{money(indexes.sv)}</span>
+        <span className={WIDEST_CELL}>{money(indexes.cv)}</span>
+        <span className={WIDEST_CELL}>{money(indexes.sv)}</span>
         <span
           className={cn(
             FIGURE_CELL,
@@ -155,7 +162,7 @@ function EarnedValueTable({
           {index(indexes.spi)}
         </span>
         <span className={FIGURE_CELL}>{money(indexes.eac)}</span>
-        <span className={FIGURE_CELL}>{money(indexes.vac)}</span>
+        <span className={WIDE_CELL}>{money(indexes.vac)}</span>
       </>
     );
   };
@@ -212,7 +219,7 @@ function EarnedValueTable({
             <Trans>Control account</Trans>
           </LabelWithHelp>
         </div>
-        <span className={FIGURE_CELL} title={t`Budget at completion`}>
+        <span className={WIDE_CELL} title={t`Budget at completion`}>
           <Trans>BAC</Trans>
         </span>
         <span className={FIGURE_CELL} title={t`BCWS`}>
@@ -230,10 +237,10 @@ function EarnedValueTable({
             <Trans>Actual cost</Trans>
           </LabelWithHelp>
         </span>
-        <span className={FIGURE_CELL} title={t`Cost variance`}>
+        <span className={WIDEST_CELL} title={t`Cost variance`}>
           <Trans>CV</Trans>
         </span>
-        <span className={FIGURE_CELL} title={t`Schedule variance`}>
+        <span className={WIDEST_CELL} title={t`Schedule variance`}>
           <Trans>SV</Trans>
         </span>
         <span className={FIGURE_CELL} title={t`Cost performance index`}>
@@ -249,7 +256,7 @@ function EarnedValueTable({
         <span className={FIGURE_CELL} title={t`Estimate at completion`}>
           <Trans>EAC</Trans>
         </span>
-        <span className={FIGURE_CELL} title={t`Variance at completion`}>
+        <span className={WIDE_CELL} title={t`Variance at completion`}>
           <Trans>VAC</Trans>
         </span>
       </div>

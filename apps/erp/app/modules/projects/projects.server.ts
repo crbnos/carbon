@@ -131,8 +131,10 @@ import {
 import type { ProjectElementLink } from "./types";
 
 /**
- * Creates a project with its six default states, in one transaction. A new
- * project starts in Draft, so nothing can charge it before it is released.
+ * Creates a project in one transaction (with a WBS template's elements when
+ * one is given). States are company-wide (Settings → Projects), so none are
+ * seeded. A new project starts in Draft, so nothing can charge it before it
+ * is released.
  * When `identifier` is empty, the SQL function `derive_project_identifier`
  * picks a unique one from the name.
  */

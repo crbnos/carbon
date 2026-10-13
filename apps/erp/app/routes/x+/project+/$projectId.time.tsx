@@ -121,7 +121,7 @@ export default function ProjectTimeRoute() {
         ),
         cell: ({ row }) =>
           row.original.element ? (
-            <div className="flex max-w-[260px] items-center gap-2">
+            <div className="flex max-w-[160px] items-center gap-2 @min-[56rem]:max-w-[260px]">
               <span className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                 {row.original.element.readableId}
               </span>
@@ -139,7 +139,7 @@ export default function ProjectTimeRoute() {
           </LabelWithHelp>
         ),
         cell: ({ row }) => (
-          <span className="whitespace-nowrap">
+          <span className="block max-w-[120px] truncate @min-[56rem]:max-w-none">
             {row.original.laborCategory?.name ?? "—"}
           </span>
         )
@@ -164,7 +164,9 @@ export default function ProjectTimeRoute() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col">
-      <section className="flex shrink-0 flex-col border-b border-border">
+      {/* A container: the table's long cells truncate to fit a narrow pane
+          (1024 px with the sidebar open) instead of scrolling sideways. */}
+      <section className="@container flex shrink-0 flex-col border-b border-border">
         <div className="flex h-12 items-center px-4">
           <h3 className="text-sm font-medium">
             <Trans>Time not posted yet</Trans>

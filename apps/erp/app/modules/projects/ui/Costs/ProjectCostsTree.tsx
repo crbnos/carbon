@@ -62,6 +62,13 @@ type ProjectCostsTreeProps = {
 
 const ROW_HEIGHT = 36;
 const FIGURE_CELL = "w-28 shrink-0 px-2 text-right tabular-nums";
+/**
+ * The tree fits its pane (a container query on the page, not the viewport):
+ * Budget, Committed, Allowable and Remaining always show; Plan and Estimate
+ * from 58rem; Unallowable from 66rem, where all seven fit beside the names.
+ */
+const WIDE_CELL = cn(FIGURE_CELL, "hidden @min-[58rem]:block");
+const WIDEST_CELL = cn(FIGURE_CELL, "hidden @min-[66rem]:block");
 
 /**
  * The element tree with plan, budget, committed, allowable and unallowable
@@ -102,7 +109,7 @@ export default function ProjectCostsTree({
 
   const figureCells = (figures: ProjectCostFigures, burden = 0) => (
     <>
-      <span className={FIGURE_CELL}>{money(figures.plan)}</span>
+      <span className={WIDE_CELL}>{money(figures.plan)}</span>
       <span className={FIGURE_CELL}>{money(figures.budget)}</span>
       <span className={FIGURE_CELL}>{money(figures.committed)}</span>
       {burden !== 0 ? (
@@ -121,7 +128,7 @@ export default function ProjectCostsTree({
           {money(figures.actual - figures.unallowable)}
         </span>
       )}
-      <span className={FIGURE_CELL}>{money(figures.unallowable)}</span>
+      <span className={WIDEST_CELL}>{money(figures.unallowable)}</span>
       <span
         className={cn(
           FIGURE_CELL,
@@ -130,20 +137,20 @@ export default function ProjectCostsTree({
       >
         {money(figures.remaining)}
       </span>
-      <span className={FIGURE_CELL}>{money(figures.estimateAtCompletion)}</span>
+      <span className={WIDE_CELL}>{money(figures.estimateAtCompletion)}</span>
     </>
   );
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-x-auto">
-      <div className="flex h-full min-h-0 min-w-[63rem] flex-col">
+    <div className="@container flex h-full min-h-0 w-full flex-col overflow-x-auto">
+      <div className="flex h-full min-h-0 min-w-[36rem] flex-col">
         <div className="sticky top-0 z-10 flex h-10 shrink-0 items-center border-b border-border bg-card pr-4 text-xs font-medium text-muted-foreground">
           <div className="min-w-0 flex-1 px-4">
             <LabelWithHelp termId="element" variant="inline">
               <Trans>Element</Trans>
             </LabelWithHelp>
           </div>
-          <span className={FIGURE_CELL}>
+          <span className={WIDE_CELL}>
             <Trans>Plan</Trans>
           </span>
           <span className={FIGURE_CELL}>
@@ -155,7 +162,7 @@ export default function ProjectCostsTree({
           <span className={FIGURE_CELL}>
             <Trans>Allowable</Trans>
           </span>
-          <span className={FIGURE_CELL}>
+          <span className={WIDEST_CELL}>
             <LabelWithHelp termId="allowability" variant="inline">
               <Trans>Unallowable</Trans>
             </LabelWithHelp>
@@ -163,7 +170,7 @@ export default function ProjectCostsTree({
           <span className={FIGURE_CELL}>
             <Trans>Remaining</Trans>
           </span>
-          <span className={FIGURE_CELL}>
+          <span className={WIDE_CELL}>
             <Trans>Estimate</Trans>
           </span>
         </div>
