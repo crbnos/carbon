@@ -25,7 +25,9 @@ most one device across every OEE provider.
 Its `workCenterId` FK is composite, `(workCenterId, companyId)` →
 `workCenter (id, companyId)` (migration `20261013191915`), so a device can
 only map to its own company's work center; `upsertWorkCenterDevice` also
-checks it first ("Work center not found").
+checks it first ("Work center not found"). `machineStateChange` and
+`unattributedMachineTime` carry the same composite FK (migration
+`20261013201722`).
 
 ## Files
 
@@ -33,23 +35,27 @@ checks it first ("Work center not found").
 |---|---|
 | `packages/ee/src/oee/types.ts` | `OeeProvider` contract (`validate`, `listDevices`, `listStateChanges`), `MachineState`, `OeeDevice`, `OeeStateChange` |
 | `packages/ee/src/oee/engine.ts` | `planMachineTime`: the pure attribution engine. No database, no env. Pinned by `engine.test.ts` |
-| `packages/ee/src/oee/registry.ts` | `OEE_PROVIDERS`: integration id → provider factory. The one place a provider is named |
+| `packages/ee/src/oee/registry.ts` | `OEE_PROVIDERS` (keyed by `OeeProviderId`): provider id → factory, the one place a provider is named. `isOeeProviderId`, and `createOeeProvider(integrationId, metadata)`: the one resolution (id check, "No API key", the `DEFAULT_MINIMUM_STATE_SECONDS` default, the factory) behind `getOeeProvider` and the Sense healthcheck |
 | `packages/ee/src/oee/service.server.ts` | `getOeeProvider` (runtime, degrades through `companyHasFeature("INTEGRATIONS")`), and 4 authoring writes that embed `requireEntitlement("INTEGRATIONS")`: `upsertWorkCenterDevice`, `deleteWorkCenterDevice`, `assignUnattributedMachineTime`, `dismissUnattributedMachineTime` |
 | `packages/ee/src/sense/provider.ts` | `SenseProvider`, the Sense HTTP adapter. Pinned by `provider.test.ts` |
 | `packages/ee/src/sense/config.tsx` | The descriptor: `apiKey` (secret), `environment`, `minimumStateSeconds` (default 60) |
 | `packages/ee/src/sense/hooks.server.ts` | `senseHealthcheck`: calls `provider.validate()` |
 | `packages/jobs/src/inngest/functions/integrations/oee-sweep.ts` | Cron `*/2 * * * *`. Sends one `carbon/oee-sync` per (company, OEE integration) that is active and has at least 1 mapped device |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `carbon/oee-sync`, concurrency 1 per company. Syncs every device of the integration in ONE `step.run` |
-| `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock |
+| `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock. Pinned by `oee-sync-device.database.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `recordManualMachinePress` and `endSensorMachineTime`. Shared by the sync, the MES and the device mapping writes. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
 | `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: loads the operation onto the work center, only when the work center and the operation are the event's own company |
-| `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE / DELETE: unloads the operation when it becomes Done or Canceled, or is deleted |
+| `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE / DELETE: unloads the operation when it becomes Done or Canceled, is deleted, or moves to another work center |
 
 UI:
 
 - **Devices tab** — `apps/erp/app/modules/settings/ui/Integrations/OeeDevices.ee.tsx`,
   rendered by `x+/settings+/integrations.$id.tsx` only for an active `oee`
-  integration.
+  integration. Its loader and action live in
+  `modules/settings/oee-devices.server.ts` (`getOeeDevicesTabData`,
+  `saveWorkCenterDeviceMapping`). The provider's device list is cached in
+  Redis for 60 s (`oee-devices:<companyId>:<integrationId>`, never an error),
+  and a mapped work center shows even when inactive.
 - **Production → "Unattributed Time"** — `x+/production+/machine-time*.tsx`
   and `modules/production/ui/MachineTime/`. The nav item appears only while an
   `oee` integration is active (`useProductionSubmodules`, through
@@ -58,7 +64,9 @@ UI:
   `x+/start.$operationId.tsx`.
 - **MES machine state** — the work center display
   (`display+/$workCenterId.work.tsx`) shows `DeviceStateBadge`
-  (`components/Display/`) and "Loaded: …". The operation page shows no
+  (`components/Display/`) and "Loaded: …". `getDisplayDeviceState`
+  (`display.service.ts`) hides the state when the device has a sync error or
+  has not synced for 10 minutes. The operation page shows no
   device badge: its Machine toggle's green dot already marks running time.
 
 ## The loaded operation (community)
@@ -72,7 +80,12 @@ without a device.
   An event inserted with an `endTime` never loads. An older `startTime` never
   replaces a newer load.
 - **Unload.** A `jobOperation` status change to `Done` or `Canceled` clears
-  the load, and so does deleting the operation. A Pause does not unload.
+  the load, and so does deleting the operation or moving it to another work
+  center (the old work center unloads). A Pause does not unload.
+- **Quiet.** `loadedJobOperationId` and `loadedAt` are in
+  `auditConfig.skipFields` and every function's `ignored_columns`, so a load
+  change writes no audit entry, no search update and no reference broadcast.
+  WEBHOOK, WORKFLOW and SYNC subscriptions still receive it.
 - **No foreign key.** `loadedJobOperationId` has none (migration
   `20261013172620`): a second `jobOperation`↔`workCenter` relationship made
   PostgREST refuse every existing embed of one from the other (PGRST201), so
@@ -136,22 +149,26 @@ unattributed time, never on the operation.
 **A load change mid-run.** The open event stays on the old operation. The
 next `Running` change goes to the new one.
 
-## The MES Machine button on a mapped work center
+## The MES Machine button
 
-A "Start" or "Pause" press with "Machine" selected calls
-`recordManualMachinePress` inside a Kysely transaction. The function takes the
-same device lock as the sync. It does 3 things:
+A machine has one machine time: operators share it. A "Start" or "Pause"
+press with "Machine" selected calls `recordManualMachinePress` inside a Kysely
+transaction:
 
-1. It ends every open Machine event on the work center at the press time.
-2. It ends the work center's open unattributed time at the press time. Without
-   this, a Start on a running machine with no loaded operation counted the
-   same minutes on the operator's event and in the supervisor queue.
-3. It sets `workCenterDevice.lastManualChangeAt` to the press time.
+1. On every work center, with or without a device, it ends each open Machine
+   event at the press time, from any operator or the sensor. It skips an event
+   that starts after the press, so no duration goes negative.
+2. On a mapped work center (it takes the same device lock as the sync), it
+   also ends the running unattributed time at the press time. Without this, a
+   Start on a running machine with no loaded operation counted the same
+   minutes on the operator's event and in the supervisor queue.
+3. On a mapped work center, it sets `workCenterDevice.lastManualChangeAt` to
+   the press time.
 
 A Start then inserts the operator's Machine event, which loads the operation.
-If the work center has no device, the function does nothing, and the MES
-behaves as before. After a Pause on a running machine, no sensor time opens
-until the device reports its next change to `Running`.
+An End reads the event's own work center and type (`event.tsx`), not the
+form's. After a Pause on a running machine, no sensor time opens until the
+device reports its next change to `Running`.
 
 ## The sync
 
@@ -161,19 +178,26 @@ until the device reports its next change to `Running`.
    not entitled, the integration is inactive, or the key is empty, the run
    returns `skipped`.
 3. For each device, `syncOeeDevice` reads changes from
-   `lastEventAt − 10 minutes` to now. The overlap catches events that the
-   provider stores late. The first sync reads from the mapping time minus 24
-   hours.
+   `lastEventAt − 10 minutes` to now. `lastEventAt` is the newest stored
+   `changedAt` (never earlier than before), not the sync time. The overlap
+   catches events that the provider stores late. The first sync reads from
+   the mapping time minus 24 hours. A stored change at or before
+   `appliedThrough` is logged (`console.warn`), not replanned: replanning
+   would rewrite closed, maybe posted, events.
 4. It inserts the changes into `machineStateChange` with
    `ON CONFLICT DO NOTHING` on (`workCenterDeviceId`, `externalEventId`,
    `companyId`), in chunks of 500.
 5. It opens one transaction, locks the device, runs `planMachineTime` and
-   applies the writes.
+   applies the writes. Before planning, an open `system` Machine event on a
+   `Canceled` operation closes at the operation's `updatedAt`.
 6. In the same transaction it sets `currentState`, `currentStateAt`,
    `appliedThrough`, `lastEventAt`, `lastSyncedAt`, and clears
    `lastSyncError`.
 7. If a device fails, the job writes `lastSyncError` (500 characters at most)
-   on that device. Its cursor does not move. The other devices continue.
+   on that device. Its cursor does not move. The other devices continue,
+   unless the error is `OeeProviderUnavailableError` (network failure,
+   timeout, 5xx): then the run stops, since every device would fail the same
+   way. `oee-sync` is a `singleton` (skip) per company and integration.
 
 Kysely returns `timestamptz` as a JS `Date`. `syncOeeDevice` normalizes every
 instant with `toInstant` before the engine compares it.
@@ -207,7 +231,15 @@ pg_cron `unattributed-machine-time-retention` (04:23 UTC) runs
 is more than 30 days old. A running row is never purged.
 
 The drawer (`x+/production+/machine-time.$id.tsx`, `MachineTimeDrawer.ee.tsx`)
-walks the queue in the list's order (`startTime` desc, then `id`):
+walks the queue in the list's order (`startTime` desc, then `id`; the list
+has no sort, `sort={null}`). The list has 5 filters: work center, location,
+start date, end date, and state (Running green / Stopped blue).
+`parseMachineTimeListFilters` (`machine-time-filters.ee.ts`, pinned by
+`apps/erp/test/machine-time-filters.ee.test.ts`) turns each date range into
+instants at the company's day bounds; the generic `between` filter is not used
+for them. `applyMachineTimeListFilters` applies them to the list and to the
+queue alike. The queue holds stopped rows only; a running row opens but shows
+"Running" in place of N of M:
 `getUnattributedMachineTimeNeighbors` gives the position and the rows above
 and below, and every answer redirects to the row below, else the row above,
 else the list. The suggestion cards come from `getWorkCenterDayEvents` (every
@@ -219,7 +251,8 @@ the time first, then by the gap to the row's interval (0 when they overlap),
 then by time run that day; Done/Canceled operations and locked jobs show
 disabled. The search card reads `getMachineTimeOperationCandidates` (open
 operations on open jobs at the work center's location, this work center's
-first). Keys (`MACHINE_TIME_REVIEW_SHORTCUTS`): 1–9 assign a card, j/k move
+first). Keys (`MACHINE_TIME_REVIEW_SHORTCUTS`): 1–6 assign a card
+(`MACHINE_TIME_SUGGESTION_LIMIT` = 6 cards), j/k move
 (the table behind binds the arrows); a repeated keydown is ignored and one
 answer per row is posted.
 

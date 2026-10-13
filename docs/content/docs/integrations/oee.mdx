@@ -79,11 +79,13 @@ If an operator starts operation B while the machine runs on operation A, the run
 Carbon posts a sensor event to the general ledger when its operation finishes or the job completes. Until then, you can correct the event in the job's **Production Events** view.
 </Callout>
 
-### The Machine button wins over older sensor data
+### One machine time per work center
 
-On a work center with a mapped device, the MES Machine timer still works. A **"Start"** or **"Pause"** press with **"Machine"** selected ends the work center's open machine time at the press. Carbon ignores any sensor change older than the press, so a late poll never undoes it.
+A machine has one machine time, and operators share it. On any work center, a **"Start"** or **"Pause"** press with **"Machine"** selected ends every open Machine timer on that work center at the press, whoever started it. A Start then opens the new one.
 
-For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time stops at 10:03. It stays stopped until the station reports its next change to Running. Work centers with no device work as before.
+On a work center with a mapped device, the press also wins over older sensor data. Carbon ignores any sensor change older than the press, so a late poll never undoes it. For example, the machine runs and the operator selects **"Pause"** at 10:03. Machine time stops at 10:03. It stays stopped until the station reports its next change to Running.
+
+The work center display shows the station's state. It hides the state when the station has a sync error or has not synced for 10 minutes.
 
 ### Unattributed time
 
@@ -95,7 +97,9 @@ Carbon cannot charge run time to an operation in three cases. Then the time goes
 
 Time also goes there when an operation finishes while the machine keeps running.
 
-The list holds only time that still needs an answer. Each row shows the work center, start, end and duration, in the time zone of the work center's location. Select **Review**, or open a row, to work through the list one row at a time:
+The list holds only time that still needs an answer. Each row shows the work center, location, start, end, duration and state (**"Running"** or **"Stopped"**), in the time zone of the work center's location. Filter the list by work center, location, start date, end date or state. The dates follow your company's time zone.
+
+Select **Review**, or open a row, to work through the rows the list shows, one at a time. A row whose machine still runs is outside the review until the machine stops:
 
 - **Which operation was this?** shows a card for each operation that ran on the same work center that day, best match first. An operation that ran during the time says **"Ran at the time"**. Select a card, or press its number key, to assign the time to it.
 - **Another job or operation** searches the open operations at the work center's location.
