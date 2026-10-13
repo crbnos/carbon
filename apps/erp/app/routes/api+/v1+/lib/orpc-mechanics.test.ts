@@ -14,7 +14,12 @@ import { OpenAPIGenerator } from "@orpc/openapi";
 import { OpenAPIHandler } from "@orpc/openapi/fetch";
 import { call } from "@orpc/server";
 import { describe, expect, it } from "vitest";
-import { type AuthedContext, base, gate } from "./base.server";
+import {
+  type AuthedContext,
+  base,
+  gate,
+  scopesFromPermissions
+} from "./base.server";
 import { outputSchema, shapeHttpBody } from "./operations.server";
 import { specOptions } from "./spec-options.server";
 
@@ -153,11 +158,51 @@ describe("oRPC mechanics for the Carbon API v1 surface", () => {
     expect(result).toEqual({ data: "ok" });
   });
 
-  it("skips the scope gate for oauth (connector) callers", async () => {
+  // An OAuth connector caller is gated on its user's own permissions. Before
+  // this it skipped the gate, and a service handed `db` (the direct connection,
+  // no RLS) wrote for a user who held no permission for the operation.
+  it("403s an oauth (connector) caller whose user lacks the permission", async () => {
+    await expect(
+      call(router.parts.getParts, {}, { context: ctx({ authKind: "oauth" }) })
+    ).rejects.toMatchObject({
+      code: "FORBIDDEN",
+      message: "You do not have the required permission: parts_view"
+    });
+  });
+
+  it("allows an oauth caller whose user holds the permission in the token's company", async () => {
+    const scopes = scopesFromPermissions(
+      { parts: { view: ["c1"], create: [], update: [], delete: [] } },
+      "c1"
+    );
     const result = await call(
       router.parts.getParts,
       {},
-      { context: ctx({ authKind: "oauth" }) }
+      { context: ctx({ authKind: "oauth", scopes }) }
+    );
+    expect(result).toEqual({ data: "ok" });
+  });
+
+  it("does not let a permission held in another company pass the oauth gate", async () => {
+    const scopes = scopesFromPermissions(
+      { parts: { view: ["c2"], create: [], update: [], delete: [] } },
+      "c1"
+    );
+    expect(scopes).toEqual({});
+    await expect(
+      call(
+        router.parts.getParts,
+        {},
+        { context: ctx({ authKind: "oauth", scopes }) }
+      )
+    ).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("skips the scope gate for in-process session callers", async () => {
+    const result = await call(
+      router.parts.getParts,
+      {},
+      { context: ctx({ authKind: "session" }) }
     );
     expect(result).toEqual({ data: "ok" });
   });

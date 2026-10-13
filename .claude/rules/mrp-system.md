@@ -287,7 +287,18 @@ Their `demand_data` CTEs read the projection arm net of consumption
   project on-hand period-by-period (`week1`…`week52`), and compute `quantityToOrder`
   via `calculate_quantity_to_order(...)`, which branches on `reorderingPolicy`:
   `'Manual Reorder'` → 0; `'Demand-Based Reorder'`; `'Fixed Reorder Quantity'`;
-  `'Maximum Quantity'`. All respect min/max OQ, `orderMultiple`, `lotSize`.
+  `'Maximum Quantity'`. Demand-Based Reorder applies the minimum and the order
+  multiple to the week's need and sizes each ORDER by the smaller of `lotSize`
+  and `maximumOrderQuantity` (`demandBasedPerOrder` in `planning-sizing.ts`;
+  the SQL total is the whole need, `20261013004700`) — a maximum never caps
+  the week. Fixed Reorder Quantity ignores `lotSize`; Maximum Quantity uses it
+  only as a rounding multiple.
+- An item is included when it has demand in the window, a stock-driven policy
+  (reorder point on Fixed Reorder Quantity / Maximum Quantity), OR open supply
+  in the window (`supply_data` with `supply > 0`, `20261013004600`). The third
+  arm is what lets `generatePlanningActions` reach `deriveChangeActions` for a
+  surplus-only item — a job whose forecast was deleted gets its Cancel — and
+  keeps that item on the Material Planning screens.
 
 ## "Buy and Make" coercion + BOM decision
 
@@ -326,6 +337,22 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   `('To Receive','To Receive and Invoice','Planned')`; `dueDate` = the line's
   `requiredDate`, `promisedDate` = the line's promised date, else the order
   delivery's `receiptPromisedDate`.
+
+### The item planning chart reads the live lines
+
+`api+/items.$id.$locationId.forecast.ts` builds the chart's supply bars from
+`openPurchaseOrderLines` / `openProductionOrders` bucketed by
+`purchaseOrderLineArrivalDate` / `jobCompletionDate` (both exported from
+`@carbon/planning`) through the pure `bucketSupplyByPeriod`
+(`items/ui/Item/planningSupplyDemand.ts`, tested) — overdue in the first
+week, past the horizon dropped, summed per (week, source). It no longer reads
+`supplyActual` / `supplyForecast`, which only a run refreshes: a PO raised or
+increased from the drawer moves the projection at once, and a new order never
+replaces the week's existing bar. Each PO row in the Supply & Demand list
+carries that arrival date as its `dueDate` (the promise alone left a planned
+line as "No due date"). The legend is a what-if: `projectedChange` (same file)
+leaves a hidden series out of the running projection, stockout and
+below-safety detection, as removing a suggested order does.
 
 ### When a PO line arrives — one rule
 

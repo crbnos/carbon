@@ -2160,14 +2160,24 @@ export async function getOpenProductionOrders(
     locationId
   }: { itemId: string; companyId: string; locationId: string }
 ) {
-  return client
-    .from("openProductionOrders")
-    .select(
-      "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate"
-    )
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId);
+  return fetchAllFromTable<{
+    id: string;
+    quantity: number | null;
+    documentReadableId: string | null;
+    documentId: string;
+    dueDate: string | null;
+    deadlineType: Database["public"]["Enums"]["deadlineType"] | null;
+  }>(
+    client,
+    "openProductionOrders",
+    "id, quantity:quantityToReceive, documentReadableId:jobId, documentId:id, dueDate, deadlineType",
+    (query) =>
+      query
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .order("id")
+  );
 }
 
 /** @mcp read */
@@ -2179,14 +2189,26 @@ export async function getOpenPurchaseOrderLines(
     locationId
   }: { itemId: string; companyId: string; locationId: string }
 ) {
-  return client
-    .from("openPurchaseOrderLines")
-    .select(
-      "id, quantity:quantityToReceive, dueDate:promisedDate, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)"
-    )
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId);
+  return fetchAllFromTable<{
+    id: string;
+    quantity: number | null;
+    promisedDate: string | null;
+    dueDate: string | null;
+    orderDate: string | null;
+    leadTime: number | null;
+    documentReadableId: string | null;
+    documentId: string;
+  }>(
+    client,
+    "openPurchaseOrderLines",
+    "id, quantity:quantityToReceive, promisedDate, dueDate, orderDate, leadTime, ...purchaseOrder(documentReadableId:purchaseOrderId, documentId:id)",
+    (query) =>
+      query
+        .eq("itemId", itemId)
+        .eq("locationId", locationId)
+        .eq("companyId", companyId)
+        .order("id")
+  );
 }
 
 /** @mcp read */

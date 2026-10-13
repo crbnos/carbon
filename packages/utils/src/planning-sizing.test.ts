@@ -129,9 +129,8 @@ describe("computePlanningOrders", () => {
       }
     });
 
-    it("applies max OQ, min OQ, and order multiple", () => {
-      // Shortfall 100, capped to maxOQ 30
-      const capped = computePlanningOrders({
+    it("splits a shortfall past the maximum order quantity into several orders", () => {
+      const split = computePlanningOrders({
         reorderingPolicy: "Demand-Based Reorder",
         periods: weeklyPeriods(["2026-10-05"]),
         projections: [0],
@@ -141,8 +140,66 @@ describe("computePlanningOrders", () => {
           maximumOrderQuantity: 30
         })
       });
-      expect(capped[0]?.quantity).toBe(30);
+      expect(split.map((o) => o.quantity)).toEqual([30, 30, 30, 10]);
+      // the next window sees the whole 100 as ordered
+      const covered = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05", "2026-10-12"]),
+        projections: [0, 0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 100,
+          maximumOrderQuantity: 30
+        })
+      });
+      expect(covered.map((o) => o.periodId)).toEqual(["p1", "p1", "p1", "p1"]);
+    });
 
+    it("keeps every split order on the order multiple and under the maximum", () => {
+      // need 100, multiple 10, max 25 → orders of 20 (25 floored to the multiple)
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 100,
+          maximumOrderQuantity: 25,
+          orderMultiple: 10
+        })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([20, 20, 20, 20, 20]);
+      // a multiple larger than the maximum is the cap
+      const multipleWins = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 25,
+          maximumOrderQuantity: 8,
+          orderMultiple: 10
+        })
+      });
+      expect(multipleWins.map((o) => o.quantity)).toEqual([10, 10, 10]);
+    });
+
+    it("splits by the smaller of batch size and maximum order quantity", () => {
+      const orders = computePlanningOrders({
+        reorderingPolicy: "Demand-Based Reorder",
+        periods: weeklyPeriods(["2026-10-05"]),
+        projections: [0],
+        todayDate: TODAY,
+        params: params({
+          demandAccumulationSafetyStock: 70,
+          lotSize: 50,
+          maximumOrderQuantity: 30
+        })
+      });
+      expect(orders.map((o) => o.quantity)).toEqual([30, 30, 10]);
+    });
+
+    it("applies min OQ and order multiple", () => {
       // Shortfall 7, rounded up to multiple 5 → 10
       const multiple = computePlanningOrders({
         reorderingPolicy: "Demand-Based Reorder",
@@ -388,12 +445,32 @@ describe("orderSizingRules", () => {
         orderMultiple: 10
       })
     ).toEqual({
-      perOrder: 50,
+      perOrder: 40,
       daily: false,
       maximum: 40,
       minimum: 5,
       multiples: [10]
     });
+    // a batch alone sizes the order
+    expect(
+      orderSizingRules("Demand-Based Reorder", { ...item, lotSize: 50 })
+    ).toMatchObject({ perOrder: 50, maximum: 50 });
+    // a maximum off the multiple is floored to it; under the multiple, the
+    // multiple is the cap
+    expect(
+      orderSizingRules("Demand-Based Reorder", {
+        ...item,
+        maximumOrderQuantity: 25,
+        orderMultiple: 10
+      })
+    ).toMatchObject({ perOrder: 20, maximum: 20 });
+    expect(
+      orderSizingRules("Demand-Based Reorder", {
+        ...item,
+        maximumOrderQuantity: 8,
+        orderMultiple: 10
+      })
+    ).toMatchObject({ perOrder: 10, maximum: 10 });
   });
 
   it("Fixed Reorder Quantity: every order is the fixed quantity", () => {
@@ -490,6 +567,15 @@ describe("splitIntoOrders", () => {
     [
       "Demand-Based Reorder",
       { demandAccumulationSafetyStock: 120, lotSize: 50 },
+      [0]
+    ],
+    [
+      "Demand-Based Reorder",
+      {
+        demandAccumulationSafetyStock: 100,
+        maximumOrderQuantity: 25,
+        orderMultiple: 10
+      },
       [0]
     ]
   ] as const)("round-trips the week %s sized", (policy, overrides, projections) => {

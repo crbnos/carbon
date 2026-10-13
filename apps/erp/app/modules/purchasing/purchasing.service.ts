@@ -345,7 +345,10 @@ export async function deleteSupplierLocation(
   }
 }
 
-/** @mcp delete */
+/**
+ * @mcp delete
+ * @mcp permission accounting:delete
+ */
 export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
@@ -353,7 +356,14 @@ export async function deleteSupplierBankAccount(
   return client.from("supplierBankAccount").delete().eq("id", id);
 }
 
-/** @mcp read */
+/**
+ * Lists a supplier's bank accounts.
+ *
+ * Gated on accounting, as the table's RLS and every bank-account screen are:
+ * a changed payee account is how payment fraud starts.
+ * @mcp read
+ * @mcp permission accounting:view
+ */
 export async function getSupplierBankAccounts(
   client: SupabaseClient<Database>,
   supplierId: string
@@ -365,7 +375,10 @@ export async function getSupplierBankAccounts(
     .order("name");
 }
 
-/** @mcp upsert */
+/**
+ * @mcp upsert
+ * @mcp permission accounting:create+update
+ */
 export async function upsertSupplierBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -4794,6 +4807,7 @@ export async function getCreditableQuantitiesForPurchaseReturn(
  * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
  * "Apply Credit" on a supplier invoice.
  * @mcp create
+ * @mcp permission invoicing:create
  * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
 export async function createPurchaseReturnOrderCredit(

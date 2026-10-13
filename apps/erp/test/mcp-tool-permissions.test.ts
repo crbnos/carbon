@@ -23,24 +23,61 @@ const allTools = metadata.tools as Tool[];
 
 // `@mcp permission` on the function — a route-verified exception that wins over
 // the verb. Pinned exactly below and excluded from the verb-based assertions.
-// The API-key WRITES (upsert/delete) moved to @carbon/ee/api-keys.server behind
-// requireEntitlement, so they are no longer MCP tools — only the read
-// (getApiKeys) remains and keeps the override.
-const OVERRIDDEN = new Set(["settings_getApiKeys"]);
+// Each must match the permission the ERP route that does the same thing
+// requires: an OAuth connector or API key gated more loosely than the screen
+// can do what the screen forbids — and a service handed `db` writes past RLS,
+// so this gate is the only one.
+const OVERRIDES: Record<string, Tool["permission"]> = {
+  // API-key management. The writes (upsert/delete) moved to
+  // @carbon/ee/api-keys.server behind requireEntitlement and are no longer
+  // tools; only the read remains.
+  settings_getApiKeys: { module: "users", actions: ["update"] },
+  // Writes a GL journal: the Reconcile screen requires accounting_create.
+  inventory_createInventoryReconciliationJournal: {
+    module: "accounting",
+    actions: ["create"]
+  },
+  // Bank accounts: the table's RLS and every bank-account screen are accounting.
+  purchasing_getSupplierBankAccounts: { module: "accounting", actions: ["view"] },
+  purchasing_upsertSupplierBankAccount: {
+    module: "accounting",
+    actions: ["create", "update"]
+  },
+  purchasing_deleteSupplierBankAccount: {
+    module: "accounting",
+    actions: ["delete"]
+  },
+  sales_getCustomerBankAccounts: { module: "accounting", actions: ["view"] },
+  sales_upsertCustomerBankAccount: {
+    module: "accounting",
+    actions: ["create", "update"]
+  },
+  sales_deleteCustomerBankAccount: {
+    module: "accounting",
+    actions: ["delete"]
+  },
+  // Issue Credit writes a memo: its route requires invoicing_create.
+  purchasing_createPurchaseReturnOrderCredit: {
+    module: "invoicing",
+    actions: ["create"]
+  },
+  sales_createSalesReturnOrderCredit: {
+    module: "invoicing",
+    actions: ["create"]
+  }
+};
 
-const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
+const tools = allTools.filter((t) => !(t.name in OVERRIDES));
 
 describe("permission overrides", () => {
-  it("API-key management gates on users_update, matching its ERP routes", () => {
-    for (const name of OVERRIDDEN) {
+  it.each(Object.entries(OVERRIDES))(
+    "%s gates on the permission its ERP route requires",
+    (name, permission) => {
       const t = allTools.find((t) => t.name === name);
       expect(t, name).toBeDefined();
-      expect(t?.permission, name).toEqual({
-        module: "users",
-        actions: ["update"]
-      });
+      expect(t?.permission, name).toEqual(permission);
     }
-  });
+  );
 });
 
 describe("permission module mapping", () => {
