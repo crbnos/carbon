@@ -557,6 +557,15 @@ export const accountMappingUpsertValidator = z.object({
   externalName: zfd.text(z.string().optional())
 });
 
+export const workCenterDeviceUpsertValidator = z.object({
+  intent: z.literal("upsert-work-center-device"),
+  externalDeviceId: z.string().min(1, { message: "Device is required" }),
+  deviceName: z.string().min(1, { message: "Device name is required" }),
+  externalSiteId: zfd.text(z.string().optional()),
+  siteTimezone: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional())
+});
+
 const accountMappingEntrySchema = z.object({
   accountId: z.string().min(1),
   externalId: z.string().min(1),

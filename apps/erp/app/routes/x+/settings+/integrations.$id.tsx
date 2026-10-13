@@ -55,6 +55,7 @@ import {
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -66,6 +67,12 @@ import {
   SECRET_KEYS,
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
+import type { OeeDevice } from "@carbon/ee/oee";
+import {
+  deleteWorkCenterDevice,
+  getOeeProvider,
+  upsertWorkCenterDevice
+} from "@carbon/ee/oee.server";
 import {
   getConflictingOnshapeIntegration,
   isOnshapeIntegrationId,
@@ -119,7 +126,8 @@ import {
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
   postingSyncSettingsValidator,
-  syncEnabledValidator
+  syncEnabledValidator,
+  workCenterDeviceUpsertValidator
 } from "~/modules/settings/settings.models";
 import {
   getSyncOperationReadableIds,
@@ -131,6 +139,7 @@ import { AccountMapping } from "~/modules/settings/ui/Integrations/AccountMappin
 import { DimensionMapping } from "~/modules/settings/ui/Integrations/DimensionMapping";
 import type { IntegrationFormTab } from "~/modules/settings/ui/Integrations/IntegrationForm";
 import { useMountActionStates } from "~/modules/settings/ui/Integrations/MountPublishStatus";
+import { OeeDevices } from "~/modules/settings/ui/Integrations/OeeDevices.ee";
 import { PostingSyncSettings } from "~/modules/settings/ui/Integrations/PostingSyncSettings";
 import type { SyncReconciliationReport } from "~/modules/settings/ui/Integrations/SyncActivity";
 import { getDatabaseClient } from "~/services/database.server";
@@ -623,6 +632,86 @@ async function getDimensionSyncTabData(
   };
 }
 
+/**
+ * Device-mapping data for an OEE integration's Devices tab: the provider's
+ * devices, this integration's saved mappings, the work centers another OEE
+ * integration already holds, and the active work centers with their location
+ * timezone. A provider failure renders the mappings with no devices and the
+ * error above the list rather than failing the drawer.
+ */
+async function getOeeDevicesTabData(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string
+) {
+  let devices: OeeDevice[] = [];
+  let providerError: string | null = null;
+  try {
+    const oee = await getOeeProvider(
+      getCarbonServiceRole(),
+      companyId,
+      integrationId
+    );
+    if (oee.error || !oee.data) {
+      providerError = oee.error ?? "Could not connect to the provider";
+    } else {
+      devices = await oee.data.provider.listDevices();
+    }
+  } catch (err) {
+    providerError = err instanceof Error ? err.message : String(err);
+  }
+  if (providerError) {
+    logger.error("Failed to list OEE devices", {
+      companyId,
+      integrationId,
+      error: providerError
+    });
+  }
+
+  const [mappings, takenWorkCenters, workCenters] = await Promise.all([
+    client
+      .from("workCenterDevice")
+      .select(
+        "externalDeviceId, workCenterId, currentState, lastSyncedAt, lastSyncError"
+      )
+      .eq("companyId", companyId)
+      .eq("integration", integrationId),
+    client
+      .from("workCenterDevice")
+      .select("workCenterId, deviceName, integration")
+      .eq("companyId", companyId)
+      .neq("integration", integrationId),
+    client
+      .from("workCenter")
+      .select("id, name, location(timezone)")
+      .eq("companyId", companyId)
+      .eq("active", true)
+      .order("name")
+  ]);
+
+  for (const result of [mappings, takenWorkCenters, workCenters]) {
+    if (result.error) {
+      logger.error("Failed to load OEE device mapping data", {
+        companyId,
+        integrationId,
+        error: result.error
+      });
+    }
+  }
+
+  return {
+    devices,
+    mappings: mappings.data ?? [],
+    takenWorkCenters: takenWorkCenters.data ?? [],
+    workCenters: (workCenters.data ?? []).map((workCenter) => ({
+      id: workCenter.id,
+      name: workCenter.name,
+      locationTimezone: workCenter.location?.timezone ?? null
+    })),
+    error: providerError
+  };
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId } = await requirePermissions(
     request,
@@ -686,7 +775,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       accountMapping: null,
       accountingSync: null,
       postingSync: null,
-      dimensionSync: null
+      dimensionSync: null,
+      devices: null
     };
   }
 
@@ -1142,6 +1232,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }
     : null;
 
+  const devices =
+    providerRole === "oee" && integrationData.data.active
+      ? await getOeeDevicesTabData(client, companyId, integrationId)
+      : null;
+
   return {
     installed: integrationData.data.active,
     metadata: flattenedMetadata,
@@ -1150,7 +1245,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   };
 }
 
@@ -1789,6 +1885,66 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Map or unmap one device (Devices tab of an OEE integration). An empty
+  // work center unmaps. Stays on the page so the tab revalidates in place.
+  if (formData.get("intent") === "upsert-work-center-device") {
+    const validation = await validator(
+      workCenterDeviceUpsertValidator
+    ).validate(formData);
+
+    if (validation.error) {
+      return validationError(validation.error);
+    }
+
+    const {
+      externalDeviceId,
+      deviceName,
+      externalSiteId,
+      siteTimezone,
+      workCenterId
+    } = validation.data;
+
+    let result: { error: string | null };
+    try {
+      result = workCenterId
+        ? await upsertWorkCenterDevice(client, getDatabaseClient(), {
+            companyId,
+            userId,
+            integration: integrationId,
+            externalDeviceId,
+            externalSiteId: externalSiteId ?? null,
+            siteTimezone: siteTimezone ?? null,
+            deviceName,
+            workCenterId
+          })
+        : await deleteWorkCenterDevice(client, getDatabaseClient(), {
+            companyId,
+            integration: integrationId,
+            externalDeviceId
+          });
+    } catch (err) {
+      if (!(err instanceof EntitlementError)) throw err;
+      logger.error("OEE device mapping refused: not entitled", {
+        companyId,
+        integrationId,
+        error: err
+      });
+      result = { error: err.message };
+    }
+
+    if (result.error) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(result.error, "Failed to save device mapping")
+        )
+      );
+    }
+
+    return data({}, await flash(request, success("Saved device mapping")));
+  }
+
   if (!isIntegrationWhitelisted(integrationId)) {
     await requireFeature({
       request,
@@ -2155,7 +2311,8 @@ export default function IntegrationRoute() {
     accountMapping,
     accountingSync,
     postingSync,
-    dimensionSync
+    dimensionSync,
+    devices
   } = useLoaderData<typeof loader>();
 
   const navigate = useNavigate();
@@ -2169,6 +2326,13 @@ export default function IntegrationRoute() {
   // and Sync Activity tabs next to the Settings form (deep-linkable via
   // ?tab=<value>).
   const tabs: IntegrationFormTab[] = [];
+  if (devices) {
+    tabs.push({
+      value: "devices",
+      label: <Trans>Devices</Trans>,
+      content: (tabBar) => <OeeDevices tabs={tabBar} {...devices} />
+    });
+  }
   if (accountMapping) {
     tabs.push({
       value: "account-mapping",
