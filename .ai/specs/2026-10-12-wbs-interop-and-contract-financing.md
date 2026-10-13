@@ -125,7 +125,7 @@ A defense manufacturer evaluates Carbon with 3 questions that Carbon cannot answ
   - `PredecessorLink` (FS, `LinkLag` 0) for each `precedes` link.
   - Text1 = the readable id. Text2 = the control account's WBS code. Text3 = the work package flag.
   - One Standard calendar (`UID` 1, Monday–Friday, 08:00–12:00 and 13:00–17:00).
-- An element with no dates takes the project's start date and has no duration. Project schedules it from its links.
+- An element with no dates takes the project's start date and one estimated day, as Project shows "1 day?". A zero duration makes Project draw a milestone. Project schedules the element from its links.
 
 ### Phase B: contract financing
 
@@ -406,7 +406,7 @@ The UI copies existing screens (`ui-minimal-existing-patterns`). It adds no new 
 **Phase A**
 
 - [ ] A project with roots A and B, where A has children A1 and A2, shows codes 1, 1.1, 1.2 and 2. Moving A2 above A1 shows A2 = 1.1.
-- [ ] After **Pin WBS codes**, moving A2 under B keeps its code 1.2. The new child of B gets 2.1.
+- [ ] After **Pin WBS codes**, moving A2 under B keeps its code 1.2. A new child of B after A2 gets 2.2, because A2 is a numbered sibling (rule 3). When A2 is unpinned, it becomes 2.1 and the new child keeps 2.2.
 - [ ] A pinned root `1.0` gives its children 1.1 and 1.2.
 - [ ] Pin `1.2` while another element's derived code is `1.2`. Both elements show a duplicate warning. **Export CSV** refuses, with a message that names the code.
 - [ ] A Parameter element has no code and does not shift its siblings' codes.

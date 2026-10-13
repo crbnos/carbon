@@ -4778,6 +4778,19 @@ export function readWbsCsv(
     typeOf.set(p.key, type);
     if (existing) {
       const currentCode = codes.get(existing.id) ?? null;
+      // Pin only a code that differs from the current one.
+      const wbsCode =
+        p.code && p.code !== currentCode ? p.code : existing.wbsCode;
+      const changed =
+        parentKey !== existing.parentId ||
+        type !== existing.type ||
+        name !== existing.name ||
+        wbsCode !== existing.wbsCode ||
+        start.value !== existing.startDate ||
+        target.value !== existing.targetDate ||
+        budget !== (existing.budget === null ? null : Number(existing.budget));
+      // A row read back as it was exported is not an update.
+      if (!changed) continue;
       updates.push({
         id: existing.id,
         row,
@@ -4786,8 +4799,7 @@ export function readWbsCsv(
         parentChanged: parentKey !== existing.parentId,
         type,
         name,
-        // Pin only a code that differs from the current one.
-        wbsCode: p.code && p.code !== currentCode ? p.code : existing.wbsCode,
+        wbsCode,
         startDate: start.value,
         targetDate: target.value,
         budget
@@ -5080,6 +5092,9 @@ export function buildMspdiXml(input: MspdiInput): string {
     tag(3, "Finish", `${finish}T17:00:00`);
     tag(3, "Duration", `PT${hours}H0M0S`);
     tag(3, "DurationFormat", 7);
+    // An undated element gets Project's own default, one estimated day
+    // ("1 day?"): a zero duration would draw it as a milestone.
+    if (!element.startDate && !element.targetDate) tag(3, "Estimated", 1);
     tag(3, "Milestone", 0);
     tag(3, "Summary", isLeaf ? 0 : 1);
     if (isLeaf && element.budget !== null) {

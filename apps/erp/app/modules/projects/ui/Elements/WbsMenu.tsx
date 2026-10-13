@@ -53,12 +53,16 @@ type ImportResponse = {
  */
 export function WbsMenu({
   projectId,
-  canUpdate
+  canUpdate,
+  repeatedCodes
 }: {
   projectId: string;
   canUpdate: boolean;
+  /** Codes two elements share: the exports refuse them, so they are off. */
+  repeatedCodes: string[];
 }) {
   const { t } = useLingui();
+  const exportBlocked = repeatedCodes.length > 0;
   const [importing, setImporting] = useState(false);
   const [pinning, setPinning] = useState(false);
 
@@ -73,18 +77,39 @@ export function WbsMenu({
           />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-60">
-          <DropdownMenuItem asChild>
-            <a href={path.to.api.projectWbsCsv(projectId)} download>
-              <DropdownMenuIcon icon={<LuFileSpreadsheet />} />
-              <Trans>Export CSV</Trans>
-            </a>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <a href={path.to.api.projectMspdi(projectId)} download>
-              <DropdownMenuIcon icon={<LuChartGantt />} />
-              <Trans>Export MS Project XML</Trans>
-            </a>
-          </DropdownMenuItem>
+          {exportBlocked ? (
+            <>
+              <DropdownMenuItem disabled>
+                <DropdownMenuIcon icon={<LuFileSpreadsheet />} />
+                <Trans>Export CSV</Trans>
+              </DropdownMenuItem>
+              <DropdownMenuItem disabled>
+                <DropdownMenuIcon icon={<LuChartGantt />} />
+                <Trans>Export MS Project XML</Trans>
+              </DropdownMenuItem>
+              <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                <Trans>
+                  WBS codes repeat: {repeatedCodes.join(", ")}. Change one of
+                  each pair to export.
+                </Trans>
+              </p>
+            </>
+          ) : (
+            <>
+              <DropdownMenuItem asChild>
+                <a href={path.to.api.projectWbsCsv(projectId)} download>
+                  <DropdownMenuIcon icon={<LuFileSpreadsheet />} />
+                  <Trans>Export CSV</Trans>
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={path.to.api.projectMspdi(projectId)} download>
+                  <DropdownMenuIcon icon={<LuChartGantt />} />
+                  <Trans>Export MS Project XML</Trans>
+                </a>
+              </DropdownMenuItem>
+            </>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             disabled={!canUpdate}

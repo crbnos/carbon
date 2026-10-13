@@ -93,12 +93,7 @@ describe("readWbsCsv", () => {
     expect(result.errors).toEqual([]);
     expect(result.creates).toEqual([]);
     expect(result.links).toEqual([]);
-    for (const update of result.updates) {
-      const before = elements.find((e) => e.id === update.id)!;
-      expect(update.parentChanged).toBe(false);
-      expect(update.wbsCode).toBe(before.wbsCode);
-      expect(update.name).toBe(before.name);
-    }
+    expect(result.updates).toEqual([]);
   });
 
   it("updates names and creates a row under a parent code", () => {
@@ -118,7 +113,6 @@ describe("readWbsCsv", () => {
     expect(
       Object.fromEntries(result.updates.map((u) => [u.id, u.name]))
     ).toEqual({
-      bus: "bus",
       design: "Detailed design",
       build: "Build and test"
     });
@@ -135,10 +129,14 @@ describe("readWbsCsv", () => {
 
   it("keeps the current values of blank cells on an update", () => {
     const { elements, links } = project();
-    const result = readWbsCsv([{ "Element ID": "OB2-2" }], elements, links);
+    const result = readWbsCsv(
+      [{ "Element ID": "OB2-2", Name: "Design review" }],
+      elements,
+      links
+    );
     expect(result.errors).toEqual([]);
     expect(result.updates[0]).toMatchObject({
-      name: "design",
+      name: "Design review",
       parentKey: "bus",
       startDate: "2026-11-02",
       budget: 20000

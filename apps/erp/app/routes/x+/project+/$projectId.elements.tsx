@@ -296,6 +296,13 @@ export default function ProjectElementsRoute() {
   const labels = routeData?.labels ?? [];
   const milestones = routeData?.milestones ?? [];
   const isClosed = routeData?.project?.status === "Closed";
+  const repeatedCodes = [
+    ...new Set(
+      Object.values(wbsCodes ?? {})
+        .filter((entry) => entry.duplicate)
+        .map((entry) => entry.code)
+    )
+  ];
 
   const groupLabels: Record<ProjectStateGroup, string> = {
     Backlog: t`Backlog`,
@@ -474,7 +481,13 @@ export default function ProjectElementsRoute() {
             ? projectPlanLockedMessage(lockMilestone.name)
             : null
         }
-        wbsMenu={<WbsMenu projectId={projectId} canUpdate={canUpdate} />}
+        wbsMenu={
+          <WbsMenu
+            projectId={projectId}
+            canUpdate={canUpdate}
+            repeatedCodes={repeatedCodes}
+          />
+        }
       />
       <div className="min-h-0 flex-1">
         {layout === "list" ? (

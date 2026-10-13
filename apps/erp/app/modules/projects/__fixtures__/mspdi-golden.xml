@@ -130,6 +130,7 @@
       <Finish>2026-11-02T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
+      <Estimated>1</Estimated>
       <Milestone>0</Milestone>
       <Summary>1</Summary>
       <ExtendedAttribute>
