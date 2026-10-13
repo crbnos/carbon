@@ -77,6 +77,27 @@ export function nextEntryStatus(args: {
 }
 
 /** The ISO week's Monday of `date`, as `YYYY-MM-DD`. */
+/**
+ * Why a project takes no new hours on `entryDate`, or null when it does. A
+ * project On Hold refuses them; under a stop-work order (FAR 52.242-15) only
+ * from the order date, since work done before it is still chargeable.
+ */
+export function heldProjectRefusal(
+  project: {
+    identifier: string | null;
+    name: string;
+    status: string;
+    stopWorkDate: string | null;
+  },
+  entryDate: string
+): string | null {
+  if (project.status !== "On Hold") return null;
+  const label = project.identifier || project.name;
+  if (!project.stopWorkDate) return `${label} is On Hold: it takes no new time`;
+  if (entryDate < project.stopWorkDate) return null;
+  return `${label} has a stop-work order from ${project.stopWorkDate}: it takes no new time from that date`;
+}
+
 export function weekStartOf(date: string): string {
   // en-GB starts the week on Monday, as ISO 8601 does.
   return startOfWeek(parseDate(date), "en-GB").toString();

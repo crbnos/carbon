@@ -82,17 +82,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { itemId: d.itemId, companyId }
     );
     if (unreleasedIssue) {
-      return validationError({
-        fieldErrors: { itemId: `${unreleasedIssue} It cannot be purchased.` }
-      });
+      throw redirect(
+        path.to.purchaseOrderDetails(orderId),
+        await flash(
+          request,
+          error(null, `${unreleasedIssue} It cannot be purchased.`)
+        )
+      );
     }
   }
 
   const chargeError = await chargeNumberError(client, companyId, d);
   if (chargeError) {
-    return validationError({
-      fieldErrors: { [chargeError.field]: chargeError.message }
-    });
+    throw redirect(
+      path.to.purchaseOrderDetails(orderId),
+      await flash(request, error(null, chargeError.message))
+    );
   }
 
   // Budget control (Government Contracting 5c, C4): Block refuses the line,
@@ -114,7 +119,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     : null;
   if (budget?.status === "block") {
     // The add-line modal closes when it submits, so a field error would have
-    // no form to land on: refuse with a flash, as the other refusals here do.
+    // no form to land on: every refusal after validation is a flash.
     throw redirect(
       path.to.purchaseOrderDetails(orderId),
       await flash(request, error(null, budget.message))

@@ -166,7 +166,7 @@ databaseTest("A project On Hold takes no new hours", async () => {
     expect(saved.error).toBeNull();
     await f.db
       .updateTable("project")
-      .set({ status: "On Hold", stopWorkDate: day(-1) })
+      .set({ status: "On Hold", stopWorkDate: day(-3) })
       .where("id", "=", f.projectId)
       .where("companyId", "=", f.companyId)
       .execute();
@@ -184,6 +184,15 @@ databaseTest("A project On Hold takes no new hours", async () => {
       hours: 1
     });
     expect(added.error?.message).toMatch(/stop-work order/);
+
+    // Time dated before the order is still chargeable.
+    const before = await saveTimesheetEntry(f.ctx, {
+      ...f.cell,
+      mode: "add",
+      entryDate: day(-4),
+      hours: 1
+    });
+    expect(before.error).toBeNull();
 
     // A correction down is still allowed.
     const fewer = await saveTimesheetEntry(f.ctx, {

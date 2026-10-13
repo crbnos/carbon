@@ -6,6 +6,7 @@ import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
   dilutionFactor,
+  heldProjectRefusal,
   isEntryDateAllowed,
   nextEntryStatus,
   TIMESHEET_REFUSAL_NOT_DRAFT,
@@ -165,5 +166,35 @@ describe("timesheetWeek", () => {
   it("treats a non-finite offset as this week", () => {
     const week = timesheetWeek(chicago, Number.NaN, parseDate("2026-10-11"));
     expect(week.weekStart).toBe("2026-10-05");
+  });
+});
+
+describe("heldProjectRefusal", () => {
+  const project = {
+    identifier: "OB2",
+    name: "ORBSEC",
+    status: "On Hold",
+    stopWorkDate: "2026-10-12"
+  };
+
+  it("refuses time from the stop-work date", () => {
+    expect(heldProjectRefusal(project, "2026-10-12")).toMatch(/stop-work/);
+    expect(heldProjectRefusal(project, "2026-10-13")).toMatch(/stop-work/);
+  });
+
+  it("takes time dated before the order", () => {
+    expect(heldProjectRefusal(project, "2026-10-11")).toBeNull();
+  });
+
+  it("refuses any date on a project On Hold with no order", () => {
+    expect(
+      heldProjectRefusal({ ...project, stopWorkDate: null }, "2020-01-01")
+    ).toEqual("OB2 is On Hold: it takes no new time");
+  });
+
+  it("takes time on a Released project", () => {
+    expect(
+      heldProjectRefusal({ ...project, status: "Released" }, "2026-10-13")
+    ).toBeNull();
   });
 });

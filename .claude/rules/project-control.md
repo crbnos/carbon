@@ -153,10 +153,13 @@ refuses any other status while it is set (`stopWorkStatusRefusal`), so the statu
 menu and the MCP tool cannot bypass Resume. The header shows the order date, the
 90-day end (`stopWorkEnd`) and the days left (`stopWorkDaysLeft`).
 
-On Hold refuses new charges in two places: the charge-number picker lists only
-Released projects, and `save-timesheet-entry` (`assertProjectTakesTime`) refuses
-more hours on a row an On Hold project already has on a timesheet. Fewer hours
-is a correction and is allowed.
+On Hold refuses new time (`heldProjectRefusal`, `@carbon/utils` `timekeeping.ts`):
+the charge-number picker lists only Released projects; `save-timesheet-entry`
+refuses more hours on a row already on a timesheet; `createTimesheetCorrection`
+refuses a transfer onto the project or more hours on it. Under a stop-work order
+only time dated on or after `stopWorkDate` is refused. Fewer hours is a
+correction and is allowed. A PO line or a job on an On Hold project is not
+refused (`chargeNumberError` has no status check).
 
 ## Known gaps
 

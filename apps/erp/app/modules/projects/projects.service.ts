@@ -9,6 +9,7 @@ import { toJson } from "@carbon/database/json";
 import {
   BILLABLE_REASON_NO_BILL_RATE,
   datetime,
+  heldProjectRefusal,
   isUniqueViolation,
   isValidWbsCode,
   round
@@ -1481,6 +1482,20 @@ export async function updateProjectElementField(
       }
       if (raw !== null && args.ids.length > 1) {
         return refusal("Pin a WBS code on one element at a time");
+      }
+      if (raw !== null) {
+        // A Parameter is not part of the WBS: a pinned code would hold a
+        // code in the unique index that no export shows.
+        const target = await client
+          .from("projectElement")
+          .select("type")
+          .eq("id", args.ids[0]!)
+          .eq("companyId", args.companyId)
+          .single();
+        if (target.error) return { data: null, error: target.error };
+        if (target.data.type === "Parameter") {
+          return refusal("A Parameter has no WBS code");
+        }
       }
       update.wbsCode = raw;
       break;
@@ -3575,6 +3590,23 @@ export async function createTimesheetCorrection(
       projectId !== original.projectId ||
       projectElementId !== original.projectElementId;
     const movesProject = projectId !== original.projectId;
+
+    // A held project takes no new hours: a transfer onto it, or more hours
+    // on it. Fewer hours is a correction and stays allowed.
+    if (
+      args.hours > 0 &&
+      (movesProject || args.hours > Number(original.hours))
+    ) {
+      const target = await trx
+        .selectFrom("project")
+        .select(["identifier", "name", "status", "stopWorkDate"])
+        .where("id", "=", projectId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!target) throw new Error("The project does not exist");
+      const refusal = heldProjectRefusal(target, original.entryDate);
+      if (refusal) throw new Error(refusal);
+    }
 
     const reversal = await trx
       .insertInto("timesheetEntry")

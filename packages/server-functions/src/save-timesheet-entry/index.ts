@@ -16,6 +16,7 @@ import { toJson } from "@carbon/database/json";
 import { inOrder } from "@carbon/database/rows";
 import {
   datetime,
+  heldProjectRefusal,
   isEntryDateAllowed,
   nextEntryStatus,
   type RdActivityRole,
@@ -416,9 +417,9 @@ async function save(
 }
 
 /**
- * A project On Hold takes no new hours: the charge-number picker hides it,
- * and this stops the rows already on a timesheet. A stop-work order sets the
- * project On Hold (FAR 52.242-15).
+ * A project On Hold takes no new hours (`heldProjectRefusal`): the
+ * charge-number picker hides it, and this stops the rows already on a
+ * timesheet. A stop-work order sets the project On Hold (FAR 52.242-15).
  */
 async function assertProjectTakesTime(trx: Transaction<DB>, input: SaveInput) {
   const project = await trx
@@ -428,13 +429,8 @@ async function assertProjectTakesTime(trx: Transaction<DB>, input: SaveInput) {
     .where("companyId", "=", input.companyId)
     .executeTakeFirst();
   if (!project) throw new NotFoundError("The project does not exist");
-  if (project.status !== "On Hold") return;
-  const label = project.identifier || project.name;
-  throw new TimesheetRefusal(
-    project.stopWorkDate
-      ? `${label} has a stop-work order: it takes no new time`
-      : `${label} is On Hold: it takes no new time`
-  );
+  const refusal = heldProjectRefusal(project, input.entryDate);
+  if (refusal) throw new TimesheetRefusal(refusal);
 }
 
 /**
