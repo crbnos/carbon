@@ -5702,6 +5702,9 @@ msgstr "Sütun görünürlüğü ve sırası"
 msgid "Columns"
 msgstr "Sütunlar"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Filtreleri birleştir"
 
@@ -7293,6 +7296,9 @@ msgstr "Kritik"
 
 msgid "CSV column"
 msgstr "CSV sütunu"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV dosyası en az 2 satır içermelidir."
@@ -10171,6 +10177,9 @@ msgstr "Şirket kapsamındaki tüm kayıtlar. Kimlik bilgileri, entegrasyon beli
 msgid "Every condition must match"
 msgstr "Her koşul eşleşmelidir"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "Aralıktaki her giriş ve buna yapılan her değişiklik"
 
@@ -10470,6 +10479,9 @@ msgstr "CSV'yi dışa aktar"
 
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "PDF olarak Dışa Aktar"
@@ -11209,6 +11221,9 @@ msgstr "Mali Yıllar"
 
 msgid "Fit view"
 msgstr "Uygun görünümü"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Bu iş akışının problemlerini test etmeden önce düzeltiniz"
@@ -12377,6 +12392,9 @@ msgstr "CSV'yi İçe Aktar"
 
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
@@ -18265,6 +18283,9 @@ msgstr "Sabitle {0}"
 msgid "Pin or unpin"
 msgstr "Sabitle veya kaldır"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "Sabitlenmiş"
 
@@ -21107,6 +21128,9 @@ msgstr "Operasyon rotası"
 
 msgid "Routing Number (ABA)"
 msgstr "Yönlendirme numarası (ABA)"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "satırlar"
@@ -24556,6 +24580,9 @@ msgstr "Bu stok kartının üretim sırasında kaybettiği beklenen yüzde; plan
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı satırlar hesabı türetmek için bir envanter defter girişine sahip olmadığından gereklidir."
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "Tüm videoyu izle"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."

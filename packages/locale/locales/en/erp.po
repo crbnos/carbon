@@ -5702,6 +5702,9 @@ msgstr "Column visibility and order"
 msgid "Columns"
 msgstr "Columns"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+
 msgid "Combine filters"
 msgstr "Combine filters"
 
@@ -7293,6 +7296,9 @@ msgstr "Critical"
 
 msgid "CSV column"
 msgstr "CSV column"
+
+msgid "CSV file"
+msgstr "CSV file"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV file must have at least 2 rows."
@@ -10171,6 +10177,9 @@ msgstr "Every company-scoped record. Credentials, integration tokens and webhook
 msgid "Every condition must match"
 msgstr "Every condition must match"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+
 msgid "Every entry in the range and every change made to it"
 msgstr "Every entry in the range and every change made to it"
 
@@ -10470,6 +10479,9 @@ msgstr "Export CSV"
 
 msgid "Export Lines to CSV"
 msgstr "Export Lines to CSV"
+
+msgid "Export MS Project XML"
+msgstr "Export MS Project XML"
 
 msgid "Export PDF"
 msgstr "Export PDF"
@@ -11209,6 +11221,9 @@ msgstr "Fiscal Years"
 
 msgid "Fit view"
 msgstr "Fit view"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr "Fix {errorCount} errors to apply"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Fix the problems with this workflow before testing it"
@@ -12377,6 +12392,9 @@ msgstr "Import CSV"
 
 msgid "Import results"
 msgstr "Import results"
+
+msgid "Import WBS"
+msgstr "Import WBS"
 
 msgid "Import your BOM"
 msgstr "Import your BOM"
@@ -18265,6 +18283,9 @@ msgstr "Pin {0}"
 msgid "Pin or unpin"
 msgstr "Pin or unpin"
 
+msgid "Pin WBS codes"
+msgstr "Pin WBS codes"
+
 msgid "Pinned"
 msgstr "Pinned"
 
@@ -21107,6 +21128,9 @@ msgstr "Routing"
 
 msgid "Routing Number (ABA)"
 msgstr "Routing Number (ABA)"
+
+msgid "Row"
+msgstr "Row"
 
 msgid "rows"
 msgstr "rows"
@@ -24556,6 +24580,9 @@ msgstr "The expected percentage of this item's output lost during production; pl
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 
+msgid "The file could not be read as CSV"
+msgstr "The file could not be read as CSV"
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "The file you uploaded and the mappings you've made will be lost."
 
@@ -27562,6 +27589,9 @@ msgstr "Watch full video"
 
 msgid "WBS code"
 msgstr "WBS code"
+
+msgid "WBS options"
+msgstr "WBS options"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "We auto-matched each column. Review the values below before continuing."

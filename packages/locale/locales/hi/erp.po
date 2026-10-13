@@ -5702,6 +5702,9 @@ msgstr "कॉलम दृश्यता और क्रम"
 msgid "Columns"
 msgstr "कॉलम"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "फ़िल्टर को संयोजित करें"
 
@@ -7293,6 +7296,9 @@ msgstr "गंभीर"
 
 msgid "CSV column"
 msgstr "CSV कॉलम"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV फ़ाइल में कम से कम 2 पंक्तियाँ होनी चाहिए।"
@@ -10171,6 +10177,9 @@ msgstr "हर कंपनी-स्कोप्ड रिकॉर्ड। �
 msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "सीमा में प्रत्येक प्रविष्टि और इसमें किए गए प्रत्येक परिवर्तन"
 
@@ -10470,6 +10479,9 @@ msgstr "CSV निर्यात करें"
 
 msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "निर्यात करें PDF"
@@ -11209,6 +11221,9 @@ msgstr "वित्तीय वर्ष"
 
 msgid "Fit view"
 msgstr "व्यू फिट करें"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
@@ -12377,6 +12392,9 @@ msgstr "CSV आयात करें"
 
 msgid "Import results"
 msgstr "आयात परिणाम"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
@@ -18265,6 +18283,9 @@ msgstr "{0} को पिन करें"
 msgid "Pin or unpin"
 msgstr "पिन करें या अनपिन करें"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "पिन किया गया"
 
@@ -21107,6 +21128,9 @@ msgstr "रूटिंग"
 
 msgid "Routing Number (ABA)"
 msgstr "रूटिंग संख्या (ABA)"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "पंक्तियाँ"
@@ -24556,6 +24580,9 @@ msgstr "इस आइटम के आउटपुट का अपेक्ष�
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "व्यय खाता जिस पर यह अप्रत्यक्ष-खर्च लाइन पोस्ट करता है; आवश्यक है क्योंकि अप्रत्यक्ष लाइनों के पास खाता प्राप्त करने के लिए कोई वस्तु बही प्रविष्टि नहीं है।"
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "आपके द्वारा अपलोड की गई फ़ाइल और की गई मैपिंग खो जाएँगी।"
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "पूरा वीडियो देखें"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."

@@ -14,6 +14,7 @@ import {
   useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
 import { LuBoxes, LuFileText, LuPlus } from "react-icons/lu";
 import { ActiveFilters, Filter } from "~/components/Table/components/Filter";
 import type { ColumnFilter } from "~/components/Table/components/Filter/types";
@@ -37,6 +38,8 @@ type ElementsHeaderProps = {
   exportHref?: string;
   /** The lock message while the plan is locked and no change request is open. */
   planLockMessage?: string | null;
+  /** The project's WBS menu (export, import, pin), after Export PDF. */
+  wbsMenu?: ReactNode;
 };
 
 /**
@@ -53,7 +56,8 @@ export function ElementsHeader({
   canCreate,
   isCreating,
   exportHref,
-  planLockMessage
+  planLockMessage,
+  wbsMenu
 }: ElementsHeaderProps) {
   const { t } = useLingui();
   const [params, setParams] = useUrlParams();
@@ -135,6 +139,7 @@ export function ElementsHeader({
               </TooltipContent>
             </Tooltip>
           )}
+          {wbsMenu}
           {!hasFilters && <Filter filters={filters} />}
           {planLockMessage ? (
             <Tooltip>

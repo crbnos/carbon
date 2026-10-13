@@ -5702,6 +5702,9 @@ msgstr "Видимость и порядок столбцов"
 msgid "Columns"
 msgstr "Столбцы"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Объединить фильтры"
 
@@ -7293,6 +7296,9 @@ msgstr "Критический"
 
 msgid "CSV column"
 msgstr "Столбец CSV"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV файл должен содержать минимум 2 строки."
@@ -10171,6 +10177,9 @@ msgstr "Все записи компании. Учётные данные, то�
 msgid "Every condition must match"
 msgstr "Каждое условие должно совпадать"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "Каждая запись в диапазоне и каждое внесенное в нее изменение"
 
@@ -10470,6 +10479,9 @@ msgstr "Экспортировать CSV"
 
 msgid "Export Lines to CSV"
 msgstr "Экспортировать строки в CSV"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "Экспортировать PDF"
@@ -11209,6 +11221,9 @@ msgstr "Финансовые годы"
 
 msgid "Fit view"
 msgstr "Уместить в окно"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
@@ -12377,6 +12392,9 @@ msgstr "Импортировать CSV"
 
 msgid "Import results"
 msgstr "Импортировать результаты"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
@@ -18265,6 +18283,9 @@ msgstr "Закрепить {0}"
 msgid "Pin or unpin"
 msgstr "Прикрепить или открепить"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "Закреплено"
 
@@ -21107,6 +21128,9 @@ msgstr "Маршрут операций"
 
 msgid "Routing Number (ABA)"
 msgstr "Маршрутный номер (ABA)"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "строк"
@@ -24556,6 +24580,9 @@ msgstr "Ожидаемый процент выпуска этой номенкл
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "Счет расходов, на который относится эта строка косвенных расходов; требуется, так как косвенные строки не имеют записи в книге товаров, из которой можно вывести счет."
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Загруженный файл и созданные сопоставления будут потеряны."
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "Смотреть полное видео"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."

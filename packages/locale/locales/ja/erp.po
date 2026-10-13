@@ -5702,6 +5702,9 @@ msgstr "列の表示と順序"
 msgid "Columns"
 msgstr "列"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "絞り込みを組み合わせ"
 
@@ -7293,6 +7296,9 @@ msgstr "重大"
 
 msgid "CSV column"
 msgstr "CSVカラム"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSVファイルは最低2行必要です。"
@@ -10171,6 +10177,9 @@ msgstr "会社に属するすべてのレコード。認証情報、連携トー
 msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "範囲内のすべてのエントリーと、それに加えられたすべての変更"
 
@@ -10470,6 +10479,9 @@ msgstr "CSVをエクスポート"
 
 msgid "Export Lines to CSV"
 msgstr "CSVにラインをエクスポート"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "PDFエクスポート"
@@ -11209,6 +11221,9 @@ msgstr "会計年度"
 
 msgid "Fit view"
 msgstr "ビューに合わせる"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "テストする前に、このワークフローの問題を修正してください"
@@ -12377,6 +12392,9 @@ msgstr "CSV インポート"
 
 msgid "Import results"
 msgstr "インポート結果"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -18265,6 +18283,9 @@ msgstr "{0}をピン留"
 msgid "Pin or unpin"
 msgstr "ピン留めまたはピン留め解除"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "ピン留め"
 
@@ -21107,6 +21128,9 @@ msgstr "工順"
 
 msgid "Routing Number (ABA)"
 msgstr "ルーティング番号（ABA）"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "行"
@@ -24556,6 +24580,9 @@ msgstr "生産中にこの品目の出力の失われると予想される割合
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "フル動画を視聴"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."

@@ -5702,6 +5702,9 @@ msgstr "Visibilidad y orden de columnas"
 msgid "Columns"
 msgstr "Columnas"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "Combinar filtros"
 
@@ -7293,6 +7296,9 @@ msgstr "Crítico"
 
 msgid "CSV column"
 msgstr "Columna CSV"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "El archivo CSV debe tener al menos 2 filas."
@@ -10171,6 +10177,9 @@ msgstr "Todos los registros de la empresa. Las credenciales, los tokens de integ
 msgid "Every condition must match"
 msgstr "Todas las condiciones deben coincidir"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "Cada entrada en el rango y cada cambio realizado en ella"
 
@@ -10470,6 +10479,9 @@ msgstr "Exportar CSV"
 
 msgid "Export Lines to CSV"
 msgstr "Exportar Líneas a CSV"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "Exportar PDF"
@@ -11209,6 +11221,9 @@ msgstr "Ejercicios fiscales"
 
 msgid "Fit view"
 msgstr "Ajustar vista"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Corrige los problemas con este flujo de trabajo antes de probarlo"
@@ -12377,6 +12392,9 @@ msgstr "Importar CSV"
 
 msgid "Import results"
 msgstr "Resultados de Importación"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "Importa tu BOM"
@@ -18265,6 +18283,9 @@ msgstr "Fijar {0}"
 msgid "Pin or unpin"
 msgstr "Fijar o desfijar"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "Fijado"
 
@@ -21107,6 +21128,9 @@ msgstr "Ruta de fabricación"
 
 msgid "Routing Number (ABA)"
 msgstr "Número de ruta (ABA)"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "filas"
@@ -24556,6 +24580,9 @@ msgstr "El porcentaje esperado de la producción de este artículo perdido duran
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "La cuenta de gastos en la que se contabiliza esta línea de gasto indirecto; es obligatoria porque las líneas indirectas no tienen un asiento de mayor de inventario del cual derivar la cuenta."
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Se perderán el archivo que subiste y las asignaciones que hiciste."
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "Ver video completo"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."

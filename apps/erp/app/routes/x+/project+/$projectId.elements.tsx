@@ -73,6 +73,7 @@ import {
   ElementTypeIcon,
   useElementTypeLabels
 } from "~/modules/projects/ui/Elements/ElementTypeIcon";
+import { WbsMenu } from "~/modules/projects/ui/Elements/WbsMenu";
 import { StateIcon } from "~/modules/projects/ui/Project/StateIcon";
 import { getDatabaseClient } from "~/services/database.server";
 import { usePeople } from "~/stores";
@@ -473,6 +474,7 @@ export default function ProjectElementsRoute() {
             ? projectPlanLockedMessage(lockMilestone.name)
             : null
         }
+        wbsMenu={<WbsMenu projectId={projectId} canUpdate={canUpdate} />}
       />
       <div className="min-h-0 flex-1">
         {layout === "list" ? (

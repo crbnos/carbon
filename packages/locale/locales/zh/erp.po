@@ -5702,6 +5702,9 @@ msgstr "列的可见性和顺序"
 msgid "Columns"
 msgstr "列"
 
+msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
+msgstr ""
+
 msgid "Combine filters"
 msgstr "合并筛选"
 
@@ -7293,6 +7296,9 @@ msgstr "严重"
 
 msgid "CSV column"
 msgstr "CSV 列"
+
+msgid "CSV file"
+msgstr ""
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV 文件必须至少有 2 行。"
@@ -10171,6 +10177,9 @@ msgstr "公司范围内的所有记录。凭据、集成令牌和 Webhook 永不
 msgid "Every condition must match"
 msgstr "每个条件都必须匹配"
 
+msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
+msgstr ""
+
 msgid "Every entry in the range and every change made to it"
 msgstr "范围内的每个条目和对其所做的每项更改"
 
@@ -10470,6 +10479,9 @@ msgstr "导出 CSV"
 
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
+
+msgid "Export MS Project XML"
+msgstr ""
 
 msgid "Export PDF"
 msgstr "导出 PDF"
@@ -11209,6 +11221,9 @@ msgstr "会计年度"
 
 msgid "Fit view"
 msgstr "缩放到适应"
+
+msgid "Fix {errorCount} errors to apply"
+msgstr ""
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
@@ -12377,6 +12392,9 @@ msgstr "导入CSV"
 
 msgid "Import results"
 msgstr "导入结果"
+
+msgid "Import WBS"
+msgstr ""
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
@@ -18265,6 +18283,9 @@ msgstr "固定{0}"
 msgid "Pin or unpin"
 msgstr "固定或取消固定"
 
+msgid "Pin WBS codes"
+msgstr ""
+
 msgid "Pinned"
 msgstr "已固定"
 
@@ -21107,6 +21128,9 @@ msgstr "工艺路线"
 
 msgid "Routing Number (ABA)"
 msgstr "ABA路由号码"
+
+msgid "Row"
+msgstr ""
 
 msgid "rows"
 msgstr "行"
@@ -24556,6 +24580,9 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
 
+msgid "The file could not be read as CSV"
+msgstr ""
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "您上传的文件和已完成的映射将会丢失。"
 
@@ -27561,6 +27588,9 @@ msgid "Watch full video"
 msgstr "观看完整视频"
 
 msgid "WBS code"
+msgstr ""
+
+msgid "WBS options"
 msgstr ""
 
 msgid "We auto-matched each column. Review the values below before continuing."
