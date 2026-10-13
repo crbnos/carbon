@@ -1,6 +1,7 @@
 -- An open production event loads its operation onto the work center
 -- (sync_load_work_center_operation); the operation going Done or Canceled
--- unloads it (sync_unload_work_center_operation), and so does deleting it; a
+-- unloads it (sync_unload_work_center_operation), and so does deleting it or
+-- moving it to another work center; a
 -- Pause does not. An event only loads its own company's operation onto its
 -- own company's work center. The oee provider role may
 -- have several active integrations; the other roles still allow one.
@@ -59,7 +60,7 @@ DO $cases$
 DECLARE
   v_group_id text; v_company_id text; v_location_id text;
   v_item text; v_process text; v_work_center text;
-  v_job text; v_a text; v_b text; v_c text; v_d text;
+  v_job text; v_a text; v_b text; v_c text; v_d text; v_e text; v_work_center_2 text;
   v_other_company text; v_other_location text; v_other_item text;
   v_other_process text; v_other_work_center text; v_other_job text; v_other_op text;
   v_day date := '2026-10-12';
@@ -130,6 +131,16 @@ BEGIN
   DELETE FROM "jobOperation" WHERE id = v_d;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'deleting D unloads it: ' || v_state;
+
+  -- Moving the loaded operation to another work center unloads the old one.
+  v_e := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 5);
+  PERFORM pg_temp.add_event(v_e, v_work_center, 'Setup', v_day + time '12:30', NULL);
+  ASSERT pg_temp.loaded(v_work_center) = v_e || '@12:30', 'E loads';
+  INSERT INTO "workCenter" (name, "locationId", "laborRate", "machineRate", "overheadRate", "defaultStandardFactor", "companyId", "createdBy")
+    VALUES ('Haas 3', v_location_id, 0, 0, 0, 'Hours/Piece', v_company_id, 'system') RETURNING id INTO v_work_center_2;
+  UPDATE "jobOperation" SET "workCenterId" = v_work_center_2, "updatedBy" = 'system' WHERE id = v_e;
+  v_state := pg_temp.loaded(v_work_center);
+  ASSERT v_state = 'none@none', 'moving E unloads the old work center: ' || v_state;
 
   -- Another company's event never loads onto this company's work center:
   -- its own operation on our work center, or our operation under its company.

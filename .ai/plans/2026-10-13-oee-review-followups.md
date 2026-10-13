@@ -8,7 +8,7 @@
 
 ## Progress
 - [x] Task 1: Make the OEE work center foreign keys company-scoped and fix the indexes
-- [ ] Task 2: Unload an operation when it moves to another work center
+- [x] Task 2: Unload an operation when it moves to another work center
 - [ ] Task 3: Ignore load-pointer changes in the event and broadcast filters
 - [x] Task 4: Tidy the engine slots, always close a slot, and merge repeated states
 - [x] Task 5: Stop a sync run when the provider is unavailable

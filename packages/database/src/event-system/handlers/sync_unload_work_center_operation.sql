@@ -14,6 +14,18 @@ BEGIN
     RETURN;
   END IF;
 
+  -- An operation moved to another work center leaves the old one: its sensor
+  -- time there is no longer this operation's.
+  IF p_operation = 'UPDATE'
+     AND (p_old->>'workCenterId') IS DISTINCT FROM (p_new->>'workCenterId') THEN
+    UPDATE "workCenter"
+    SET "loadedJobOperationId" = NULL,
+        "loadedAt" = NULL
+    WHERE "id" = p_old->>'workCenterId'
+      AND "companyId" = p_old->>'companyId'
+      AND "loadedJobOperationId" = p_new->>'id';
+  END IF;
+
   IF p_operation != 'UPDATE' THEN RETURN; END IF;
   IF (p_new->>'status') NOT IN ('Done', 'Canceled') THEN RETURN; END IF;
   IF (p_old->>'status') = (p_new->>'status') THEN RETURN; END IF;
