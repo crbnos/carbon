@@ -3507,10 +3507,10 @@ msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
 msgid "Assign"
-msgstr ""
+msgstr "Assegna"
 
 msgid "Assign machine run time that no loaded operation claimed to the right job, or dismiss it."
-msgstr ""
+msgstr "Assegna il tempo macchina che nessuna operazione caricata ha rivendicato all'ordine di produzione corretto, oppure scartalo."
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
@@ -4262,7 +4262,7 @@ msgid "Calendar Month"
 msgstr "Mese Calendario"
 
 msgid "Calibrated"
-msgstr ""
+msgstr "Calibrato"
 
 msgid "Calibration"
 msgstr "Taratura"
@@ -5362,7 +5362,7 @@ msgid "Connect Linear issue"
 msgstr "Connetti problema Linear"
 
 msgid "Connect machine monitoring devices to work centers so machine time is recorded against the operation that is loaded."
-msgstr ""
+msgstr "Collega i dispositivi di monitoraggio delle macchine ai centri di lavoro in modo che il tempo macchina sia registrato rispetto all'operazione caricata."
 
 msgid "Connect Slack under Settings → Integrations first."
 msgstr "Connetti Slack in Impostazioni → Integrazioni prima."
@@ -7593,7 +7593,7 @@ msgid "Developer"
 msgstr "Sviluppatore"
 
 msgid "Devices"
-msgstr ""
+msgstr "Dispositivi"
 
 msgid "Difference"
 msgstr "Differenza"
@@ -10090,7 +10090,7 @@ msgid "for anything. They'll pull in the right person."
 msgstr "per qualsiasi cosa. Porteranno la persona giusta."
 
 msgid "For example warm-up, prove-out or maintenance"
-msgstr ""
+msgstr "Ad esempio riscaldamento, collaudo o manutenzione"
 
 msgid "Forecast"
 msgstr "Previsione"
@@ -11527,7 +11527,7 @@ msgid "Invoice schedule"
 msgstr "Programma di fatturazione"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "Fattura separatamente"
 
 msgid "Invoice settlement"
 msgstr "Regolamento della fattura"
@@ -11560,7 +11560,7 @@ msgid "Invoiced Amount:"
 msgstr "Importo Fatturato:"
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "Fatturato separatamente"
 
 msgid "Invoiced Statuses"
 msgstr "Stati Fatturati"
@@ -12626,7 +12626,7 @@ msgid "Machine Hours"
 msgstr "Ore di macchina"
 
 msgid "Machine monitoring"
-msgstr ""
+msgstr "Monitoraggio delle macchine"
 
 msgid "Machine rate"
 msgstr "Tariffa macchina"
@@ -12822,7 +12822,7 @@ msgid "Map accounts"
 msgstr "Mappa conti"
 
 msgid "Map each machine to the work center it runs at. Carbon reads the machine's state changes from the moment you save the mapping."
-msgstr ""
+msgstr "Mappa ogni macchina al centro di lavoro in cui funziona. Carbon legge i cambiamenti di stato della macchina dal momento in cui salvi il mapping."
 
 msgid "Map Extracted Invoice Lines"
 msgstr "Associa righe fattura estratte"
@@ -14208,7 +14208,7 @@ msgid "No depreciation run happens before the cutover. Enter each asset's accumu
 msgstr "Non viene eseguito nessun ammortamento prima della transizione contabile. Inserisci il fondo ammortamento di ogni asset al giorno precedente la transizione contabile."
 
 msgid "No devices found"
-msgstr ""
+msgstr "Nessun dispositivo trovato"
 
 msgid "No dimension slots configured"
 msgstr "Nessuno slot dimensionale configurato"
@@ -14803,7 +14803,7 @@ msgid "Not a table but a general-ledger balance: cost accumulates as job materia
 msgstr "Non è una tabella ma un saldo della contabilità generale: il costo si accumula man mano che i materiali dell'ordine di produzione vengono emessi e si azzera quando l'ordine viene ricevuto in magazzino."
 
 msgid "Not calibrated"
-msgstr ""
+msgstr "Non calibrato"
 
 msgid "Not certified"
 msgstr "Non certificato"
@@ -17153,7 +17153,7 @@ msgid "Push to accounting"
 msgstr "Invia alla contabilità"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "Metti questo addebito sulla sua fattura, in sospeso per la revisione prima che sia registrata. Altrimenti va sulla fattura successiva dell'accordo."
 
 msgid "Putting your data back"
 msgstr "Ripristino dei dati"
@@ -18412,7 +18412,7 @@ msgid "Resolve these before completing the NCR: every row must have a non-Pendin
 msgstr "Risolvi questi prima di completare l'NCR: ogni riga deve avere una disposizione non in sospeso e le quantità delle entità collegate devono corrispondere alla quantità della riga."
 
 msgid "Resolved"
-msgstr ""
+msgstr "Risolto"
 
 msgid "Resolved Price"
 msgstr "Prezzo Risolto"
@@ -19747,7 +19747,7 @@ msgid "Select values"
 msgstr "Seleziona valori"
 
 msgid "Select work center"
-msgstr ""
+msgstr "Seleziona centro di lavoro"
 
 msgid "Select…"
 msgstr "Seleziona…"
@@ -19821,7 +19821,7 @@ msgstr "Invia questo documento per l'approvazione prima che possa diventare atti
 
 #. placeholder {0}: device.siteTimezone
 msgid "Sense site is in {0}; Carbon uses {locationTimezone}"
-msgstr ""
+msgstr "Il sito del sensore si trova in {0}; Carbon utilizza {locationTimezone}"
 
 msgid "Sent at"
 msgstr "Inviato il"
@@ -20007,7 +20007,7 @@ msgid "Set Up Accounting"
 msgstr "Configura la contabilità"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "Configura la contabilità per utilizzare report, voci di prima nota, periodi contabili, ammortamenti e altro ancora."
 
 msgid "Set up authenticator app"
 msgstr "Configura app autenticatore"
@@ -21435,7 +21435,7 @@ msgstr "Sincronizzato"
 
 #. placeholder {0}: formatTimeAgo(mapping.lastSyncedAt)
 msgid "Synced {0}"
-msgstr ""
+msgstr "Sincronizzato {0}"
 
 msgid "System"
 msgstr "Sistema"
@@ -22269,7 +22269,7 @@ msgid "The lowest amount this supplier will charge for this process, regardless 
 msgstr "L'importo minimo che questo fornitore addebiterà per questo processo, indipendentemente dalla quantità; gli ordini di produzione al di sotto del volume di pareggio costano ancora almeno questo importo."
 
 msgid "The machine is still running. Assign or dismiss this time after it stops."
-msgstr ""
+msgstr "La macchina è ancora in funzione. Assegna o scarta questo tempo dopo che si ferma."
 
 msgid "The machines, cells, and stations your work runs through"
 msgstr "Le macchine, celle e stazioni attraverso cui passa il tuo lavoro"
@@ -23153,7 +23153,7 @@ msgid "This takes {employeeName} off the board for the day. Save again to confir
 msgstr "Questo toglie {employeeName} dalla programmazione per il giorno. Salva di nuovo per confermare."
 
 msgid "This time was recorded as a machine production event on the job."
-msgstr ""
+msgstr "Questo tempo è stato registrato come un evento di produzione della macchina sull'ordine di produzione."
 
 msgid "This tool is activated when change notice {activationLockId} is released."
 msgstr "Questo attrezzo viene attivato quando l'avviso di modifica {activationLockId} viene rilasciato."
@@ -23864,10 +23864,10 @@ msgid "Unassigned"
 msgstr "Non assegnato"
 
 msgid "Unattributed machine time"
-msgstr ""
+msgstr "Tempo macchina non attribuito"
 
 msgid "Unattributed Machine Time"
-msgstr ""
+msgstr "Tempo macchina non attribuito"
 
 msgid "Unbalanced"
 msgstr "Sbilanciato"
@@ -24627,7 +24627,7 @@ msgid "View Lists"
 msgstr "Visualizza Elenchi"
 
 msgid "View Machine Time"
-msgstr ""
+msgstr "Visualizza tempo macchina"
 
 msgid "View maintenance dispatch"
 msgstr "Visualizza intervento di manutenzione"

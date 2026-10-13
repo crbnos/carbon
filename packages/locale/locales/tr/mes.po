@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Fikirler, öneriler veya sorunlar?"
 
 msgid "Idle"
-msgstr ""
+msgstr "Boş"
 
 msgid "Idle for"
 msgstr "Boş olma süresi"
@@ -960,7 +960,7 @@ msgid "Load list"
 msgstr "Listeyi yükle"
 
 msgid "Loaded: {loadedLabel}"
-msgstr ""
+msgstr "Yüklendi: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Ürün detayları yükleniyor..."
@@ -1284,7 +1284,7 @@ msgid "of {0}"
 msgstr "/{0}"
 
 msgid "Offline"
-msgstr ""
+msgstr "Çevrimdışı"
 
 msgid "Oldest first"
 msgstr "En eski önce"

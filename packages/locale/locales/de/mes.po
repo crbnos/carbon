@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Ideen, Vorschläge oder Probleme?"
 
 msgid "Idle"
-msgstr ""
+msgstr "Leerlauf"
 
 msgid "Idle for"
 msgstr "Untätig seit"
@@ -960,7 +960,7 @@ msgid "Load list"
 msgstr "Liste laden"
 
 msgid "Loaded: {loadedLabel}"
-msgstr ""
+msgstr "Beladen: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "Artikeldetails werden geladen..."
@@ -1284,7 +1284,7 @@ msgid "of {0}"
 msgstr "von {0}"
 
 msgid "Offline"
-msgstr ""
+msgstr "Offline"
 
 msgid "Oldest first"
 msgstr "Älteste zuerst"

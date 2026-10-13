@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "アイデア、提案、または問題はありますか？"
 
 msgid "Idle"
-msgstr ""
+msgstr "待機中"
 
 msgid "Idle for"
 msgstr "待機時間"
@@ -960,7 +960,7 @@ msgid "Load list"
 msgstr "リストをロード"
 
 msgid "Loaded: {loadedLabel}"
-msgstr ""
+msgstr "ロード済み: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
@@ -1284,7 +1284,7 @@ msgid "of {0}"
 msgstr "の{0}"
 
 msgid "Offline"
-msgstr ""
+msgstr "オフライン"
 
 msgid "Oldest first"
 msgstr "最も古い順"

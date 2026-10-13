@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "아이디어, 제안, 또는 문제가 있으신가요?"
 
 msgid "Idle"
-msgstr ""
+msgstr "유휴"
 
 msgid "Idle for"
 msgstr "유휴 상태"
@@ -960,7 +960,7 @@ msgid "Load list"
 msgstr "목록 불러오기"
 
 msgid "Loaded: {loadedLabel}"
-msgstr ""
+msgstr "로드됨: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -1284,7 +1284,7 @@ msgid "of {0}"
 msgstr "/{0}"
 
 msgid "Offline"
-msgstr ""
+msgstr "오프라인"
 
 msgid "Oldest first"
 msgstr "오래된순"

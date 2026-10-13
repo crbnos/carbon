@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "विचार, सुझाव या समस्याएं?"
 
 msgid "Idle"
-msgstr ""
+msgstr "निष्क्रिय"
 
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
@@ -960,7 +960,7 @@ msgid "Load list"
 msgstr "सूची लोड करें"
 
 msgid "Loaded: {loadedLabel}"
-msgstr ""
+msgstr "लोड किया गया: {loadedLabel}"
 
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
@@ -1284,7 +1284,7 @@ msgid "of {0}"
 msgstr "का {0}"
 
 msgid "Offline"
-msgstr ""
+msgstr "ऑफलाइन"
 
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
