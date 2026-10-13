@@ -31,7 +31,11 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     ...mockRow,
     id: "mock-1",
     workCenterId: "mock-wc-1",
-    workCenter: { name: "Haas VF-2", location: { timezone: "UTC" } },
+    workCenter: {
+      name: "Haas VF-2",
+      locationId: "mock-location",
+      location: { name: "Main Plant", timezone: "UTC" }
+    },
     startTime: "2026-05-05T06:12:00Z",
     endTime: "2026-05-05T07:47:00Z"
   },
@@ -39,7 +43,11 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     ...mockRow,
     id: "mock-2",
     workCenterId: "mock-wc-2",
-    workCenter: { name: "Mazak QTN-200", location: { timezone: "UTC" } },
+    workCenter: {
+      name: "Mazak QTN-200",
+      locationId: "mock-location",
+      location: { name: "Main Plant", timezone: "UTC" }
+    },
     startTime: "2026-05-05T09:30:00Z",
     endTime: "2026-05-05T09:52:00Z"
   },
@@ -47,7 +55,11 @@ const mockMachineTimes: UnattributedMachineTime[] = [
     ...mockRow,
     id: "mock-3",
     workCenterId: "mock-wc-1",
-    workCenter: { name: "Haas VF-2", location: { timezone: "UTC" } },
+    workCenter: {
+      name: "Haas VF-2",
+      locationId: "mock-location",
+      location: { name: "Main Plant", timezone: "UTC" }
+    },
     startTime: "2026-05-05T13:05:00Z",
     endTime: null
   }
@@ -60,6 +72,8 @@ export default function MachineTimeUpgradeOverlay() {
         <MachineTimeTable
           data={mockMachineTimes}
           count={mockMachineTimes.length}
+          workCenters={[]}
+          locations={[]}
         />
       </UpgradeOverlayPreview>
       <UpgradeOverlayCard>

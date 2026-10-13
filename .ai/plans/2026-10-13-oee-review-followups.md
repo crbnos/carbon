@@ -18,10 +18,10 @@
 - [x] Task 9: Make machine time one stream per work center
 - [x] Task 10: End the MES event on its own work center
 - [x] Task 11: Hide a stale device state on the work center display
-- [ ] Task 12: Fix the machine time service reads
-- [ ] Task 13: Add filters to the Unattributed Time list
-- [ ] Task 14: Make the review queue match the filtered list and skip running rows
-- [ ] Task 15: Polish the review drawer
+- [x] Task 12: Fix the machine time service reads
+- [x] Task 13: Add filters to the Unattributed Time list
+- [x] Task 14: Make the review queue match the filtered list and skip running rows
+- [x] Task 15: Polish the review drawer
 - [x] Task 16: Move the Devices tab server code out of the route and fix its gaps
 - [ ] Task 17: Update the rule, AGENTS.md files and the guide
 - [ ] Task 18: Verify in the browser

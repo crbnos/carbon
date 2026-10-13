@@ -14,6 +14,9 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { getUnattributedMachineTimes } from "~/modules/production";
 import MachineTimeTable from "~/modules/production/ui/MachineTime/MachineTimeTable.ee";
 import MachineTimeUpgradeOverlay from "~/modules/production/ui/MachineTime/MachineTimeUpgradeOverlay.ee";
+import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
+import { getLocationsList, getWorkCentersList } from "~/modules/resources";
+import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -31,17 +34,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
+  const { limit, offset } = getGenericQueryFilters(searchParams);
+  const timeZone = await getCompanyTimeZone(client, companyId);
+  const filters = parseMachineTimeListFilters(searchParams, timeZone);
 
-  const machineTimes = await getUnattributedMachineTimes(client, companyId, {
-    search,
-    limit,
-    offset,
-    sorts,
-    filters
-  });
+  const [machineTimes, workCenters, locations] = await Promise.all([
+    getUnattributedMachineTimes(client, companyId, { filters, limit, offset }),
+    getWorkCentersList(client, companyId),
+    getLocationsList(client, companyId)
+  ]);
 
   if (machineTimes.error) {
     throw redirect(
@@ -55,12 +56,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     machineTimes: machineTimes.data ?? [],
-    count: machineTimes.count ?? 0
+    count: machineTimes.count ?? 0,
+    workCenters: workCenters.data ?? [],
+    locations: locations.data ?? []
   };
 }
 
 export default function MachineTimeRoute() {
-  const { machineTimes, count } = useLoaderData<typeof loader>();
+  const { machineTimes, count, workCenters, locations } =
+    useLoaderData<typeof loader>();
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
 
   if (isGated) {
@@ -69,7 +73,12 @@ export default function MachineTimeRoute() {
 
   return (
     <VStack spacing={0} className="h-full">
-      <MachineTimeTable data={machineTimes} count={count} />
+      <MachineTimeTable
+        data={machineTimes}
+        count={count}
+        workCenters={workCenters}
+        locations={locations}
+      />
       <RecordOutlet />
     </VStack>
   );

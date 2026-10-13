@@ -2,15 +2,29 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import { Button, MENU_ITEM_SHORTCUTS, MenuIcon, MenuItem } from "@carbon/react";
+import {
+  Button,
+  MENU_ITEM_SHORTCUTS,
+  MenuIcon,
+  MenuItem,
+  Status
+} from "@carbon/react";
 import { formatDateTimeInZone, formatPreciseDuration } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
-import { LuCalendar, LuEye, LuFactory, LuHourglass } from "react-icons/lu";
+import {
+  LuActivity,
+  LuCalendar,
+  LuEye,
+  LuFactory,
+  LuHourglass,
+  LuMapPin
+} from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { DateTime, Hyperlink, Table } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
 import { useUrlParams } from "~/hooks";
 import { useCompanyTimeZone } from "~/hooks/useCompanyTimeZone";
 import { path } from "~/utils/path";
@@ -38,14 +52,20 @@ export function MachineTimeInstant({
   );
 }
 
-/** `endTime − startTime` in words, or null while the machine is running. */
+/** Machine time lengths in words, one style for the list and the drawer. */
 export function useMachineTimeDuration() {
   const { locale } = useLocale();
-  return useCallback(
-    (startTime: string, endTime: string | null) =>
-      endTime
-        ? formatPreciseDuration(startTime, locale, Date.parse(endTime)).text
-        : null,
+  return useMemo(
+    () => ({
+      /** `endTime − startTime`, or null while the machine is running. */
+      between: (startTime: string, endTime: string | null) =>
+        endTime
+          ? formatPreciseDuration(startTime, locale, Date.parse(endTime)).text
+          : null,
+      /** A length in milliseconds. */
+      length: (ms: number) =>
+        formatPreciseDuration("1970-01-01T00:00:00.000Z", locale, ms).text
+    }),
     [locale]
   );
 }
@@ -62,120 +82,204 @@ export function useMachineTimeZone() {
 type MachineTimeTableProps = {
   data: UnattributedMachineTime[];
   count: number;
+  workCenters: { id: string | null; name: string | null }[];
+  locations: { id: string; name: string }[];
 };
 
-const MachineTimeTable = memo(({ data, count }: MachineTimeTableProps) => {
-  const [params] = useUrlParams();
-  const { t } = useLingui();
-  const navigate = useNavigate();
-  const duration = useMachineTimeDuration();
-  const timeZoneOf = useMachineTimeZone();
+const MachineTimeTable = memo(
+  ({ data, count, workCenters, locations }: MachineTimeTableProps) => {
+    const [params] = useUrlParams();
+    const { t } = useLingui();
+    const navigate = useNavigate();
+    const duration = useMachineTimeDuration();
+    const timeZoneOf = useMachineTimeZone();
 
-  const columns = useMemo<ColumnDef<UnattributedMachineTime>[]>(
-    () => [
-      {
-        id: "workCenter",
-        header: t`Work Center`,
-        cell: ({ row }) => (
-          <Hyperlink to={row.original.id}>
-            {row.original.workCenter?.name ?? row.original.workCenterId}
-          </Hyperlink>
-        ),
-        meta: {
-          mobile: "P1",
-          icon: <LuFactory />,
-          exportValue: (row: UnattributedMachineTime) =>
-            row.workCenter?.name ?? null
-        }
-      },
-      {
-        accessorKey: "startTime",
-        header: t`Start`,
-        cell: ({ row }) => (
-          <MachineTimeInstant
-            value={row.original.startTime}
-            timeZone={timeZoneOf(row.original)}
-          />
-        ),
-        meta: {
-          mobile: "P2",
-          icon: <LuCalendar />
-        }
-      },
-      {
-        accessorKey: "endTime",
-        header: t`End`,
-        cell: ({ row }) =>
-          row.original.endTime ? (
+    const columns = useMemo<ColumnDef<UnattributedMachineTime>[]>(
+      () => [
+        {
+          accessorKey: "workCenterId",
+          header: t`Work Center`,
+          enableSorting: false,
+          cell: ({ row }) => (
+            <Hyperlink to={row.original.id}>
+              <Enumerable
+                value={
+                  row.original.workCenter?.name ?? row.original.workCenterId
+                }
+              />
+            </Hyperlink>
+          ),
+          meta: {
+            mobile: "P1",
+            icon: <LuFactory />,
+            filter: {
+              type: "static",
+              options: workCenters.flatMap((workCenter) =>
+                workCenter.id
+                  ? [
+                      {
+                        value: workCenter.id,
+                        label: <Enumerable value={workCenter.name} />
+                      }
+                    ]
+                  : []
+              )
+            },
+            exportValue: (row: UnattributedMachineTime) =>
+              row.workCenter?.name ?? null
+          }
+        },
+        {
+          id: "locationId",
+          header: t`Location`,
+          enableSorting: false,
+          cell: ({ row }) => (
+            <Enumerable
+              value={row.original.workCenter?.location?.name ?? null}
+            />
+          ),
+          meta: {
+            icon: <LuMapPin />,
+            filter: {
+              type: "static",
+              options: locations.map((location) => ({
+                value: location.id,
+                label: <Enumerable value={location.name} />
+              }))
+            },
+            exportValue: (row: UnattributedMachineTime) =>
+              row.workCenter?.location?.name ?? null
+          }
+        },
+        {
+          accessorKey: "startTime",
+          header: t`Start`,
+          enableSorting: false,
+          cell: ({ row }) => (
             <MachineTimeInstant
-              value={row.original.endTime}
+              value={row.original.startTime}
               timeZone={timeZoneOf(row.original)}
             />
-          ) : null,
-        meta: {
-          icon: <LuCalendar />
-        }
-      },
-      {
-        id: "duration",
-        header: t`Duration`,
-        cell: ({ row }) =>
-          duration(row.original.startTime, row.original.endTime) ?? (
-            <span className="text-muted-foreground">{t`Running`}</span>
           ),
-        meta: {
-          mobile: "P3",
-          icon: <LuHourglass />
+          meta: {
+            mobile: "P2",
+            icon: <LuCalendar />,
+            filter: { type: "dateRange" }
+          }
+        },
+        {
+          accessorKey: "endTime",
+          header: t`End`,
+          enableSorting: false,
+          cell: ({ row }) =>
+            row.original.endTime ? (
+              <MachineTimeInstant
+                value={row.original.endTime}
+                timeZone={timeZoneOf(row.original)}
+              />
+            ) : null,
+          meta: {
+            icon: <LuCalendar />,
+            filter: { type: "dateRange" }
+          }
+        },
+        {
+          id: "duration",
+          header: t`Duration`,
+          enableSorting: false,
+          cell: ({ row }) =>
+            duration.between(row.original.startTime, row.original.endTime) ?? (
+              <span className="text-muted-foreground">{t`Running`}</span>
+            ),
+          meta: {
+            mobile: "P3",
+            icon: <LuHourglass />
+          }
+        },
+        {
+          id: "state",
+          header: t`State`,
+          enableSorting: false,
+          cell: ({ row }) =>
+            row.original.endTime ? (
+              <Status color="blue">{t`Stopped`}</Status>
+            ) : (
+              // Green matches the MES dot for a running machine.
+              <Status color="green">{t`Running`}</Status>
+            ),
+          meta: {
+            icon: <LuActivity />,
+            filter: {
+              type: "static",
+              isExclusive: true,
+              options: [
+                {
+                  value: "Running",
+                  label: <Status color="green">{t`Running`}</Status>
+                },
+                {
+                  value: "Stopped",
+                  label: <Status color="blue">{t`Stopped`}</Status>
+                }
+              ]
+            },
+            exportValue: (row: UnattributedMachineTime) =>
+              row.endTime ? t`Stopped` : t`Running`
+          }
         }
-      }
-    ],
-    [duration, t, timeZoneOf]
-  );
+      ],
+      [duration, locations, t, timeZoneOf, workCenters]
+    );
 
-  const renderContextMenu = useCallback(
-    (row: UnattributedMachineTime) => (
-      <MenuItem
-        shortcut={MENU_ITEM_SHORTCUTS.view}
-        onClick={() => {
-          navigate(
-            `${path.to.unattributedMachineTime(row.id)}?${params.toString()}`
-          );
-        }}
-      >
-        <MenuIcon icon={<LuEye />} />
-        {t`View Machine Time`}
-      </MenuItem>
-    ),
-    [navigate, params, t]
-  );
+    const renderContextMenu = useCallback(
+      (row: UnattributedMachineTime) => (
+        <MenuItem
+          shortcut={MENU_ITEM_SHORTCUTS.view}
+          onClick={() => {
+            navigate(
+              `${path.to.unattributedMachineTime(row.id)}?${params.toString()}`
+            );
+          }}
+        >
+          <MenuIcon icon={<LuEye />} />
+          {t`View Machine Time`}
+        </MenuItem>
+      ),
+      [navigate, params, t]
+    );
 
-  // The drawer walks the queue in this list's order, so Review starts at
-  // the top row.
-  const firstId = data[0]?.id;
+    // The drawer walks the queue in this list's order, so Review starts at
+    // the top row. The queue holds stopped rows only: a running row cannot
+    // be answered yet.
+    const firstId = data.find((row) => row.endTime)?.id;
 
-  return (
-    <Table<UnattributedMachineTime>
-      data={data}
-      columns={columns}
-      count={count}
-      renderContextMenu={renderContextMenu}
-      title={t`Unattributed Time`}
-      primaryAction={
-        firstId ? (
-          <Button
-            onClick={() =>
-              navigate(
-                `${path.to.unattributedMachineTime(firstId)}?${params.toString()}`
-              )
-            }
-          >
-            {t`Review`}
-          </Button>
-        ) : undefined
-      }
-    />
-  );
-});
+    return (
+      <Table<UnattributedMachineTime>
+        data={data}
+        columns={columns}
+        count={count}
+        // The review queue walks one fixed order (newest start, then id), so
+        // the list offers no sort.
+        sort={null}
+        renderContextMenu={renderContextMenu}
+        title={t`Unattributed Time`}
+        primaryAction={
+          firstId ? (
+            <Button
+              onClick={() =>
+                navigate(
+                  `${path.to.unattributedMachineTime(firstId)}?${params.toString()}`
+                )
+              }
+            >
+              {t`Review`}
+            </Button>
+          ) : undefined
+        }
+      />
+    );
+  }
+);
 
 MachineTimeTable.displayName = "MachineTimeTable";
 export default MachineTimeTable;

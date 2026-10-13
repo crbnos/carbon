@@ -20981,7 +20981,7 @@ msgid "Starts"
 msgstr "开始"
 
 msgid "State"
-msgstr ""
+msgstr "状态"
 
 msgid "State / Province"
 msgstr "州/省"
@@ -21135,7 +21135,7 @@ msgid "Stop using {0} in this step"
 msgstr "在此步骤中停止使用 {0}"
 
 msgid "Stopped"
-msgstr ""
+msgstr "已停止"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "在此日期之后停止新采购建议。"

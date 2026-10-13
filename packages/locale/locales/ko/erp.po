@@ -20981,7 +20981,7 @@ msgid "Starts"
 msgstr "시작"
 
 msgid "State"
-msgstr ""
+msgstr "상태"
 
 msgid "State / Province"
 msgstr "주/도"
@@ -21135,7 +21135,7 @@ msgid "Stop using {0} in this step"
 msgstr "이 단계에서 {0} 사용 중지"
 
 msgid "Stopped"
-msgstr ""
+msgstr "정지됨"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "이 날짜 이후로 새로운 구매 제안을 중단합니다."

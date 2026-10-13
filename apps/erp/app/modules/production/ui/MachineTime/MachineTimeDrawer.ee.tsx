@@ -19,10 +19,7 @@ import {
   useShortcutKeys,
   VStack
 } from "@carbon/react";
-import {
-  formatDateTimeInZone,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { formatDateTimeInZone } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { ReactNode } from "react";
@@ -52,7 +49,8 @@ type MachineTimeDrawerProps = {
   machineTime: MachineTime;
   timeZone: string;
   queue: {
-    position: number;
+    /** Null for a running row: the queue holds stopped rows only. */
+    position: number | null;
     total: number;
     previousId: string | null;
     nextId: string | null;
@@ -157,9 +155,13 @@ const MachineTimeDrawer = ({
           </div>
           <div className="flex shrink-0 items-center gap-1">
             <span className="mr-1 text-xs tabular-nums text-muted-foreground">
-              <Trans>
-                {queue.position} of {queue.total}
-              </Trans>
+              {queue.position === null ? (
+                <Trans>Running</Trans>
+              ) : (
+                <Trans>
+                  {queue.position} of {queue.total}
+                </Trans>
+              )}
             </span>
             <IconButton
               aria-label={t`Previous`}
@@ -197,9 +199,10 @@ const MachineTimeDrawer = ({
                 )}
               </DetailRow>
               <DetailRow label={t`Duration`}>
-                {duration(machineTime.startTime, machineTime.endTime) ?? (
-                  <Trans>Running</Trans>
-                )}
+                {duration.between(
+                  machineTime.startTime,
+                  machineTime.endTime
+                ) ?? <Trans>Running</Trans>}
               </DetailRow>
             </div>
 
@@ -256,9 +259,7 @@ const MachineTimeDrawer = ({
                                 ? time(suggestion.lastEnd)
                                 : t`now`
                             }`,
-                            formatDurationMilliseconds(suggestion.totalMs, {
-                              style: "short"
-                            }),
+                            duration.length(suggestion.totalMs),
                             suggestion.itemReadableId
                           ]
                             .filter(Boolean)
@@ -332,7 +333,7 @@ const MachineTimeDrawer = ({
   );
 };
 
-// The fixed asset summary row: label left, value right, one line each.
+// Same row as the fixed asset page's DetailRow: label left, value right.
 function DetailRow({
   label,
   children

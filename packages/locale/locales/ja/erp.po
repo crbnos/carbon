@@ -20981,7 +20981,7 @@ msgid "Starts"
 msgstr "開始"
 
 msgid "State"
-msgstr ""
+msgstr "状態"
 
 msgid "State / Province"
 msgstr "都道府県"
@@ -21135,7 +21135,7 @@ msgid "Stop using {0} in this step"
 msgstr "{0} をこのステップで使用しない"
 
 msgid "Stopped"
-msgstr ""
+msgstr "停止"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "この日付以降、新規の購買提案が行われなくなります。"

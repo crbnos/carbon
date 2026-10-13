@@ -11,6 +11,7 @@ import {
 } from "@carbon/ee/oee.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { useCloseRoute } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import {
@@ -32,6 +33,7 @@ import {
   isJobLocked
 } from "~/modules/production";
 import MachineTimeDrawer from "~/modules/production/ui/MachineTime/MachineTimeDrawer.ee";
+import { parseMachineTimeListFilters } from "~/modules/production/ui/MachineTime/machine-time-filters.ee";
 import { suggestMachineTimeOperations } from "~/modules/production/ui/MachineTime/machine-time-suggestions.ee";
 import {
   getCompanyTimeZone,
@@ -40,6 +42,8 @@ import {
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { getParams, path } from "~/utils/path";
+
+const logger = getLogger("erp", "production", "machine-time");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -51,7 +55,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!id) throw notFound("id not found");
 
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
-  if (machineTime.error || !machineTime.data) {
+  if (machineTime.error) {
+    logger.error("Failed to load machine time", {
+      companyId,
+      id,
+      error: machineTime.error
+    });
+    throw redirect(
+      `${path.to.unattributedMachineTimes}?${getParams(request)}`,
+      await flash(
+        request,
+        error(machineTime.error, "Failed to load machine time")
+      )
+    );
+  }
+  if (!machineTime.data) {
     // Assigned, dismissed or aged out since the link was made.
     throw redirect(
       `${path.to.unattributedMachineTimes}?${getParams(request)}`,
@@ -60,9 +78,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const { workCenterId, startTime, endTime, workCenter } = machineTime.data;
+  const companyTimeZone = await getCompanyTimeZone(client, companyId);
   const timeZone = workCenter.locationId
     ? await getLocationTimeZone(client, workCenter.locationId, companyId)
-    : await getCompanyTimeZone(client, companyId);
+    : companyTimeZone;
+
+  // The queue walks the list's rows: the same search and filters, read from
+  // the list's query string.
+  const filters = parseMachineTimeListFilters(
+    new URL(request.url).searchParams,
+    companyTimeZone
+  );
 
   // The work center's calendar day the time started on.
   const date = toCalendarDate(parseAbsolute(startTime, timeZone));
@@ -72,7 +98,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 
   const [neighbors, events, candidates] = await Promise.all([
-    getUnattributedMachineTimeNeighbors(client, { companyId, id, startTime }),
+    getUnattributedMachineTimeNeighbors(client, {
+      companyId,
+      id,
+      startTime,
+      endTime,
+      filters
+    }),
     getWorkCenterDayEvents(client, {
       companyId,
       workCenterId,
@@ -90,7 +122,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     machineTime: machineTime.data,
     timeZone,
     queue: neighbors.data ?? {
-      position: 1,
+      position: endTime ? 1 : null,
       total: 1,
       previousId: null,
       nextId: null
@@ -129,11 +161,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Answering one moves on: to the row below, else the row above, else the
   // list. Read before the write, which deletes this row.
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
+  const filters = parseMachineTimeListFilters(
+    new URL(request.url).searchParams,
+    await getCompanyTimeZone(client, companyId)
+  );
   const neighbors = machineTime.data
     ? await getUnattributedMachineTimeNeighbors(client, {
         companyId,
         id,
-        startTime: machineTime.data.startTime
+        startTime: machineTime.data.startTime,
+        endTime: machineTime.data.endTime,
+        filters
       })
     : null;
   const nextId = neighbors?.data?.nextId ?? neighbors?.data?.previousId;

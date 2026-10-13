@@ -128,6 +128,7 @@ import {
   outsideOperationsNeedingPurchaseOrders,
   resolveOperationSupplier
 } from "./ui/Jobs/job-release-logic";
+import type { MachineTimeListFilters } from "./ui/MachineTime/machine-time-filters.ee";
 
 const logger = getLogger("erp", "production");
 
@@ -6661,28 +6662,79 @@ export async function getJobOperationBatches(
   return query;
 }
 
-// Machine run time the OEE sync could not attribute to a loaded operation.
-// `workCenterId` is NOT NULL, so the inner join drops no row; it is what lets
-// the search filter the parent rows by work-center name.
+// The filters the Unattributed Time list and its review queue share. The
+// query must embed `workCenter!inner(name, locationId)`: the search and the
+// location filter read the work center. `workCenterId` is NOT NULL, so the
+// inner join drops no row.
+type MachineTimeFilterableQuery<Q> = {
+  ilike(column: string, pattern: string): Q;
+  in(column: string, values: readonly string[]): Q;
+  gte(column: string, value: string): Q;
+  lt(column: string, value: string): Q;
+  is(column: string, value: null): Q;
+  not(column: string, operator: string, value: null): Q;
+};
+
+export function applyMachineTimeListFilters<
+  Q extends MachineTimeFilterableQuery<Q>
+>(query: Q, filters: MachineTimeListFilters): Q {
+  let filtered = query;
+  if (filters.search) {
+    filtered = filtered.ilike("workCenter.name", `%${filters.search}%`);
+  }
+  if (filters.workCenterIds.length > 0) {
+    filtered = filtered.in("workCenterId", filters.workCenterIds);
+  }
+  if (filters.locationIds.length > 0) {
+    filtered = filtered.in("workCenter.locationId", filters.locationIds);
+  }
+  if (filters.start.from)
+    filtered = filtered.gte("startTime", filters.start.from);
+  if (filters.start.until)
+    filtered = filtered.lt("startTime", filters.start.until);
+  if (filters.end.from) filtered = filtered.gte("endTime", filters.end.from);
+  if (filters.end.until) filtered = filtered.lt("endTime", filters.end.until);
+  if (filters.state === "Running") filtered = filtered.is("endTime", null);
+  if (filters.state === "Stopped") {
+    filtered = filtered.not("endTime", "is", null);
+  }
+  return filtered;
+}
+
+// Machine run time the OEE sync could not attribute to a loaded operation,
+// newest start first, then `id`: the review queue walks the same order.
 export async function getUnattributedMachineTimes(
   client: SupabaseClient<Database>,
   companyId: string,
-  args: GenericQueryFilters & { search: string | null }
-) {
-  let query = client
-    .from("unattributedMachineTime")
-    .select("*, workCenter!inner(name, location(timezone))", {
-      count: LIST_COUNT
-    })
-    .eq("companyId", companyId);
-
-  if (args.search) {
-    query = query.ilike("workCenter.name", `%${args.search}%`);
+  args: {
+    filters: MachineTimeListFilters;
+    limit: number;
+    offset: number;
   }
+) {
+  let query = applyMachineTimeListFilters(
+    client
+      .from("unattributedMachineTime")
+      .select(
+        "*, workCenter!inner(name, locationId, location(name, timezone))",
+        {
+          count: LIST_COUNT
+        }
+      )
+      .eq("companyId", companyId),
+    args.filters
+  );
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "startTime", ascending: false }
-  ]);
+  // No `filters` and no `sorts`: the filters above replace the generic ones,
+  // and the list allows no column sort.
+  query = setGenericQueryFilters(
+    query,
+    { limit: args.limit, offset: args.offset },
+    [
+      { column: "startTime", ascending: false },
+      { column: "id", ascending: false }
+    ]
+  );
 
   return query;
 }
@@ -6697,38 +6749,47 @@ export async function getUnattributedMachineTime(
     .select("*, workCenter!inner(name, locationId, location(timezone))")
     .eq("id", id)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
 }
 
-// Where a row sits in the queue, in the list's order (newest start first):
-// its position, the total, and its neighbours above and below.
+// Where a row sits in the queue, in the list's order (newest start first,
+// then `id`) and under the list's search and filters: its position, the
+// total, and its neighbours above and below. The queue holds stopped rows
+// only, whatever the State filter says: a running row cannot be answered. So a
+// running row has no position, but its neighbours are still the stopped rows
+// around it.
 export async function getUnattributedMachineTimeNeighbors(
   client: SupabaseClient<Database>,
-  args: { companyId: string; id: string; startTime: string }
+  args: {
+    companyId: string;
+    id: string;
+    startTime: string;
+    endTime: string | null;
+    filters: MachineTimeListFilters;
+  }
 ) {
   const at = `"${args.startTime}"`;
+  const queue = (options?: { count: "exact"; head: true }) =>
+    applyMachineTimeListFilters(
+      client
+        .from("unattributedMachineTime")
+        .select("id, workCenter!inner(name, locationId)", options)
+        .eq("companyId", args.companyId)
+        .not("endTime", "is", null),
+      args.filters
+    );
+
   const [total, above, previous, next] = await Promise.all([
-    client
-      .from("unattributedMachineTime")
-      .select("id", { count: "exact", head: true })
-      .eq("companyId", args.companyId),
-    client
-      .from("unattributedMachineTime")
-      .select("id", { count: "exact", head: true })
-      .eq("companyId", args.companyId)
-      .or(`startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`),
-    client
-      .from("unattributedMachineTime")
-      .select("id")
-      .eq("companyId", args.companyId)
+    queue({ count: "exact", head: true }),
+    queue({ count: "exact", head: true }).or(
+      `startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`
+    ),
+    queue()
       .or(`startTime.gt.${at},and(startTime.eq.${at},id.gt.${args.id})`)
       .order("startTime", { ascending: true })
       .order("id", { ascending: true })
       .limit(1),
-    client
-      .from("unattributedMachineTime")
-      .select("id")
-      .eq("companyId", args.companyId)
+    queue()
       .or(`startTime.lt.${at},and(startTime.eq.${at},id.lt.${args.id})`)
       .order("startTime", { ascending: false })
       .order("id", { ascending: false })
@@ -6740,7 +6801,7 @@ export async function getUnattributedMachineTimeNeighbors(
 
   return {
     data: {
-      position: (above.count ?? 0) + 1,
+      position: args.endTime ? (above.count ?? 0) + 1 : null,
       total: total.count ?? 0,
       previousId: previous.data?.[0]?.id ?? null,
       nextId: next.data?.[0]?.id ?? null
@@ -6781,20 +6842,31 @@ export async function getMachineTimeOperationCandidates(
   client: SupabaseClient<Database>,
   args: { workCenterId: string; locationId: string | null; companyId: string }
 ) {
-  let operationsQuery = client
-    .from("jobOperation")
-    .select(
-      "id, description, status, workCenterId, workCenter(name), job!inner(jobId, locationId, status)"
-    )
-    .eq("companyId", args.companyId)
-    .not("status", "in", "(Done,Canceled)")
-    .not("job.status", "in", "(Completed,Closed,Cancelled)");
-  operationsQuery = args.locationId
-    ? operationsQuery.eq("job.locationId", args.locationId)
-    : operationsQuery.eq("workCenterId", args.workCenterId);
+  const operationSelect =
+    "id, description, status, workCenterId, workCenter(name), job!inner(jobId, locationId, status)";
+  const lockedJobStatuses = `(${JOB_LOCKED_STATUSES.join(",")})`;
 
-  const [operations, events] = await Promise.all([
-    operationsQuery.limit(1000),
+  const [here, elsewhere, events] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select(operationSelect)
+      .eq("companyId", args.companyId)
+      .eq("workCenterId", args.workCenterId)
+      .not("status", "in", "(Done,Canceled)")
+      .not("job.status", "in", lockedJobStatuses)
+      .limit(1000),
+    args.locationId
+      ? client
+          .from("jobOperation")
+          .select(operationSelect)
+          .eq("companyId", args.companyId)
+          .eq("job.locationId", args.locationId)
+          .neq("workCenterId", args.workCenterId)
+          .not("status", "in", "(Done,Canceled)")
+          .not("job.status", "in", lockedJobStatuses)
+          .order("updatedAt", { ascending: false })
+          .limit(1000)
+      : null,
     client
       .from("productionEvent")
       .select("jobOperationId, startTime")
@@ -6804,7 +6876,12 @@ export async function getMachineTimeOperationCandidates(
       .limit(200)
   ]);
 
-  if (operations.error) return { data: null, error: operations.error };
+  if (here.error) return { data: null, error: here.error };
+  if (elsewhere?.error) return { data: null, error: elsewhere.error };
+  if (events.error) return { data: null, error: events.error };
+
+  // This work center's operations first, then the rest of the location.
+  const operations = [...(here.data ?? []), ...(elsewhere?.data ?? [])];
 
   // Events arrive latest first, so the first start seen per operation is its
   // latest. ISO timestamps from PostgREST share one format, so string order is
@@ -6816,12 +6893,12 @@ export async function getMachineTimeOperationCandidates(
     }
   }
 
-  const rank = (operation: (typeof operations.data)[number]) => [
+  const rank = (operation: (typeof operations)[number]) => [
     operation.workCenterId === args.workCenterId ? 0 : 1,
     operation.status === "In Progress" ? 0 : 1
   ];
 
-  const ranked = [...(operations.data ?? [])].sort((a, b) => {
+  const ranked = operations.sort((a, b) => {
     const [aHere, aInProgress] = rank(a);
     const [bHere, bInProgress] = rank(b);
     if (aHere !== bHere) return aHere - bHere;
@@ -6838,7 +6915,7 @@ export async function getMachineTimeOperationCandidates(
     data: ranked.map((operation) => ({
       value: operation.id,
       label: `${operation.job?.jobId ?? ""} · ${operation.description ?? ""}`,
-      helper: operation.workCenter?.name ?? (operation.status as string)
+      helper: operation.workCenter?.name ?? operation.status
     })),
     error: null
   };

@@ -20981,7 +20981,7 @@ msgid "Starts"
 msgstr "शुरू होता है"
 
 msgid "State"
-msgstr ""
+msgstr "स्थिति"
 
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
@@ -21135,7 +21135,7 @@ msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
 
 msgid "Stopped"
-msgstr ""
+msgstr "रुका हुआ"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"

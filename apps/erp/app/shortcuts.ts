@@ -66,12 +66,14 @@ export const PAGINATION_SHORTCUTS = {
 
 /**
  * Unattributed Time review drawer. The table behind it pages on the arrows,
- * so the queue moves on j/k; 1–9 assign the matching suggestion card.
+ * so the queue moves on j/k; 1–6 assign the matching suggestion card.
  */
 export const MACHINE_TIME_REVIEW_SHORTCUTS = {
   previous: "k",
   next: "j",
-  choose: ["1", "2", "3", "4", "5", "6", "7", "8", "9"]
+  // One key per card: matches MACHINE_TIME_SUGGESTION_LIMIT
+  // (ui/MachineTime/machine-time-suggestions.ee.ts).
+  choose: ["1", "2", "3", "4", "5", "6"]
 } as const satisfies Record<string, ShortcutInput | readonly ShortcutInput[]>;
 
 /**

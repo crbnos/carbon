@@ -44,6 +44,12 @@ export type MachineTimeSuggestion = {
   blockedBy: "Done" | "Canceled" | "Locked" | null;
 };
 
+/** The most cards the drawer shows; one shortcut key each. */
+export const MACHINE_TIME_SUGGESTION_LIMIT = 6;
+
+// A copy of `JOB_LOCKED_STATUSES` (`production.models.ts`), the source. That
+// module pulls in Lingui macros, which fail outside the Vite build, so this
+// pure file cannot import it.
 const LOCKED_JOB_STATUSES = new Set(["Completed", "Closed", "Cancelled"]);
 
 export function suggestMachineTimeOperations(args: {
@@ -125,6 +131,6 @@ export function suggestMachineTimeOperations(args: {
       if (a.gapMs !== b.gapMs) return a.gapMs - b.gapMs;
       return b.totalMs - a.totalMs;
     })
-    .slice(0, args.limit ?? 6)
+    .slice(0, args.limit ?? MACHINE_TIME_SUGGESTION_LIMIT)
     .map(({ gapMs: _gapMs, ...suggestion }) => suggestion);
 }

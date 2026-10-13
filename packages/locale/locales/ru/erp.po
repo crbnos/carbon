@@ -20981,7 +20981,7 @@ msgid "Starts"
 msgstr "Начинается"
 
 msgid "State"
-msgstr ""
+msgstr "Состояние"
 
 msgid "State / Province"
 msgstr "Штат / Провинция"
@@ -21135,7 +21135,7 @@ msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
 
 msgid "Stopped"
-msgstr ""
+msgstr "Остановлено"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Останавливает новые предложения по закупкам после этой даты."
