@@ -307,7 +307,7 @@ export const expiredEntityPolicies = [
   "BlockWithOverride"
 ] as const;
 
-// Government Contracting 5a: Settings → Timekeeping.
+// Government Contracting 5a: Settings → Time.
 export const timekeepingControlsModes = [
   "Standard",
   "DCAA"
@@ -318,7 +318,7 @@ export const timesheetTimecardChecks = ["Off", "Warn", "Block"] as const;
 export const timekeepingSettingsValidator = z
   .object({
     timekeepingControls: z.enum(timekeepingControlsModes, {
-      error: "Timekeeping controls are required"
+      error: "Controls are required"
     }),
     timesheetEntryWindowDays: zfd.numeric(
       z.number().int().min(0, { message: "The window cannot be negative" })

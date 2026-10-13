@@ -15909,8 +15909,8 @@ msgstr "表示する容量予約はありません。ジョブをスケジュー
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "上限なし。請求レートで負担請求されます。"
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "認証テキストが設定されていません。管理者に設定 → タイムキーピングで設定するよう依頼してください"
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "変更要求なし"
@@ -24535,8 +24535,8 @@ msgstr "会社には既に転記済の期首残高仕訳があります。"
 msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "会社のタイムシートモード（標準または DCAA）は、設定 → 勤務時間管理で設定されます。DCAA は入力ウィンドウ、遅刻と変更時間の理由、週単位の認定およびタイムカード確認を追加します。"
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"

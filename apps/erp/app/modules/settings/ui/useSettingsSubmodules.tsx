@@ -158,8 +158,8 @@ export default function useSettingsSubmodules() {
             icon: <LuFolderKanban />
           },
           {
-            name: t`Timekeeping`,
-            to: path.to.timekeepingSettings,
+            name: t`Time`,
+            to: path.to.timeSettings,
             role: "employee",
             icon: <LuTimer />
           },

@@ -15909,8 +15909,8 @@ msgstr "No capacity reservations to visualize. Schedule a job to see work-center
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "No ceilings. Burden bills at the billing rates."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
 msgid "No change request"
 msgstr "No change request"
@@ -24535,8 +24535,8 @@ msgstr "The company already has a posted opening balance journal."
 msgid "The company has no account defaults."
 msgstr "The company has no account defaults."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
 
 msgid "The contract cannot be cancelled then"
 msgstr "The contract cannot be cancelled then"

@@ -27,7 +27,8 @@ has its own rule: `contract-financing.md`.
 Every timekeeping control waits for `companySettings.timekeepingControls = 'DCAA'`
 (enum `timekeepingControls`: Standard, DCAA; default Standard). In Standard mode each
 timesheet path keeps its Phase 1a behavior, and the tests pin that per path. Settings →
-Timekeeping (`x+/settings+/timekeeping.tsx`, `updateTimekeepingSettings`) holds the
+Time (`x+/settings+/time.tsx`; `/x/settings/timekeeping` redirects there;
+`updateTimekeepingSettings`) holds the
 mode and these `companySettings` columns. The page uses the `SettingsPage` /
 `SettingsPageHeading` shell, like Settings → Inventory: a Controls card, then a DCAA
 rules card. One `ValidatedForm` spans both cards, because the action saves every field

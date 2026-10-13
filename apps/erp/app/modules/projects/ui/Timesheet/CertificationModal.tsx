@@ -95,7 +95,7 @@ export function CertificationModal({
                 <AlertDescription>
                   <Trans>
                     No certification text is set for you. Ask an administrator
-                    to set it in Settings → Timekeeping.
+                    to set it in Settings → Time.
                   </Trans>
                 </AlertDescription>
               </Alert>

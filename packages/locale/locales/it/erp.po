@@ -15909,8 +15909,8 @@ msgstr "Nessuna prenotazione di capacità da visualizzare. Pianifica un lavoro p
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Nessun tetto. I costi vengono fatturati alle tariffe di fatturazione."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Timekeeping."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Nessuna richiesta di modifica"
@@ -24535,8 +24535,8 @@ msgstr "L'azienda ha già una prima nota di apertura registrata."
 msgid "The company has no account defaults."
 msgstr "L'azienda non ha account predefiniti."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "La modalità foglio orario dell'azienda, Standard o DCAA, impostata in Impostazioni → Timekeeping. DCAA aggiunge la finestra di inserimento, i motivi dei tempi tardivi e modificati, la certificazione settimanale e il controllo della scheda oraria."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Il contratto non può essere annullato allora"

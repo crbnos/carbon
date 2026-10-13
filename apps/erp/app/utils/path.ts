@@ -2699,7 +2699,7 @@ export const path = {
     theme: `${x}/account/theme`,
     timecard: (id: string) => generatePath(`${x}/people/timecard/${id}`),
     timecards: `${x}/timecards`,
-    timekeepingSettings: `${x}/settings/timekeeping`,
+    timeSettings: `${x}/settings/time`,
     timesheet: `${x}/timesheet`,
     timesheetCorrect: `${x}/timesheet/correct`,
     timesheetReview: `${x}/timesheet/review`,

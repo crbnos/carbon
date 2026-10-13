@@ -15909,8 +15909,8 @@ msgstr "कोई क्षमता आरक्षण नहीं है ज�
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "कोई छत नहीं। बिलिंग दरों पर बोझ के बिल।"
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। एक व्यवस्थापक से सेटिंग्स → Timekeeping में इसे सेट करने के लिए कहें।"
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "कोई परिवर्तन अनुरोध नहीं"
@@ -24535,8 +24535,8 @@ msgstr "कंपनी के पास पहले से एक पोस्
 msgid "The company has no account defaults."
 msgstr "कंपनी के पास कोई खाता डिफ़ॉल्ट नहीं है।"
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "कंपनी का टाइमशीट मोड, Standard या DCAA, सेटिंग्स → Timekeeping पर सेट किया गया। DCAA प्रविष्टि विंडो, देर और बदली गई समय के कारण, साप्ताहिक प्रमाणपत्र और टाइमकार्ड जांच जोड़ता है।"
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"

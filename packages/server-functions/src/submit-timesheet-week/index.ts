@@ -37,7 +37,7 @@ export const TIMESHEET_REVIEW_PENDING =
 export const TIMESHEET_CERTIFICATION_CHANGED =
   "The certification text changed. Reload the page";
 export const TIMESHEET_CERTIFICATION_MISSING =
-  "Set the certification text in Settings → Timekeeping before you submit";
+  "Set the certification text in Settings → Time before you submit";
 
 /** A refusal the caller can fix: returned as a 422 with its message. */
 class TimesheetRefusal extends ServerFnError {

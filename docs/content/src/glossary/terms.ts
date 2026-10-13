@@ -2474,7 +2474,7 @@ export const terms = {
   },
   "timekeeping-controls": {
     term: msg`Timekeeping controls`,
-    definition: msg`The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check.`,
+    definition: msg`The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check.`,
     href: "/docs/reference/government-contracting#dcaa-timekeeping",
     aliases: ["dcaa"]
   },

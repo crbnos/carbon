@@ -15909,8 +15909,8 @@ msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작�
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "상한선이 없습니다. 간접비는 청구 요율로 청구됩니다."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "인증 텍스트가 설정되지 않았습니다. 관리자에게 설정 → 시간 기록에서 설정하도록 요청하세요."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "변경 요청 없음"
@@ -24535,8 +24535,8 @@ msgstr "회사에 이미 전기된 개시잔액 전표가 있습니다."
 msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "회사의 타임시트 모드, Standard 또는 DCAA, 설정 → 시간 관리에서 설정됨. DCAA는 항목 창, 지연 및 변경된 시간의 이유, 주간 인증 및 타임카드 확인을 추가합니다."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."

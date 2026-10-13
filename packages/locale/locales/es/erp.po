@@ -15909,8 +15909,8 @@ msgstr "No hay reservas de capacidad para visualizar. Programa un trabajo para v
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Sin límites. La carga se factura según las tarifas de facturación."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "No hay texto de certificación establecido para usted. Pida a un administrador que lo configure en Configuración → Timekeeper."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Sin solicitud de cambio"
@@ -24535,8 +24535,8 @@ msgstr "La empresa ya tiene un asiento de apertura contabilizado."
 msgid "The company has no account defaults."
 msgstr "La Empresa no tiene valores predeterminados de cuenta."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "El modo de hoja de horas de la empresa, Normal o DCAA, establecido en Configuración → Registro de tiempo. DCAA añade la ventana de entrada, razones para tiempo tardío y cambiado, la certificación semanal y la verificación de tarjeta de tiempo."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "El contrato no puede cancelarse entonces"

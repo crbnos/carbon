@@ -15909,8 +15909,8 @@ msgstr "没有产能预留可显示。计划一项任务以查看工作中心负
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "无限额。按计费费率计费。"
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "没有为您设置认证文本。请要求管理员在设置 → 时间记录中设置。"
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "没有更改请求"
@@ -24535,8 +24535,8 @@ msgstr "公司已有一份已过账的期初余额凭证。"
 msgid "The company has no account defaults."
 msgstr "公司没有账户默认值。"
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "公司的时间表模式，标准或DCAA，在设置 → 计时中设置。DCAA添加进入窗口、迟到和更改时间的原因、每周认证和时间卡检查。"
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"

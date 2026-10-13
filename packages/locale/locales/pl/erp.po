@@ -15909,8 +15909,8 @@ msgstr "Brak rezerwacji pojemności do wizualizacji. Zaplanuj pracę, aby zobacz
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Brak limitów. Koszty ogólne rozliczane stawkami rozliczeniowymi."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "Brak tekstu certyfikacji dla ciebie. Poproś administratora, aby ustawił go w Ustawienia → Rejestracja czasu pracy."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Brak żądania zmiany"
@@ -24535,8 +24535,8 @@ msgstr "Firma ma już zaksięgowany dowód księgowy saldo otwarcia."
 msgid "The company has no account defaults."
 msgstr "Firma nie ma skonfigurowanych domyślnych kont."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Tryb kart czasu pracy firmy, Standard lub DCAA, ustawiony w Ustawieniach → Timeekeeping. DCAA dodaje okno wpisu, przyczyny spóźnienia i zmienionego czasu, tygodniowe certyfikaty i sprawdzenie karty czasu pracy."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Umowa nie może być wówczas anulowana"

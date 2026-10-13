@@ -15909,8 +15909,8 @@ msgstr "Keine Kapazitätsreservierungen zum Visualisieren. Planen Sie einen Auft
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Keine Obergrenzen. Gemeinkostenzuschläge werden mit den Abrechnungssätzen abgerechnet."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "Für Sie ist kein Zertifizierungstext gesetzt. Bitten Sie einen Administrator, ihn in Einstellungen → Zeiterfassung zu setzen."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Keine Änderungsanfrage"
@@ -24535,8 +24535,8 @@ msgstr "Das Unternehmen hat bereits einen gebuchten Eröffnungsbuchungssatz."
 msgid "The company has no account defaults."
 msgstr "Das Unternehmen hat keine Kontostandardwerte."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Der Stundenzettel-Modus des Unternehmens, Standard oder DCAA, festgelegt bei Einstellungen → Zeiterfassung. DCAA fügt das Eingebungsfenster, Gründe für zu späte und geänderte Zeit, die wöchentliche Zertifizierung und die Zeitkartenprüfung hinzu."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Der Vertrag kann dann nicht storniert werden"

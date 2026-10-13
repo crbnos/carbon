@@ -15909,8 +15909,8 @@ msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü g
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Tavan yok. Yük faturalandırma oranlarında faturalan."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "Sizin için sertifika metni ayarlanmamış. Ayarlar → Zaman Takibi'nde ayarlamasını istemek için bir yöneticiye sorun."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Değişiklik isteği yok"
@@ -24535,8 +24535,8 @@ msgstr "Şirket zaten muhasebeleştirilmiş bir açılış bakiyesi muhasebe fi�
 msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Şirketin zaman tablosu modu, Standart veya DCAA, Ayarlar → Zaman Takibi'nde ayarlanır. DCAA giriş penceresi, geç ve değiştirilmiş zaman nedenleri, haftalık sertifikasyon ve zaman kartı kontrolü ekler."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"

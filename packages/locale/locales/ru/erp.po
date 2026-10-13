@@ -15909,8 +15909,8 @@ msgstr "Нет резервирований мощности для визуал
 msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Нет лимитов. Косвенные расходы выставляются по ставкам выставления счетов."
 
-msgid "No certification text is set for you. Ask an administrator to set it in Settings → Timekeeping."
-msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Учет времени."
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr ""
 
 msgid "No change request"
 msgstr "Нет запроса на изменение"
@@ -24535,8 +24535,8 @@ msgstr "У организации уже есть проведённая опе�
 msgid "The company has no account defaults."
 msgstr "У организации нет значений по умолчанию для счета."
 
-msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Timekeeping. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr "Режим табеля учета рабочего времени организации, Стандартный или DCAA, установленный в Настройки → Учет рабочего времени. DCAA добавляет окно ввода, причины опоздания и измененного времени, еженедельную сертификацию и проверку табеля."
+msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
+msgstr ""
 
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
