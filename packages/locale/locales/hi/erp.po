@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "कोई छत नहीं। बिलिंग दरों पर बोझ के बिल।"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
 msgid "No change request"
 msgstr "कोई परिवर्तन अनुरोध नहीं"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "कंपनी के पास कोई खाता डिफ़ॉल्ट नहीं है।"
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "कंपनी का टाइमशीट मोड मानक या DCAA है, सेटिंग्स → समय में सेट है। DCAA प्रविष्टि विंडो, देरी और बदलने के समय के कारण, साप्ताहिक प्रमाणपत्र और समय कार्ड जांच जोड़ता है।"
 
 msgid "The contract cannot be cancelled then"
 msgstr "अनुबंध को तब रद्द नहीं किया जा सकता"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "इस आइटम के बैच या सीरीज़ कब समाप्त होते हैं, इसे ट्रैक करें।"
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "कार्य पारियों को ट्रैक करें"
 
 msgid "Tracked Entities"
 msgstr "ट्रैक किए गए इकाइयां"

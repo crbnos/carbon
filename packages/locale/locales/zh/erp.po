@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "无限额。按计费费率计费。"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
 msgid "No change request"
 msgstr "没有更改请求"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "公司没有账户默认值。"
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "公司的时间表模式是标准或 DCAA，在设置 → 时间中设置。DCAA 添加了输入窗口、迟到和改变时间的原因、每周认证和时间卡检查。"
 
 msgid "The contract cannot be cancelled then"
 msgstr "该合同不能被取消。"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "跟踪此项目的批次或序列号何时过期。"
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "跟踪工作班次"
 
 msgid "Tracked Entities"
 msgstr "追踪实体"

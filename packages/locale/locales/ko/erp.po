@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "상한선이 없습니다. 간접비는 청구 요율로 청구됩니다."
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
 msgid "No change request"
 msgstr "변경 요청 없음"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "회사에 계정 기본값이 없습니다."
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "회사의 타임시트 모드는 표준 또는 DCAA이며, 설정 → 시간에서 설정됩니다. DCAA는 항목 입력 창, 지연 및 변경된 시간의 이유, 매주 인증 및 타임카드 확인을 추가합니다."
 
 msgid "The contract cannot be cancelled then"
 msgstr "그때는 계약을 취소할 수 없습니다."
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "이 품목의 배치 또는 일련번호 유효기한을 추적합니다."
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "근무 교대조 추적"
 
 msgid "Tracked Entities"
 msgstr "추적 개체"

@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "上限なし。請求レートで負担請求されます。"
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
 msgid "No change request"
 msgstr "変更要求なし"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "会社に勘定科目のデフォルト設定がありません。"
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "会社のタイムシートモードは標準またはDCAAで、設定 → 時間で設定されます。DCAAは入力ウィンドウ、遅刻および時間変更の理由、毎週の認証、およびタイムカード確認を追加します。"
 
 msgid "The contract cannot be cancelled then"
 msgstr "その場合、契約をキャンセルすることはできません。"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "このアイテムのバッチまたはシリアルの有効期限を追跡します。"
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "勤務シフトの追跡"
 
 msgid "Tracked Entities"
 msgstr "追跡対象エンティティ"

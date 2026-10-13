@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Нет лимитов. Косвенные расходы выставляются по ставкам выставления счетов."
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
 msgid "No change request"
 msgstr "Нет запроса на изменение"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "У организации нет значений по умолчанию для счета."
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "Режим табеля учета рабочего времени Организации — Стандартный или DCAA, установленный в Настройки → Время. DCAA добавляет окно ввода, причины опозданий и изменений времени, еженедельную сертификацию и проверку табелей."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Контракт не может быть отменен тогда"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "Отслеживайте, когда партии или серийные номера этого товара истекают."
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "Отслеживание рабочих смен"
 
 msgid "Tracked Entities"
 msgstr "Отслеживаемые сущности"

@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Sin límites. La carga se factura según las tarifas de facturación."
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "No se establece ningún texto de certificación para usted. Pídale a un administrador que lo establezca en Configuración → Tiempo."
 
 msgid "No change request"
 msgstr "Sin solicitud de cambio"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "La Empresa no tiene valores predeterminados de cuenta."
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "El modo de parte de tiempo de la Empresa es Estándar o DCAA, establecido en Configuración → Tiempo. DCAA agrega la ventana de entrada, razones para retrasos y cambios de tiempo, la certificación semanal y la verificación de tarjetas de tiempo."
 
 msgid "The contract cannot be cancelled then"
 msgstr "El contrato no puede cancelarse entonces"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "Realiza un seguimiento de cuándo vencen los lotes o números de serie de este artículo."
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "Seguimiento de turnos de trabajo"
 
 msgid "Tracked Entities"
 msgstr "Entidades Rastreadas"

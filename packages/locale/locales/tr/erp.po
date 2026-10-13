@@ -15910,7 +15910,7 @@ msgid "No ceilings. Burden bills at the billing rates."
 msgstr "Tavan yok. Yük faturalandırma oranlarında faturalan."
 
 msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
-msgstr ""
+msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
 msgid "No change request"
 msgstr "Değişiklik isteği yok"
@@ -24536,7 +24536,7 @@ msgid "The company has no account defaults."
 msgstr "Şirketin hesap varsayılanları yoktur."
 
 msgid "The company's timesheet mode, Standard or DCAA, set at Settings → Time. DCAA adds the entry window, reasons for late and changed time, the weekly certification and the timecard check."
-msgstr ""
+msgstr "Şirketin zaman çizelgesi modu Standard veya DCAA olarak ayarlanmıştır ve Ayarlar → Zaman içinde ayarlanmıştır. DCAA giriş penceresini, gecikmeler ve değişen saatlerin nedenlerini, haftalık sertifikasyonu ve timecard kontrolünü ekler."
 
 msgid "The contract cannot be cancelled then"
 msgstr "Sözleşme o zaman iptal edilemez"
@@ -26414,7 +26414,7 @@ msgid "Track when batches or serials of this item expire."
 msgstr "Bu öğenin partileri veya seri numaraları ne zaman sona erdiğini izleyin."
 
 msgid "Track work shifts"
-msgstr ""
+msgstr "İş vardiyalarını izle"
 
 msgid "Tracked Entities"
 msgstr "Takip Edilen Varlıklar"
