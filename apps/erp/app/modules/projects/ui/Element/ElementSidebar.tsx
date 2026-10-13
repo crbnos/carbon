@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { ValidatedForm } from "@carbon/form";
-import { Button, Copy, cn, Progress, VStack } from "@carbon/react";
+import { Button, Copy, cn, VStack } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
@@ -238,17 +238,9 @@ export function ElementSidebar({
         />
         {children.length > 0 && (
           <PropertyField label={t`Children`}>
-            <div className="flex w-full items-center gap-2">
-              <span className="shrink-0 whitespace-nowrap tabular-nums">
-                {t`${completed} of ${children.length} done`}
-              </span>
-              <Progress
-                value={(completed / children.length) * 100}
-                aria-label={t`Children done`}
-                className="h-1.5 min-w-0"
-                indicatorClassName="bg-foreground/70"
-              />
-            </div>
+            <span className="whitespace-nowrap tabular-nums">
+              {t`${completed} of ${children.length} done`}
+            </span>
           </PropertyField>
         )}
       </PropertyGroup>

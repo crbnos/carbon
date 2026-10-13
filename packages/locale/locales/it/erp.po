@@ -5385,9 +5385,6 @@ msgstr "Checkpoint"
 msgid "Children"
 msgstr "Figli"
 
-msgid "Children done"
-msgstr "Figli completati"
-
 msgid "Choose a backup"
 msgstr "Scegli un backup"
 

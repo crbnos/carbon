@@ -5385,9 +5385,6 @@ msgstr "Punkty kontrolne"
 msgid "Children"
 msgstr "Elementy podrzędne"
 
-msgid "Children done"
-msgstr "Dzieci gotowe"
-
 msgid "Choose a backup"
 msgstr "Wybierz kopię zapasową"
 
