@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
-import { getCompanyTimeZone } from "@carbon/database";
+import { ACCOUNT_DEFAULT_COLUMNS } from "@carbon/database/account-import";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { single, updateRows } from "@carbon/database/rows";
 import {
@@ -30,9 +30,7 @@ import {
   unitOfMeasures
 } from "@carbon/database/seed-data";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
-import { startOfMonth } from "@internationalized/date";
-import type { Insertable, Kysely } from "kysely";
+import { type Insertable, type Kysely, type Selectable, sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
@@ -356,6 +354,13 @@ const seedCompany = defineServerFn({
 
         // Shared tables: only seed for new groups (existing groups already have these)
         let accountIdByKey: Record<string, string> = {};
+        let siblingDefaults:
+          | Selectable<KyselyDatabase["accountDefault"]>
+          | undefined;
+        const siblingAssetClasses = new Map<
+          string,
+          Selectable<KyselyDatabase["fixedAssetClass"]>
+        >();
         if (isNewGroup) {
           await trx
             .insertInto("currency")
@@ -392,7 +397,32 @@ const seedCompany = defineServerFn({
             )
             .execute();
         } else {
-          // For subsidiaries joining an existing group, look up account IDs by number
+          // A subsidiary joining an existing group copies the account ids of a
+          // company already in it. Its chart may have been imported, so the
+          // seeded numbers below are only the fallback for a group with none.
+          const sibling = await trx
+            .selectFrom("accountDefault")
+            .innerJoin("company", "company.id", "accountDefault.companyId")
+            .selectAll("accountDefault")
+            .where("company.companyGroupId", "=", companyGroupId!)
+            .where("accountDefault.companyId", "!=", companyId)
+            .orderBy(
+              sql`"accountDefault"."companyId" = ${parentCompanyId ?? ""}`,
+              "desc"
+            )
+            .orderBy("accountDefault.companyId")
+            .executeTakeFirst();
+          if (sibling) {
+            siblingDefaults = sibling;
+            const siblingClasses = await trx
+              .selectFrom("fixedAssetClass")
+              .selectAll()
+              .where("companyId", "=", sibling.companyId)
+              .execute();
+            for (const fac of siblingClasses) {
+              siblingAssetClasses.set(fac.name, fac);
+            }
+          }
           const existingAccounts = await trx
             .selectFrom("account")
             .select([
@@ -446,6 +476,12 @@ const seedCompany = defineServerFn({
         for (const [key, number] of Object.entries(accountDefaults)) {
           resolvedDefaults[key] = accountIdByKey[number] ?? null;
         }
+        if (siblingDefaults) {
+          for (const column of ACCOUNT_DEFAULT_COLUMNS) {
+            const accountId = siblingDefaults[column] as string | null;
+            if (accountId) resolvedDefaults[column] = accountId;
+          }
+        }
 
         // These defaults are NOT NULL in the schema. If a customized COA
         // on an existing group is missing one of their accounts
@@ -489,45 +525,45 @@ const seedCompany = defineServerFn({
           .values([{ ...fiscalYearSettings, companyId }])
           .execute();
 
-        // A new company keeps its ledger in Carbon from day one: its
-        // accounting cutover is the first day of the current period, so
-        // every posting is Posted and there is nothing to migrate
-        // (.ai/specs/implemented/2026-10-08-accounting-cutover.md section 7).
-        const today = datetime.today(await getCompanyTimeZone(trx, companyId));
-        await trx
-          .updateTable("companySettings")
-          .set({
-            accountingCutoverDate: startOfMonth(today).toString(),
-            accountingActivatedAt: datetime.timestamp(),
-            accountingActivatedBy: userId
-          })
-          .where("id", "=", companyId)
-          .where("accountingCutoverDate", "is", null)
-          .execute();
+        // A new company stays Provisional until the activation wizard sets
+        // its cutover, so the chart can be imported before anything is
+        // Posted (.ai/specs/2026-10-12-chart-of-accounts-import.md).
 
         await trx
           .insertInto("fixedAssetClass")
           .values(
-            fixedAssetClasses.map((fac) => ({
-              name: fac.name,
-              depreciationMethod: fac.depreciationMethod,
-              usefulLifeMonths: fac.usefulLifeMonths,
-              residualValuePercent: fac.residualValuePercent,
-              assetAccountId: accountIdByKey[fac.assetAccount]!,
-              accumulatedDepreciationAccountId:
-                accountIdByKey[fac.accumulatedDepreciationAccount]!,
-              depreciationExpenseAccountId:
-                accountIdByKey[fac.depreciationExpenseAccount]!,
-              writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
-              writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
-              gainOnDisposalAccountId:
-                accountIdByKey[fac.gainOnDisposalAccount]!,
-              lossOnDisposalAccountId:
-                accountIdByKey[fac.lossOnDisposalAccount]!,
-              isConstructionInProgress: fac.isConstructionInProgress,
-              companyId,
-              createdBy: userId
-            }))
+            fixedAssetClasses.map((fac) => {
+              const copied = siblingAssetClasses.get(fac.name);
+              return {
+                name: fac.name,
+                depreciationMethod: fac.depreciationMethod,
+                usefulLifeMonths: fac.usefulLifeMonths,
+                residualValuePercent: fac.residualValuePercent,
+                assetAccountId:
+                  copied?.assetAccountId ?? accountIdByKey[fac.assetAccount]!,
+                accumulatedDepreciationAccountId:
+                  copied?.accumulatedDepreciationAccountId ??
+                  accountIdByKey[fac.accumulatedDepreciationAccount]!,
+                depreciationExpenseAccountId:
+                  copied?.depreciationExpenseAccountId ??
+                  accountIdByKey[fac.depreciationExpenseAccount]!,
+                writeOffAccountId:
+                  copied?.writeOffAccountId ??
+                  accountIdByKey[fac.writeOffAccount]!,
+                writeDownAccountId:
+                  copied?.writeDownAccountId ??
+                  accountIdByKey[fac.writeDownAccount]!,
+                gainOnDisposalAccountId:
+                  copied?.gainOnDisposalAccountId ??
+                  accountIdByKey[fac.gainOnDisposalAccount]!,
+                lossOnDisposalAccountId:
+                  copied?.lossOnDisposalAccountId ??
+                  accountIdByKey[fac.lossOnDisposalAccount]!,
+                isConstructionInProgress: fac.isConstructionInProgress,
+                companyId,
+                createdBy: userId
+              };
+            })
           )
           .execute();
       } // end if (!identityOnly)

@@ -41,10 +41,11 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── Accounting cutover ───────────────────────────────────────────────────
   // A demo company keeps its ledger in Carbon from its first seeded period
   // (SEEDED_PERIOD_MONTHS back), so every seeded journal is on or after the
-  // cutover and every posting the user makes is Posted. Written even when the
-  // company already has a cutover: seed-company stamps the current month
-  // before onboarding applies the template, and a later one would leave the
-  // seeded journals before it. The cutover is one-way for everything else;
+  // cutover and every posting the user makes is Posted. seed-company leaves a
+  // new company without a cutover (it stays Provisional until activation), so
+  // this is usually the first one. Written even when the company already has
+  // one (an app-created company applied through Settings → Demo Data): a later
+  // cutover would leave the seeded journals before it. It is one-way otherwise;
   // `check_accounting_config_locked` lets this write through only because
   // `applyDatasetTiers` sets app.dataset_apply in the apply's transaction.
   ctx.log("accounting cutover");
