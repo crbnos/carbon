@@ -32,7 +32,7 @@ WHERE m."memberUserId" IS NOT NULL
   AND m."memberUserId" = keeper."memberUserId"
   AND m."id" > keeper."id";
 
-CREATE UNIQUE INDEX "membership_groupId_memberUserId_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "membership_groupId_memberUserId_key"
   ON "membership" ("groupId", "memberUserId");
 
 COMMIT;
