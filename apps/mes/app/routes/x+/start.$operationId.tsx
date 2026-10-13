@@ -8,10 +8,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
+import { recordManualMachinePress } from "@carbon/database/machine-time";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, redirect } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { getWorkCenterWithBlockingStatus } from "~/services/maintenance.service";
 import {
   getNextIncompleteSerialEntity,
@@ -240,14 +242,36 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // If type is Machine, cancel all setup and labor production events for this operation
+  const pressedAt = datetime.timestamp();
   if (type === "Machine") {
-    const currentTime = datetime.timestamp();
+    // A work center with a device: end its open Machine time at the press and
+    // record the press. A no-op when the work center has no device.
+    const workCenterId = jobOperation.data.workCenterId;
+    if (workCenterId) {
+      try {
+        await getDatabaseClient()
+          .transaction()
+          .execute((trx) =>
+            recordManualMachinePress(trx, {
+              workCenterId,
+              companyId,
+              userId,
+              pressedAt
+            })
+          );
+      } catch (err) {
+        throw redirect(
+          path.to.operations,
+          await flash(request, error(err, "Failed to start event"))
+        );
+      }
+    }
 
     await serviceRole
       .from("productionEvent")
       .update({
-        endTime: currentTime,
-        updatedAt: currentTime,
+        endTime: pressedAt,
+        updatedAt: pressedAt,
         updatedBy: userId
       })
       .eq("jobOperationId", operationId)
@@ -261,7 +285,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       type,
       jobOperationId: operationId,
       workCenterId: jobOperation.data.workCenterId!,
-      startTime: datetime.timestamp(),
+      startTime: pressedAt,
       employeeId: userId,
       companyId,
       createdBy: userId

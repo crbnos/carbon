@@ -6,6 +6,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { recordManualMachinePress } from "@carbon/database/machine-time";
 import { validationError, validator } from "@carbon/form";
 import { serverFns } from "@carbon/server-functions";
 import { datetime } from "@carbon/utils";
@@ -41,6 +42,27 @@ export async function action({ request }: ActionFunctionArgs) {
     exclusive,
     ...d
   } = validation.data;
+
+  // One press time for the device rules and the event itself.
+  const pressedAt = datetime.timestamp();
+
+  // A Machine press on a work center with a device ends the work center's open
+  // Machine time at the press and records it, so an older sensor change cannot
+  // undo it. A work center without a device is left as it is.
+  const recordMachinePress = async () => {
+    if (d.type !== "Machine" || !d.workCenterId) return;
+    const workCenterId = d.workCenterId;
+    await getDatabaseClient()
+      .transaction()
+      .execute((trx) =>
+        recordManualMachinePress(trx, {
+          workCenterId,
+          companyId,
+          userId,
+          pressedAt
+        })
+      );
+  };
 
   if (productionAction === "Start") {
     // Ability gate: the shop-floor Start button posts here, so the
@@ -111,11 +133,21 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       }
     }
+
+    try {
+      await recordMachinePress();
+    } catch (err) {
+      return data(
+        {},
+        await flash(request, error(err, "Failed to start event"))
+      );
+    }
+
     const startEvent = await startProductionEvent(
       client,
       {
         ...d,
-        startTime: datetime.timestamp(),
+        startTime: pressedAt,
         employeeId: userId,
         companyId,
         createdBy: userId
@@ -139,9 +171,15 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!id) {
       return data({}, await flash(request, error("No event id provided")));
     }
+    try {
+      await recordMachinePress();
+    } catch (err) {
+      return data({}, await flash(request, error(err, "Failed to end event")));
+    }
+
     const endEvent = await endProductionEvent(client, {
       id,
-      endTime: datetime.timestamp(),
+      endTime: pressedAt,
       employeeId: userId
     });
     if (endEvent.error) {
