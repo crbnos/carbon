@@ -420,8 +420,9 @@ export async function getPurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLineId: string
 ) {
+  // The view: the line plus its asset's and lease's readable ids.
   return client
-    .from("purchaseInvoiceLine")
+    .from("purchaseInvoiceLines")
     .select("*")
     .eq("id", purchaseInvoiceLineId)
     .single();
@@ -890,11 +891,15 @@ export async function upsertPurchaseInvoiceLine(
         customFields?: Json;
       })
 ) {
-  if ("id" in purchaseInvoiceLine) {
+  // Only `create-lease-invoices` links a line to a lease payment row, when
+  // it bills the row; a caller cannot claim one (the row would stay Pending
+  // and be billed again), and an edit keeps the stored link.
+  const { leasePaymentId: _leasePaymentId, ...line } = purchaseInvoiceLine;
+  if ("id" in line) {
     return client
       .from("purchaseInvoiceLine")
-      .update(sanitize(purchaseInvoiceLine))
-      .eq("id", purchaseInvoiceLine.id)
+      .update(sanitize(line))
+      .eq("id", line.id)
       .select("id")
       .single();
   }
@@ -902,7 +907,7 @@ export async function upsertPurchaseInvoiceLine(
   const existing = await client
     .from("purchaseInvoiceLine")
     .select("sortOrder")
-    .eq("invoiceId", purchaseInvoiceLine.invoiceId);
+    .eq("invoiceId", line.invoiceId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -911,7 +916,7 @@ export async function upsertPurchaseInvoiceLine(
 
   return client
     .from("purchaseInvoiceLine")
-    .insert([{ ...purchaseInvoiceLine, sortOrder: maxSortOrder + 1 }])
+    .insert([{ ...line, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }

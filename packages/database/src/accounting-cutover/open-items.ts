@@ -27,6 +27,12 @@ import { credit, debit, debitSigned } from "../ledger";
 import { EPSILON, round } from "../precision";
 import { journalReference } from "../utils";
 import {
+  type CutoverPayment,
+  cutoverPaymentAdjustment,
+  invoicePostedBefore,
+  lesseeScheduleHasPaid
+} from "./lease-payments";
+import {
   type AccountDefaults,
   addTo,
   type CutoverArgs,
@@ -1168,6 +1174,13 @@ async function getDeferredRevenueItems(
  * falls before it. Read from the lease rows, not the commencement journal:
  * a lease commenced before the reset has none. Commencement sells the unit
  * to the lease, so the date is its asset's disposal date.
+ *
+ * A rent invoice credits the net investment when it posts, so a billing
+ * period that schedule line has taken off but whose invoice posts after the
+ * cutover (or is not invoiced yet) is added back, and one invoiced before the
+ * cutover that the schedule takes off later is taken off now
+ * (`cutoverPaymentAdjustment`). Line `i` of the schedule pays billing period
+ * `i`, dated at its end.
  */
 async function getLeaseNetInvestmentItems(
   db: CutoverDb,
@@ -1203,7 +1216,7 @@ async function getLeaseNetInvestmentItems(
   const lastScheduleLines = await db
     .selectFrom("rentalLeaseScheduleLine")
     .distinctOn("rentalAgreementLineId")
-    .select(["rentalAgreementLineId", "closingNetInvestment"])
+    .select(["rentalAgreementLineId", "periodDate", "closingNetInvestment"])
     .where("companyId", "=", companyId)
     .where(
       "rentalAgreementLineId",
@@ -1214,17 +1227,68 @@ async function getLeaseNetInvestmentItems(
     .orderBy("rentalAgreementLineId")
     .orderBy("periodDate", "desc")
     .execute();
-  const closingByLine = new Map(
-    lastScheduleLines.map((row) => [
-      row.rentalAgreementLineId,
-      Number(row.closingNetInvestment)
-    ])
+  const lastLineByLine = new Map(
+    lastScheduleLines.map((row) => [row.rentalAgreementLineId, row])
   );
+
+  const billingPeriods = await db
+    .selectFrom("rentalBillingPeriod as period")
+    .leftJoin("salesInvoiceLine as invoiceLine", (join) =>
+      join
+        .onRef("invoiceLine.id", "=", "period.salesInvoiceLineId")
+        .onRef("invoiceLine.companyId", "=", "period.companyId")
+    )
+    .leftJoin("salesInvoice as invoice", (join) =>
+      join
+        .onRef("invoice.id", "=", "invoiceLine.invoiceId")
+        .onRef("invoice.companyId", "=", "invoiceLine.companyId")
+    )
+    .select([
+      "period.rentalAgreementLineId",
+      "period.periodEnd",
+      "period.amount",
+      "period.status",
+      "invoice.status as invoiceStatus",
+      "invoice.postingDate as invoicePostingDate"
+    ])
+    .where("period.companyId", "=", companyId)
+    .where(
+      "period.rentalAgreementLineId",
+      "in",
+      leaseLines.map((line) => line.id)
+    )
+    .where("period.isAdjustment", "=", false)
+    .execute();
+  const paymentsByLine = new Map<string, CutoverPayment[]>();
+  for (const period of billingPeriods) {
+    const lastLine = lastLineByLine.get(period.rentalAgreementLineId);
+    const payments = paymentsByLine.get(period.rentalAgreementLineId) ?? [];
+    payments.push({
+      amount: Number(period.amount),
+      paidBySchedule: !!lastLine && period.periodEnd <= lastLine.periodDate,
+      settledBeforeCutover:
+        period.status === "Invoiced" &&
+        invoicePostedBefore(
+          period.invoiceStatus
+            ? {
+                status: period.invoiceStatus,
+                postingDate: period.invoicePostingDate
+              }
+            : null,
+          cutoverDate
+        )
+    });
+    paymentsByLine.set(period.rentalAgreementLineId, payments);
+  }
 
   const byAgreement = new Map<string, number>();
   for (const line of leaseLines) {
+    const lastLine = lastLineByLine.get(line.id);
     const netInvestment =
-      closingByLine.get(line.id) ?? Number(line.initialNetInvestment ?? 0);
+      (lastLine
+        ? Number(lastLine.closingNetInvestment)
+        : Number(line.initialNetInvestment ?? 0)) +
+      cutoverPaymentAdjustment(paymentsByLine.get(line.id) ?? []);
     const rate = Number(line.exchangeRate ?? 1) || 1;
     addTo(byAgreement, line.rentalAgreementId, netInvestment / rate);
   }
@@ -1246,6 +1310,272 @@ async function getLeaseNetInvestmentItems(
       documentLineReference: null,
       description: "Net Investment in Leases"
     });
+  }
+  return items;
+}
+
+/**
+ * Lessee leases: per leased asset of a lease commenced before the cutover,
+ * the three balances its journals carry at the cutover, read from the
+ * schedule rather than the journals (a lease commenced before the reset has
+ * none):
+ *
+ * - the lease liability: the closing liability of its last schedule line
+ *   before the cutover (else its initial liability), plus any remeasurement
+ *   effective after that line and before the cutover, and corrected for the
+ *   payments that line and the invoices disagree on: a purchase invoice's
+ *   Lease line debits the liability when it posts, so a payment the schedule
+ *   has taken off whose invoice posts after the cutover (or is not invoiced
+ *   yet) is added back, and one invoiced before the cutover that a later
+ *   schedule line takes off is taken off now (`cutoverPaymentAdjustment`). A
+ *   Skipped row was paid outside Carbon, on its due date;
+ * - the right-of-use asset at cost: the initial asset plus every
+ *   remeasurement effective before the cutover;
+ * - the accumulated amortization: every schedule line's amortization before
+ *   the cutover.
+ *
+ * An asset terminated or purchased before the cutover was derecognized and
+ * has none. A short-term asset is never on the balance sheet.
+ */
+async function getLeaseLiabilityItems(
+  db: CutoverDb,
+  companyId: string,
+  cutoverDate: string,
+  defaults: AccountDefaults
+): Promise<DraftItem[]> {
+  const assets = await db
+    .selectFrom("leaseLine as l")
+    .innerJoin("lease", (join) =>
+      join
+        .onRef("lease.id", "=", "l.leaseId")
+        .onRef("lease.companyId", "=", "l.companyId")
+    )
+    .select([
+      "l.id",
+      "l.leaseId",
+      "l.description",
+      "l.initialLiability",
+      "l.initialRouAsset",
+      "lease.commencementDate",
+      "lease.paymentTiming"
+    ])
+    .where("l.companyId", "=", companyId)
+    .where("lease.status", "in", [
+      "Active",
+      "Expired",
+      "Terminated",
+      "Purchased"
+    ])
+    .where("l.lesseeClassification", "in", ["Operating", "Finance"])
+    .where("l.initialLiability", "is not", null)
+    .where("lease.commencementDate", "<", cutoverDate)
+    .execute();
+  if (assets.length === 0) return [];
+  const assetIds = assets.map((asset) => asset.id);
+
+  const [lastLines, scheduleEnds, payments, amortization, events] =
+    await Promise.all([
+      db
+        .selectFrom("leaseScheduleLine")
+        .distinctOn("leaseLineId")
+        .select(["leaseLineId", "periodDate", "closingLiability"])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("periodDate", "<", cutoverDate)
+        .orderBy("leaseLineId")
+        .orderBy("periodDate", "desc")
+        .execute(),
+      db
+        .selectFrom("leaseScheduleLine")
+        .select([
+          "leaseLineId",
+          (eb) => eb.fn.max("periodDate").as("lastPeriodDate")
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .groupBy("leaseLineId")
+        .execute(),
+      db
+        .selectFrom("leasePayment as p")
+        .leftJoin("purchaseInvoiceLine as invoiceLine", (join) =>
+          join
+            .onRef("invoiceLine.id", "=", "p.purchaseInvoiceLineId")
+            .onRef("invoiceLine.companyId", "=", "p.companyId")
+        )
+        .leftJoin("purchaseInvoice as invoice", (join) =>
+          join
+            .onRef("invoice.id", "=", "invoiceLine.invoiceId")
+            .onRef("invoice.companyId", "=", "invoiceLine.companyId")
+        )
+        .select([
+          "p.leaseLineId",
+          "p.periodStart",
+          "p.periodEnd",
+          "p.dueDate",
+          "p.paymentType",
+          "p.amount",
+          "p.status",
+          "invoice.status as invoiceStatus",
+          "invoice.postingDate as invoicePostingDate"
+        ])
+        .where("p.companyId", "=", companyId)
+        .where("p.leaseLineId", "in", assetIds)
+        .execute(),
+      db
+        .selectFrom("leaseScheduleLine")
+        .select([
+          "leaseLineId",
+          (eb) => eb.fn.sum("rouAmortization").as("total")
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("periodDate", "<", cutoverDate)
+        .groupBy("leaseLineId")
+        .execute(),
+      db
+        .selectFrom("leaseEvent")
+        .select([
+          "leaseLineId",
+          "eventType",
+          "effectiveDate",
+          "liabilityBefore",
+          "liabilityAfter",
+          "rouAssetBefore",
+          "rouAssetAfter"
+        ])
+        .where("companyId", "=", companyId)
+        .where("leaseLineId", "in", assetIds)
+        .where("effectiveDate", "<", cutoverDate)
+        .execute()
+    ]);
+  const lastLineByAsset = new Map(
+    lastLines.map((row) => [row.leaseLineId, row])
+  );
+  const scheduleEndByAsset = new Map(
+    scheduleEnds.map((row) => [row.leaseLineId, row.lastPeriodDate])
+  );
+  const paymentsByAsset = new Map<string, typeof payments>();
+  for (const payment of payments) {
+    const own = paymentsByAsset.get(payment.leaseLineId) ?? [];
+    own.push(payment);
+    paymentsByAsset.set(payment.leaseLineId, own);
+  }
+  const amortizationByAsset = new Map(
+    amortization.map((row) => [row.leaseLineId, Number(row.total ?? 0)])
+  );
+
+  const accounts = {
+    liability: defaults.leaseLiabilityAccount,
+    rou: defaults.rightOfUseAssetAccount,
+    accumulated: defaults.accumulatedRightOfUseAmortizationAccount
+  };
+  const required = (accountId: string | null | undefined, column: string) => {
+    if (!accountId) throw new Error(`Set the ${column} account default`);
+    return accountId;
+  };
+
+  const items: DraftItem[] = [];
+  for (const asset of assets) {
+    const own = events.filter((event) => event.leaseLineId === asset.id);
+    // Derecognized before the cutover: its accounts were cleared then.
+    if (own.some((event) => event.eventType !== "Modification")) continue;
+    const remeasurements = own.filter(
+      (event) => event.eventType === "Modification"
+    );
+
+    const lastLine = lastLineByAsset.get(asset.id);
+    const paidThrough = lastLine
+      ? {
+          periodDate: lastLine.periodDate,
+          isLastLine: scheduleEndByAsset.get(asset.id) === lastLine.periodDate
+        }
+      : null;
+    const paymentAdjustment = cutoverPaymentAdjustment(
+      (paymentsByAsset.get(asset.id) ?? []).map((payment) => ({
+        amount: Number(payment.amount),
+        paidBySchedule: lesseeScheduleHasPaid({
+          payment,
+          commencementDate: asset.commencementDate,
+          timing: asset.paymentTiming,
+          paidThrough
+        }),
+        settledBeforeCutover:
+          payment.status === "Skipped"
+            ? payment.dueDate < cutoverDate
+            : payment.status === "Invoiced" &&
+              invoicePostedBefore(
+                payment.invoiceStatus
+                  ? {
+                      status: payment.invoiceStatus,
+                      postingDate: payment.invoicePostingDate
+                    }
+                  : null,
+                cutoverDate
+              )
+      }))
+    );
+    const liability =
+      (lastLine
+        ? Number(lastLine.closingLiability)
+        : Number(asset.initialLiability ?? 0)) +
+      paymentAdjustment +
+      remeasurements
+        .filter(
+          (event) => !lastLine || event.effectiveDate > lastLine.periodDate
+        )
+        .reduce(
+          (sum, event) =>
+            sum + Number(event.liabilityAfter) - Number(event.liabilityBefore),
+          0
+        );
+    const rouCost =
+      Number(asset.initialRouAsset ?? 0) +
+      remeasurements.reduce(
+        (sum, event) =>
+          sum + Number(event.rouAssetAfter) - Number(event.rouAssetBefore),
+        0
+      );
+    const accumulated = amortizationByAsset.get(asset.id) ?? 0;
+
+    const lines = [
+      {
+        openItemType: "Lease Liability" as const,
+        accountId: accounts.liability,
+        column: "leaseLiabilityAccount",
+        // A credit balance.
+        original: -round(liability),
+        description: "Lease Liability"
+      },
+      {
+        openItemType: "Right-of-Use Asset" as const,
+        accountId: accounts.rou,
+        column: "rightOfUseAssetAccount",
+        original: round(rouCost),
+        description: "Right-of-Use Asset"
+      },
+      {
+        openItemType: "Accumulated ROU Amortization" as const,
+        accountId: accounts.accumulated,
+        column: "accumulatedRightOfUseAmortizationAccount",
+        // A credit balance.
+        original: -round(accumulated),
+        description: "Accumulated ROU Amortization"
+      }
+    ];
+    for (const line of lines) {
+      if (Math.abs(line.original) <= EPSILON) continue;
+      items.push({
+        openItemType: line.openItemType,
+        accountId: required(line.accountId, line.column),
+        basis: "debit",
+        original: line.original,
+        settled: 0,
+        documentType: "Lease",
+        documentId: asset.leaseId,
+        documentLineReference: asset.id,
+        description: `${line.description} — ${asset.description}`
+      });
+    }
   }
   return items;
 }
@@ -1293,7 +1623,8 @@ export async function finishItems(
  * Every document-level item open at the cutover, in base currency, positive
  * on the natural side of its account: receivables, payables, employee
  * reimbursements, unapplied credit, deposits, received-not-invoiced,
- * invoiced-not-received, work in progress, deferred revenue and lease net investment. Inventory and fixed assets come from
+ * invoiced-not-received, work in progress, deferred revenue, lease net
+ * investment and lessee lease balances. Inventory and fixed assets come from
  * `getCutoverInventory` and `getCutoverFixedAssets`.
  */
 export async function getCutoverOpenItems(
@@ -1327,7 +1658,8 @@ export async function openItemsFor(
     getInvoicedNotReceivedItems(db, companyId, cutoverDate, defaults),
     getWorkInProgressItems(db, companyId, cutoverDate, defaults),
     getDeferredRevenueItems(db, companyId, cutoverDate, defaults),
-    getLeaseNetInvestmentItems(db, companyId, cutoverDate, defaults)
+    getLeaseNetInvestmentItems(db, companyId, cutoverDate, defaults),
+    getLeaseLiabilityItems(db, companyId, cutoverDate, defaults)
   ]);
   return finishItems(db, company.companyGroupId, groups.flat());
 }

@@ -6,10 +6,6 @@ import type { Json } from "@carbon/database";
 import { CreatableMultiSelect, DatePicker, ValidatedForm } from "@carbon/form";
 import { useAction } from "@carbon/query";
 import {
-  Avatar,
-  AvatarGroup,
-  AvatarGroupList,
-  AvatarOverflowIndicator,
   Button,
   Copy,
   HStack,
@@ -27,7 +23,11 @@ import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { Assignee, useOptimisticAssignment } from "~/components";
+import {
+  Assignee,
+  SupplierAvatarGroup,
+  useOptimisticAssignment
+} from "~/components";
 import { Employee, Location } from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { usePermissions, useRouteData } from "~/hooks";
@@ -64,21 +64,11 @@ const PurchasingRFQProperties = () => {
 
   const renderSuppliersInlinePreview = useCallback(
     (value: string[], _options: unknown, maxPreview = 5) => (
-      <AvatarGroup limit={maxPreview} className="relative z-10">
-        <AvatarGroupList>
-          {value.map((supplier, index: number) => (
-            <Avatar
-              key={index}
-              name={
-                allSuppliers.find((s) => s.id === supplier)?.name ?? supplier
-              }
-            />
-          ))}
-        </AvatarGroupList>
-        <AvatarOverflowIndicator />
-      </AvatarGroup>
+      <div className="relative z-10">
+        <SupplierAvatarGroup supplierIds={value} size="sm" limit={maxPreview} />
+      </div>
     ),
-    [allSuppliers]
+    []
   );
 
   // Get current supplier IDs from the RFQ

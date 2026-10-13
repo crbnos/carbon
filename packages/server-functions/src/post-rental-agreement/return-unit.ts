@@ -15,12 +15,12 @@ import {
 } from "@carbon/utils";
 import { sql } from "kysely";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { currencyDecimals } from "../lib/currency-decimals";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
 import { bookAdjustment } from "../lib/post-adjustment";
 import {
   type AgreementRow,
   billingPeriodRow,
-  currencyDecimals,
   insertUnitActivity,
   loadLeaseAccounting,
   postLeaseJournal,
@@ -319,7 +319,7 @@ async function returnResidual(
     .executeTakeFirstOrThrow();
   if (Number(claimed.count) > 0) {
     throw new InvalidInputError(
-      "A draft revenue recognition run includes this lease's interest; post or delete the run before returning the unit"
+      "A draft lease run includes this lease's interest; post or delete the run before returning the unit"
     );
   }
 

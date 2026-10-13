@@ -1518,7 +1518,9 @@ export const rentalAgreementChargeValidator = z.object({
   amount: zfd.numeric(z.number()),
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
-  )
+  ),
+  /** Drafted on its own invoice, held for review, instead of with the rent. */
+  invoiceSeparately: zfd.checkbox()
 });
 
 /** Where a Sale unit's closing net investment goes when it comes back

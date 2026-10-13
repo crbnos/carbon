@@ -118,6 +118,10 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
     "create": "invoicing",
     "update": "sales",
   },
+  "create-lease-invoices": {
+    "create": "invoicing",
+    "update": "purchasing",
+  },
   "create-rental-invoices": {
     "create": "invoicing",
     "update": "sales",
@@ -317,6 +321,9 @@ exports[`server function permissions > match the reviewed manifest 1`] = `
   },
   "post-inventory-count": {
     "update": "inventory",
+  },
+  "post-lease": {
+    "update": "purchasing",
   },
   "post-maintenance-event": {
     "update": "resources",

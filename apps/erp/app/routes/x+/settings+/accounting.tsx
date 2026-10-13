@@ -45,6 +45,7 @@ import { z } from "zod";
 import { zfd } from "zod-form-data";
 import {
   Account,
+  Boolean as BooleanInput,
   Hidden,
   Number as NumberInput,
   Submit
@@ -95,6 +96,16 @@ const leasePolicySettingsValidator = z.object({
   ),
   leaseDefaultDiscountRate: zfd.numeric(
     z.number().min(0, { message: "Discount rate cannot be negative" })
+  ),
+  leaseIncrementalBorrowingRate: zfd.numeric(
+    z.number().min(0, { message: "Borrowing rate cannot be negative" })
+  ),
+  leaseShortTermExpedient: zfd.checkbox(),
+  leaseReminderDays: zfd.numeric(
+    z
+      .number()
+      .int({ message: "Reminder days must be a whole number" })
+      .min(0, { message: "Reminder days cannot be negative" })
   )
 });
 
@@ -512,19 +523,26 @@ export default function AccountingSettingsRoute() {
               companySettings.leaseMajorPartThresholdPercent,
             leaseSubstantiallyAllThresholdPercent:
               companySettings.leaseSubstantiallyAllThresholdPercent,
-            leaseDefaultDiscountRate: companySettings.leaseDefaultDiscountRate
+            leaseDefaultDiscountRate: companySettings.leaseDefaultDiscountRate,
+            leaseIncrementalBorrowingRate:
+              companySettings.leaseIncrementalBorrowingRate,
+            leaseShortTermExpedient: companySettings.leaseShortTermExpedient,
+            leaseReminderDays: companySettings.leaseReminderDays
           }}
         >
-          <Card>
+          {/* Linked from a lease that needs the short-term expedient. */}
+          <Card id="lease-classification">
             <CardHeader>
               <CardTitle>
                 <Trans>Lease Classification</Trans>
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  A rental line is a sales-type lease when any ASC 842 test is
-                  met. These thresholds set tests (c) and (d); the discount rate
-                  is the default for new rental agreements.
+                  A lease is a sales-type (lessor) or finance (lessee) lease
+                  when any ASC 842 test is met. These thresholds set tests (c)
+                  and (d). The lessor discount rate is the default for new
+                  rental agreements; the incremental borrowing rate is the
+                  default for new leases.
                 </Trans>
               </CardDescription>
             </CardHeader>
@@ -549,10 +567,28 @@ export default function AccountingSettingsRoute() {
                 />
                 <NumberInput
                   name="leaseDefaultDiscountRate"
-                  label={t`Default Discount Rate (%)`}
+                  label={t`Lessor Discount Rate (%)`}
                   minValue={0}
                   step={INPUT_STEP.percent}
                   formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseIncrementalBorrowingRate"
+                  label={t`Incremental Borrowing Rate (%)`}
+                  minValue={0}
+                  step={INPUT_STEP.percent}
+                  formatOptions={INPUT_FORMAT.percentPoints}
+                />
+                <NumberInput
+                  name="leaseReminderDays"
+                  label={t`Lease Reminder Days`}
+                  minValue={0}
+                  helperText={t`Days before a lease's notice or end date that its owner is reminded.`}
+                />
+                <BooleanInput
+                  name="leaseShortTermExpedient"
+                  label={t`Short-Term Lease Expedient`}
+                  description={t`Leases of 12 months or less with no reasonably certain purchase option are expensed as paid.`}
                 />
               </div>
             </CardContent>

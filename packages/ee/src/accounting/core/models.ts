@@ -550,9 +550,18 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
-  // Sales-type lease commencement and end of term. Off by default for the
-  // same reason as 'Revenue Recognition'.
+  // One-off lease journals: a sales-type lease's commencement and end of
+  // term, and a lessee lease's commencement or opening balance, modification,
+  // termination, purchase and cancel. Off by default for the same reason as
+  // 'Revenue Recognition'.
   Lease: {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // Lease runs (lessee interest and amortization, rental deferrals, accruals
+  // and sales-type interest). Off by default, as 'Revenue Recognition'.
+  "Lease Run": {
     representation: "journal",
     defaultEnabled: false,
     defaultGranularity: "individual"

@@ -148,6 +148,23 @@ describe("rentalAgreementChargeValidator", () => {
     expect(result.success).toBe(true);
     expect(result.data).not.toHaveProperty("chargeType");
   });
+
+  it("reads invoiceSeparately from a checkbox, off when unchecked", () => {
+    const base = {
+      rentalAgreementLineId: "ral_1",
+      chargeDate: "2026-09-23",
+      description: "Damage",
+      amount: "500",
+      taxPercent: "0"
+    };
+    expect(rentalAgreementChargeValidator.parse(base).invoiceSeparately).toBe(
+      false
+    );
+    expect(
+      rentalAgreementChargeValidator.parse({ ...base, invoiceSeparately: "on" })
+        .invoiceSeparately
+    ).toBe(true);
+  });
 });
 
 describe("salesOrderLineValidator priceTrace", () => {

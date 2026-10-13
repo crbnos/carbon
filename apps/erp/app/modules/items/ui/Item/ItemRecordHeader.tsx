@@ -60,7 +60,9 @@ const ItemRecordHeader = ({
     entityType: "item",
     entityId: itemId,
     companyId: company.id,
-    variant: "dropdown"
+    variant: "dropdown",
+    downloadable: true,
+    downloadName: readableId ?? undefined
   });
 
   const supersession = useResolved(supersessionPromise, null, itemId);

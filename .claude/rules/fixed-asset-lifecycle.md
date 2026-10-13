@@ -11,6 +11,7 @@ paths:
   - "packages/server-functions/src/post-asset-transfer/**"
   - "packages/server-functions/src/lib/asset-transfer.ts"
   - "packages/server-functions/src/post-rental-agreement/**"
+  - "packages/server-functions/src/post-lease/**"
   - "packages/database/supabase/migrations/*rental-agreements*"
   - "packages/database/supabase/migrations/*lease-enum*"
   - "packages/database/supabase/migrations/*lessor-schedule*"
@@ -26,7 +27,8 @@ or returned to it). All GL postings flow through `journal` / `journalLine`.
 `journalEntrySourceType` is `'Asset Depreciation'` for depreciation runs,
 `'Asset Disposal'` for the manual scrap, `'Asset Transfer'` for every
 inventory ↔ asset move and job → asset completion, and `'Lease'` for a
-sales-type lease's commencement and residual return (below); the two-step sale reuses the
+sales-type lease's commencement and residual return (below) and for a lessee lease's
+purchase option exercise (Acquire, path 5); the two-step sale reuses the
 document source types (`'Sales Shipment'` / `'Sales Invoice'`) and manual
 registration uses `'Manual'`. `'Asset Transfer'` is `representation: "journal"`,
 `defaultEnabled: false` in the accounting-sync policy
@@ -269,7 +271,8 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 ## Lifecycle
 
 **Acquire (Draft → Active, or → Under Construction).** Four paths set
-`acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`:
+`acquisitionCost`, `depreciationStartDate` (if unset), and flip `status`; a
+fifth (5, a lessee lease's purchase option) inserts the asset already Active:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
    `fixedAssetRegisterValidator`. For every company the
    route posts an acquisition journal via `postAssetRegistration()` inside one
@@ -307,6 +310,32 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    `Available` serialized unit into a new (or a Draft) asset at its carrying
    cost — or, for a unit carried at zero, at the cost the user enters; see
    **post-asset-transfer** below.
+5. Exercise a lessee lease's purchase option for one leased asset:
+   `post-lease` `purchase` (`packages/server-functions/src/post-lease/lifecycle.ts`;
+   lease page → the asset in the explorer → its page → **Exercise Purchase Option**,
+   `x+/lease+/$id.$lineId.purchase.tsx`, `update: purchasing`). Refused for a
+   Short-Term asset (and an open-ended lease, whose assets all are), an
+   exercise date before the commencement, and a Construction in Progress
+   class ("Choose an in-service fixed asset class"). An asset with no
+   `purchaseOptionAmount` can be taken only when `ownershipTransfers`: on the
+   lease's end date, at price 0 (ownership passes for nothing); with neither,
+   it is refused ("has no purchase option").
+   In ONE transaction it posts a `'Lease'` journal (`purchaseLines`,
+   `post-lease/lessee.ts`): Dr the class's `assetAccountId` at
+   `assetCost = ROU cost − accumulated ROU amortization + price − carrying
+   liability` (refused below zero), Dr accumulated ROU amortization, Dr lease
+   liability (carrying, plus a Pending option row the schedule already counted
+   as paid), Cr ROU asset (cost), Cr lease liability (the price, billed later
+   as a `Purchase Option` `leasePayment` row whose Lease invoice line debits
+   the liability — or nothing, when an option row was already invoiced at that
+   price). Then it INSERTS a new `fixedAsset` directly with `status 'Active'`,
+   `quantity 1`, the leased asset's `serialNumber`, the asset's location (else
+   the lease's), `acquisitionCost = assetCost`, `acquisitionDate =
+   depreciationStartDate =` the exercise date, and the class's method, useful
+   life and residual; no `fixedAssetCipCost` row and no accumulated
+   depreciation. `leaseLine.fixedAssetId` and the asset's `leaseEvent` (type
+   `Purchase`) point at it; the asset becomes `Purchased`, and the lease too
+   when it was its last active asset. See purchasing AGENTS → Leases.
 
 **Adjust Cost (post-capitalization).** An asset that came onto the books for
 less than it cost — a Make to Asset job with no WIP creates it at 0 — is raised

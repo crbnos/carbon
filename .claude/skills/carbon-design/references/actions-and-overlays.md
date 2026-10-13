@@ -62,7 +62,7 @@ A card's section title is left, its action right:
 | Create an entity from inside a selector | the entity's form with `type="modal"` | Modal `medium` |
 | Record / line form: page card vs inline create | `ModalCard` | `xlarge`; lines `xxlarge` |
 | Read-only drill-down beside a list (ledger, audit log, run detail) | `Drawer` | `lg`/`xl`/`full` |
-| Multi-step wizard, side-by-side comparison | `Drawer` | `xl`/`full` |
+| Multi-step overlay, side-by-side comparison | `Drawer` | `xl`/`full` (setting up an agreement record is the full-page setup wizard, Archetype J in `page-archetypes.md`) |
 | Lifecycle transition needing confirmation or a few inputs (Post, Void, Finalize, Release, Approve, Send, Cancel order) | `Modal` | `medium`; `large`/`xxlarge` when listing lines |
 | Destructive confirmation | `ConfirmDelete` / `Confirm` | medium |
 | Non-committing pick or explanation (assignee, color, "why this price", filter, sort) | `Popover` | content |

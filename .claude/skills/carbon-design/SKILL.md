@@ -92,6 +92,7 @@ screen will post to them. Canonical starting points:
 |---|---|
 | Module list | `routes/x+/sales+/rmas.tsx`, `modules/sales/ui/SalesReturnOrders/SalesReturnOrdersTable.tsx`, `modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx` |
 | Document workspace | `routes/x+/sales-return-order+/$id.tsx` + `modules/sales/ui/SalesReturnOrders/SalesReturnOrder{Header,Explorer,Properties}.tsx`; richer: `modules/sales/ui/Quotes/QuoteHeader.tsx` |
+| Agreement setup wizard (Draft contract / rental agreement / lease) | `routes/x+/rental-agreement+/{new,$id.setup*}.tsx` + `modules/sales/ui/Rentals/RentalSetupSteps.tsx`, `~/components/Setup` |
 | Config row CRUD | `routes/x+/sales+/customer-types.tsx` (+ `.new`, `.$customerTypeId`, `.delete.$customerTypeId`), `modules/sales/ui/CustomerTypes/CustomerTypeForm.tsx` |
 | Record form | `modules/sales/ui/Customer/CustomerForm.tsx` |
 | Line form | `modules/sales/ui/SalesOrder/SalesOrderLineForm.tsx` |
@@ -117,7 +118,7 @@ Keep it to ~15 lines. It is what you'll review against in Step 6.
 ```
 Design brief — <feature>
 - Users & context: <who, desk or floor, how often>
-- Archetype(s): <A–I / MES> — exemplar: <path(s)>
+- Archetype(s): <A–J / MES> — exemplar: <path(s)>
 - Layout & hierarchy: <what is identity, primary action, work, metadata; where each lives>
 - Actions: <primary per surface; secondary; what goes in ⋯ / row menu; destructive flow>
 - Create/edit: <where it opens; container; save model>

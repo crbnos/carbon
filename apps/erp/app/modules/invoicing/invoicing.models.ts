@@ -18,6 +18,7 @@ export const purchaseInvoiceLineType = [
   "Consumable",
   // "Fixed Asset",
   "G/L Account",
+  "Lease",
   "Comment"
 ] as const;
 
@@ -147,7 +148,14 @@ export const purchaseInvoiceLineValidator = z
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
     invoiceLineType: z.enum(
-      [...itemType, "Fixture", "G/L Account", "Fixed Asset", "Comment"],
+      [
+        ...itemType,
+        "Fixture",
+        "G/L Account",
+        "Fixed Asset",
+        "Lease",
+        "Comment"
+      ],
 
       {
         error: "Type is required"
@@ -159,6 +167,9 @@ export const purchaseInvoiceLineValidator = z
     accountId: zfd.text(z.string().optional()),
     costCenterId: zfd.text(z.string().optional()),
     assetId: zfd.text(z.string().optional()),
+    // A Lease line names the lease; a drafted one also its payment row.
+    leaseId: zfd.text(z.string().optional()),
+    leasePaymentId: zfd.text(z.string().optional()),
     description: zfd.text(z.string().optional()),
     quantity: zfd.numeric(z.number().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
@@ -205,6 +216,17 @@ export const purchaseInvoiceLineValidator = z
   .refine(
     (data) =>
       data.invoiceLineType === "G/L Account" ? data.description : true,
+    {
+      message: "Description is required",
+      path: ["description"]
+    }
+  )
+  .refine((data) => (data.invoiceLineType === "Lease" ? data.leaseId : true), {
+    message: "Lease is required",
+    path: ["leaseId"]
+  })
+  .refine(
+    (data) => (data.invoiceLineType === "Lease" ? data.description : true),
     {
       message: "Description is required",
       path: ["description"]

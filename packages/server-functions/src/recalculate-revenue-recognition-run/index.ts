@@ -17,8 +17,8 @@ import { assertAccountingCutover } from "../lib/require-accounting-cutover";
 import {
   claimScheduleRows,
   lockRecognitionProposals,
-  RUN_ROW_SYNTHESIZERS,
   type RunProposalContext,
+  runRowSynthesizers,
   selectDueScheduleRows
 } from "../propose-revenue-recognition-run";
 
@@ -44,7 +44,7 @@ const recalculateRevenueRecognitionRun = defineServerFn({
     return db.transaction().execute(async (trx) => {
       const run = await trx
         .selectFrom("revenueRecognitionRun")
-        .select(["id", "runId", "status", "periodEnd"])
+        .select(["id", "runId", "status", "periodEnd", "type"])
         .where("id", "=", runId)
         .where("companyId", "=", companyId)
         .forUpdate()
@@ -98,11 +98,11 @@ const recalculateRevenueRecognitionRun = defineServerFn({
           .execute();
       }
 
-      for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+      for (const synthesize of runRowSynthesizers(run.type)) {
         await synthesize(trx, ctx);
       }
 
-      const due = await selectDueScheduleRows(trx, ctx);
+      const due = await selectDueScheduleRows(trx, ctx, run.type);
       const held = new Map(
         before.map((line) => [line.scheduleId, Number(line.amount)])
       );

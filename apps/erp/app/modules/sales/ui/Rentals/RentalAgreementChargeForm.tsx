@@ -19,7 +19,14 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
-import { DatePicker, Input, Number, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  DatePicker,
+  Input,
+  Number,
+  Select,
+  Submit
+} from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
 import { rentalAgreementChargeValidator } from "../../sales.models";
 
@@ -100,6 +107,11 @@ const RentalAgreementChargeForm = ({
                   maxValue={1}
                   step={INPUT_STEP.percent}
                   formatOptions={INPUT_FORMAT.percent}
+                />
+                <Boolean
+                  name="invoiceSeparately"
+                  label={t`Invoice Separately`}
+                  description={t`Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice.`}
                 />
               </VStack>
             </ModalDrawerBody>

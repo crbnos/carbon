@@ -7,6 +7,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import {
+  jobCompletionDate,
+  purchaseOrderLineArrivalDate
+} from "@carbon/planning";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -15,12 +19,12 @@ import {
   getDemandForecastSources,
   getItemDemand,
   getItemQuantities,
-  getItemSupply,
   getOpenJobMaterials,
   getOpenProductionOrders,
   getOpenPurchaseOrderLines,
   getOpenSalesOrderLines
 } from "~/modules/items/items.service";
+import { bucketSupplyByPeriod } from "~/modules/items/ui/Item/planningSupplyDemand";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 
@@ -175,7 +179,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [
     demand,
-    supply,
     quantities,
     openSalesOrderLines,
     openJobMaterials,
@@ -184,12 +187,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     demandForecastSources
   ] = await Promise.all([
     getItemDemand(client, {
-      itemId,
-      locationId,
-      periods: periods.map((p) => p.id ?? ""),
-      companyId
-    }),
-    getItemSupply(client, {
       itemId,
       locationId,
       periods: periods.map((p) => p.id ?? ""),
@@ -236,6 +233,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       await flash(request, error(demand.error, "Failed to load demand"))
     );
   }
+  // A failed supply read must not chart as "no supply".
+  if (openPurchaseOrderLines.error || openProductionOrders.error) {
+    return data(
+      defaultResponse,
+      await flash(
+        request,
+        error(
+          openPurchaseOrderLines.error ?? openProductionOrders.error,
+          "Failed to load supply"
+        )
+      )
+    );
+  }
 
   const redirectedOpenJobMaterials = await getRedirectedOpenJobMaterials(
     client,
@@ -249,22 +259,50 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   );
 
+  const todayIso = today.toString();
+
+  const purchaseOrderLines = (openPurchaseOrderLines.data ?? []).map(
+    (line) => ({
+      ...line,
+      dueDate: purchaseOrderLineArrivalDate(line, todayIso)
+    })
+  );
+  const productionOrders = (openProductionOrders.data ?? []).map((job) => ({
+    ...job,
+    completionDate: jobCompletionDate(job, todayIso)
+  }));
+
+  const supply = bucketSupplyByPeriod(
+    periods.map((p) => ({
+      id: p.id ?? "",
+      startDate: p.startDate ?? "",
+      endDate: p.endDate ?? ""
+    })),
+    todayIso,
+    [
+      ...purchaseOrderLines.map((line) => ({
+        sourceType: "Purchase Order" as const,
+        quantity: Number(line.quantity ?? 0),
+        dueDate: line.dueDate
+      })),
+      ...productionOrders.map((job) => ({
+        sourceType: "Production Order" as const,
+        quantity: Number(job.quantity ?? 0),
+        dueDate: job.completionDate
+      }))
+    ]
+  );
+
   return {
     demand: demand.actuals,
     demandForecast,
     demandForecastSources: demandForecastSources.data ?? [],
-    supply: [
-      ...supply.actuals,
-      ...supply.forecasts.map((f) => ({
-        ...f,
-        actualQuantity: f.forecastQuantity
-      }))
-    ],
+    supply,
     periods,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     openSalesOrderLines: openSalesOrderLines.data ?? [],
     openJobMaterials: redirectedOpenJobMaterials,
-    openProductionOrders: openProductionOrders.data ?? [],
-    openPurchaseOrderLines: openPurchaseOrderLines.data ?? []
+    openProductionOrders: productionOrders,
+    openPurchaseOrderLines: purchaseOrderLines
   };
 }

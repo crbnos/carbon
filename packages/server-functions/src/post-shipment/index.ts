@@ -52,6 +52,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { getTrackedEntityBins } from "../lib/storage-units";
 import {
   buildReturnShipmentJournal,
   buildSalesShipmentJournal,
@@ -300,6 +301,48 @@ const postShipment = defineServerFn({
               const serialNumbersConsumed: string[] = [];
 
               const locationId = shipmentHeader.locationId;
+
+              // A serial or batch leaves the bin it actually holds stock in; the
+              // line's bin is only a default. A unit whose bin cannot cover the
+              // quantity is refused rather than driving that bin negative.
+              const trackedEntityBins = await getTrackedEntityBins(db, {
+                trackedEntityIds: (shipmentLineTracking.data ?? []).map(
+                  (tracking) => tracking.id
+                ),
+                locationIds: [
+                  ...new Set(
+                    shipmentLines.data.flatMap(
+                      (line) => line.locationId ?? locationId ?? []
+                    )
+                  )
+                ],
+                companyId
+              });
+              const sourceBin = (
+                trackedEntityId: string | undefined,
+                lineLocationId: string | null,
+                quantity: number
+              ): string | null => {
+                const bin =
+                  trackedEntityId && lineLocationId
+                    ? trackedEntityBins(trackedEntityId, lineLocationId)
+                    : undefined;
+                if (!bin || round(bin.quantity) < round(quantity)) {
+                  const readableId =
+                    shipmentLineTracking.data?.find(
+                      (tracking) => tracking.id === trackedEntityId
+                    )?.readableId ??
+                    trackedEntityId ??
+                    "A tracked item";
+                  throw new Error(
+                    bin
+                      ? `${readableId} has only ${round(bin.quantity)} in one storage unit, ${round(quantity)} needed. Move it into one storage unit first`
+                      : `${readableId} has no stock to ship at this location`
+                  );
+                }
+                return bin.storageUnitId;
+              };
+
               for await (const shipmentLine of shipmentLines.data) {
                 if (
                   shipmentLine.fulfillment?.type === "Job" &&
@@ -442,23 +485,28 @@ const postShipment = defineServerFn({
                 }
 
                 if (shipmentLine.requiresBatchTracking) {
+                  const batchId = shipmentLineTracking.data?.find(
+                    (tracking) =>
+                      (
+                        tracking.attributes as
+                          | TrackedEntityAttributes
+                          | undefined
+                      )?.["Shipment Line"] === shipmentLine.id
+                  )?.id;
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
                     quantity: round(-shippedQuantity),
                     locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
+                    storageUnitId: sourceBin(
+                      batchId,
+                      shipmentLine.locationId ?? locationId,
+                      shippedQuantity
+                    ),
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Shipment",
                     documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: shipmentLineTracking.data?.find(
-                      (tracking) =>
-                        (
-                          tracking.attributes as
-                            | TrackedEntityAttributes
-                            | undefined
-                        )?.["Shipment Line"] === shipmentLine.id
-                    )?.id,
+                    trackedEntityId: batchId,
                     externalDocumentId: undefined,
                     createdBy: userId,
                     companyId
@@ -481,7 +529,11 @@ const postShipment = defineServerFn({
                       itemId: shipmentLine.itemId,
                       quantity: -1,
                       locationId: shipmentLine.locationId ?? locationId,
-                      storageUnitId: shipmentLine.storageUnitId,
+                      storageUnitId: sourceBin(
+                        tracking.id,
+                        shipmentLine.locationId ?? locationId,
+                        1
+                      ),
                       entryType: "Negative Adjmt.",
                       documentType: "Sales Shipment",
                       documentId: shipmentHeader.id ?? undefined,
@@ -935,8 +987,13 @@ const postShipment = defineServerFn({
                       splitActivityId: nanoid(),
                       activitySourceDocument: "Shipment",
                       activitySourceDocumentId: shipmentId,
+                      // The same bin the shipment's own row draws from.
                       bin: {
-                        storageUnitId: shipmentLine?.storageUnitId ?? null,
+                        storageUnitId: sourceBin(
+                          splitInfo.originalEntityId,
+                          shipmentLine?.locationId ?? locationId,
+                          splitInfo.shippedQuantity
+                        ),
                         locationId
                       },
                       itemLedgerItemId: shipmentLine?.itemId ?? null,
@@ -2720,6 +2777,31 @@ const postShipment = defineServerFn({
                 Database["public"]["Tables"]["job"]["Update"]
               > = {};
 
+              // Put each serial or batch back in the bin its posting took it
+              // from, which is not always the line's bin.
+              const postedTrackedRows = await db
+                .selectFrom("itemLedger")
+                .where("documentId", "=", shipmentHeader.id)
+                .where("documentType", "=", "Sales Shipment")
+                .where("companyId", "=", companyId)
+                .where("trackedEntityId", "is not", null)
+                .where("quantity", "<", 0)
+                .select(["trackedEntityId", "storageUnitId"])
+                .execute();
+              const postedTrackedBins = new Map<string, string | null>(
+                postedTrackedRows.map((row) => [
+                  row.trackedEntityId as string,
+                  row.storageUnitId ?? null
+                ])
+              );
+              const restoreBin = (
+                trackedEntityId: string | undefined,
+                lineStorageUnitId: string | null
+              ) =>
+                trackedEntityId && postedTrackedBins.has(trackedEntityId)
+                  ? (postedTrackedBins.get(trackedEntityId) ?? null)
+                  : lineStorageUnitId;
+
               const locationId = shipmentHeader.locationId;
               for await (const shipmentLine of shipmentLines.data) {
                 if (
@@ -2820,23 +2902,27 @@ const postShipment = defineServerFn({
                 }
 
                 if (shipmentLine.requiresBatchTracking) {
+                  const batchId = shipmentLineTracking.data?.find(
+                    (tracking) =>
+                      (
+                        tracking.attributes as
+                          | TrackedEntityAttributes
+                          | undefined
+                      )?.["Shipment Line"] === shipmentLine.id
+                  )?.id;
                   itemLedgerInserts.push({
                     postingDate: today,
                     itemId: shipmentLine.itemId,
                     quantity: round(shippedQuantity), // Positive to restore inventory
                     locationId: shipmentLine.locationId ?? locationId,
-                    storageUnitId: shipmentLine.storageUnitId,
+                    storageUnitId: restoreBin(
+                      batchId,
+                      shipmentLine.storageUnitId
+                    ),
                     entryType: "Positive Adjmt.",
                     documentType: "Sales Shipment",
                     documentId: shipmentHeader.id ?? undefined,
-                    trackedEntityId: shipmentLineTracking.data?.find(
-                      (tracking) =>
-                        (
-                          tracking.attributes as
-                            | TrackedEntityAttributes
-                            | undefined
-                        )?.["Shipment Line"] === shipmentLine.id
-                    )?.id,
+                    trackedEntityId: batchId,
                     externalDocumentId: undefined,
                     createdBy: userId,
                     companyId
@@ -2859,7 +2945,10 @@ const postShipment = defineServerFn({
                       itemId: shipmentLine.itemId,
                       quantity: 1, // Positive to restore inventory
                       locationId: shipmentLine.locationId ?? locationId,
-                      storageUnitId: shipmentLine.storageUnitId,
+                      storageUnitId: restoreBin(
+                        tracking.id,
+                        shipmentLine.storageUnitId
+                      ),
                       entryType: "Positive Adjmt.",
                       documentType: "Sales Shipment",
                       documentId: shipmentHeader.id ?? undefined,

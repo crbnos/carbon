@@ -289,6 +289,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
+## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
+
+**Context:** Sales order shipments booked every serial and batch against `shipmentLine.storageUnitId` (copied from the sales order line, which defaults to the item's default bin). A unit picked from any other bin drove the line's bin negative and left its real bin showing stock that had already shipped. The stock transfer picker had the matching gap: it listed every lot at the location, not the line's source bin, and an empty source (`fromStorageUnitId` null — the wizard's "No storage unit") meant "any bin".
+
+**Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
+
+**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`server-functions/src/lib/storage-units.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+
+**Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
+
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
 **Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
@@ -3496,3 +3506,54 @@ After any commit, check its `.po` diff. A removed `msgid` that HEAD code still u
 A ✓ that a script prints after a step that is allowed to fail is not evidence. Read the state back.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
+
+## A new record type copies its sibling's UI, not the generic archetype
+
+**Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
+
+**Problem:** The plan named the sibling for the server side (post-lease mirrors the rental functions) but not for the UI, and the design skill's "where create opens" rule sent a record with a workspace to a Card form. The setup wizard was documented nowhere, so the subagent that built the UI followed the generic rule faithfully.
+
+**Rule:** Before designing a record type, name its closest sibling — the record users would call "the same kind of thing" (rental agreement ↔ lease ↔ contract; sales order ↔ purchase order; RMA ↔ supplier return) — and copy its routes and components file for file: `new`, `$id`, `$id._index`, the setup or detail routes, the module's `ui/` components. The spec and plan state the sibling and the files copied. A deviation from it is a design decision and is asked about first. When the sibling's pattern is missing from `carbon-design`, add it there in the same change (Archetype J was added for this one).
+
+**Applies to:** `/spec-writing`, `/plan`, `carbon-design`, and any subagent prompt that builds UI.
+
+## A dropped column breaks string selects that typecheck cannot see
+
+**Context:** The several-assets change for lessee leases (2026-10-11) moved twelve columns from `lease` to `leaseLine` and recreated the `leases` view.
+
+**Problem:** Typecheck passed, but the Lease Liabilities report still selected the moved columns from the view through `fetchAllFromTable(client, "leases", "id, …, lesseeClassification, …")`. The column list is a string, so the report would only have failed at runtime.
+
+**Rule:** After a migration drops or moves a column, grep every string select of the table and its views (`.select("…")`, `fetchAllFromTable` column lists, embeds) for the old name. Do not rely on typecheck for them.
+
+**Applies to:** any migration that drops, renames or moves a column.
+
+## A caller-supplied document number used to leave the counter behind
+
+**Context:** Documents take their number from `get_next_sequence` unless the caller supplies one: a custom ID typed into `SequenceOrCustomId`, or an MCP / API upsert (`upsertSalesOrder`, `upsertQuote`, `upsertPurchaseOrder`, `upsertJob`, …) whose create path requires the number.
+
+**Problem:** A supplied number never moved the `sequence` row. Once the counter reached a number an agent or a user had already used, every new document failed on the unique constraint ("Failed to insert sales order") until someone moved the counter by hand.
+
+**Rule:** The counter is kept ahead in the database, not in app code: the `sync_advance_document_sequence` after-interceptor moves `sequence.next` past any number saved in the sequence's format, on insert and on a number change. A new numbered table must be added to that interceptor's `CASE` and given the interceptor in `attachments.ts`; the `document-sequence-synced` conformance check fails CI for a new counter that is neither covered nor in its `EXEMPT_COUNTERS`. Never "fix" a collision by retrying `get_next_sequence`.
+
+**Applies to:** `packages/database/src/event-system/handlers/sync_advance_document_sequence.sql`, `util.document_sequence_pattern`, any table with a readable document number.
+
+## An entity in `audit.config.ts` records nothing until its tables have `events: true`
+
+**Context:** Change notice history (the `changeOrder` audit entity) was empty in the History drawer even with audit logging on (2026-10-08).
+
+**Problem:** `auditConfig.entities.changeOrder` listed its 4 tables, and `syncAuditSubscriptions` created AUDIT subscriptions for them. But `packages/database/src/event-system/attachments.ts` gave `changeOrder` only a statement broadcast and the 3 child tables no entry at all, so no async event trigger existed and nothing reached the event queue. Every check looked green: subscriptions present, sweeper succeeding, queue empty.
+
+**Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
+
+**Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.
+
+## RLS does not bound an MCP tool handed `db`; its declared permission is the only gate
+
+**Context:** A 2026-10 security disclosure: an OAuth (MCP connector) token for a user with no accounting permission could create draft GL journals through `inventory_createInventoryReconciliationJournal`.
+
+**Problem:** Two gaps stacked. The oRPC `gate()` skipped OAuth callers on the theory that RLS bounds them, but a service whose manifest asks for `db` gets `getDatabaseClient()`, the direct connection, which bypasses RLS. And a tool's default permission is its own module plus its verb's action, so the journal tool was gated on `inventory:create` while the Reconcile screen requires `accounting:create`. Supplier and customer bank accounts (`purchasing`/`sales` vs `accounting`) and return-order credits (`purchasing`/`sales` vs `invoicing`) had the same mismatch, for API keys as well.
+
+**Rule:** Every non-session caller (API key AND OAuth) is gated per operation, OAuth on the user's live permissions in the token's company (`scopesFromPermissions`). When a tool does what an ERP route does, its permission must equal that route's `requirePermissions`: add `@mcp permission` where the default differs, regenerate, and pin it in `OVERRIDES` in `mcp-tool-permissions.test.ts`. Never reason "RLS will catch it" for a tool whose `contextParams` include `db`.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
+

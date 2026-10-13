@@ -130,7 +130,16 @@ const RentalAgreementCharges = ({
                         {charge.rentalAgreementLine?.fixedAsset?.fixedAssetId ??
                           "—"}
                       </Td>
-                      <Td>{charge.description}</Td>
+                      <Td>
+                        <HStack spacing={2}>
+                          <span>{charge.description}</span>
+                          {charge.invoiceSeparately && (
+                            <Badge variant="secondary">
+                              <Trans>Invoiced separately</Trans>
+                            </Badge>
+                          )}
+                        </HStack>
+                      </Td>
                       <Td className="text-right">
                         <RentalMoney
                           value={charge.amount}
@@ -212,7 +221,8 @@ const RentalAgreementCharges = ({
             chargeDate: companyToday,
             description: "",
             amount: 0,
-            taxPercent: rentalAgreement.taxPercent ?? 0
+            taxPercent: rentalAgreement.taxPercent ?? 0,
+            invoiceSeparately: false
           }}
           currencyCode={rentalAgreement.currencyCode ?? ""}
           lineOptions={lineOptions}

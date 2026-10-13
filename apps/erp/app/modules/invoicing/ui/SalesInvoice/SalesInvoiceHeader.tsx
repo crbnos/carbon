@@ -300,31 +300,9 @@ const SalesInvoiceHeader = () => {
           </Status>
         ))}
       {showNotSent && (
-        <>
-          <Status color="red" tooltip={salesInvoice.sendError}>
-            <Trans>Not sent</Trans>
-          </Status>
-          <Button
-            variant="secondary"
-            leftIcon={<LuSend />}
-            isLoading={sendFetcher.state !== "idle"}
-            isDisabled={
-              sendFetcher.state !== "idle" ||
-              !permissions.can("update", "invoicing")
-            }
-            onClick={() =>
-              sendFetcher.submit(
-                {},
-                {
-                  method: "post",
-                  action: path.to.salesInvoiceSend(invoiceId)
-                }
-              )
-            }
-          >
-            <Trans>Send</Trans>
-          </Button>
-        </>
+        <Status color="red" tooltip={salesInvoice.sendError}>
+          <Trans>Not sent</Trans>
+        </Status>
       )}
       {routeData?.stripeInvoiceUrl && isPosted && (
         <a
@@ -437,6 +415,30 @@ const SalesInvoiceHeader = () => {
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
+              </RecordAction>
+            )}
+            {showNotSent && (
+              <RecordAction slot="overflow">
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuSend />}
+                  isLoading={sendFetcher.state !== "idle"}
+                  isDisabled={
+                    sendFetcher.state !== "idle" ||
+                    !permissions.can("update", "invoicing")
+                  }
+                  onClick={() =>
+                    sendFetcher.submit(
+                      {},
+                      {
+                        method: "post",
+                        action: path.to.salesInvoiceSend(invoiceId)
+                      }
+                    )
+                  }
+                >
+                  <Trans>Send</Trans>
+                </Button>
               </RecordAction>
             )}
             <RecordAction slot="overflow">

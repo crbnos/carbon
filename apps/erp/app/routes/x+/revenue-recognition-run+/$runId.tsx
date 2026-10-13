@@ -5,6 +5,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { RunType } from "@carbon/database/run-type";
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import {
   RecordOutlet
 } from "@carbon/react";
 import { redirect } from "@carbon/utils";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -39,17 +39,22 @@ import {
   type RunRentalAgreement,
   type RunSalesInvoice
 } from "~/modules/accounting/ui/RevenueRecognition";
+import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+type RunBreadcrumbData = { run?: { runId: string; type: RunType } | null };
+
 export const handle: Handle = {
-  breadcrumb: detailBreadcrumb(
-    {
-      breadcrumb: msg`Revenue Recognition`,
-      to: path.to.revenueRecognitionRuns
-    },
-    (data) => data?.run?.runId
-  ),
+  // A run sits under the list of its own type.
+  breadcrumb: (params: unknown, data: RunBreadcrumbData | undefined) => {
+    const { listPath, title } =
+      RUN_PAGES[data?.run?.type ?? "Revenue Recognition"];
+    return detailBreadcrumb(
+      { breadcrumb: title, to: listPath },
+      (loaded: RunBreadcrumbData) => loaded.run?.runId
+    )(params, data);
+  },
   module: "accounting"
 };
 
@@ -94,8 +99,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         .filter((id): id is string => Boolean(id))
     )
   ];
+  const leaseIds = [
+    ...new Set(
+      scheduleLines
+        .map((schedule) => schedule?.leaseId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
 
-  const [invoiceLines, rentalLines] = await Promise.all([
+  const [invoiceLines, rentalLines, leases] = await Promise.all([
     invoiceLineIds.length > 0
       ? client
           .from("salesInvoiceLine")
@@ -111,6 +123,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .select("id, rentalAgreement(id, rentalAgreementId, status)")
           .eq("companyId", companyId)
           .in("id", rentalLineIds)
+      : null,
+    leaseIds.length > 0
+      ? client
+          .from("lease")
+          .select("id, leaseId")
+          .eq("companyId", companyId)
+          .in("id", leaseIds)
       : null
   ]);
 
@@ -137,6 +156,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       };
       rentalAgreements.set(row.rentalAgreement.id, row.rentalAgreement);
     }
+  }
+
+  // A lessee lease's rows are keyed by the lease id.
+  for (const lease of leases?.data ?? []) {
+    sources[lease.id] = {
+      label: lease.leaseId,
+      to: path.to.lease(lease.id)
+    };
   }
 
   return {
@@ -182,7 +209,8 @@ export default function RevenueRecognitionRunDetailRoute() {
   const sectionLabels: Record<RevenueScheduleType, string> = {
     Deferral: t`Deferrals`,
     Accrual: t`Accruals`,
-    Interest: t`Interest`
+    Interest: t`Interest`,
+    Amortization: t`Amortization`
   };
 
   const sections = revenueScheduleTypes
@@ -238,7 +266,11 @@ export default function RevenueRecognitionRunDetailRoute() {
         <Card>
           <CardContent>
             <div className="px-4 py-6 text-sm text-muted-foreground text-center w-full">
-              <Trans>No revenue to recognize for this period.</Trans>
+              {run.type === "Lease" ? (
+                <Trans>Nothing to post for this period.</Trans>
+              ) : (
+                <Trans>No revenue to recognize for this period.</Trans>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -283,7 +315,8 @@ export default function RevenueRecognitionRunDetailRoute() {
                       {section.lines.map((line, index) => {
                         const sourceLineId =
                           line.schedule?.salesInvoiceLineId ??
-                          line.schedule?.rentalAgreementLineId;
+                          line.schedule?.rentalAgreementLineId ??
+                          line.schedule?.leaseId;
                         const source = sourceLineId
                           ? sources[sourceLineId]
                           : undefined;
