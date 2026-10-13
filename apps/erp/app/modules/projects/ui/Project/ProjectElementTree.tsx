@@ -110,7 +110,9 @@ export function ProjectElementTree({
           return (
             node.data.name.toLowerCase().includes(text) ||
             node.data.readableId.toLowerCase().includes(text) ||
-            Boolean(wbsCodes?.[node.data.id]?.code.startsWith(text))
+            Boolean(
+              wbsCodes?.[node.data.id]?.code.toLowerCase().startsWith(text)
+            )
           );
         }
       },

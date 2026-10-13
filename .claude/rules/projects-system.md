@@ -688,7 +688,13 @@ the `.0`. A move never changes a pinned code. Codes are computed from the WHOLE 
   Appendix B, A, C, F). Build from part sets `wbsCode` null on copied elements.
 - CSV: `toWbsCsvRows` / `readWbsCsv` (pure, `projects.models.ts`) and
   `importProjectWbs` (one transaction, refused on a locked plan, never deletes; a
-  blank cell keeps its value; a code pins only when it differs).
+  blank cell keeps its value; a code pins only when it differs; a row with no
+  change is skipped; a `Type` change and a parent loop, among new rows too, are
+  row errors). The route needs `create` and `update` on projects. Changing codes
+  are cleared before the writes, so a swap does not trip the unique index. A
+  name the CSV encoder stripped (`+28V` exports as `28V`) reads back unchanged.
+- Pin and Renumber write the live plan even under `?cr=`; a Parameter refuses a
+  pinned code.
 - MSPDI: `buildMspdiXml` (pure; golden fixture `__fixtures__/mspdi-golden.xml`).
 - UI: `WbsCode` badge in `ElementList` and `ProjectElementTree` only once the
   project has a pinned code; `WbsMenu` (Export CSV, Export MS Project XML, Import

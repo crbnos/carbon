@@ -16,6 +16,7 @@ import {
   planSnapshotKeys,
   toPlanSnapshot
 } from "@carbon/database/project-plan";
+import { stripCsvFormulaPrefix } from "@carbon/files/csv";
 import {
   computeWbsCodes,
   EPSILON,
@@ -4709,15 +4710,29 @@ export function readWbsCsv(
 
   for (const p of parsed) {
     const { record, row, existing } = p;
-    const name = cell(record, "Name") ?? existing?.name ?? null;
+    let name = cell(record, "Name") ?? existing?.name ?? null;
     if (!name) {
       fail(row, "Every row needs a Name");
       continue;
+    }
+    // The CSV encoder strips a leading = + - @ from every cell, so
+    // "+28V Power" exports as "28V Power": that is not a rename.
+    if (existing && name !== existing.name) {
+      if (stripCsvFormulaPrefix(existing.name) === name) name = existing.name;
     }
     const typeCell = cell(record, "Type");
     const type = (typeCell ?? existing?.type ?? "Task") as ProjectElementType;
     if (!(wbsImportTypes as readonly string[]).includes(type)) {
       fail(row, `Type ${type} is not one of ${wbsImportTypes.join(", ")}`);
+      continue;
+    }
+    // A type decides an element's links and fields; the element page owns
+    // that change, so an import never makes it.
+    if (existing && type !== existing.type) {
+      fail(
+        row,
+        `${existing.readableId} is a ${existing.type}: an import cannot change its type`
+      );
       continue;
     }
     const date = (column: "Start" | "Target", current: string | null) => {
@@ -4819,27 +4834,38 @@ export function readWbsCsv(
     }
   }
 
-  // A move must not put an element under its own subtree.
-  for (const update of updates) {
-    if (!update.parentChanged) continue;
-    const seen = new Set<string>([update.id]);
-    let current = update.parentKey;
+  // No element may end up under itself: a move into its own subtree, or new
+  // rows that name each other as parents.
+  const placed = [
+    ...updates
+      .filter((update) => update.parentChanged)
+      .map((update) => ({
+        key: update.id,
+        row: update.row,
+        parentKey: update.parentKey,
+        label: update.readableId
+      })),
+    ...creates.map((create) => ({
+      key: create.key,
+      row: create.row,
+      parentKey: create.parentKey,
+      label: create.name
+    }))
+  ];
+  for (const item of placed) {
+    const seen = new Set<string>([item.key]);
+    let current = item.parentKey;
     while (current) {
       if (seen.has(current)) {
-        fail(
-          update.row,
-          `${update.readableId} cannot move under its own subtree`
-        );
+        fail(item.row, `${item.label} cannot sit under its own subtree`);
         break;
       }
       seen.add(current);
       current = parentOf.get(current) ?? null;
     }
-  }
-  for (const update of updates) {
-    const parentType = update.parentKey ? typeOf.get(update.parentKey) : null;
+    const parentType = item.parentKey ? typeOf.get(item.parentKey) : null;
     if (parentType === "Parameter") {
-      fail(update.row, "A Parameter can only have Parameters as children");
+      fail(item.row, "A Parameter can only have Parameters as children");
     }
   }
 
@@ -4929,8 +4955,13 @@ export type MspdiInput = {
   today: string;
 };
 
+/** Control characters XML 1.0 forbids even escaped: one makes the file unreadable. */
+// biome-ignore lint/suspicious/noControlCharactersInRegex: matching them is the point
+const XML_INVALID_CHARACTERS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g;
+
 const xmlEscape = (value: string) =>
   value
+    .replace(XML_INVALID_CHARACTERS, "")
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")

@@ -225,7 +225,9 @@ export async function insertElementsFromWbsTemplate(
   const project = await trx
     .updateTable("project")
     .set({
-      nextElementSequence: sql`"nextElementSequence" + ${template.rows.length}`
+      nextElementSequence: sql`"nextElementSequence" + ${template.rows.length}`,
+      // A project made without an identifier gets one, as for a new element.
+      identifier: sql<string>`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
     })
     .where("id", "=", args.projectId)
     .where("companyId", "=", args.companyId)
@@ -386,11 +388,32 @@ export async function importProjectWbs(
       return value;
     };
 
+    // A code can move between elements in one file (a swap, or a code a new
+    // row takes over). The unique index checks row by row, so clear every
+    // changing code first; the writes below set the new ones.
+    const codeOf = new Map(
+      elements.map((element) => [element.id, element.wbsCode])
+    );
+    const recoded = result.updates
+      .filter((update) => update.wbsCode !== codeOf.get(update.id))
+      .map((update) => update.id);
+    if (recoded.length > 0) {
+      await trx
+        .updateTable("projectElement")
+        .set({ wbsCode: null })
+        .where("id", "in", recoded)
+        .where("projectId", "=", args.projectId)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    }
+
     if (result.creates.length > 0) {
       const sequence = await trx
         .updateTable("project")
         .set({
-          nextElementSequence: sql`"nextElementSequence" + ${result.creates.length}`
+          nextElementSequence: sql`"nextElementSequence" + ${result.creates.length}`,
+          // A project made without an identifier gets one, as for a new element.
+          identifier: sql<string>`COALESCE("identifier", derive_project_identifier("name", ${args.companyId}))`
         })
         .where("id", "=", args.projectId)
         .where("companyId", "=", args.companyId)
@@ -411,6 +434,10 @@ export async function importProjectWbs(
           : undefined;
         while (parent) {
           depth += 1;
+          // readWbsCsv refuses a loop; this keeps a missed one from hanging.
+          if (depth > createByKey.size) {
+            throw new Error("The new rows' parents make a loop");
+          }
           parent = parent.parentKey
             ? createByKey.get(parent.parentKey)
             : undefined;

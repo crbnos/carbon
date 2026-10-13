@@ -28,7 +28,9 @@ const MAX_ROWS = 5000;
  */
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
+  // A row without an Element ID creates an element, as New element does.
   const { client, companyId, userId } = await requirePermissions(request, {
+    create: "projects",
     update: "projects"
   });
   const { projectId } = params;

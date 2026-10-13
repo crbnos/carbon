@@ -45,6 +45,8 @@ type ImportResponse = {
   applied?: boolean;
   result?: WbsCsvResult;
   message?: string;
+  /** The plan-lock refusal answers in this shape. */
+  error?: { message: string } | null;
 };
 
 /**
@@ -54,10 +56,13 @@ type ImportResponse = {
 export function WbsMenu({
   projectId,
   canUpdate,
+  canImport,
   repeatedCodes
 }: {
   projectId: string;
   canUpdate: boolean;
+  /** Import creates elements too: it needs create as well as update. */
+  canImport: boolean;
   /** Codes two elements share: the exports refuse them, so they are off. */
   repeatedCodes: string[];
 }) {
@@ -112,7 +117,7 @@ export function WbsMenu({
           )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
-            disabled={!canUpdate}
+            disabled={!canImport}
             onClick={() => setImporting(true)}
           >
             <DropdownMenuIcon icon={<LuFileUp />} />
@@ -219,7 +224,11 @@ function ImportWbsModal({
     )
     .sort((a, b) => a.row - b.row);
   const errorCount = result?.errors.length ?? 0;
-  const message = readError ?? (response?.success ? null : response?.message);
+  const message =
+    readError ??
+    (response?.success
+      ? null
+      : (response?.message ?? response?.error?.message));
 
   return (
     <Modal open onOpenChange={(open) => !open && onClose()}>

@@ -96,6 +96,46 @@ describe("readWbsCsv", () => {
     expect(result.updates).toEqual([]);
   });
 
+  it("refuses new rows that name each other as parents", () => {
+    const { elements, links } = project();
+    const result = readWbsCsv(
+      [
+        { "WBS Code": "X", "Parent WBS Code": "Y", Name: "One" },
+        { "WBS Code": "Y", "Parent WBS Code": "X", Name: "Two" }
+      ],
+      elements,
+      links
+    );
+    expect(result.errors.map((error) => error.message)).toEqual([
+      "One cannot sit under its own subtree",
+      "Two cannot sit under its own subtree"
+    ]);
+  });
+
+  it("refuses a type change", () => {
+    const { elements, links } = project();
+    const result = readWbsCsv(
+      [{ "Element ID": "OB2-2", Type: "Requirement" }],
+      elements,
+      links
+    );
+    expect(result.errors).toEqual([
+      { row: 2, message: "OB2-2 is a Task: an import cannot change its type" }
+    ]);
+  });
+
+  it("reads a name the CSV encoder stripped as unchanged", () => {
+    const { elements, links } = project();
+    elements[1]!.name = "+28V Power";
+    const result = readWbsCsv(
+      [{ "Element ID": "OB2-2", Name: "28V Power" }],
+      elements,
+      links
+    );
+    expect(result.errors).toEqual([]);
+    expect(result.updates).toEqual([]);
+  });
+
   it("updates names and creates a row under a parent code", () => {
     const { elements, links } = project();
     const csv = asCsv(toWbsCsvRows(elements, links));

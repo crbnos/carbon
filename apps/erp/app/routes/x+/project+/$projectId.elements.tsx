@@ -485,6 +485,7 @@ export default function ProjectElementsRoute() {
           <WbsMenu
             projectId={projectId}
             canUpdate={canUpdate}
+            canImport={canUpdate && permissions.can("create", "projects")}
             repeatedCodes={repeatedCodes}
           />
         }

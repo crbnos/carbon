@@ -83,7 +83,7 @@ A defense manufacturer evaluates Carbon with 3 questions that Carbon cannot answ
 
 - `@carbon/utils` `wbs-templates.ts` holds 4 templates as static data: Appendix B (Electronics/Avionics/Generic), A (Aircraft, manned and unmanned), C (Missile/Ordnance) and F (Space).
 - Each template holds levels 1 to 3 with the 881F codes and names. The data comes from the 881F text (`.context/research/881f.txt`, copied from the ASSIST PDF).
-- The New Project drawer and **Copy from** list the templates under "MIL-STD-881F" beside the company's own templates.
+- The New Project drawer's **Copy from** lists the 4 templates after the company's own templates, each named "MIL-STD-881F Appendix …".
 - Building from a template inserts the elements with pinned codes.
   - Level 1 gets type `System`.
   - An element with children gets type `System`.
@@ -93,7 +93,7 @@ A defense manufacturer evaluates Carbon with 3 questions that Carbon cannot answ
 **CSV export and import.**
 
 - The Plan page's ⋯ menu has **Export CSV**, **Import CSV** and **Export MS Project XML**.
-- Export columns: `Element ID` (the readable id), `WBS Code`, `Parent WBS Code`, `Level`, `Type`, `Name`, `Start`, `Target`, `Budget`, `Predecessors`, `Milestone`.
+- Export columns: `Element ID` (the readable id), `WBS Code`, `Parent WBS Code`, `Level`, `Type`, `Name`, `Start`, `Target`, `Budget`, `Predecessors`. There is no `Milestone` column: an element has no milestone type.
   - Dates are `YYYY-MM-DD`.
   - `Predecessors` lists the `precedes` links into the element as WBS codes, separated by `;`, for example `1.2.1; 1.1`. A `precedes` link has no lag and no type, so the export writes neither.
 - Import is a modal on the Plan page: upload, preview, apply. It does not use the generic import wizard, which is per list page and has no parent record.
@@ -102,7 +102,7 @@ A defense manufacturer evaluates Carbon with 3 questions that Carbon cannot answ
   3. The modal shows the preview: new elements, updated elements, and errors per row.
   4. **Apply** calls `importProjectWbs` (`projects.server.ts`). It writes every row in one Kysely transaction.
 - Import rules:
-  1. A row with an `Element ID` of this project updates that element: name, type, budget, dates, parent, and the pinned code.
+  1. A row with an `Element ID` of this project updates that element: name, budget, dates, parent, and the pinned code. A different `Type` is an error: the element page owns a type change. A row with no change is not an update. Import needs `create` and `update` on projects.
   2. A row with no `Element ID` creates an element. It takes the next `readableId`.
   3. `Parent WBS Code` names the parent. It is a code of the file or of an existing element. Blank means a root element.
   4. A `WBS Code` on the row pins that code.
@@ -116,7 +116,7 @@ A defense manufacturer evaluates Carbon with 3 questions that Carbon cannot answ
 - The mapping follows the research file (*Recommended approach*, WBS item 6):
   - `UID` = the sequence number of `readableId`, which never changes.
   - `ID` = the row in tree order.
-  - `WBS` and `OutlineNumber` = the WBS code. `OutlineLevel` = the depth.
+  - `WBS` = the WBS code. `OutlineNumber` = the position in the outline (Project derives it and rejects one that disagrees). `OutlineLevel` = the depth.
   - `Summary` = 1 when the element has children.
   - `Start` at `T08:00:00` and `Finish` at `T17:00:00`.
   - A leaf gets `ConstraintType` 4 (Start No Earlier Than) on its start date.
@@ -346,13 +346,13 @@ Every FK column gets a `("…", "companyId")` index. RLS comes from the authz ma
 **Phase A**
 
 - `@carbon/utils` `wbs.ts`: `computeWbsCodes`, `childWbsCode`, `isValidWbsCode`. Tests pin the `.0` rule, Parameter skips, pinned subtrees and duplicates.
-- `@carbon/utils` `wbs-templates.ts`: `WBS_TEMPLATES` (4 templates); `wbsTemplateRows(key)`.
+- `@carbon/utils` `wbs-templates.ts`: `WBS_TEMPLATES` (4 templates); `wbsTemplate(key)`, `wbsTemplateParentCode`.
 - `projects.server.ts`:
   - `pinProjectWbsCodes(db, …)`;
   - `renumberWbsSubtree(db, …)`;
   - `importProjectWbs(db, …)`;
-  - `insertElementsFromWbsTemplate(db, …)`, shared by New Project and Copy from.
-- `projects.models.ts`: `wbsCodeValidator`, `readWbsCsv`, `toWbsCsvRows`, `buildMspdiXml`.
+  - `insertElementsFromWbsTemplate(db, …)`, called by `createProject` with `wbsTemplateKey`.
+- `projects.models.ts`: `readWbsCsv`, `toWbsCsvRows`, `buildMspdiXml`. The field route validates a code with `isValidWbsCode`.
 - Routes:
   - `project+/$projectId.wbs.pin.tsx`, `.renumber.tsx`, `.import.tsx` (actions);
   - `api+/projects.$projectId.wbs[.]csv.ts` and `api+/projects.$projectId.mspdi[.]xml.ts` (downloads).
@@ -389,8 +389,8 @@ The UI copies existing screens (`ui-minimal-existing-patterns`). It adds no new 
   - A `WBS` column in the element list and the tree, in tabular numbers, with a pin icon on pinned codes and a warning icon on duplicates.
   - A ⋯ menu with Export CSV, Import CSV, Export MS Project XML and Pin WBS codes.
 - **Element page.** A WBS code field in the properties column. Blank shows the derived code as a placeholder. A Renumber item in the ⋯ menu.
-- **New Project drawer and Copy from.** A "MIL-STD-881F" group in the template picker.
-- **Import modal.** It uses the existing `UploadCSV` drop zone, then a preview table (row, action, element, error) and **Apply**.
+- **New Project drawer.** The 4 templates in the **Copy from** list, after the company's templates.
+- **Import modal.** A file input (parsed with `parseCsvFile`), then a preview table (row, action, element, error) and **Apply**.
 - **Contract → Financing** (`ContractFinancing.ee.tsx`), a section on the contract page:
   - the terms card;
   - the rate history (a grid);
