@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CompiledQuery, DatabaseConnection, Driver } from "kysely";
 import {
   Kysely,
@@ -44,6 +48,14 @@ vi.mock("@carbon/auth/client.server", () => ({
           Promise.resolve(
             table === "user"
               ? { data: { id: USER, email: EMAIL }, error: null }
+              : { data: null, error: null }
+          ),
+        // The employee type and location ownership checks: both belong to
+        // the company in every test here.
+        maybeSingle: () =>
+          Promise.resolve(
+            table === "employeeType" || table === "location"
+              ? { data: { id: table }, error: null }
               : { data: null, error: null }
           ),
         upsert: (payload: unknown) => {

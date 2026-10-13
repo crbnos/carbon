@@ -125,7 +125,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   `acceptedAt` in one Kysely transaction, so a failed restore leaves the invite unaccepted and
   retryable rather than an active employee outside their type's group. The membership insert uses
   `ON CONFLICT ("groupId", "memberUserId") DO NOTHING` against `membership_groupId_memberUserId_key`
-  (`20260911083113`), which is what makes it safe against the trigger racing the same insert.
+  (`20261013073945`), which is what makes it safe against the trigger racing the same insert.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
   recipients against `userToCompany` for the notification's company — a missing membership row
   (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how

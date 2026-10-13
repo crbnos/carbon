@@ -254,6 +254,7 @@ export async function acceptInvite(
         .updateTable("invite")
         .set({ acceptedAt: datetime.timestamp() })
         .where("code", "=", code)
+        .where("companyId", "=", companyId)
         .where("acceptedAt", "is", null)
         .returningAll()
         .executeTakeFirst();
