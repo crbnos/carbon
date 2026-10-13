@@ -4,6 +4,10 @@
 
 import { round } from "../../precision.ts";
 import {
+  PROJECT_BASELINE_FORMAT_VERSION,
+  toPlanSnapshot
+} from "../../project-plan.ts";
+import {
   CLOSED_PERIOD_MONTHS_BACK,
   LABOR_RATE_EFFECTIVE_OFFSET,
   LOCKED_PERIOD_MONTHS_BACK,
@@ -41,6 +45,7 @@ import type {
   AccountClass,
   BillingAddressSpec,
   Ctx,
+  DayOffset,
   JournalEntrySpec,
   JournalLineSpec,
   ProjectElementSpec,
@@ -1615,6 +1620,49 @@ async function seedPlanningGroups(ctx: Ctx): Promise<void> {
  * `readableId` is `<identifier>-<n>` in list order, as `insertProjectElement`
  * numbers them, and the project's `nextElementSequence` continues after it.
  */
+/**
+ * Baseline 1 of a project, as `insertProjectBaseline` writes it: the plan
+ * layer of the 5 plan tables through the shared `toPlanSnapshot`, with the
+ * element dates (format version 2). Rows are read as JSON so dates and
+ * numbers reach the snapshot as the app's reads give them.
+ */
+async function seedProjectBaseline(
+  ctx: Ctx,
+  projectId: string,
+  baseline: { name: string; dateOffset: DayOffset }
+): Promise<void> {
+  const read = (table: string) =>
+    rows<{ row: Record<string, unknown> }>(
+      ctx.client,
+      `SELECT to_jsonb(t) AS row FROM "${table}" t
+       WHERE t."projectId" = $1 AND t."companyId" = $2`,
+      [projectId, ctx.companyId]
+    ).then((result) => result.map((r) => r.row));
+  // One client: the reads run one after another.
+  const elements = await read("projectElement");
+  const links = await read("projectElementLink");
+  const materials = await read("projectElementMaterial");
+  const labor = await read("projectElementLabor");
+  const costs = await read("projectElementCost");
+  const snapshot = toPlanSnapshot({ elements, links, materials, labor, costs });
+  await insertRow(ctx, "projectBaseline", {
+    projectId,
+    sequence: 1,
+    name: baseline.name,
+    source: "Manual",
+    formatVersion: PROJECT_BASELINE_FORMAT_VERSION,
+    snapshot: JSON.stringify(snapshot),
+    elementCount: snapshot.elements.length,
+    linkCount: snapshot.links.length,
+    createdAt: resolveTimestamp(ctx.anchor, baseline.dateOffset, "09:00:00")
+  });
+  await ctx.client.query(
+    `UPDATE "project" SET "nextBaselineSequence" = 2
+     WHERE id = $1 AND "companyId" = $2`,
+    [projectId, ctx.companyId]
+  );
+}
+
 async function seedProjects(ctx: Ctx): Promise<void> {
   const { companyId, userId, anchor } = ctx;
   const data = ctx.dataset.accounting;
@@ -1738,6 +1786,14 @@ async function seedProjects(ctx: Ctx): Promise<void> {
             ? resolveTimestamp(anchor, -1, "16:00:00")
             : null,
           estimatedHours: element.estimatedHours ?? null,
+          startDate:
+            element.startOffset === undefined
+              ? null
+              : resolveDate(anchor, element.startOffset),
+          targetDate:
+            element.targetOffset === undefined
+              ? null
+              : resolveDate(anchor, element.targetOffset),
           // A Parameter takes no charges.
           isChargeable: element.type !== "Parameter",
           budget: element.budget ?? null,
@@ -1822,6 +1878,8 @@ async function seedProjects(ctx: Ctx): Promise<void> {
         linkType: link.type
       });
     }
+
+    if (spec.baseline) await seedProjectBaseline(ctx, projectId, spec.baseline);
   }
 
   for (const entry of data.timesheetEntries) {

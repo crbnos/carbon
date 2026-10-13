@@ -300,6 +300,8 @@ export const DATASET_COVERAGE_FLOORS: Record<string, Record<string, number>> = {
     indirectPoolAccount: 7,
     indirectRate: 72,
     planningGroup: 1,
+    // The ORBSEC Block 2 earned value baseline.
+    projectBaseline: 1,
     projectElementMaterial: 4,
     projectPeg: 8
   }

@@ -5443,6 +5443,13 @@ function projectElementChecks(
     if (element.isControlAccount && element.earnedValueTechnique) {
       fail(`${at}: a control account takes no earned value technique`);
     }
+    if (
+      element.startOffset !== undefined &&
+      element.targetOffset !== undefined &&
+      element.targetOffset < element.startOffset
+    ) {
+      fail(`${at}: the target date is before the start date`);
+    }
     if (element.earnedValueTechnique) {
       // The nearest control account above it makes it a work package (C7).
       let parentKey = element.parentKey;

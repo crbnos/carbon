@@ -30,7 +30,7 @@ Phase B — contract financing
 
 Phase C — demo and proof
 - [x] Task 18: Move the plan snapshot builder to `@carbon/database`
-- [ ] Task 19: Seed the satellite baseline, element dates and financing
+- [x] Task 19: Seed the satellite baseline, element dates and financing
 - [ ] Task 20: Update the docs, rules and AGENTS.md
 - [ ] Task 21: Run the browser verification of 5a–5d, A and B
 - [ ] Task 22: Mark the spec implemented
@@ -863,3 +863,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 16: the PDF is hand-built like `ProjectReaderPDF` (no template engine): a government form, not a customer document. The route formats every value; amounts print in whole dollars through `formatMoney` with `SF1443_WHOLE_DOLLAR_SCALE`, and an overridden line prints its computed value and reason under it.
 - Task 17: DEFERRED, two parts. (1) The sales invoice PDF note: `SalesInvoicePDF` renders through the document template engine (blocks and sections), and a note there is a template change. (2) Prefilling the payment form's credit amount with the expected liquidation: it needs a per-invoice liquidation read in the payment loaders. The invoice prints the GROSS amount either way, which is what DFAS asks; the invoice page shows the expected liquidation, and the user types it on the payment's credit row. Both are follow-ups.
 - Task 18: `planSnapshotKeys`, `isPlanLayerField`, `pickPlanLayerFields` and `parsePlanSnapshot` moved too, because `toPlanSnapshot` needs them. `projects.models.ts` imports and re-exports every moved name, and keeps its own `byId` for the diff code. ERP tests: 203 files, 2293 passed.
+- Task 19: the four ORBSEC Block 2 work packages also needed budgets (BAC comes from the baseline budget): 40,000, 30,000, 50,000 and 25,000. The baseline reads the 5 plan tables as `to_jsonb` rows, one after another on the tier's single client, so dates and numbers reach the snapshot as the app's reads give them. DEFERRED: the financing demo rows. The satellite dataset has no ORBSEC contract (its contracts are NovaSat service contracts), so seeding financing means adding a contract with its lines, schedule and invoices; that is a follow-up. `db:seed:dev` was not run: it wipes a company, so the earned value page is checked in Task 21 on an existing seeded company.

@@ -430,6 +430,8 @@ export const PROJECTS: ProjectSpec[] = [
     costObjective: "Direct",
     budgetControl: "Warn",
     budgetTolerancePercent: 5,
+    // The plan as awarded: the earned value baseline (BCWS and BAC).
+    baseline: { name: "Contract award", dateOffset: -90 },
     // Phase 2a: the contract keeps its own stock — two parts received for
     // it, and fasteners transferred in from common stock.
     projectStock: {
@@ -500,7 +502,10 @@ export const PROJECTS: ProjectSpec[] = [
         state: "Done",
         milestone: "cdr",
         estimatedHours: 24,
-        earnedValueTechnique: "0/100"
+        earnedValueTechnique: "0/100",
+        budget: 40000,
+        startOffset: -80,
+        targetOffset: -40
       },
       {
         key: "tc-power",
@@ -525,7 +530,10 @@ export const PROJECTS: ProjectSpec[] = [
         parentKey: "req-mass",
         state: "In Progress",
         estimatedHours: 12,
-        earnedValueTechnique: "50/50"
+        earnedValueTechnique: "50/50",
+        budget: 30000,
+        startOffset: -50,
+        targetOffset: 20
       },
       {
         key: "payload",
@@ -554,7 +562,10 @@ export const PROJECTS: ProjectSpec[] = [
         earnedValueTechnique: "Percent Complete",
         earnedValuePercent: 40,
         // Phase 3: the first two flight units' trackers, from the group.
-        materials: [{ item: "ST-050", quantity: 2, requiredOffset: 20 }]
+        materials: [{ item: "ST-050", quantity: 2, requiredOffset: 20 }],
+        budget: 50000,
+        startOffset: -30,
+        targetOffset: 30
       },
       {
         key: "tc-pointing",
@@ -564,7 +575,10 @@ export const PROJECTS: ProjectSpec[] = [
         state: "Backlog",
         estimatedHours: 10,
         earnedValueTechnique: "Level of Effort",
-        materials: [{ item: "ST-050", quantity: 1, requiredOffset: 60 }]
+        materials: [{ item: "ST-050", quantity: 1, requiredOffset: 60 }],
+        budget: 25000,
+        startOffset: -60,
+        targetOffset: 60
       }
     ]
   },

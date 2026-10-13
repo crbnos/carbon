@@ -1967,6 +1967,9 @@ export type ProjectElementSpec = {
   milestone?: string;
   estimatedHours?: number;
   budget?: number;
+  /** The element's start and target dates; earned value spreads BCWS over them. */
+  startOffset?: DayOffset;
+  targetOffset?: DayOffset;
   /** The linked part, by readable id. Never on a Parameter. */
   item?: string;
   /** A Capitalize project's final asset. Never on a Parameter. */
@@ -2053,6 +2056,12 @@ export type ProjectSpec = {
   milestones: ProjectMilestoneSpec[];
   /** Parent-first order; `readableId` follows this order. */
   elements: ProjectElementSpec[];
+  /**
+   * A baseline of the plan as seeded, taken on the offset's day: the
+   * project's baseline 1 (format version 2, with the element dates). Earned
+   * value reads its budgets and dates.
+   */
+  baseline?: { name: string; dateOffset: DayOffset };
   links?: ProjectElementLinkSpec[];
   /** The purchase invoice line this project's charge number codes. */
   purchaseInvoiceLine?: { invoiceKey: string; item: string };
