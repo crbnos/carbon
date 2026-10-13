@@ -13,6 +13,7 @@ import { QuickBooks } from "./quickbooks/config";
 import { Ramp } from "./ramp/config";
 import { Rillet } from "./rillet/config";
 import { Sage } from "./sage/config";
+import { Sense } from "./sense/config";
 import { Slack } from "./slack/config";
 import { StripeConnect } from "./stripe-connect/config";
 import type { QuickInstallConnector } from "./types";
@@ -66,6 +67,7 @@ export const integrations = [
   Ramp,
   Rillet,
   Sage,
+  Sense,
   Slack,
   Xero,
   StripeConnect
@@ -92,6 +94,7 @@ export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
 export { Ramp } from "./ramp/config";
 export { Rillet } from "./rillet/config";
+export { Sense } from "./sense/config";
 export { Slack } from "./slack/config";
 export * from "./slack/lib/messages";
 export { StripeConnect } from "./stripe-connect/config";
