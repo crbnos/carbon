@@ -30,7 +30,7 @@ Phase B — contract financing
 
 Phase C — demo and proof
 - [x] Task 18: Move the plan snapshot builder to `@carbon/database`
-- [x] Task 19: Seed the satellite baseline, element dates and financing
+- [x] Task 19: Seed the satellite baseline, element dates and financing (financing rows deferred: no ORBSEC contract in the dataset)
 - [x] Task 20: Update the docs, rules and AGENTS.md
 - [x] Task 21: Run the browser verification of 5a–5d, A and B
 - [x] Task 22: Mark the spec implemented

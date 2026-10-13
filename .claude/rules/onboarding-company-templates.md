@@ -589,8 +589,10 @@ the floor in the same change; adding a table means measuring and adding it.
 
 Content that only one dataset carries has its own floors in `DATASET_COVERAGE_FLOORS` (same
 file), which `findCoverageShortfalls` adds for that dataset's key: a shared floor would be 0.
-Today only satellite has them, for the Projects Phase 3 planning group (`planningGroup`,
-`projectElementMaterial`, `projectPeg`).
+Today only satellite has them: the Projects Phase 3 planning group (`planningGroup`,
+`projectElementMaterial`, `projectPeg`), the Phase 5b indirect rates (`indirectPool`,
+`indirectPoolAccount`, `indirectRate`) and ORBSEC Block 2's earned value baseline
+(`projectBaseline`, `ProjectSpec.baseline`, tier 09 `seedProjectBaseline`).
 
 Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
 dataset fails, so the error is placed inside the tier sequence without drowning a green run.

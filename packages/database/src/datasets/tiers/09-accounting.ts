@@ -1615,12 +1615,6 @@ async function seedPlanningGroups(ctx: Ctx): Promise<void> {
 }
 
 /**
- * Labor categories and their rates, then each project with its states,
- * milestones and elements, then the applying user's timesheet. An element's
- * `readableId` is `<identifier>-<n>` in list order, as `insertProjectElement`
- * numbers them, and the project's `nextElementSequence` continues after it.
- */
-/**
  * Baseline 1 of a project, as `insertProjectBaseline` writes it: the plan
  * layer of the 5 plan tables through the shared `toPlanSnapshot`, with the
  * element dates (format version 2). Rows are read as JSON so dates and
@@ -1663,6 +1657,12 @@ async function seedProjectBaseline(
   );
 }
 
+/**
+ * Labor categories and their rates, then each project with its states,
+ * milestones and elements, then the applying user's timesheet. An element's
+ * `readableId` is `<identifier>-<n>` in list order, as `insertProjectElement`
+ * numbers them, and the project's `nextElementSequence` continues after it.
+ */
 async function seedProjects(ctx: Ctx): Promise<void> {
   const { companyId, userId, anchor } = ctx;
   const data = ctx.dataset.accounting;
