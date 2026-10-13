@@ -13,13 +13,13 @@ import {
   type AccountImportContext,
   type AccountUsage,
   type ChartAccount,
+  FIXED_ASSET_CLASS_COLUMNS,
+  type FixedAssetClassRow,
   REFERENCE_POLICY
 } from "./account-import.ts";
 import { ACCOUNT_DEFAULT_COLUMNS } from "./accounting-cutover/shared.ts";
-import { GL_JOURNAL_STATUSES } from "./accounting-posting.ts";
 import type { KyselyDatabase } from "./client.ts";
 import { isAccountClass } from "./ledger.ts";
-import { equals } from "./precision.ts";
 
 type Db = Kysely<KyselyDatabase> | Transaction<KyselyDatabase>;
 
@@ -127,47 +127,31 @@ export async function loadAccountImportContext(
     defaultsByCompany[row.companyId] = defaults;
   }
 
+  const fixedAssetClassRows =
+    companyIds.length === 0
+      ? []
+      : await db
+          .selectFrom("fixedAssetClass")
+          .select(["id", "companyId", "name", ...FIXED_ASSET_CLASS_COLUMNS])
+          .where("companyId", "in", companyIds)
+          .orderBy("name")
+          .execute();
+  const fixedAssetClasses: FixedAssetClassRow[] = fixedAssetClassRows.map(
+    (row) => ({
+      id: row.id,
+      companyId: row.companyId,
+      name: row.name,
+      accounts: Object.fromEntries(
+        FIXED_ASSET_CLASS_COLUMNS.map((column) => [column, row[column] ?? null])
+      ) as FixedAssetClassRow["accounts"]
+    })
+  );
+
   const usage: Record<string, AccountUsage> = {};
-  const usageOf = (accountId: string) => {
-    usage[accountId] ??= {
-      hasPostedLines: false,
-      reclassBalanceByCompany: {},
-      movableReferencesByCompany: {},
-      historyReferences: 0
-    };
-    return usage[accountId];
-  };
-
   if (companyIds.length > 0) {
-    // Lines on Posted, Reversed and Superseded journals. Any of them is
-    // history; only Posted and Reversed carry the balance a reclass moves.
-    const journalUsage = await db
-      .selectFrom("journalLine")
-      .innerJoin("journal", "journal.id", "journalLine.journalId")
-      .select([
-        "journalLine.accountId",
-        "journal.companyId",
-        "journal.status",
-        sql<number>`SUM("journalLine"."amount")`.as("amount")
-      ])
-      .where("journal.companyId", "in", companyIds)
-      .where("journal.status", "in", [...GL_JOURNAL_STATUSES, "Superseded"])
-      .where("journalLine.accountId", "is not", null)
-      .groupBy(["journalLine.accountId", "journal.companyId", "journal.status"])
-      .execute();
-    const glStatuses: readonly string[] = GL_JOURNAL_STATUSES;
-    for (const row of journalUsage) {
-      if (!row.accountId) continue;
-      const entry = usageOf(row.accountId);
-      entry.hasPostedLines = true;
-      if (glStatuses.includes(row.status)) {
-        entry.reclassBalanceByCompany[row.companyId] =
-          (entry.reclassBalanceByCompany[row.companyId] ?? 0) +
-          Number(row.amount);
-      }
-    }
-
-    // Every other reference, in one statement.
+    // Every reference REFERENCE_POLICY knows, in one statement. A journal
+    // line is movable while its journal is Draft or Provisional; anything
+    // else is posted history.
     const branches = REFERENCE_POLICY.map((ref) =>
       referenceBranch(ref, companyIds)
     );
@@ -180,7 +164,10 @@ export async function loadAccountImportContext(
       FROM (${sql.join(branches, sql` UNION ALL `)}) AS r
       GROUP BY r."accountId", r."companyId", r.movable`.execute(db);
     for (const row of references.rows) {
-      const entry = usageOf(row.accountId);
+      const entry = (usage[row.accountId] ??= {
+        movableReferencesByCompany: {},
+        historyReferences: 0
+      });
       if (row.movable) {
         entry.movableReferencesByCompany[row.companyId] =
           (entry.movableReferencesByCompany[row.companyId] ?? 0) +
@@ -191,19 +178,11 @@ export async function loadAccountImportContext(
     }
   }
 
-  // Drop zero balances, so an account whose lines net to zero needs no target.
-  for (const entry of Object.values(usage)) {
-    for (const [companyId, amount] of Object.entries(
-      entry.reclassBalanceByCompany
-    )) {
-      if (equals(amount, 0)) delete entry.reclassBalanceByCompany[companyId];
-    }
-  }
-
   return {
     chart,
     companies,
     defaultsByCompany,
+    fixedAssetClasses,
     usage,
     importingCompanyId
   };
