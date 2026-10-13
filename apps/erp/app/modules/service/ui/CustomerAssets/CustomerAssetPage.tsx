@@ -20,7 +20,12 @@ import {
   Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { LuClipboardList, LuSquareUser, LuTruck } from "react-icons/lu";
+import {
+  LuClipboardList,
+  LuQrCode,
+  LuSquareUser,
+  LuTruck
+} from "react-icons/lu";
 import { Link } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import {
@@ -138,6 +143,12 @@ export default function CustomerAssetPage({
                 icon={<LuSquareUser />}
                 title={asset.customer?.name ?? ""}
                 description={t`Customer`}
+              />
+              <RelatedDocument
+                to={`${path.to.traceabilityGraph}?trackedEntityId=${asset.trackedEntityId}`}
+                icon={<LuQrCode />}
+                title={serial}
+                description={t`Serial Number`}
               />
               {shipment && (
                 <RelatedDocument

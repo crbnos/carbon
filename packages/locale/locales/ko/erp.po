@@ -5385,9 +5385,6 @@ msgstr "체크포인트"
 msgid "Children"
 msgstr "하위 항목"
 
-msgid "Children done"
-msgstr "자식 요소 완료"
-
 msgid "Choose a backup"
 msgstr "백업 선택"
 

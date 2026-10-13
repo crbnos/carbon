@@ -5385,9 +5385,6 @@ msgstr "チェックポイント"
 msgid "Children"
 msgstr "子要素"
 
-msgid "Children done"
-msgstr "子要素が完了"
-
 msgid "Choose a backup"
 msgstr "バックアップを選択"
 

@@ -157,16 +157,7 @@ const ServiceOrderProperties = () => {
         <span className="text-sm">{order.serviceOrderId}</span>
       </VStack>
 
-      {isRefurbishment ? (
-        <VStack spacing={2}>
-          <span className="text-xs text-muted-foreground">
-            <Trans>Serial</Trans>
-          </span>
-          <span className="whitespace-nowrap">
-            {order.trackedEntity?.readableId ?? "—"}
-          </span>
-        </VStack>
-      ) : (
+      {!isRefurbishment && (
         <VStack spacing={2}>
           <span className="text-xs text-muted-foreground">
             <Trans>Customer</Trans>
@@ -174,6 +165,21 @@ const ServiceOrderProperties = () => {
           <CustomerAvatar customerId={order.customerId} />
         </VStack>
       )}
+
+      <VStack spacing={2}>
+        <span className="text-xs text-muted-foreground">
+          <Trans>Serial</Trans>
+        </span>
+        {order.trackedEntity ? (
+          <Hyperlink
+            to={`${path.to.traceabilityGraph}?trackedEntityId=${order.trackedEntity.id}`}
+          >
+            {order.trackedEntity.readableId ?? order.trackedEntity.id}
+          </Hyperlink>
+        ) : (
+          <span>—</span>
+        )}
+      </VStack>
 
       {order.customerAssetId && (
         <VStack spacing={2}>

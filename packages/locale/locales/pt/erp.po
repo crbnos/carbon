@@ -5385,9 +5385,6 @@ msgstr "Pontos de Verificação"
 msgid "Children"
 msgstr "Filhos"
 
-msgid "Children done"
-msgstr "Filhos concluídos"
-
 msgid "Choose a backup"
 msgstr "Escolher um backup"
 
