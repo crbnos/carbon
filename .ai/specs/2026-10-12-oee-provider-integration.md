@@ -147,8 +147,11 @@ If Sense returns another status, the adapter throws. The sync job then fails
 that device and keeps its cursor (`.ai/lessons.md` → "Financial
 discriminators require explicit verified allowlists").
 
-The adapter pages through events with `order=asc`, `limit=500` and `offset`
-until a page is short.
+Sense ignores `offset`, and `offset=0` returns HTTP 400 (verified against
+staging on 2026-10-13). So the adapter pages by time: it requests
+`order=asc&limit=500`, and if the page is full it requests again from the last
+event's `created_at`. It drops events it has already seen, by `id`, and stops
+when a page is short or adds nothing new.
 
 ### 2. Installing Sense
 

@@ -7,14 +7,14 @@
 
 ## Progress
 
-- [ ] Task 1: Write the schema migration
-- [ ] Task 2: Add the interceptors, attachments and authz rules
-- [ ] Task 3: Apply, ship the generated migration, regenerate types
-- [ ] Task 4: Test the load and unload interceptors in SQL
-- [ ] Task 5: Add the shared device lock in `@carbon/database`
-- [ ] Task 6: Widen the provider role to `oee`
-- [ ] Task 7: Write the OEE types and the attribution engine with tests
-- [ ] Task 8: Write the Sense adapter with tests
+- [x] Task 1: Write the schema migration
+- [x] Task 2: Add the interceptors, attachments and authz rules
+- [x] Task 3: Apply, ship the generated migration, regenerate types
+- [x] Task 4: Test the load and unload interceptors in SQL
+- [x] Task 5: Add the shared device lock in `@carbon/database`
+- [x] Task 6: Widen the provider role to `oee`
+- [x] Task 7: Write the OEE types and the attribution engine with tests
+- [x] Task 8: Write the Sense adapter with tests
 - [ ] Task 9: Register Sense and write the OEE server functions
 - [ ] Task 10: Write the sweep and sync Inngest functions
 - [ ] Task 11: Add the Devices tab to the integration drawer
@@ -610,7 +610,7 @@ curl -sS -o /dev/null -w "%{http_code}\n" -G "http://bifrost-staging.sensemfg.co
   --data-urlencode "order=asc" --data-urlencode "limit=500" --data-urlencode "offset=0"
 ```
 
-2. If the request does not return 200, STOP and report. Ask the user for `SENSE_API_KEY`; never commit it.
+2. If the request does not return 200, STOP and report. (Verified 2026-10-13: Sense ignores `offset`, and `offset=0` returns 400. Steps 11–13 page by time for that reason.) Ask the user for `SENSE_API_KEY`; never commit it.
 3. Write `class SenseProvider implements OeeProvider` with `id = "sense" as const`.
 4. Use the constructor args `{ apiKey: string; environment: "production" | "staging" }`. Production is `https://bifrost.sensemfg.com`. Staging is `http://bifrost-staging.sensemfg.com`.
 5. Write a private `get<T>(path, query)`. It calls `fetch` with `Authorization: Bearer <apiKey>` and `signal: AbortSignal.timeout(15_000)`.
@@ -619,15 +619,16 @@ curl -sS -o /dev/null -w "%{http_code}\n" -G "http://bifrost-staging.sensemfg.co
 8. `listDevices()` calls `GET /v1/public/companies/stations` and `GET /v1/public/companies/sites` in parallel. It joins each station to its site by `site_id`.
 9. Map each station: `id`→`externalDeviceId`, `machine_name`→`name`, `site_id`→`externalSiteId`, the site's `name`→`siteName` and `timezone`→`siteTimezone`, `machine_manufacturer`→`manufacturer`, `machine_model`→`model`, `machine_type`→`machineType`.
 10. Map `last_calibration_attempt_status` to `calibrated`: `"CALIBRATED"` → true, null → null, any other value → false.
-11. `listStateChanges(device, window)` calls `GET /v1/public/companies/sites/{site}/stations/{station}/events` with `start_datetime`, `end_datetime`, `order=asc`, `limit=500`, `offset`.
-12. Loop `offset += 500` until a page has fewer than 500 events.
-13. If `externalSiteId` is null, throw `SenseApiError(0, "Station has no site")`.
-14. Map `status` with this allowlist: `Active`→`Running`, `Idle`→`Idle`, `Alert`→`Down`, `Offline`→`Offline`. Throw `SenseApiError(0, "Unknown Sense status: <value>")` for any other value.
-15. Return `{ externalEventId: event.id, state, changedAt: event.created_at }`.
-16. Write `provider.test.ts` with `vi.stubGlobal("fetch", …)`. Cover four cases:
+11. `listStateChanges(device, window)` calls `GET /v1/public/companies/sites/{site}/stations/{station}/events` with `start_datetime`, `end_datetime`, `order=asc` and `limit=500`. Never send `offset`.
+12. Page by time. If a page has 500 events, request again from the last event's `created_at`.
+13. Drop events whose `id` was already returned. Stop when a page has fewer than 500 events or adds no new event.
+14. If `externalSiteId` is null, throw `SenseApiError(0, "Station has no site")`.
+15. Map `status` with this allowlist: `Active`→`Running`, `Idle`→`Idle`, `Alert`→`Down`, `Offline`→`Offline`. Throw `SenseApiError(0, "Unknown Sense status: <value>")` for any other value.
+16. Return `{ externalEventId: event.id, state, changedAt: event.created_at }`.
+17. Write `provider.test.ts` with `vi.stubGlobal("fetch", …)`. Cover four cases:
     1. The status allowlist maps all four values.
     2. An unknown status throws `SenseApiError`.
-    3. A first page of 500 events and a second page of 3 make exactly 2 calls and return 503 changes.
+    3. A full page of 500 events, then a page that repeats the last event plus 3 new ones, make exactly 2 calls and return 503 changes. The second call starts at the last event's `created_at` and sends no `offset`.
     4. `listDevices` joins the site name and timezone.
 
 **Verify:**
