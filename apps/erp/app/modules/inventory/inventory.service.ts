@@ -2514,6 +2514,7 @@ export async function upsertKanban(
       })
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         id: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -2537,15 +2538,19 @@ export async function upsertKanban(
       .select("id")
       .single();
   }
+  // Scoped by company, not left to RLS: the update names its row by id, and a
+  // user can belong to several companies.
+  const { companyId, ...update } = row;
   return client
     .from("kanban")
     .update({
-      ...sanitize(row),
+      ...sanitize(update),
       replenishmentLevel,
       fromStorageUnitId,
       updatedAt: datetime.timestamp()
     })
     .eq("id", row.id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }

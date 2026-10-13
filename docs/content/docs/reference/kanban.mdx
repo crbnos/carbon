@@ -70,7 +70,7 @@ For `Make` kanbans, the list view also surfaces the **start** and **complete** a
 Both replenish stock, but they're different tools:
 
 <Callout type="info" title="A kanban is a signal, not a plan">
-A [reordering policy](/docs/reference/reordering) is evaluated by the planning engine, which computes suggested orders from on-hand, demand, and reorder points. A kanban skips all of that: a scan or a replenishment level creates a real purchase order, job, or stock transfer on the spot. Reach for a kanban when the shop floor pulls material by hand and you want the refill to be one scan away.
+A [reordering policy](/docs/reference/reordering) is evaluated by the planning engine, which computes suggested orders from on-hand, demand, and reorder points. A kanban skips all of that: a scan creates a real purchase order, job, or stock transfer on the spot. A replenishment level applies only to a `Transfer` kanban, and it creates a stock transfer. Reach for a kanban when the shop floor pulls material by hand and you want the refill to be one scan away.
 </Callout>
 
 ## Related

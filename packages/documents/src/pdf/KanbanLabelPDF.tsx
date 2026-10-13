@@ -233,10 +233,10 @@ const KanbanLabelPDF = ({
                                 fontWeight: "bold"
                               }}
                             >
+                              {/* The level is in stock units at the To
+                                  storage unit; unitOfMeasureCode is the
+                                  purchase unit, so MIN prints no unit. */}
                               MIN: {label.replenishmentLevel}
-                              {label.unitOfMeasureCode
-                                ? ` ${label.unitOfMeasureCode}`
-                                : ""}
                             </Text>
                           )}
                         </View>
