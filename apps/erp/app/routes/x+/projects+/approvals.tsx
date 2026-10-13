@@ -175,6 +175,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const approvedIds = (approved.data ?? []).map((row) => row.id);
+    if (approvedIds.length === 0) {
+      return data(
+        { success: false },
+        await flash(
+          request,
+          error(null, "No entry could be approved. Reload the page.")
+        )
+      );
+    }
     const postingError = await postTimesheetEntries({
       timesheetEntryIds: approvedIds,
       companyId,

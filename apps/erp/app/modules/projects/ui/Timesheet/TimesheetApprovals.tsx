@@ -116,11 +116,17 @@ function ApprovalCard({
   const employeeName = group.employee?.fullName ?? "";
   const allIds = group.entries.map((entry) => entry.id);
 
-  const approve = (ids: string[]) =>
-    fetcher.submit(
-      { intent: "approve", ids },
-      { method: "post", action: path.to.projectTimesheetApprovals }
-    );
+  const approve = (ids: string[]) => {
+    // One `ids` field per entry: a plain object would join the array into
+    // one comma-separated value.
+    const formData = new FormData();
+    formData.append("intent", "approve");
+    for (const id of ids) formData.append("ids", id);
+    fetcher.submit(formData, {
+      method: "post",
+      action: path.to.projectTimesheetApprovals
+    });
+  };
 
   return (
     <Card>

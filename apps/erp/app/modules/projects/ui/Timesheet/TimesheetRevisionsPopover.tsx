@@ -43,6 +43,8 @@ export function TimesheetRevisionsPopover({ entryId }: { entryId: string }) {
           variant="ghost"
           size="sm"
           className="shrink-0 text-muted-foreground"
+          // The grid cell opens its editor on click: keep this click here.
+          onClick={(event) => event.stopPropagation()}
         />
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80">
