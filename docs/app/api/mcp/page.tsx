@@ -115,6 +115,7 @@ const FAQ: FaqEntry[] = [
   }
 ];
 
+/** Render the public Connect over MCP page. */
 export default async function ConnectOverMcpPage() {
   const [code, grok, cursor] = await Promise.all([
     highlight(CLAUDE_CODE, "curl"),

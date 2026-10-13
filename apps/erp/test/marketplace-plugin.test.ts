@@ -18,9 +18,13 @@ const CLOUD_ORIGIN = "https://app.carbon.ms";
 const CLOUD_MCP = `${CLOUD_ORIGIN}/api/mcp`;
 const PRIVATE_ORIGIN = "https://erp.internal.example";
 
+/** Read a repository file as UTF-8 text. */
 const read = (path: string) => readFileSync(path, "utf8");
+
+/** Parse a repository JSON file. */
 const readJson = (path: string) => JSON.parse(read(path)) as unknown;
 
+/** Assert the rule and skill require the operator loop and the status split. */
 function expectOperatorLoop(text: string) {
   expect(text).toContain("search_tools");
   expect(text).toContain("describe_tool");
