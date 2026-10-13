@@ -7863,6 +7863,9 @@ msgstr "Clique duas vezes para abrir esta sub-montagem"
 msgid "Double-click to play this step"
 msgstr "Clique duas vezes para reproduzir esta etapa"
 
+msgid "Down"
+msgstr "Parado"
+
 msgid "Download"
 msgstr "Baixar"
 
@@ -10941,6 +10944,9 @@ msgstr "Provedor de Identidade"
 
 msgid "Identity provider (IdP)"
 msgstr "Provedor de identidade (IdP)"
+
+msgid "Idle"
+msgstr "Ocioso"
 
 msgid "IdP Metadata URL"
 msgstr "URL de Metadados IdP"
@@ -14989,6 +14995,9 @@ msgstr "Desativado — tratado fora da sincronização"
 
 msgid "Off — released revisions stay editable"
 msgstr "Desativado — revisões lançadas permanecem editáveis"
+
+msgid "Offline"
+msgstr "Desconectado"
 
 msgid "Offset Account"
 msgstr "Conta de Compensação"

@@ -7863,6 +7863,9 @@ msgstr "이 하위 조립품을 열려면 이중 클릭하세요"
 msgid "Double-click to play this step"
 msgstr "이 단계를 재생하려면 더블 클릭"
 
+msgid "Down"
+msgstr "가동중단"
+
 msgid "Download"
 msgstr "다운로드"
 
@@ -10941,6 +10944,9 @@ msgstr "자격 증명 공급자"
 
 msgid "Identity provider (IdP)"
 msgstr "자격 증명 공급자(IdP)"
+
+msgid "Idle"
+msgstr "유휴"
 
 msgid "IdP Metadata URL"
 msgstr "IdP 메타데이터 URL"
@@ -14989,6 +14995,9 @@ msgstr "끔 — 동기화 외부에서 처리됨"
 
 msgid "Off — released revisions stay editable"
 msgstr "꺼짐 — 릴리스된 리비전은 편집 가능한 상태로 유지됨"
+
+msgid "Offline"
+msgstr "오프라인"
 
 msgid "Offset Account"
 msgstr "상계 계정"

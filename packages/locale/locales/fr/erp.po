@@ -7863,6 +7863,9 @@ msgstr "Double-cliquez pour ouvrir ce sous-ensemble"
 msgid "Double-click to play this step"
 msgstr "Double-cliquez pour jouer cette étape"
 
+msgid "Down"
+msgstr "En panne"
+
 msgid "Download"
 msgstr "Télécharger"
 
@@ -10941,6 +10944,9 @@ msgstr "Fournisseur d'identité"
 
 msgid "Identity provider (IdP)"
 msgstr "Fournisseur d'identité (IdP)"
+
+msgid "Idle"
+msgstr "Disponible"
 
 msgid "IdP Metadata URL"
 msgstr "URL des métadonnées IdP"
@@ -14989,6 +14995,9 @@ msgstr "Off — géré en dehors de la synchronisation"
 
 msgid "Off — released revisions stay editable"
 msgstr "Désactivé — les révisions publiées restent modifiables"
+
+msgid "Offline"
+msgstr "Hors ligne"
 
 msgid "Offset Account"
 msgstr "Compte de contrepartie"

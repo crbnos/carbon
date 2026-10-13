@@ -672,7 +672,7 @@ async function getOeeDevicesTabData(
     client
       .from("workCenterDevice")
       .select(
-        "externalDeviceId, workCenterId, currentState, lastSyncedAt, lastSyncError"
+        "externalDeviceId, deviceName, externalSiteId, siteTimezone, workCenterId, currentState, lastSyncedAt, lastSyncError"
       )
       .eq("companyId", companyId)
       .eq("integration", integrationId),
@@ -1937,7 +1937,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         {},
         await flash(
           request,
-          error(result.error, "Failed to save device mapping")
+          error(result.error, `Failed to save device mapping: ${result.error}`)
         )
       );
     }

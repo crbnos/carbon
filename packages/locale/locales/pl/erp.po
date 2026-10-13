@@ -7863,6 +7863,9 @@ msgstr "Kliknij dwukrotnie, aby otworzyć ten podzespół"
 msgid "Double-click to play this step"
 msgstr "Kliknij dwukrotnie, aby odtworzyć ten krok"
 
+msgid "Down"
+msgstr "Awaria"
+
 msgid "Download"
 msgstr "Pobierz"
 
@@ -10941,6 +10944,9 @@ msgstr "Dostawca tożsamości"
 
 msgid "Identity provider (IdP)"
 msgstr "Dostawca tożsamości (IdP)"
+
+msgid "Idle"
+msgstr "Bezczynny"
 
 msgid "IdP Metadata URL"
 msgstr "Adres URL metadanych IdP"
@@ -14989,6 +14995,9 @@ msgstr "Wyłączone — obsługiwane poza synchronizacją"
 
 msgid "Off — released revisions stay editable"
 msgstr "Wyłączone — zwolnione rewizje pozostają edytowalne"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Offset Account"
 msgstr "Konto równoważące"

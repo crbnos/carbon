@@ -7863,6 +7863,9 @@ msgstr "Double-click to open this sub-assembly"
 msgid "Double-click to play this step"
 msgstr "Double-click to play this step"
 
+msgid "Down"
+msgstr "Down"
+
 msgid "Download"
 msgstr "Download"
 
@@ -10941,6 +10944,9 @@ msgstr "Identity Provider"
 
 msgid "Identity provider (IdP)"
 msgstr "Identity provider (IdP)"
+
+msgid "Idle"
+msgstr "Idle"
 
 msgid "IdP Metadata URL"
 msgstr "IdP Metadata URL"
@@ -14989,6 +14995,9 @@ msgstr "Off — handled outside the sync"
 
 msgid "Off — released revisions stay editable"
 msgstr "Off — released revisions stay editable"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Offset Account"
 msgstr "Offset Account"

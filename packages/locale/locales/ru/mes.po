@@ -815,7 +815,7 @@ msgid "Ideas, suggestions or problems?"
 msgstr "Идеи, предложения или проблемы?"
 
 msgid "Idle"
-msgstr "Простой"
+msgstr "Ожидание"
 
 msgid "Idle for"
 msgstr "Простой в течение"

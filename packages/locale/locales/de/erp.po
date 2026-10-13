@@ -7863,6 +7863,9 @@ msgstr "Doppelklicken Sie, um diese Unterbaugruppe zu öffnen"
 msgid "Double-click to play this step"
 msgstr "Doppelklicken Sie, um diesen Schritt abzuspielen"
 
+msgid "Down"
+msgstr "Stillstand"
+
 msgid "Download"
 msgstr "Herunterladen"
 
@@ -10941,6 +10944,9 @@ msgstr "Identitätsanbieter"
 
 msgid "Identity provider (IdP)"
 msgstr "Identitätsanbieter (IdP)"
+
+msgid "Idle"
+msgstr "Leerlauf"
 
 msgid "IdP Metadata URL"
 msgstr "IdP-Metadaten-URL"
@@ -14989,6 +14995,9 @@ msgstr "Aus — außerhalb der Synchronisierung behandelt"
 
 msgid "Off — released revisions stay editable"
 msgstr "Aus — ausgegebene Revisionen bleiben bearbeitbar"
+
+msgid "Offline"
+msgstr "Offline"
 
 msgid "Offset Account"
 msgstr "Gegenkonto"

@@ -7863,6 +7863,9 @@ msgstr "Fai doppio clic per aprire questo sottoassembly"
 msgid "Double-click to play this step"
 msgstr "Fai doppio clic per riprodurre questo passo"
 
+msgid "Down"
+msgstr "Fermo"
+
 msgid "Download"
 msgstr "Scarica"
 
@@ -10941,6 +10944,9 @@ msgstr "Provider di Identità"
 
 msgid "Identity provider (IdP)"
 msgstr "Provider di identità (IdP)"
+
+msgid "Idle"
+msgstr "Inattivo"
 
 msgid "IdP Metadata URL"
 msgstr "URL Metadati IdP"
@@ -14989,6 +14995,9 @@ msgstr "Disattivato — gestito al di fuori della sincronizzazione"
 
 msgid "Off — released revisions stay editable"
 msgstr "Disattivato — le revisioni rilasciate rimangono modificabili"
+
+msgid "Offline"
+msgstr "Non in linea"
 
 msgid "Offset Account"
 msgstr "Conto di compensazione"

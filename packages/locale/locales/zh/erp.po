@@ -7863,6 +7863,9 @@ msgstr "双击以打开此子装配"
 msgid "Double-click to play this step"
 msgstr "双击播放此步骤"
 
+msgid "Down"
+msgstr "停机"
+
 msgid "Download"
 msgstr "下载"
 
@@ -10941,6 +10944,9 @@ msgstr "身份提供商"
 
 msgid "Identity provider (IdP)"
 msgstr "身份提供商 (IdP)"
+
+msgid "Idle"
+msgstr "空闲"
 
 msgid "IdP Metadata URL"
 msgstr "IdP 元数据 URL"
@@ -14989,6 +14995,9 @@ msgstr "关闭 — 在同步外处理"
 
 msgid "Off — released revisions stay editable"
 msgstr "关闭 — 已下达修订版保持可编辑"
+
+msgid "Offline"
+msgstr "离线"
 
 msgid "Offset Account"
 msgstr "抵消账户"

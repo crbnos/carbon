@@ -7863,6 +7863,9 @@ msgstr "Дважды щелкните, чтобы открыть эту подс
 msgid "Double-click to play this step"
 msgstr "Дважды щелкните, чтобы воспроизвести этот шаг"
 
+msgid "Down"
+msgstr "Простой"
+
 msgid "Download"
 msgstr "Скачать"
 
@@ -10941,6 +10944,9 @@ msgstr "Поставщик удостоверений"
 
 msgid "Identity provider (IdP)"
 msgstr "Поставщик удостоверений (IdP)"
+
+msgid "Idle"
+msgstr "Ожидание"
 
 msgid "IdP Metadata URL"
 msgstr "URL метаданных IdP"
@@ -14989,6 +14995,9 @@ msgstr "Отключено — обработано вне синхрониза�
 
 msgid "Off — released revisions stay editable"
 msgstr "Отключено — выпущенные ревизии остаются редактируемыми"
+
+msgid "Offline"
+msgstr "Отключено"
 
 msgid "Offset Account"
 msgstr "Счет компенсации"

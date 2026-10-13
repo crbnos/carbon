@@ -7863,6 +7863,9 @@ msgstr "Bu alt montajı açmak için çift tıkla"
 msgid "Double-click to play this step"
 msgstr "Bu adımı oynatmak için çift tıklayın"
 
+msgid "Down"
+msgstr "Arızalı"
+
 msgid "Download"
 msgstr "İndir"
 
@@ -10941,6 +10944,9 @@ msgstr "Kimlik Sağlayıcı"
 
 msgid "Identity provider (IdP)"
 msgstr "Kimlik Sağlayıcı (IdP)"
+
+msgid "Idle"
+msgstr "Boş"
 
 msgid "IdP Metadata URL"
 msgstr "IdP Meta Veri URL'si"
@@ -14989,6 +14995,9 @@ msgstr "Kapalı — senkronizasyon dışında işlenir"
 
 msgid "Off — released revisions stay editable"
 msgstr "Kapalı — yayınlanan revizyonlar düzenlenebilir kalır"
+
+msgid "Offline"
+msgstr "Çevrimdışı"
 
 msgid "Offset Account"
 msgstr "Karşı Hesap"

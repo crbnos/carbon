@@ -7,6 +7,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { EntitlementError, requireEntitlement } from "../entitlements.server";
+import { integrations } from "../index";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import { companyHasFeature } from "../plan.server";
 import { OEE_PROVIDERS } from "./registry";
@@ -129,7 +130,10 @@ export async function upsertWorkCenterDevice(
       if (taken) {
         return {
           data: null,
-          error: `${taken.workCenterName} already has ${taken.deviceName} from ${taken.integration}`
+          error: `${taken.workCenterName} already has ${taken.deviceName} from ${
+            integrations.find((entry) => entry.id === taken.integration)
+              ?.name ?? taken.integration
+          }`
         };
       }
 

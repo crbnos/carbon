@@ -39,6 +39,9 @@ export type OeeDeviceRow = {
 
 export type OeeDeviceMappingRow = {
   externalDeviceId: string;
+  deviceName: string;
+  externalSiteId: string | null;
+  siteTimezone: string | null;
   workCenterId: string;
   currentState: "Running" | "Idle" | "Down" | "Offline" | null;
   lastSyncedAt: string | null;
@@ -191,7 +194,27 @@ function OeeDeviceList({
       .map((workCenter) => ({ value: workCenter.id, label: workCenter.name }));
   }, [workCenters, takenWorkCenters]);
 
-  if (devices.length === 0) {
+  // A mapped device stays listed when the provider cannot list its devices
+  // (a slow or failing API), so it can still be seen and unmapped.
+  const rows = useMemo(() => {
+    const listed = new Set(devices.map((device) => device.externalDeviceId));
+    const mappedOnly: OeeDeviceRow[] = mappings
+      .filter((mapping) => !listed.has(mapping.externalDeviceId))
+      .map((mapping) => ({
+        externalDeviceId: mapping.externalDeviceId,
+        name: mapping.deviceName,
+        externalSiteId: mapping.externalSiteId,
+        siteName: null,
+        siteTimezone: mapping.siteTimezone,
+        manufacturer: null,
+        model: null,
+        machineType: null,
+        calibrated: null
+      }));
+    return [...mappedOnly, ...devices];
+  }, [devices, mappings]);
+
+  if (rows.length === 0) {
     return (
       <div className="flex w-full items-center justify-center rounded-lg border border-border py-8 text-sm text-muted-foreground max-md:border-0 max-md:rounded-none">
         <Trans>No devices found</Trans>
@@ -202,7 +225,7 @@ function OeeDeviceList({
   return (
     <div className="w-full rounded-lg border border-border max-md:border-0 max-md:p-0 max-md:rounded-none">
       <div className="flex w-full flex-col divide-y divide-border">
-        {devices.map((device) => {
+        {rows.map((device) => {
           const mapping = mappedByDeviceId.get(device.externalDeviceId);
           return (
             // Keyed on the persisted work center so a saved change remounts
@@ -256,6 +279,13 @@ function OeeDeviceRowForm({
     locationTimezone !== null &&
     device.siteTimezone !== locationTimezone;
 
+  const stateLabels = {
+    Running: t`Running`,
+    Idle: t`Idle`,
+    Down: t`Down`,
+    Offline: t`Offline`
+  } as const;
+
   const details = [device.manufacturer, device.model, device.machineType]
     .filter(Boolean)
     .join(" · ");
@@ -292,8 +322,8 @@ function OeeDeviceRowForm({
         value={device.siteTimezone ?? ""}
       />
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-sm font-medium">{device.name}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="text-sm font-medium">{device.name}</span>
           {device.calibrated !== null && (
             <Badge variant={device.calibrated ? "green" : "yellow"}>
               {device.calibrated ? (
@@ -305,7 +335,7 @@ function OeeDeviceRowForm({
           )}
           {mapping?.currentState && (
             <Badge variant={STATE_BADGE_VARIANT[mapping.currentState]}>
-              {mapping.currentState}
+              {stateLabels[mapping.currentState]}
             </Badge>
           )}
         </div>

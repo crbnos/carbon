@@ -7863,6 +7863,9 @@ msgstr "ダブルクリックするとこのサブアセンブリが開きます
 msgid "Double-click to play this step"
 msgstr "このステップを再生するにはダブルクリック"
 
+msgid "Down"
+msgstr "停止"
+
 msgid "Download"
 msgstr "ダウンロード"
 
@@ -10941,6 +10944,9 @@ msgstr "IDプロバイダー"
 
 msgid "Identity provider (IdP)"
 msgstr "IDプロバイダー（IdP）"
+
+msgid "Idle"
+msgstr "待機中"
 
 msgid "IdP Metadata URL"
 msgstr "IdP メタデータURL"
@@ -14989,6 +14995,9 @@ msgstr "オフ — 同期外で処理"
 
 msgid "Off — released revisions stay editable"
 msgstr "オフ - リリースされたリビジョンは編集可能なままです"
+
+msgid "Offline"
+msgstr "オフライン"
 
 msgid "Offset Account"
 msgstr "相殺勘定"

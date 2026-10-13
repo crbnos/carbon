@@ -7863,6 +7863,9 @@ msgstr "इस उप-विधानसभा को खोलने के ल
 msgid "Double-click to play this step"
 msgstr "इस चरण को चलाने के लिए डबल-क्लिक करें"
 
+msgid "Down"
+msgstr "डाउन"
+
 msgid "Download"
 msgstr "डाउनलोड करें"
 
@@ -10941,6 +10944,9 @@ msgstr "आइडेंटिटी प्रदाता"
 
 msgid "Identity provider (IdP)"
 msgstr "आइडेंटिटी प्रदाता (IdP)"
+
+msgid "Idle"
+msgstr "निष्क्रिय"
 
 msgid "IdP Metadata URL"
 msgstr "IdP मेटाडेटा URL"
@@ -14989,6 +14995,9 @@ msgstr "बंद — सिंक के बाहर संभाला गय
 
 msgid "Off — released revisions stay editable"
 msgstr "बंद — जारी किए गए रिवीजन संपादन योग्य रहते हैं"
+
+msgid "Offline"
+msgstr "ऑफलाइन"
 
 msgid "Offset Account"
 msgstr "ऑफसेट खाता"
