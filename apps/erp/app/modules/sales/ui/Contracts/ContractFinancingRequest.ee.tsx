@@ -60,6 +60,7 @@ import {
   usePermissions,
   useUser
 } from "~/hooks";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { FinancingStatus } from "./ContractFinancing.ee";
 
@@ -85,7 +86,10 @@ export default function ContractFinancingRequest({
   const currency = company.baseCurrencyCode;
   const decimals = useCurrencyDecimals(currency);
   const formatMoney = useCurrencyFormatter({ currency });
-  const { formatDate } = useDateFormatter();
+  const { formatDate, formatDateTime } = useDateFormatter();
+  const [people] = usePeople();
+  const personName = (id: string) =>
+    people.find((person) => person.id === id)?.name ?? id;
   const permissions = usePermissions();
   const canUpdate = permissions.can("update", "sales");
   const fetcher = useFetcher();
@@ -255,7 +259,8 @@ export default function ContractFinancingRequest({
                           <span>{SF1443_LINE_LABELS[line as Sf1443Line]}</span>
                           {override && (
                             <span className="block text-xs text-muted-foreground">
-                              {override.reason}
+                              {override.reason} · {personName(override.by)},{" "}
+                              {formatDateTime(override.at)}
                             </span>
                           )}
                         </Td>

@@ -222,7 +222,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             ]),
         {
           title: "For the contracting officer",
-          rows: [{ line: "27", label: "Amount approved", value: "" }]
+          rows: [
+            {
+              line: "27",
+              label: "Amount approved",
+              value:
+                detail.approvedAmount === null
+                  ? ""
+                  : dollars(Number(detail.approvedAmount))
+            }
+          ]
         }
       ];
 

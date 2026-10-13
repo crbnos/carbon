@@ -27774,7 +27774,7 @@ msgstr "WBS कोड"
 
 #. placeholder {0}: repeatedCodes.join(", ")
 msgid "WBS codes repeat: {0}. Change one of each pair to export."
-msgstr ""
+msgstr "WBS कोड दोहराए जाते हैं: {0}। निर्यात करने के लिए प्रत्येक जोड़ी में से एक को बदलें।"
 
 msgid "WBS options"
 msgstr "WBS विकल्प"

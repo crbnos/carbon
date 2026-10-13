@@ -707,6 +707,28 @@ export async function createFinancingRequest(
     throw new FinancingError("Costs through cannot be after the request date");
   }
   return db.transaction().execute(async (trx) => {
+    // One Draft per contract: a request's earlier values (SF 1443 line 24,
+    // PBP 1a and the share cap) count only live requests, so a second Draft
+    // would be computed without the first and both could be submitted.
+    await trx
+      .selectFrom("customerContractFinancing")
+      .select("customerContractId")
+      .where("customerContractId", "=", input.customerContractId)
+      .where("companyId", "=", input.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    const draft = await trx
+      .selectFrom("contractFinancingRequest")
+      .select("id")
+      .where("customerContractId", "=", input.customerContractId)
+      .where("companyId", "=", input.companyId)
+      .where("status", "=", "Draft")
+      .executeTakeFirst();
+    if (draft) {
+      throw new FinancingError(
+        "Submit or delete the Draft request before you create another"
+      );
+    }
     const { terms } = await loadTerms(trx, input);
     const base = {
       companyId: input.companyId,
