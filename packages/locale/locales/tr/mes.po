@@ -339,8 +339,17 @@ msgstr "Carbon Logosu"
 msgid "Cards"
 msgstr "Kartlar"
 
+msgid "Certify and submit"
+msgstr "Onayla ve gönder"
+
+msgid "Certify and Submit"
+msgstr "Onayla ve Gönder"
+
 msgid "Change"
 msgstr "Değiştir"
+
+msgid "Change Time"
+msgstr "Zamanı Değiştir"
 
 msgid "Changelog newsletter"
 msgstr "Değişiklik günlüğü bülteni"
@@ -835,6 +844,9 @@ msgstr "Gerçekte kaç tane alındı?"
 msgid "How many?"
 msgstr "Kaç tane?"
 
+msgid "I certify this statement"
+msgstr "Bu beyanı onaylarım"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Anladığımı ve çıkarmadan tamamlamak istediğimi anlıyorum"
 
@@ -958,6 +970,9 @@ msgstr "Soyadı"
 
 msgid "Last used"
 msgstr "Son kullanılmış"
+
+msgid "Late Entry"
+msgstr "Geç Giriş"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
@@ -1185,6 +1200,9 @@ msgstr "Kullanılabilir seri numarası bulunamadı"
 
 msgid "No available tracked entities found"
 msgstr "Kullanılabilir izlenen varlık bulunamadı"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Sizin için sertifika metni ayarlanmadı. Bir yöneticiden Ayarlar → Zaman içinde ayarlamasını isteyin."
 
 msgid "No dispatches assigned to you"
 msgstr "Size atanmış bakım emri yok"
@@ -1582,6 +1600,12 @@ msgstr "Kuyruk boş"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Reason for change"
+msgstr "Değişiklik Nedeni"
+
+msgid "Reason for late entry"
+msgstr "Geç Giriş Nedeni"
 
 msgid "Reason for rework"
 msgstr "Yeniden işleme nedeni"
@@ -2022,8 +2046,14 @@ msgstr "Etiket"
 msgid "The accent color used across Carbon."
 msgstr "Carbon'da kullanılan vurgu rengi."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Değişiklik ve nedeni zaman tablosunun geçmişinde tutulur."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Tarih giriş penceresinden önce. Neden giriş ile tutulur."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."

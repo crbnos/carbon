@@ -339,8 +339,17 @@ msgstr "Carbon Logo"
 msgid "Cards"
 msgstr "Cards"
 
+msgid "Certify and submit"
+msgstr "Certify and submit"
+
+msgid "Certify and Submit"
+msgstr "Certify and Submit"
+
 msgid "Change"
 msgstr "Change"
+
+msgid "Change Time"
+msgstr "Change Time"
 
 msgid "Changelog newsletter"
 msgstr "Changelog newsletter"
@@ -835,6 +844,9 @@ msgstr "How many were actually picked?"
 msgid "How many?"
 msgstr "How many?"
 
+msgid "I certify this statement"
+msgstr "I certify this statement"
+
 msgid "I understand and want to complete without issuing"
 msgstr "I understand and want to complete without issuing"
 
@@ -958,6 +970,9 @@ msgstr "Last Name"
 
 msgid "Last used"
 msgstr "Last used"
+
+msgid "Late Entry"
+msgstr "Late Entry"
 
 msgid "Learn more"
 msgstr "Learn more"
@@ -1185,6 +1200,9 @@ msgstr "No available serial numbers found"
 
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "No certification text is set for you. Ask an administrator to set it in Settings → Time."
 
 msgid "No dispatches assigned to you"
 msgstr "No dispatches assigned to you"
@@ -1582,6 +1600,12 @@ msgstr "Queue empty"
 
 msgid "Quotes"
 msgstr "Quotes"
+
+msgid "Reason for change"
+msgstr "Reason for change"
+
+msgid "Reason for late entry"
+msgstr "Reason for late entry"
 
 msgid "Reason for rework"
 msgstr "Reason for rework"
@@ -2022,8 +2046,14 @@ msgstr "Tag"
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "The change and its reason are kept in the timesheet's history."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "The date is before the entry window. The reason is kept with the entry."
 
 msgid "The jobs and parts that make up this run."
 msgstr "The jobs and parts that make up this run."

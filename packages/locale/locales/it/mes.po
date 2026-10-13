@@ -339,8 +339,17 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Schede"
 
+msgid "Certify and submit"
+msgstr "Certifica e invia"
+
+msgid "Certify and Submit"
+msgstr "Certifica e Invia"
+
 msgid "Change"
 msgstr "Cambia"
+
+msgid "Change Time"
+msgstr "Cambia ora"
 
 msgid "Changelog newsletter"
 msgstr "Newsletter Changelog"
@@ -835,6 +844,9 @@ msgstr "Quanti sono stati effettivamente prelevati?"
 msgid "How many?"
 msgstr "Quanti?"
 
+msgid "I certify this statement"
+msgstr "Certifico questa dichiarazione"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Comprendo e desidero completare senza prelevare"
 
@@ -958,6 +970,9 @@ msgstr "Cognome"
 
 msgid "Last used"
 msgstr "Ultimo utilizzo"
+
+msgid "Late Entry"
+msgstr "Voce tardiva"
 
 msgid "Learn more"
 msgstr "Per saperne di più"
@@ -1185,6 +1200,9 @@ msgstr "Nessun numero di serie disponibile trovato"
 
 msgid "No available tracked entities found"
 msgstr "Nessuna entità tracciata disponibile trovata"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Nessun testo di certificazione è impostato per te. Chiedi a un amministratore di impostarlo in Impostazioni → Tempo."
 
 msgid "No dispatches assigned to you"
 msgstr "Nessun intervento di manutenzione assegnato"
@@ -1582,6 +1600,12 @@ msgstr "Coda vuota"
 
 msgid "Quotes"
 msgstr "Offerte"
+
+msgid "Reason for change"
+msgstr "Motivo della modifica"
+
+msgid "Reason for late entry"
+msgstr "Motivo dell'inserimento tardivo"
 
 msgid "Reason for rework"
 msgstr "Motivo della rilavorazione"
@@ -2022,8 +2046,14 @@ msgstr "Etichetta"
 msgid "The accent color used across Carbon."
 msgstr "Il colore di accento utilizzato in Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Il cambiamento e il suo motivo vengono conservati nella cronologia del foglio orario."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "La data è precedente alla finestra di voce. Il motivo viene conservato con la voce."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Gli ordini di produzione e i componenti che compongono questa esecuzione."

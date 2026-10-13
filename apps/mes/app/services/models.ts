@@ -498,6 +498,10 @@ export const timesheetCellValidator = z.object({
       .min(0, { message: "Hours cannot be negative" })
       .max(24, { message: "A day has 24 hours" })
   ),
+  // DCAA mode: the reason for a late entry, and for a change to a saved one,
+  // as in the ERP's cell validator.
+  lateReason: zfd.text(z.string().trim().optional()),
+  reason: zfd.text(z.string().trim().optional()),
   // R&D tax: the row's work location and research role, part of the cell's
   // key. A field that is not sent takes its default in save-timesheet-entry;
   // an empty one is none.

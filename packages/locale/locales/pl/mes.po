@@ -339,8 +339,17 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Karty"
 
+msgid "Certify and submit"
+msgstr "Zaświadcz i prześlij"
+
+msgid "Certify and Submit"
+msgstr "Zaświadcz i Prześlij"
+
 msgid "Change"
 msgstr "Zmień"
+
+msgid "Change Time"
+msgstr "Zmień czas"
 
 msgid "Changelog newsletter"
 msgstr "Newsletter zmian"
@@ -835,6 +844,9 @@ msgstr "Ile faktycznie zostało zebrane?"
 msgid "How many?"
 msgstr "Ile?"
 
+msgid "I certify this statement"
+msgstr "Poświadczam to oświadczenie"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Rozumiem i chcę ukończyć bez wydania"
 
@@ -958,6 +970,9 @@ msgstr "Nazwisko"
 
 msgid "Last used"
 msgstr "Ostatnio użyte"
+
+msgid "Late Entry"
+msgstr "Wpis opóźniony"
 
 msgid "Learn more"
 msgstr "Dowiedz się więcej"
@@ -1185,6 +1200,9 @@ msgstr "Nie znaleziono dostępnych numerów seryjnych"
 
 msgid "No available tracked entities found"
 msgstr "Nie znaleziono dostępnych śledzonych jednostek"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Brak tekstu certyfikacji. Poproś administratora, aby ustawił go w Ustawienia → Czas."
 
 msgid "No dispatches assigned to you"
 msgstr "Brak zleceń utrzymania ruchu przydzielonych Tobie"
@@ -1582,6 +1600,12 @@ msgstr "Kolejka pusta"
 
 msgid "Quotes"
 msgstr "Oferty"
+
+msgid "Reason for change"
+msgstr "Przyczyna zmiany"
+
+msgid "Reason for late entry"
+msgstr "Przyczyna opóźnionego wpisu"
 
 msgid "Reason for rework"
 msgstr "Przyczyna poprawki"
@@ -2022,8 +2046,14 @@ msgstr "Tag"
 msgid "The accent color used across Carbon."
 msgstr "Kolor akcentu używany w Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Zmiana i jej przyczyna są przechowywane w historii arkusza czasu."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Ukończona ilość dla tej operacji jest mniejsza niż wymagana ilość {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Data jest przed oknem wpisu. Przyczyna jest przechowywana razem z wpisem."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Zlecenia produkcyjne i części, które składają się na ten przebieg."

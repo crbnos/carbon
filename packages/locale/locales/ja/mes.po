@@ -339,8 +339,17 @@ msgstr "Carbonロゴ"
 msgid "Cards"
 msgstr "カード"
 
+msgid "Certify and submit"
+msgstr "認証して提出"
+
+msgid "Certify and Submit"
+msgstr "認証して提出"
+
 msgid "Change"
 msgstr "変更"
+
+msgid "Change Time"
+msgstr "時間を変更"
 
 msgid "Changelog newsletter"
 msgstr "チェンジログニュースレター"
@@ -835,6 +844,9 @@ msgstr "実際にはいくつ選ばれましたか？"
 msgid "How many?"
 msgstr "いくつ?"
 
+msgid "I certify this statement"
+msgstr "この声明を認証します"
+
 msgid "I understand and want to complete without issuing"
 msgstr "理解した上で払出なしで完了します"
 
@@ -958,6 +970,9 @@ msgstr "姓"
 
 msgid "Last used"
 msgstr "最後に使用"
+
+msgid "Late Entry"
+msgstr "遅延エントリ"
 
 msgid "Learn more"
 msgstr "詳細情報"
@@ -1185,6 +1200,9 @@ msgstr "利用可能なシリアル番号が見つかりません"
 
 msgid "No available tracked entities found"
 msgstr "利用可能な追跡対象エンティティが見つかりません"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "認証テキストが設定されていません。管理者に設定 → 時間で設定するよう依頼してください。"
 
 msgid "No dispatches assigned to you"
 msgstr "あなたに割り当てられた保全指示はありません。"
@@ -1582,6 +1600,12 @@ msgstr "キューが空です"
 
 msgid "Quotes"
 msgstr "見積"
+
+msgid "Reason for change"
+msgstr "変更理由"
+
+msgid "Reason for late entry"
+msgstr "遅延入力の理由"
 
 msgid "Reason for rework"
 msgstr "手直しの理由"
@@ -2022,8 +2046,14 @@ msgstr "タグ"
 msgid "The accent color used across Carbon."
 msgstr "Carbon全体で使用されるアクセントカラー。"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "変更とその理由はタイムシートの履歴に保持されます。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "日付がエントリー期間前です。理由はエントリーと共に保持されます。"
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"

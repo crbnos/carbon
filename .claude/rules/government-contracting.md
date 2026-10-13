@@ -6,6 +6,8 @@ paths:
   - "packages/server-functions/src/save-timesheet-entry/**"
   - "packages/server-functions/src/submit-timesheet-week/**"
   - "apps/erp/app/modules/projects/ui/Timesheet/**"
+  - "apps/mes/app/routes/x+/timesheet.tsx"
+  - "apps/mes/app/components/Timesheet/**"
 ---
 
 # Government contracting (Phases 5a and 5d)
@@ -125,6 +127,24 @@ changes**, `acceptTimesheetReview`), `TimesheetRevisionsPopover`. A manager edit
 `x+/projects+/timesheets.$employeeId.tsx` (`path.to.employeeTimesheet`); access is the
 employee's manager or `update: projects` (`canManageTimesheet`). In Standard mode the
 server refuses another user's save, so that page is read-only.
+
+Which reasons a cell needs is one pure rule, `timesheetCellReasons` (`@carbon/utils`
+`timekeeping.ts`): a reason for a change to a saved entry or any change by another
+user, a late reason for a date before the window. The certification text for an
+FLSA status is `certificationTextFor`, used by both My Time loaders and
+`submit-timesheet-week`. The submit button reads **Submit week** in every mode; with
+approval off the route posts the week and the toast says "Week submitted and posted".
+
+**The MES enforces the same controls** (`apps/mes/app/routes/x+/timesheet.tsx`). Its
+loader returns `controls` (today, the window, the certification text) only under
+DCAA, so Standard mode is unchanged. A future day is read-only except on a leave
+element. A cell that needs a reason opens `TimesheetReasonModal`
+(`apps/mes/app/components/Timesheet/`), which posts the cell with `reason` /
+`lateReason`; a refusal keeps it open and Cancel reverts the cell. **Submit week**
+opens `WeekCertificationModal`, which posts `certificationText` to the action's
+`submit` intent. The MES does not show `TimesheetReviewBanner`: an entry another user
+changed (Pending Employee Review) is locked there, and the server refuses to submit
+its week until the employee accepts it in the ERP.
 
 ## Charge restrictions
 

@@ -5,6 +5,7 @@
 import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import {
+  certificationTextFor,
   dilutionFactor,
   heldProjectRefusal,
   isEntryDateAllowed,
@@ -12,6 +13,7 @@ import {
   TIMESHEET_REFUSAL_NOT_DRAFT,
   TIMESHEET_REFUSAL_POSTED,
   timecardShortfall,
+  timesheetCellReasons,
   timesheetWeek,
   weekStartOf
 } from "./timekeeping";
@@ -55,6 +57,83 @@ describe("isEntryDateAllowed", () => {
         isLeave: true
       })
     ).toEqual({ allowed: true, late: false });
+  });
+});
+
+describe("timesheetCellReasons", () => {
+  const today = "2026-10-09";
+  const base = { today, windowDays: 1, isLeave: false, actorIsOwner: true };
+
+  it("asks for nothing on the owner's new entry inside the window", () => {
+    expect(
+      timesheetCellReasons({ ...base, entryDate: today, hasEntry: false })
+    ).toEqual({ requiresReason: false, requiresLateReason: false });
+  });
+
+  it("asks for a reason when the owner changes a saved entry", () => {
+    expect(
+      timesheetCellReasons({ ...base, entryDate: today, hasEntry: true })
+    ).toEqual({ requiresReason: true, requiresLateReason: false });
+  });
+
+  it("asks for a late reason before the window", () => {
+    expect(
+      timesheetCellReasons({
+        ...base,
+        entryDate: "2026-10-06",
+        hasEntry: false
+      })
+    ).toEqual({ requiresReason: false, requiresLateReason: true });
+    expect(
+      timesheetCellReasons({ ...base, entryDate: "2026-10-06", hasEntry: true })
+    ).toEqual({ requiresReason: true, requiresLateReason: true });
+  });
+
+  it("asks another user for a reason on every change", () => {
+    expect(
+      timesheetCellReasons({
+        ...base,
+        entryDate: today,
+        hasEntry: false,
+        actorIsOwner: false
+      })
+    ).toEqual({ requiresReason: true, requiresLateReason: false });
+  });
+
+  it("asks for no late reason on a future date (the server refuses it)", () => {
+    expect(
+      timesheetCellReasons({
+        ...base,
+        entryDate: "2026-10-12",
+        hasEntry: false
+      })
+    ).toEqual({ requiresReason: false, requiresLateReason: false });
+  });
+});
+
+describe("certificationTextFor", () => {
+  const settings = {
+    certificationTextExempt: "Exempt text",
+    certificationTextNonExempt: "Non-exempt text"
+  };
+
+  it("gives the text for the FLSA status", () => {
+    expect(certificationTextFor("Exempt", settings)).toBe("Exempt text");
+    expect(certificationTextFor("Non-Exempt", settings)).toBe(
+      "Non-exempt text"
+    );
+    // No job row or no status: the Non-Exempt text, as the server picks.
+    expect(certificationTextFor(null, settings)).toBe("Non-exempt text");
+  });
+
+  it("is null when the text is not set", () => {
+    expect(
+      certificationTextFor("Exempt", {
+        ...settings,
+        certificationTextExempt: ""
+      })
+    ).toBeNull();
+    expect(certificationTextFor("Exempt", null)).toBeNull();
   });
 });
 

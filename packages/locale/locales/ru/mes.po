@@ -339,8 +339,17 @@ msgstr "Логотип Carbon"
 msgid "Cards"
 msgstr "Карточки"
 
+msgid "Certify and submit"
+msgstr "Подтвердить и отправить"
+
+msgid "Certify and Submit"
+msgstr "Подтвердить и отправить"
+
 msgid "Change"
 msgstr "Изменить"
+
+msgid "Change Time"
+msgstr "Изменить время"
 
 msgid "Changelog newsletter"
 msgstr "Рассылка журнала изменений"
@@ -835,6 +844,9 @@ msgstr "Сколько было фактически собрано?"
 msgid "How many?"
 msgstr "Сколько?"
 
+msgid "I certify this statement"
+msgstr "Я удостоверяю это заявление"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Я понимаю и хочу завершить без выдачи"
 
@@ -958,6 +970,9 @@ msgstr "Фамилия"
 
 msgid "Last used"
 msgstr "Последнее использование"
+
+msgid "Late Entry"
+msgstr "Поздняя запись"
 
 msgid "Learn more"
 msgstr "Узнать больше"
@@ -1185,6 +1200,9 @@ msgstr "Доступные серийные номера не найдены"
 
 msgid "No available tracked entities found"
 msgstr "Не найдено доступных отслеживаемых объектов"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Для вас не установлен текст сертификации. Попросите администратора установить его в Настройки → Время."
 
 msgid "No dispatches assigned to you"
 msgstr "Вам не назначены никакие заявки на техобслуживание"
@@ -1582,6 +1600,12 @@ msgstr "Очередь пуста"
 
 msgid "Quotes"
 msgstr "Коммерческие предложения"
+
+msgid "Reason for change"
+msgstr "Причина изменения"
+
+msgid "Reason for late entry"
+msgstr "Причина позднего ввода"
 
 msgid "Reason for rework"
 msgstr "Причина доработки"
@@ -2022,8 +2046,14 @@ msgstr "Тег"
 msgid "The accent color used across Carbon."
 msgstr "Цвет акцента, используемый во всём Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "Изменение и его причина хранятся в истории таблицы учёта рабочего времени."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "Дата находится перед окном ввода. Причина хранится с записью."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Производственные заказы и детали, которые составляют этот запуск."

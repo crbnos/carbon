@@ -48,6 +48,50 @@ export function isEntryDateAllowed(args: {
 }
 
 /**
+ * The reasons DCAA mode needs before a timesheet cell saves, so the ERP grid
+ * and the MES week ask for the same ones that `save-timesheet-entry`
+ * requires. A change to a saved entry, and every change by someone other
+ * than the owner, needs a reason (it goes into the correction trail). A
+ * value on a date before the entry window needs a late reason.
+ */
+export function timesheetCellReasons(args: {
+  entryDate: string;
+  today: string;
+  windowDays: number;
+  isLeave: boolean;
+  /** The cell already has a saved entry. */
+  hasEntry: boolean;
+  actorIsOwner: boolean;
+}): { requiresReason: boolean; requiresLateReason: boolean } {
+  const entryWindow = isEntryDateAllowed(args);
+  return {
+    requiresReason: args.hasEntry || !args.actorIsOwner,
+    requiresLateReason: entryWindow.allowed && entryWindow.late
+  };
+}
+
+/**
+ * The certification text for an employee's FLSA status: the Exempt text for
+ * an Exempt employee, else the Non-Exempt text. Null when it is not set.
+ */
+export function certificationTextFor(
+  flsaStatus: string | null | undefined,
+  settings:
+    | {
+        certificationTextExempt: string | null;
+        certificationTextNonExempt: string | null;
+      }
+    | null
+    | undefined
+): string | null {
+  const text =
+    flsaStatus === "Exempt"
+      ? settings?.certificationTextExempt
+      : settings?.certificationTextNonExempt;
+  return text || null;
+}
+
+/**
  * The status a saved change gives an entry. `current` null means a new entry.
  *
  * - Standard mode keeps Phase 1a: the owner edits a new, Draft or Rejected

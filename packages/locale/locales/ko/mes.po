@@ -339,8 +339,17 @@ msgstr "Carbon 로고"
 msgid "Cards"
 msgstr "카드"
 
+msgid "Certify and submit"
+msgstr "인증 및 제출"
+
+msgid "Certify and Submit"
+msgstr "인증 및 제출"
+
 msgid "Change"
 msgstr "변경"
+
+msgid "Change Time"
+msgstr "시간 변경"
 
 msgid "Changelog newsletter"
 msgstr "변경 로그 뉴스레터"
@@ -835,6 +844,9 @@ msgstr "실제로 몇 개를 피킹했습니까?"
 msgid "How many?"
 msgstr "몇 개?"
 
+msgid "I certify this statement"
+msgstr "이 진술을 인증합니다"
+
 msgid "I understand and want to complete without issuing"
 msgstr "이해했으며 출고 없이 완료하겠습니다"
 
@@ -958,6 +970,9 @@ msgstr "성"
 
 msgid "Last used"
 msgstr "마지막 사용"
+
+msgid "Late Entry"
+msgstr "지연 항목"
 
 msgid "Learn more"
 msgstr "자세히 알아보기"
@@ -1185,6 +1200,9 @@ msgstr "가용 시리얼 번호를 찾을 수 없습니다"
 
 msgid "No available tracked entities found"
 msgstr "가용 추적 항목을 찾을 수 없습니다"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "설정된 인증 텍스트가 없습니다. 설정 → 시간에서 설정하도록 관리자에게 요청하세요."
 
 msgid "No dispatches assigned to you"
 msgstr "당신에게 할당된 유지보수 지시가 없습니다"
@@ -1582,6 +1600,12 @@ msgstr "대기열 비었음"
 
 msgid "Quotes"
 msgstr "견적서"
+
+msgid "Reason for change"
+msgstr "변경 사유"
+
+msgid "Reason for late entry"
+msgstr "늦은 입력 사유"
 
 msgid "Reason for rework"
 msgstr "재작업 사유"
@@ -2022,8 +2046,14 @@ msgstr "태그"
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용되는 강조 색상입니다."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "변경 사항과 그 이유는 타임시트의 이력에 보관됩니다."
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "날짜가 입력 윈도우 이전입니다. 이유는 항목과 함께 보관됩니다."
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."

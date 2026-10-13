@@ -339,8 +339,17 @@ msgstr "कार्बन लोगो"
 msgid "Cards"
 msgstr "कार्ड"
 
+msgid "Certify and submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
+msgid "Certify and Submit"
+msgstr "प्रमाणित करें और सबमिट करें"
+
 msgid "Change"
 msgstr "बदलें"
+
+msgid "Change Time"
+msgstr "समय बदलें"
 
 msgid "Changelog newsletter"
 msgstr "परिवर्तनलॉग समाचारपत्र"
@@ -835,6 +844,9 @@ msgstr "वास्तव में कितने चुने गए?"
 msgid "How many?"
 msgstr "कितने?"
 
+msgid "I certify this statement"
+msgstr "मैं इस विवरण को प्रमाणित करता हूं"
+
 msgid "I understand and want to complete without issuing"
 msgstr "मैं समझता हूँ और बिना जारी किए पूरा करना चाहता हूँ"
 
@@ -958,6 +970,9 @@ msgstr "अंतिम नाम"
 
 msgid "Last used"
 msgstr "अंतिम उपयोग"
+
+msgid "Late Entry"
+msgstr "देरी से प्रविष्टि"
 
 msgid "Learn more"
 msgstr "अधिक जानें"
@@ -1185,6 +1200,9 @@ msgstr "कोई उपलब्ध सीरियल नंबर नही�
 
 msgid "No available tracked entities found"
 msgstr "कोई उपलब्ध ट्रैक किए गए इकाइयां नहीं मिलीं"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "आपके लिए कोई प्रमाणपत्र पाठ सेट नहीं है। किसी प्रशासक को सेटिंग्स → समय में इसे सेट करने के लिए कहें।"
 
 msgid "No dispatches assigned to you"
 msgstr "आपको कोई असाइन किया गया रखरखाव कार्य नहीं है"
@@ -1582,6 +1600,12 @@ msgstr "कतार खाली"
 
 msgid "Quotes"
 msgstr "कोटेशन"
+
+msgid "Reason for change"
+msgstr "परिवर्तन का कारण"
+
+msgid "Reason for late entry"
+msgstr "देरी से प्रविष्टि का कारण"
 
 msgid "Reason for rework"
 msgstr "पुनः कार्य का कारण"
@@ -2022,8 +2046,14 @@ msgstr "टैग"
 msgid "The accent color used across Carbon."
 msgstr "Carbon में उपयोग किया जाने वाला उच्चारण रंग।"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "परिवर्तन और इसका कारण टाइमशीट के इतिहास में रखा जाता है।"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "तारीख प्रविष्टि विंडो से पहले है। कारण प्रविष्टि के साथ रखा जाता है।"
 
 msgid "The jobs and parts that make up this run."
 msgstr "जॉब्स और पार्ट्स जो इस रन को बनाते हैं।"

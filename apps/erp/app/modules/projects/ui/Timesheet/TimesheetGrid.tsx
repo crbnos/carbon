@@ -28,7 +28,7 @@ import {
   equals,
   INPUT_FORMAT,
   INPUT_STEP,
-  isEntryDateAllowed
+  timesheetCellReasons
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
@@ -411,15 +411,15 @@ export default function TimesheetGrid({
         hours: String(hours)
       };
       if (controls) {
-        const entryWindow = isEntryDateAllowed({
+        // A manager's every change needs a reason.
+        const { requiresReason, requiresLateReason } = timesheetCellReasons({
           entryDate: day,
           today: controls.today,
           windowDays: controls.windowDays,
-          isLeave: row.isLeave
+          isLeave: row.isLeave,
+          hasEntry: Boolean(cell),
+          actorIsOwner: !employee
         });
-        const requiresLateReason = entryWindow.allowed && entryWindow.late;
-        // A manager's every change needs a reason.
-        const requiresReason = Boolean(cell) || Boolean(employee);
         if (requiresReason || requiresLateReason) {
           return new Promise<Awaited<ReturnType<typeof save>>>((resolve) => {
             setPendingChange({

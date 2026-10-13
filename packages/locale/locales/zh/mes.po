@@ -339,8 +339,17 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Certify and submit"
+msgstr "认证并提交"
+
+msgid "Certify and Submit"
+msgstr "认证并提交"
+
 msgid "Change"
 msgstr "更改"
+
+msgid "Change Time"
+msgstr "更改时间"
 
 msgid "Changelog newsletter"
 msgstr "更新日志通讯"
@@ -835,6 +844,9 @@ msgstr "实际拣了多少？"
 msgid "How many?"
 msgstr "多少个？"
 
+msgid "I certify this statement"
+msgstr "我认证此声明"
+
 msgid "I understand and want to complete without issuing"
 msgstr "我理解并希望在不发放物料的情况下完成"
 
@@ -958,6 +970,9 @@ msgstr "姓氏"
 
 msgid "Last used"
 msgstr "最后使用"
+
+msgid "Late Entry"
+msgstr "迟到条目"
 
 msgid "Learn more"
 msgstr "了解更多"
@@ -1185,6 +1200,9 @@ msgstr "未找到可用的序列号"
 
 msgid "No available tracked entities found"
 msgstr "未找到可用的追踪实体"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "未为您设置认证文本。请要求管理员在设置 → 时间中设置。"
 
 msgid "No dispatches assigned to you"
 msgstr "没有分配给您的维护工单"
@@ -1582,6 +1600,12 @@ msgstr "队列为空"
 
 msgid "Quotes"
 msgstr "报价单"
+
+msgid "Reason for change"
+msgstr "变更原因"
+
+msgid "Reason for late entry"
+msgstr "迟交原因"
 
 msgid "Reason for rework"
 msgstr "返工原因"
@@ -2022,8 +2046,14 @@ msgstr "标签"
 msgid "The accent color used across Carbon."
 msgstr "整个 Carbon 中使用的强调色。"
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "更改及其原因保存在时间表的历史记录中。"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "日期在输入窗口之前。原因与条目一起保存。"
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"

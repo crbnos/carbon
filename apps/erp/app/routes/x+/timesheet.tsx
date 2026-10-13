@@ -4,6 +4,7 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
+import { certificationTextFor } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -65,10 +66,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         today: view.today,
         windowDays: view.settings?.timesheetEntryWindowDays ?? 0,
         revisedEntryIds: view.revisedEntryIds,
-        certificationText:
-          (job.data?.flsaStatus === "Exempt"
-            ? view.settings?.certificationTextExempt
-            : view.settings?.certificationTextNonExempt) ?? null,
+        certificationText: certificationTextFor(
+          job.data?.flsaStatus,
+          view.settings
+        ),
         pendingReview: pendingReview.data ?? []
       }
     : null;

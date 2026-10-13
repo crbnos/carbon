@@ -339,8 +339,17 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Cartões"
 
+msgid "Certify and submit"
+msgstr "Certificar e enviar"
+
+msgid "Certify and Submit"
+msgstr "Certificar e Enviar"
+
 msgid "Change"
 msgstr "Alterar"
+
+msgid "Change Time"
+msgstr "Alterar Hora"
 
 msgid "Changelog newsletter"
 msgstr "Newsletter de alterações"
@@ -835,6 +844,9 @@ msgstr "Quantos foram realmente apanhados?"
 msgid "How many?"
 msgstr "Quantos?"
 
+msgid "I certify this statement"
+msgstr "Certifico esta declaração"
+
 msgid "I understand and want to complete without issuing"
 msgstr "Eu entendo e desejo concluir sem emitir"
 
@@ -958,6 +970,9 @@ msgstr "Sobrenome"
 
 msgid "Last used"
 msgstr "Último uso"
+
+msgid "Late Entry"
+msgstr "Entrada Tardia"
 
 msgid "Learn more"
 msgstr "Saiba mais"
@@ -1185,6 +1200,9 @@ msgstr "Nenhum número de série disponível encontrado"
 
 msgid "No available tracked entities found"
 msgstr "Nenhuma entidade rastreada disponível encontrada"
+
+msgid "No certification text is set for you. Ask an administrator to set it in Settings → Time."
+msgstr "Nenhum texto de certificação está definido para você. Peça a um administrador que o defina em Configurações → Tempo."
 
 msgid "No dispatches assigned to you"
 msgstr "Nenhuma ordem de manutenção atribuída a você"
@@ -1582,6 +1600,12 @@ msgstr "Fila vazia"
 
 msgid "Quotes"
 msgstr "Orçamentos"
+
+msgid "Reason for change"
+msgstr "Motivo da alteração"
+
+msgid "Reason for late entry"
+msgstr "Motivo da entrada atrasada"
 
 msgid "Reason for rework"
 msgstr "Motivo da retrabalhação"
@@ -2022,8 +2046,14 @@ msgstr "Etiqueta"
 msgid "The accent color used across Carbon."
 msgstr "A cor de destaque usada em todo o Carbon."
 
+msgid "The change and its reason are kept in the timesheet's history."
+msgstr "A alteração e sua razão são mantidas no histórico da folha de horas"
+
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "A quantidade concluída para esta operação é menor que a quantidade requerida de {targetQuantity}."
+
+msgid "The date is before the entry window. The reason is kept with the entry."
+msgstr "A data é anterior à janela de entrada. A razão é mantida com a entrada."
 
 msgid "The jobs and parts that make up this run."
 msgstr "As ordens de produção e peças que compõem esta execução."

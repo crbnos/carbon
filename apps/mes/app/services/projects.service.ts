@@ -113,15 +113,16 @@ export async function getChargeNumbers(client: Client, companyId: string) {
 
 /**
  * The company's timesheet settings: whether time needs approval before it
- * posts, and the timekeeping controls (DCAA keeps a future date read-only).
+ * posts, and the timekeeping controls. DCAA mode keeps a future date
+ * read-only, asks for a reason before a late or changed entry saves (the
+ * entry window) and certifies the week (the certification texts).
  */
-export async function getTimesheetApprovalRequired(
-  client: Client,
-  companyId: string
-) {
+export async function getTimesheetSettings(client: Client, companyId: string) {
   return client
     .from("companySettings")
-    .select("timesheetApprovalRequired, timekeepingControls")
+    .select(
+      "timesheetApprovalRequired, timekeepingControls, timesheetEntryWindowDays, certificationTextExempt, certificationTextNonExempt"
+    )
     .eq("id", companyId)
     .maybeSingle();
 }
@@ -277,6 +278,9 @@ export async function saveTimesheetEntry(
       projectElementId: input.projectElementId || null,
       laborCategoryId: input.laborCategoryId,
       hours: input.hours,
+      // DCAA mode: the reasons the server requires; empty is none.
+      lateReason: input.lateReason || undefined,
+      reason: input.reason || undefined,
       // Left out takes the default (job location, category role); "" is none.
       workLocationId:
         input.workLocationId === undefined
@@ -300,6 +304,8 @@ export async function submitTimesheetWeek(
     companyId: string;
     employeeId: string;
     weekStart: string;
+    /** DCAA mode: the certification text the employee confirmed. */
+    certificationText?: string;
     userId: string;
   }
 ) {
@@ -307,7 +313,8 @@ export async function submitTimesheetWeek(
     .system({ db, companyId: args.companyId, userId: args.userId })
     .invoke("submit-timesheet-week", {
       employeeId: args.employeeId,
-      weekStart: args.weekStart
+      weekStart: args.weekStart,
+      certificationText: args.certificationText
     });
 }
 

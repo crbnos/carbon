@@ -10,7 +10,12 @@
 import { createHash } from "node:crypto";
 import { getCompanyTimeZone } from "@carbon/database";
 import { inOrder } from "@carbon/database/rows";
-import { datetime, round, timecardShortfall } from "@carbon/utils";
+import {
+  certificationTextFor,
+  datetime,
+  round,
+  timecardShortfall
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
 import { z } from "zod";
@@ -164,10 +169,7 @@ const submitTimesheetWeek = defineServerFn({
 
         if (drafts.length > 0) {
           const flsaStatus = job?.flsaStatus ?? null;
-          const text =
-            flsaStatus === "Exempt"
-              ? settings?.certificationTextExempt
-              : settings?.certificationTextNonExempt;
+          const text = certificationTextFor(flsaStatus, settings);
           if (!text)
             throw new TimesheetRefusal(TIMESHEET_CERTIFICATION_MISSING);
           if (input.certificationText !== text) {

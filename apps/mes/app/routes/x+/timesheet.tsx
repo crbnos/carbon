@@ -21,17 +21,18 @@ import {
   toast
 } from "@carbon/react";
 import {
-  datetime,
+  certificationTextFor,
   equals,
   formatDate,
   INPUT_FORMAT,
   TIMESHEET_ENTRY_STATUS_COLOR_MAP,
+  timesheetCellReasons,
   timesheetWeek,
   weekStartOf
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   LuChevronLeft,
   LuChevronRight,
@@ -42,6 +43,11 @@ import {
 } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
+import {
+  TimesheetReasonModal,
+  type TimesheetReasons
+} from "~/components/Timesheet/TimesheetReasonModal";
+import { WeekCertificationModal } from "~/components/Timesheet/WeekCertificationModal";
 import { getDatabaseClient } from "~/services/database.server";
 import { timesheetCellValidator } from "~/services/models";
 import { timesheetBudgetWarning } from "~/services/project-budget.server";
@@ -53,7 +59,7 @@ import type {
 import {
   getChargeNumbers,
   getLaborCategoriesList,
-  getTimesheetApprovalRequired,
+  getTimesheetSettings,
   getTimesheetWeek,
   groupTimesheetRows,
   postTimesheetEntries,
@@ -76,9 +82,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // The week runs Monday to Sunday on the company calendar, as My Hours does.
   const timeZone = await getCompanyTimeZone(client, companyId);
-  const { weekStart, weekEnd, days } = timesheetWeek(timeZone, weekOffset);
+  const { weekStart, weekEnd, days, today } = timesheetWeek(
+    timeZone,
+    weekOffset
+  );
 
-  const [entries, chargeNumbers, laborCategories, employeeJob, approval] =
+  const [entries, chargeNumbers, laborCategories, employeeJob, settings] =
     await Promise.all([
       getTimesheetWeek(client, {
         companyId,
@@ -90,11 +99,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
       getLaborCategoriesList(client, companyId),
       client
         .from("employeeJob")
-        .select("laborCategoryId, locationId")
+        .select("laborCategoryId, locationId, flsaStatus")
         .eq("id", userId)
         .eq("companyId", companyId)
         .maybeSingle(),
-      getTimesheetApprovalRequired(client, companyId)
+      getTimesheetSettings(client, companyId)
     ]);
 
   if (entries.error) {
@@ -115,6 +124,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       error: laborCategories.error
     });
   }
+  if (settings.error) {
+    logger.error("Failed to load the timesheet settings", {
+      companyId,
+      error: settings.error
+    });
+  }
 
   return {
     weekOffset,
@@ -126,11 +141,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     laborCategories: laborCategories.data ?? [],
     defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
     jobLocationId: employeeJob.data?.locationId ?? null,
-    // DCAA mode keeps a date after today (company calendar) read-only,
-    // except on a leave element, as the ERP grid and the server do.
-    dcaaToday:
-      approval.data?.timekeepingControls === "DCAA"
-        ? datetime.today(timeZone).toString()
+    // DCAA mode (5a), as the ERP's My Time: today on the company calendar
+    // (a later date is read-only, except on a leave element), the entry
+    // window (an older date needs a late reason) and the certification text
+    // for the employee's FLSA status. Null in Standard mode.
+    controls:
+      settings.data?.timekeepingControls === "DCAA"
+        ? {
+            today,
+            windowDays: settings.data.timesheetEntryWindowDays ?? 0,
+            certificationText: certificationTextFor(
+              employeeJob.data?.flsaStatus,
+              settings.data
+            )
+          }
         : null
   };
 }
@@ -185,11 +209,19 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: false, message: "No week was given" };
     }
 
+    // DCAA mode: the text the employee certified; the server refuses a
+    // week without it, or with a text that is no longer the current one.
+    const certificationText = formData.get("certificationText");
+
     const db = getDatabaseClient();
     const submitted = await submitTimesheetWeek(db, {
       companyId,
       employeeId: userId,
       weekStart: weekStartOf(from),
+      certificationText:
+        typeof certificationText === "string" && certificationText
+          ? certificationText
+          : undefined,
       userId
     });
     if (submitted.error || !submitted.data) {
@@ -215,7 +247,7 @@ export async function action({ request }: ActionFunctionArgs) {
       };
     }
 
-    const settings = await getTimesheetApprovalRequired(client, companyId);
+    const settings = await getTimesheetSettings(client, companyId);
     if (settings.error) {
       logger.error("Failed to load company settings", {
         companyId,
@@ -256,6 +288,18 @@ export async function action({ request }: ActionFunctionArgs) {
   return { success: false, message: "Unknown action" };
 }
 
+/** A cell value that waits for its reasons before it saves (DCAA mode). */
+type PendingChange = {
+  label: string;
+  fields: Record<string, string>;
+  hours: number;
+  previousHours: number | null;
+  requiresReason: boolean;
+  requiresLateReason: boolean;
+  /** Drops the cell's typed value, so it shows the stored hours. */
+  settle: () => void;
+};
+
 type LocalRow = {
   projectId: string;
   projectElementId: string | null;
@@ -275,7 +319,7 @@ export default function MESTimesheetPage() {
     laborCategories,
     defaultLaborCategoryId,
     jobLocationId,
-    dcaaToday
+    controls
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const roleLabels = useMemo<Record<RdActivityRole, string>>(
@@ -288,11 +332,27 @@ export default function MESTimesheetPage() {
     [t]
   );
   const { locale } = useLocale();
+  const [certifying, setCertifying] = useState(false);
   const submitFetcher = useAction<typeof action>({
+    // The certification modal closes whatever the outcome, as in the ERP.
+    onSettled: () => setCertifying(false),
     onSuccess: (data) => {
       if (data.message) toast.success(data.message);
     },
     onError: (data) => toast.error(data.message ?? t`Failed to submit the week`)
+  });
+  const [pendingChange, setPendingChange] = useState<PendingChange | null>(
+    null
+  );
+  const reasonFetcher = useAction<typeof action>({
+    onSuccess: (data) => {
+      // A budget overrun never refuses the hours; it only warns.
+      if (data.message) toast.warning(data.message);
+      pendingChange?.settle();
+      setPendingChange(null);
+    },
+    // A refusal keeps the modal open, so the reason can be fixed.
+    onError: (data) => toast.error(data.message ?? t`Failed to save the hours`)
   });
   const [addingRow, setAddingRow] = useState(false);
   const [addedRows, setAddedRows] = useState<LocalRow[]>([]);
@@ -336,6 +396,7 @@ export default function MESTimesheetPage() {
   const dayLabel = (day: string) =>
     formatDate(day, { weekday: "short", day: "numeric" }, locale);
   const weekTotal = dayTotals.reduce((sum, hours) => sum + hours, 0);
+  const weekLabel = `${formatDate(weekStart, { dateStyle: "medium" }, locale)} – ${formatDate(weekEnd, { dateStyle: "medium" }, locale)}`;
 
   return (
     <div className="flex h-full w-full flex-col gap-4 overflow-hidden p-4 md:p-6">
@@ -355,8 +416,7 @@ export default function MESTimesheetPage() {
             </Link>
           </Button>
           <span className="whitespace-nowrap text-base tabular-nums">
-            {formatDate(weekStart, { dateStyle: "medium" }, locale)} –{" "}
-            {formatDate(weekEnd, { dateStyle: "medium" }, locale)}
+            {weekLabel}
           </span>
           <Button size="lg" variant="ghost" asChild aria-label={t`Next week`}>
             <Link to={`${path.to.timesheet}?week=${weekOffset + 1}`}>
@@ -380,21 +440,34 @@ export default function MESTimesheetPage() {
           >
             <Trans>Add row</Trans>
           </Button>
-          <submitFetcher.Form method="post">
-            <input type="hidden" name="intent" value="submit" />
-            <input type="hidden" name="from" value={weekStart} />
-            <input type="hidden" name="to" value={weekEnd} />
+          {controls ? (
+            // DCAA mode: the week is certified before it is submitted.
             <Button
               size="lg"
-              type="submit"
               leftIcon={<LuSend />}
               isDisabled={!hasDraft || isSubmitting}
               isLoading={isSubmitting}
+              onClick={() => setCertifying(true)}
             >
-              {/* With approval off the week posts too; the toast says so. */}
               <Trans>Submit week</Trans>
             </Button>
-          </submitFetcher.Form>
+          ) : (
+            <submitFetcher.Form method="post">
+              <input type="hidden" name="intent" value="submit" />
+              <input type="hidden" name="from" value={weekStart} />
+              <input type="hidden" name="to" value={weekEnd} />
+              <Button
+                size="lg"
+                type="submit"
+                leftIcon={<LuSend />}
+                isDisabled={!hasDraft || isSubmitting}
+                isLoading={isSubmitting}
+              >
+                {/* With approval off the week posts too; the toast says so. */}
+                <Trans>Submit week</Trans>
+              </Button>
+            </submitFetcher.Form>
+          )}
         </div>
       </div>
 
@@ -461,9 +534,8 @@ export default function MESTimesheetPage() {
                         row={row}
                         day={day}
                         label={dayLabel(day)}
-                        isFuture={
-                          dcaaToday !== null && day > dcaaToday && !row.isLeave
-                        }
+                        controls={controls}
+                        onRequestReasons={setPendingChange}
                       />
                     </td>
                   ))}
@@ -493,6 +565,59 @@ export default function MESTimesheetPage() {
             </tfoot>
           </table>
         </div>
+      )}
+
+      {pendingChange && (
+        <TimesheetReasonModal
+          label={pendingChange.label}
+          before={
+            pendingChange.previousHours === null
+              ? "—"
+              : formatHours(pendingChange.previousHours, locale)
+          }
+          after={formatHours(pendingChange.hours, locale)}
+          requiresReason={pendingChange.requiresReason}
+          requiresLateReason={pendingChange.requiresLateReason}
+          isSaving={reasonFetcher.state !== "idle"}
+          onConfirm={(reasons: TimesheetReasons) =>
+            reasonFetcher.submit(
+              {
+                intent: "cell",
+                ...pendingChange.fields,
+                ...(reasons.reason ? { reason: reasons.reason } : {}),
+                ...(reasons.lateReason
+                  ? { lateReason: reasons.lateReason }
+                  : {})
+              },
+              { method: "post" }
+            )
+          }
+          onCancel={() => {
+            // The cell goes back to its stored hours.
+            pendingChange.settle();
+            setPendingChange(null);
+          }}
+        />
+      )}
+
+      {certifying && controls && (
+        <WeekCertificationModal
+          certificationText={controls.certificationText}
+          weekLabel={weekLabel}
+          isSubmitting={isSubmitting}
+          onSubmit={(certificationText) =>
+            submitFetcher.submit(
+              {
+                intent: "submit",
+                from: weekStart,
+                to: weekEnd,
+                certificationText
+              },
+              { method: "post" }
+            )
+          }
+          onClose={() => setCertifying(false)}
+        />
       )}
 
       {addingRow && (
@@ -527,28 +652,36 @@ function parseHours(text: string) {
 /**
  * One day of a row: a borderless touch cell that saves on blur and on
  * Enter, or the locked hours with their status. A refused save puts the
- * stored hours back. A future day in DCAA mode (`isFuture`) is read-only,
- * as in the ERP grid.
+ * stored hours back. DCAA mode (`controls`), as in the ERP grid: a future
+ * day is read-only except on a leave element, and a change to a saved
+ * entry or a value before the entry window asks for its reasons first
+ * (`onRequestReasons`); the page's modal saves it, or reverts the cell.
  */
 function DayCell({
   row,
   day,
   label,
-  isFuture
+  controls,
+  onRequestReasons
 }: {
   row: TimesheetRow;
   day: string;
   label: string;
-  isFuture: boolean;
+  controls: { today: string; windowDays: number } | null;
+  onRequestReasons: (change: PendingChange) => void;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
   const cell = row.cells[day];
+  const isFuture = controls !== null && day > controls.today && !row.isLeave;
   const serverHours = cell?.hours;
   const shownHours =
     serverHours === undefined ? "" : formatHours(serverHours, locale);
   // The user's typing; the stored hours show while it is null.
   const [draft, setDraft] = useState<string | null>(null);
+  // Escape blurs the input in the same event, before the cleared draft
+  // renders, so the blur must know not to save the typed value.
+  const cancelled = useRef(false);
   const fetcher = useAction<typeof action>({
     onSuccess: (data) => {
       setDraft(null);
@@ -587,6 +720,10 @@ function DayCell({
   }
 
   const commit = () => {
+    if (cancelled.current) {
+      cancelled.current = false;
+      return;
+    }
     if (draft === null) return;
     const hours = parseHours(draft);
     if (hours === null || hours < 0 || hours > 24) {
@@ -598,21 +735,40 @@ function DayCell({
       setDraft(null);
       return;
     }
-    fetcher.submit(
-      {
-        intent: "cell",
+    const fields = {
+      entryDate: day,
+      projectId: row.projectId,
+      projectElementId: row.projectElementId ?? "",
+      laborCategoryId: row.laborCategoryId,
+      // The row's own location and role, so the save edits the row's
+      // entry. "" is none.
+      workLocationId: row.workLocationId ?? "",
+      rdActivityRole: row.rdActivityRole ?? "",
+      hours: String(hours)
+    };
+    if (controls) {
+      const reasons = timesheetCellReasons({
         entryDate: day,
-        projectId: row.projectId,
-        projectElementId: row.projectElementId ?? "",
-        laborCategoryId: row.laborCategoryId,
-        // The row's own location and role, so the save edits the row's
-        // entry. "" is none.
-        workLocationId: row.workLocationId ?? "",
-        rdActivityRole: row.rdActivityRole ?? "",
-        hours: String(hours)
-      },
-      { method: "post" }
-    );
+        today: controls.today,
+        windowDays: controls.windowDays,
+        isLeave: row.isLeave,
+        hasEntry: cell !== undefined,
+        actorIsOwner: true
+      });
+      if (reasons.requiresReason || reasons.requiresLateReason) {
+        // The typed value stays in the cell until the modal settles it.
+        onRequestReasons({
+          label: `${row.readableId} · ${formatDate(day, { dateStyle: "medium" }, locale)}`,
+          fields,
+          hours,
+          previousHours: serverHours ?? null,
+          ...reasons,
+          settle: () => setDraft(null)
+        });
+        return;
+      }
+    }
+    fetcher.submit({ intent: "cell", ...fields }, { method: "post" });
   };
 
   return (
@@ -630,6 +786,7 @@ function DayCell({
       onKeyDown={(event) => {
         if (event.key === "Enter") event.currentTarget.blur();
         if (event.key === "Escape") {
+          cancelled.current = true;
           setDraft(null);
           event.currentTarget.blur();
         }
