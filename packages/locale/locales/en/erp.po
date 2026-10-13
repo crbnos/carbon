@@ -109,6 +109,10 @@ msgstr "{0, plural, one {The planner treats this component as one rigid body —
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
+#. placeholder {0}: file.name
+msgid "{0} · {count} rows"
+msgstr "{0} · {count} rows"
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (type)"
@@ -381,8 +385,8 @@ msgstr "{0}h required"
 msgid "{0}h staffed"
 msgstr "{0}h staffed"
 
-msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
-msgstr "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
+msgid "{account} has posted journal lines, so it cannot be removed."
+msgstr "{account} has posted journal lines, so it cannot be removed."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
@@ -476,8 +480,8 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
-msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
-msgstr "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
+msgid "{label} has journal lines, so it cannot be deleted."
+msgstr "{label} has journal lines, so it cannot be deleted."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# day} other {# days}}"
@@ -514,6 +518,9 @@ msgstr "{name} ends {end} (was {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name} ends {end} (was open-ended)"
+
+msgid "{name} needs an account number."
+msgstr "{name} needs an account number."
 
 msgid "{name} replaced"
 msgstr "{name} replaced"
@@ -564,9 +571,6 @@ msgstr "{remaining, plural, one {# phase left} other {# phases left}}"
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed} planned invoices are removed."
-
-msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
-msgstr "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
@@ -621,6 +625,9 @@ msgstr "{unread} unread"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
+
+msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
+msgstr "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} uploaded — fields filled from the document."
@@ -1526,6 +1533,9 @@ msgstr "Accounting is not set up"
 
 msgid "Accounting is not set up for this company."
 msgstr "Accounting is not set up for this company."
+
+msgid "Accounting is set up for {company}, so the chart of accounts can no longer be imported."
+msgstr "Accounting is set up for {company}, so the chart of accounts can no longer be imported."
 
 msgid "Accounting period"
 msgstr "Accounting period"
@@ -4339,8 +4349,8 @@ msgstr "Carbon posts every document dated on or after this day. Choose the first
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 
-msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
-msgstr "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. The import needs two files: your chart, and the default accounts template filled with your account numbers. To keep Carbon's chart, continue."
+msgstr "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. The import needs two files: your chart, and the default accounts template filled with your account numbers. To keep Carbon's chart, continue."
 
 msgid "Carbon value"
 msgstr "Carbon value"
@@ -4549,6 +4559,23 @@ msgstr "Charges"
 
 msgid "Chart"
 msgstr "Chart"
+
+#. placeholder {0}: error.line
+msgid "Chart line {0}: a new account needs a class."
+msgstr "Chart line {0}: a new account needs a class."
+
+#. placeholder {0}: error.line
+msgid "Chart line {0}: Migration Clearing must be an Equity account."
+msgstr "Chart line {0}: Migration Clearing must be an Equity account."
+
+msgid "Chart line {line}: group \"{group}\" holds accounts of another class."
+msgstr "Chart line {line}: group \"{group}\" holds accounts of another class."
+
+msgid "Chart line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr "Chart line {line}: name \"{value}\" is already on line {firstLine}."
+
+msgid "Chart line {line}: number {value} is already on line {firstLine}."
+msgstr "Chart line {line}: number {value} is already on line {firstLine}."
 
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
@@ -6587,7 +6614,6 @@ msgstr "Days Remaining"
 msgid "Deactivate"
 msgstr "Deactivate"
 
-#. placeholder {0}: account.name
 #. placeholder {0}: workCenter.name
 msgid "Deactivate {0}"
 msgstr "Deactivate {0}"
@@ -6621,9 +6647,6 @@ msgstr "Deactivate Users"
 
 msgid "Deactivate Work Center"
 msgstr "Deactivate Work Center"
-
-msgid "Deactivated (has history)"
-msgstr "Deactivated (has history)"
 
 msgid "Deadline type"
 msgstr "Deadline type"
@@ -6684,14 +6707,14 @@ msgstr "Deep in the small hours, {name}."
 msgid "Default"
 msgstr "Default"
 
-msgid "Default account"
-msgstr "Default account"
-
 msgid "Default Account"
 msgstr "Default Account"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Default account for posting sales revenue from invoices"
+
+msgid "Default accounts"
+msgstr "Default accounts"
 
 msgid "Default Accounts"
 msgstr "Default Accounts"
@@ -6714,8 +6737,14 @@ msgstr "Default accounts for tax-related transactions"
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "Default accounts for the cost of goods sold and indirect purchases"
 
-msgid "Default accounts moved"
-msgstr "Default accounts moved"
+msgid "Default accounts line {line}: \"{value}\" is not a default account."
+msgstr "Default accounts line {line}: \"{value}\" is not a default account."
+
+msgid "Default accounts line {line}: {name} is already on line {firstLine}."
+msgstr "Default accounts line {line}: {name} is already on line {firstLine}."
+
+msgid "Default accounts line {line}: account {value} is not in the chart."
+msgstr "Default accounts line {line}: account {value} is not in the chart."
 
 msgid "Default Approver"
 msgstr "Default Approver"
@@ -7675,9 +7704,6 @@ msgstr "Download {0} row(s) to fix"
 msgid "Download CSV"
 msgstr "Download CSV"
 
-msgid "Download current chart"
-msgstr "Download current chart"
-
 msgid "Download Labels"
 msgstr "Download Labels"
 
@@ -7690,8 +7716,8 @@ msgstr "Download PDF"
 msgid "Download template"
 msgstr "Download template"
 
-msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
-msgstr "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
+msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
+msgstr "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
 
 msgid "Draft"
 msgstr "Draft"
@@ -9099,6 +9125,9 @@ msgstr "Export CSV"
 msgid "Export Lines to CSV"
 msgstr "Export Lines to CSV"
 
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
+msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
+
 msgid "Extended Price"
 msgstr "Extended Price"
 
@@ -9764,8 +9793,8 @@ msgstr "Fit view"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Fix the problems with this workflow before testing it"
 
-msgid "Fix these in the file, then upload it again"
-msgstr "Fix these in the file, then upload it again"
+msgid "Fix these in the files, then upload them again"
+msgstr "Fix these in the files, then upload them again"
 
 msgid "Fix these jobs before releasing"
 msgstr "Fix these jobs before releasing"
@@ -10460,9 +10489,6 @@ msgstr "Hours/1000 Pieces"
 
 msgid "Hours/Piece"
 msgstr "Hours/Piece"
-
-msgid "How"
-msgstr "How"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
@@ -11980,36 +12006,24 @@ msgid "Line {0}"
 msgstr "Line {0}"
 
 #. placeholder {0}: error.line
+msgid "Line {0} has no account name."
+msgstr "Line {0} has no account name."
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no account number."
+msgstr "Line {0} has no account number."
+
+#. placeholder {0}: error.line
 msgid "Line {0} has no group."
 msgstr "Line {0} has no group."
 
 #. placeholder {0}: error.line
-msgid "Line {0} has no name."
-msgstr "Line {0} has no name."
-
-#. placeholder {0}: error.line
-msgid "Line {0} has no number."
-msgstr "Line {0} has no number."
+msgid "Line {0} has no key."
+msgstr "Line {0} has no key."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
 msgstr "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-msgstr "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: {account} has postings, so its class cannot change."
-msgstr "Line {0}: {account} has postings, so its class cannot change."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: a new account needs a class."
-msgstr "Line {0}: a new account needs a class."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: Migration Clearing must be an Equity account."
-msgstr "Line {0}: Migration Clearing must be an Equity account."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
@@ -12026,36 +12040,8 @@ msgstr "Line {line} ({accountNumber}): the debit \"{value}\" is not a positive n
 msgid "Line {line} has no account number."
 msgstr "Line {line} has no account number."
 
-msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
-msgstr "Line {line}: \"{value}\" is not a Carbon account number or role."
-
-msgid "Line {line}: \"{value}\" is not an account type."
-msgstr "Line {line}: \"{value}\" is not an account type."
-
-msgid "Line {line}: {account} is already named on line {firstLine}."
-msgstr "Line {line}: {account} is already named on line {firstLine}."
-
-#. placeholder {0}: error.field
-#. placeholder {1}: error.field
-msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-msgstr "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
-
-msgid "Line {line}: group \"{group}\" holds accounts of another class."
-msgstr "Line {line}: group \"{group}\" holds accounts of another class."
-
-#. placeholder {0}: error.field
-#. placeholder {1}: error.field
-msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-msgstr "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-
-msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
-msgstr "Line {line}: name \"{value}\" is already on line {firstLine}."
-
-msgid "Line {line}: number {value} is already on line {firstLine}."
-msgstr "Line {line}: number {value} is already on line {firstLine}."
 
 msgid "Line description (optional)"
 msgstr "Line description (optional)"
@@ -12159,9 +12145,6 @@ msgstr "List View"
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
-
-msgid "Live"
-msgstr "Live"
 
 msgid "Live on Carbon"
 msgstr "Live on Carbon"
@@ -12829,9 +12812,6 @@ msgstr "Merchant"
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr "Merge {0} lots"
-
-msgid "Merge into"
-msgstr "Merge into"
 
 msgid "Merge output lots"
 msgstr "Merge output lots"
@@ -14258,9 +14238,6 @@ msgstr "No revenue to recognize for this period."
 
 msgid "No risks"
 msgstr "No risks"
-
-msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
-msgstr "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
 
 msgid "No rows here."
 msgstr "No rows here."
@@ -17028,9 +17005,6 @@ msgstr "Re-send"
 msgid "Reactivate"
 msgstr "Reactivate"
 
-msgid "Reactivated"
-msgstr "Reactivated"
-
 msgid "Reactivation"
 msgstr "Reactivation"
 
@@ -17221,9 +17195,6 @@ msgstr "Recently used"
 msgid "Recertify Every (Days)"
 msgstr "Recertify Every (Days)"
 
-msgid "Reclass journals"
-msgstr "Reclass journals"
-
 msgid "Recognition"
 msgstr "Recognition"
 
@@ -17302,6 +17273,9 @@ msgstr "Records"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "Records and posted journals are being sent to and received from this provider."
 
+msgid "Records moved"
+msgstr "Records moved"
+
 msgid "Recost"
 msgstr "Recost"
 
@@ -17341,12 +17315,6 @@ msgstr "Reduced"
 
 msgid "Reference"
 msgstr "Reference"
-
-msgid "References"
-msgstr "References"
-
-msgid "References moved"
-msgstr "References moved"
 
 msgid "Refresh"
 msgstr "Refresh"
@@ -17640,9 +17608,6 @@ msgstr "Rename"
 msgid "Rename Workflow"
 msgstr "Rename Workflow"
 
-msgid "Renamed"
-msgstr "Renamed"
-
 msgid "Rendering label preview..."
 msgstr "Rendering label preview..."
 
@@ -17748,8 +17713,14 @@ msgstr "Repeat Run"
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "Repeats once for each item in {inputLabel}"
 
-msgid "Replace Carbon's default chart with your own, from a CSV"
-msgstr "Replace Carbon's default chart with your own, from a CSV"
+msgid "Replace Carbon's default chart with your own, before you set up accounting"
+msgstr "Replace Carbon's default chart with your own, before you set up accounting"
+
+msgid "Replace chart"
+msgstr "Replace chart"
+
+msgid "Replace defaults"
+msgstr "Replace defaults"
 
 msgid "Replace drawing?"
 msgstr "Replace drawing?"
@@ -17762,6 +17733,9 @@ msgstr "Replace PDF"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
+
+msgid "Replace with"
+msgstr "Replace with"
 
 msgid "Replacement Order"
 msgstr "Replacement Order"
@@ -18047,9 +18021,6 @@ msgstr "Retained Earnings"
 
 msgid "Retained Earnings (default)"
 msgstr "Retained Earnings (default)"
-
-msgid "Retired"
-msgstr "Retired"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
@@ -19856,9 +19827,6 @@ msgstr "Show documents and activity"
 msgid "Show Durations"
 msgstr "Show Durations"
 
-msgid "Show inactive"
-msgstr "Show inactive"
-
 msgid "Show keyboard shortcuts"
 msgstr "Show keyboard shortcuts"
 
@@ -21195,6 +21163,9 @@ msgstr "The {0} phases to go live, each ending at a checkpoint. Tick off each ta
 msgid "The accent color used across Carbon."
 msgstr "The accent color used across Carbon."
 
+msgid "The account picked for {account} is no longer in the chart."
+msgstr "The account picked for {account} is no longer in the chart."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "The accounting dimension that categorizes items for reporting and analysis."
 
@@ -21312,8 +21283,8 @@ msgstr "The category this customer belongs to (OEM, distributor, end-user, inter
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 
-msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
-msgstr "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
+msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
+msgstr "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
@@ -22088,9 +22059,6 @@ msgstr "The system a company uses to manage its people's logins — Okta, Entra 
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 
-msgid "The target picked for {account} is no longer in the file."
-msgstr "The target picked for {account} is no longer in the file."
-
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 
@@ -22238,8 +22206,8 @@ msgstr "There's no setup, labor, or machine time on these operations, so there's
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "There's nothing outstanding to apply these credits to."
 
-msgid "These accounts need a target"
-msgstr "These accounts need a target"
+msgid "These accounts need a replacement"
+msgstr "These accounts need a replacement"
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "These custom fields will only be available for entities with the same tags"
@@ -22282,6 +22250,9 @@ msgstr "These rows link to data outside this company, so they could never be res
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+
+msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
+msgstr "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
 
 msgid "this ability"
 msgstr "this ability"
@@ -23592,11 +23563,17 @@ msgstr "Upload"
 msgid "Upload a PDF first"
 msgstr "Upload a PDF first"
 
+msgid "Upload chart"
+msgstr "Upload chart"
+
 msgid "Upload completed but no file path returned"
 msgstr "Upload completed but no file path returned"
 
 msgid "Upload CSV"
 msgstr "Upload CSV"
+
+msgid "Upload defaults"
+msgstr "Upload defaults"
 
 msgid "Upload failed. Please try again."
 msgstr "Upload failed. Please try again."
@@ -23680,6 +23657,9 @@ msgstr "Use metric system for default material dimensions."
 
 msgid "Use Sub-Assembly"
 msgstr "Use Sub-Assembly"
+
+msgid "Used by"
+msgstr "Used by"
 
 msgid "Used in"
 msgstr "Used in"
@@ -24974,9 +24954,6 @@ msgstr "Your books and how money flows."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "Your changes go into a new draft version released with this change notice."
-
-msgid "Your chart"
-msgstr "Your chart"
 
 msgid "Your Console PIN"
 msgstr "Your Console PIN"

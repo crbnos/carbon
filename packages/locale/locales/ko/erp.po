@@ -109,6 +109,10 @@ msgstr "{0, plural, one {플래너는 이 부품을 하나의 강체로 취급�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
 
+#. placeholder {0}: file.name
+msgid "{0} · {count} rows"
+msgstr "{0} · {count} 행"
+
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
 msgstr "{0} (유형)"
@@ -381,8 +385,8 @@ msgstr "{0}h 필요"
 msgid "{0}h staffed"
 msgstr "{0}시간 인원배치"
 
-msgid "{account} has postings and backs a control account. Rename it, but do not merge or remove it."
-msgstr "{account}은(는) 전기를 가지고 있으며 제어 계정을 지원합니다. 이름을 바꾸되, 병합하거나 제거하지 마세요."
+msgid "{account} has posted journal lines, so it cannot be removed."
+msgstr "{account}에는 전기된 전표 라인이 있어 제거할 수 없습니다."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품 건너뜀 — 이미 미결 작업 지시가 있음"
@@ -476,8 +480,8 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
-msgid "{label} has postings, so it cannot be deleted. Deactivate it instead: it stays in reports and history, and no longer appears in account pickers."
-msgstr "{label}은(는) 전기를 가지고 있으므로 삭제할 수 없습니다. 대신 비활성화하세요: 보고서와 이력에 남아 있으며 계정 선택기에 더 이상 나타나지 않습니다."
+msgid "{label} has journal lines, so it cannot be deleted."
+msgstr "{label}에는 전표 라인이 있어 삭제할 수 없습니다."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#일}}"
@@ -514,6 +518,9 @@ msgstr "{name}은 {end}에 끝남 (이전: {was})"
 
 msgid "{name} ends {end} (was open-ended)"
 msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
+
+msgid "{name} needs an account number."
+msgstr "{name}은 계정 번호가 필요합니다."
 
 msgid "{name} replaced"
 msgstr "{name} 대체됨"
@@ -564,9 +571,6 @@ msgstr "{remaining}단계 남음"
 
 msgid "{removed} planned invoices are removed."
 msgstr "{removed}개 계획됨 송장이 제거됨"
-
-msgid "{renamed} renamed · {merged} merged · {created} new · {retired} retired · {journals} reclass journals"
-msgstr "{renamed}개 이름 변경됨 · {merged}개 병합됨 · {created}개 신규 · {retired}개 폐기됨 · {journals}개 재분류 전표"
 
 msgid "{resourceCount} resources · {reservationCount} reservations · {jobCount} jobs"
 msgstr "{resourceCount}개 자원 · {reservationCount}개 예약 · {jobCount}개 작업 지시"
@@ -621,6 +625,9 @@ msgstr "{unread} 미읽음"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
+
+msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
+msgstr "{updated} 업데이트됨 · {created} 신규 · {merged} 병합됨 · {deleted} 삭제됨"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -1526,6 +1533,9 @@ msgstr "회계가 설정되지 않았습니다"
 
 msgid "Accounting is not set up for this company."
 msgstr "이 회사에 회계가 설정되지 않았습니다."
+
+msgid "Accounting is set up for {company}, so the chart of accounts can no longer be imported."
+msgstr "{company}에 회계가 설정되어 있어서 더 이상 계정과목표를 가져올 수 없습니다."
 
 msgid "Accounting period"
 msgstr "회계 기간"
@@ -4339,8 +4349,8 @@ msgstr "Carbon는 이 날짜 이후의 모든 문서를 전기합니다. 현재 
 msgid "Carbon posts the opening journal, posts every journal dated on or after the cutover date, and closes the periods before it."
 msgstr "Carbon는 개시 전표를 전기하고, 기준일 이후의 모든 전표를 전기하며, 그 이전 기간을 마감합니다."
 
-msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. To keep Carbon's chart, continue."
-msgstr "Carbon은 모든 회사를 기본 계정과목표로 시작합니다. 계정을 번호로 일치시키는 시산표 전에 지금 자신의 계정과목표를 가져오기하세요. Carbon의 계정과목표를 유지하려면 계속하세요."
+msgid "Carbon starts every company on its default chart. Import your own chart now, before the trial balance, which matches accounts by number. The import needs two files: your chart, and the default accounts template filled with your account numbers. To keep Carbon's chart, continue."
+msgstr "Carbon은 모든 회사를 기본 계정과목표로 시작합니다. 시산표 전에 지금 자신의 계정과목표를 가져오세요. 시산표는 계정을 번호로 매칭합니다. 가져오기에는 두 개의 파일이 필요합니다: 자신의 계정과목표와 계정 번호로 채운 기본 계정과목 템플릿. Carbon의 계정과목표를 유지하려면 계속하세요."
 
 msgid "Carbon value"
 msgstr "Carbon 값"
@@ -4549,6 +4559,23 @@ msgstr "청구"
 
 msgid "Chart"
 msgstr "차트"
+
+#. placeholder {0}: error.line
+msgid "Chart line {0}: a new account needs a class."
+msgstr "계정과목표 라인 {0}: 새 계정에 분류가 필요합니다."
+
+#. placeholder {0}: error.line
+msgid "Chart line {0}: Migration Clearing must be an Equity account."
+msgstr "계정과목표 라인 {0}: 마이그레이션 청산은 자본 계정이어야 합니다."
+
+msgid "Chart line {line}: group \"{group}\" holds accounts of another class."
+msgstr "계정과목표 라인 {line}: \"{group}\" 그룹에는 다른 분류의 계정이 포함되어 있습니다."
+
+msgid "Chart line {line}: name \"{value}\" is already on line {firstLine}."
+msgstr "계정과목표 라인 {line}: \"{value}\" 이름이 이미 라인 {firstLine}에 있습니다."
+
+msgid "Chart line {line}: number {value} is already on line {firstLine}."
+msgstr "계정과목표 라인 {line}: {value} 번호가 이미 라인 {firstLine}에 있습니다."
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -6587,7 +6614,6 @@ msgstr "남은 일수"
 msgid "Deactivate"
 msgstr "비활성화"
 
-#. placeholder {0}: account.name
 #. placeholder {0}: workCenter.name
 msgid "Deactivate {0}"
 msgstr "{0} 비활성화"
@@ -6621,9 +6647,6 @@ msgstr "사용자 비활성화"
 
 msgid "Deactivate Work Center"
 msgstr "작업장 비활성화"
-
-msgid "Deactivated (has history)"
-msgstr "비활성화됨(이력 보유)"
 
 msgid "Deadline type"
 msgstr "마감일 유형"
@@ -6684,14 +6707,14 @@ msgstr "{name}님, 한밤중이군요."
 msgid "Default"
 msgstr "기본값"
 
-msgid "Default account"
-msgstr "기본 계정"
-
 msgid "Default Account"
 msgstr "기본 계정"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "송장에서 매출을 전기하기 위한 기본 계정"
+
+msgid "Default accounts"
+msgstr "기본 계정과목"
 
 msgid "Default Accounts"
 msgstr "기본 계정"
@@ -6714,8 +6737,14 @@ msgstr "세금 관련 거래에 대한 기본 계정"
 msgid "Default accounts for the cost of goods sold and indirect purchases"
 msgstr "매출원가와 간접 구매를 위한 기본 계정"
 
-msgid "Default accounts moved"
-msgstr "기본 계정이 이동됨"
+msgid "Default accounts line {line}: \"{value}\" is not a default account."
+msgstr "기본 계정과목 라인 {line}: \"{value}\"은 기본 계정과목이 아닙니다."
+
+msgid "Default accounts line {line}: {name} is already on line {firstLine}."
+msgstr "기본 계정과목 라인 {line}: {name}은 이미 라인 {firstLine}에 있습니다."
+
+msgid "Default accounts line {line}: account {value} is not in the chart."
+msgstr "기본 계정과목 라인 {line}: 계정 {value}가 계정과목표에 없습니다."
 
 msgid "Default Approver"
 msgstr "기본 승인자"
@@ -7675,9 +7704,6 @@ msgstr "수정할 {0}개 행 다운로드"
 msgid "Download CSV"
 msgstr "CSV 다운로드"
 
-msgid "Download current chart"
-msgstr "현재 계정과목표 다운로드"
-
 msgid "Download Labels"
 msgstr "라벨 다운로드"
 
@@ -7690,8 +7716,8 @@ msgstr "PDF 다운로드"
 msgid "Download template"
 msgstr "템플릿 다운로드"
 
-msgid "Download the current chart and edit it in a spreadsheet to match your chart. Change a row to rename that account. Delete a row to retire the account. Add a row with no Carbon Account to create one. Name two Carbon accounts on one row, separated by \";\", to merge them."
-msgstr "현재 계정과목표를 다운로드하고 스프레드시트에서 편집하여 자신의 계정과목표와 일치시키세요. 행을 변경하여 해당 계정의 이름을 바꾸세요. 행을 삭제하여 계정을 폐기하세요. Carbon 계정 없이 행을 추가하여 새 계정을 생성하세요. 한 행에 두 개의 Carbon 계정을 「;」로 구분하여 표시하고 병합하세요."
+msgid "Download the template. Each row is a default account Carbon posts to. In Account Number, enter the number of the account in your chart that takes it. Carbon updates the default account to match."
+msgstr "템플릿을 다운로드합니다. 각 행은 Carbon이 전기하는 기본 계정과목입니다. 계정 번호에 자신의 계정과목표에서 이를 담당할 계정의 번호를 입력합니다. Carbon은 기본 계정과목을 이에 맞게 업데이트합니다."
 
 msgid "Draft"
 msgstr "초안"
@@ -9099,6 +9125,9 @@ msgstr "CSV 내보내기"
 msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
 
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
+msgstr "현재 시스템에서 계정과목표를 CSV로 내보냅니다. 계정당 하나의 행으로 번호, 이름, 분류, 유형 및 그룹을 포함합니다. Carbon은 이 파일의 계정만 유지합니다."
+
 msgid "Extended Price"
 msgstr "확장 가격"
 
@@ -9764,8 +9793,8 @@ msgstr "보기에 맞춤"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "테스트하기 전에 이 워크플로우의 문제를 해결하십시오"
 
-msgid "Fix these in the file, then upload it again"
-msgstr "파일에서 이를 수정한 다음 다시 업로드하세요"
+msgid "Fix these in the files, then upload them again"
+msgstr "파일에서 수정한 후 다시 업로드합니다."
 
 msgid "Fix these jobs before releasing"
 msgstr "릴리스하기 전에 이 작업 지시들을 수정하세요"
@@ -10460,9 +10489,6 @@ msgstr "시간/1000개"
 
 msgid "Hours/Piece"
 msgstr "시간/개"
-
-msgid "How"
-msgstr "방법"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
@@ -11980,36 +12006,24 @@ msgid "Line {0}"
 msgstr "라인 {0}"
 
 #. placeholder {0}: error.line
+msgid "Line {0} has no account name."
+msgstr "라인 {0}에 계정 이름이 없습니다."
+
+#. placeholder {0}: error.line
+msgid "Line {0} has no account number."
+msgstr "라인 {0}에 계정 번호가 없습니다."
+
+#. placeholder {0}: error.line
 msgid "Line {0} has no group."
 msgstr "라인 {0}에 그룹이 없습니다."
 
 #. placeholder {0}: error.line
-msgid "Line {0} has no name."
-msgstr "라인 {0}에 이름이 없습니다."
-
-#. placeholder {0}: error.line
-msgid "Line {0} has no number."
-msgstr "라인 {0}에 번호가 없습니다."
+msgid "Line {0} has no key."
+msgstr "라인 {0}에 키가 없습니다."
 
 #. placeholder {0}: error.line
 msgid "Line {0}: \"{value}\" is not a class. Use Asset, Liability, Equity, Revenue or Expense."
 msgstr "라인 {0}: 「{value}」은(는) 클래스가 아닙니다. Asset, Liability, Equity, Revenue 또는 Expense를 사용하세요."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: {account} has a different class. It backs a default account, so its class cannot change."
-msgstr "라인 {0}: {account}은(는) 다른 클래스를 가지고 있습니다. 기본 계정을 지원하므로 그 클래스를 변경할 수 없습니다."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: {account} has postings, so its class cannot change."
-msgstr "라인 {0}: {account}은(는) 전기를 가지고 있으므로 그 클래스를 변경할 수 없습니다."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: a new account needs a class."
-msgstr "라인 {0}: 새 계정에는 클래스가 필요합니다."
-
-#. placeholder {0}: error.line
-msgid "Line {0}: Migration Clearing must be an Equity account."
-msgstr "라인 {0}: Migration Clearing은(는) Equity 계정이어야 합니다."
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "라인 {line} ({accountNumber}): 대변 \"{value}\"에 쉼표가 있습니다. 금액은 소수점을 마침표로 표기하고 천단위 구분기호 없이 입력하세요(예: 1234.56)."
@@ -12026,36 +12040,8 @@ msgstr "라인 {line} ({accountNumber}): 차변 \"{value}\"이(가) 양수가 �
 msgid "Line {line} has no account number."
 msgstr "라인 {line}에 계정 번호가 없습니다."
 
-msgid "Line {line}: \"{value}\" is not a Carbon account number or role."
-msgstr "라인 {line}: 「{value}」은(는) Carbon 계정 번호 또는 역할이 아닙니다."
-
-msgid "Line {line}: \"{value}\" is not an account type."
-msgstr "라인 {line}: 「{value}」은(는) 계정 유형이 아닙니다."
-
-msgid "Line {line}: {account} is already named on line {firstLine}."
-msgstr "라인 {line}: {account}은(는) 이미 라인 {firstLine}에 명명되어 있습니다."
-
-#. placeholder {0}: error.field
-#. placeholder {1}: error.field
-msgid "Line {line}: {account} keeps this {0} after the import, because it has history. Pick another {1}."
-msgstr "라인 {line}: {account}은(는) 이력이 있으므로 가져오기 후 이 {0}을(를) 유지합니다. 다른 {1}을(를) 선택하세요."
-
 msgid "Line {line}: account {accountNumber} is already on line {firstLine}. Put each account on one line."
 msgstr "라인 {line}: 계정 {accountNumber}은(는) 이미 라인 {firstLine}에 있습니다. 각 계정을 한 라인에만 넣으세요."
-
-msgid "Line {line}: group \"{group}\" holds accounts of another class."
-msgstr "라인 {line}: 그룹 「{group}」은(는) 다른 클래스의 계정을 보유하고 있습니다."
-
-#. placeholder {0}: error.field
-#. placeholder {1}: error.field
-msgid "Line {line}: inactive account {account} holds this {0}. Name it in Carbon Account to reactivate it, or pick another {1}."
-msgstr "라인 {line}: 비활성 계정 {account}이(가) 이 {0}을(를) 보유하고 있습니다. Carbon 계정에서 이름을 지어 재활성화하거나 다른 {1}을(를) 선택하세요."
-
-msgid "Line {line}: name \"{value}\" is already on line {firstLine}."
-msgstr "라인 {line}: 이름 「{value}」은(는) 이미 라인 {firstLine}에 있습니다."
-
-msgid "Line {line}: number {value} is already on line {firstLine}."
-msgstr "라인 {line}: 번호 {value}은(는) 이미 라인 {firstLine}에 있습니다."
 
 msgid "Line description (optional)"
 msgstr "행 설명 (선택 사항)"
@@ -12159,9 +12145,6 @@ msgstr "목록 보기"
 #. placeholder {1}: inputLabel(batch.second)
 msgid "Lists are wired into both {0} and {1}, so this step cannot tell which one to repeat over. Leave a list on only one of them."
 msgstr "{0}과 {1} 모두에 목록이 연결되어 있어서 이 단계에서 어느 것을 반복할지 알 수 없습니다. 목록을 하나에만 남기세요."
-
-msgid "Live"
-msgstr "실시간"
 
 msgid "Live on Carbon"
 msgstr "Carbon 도입 완료"
@@ -12829,9 +12812,6 @@ msgstr "가맹점"
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr "{0} 로트 병합"
-
-msgid "Merge into"
-msgstr "병합"
 
 msgid "Merge output lots"
 msgstr "생산 로트 병합"
@@ -14258,9 +14238,6 @@ msgstr "이 기간에 인식할 매출이 없습니다."
 
 msgid "No risks"
 msgstr "리스크 없음"
-
-msgid "No row names them, but they are still in use. Pick the account in your chart that takes over their references, default roles and balance."
-msgstr "어떤 행도 이들을 참조하지 않지만 여전히 사용 중입니다. 이들의 참조, 기본 역할 및 잔액을 인수받을 차트의 계정을 선택하세요."
 
 msgid "No rows here."
 msgstr "행이 없습니다."
@@ -17028,9 +17005,6 @@ msgstr "다시 보내기"
 msgid "Reactivate"
 msgstr "재활성화"
 
-msgid "Reactivated"
-msgstr "재활성화됨"
-
 msgid "Reactivation"
 msgstr "재활성화"
 
@@ -17221,9 +17195,6 @@ msgstr "최근 사용"
 msgid "Recertify Every (Days)"
 msgstr "매 (Days)마다 재인증"
 
-msgid "Reclass journals"
-msgstr "전표 재분류"
-
 msgid "Recognition"
 msgstr "인식"
 
@@ -17302,6 +17273,9 @@ msgstr "레코드"
 msgid "Records and posted journals are being sent to and received from this provider."
 msgstr "기록 및 전기된 전표가 이 공급자에게 송수신되고 있습니다."
 
+msgid "Records moved"
+msgstr "레코드 이동"
+
 msgid "Recost"
 msgstr "원가 재계산"
 
@@ -17341,12 +17315,6 @@ msgstr "수월한 검사"
 
 msgid "Reference"
 msgstr "참조"
-
-msgid "References"
-msgstr "참조"
-
-msgid "References moved"
-msgstr "참조 이동됨"
 
 msgid "Refresh"
 msgstr "새로고침"
@@ -17640,9 +17608,6 @@ msgstr "이름 바꾸기"
 msgid "Rename Workflow"
 msgstr "워크플로우 이름 바꾸기"
 
-msgid "Renamed"
-msgstr "이름 변경됨"
-
 msgid "Rendering label preview..."
 msgstr "라벨 미리보기 생성 중..."
 
@@ -17748,8 +17713,14 @@ msgstr "반복 실행"
 msgid "Repeats once for each item in {inputLabel}"
 msgstr "{inputLabel}의 각 항목에 대해 한 번씩 반복됩니다"
 
-msgid "Replace Carbon's default chart with your own, from a CSV"
-msgstr "CSV에서 Carbon의 기본 차트를 자신의 차트로 바꾸세요"
+msgid "Replace Carbon's default chart with your own, before you set up accounting"
+msgstr "회계를 설정하기 전에 Carbon의 기본 계정과목표를 자신의 것으로 교체합니다."
+
+msgid "Replace chart"
+msgstr "계정과목표 교체"
+
+msgid "Replace defaults"
+msgstr "기본값 교체"
 
 msgid "Replace drawing?"
 msgstr "도면을 교체하시겠습니까?"
@@ -17762,6 +17733,9 @@ msgstr "PDF 교체"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "이 회사의 데이터를 데모 데이터셋으로 교체합니다 — 먼저 스냅샷을 저장하여 나중에 복원할 수 있습니다."
+
+msgid "Replace with"
+msgstr "다음으로 교체"
 
 msgid "Replacement Order"
 msgstr "대체 주문"
@@ -18047,9 +18021,6 @@ msgstr "이익잉여금"
 
 msgid "Retained Earnings (default)"
 msgstr "이익잉여금(기본값)"
-
-msgid "Retired"
-msgstr "폐기됨"
 
 msgid "Retiring an asset from service by scrapping or sale, booking any gain or loss against net book value and setting its status to Disposed."
 msgstr "폐기 또는 매각을 통해 자산을 운용에서 제외하고, 순장부가액 대비 손익을 계상한 후 상태를 '처분됨'으로 설정하는 것."
@@ -19856,9 +19827,6 @@ msgstr "세부 사항 표시"
 msgid "Show Durations"
 msgstr "소요 시간 표시"
 
-msgid "Show inactive"
-msgstr "비활성 표시"
-
 msgid "Show keyboard shortcuts"
 msgstr "키보드 단축키 표시"
 
@@ -21195,6 +21163,9 @@ msgstr "도입까지 {0}단계이며, 각 단계는 체크포인트로 마무리
 msgid "The accent color used across Carbon."
 msgstr "Carbon 전체에서 사용하는 강조 색상"
 
+msgid "The account picked for {account} is no longer in the chart."
+msgstr "{account}에 선택된 계정이 더 이상 계정과목표에 없습니다."
+
 msgid "The accounting dimension that categorizes items for reporting and analysis."
 msgstr "보고 및 분석을 위해 항목을 분류하는 회계 차원입니다."
 
@@ -21312,8 +21283,8 @@ msgstr "이 고객이 속하는 카테고리(OEM, 유통업체, 최종 사용자
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁제조업체)로, 기본 총계정원장 계정과 보고 그룹을 결정합니다."
 
-msgid "The chart is shared by every company in the group. These companies have documents, default accounts or balances that move."
-msgstr "차트는 그룹의 모든 회사에서 공유됩니다. 이 회사들은 이동되는 문서, 기본 계정 또는 잔액을 가지고 있습니다."
+msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
+msgstr "계정과목표는 그룹의 모든 회사가 공유합니다. 이 회사들은 다른 계정으로 이동하는 초안 문서 또는 전기되지 않은 전표를 가지고 있습니다."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "선택한 서비스 라인이 새 초안 계약으로 이동하며, 이 계약은 일정에 따라 송장을 발행합니다. 주문은 이들을 송장 발행됨으로 계산합니다."
@@ -22088,9 +22059,6 @@ msgstr "회사가 인원의 로그인을 관리하기 위해 사용하는 시스
 msgid "The system passes every in-scope acceptance test in your configured system, with your data; the data is validated; and you sign off. Then go-live."
 msgstr "설정된 시스템에서 귀사 데이터로 범위 내 모든 인수 테스트를 통과하고, 데이터가 검증되며, 귀사가 최종 승인합니다. 그다음 실제 가동을 시작합니다."
 
-msgid "The target picked for {account} is no longer in the file."
-msgstr "{account}에 대해 선택한 대상이 더 이상 파일에 없습니다."
-
 msgid "The thread linking a sales RFQ, its quote, and the resulting sales order — a join, not a document with its own status."
 msgstr "영업 견적 요청, 그 견적서, 그리고 결과 수주를 연결하는 스레드입니다. 자체 상태가 있는 문서가 아니라 조인입니다."
 
@@ -22238,8 +22206,8 @@ msgstr "이 공정에는 셋업, 노무 또는 기계 시간이 없어서 실행
 msgid "There's nothing outstanding to apply these credits to."
 msgstr "이 크레딧을 적용할 미결제 항목이 없습니다."
 
-msgid "These accounts need a target"
-msgstr "이 계정들은 대상이 필요합니다"
+msgid "These accounts need a replacement"
+msgstr "이 계정에는 대체 계정이 필요합니다."
 
 msgid "These custom fields will only be available for entities with the same tags"
 msgstr "이러한 사용자 정의 필드는 동일한 태그를 가진 엔터티에만 사용 가능합니다."
@@ -22282,6 +22250,9 @@ msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원�
 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자산에서 제거하고 개시 전표를 전기합니다."
+
+msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
+msgstr "이 계정들은 자신의 계정과목표에 없지만 초안 문서 또는 전기되지 않은 전표가 사용합니다. 자신의 계정과목표에서 각각을 대체할 계정을 선택합니다."
 
 msgid "this ability"
 msgstr "이 역량"
@@ -23592,11 +23563,17 @@ msgstr "업로드"
 msgid "Upload a PDF first"
 msgstr "먼저 PDF를 업로드하세요"
 
+msgid "Upload chart"
+msgstr "계정과목표 업로드"
+
 msgid "Upload completed but no file path returned"
 msgstr "업로드는 완료되었지만 파일 경로가 반환되지 않았습니다"
 
 msgid "Upload CSV"
 msgstr "CSV 업로드"
+
+msgid "Upload defaults"
+msgstr "기본값 업로드"
 
 msgid "Upload failed. Please try again."
 msgstr "업로드에 실패했습니다. 다시 시도해 주세요."
@@ -23680,6 +23657,9 @@ msgstr "기본 자재 치수에 미터법 시스템 사용"
 
 msgid "Use Sub-Assembly"
 msgstr "하위 어셈블리 사용"
+
+msgid "Used by"
+msgstr "사용처"
 
 msgid "Used in"
 msgstr "사용 위치"
@@ -24971,9 +24951,6 @@ msgstr "귀사의 장부와 자금 흐름."
 
 msgid "Your changes go into a new draft version released with this change notice."
 msgstr "변경사항이 이 변경 통지로 릴리스된 새로운 초안 버전으로 이동합니다."
-
-msgid "Your chart"
-msgstr "귀사의 차트"
 
 msgid "Your Console PIN"
 msgstr "콘솔 PIN"
