@@ -644,6 +644,10 @@ export const path = {
       generatePath(`${x}/contract/${id}/confirm`),
     contractDetails: (id: string) =>
       generatePath(`${x}/contract/${id}/details`),
+    contractFinancing: (id: string) =>
+      generatePath(`${x}/contract/${id}/financing`),
+    contractFinancingRequest: (id: string, requestId: string) =>
+      generatePath(`${x}/contract/${id}/financing/${requestId}`),
     contractInvoice: (id: string) =>
       generatePath(`${x}/contract/${id}/invoice`),
     contractLine: (id: string, lineId: string) =>
@@ -1161,6 +1165,8 @@ export const path = {
     file: {
       batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      contractFinancingRequest: (requestId: string) =>
+        generatePath(`${file}/contract/financing/${requestId}.pdf`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       jobTravelerByJobId: (jobId: string) =>
         generatePath(`${file}/job/${jobId}/traveler.pdf`),

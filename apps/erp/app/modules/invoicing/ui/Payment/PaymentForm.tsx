@@ -94,6 +94,8 @@ type PaymentFormProps = {
   // Documents the "Deposit for" picker offers. Omitted = no picker (the saved
   // ids still round-trip through the hidden fields).
   depositDocuments?: DepositDocument[];
+  // A contract financing request the new payment receives.
+  financingRequestId?: string;
 };
 
 /**
@@ -104,7 +106,8 @@ type PaymentFormProps = {
 const PaymentForm = ({
   initialValues,
   seedInvoiceIds,
-  depositDocuments
+  depositDocuments,
+  financingRequestId
 }: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
@@ -240,6 +243,9 @@ const PaymentForm = ({
           value={depositIds.customerContractId}
         />
         {isEditing && <Hidden name="paymentId" />}
+        {financingRequestId && (
+          <Hidden name="financingRequestId" value={financingRequestId} />
+        )}
         {seedInvoiceIds && seedInvoiceIds.length > 0 && (
           <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
         )}

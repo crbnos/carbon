@@ -158,6 +158,11 @@ msgstr "{0, plural, one {Планировщик рассматривает эт�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
 
+#. placeholder {0}: request.financingMethod
+#. placeholder {1}: formatDate(request.costsThroughDate)
+msgid "{0} · costs through {1}"
+msgstr ""
+
 #. placeholder {0}: project.name
 msgid "{0} (template)"
 msgstr "{0} (шаблон)"
@@ -1032,6 +1037,9 @@ msgstr "Подрядчик — контактное лицо поставщик�
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "Исправление, которое перемещает проведенное время на другой номер расчета. В режиме DCAA оно всегда ожидает утверждения, и лицо, которое его попросило, не может его утвердить."
+
+msgid "A Cumulative event bills only after every event before it."
+msgstr ""
 
 msgid "A custom solution to meet your needs"
 msgstr "Пользовательское решение для удовлетворения ваших потребностей."
@@ -2175,6 +2183,9 @@ msgstr "Добавить сотрудника"
 msgid "Add Entry"
 msgstr "Добавить запись"
 
+msgid "Add Event"
+msgstr ""
+
 msgid "Add Expense"
 msgstr "Добавить расход"
 
@@ -2388,6 +2399,9 @@ msgstr "Добавьте следующую возможность в ту же 
 
 msgid "Add the operations that make this item."
 msgstr "Добавить операции, которые производят эту номенклатуру."
+
+msgid "Add the rates before the first request."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Добавьте эту TXT запись на хосте DNS, затем нажмите Проверить. Изменения DNS могут занять несколько минут на распространение."
@@ -2719,11 +2733,17 @@ msgstr "Изменения"
 msgid "Amount"
 msgstr "Сумма"
 
+msgid "Amount of this request"
+msgstr ""
+
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Сумма, которая увеличивает активы/расходы или уменьшает обязательства/собственный капитал/выручку на этой строке."
 
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "Сумма, которая увеличивает обязательства/собственный капитал/выручку или уменьшает активы/расходы на этой строке."
+
+msgid "Amount the contracting officer approved"
+msgstr ""
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -3139,6 +3159,9 @@ msgstr "Утвердить"
 
 msgid "Approve all"
 msgstr "Утвердить все"
+
+msgid "Approve Request"
+msgstr ""
 
 msgid "Approved"
 msgstr "Утверждено"
@@ -4448,6 +4471,9 @@ msgstr "Выставляет счета до отмены"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Пусто = рассчитывается из периода переаттестации навыка"
+
+msgid "Blank uses the estimate at completion of the contract's projects"
+msgstr ""
 
 msgid "Blind"
 msgstr "Слепой"
@@ -5823,6 +5849,9 @@ msgstr "Завершить все"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Завершить все количества при сканировании завершения канбана"
 
+msgid "Complete Event"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "Завершить работу"
 
@@ -5863,6 +5892,9 @@ msgstr "Завершение этого обучения предоставля�
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
 
+msgid "Completion criteria"
+msgstr ""
+
 msgid "Completion Date"
 msgstr "Дата завершения"
 
@@ -5902,6 +5934,9 @@ msgstr "Рассчитать ставки фрингов, накладных р�
 
 msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr "Рассчитать фактические ставки за период, провести коррекцию накладных расходов и выставить счета по накладным расходам на строках Cost Plus."
+
+msgid "Computed"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6246,6 +6281,12 @@ msgstr "Дата закрытия контракта"
 msgid "Contract Close Date"
 msgstr "Дата закрытия контракта"
 
+msgid "Contract Financing"
+msgstr ""
+
+msgid "Contract financing needs a contract in the company's base currency."
+msgstr ""
+
 msgid "Contract Line"
 msgstr "Строка контракта"
 
@@ -6254,6 +6295,9 @@ msgstr "Строки контракта"
 
 msgid "Contract Loss Provision"
 msgstr "Резерв на убыток по контракту"
+
+msgid "Contract price"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "Настройка контракта"
@@ -6785,6 +6829,9 @@ msgstr "Затраты"
 msgid "Costs posted"
 msgstr "Затраты проведены"
 
+msgid "Costs through"
+msgstr ""
+
 msgid "Costs, with children"
 msgstr "Себестоимость, с дочерними элементами"
 
@@ -7312,6 +7359,9 @@ msgstr "Кумулятивный %"
 msgid "Cumulative cost claimed and billed, by contract"
 msgstr "Кумулятивные затраты заявлены и выставлены по счетам по контракту"
 
+msgid "Cumulative value"
+msgstr ""
+
 msgid "Currencies"
 msgstr "Валюты"
 
@@ -7386,6 +7436,9 @@ msgstr "Пользовательское SOW · мы управляем"
 
 msgid "Custom…"
 msgstr "Пользовательский…"
+
+msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
+msgstr ""
 
 msgid "customer"
 msgstr "покупатель"
@@ -8905,6 +8958,9 @@ msgstr "Черновые операции"
 msgid "Draft only"
 msgstr "Только черновик"
 
+msgid "Draft Request"
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Создает черновик кредит-ноты за время, уже выставленное счетом после даты окончания."
 
@@ -9630,6 +9686,9 @@ msgstr "отредактировано <0/>"
 msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "Редактирование <0>{0}</0>: {1}. Изменения переходят на этот запрос на изменение."
 
+msgid "Effective"
+msgstr ""
+
 msgid "Effective From"
 msgstr "Действует с"
 
@@ -10120,6 +10179,9 @@ msgstr "Приблизительно — нет резервирования м�
 msgid "Estimated <0>{0}</0>"
 msgstr "Расчетный <0>{0}</0>"
 
+msgid "Estimated cost to complete"
+msgstr ""
+
 msgid "Estimated Duration"
 msgstr "Предполагаемая продолжительность"
 
@@ -10128,6 +10190,9 @@ msgstr "Расчетная продолжительность (минуты)"
 
 msgid "Estimated hours"
 msgstr "Расчётные часы"
+
+msgid "Estimated on"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "Предполагаемое количество брака"
@@ -10155,6 +10220,9 @@ msgstr "Добрый вечер, {name}."
 
 msgid "Event"
 msgstr "Событие"
+
+msgid "Event code"
+msgstr ""
 
 msgid "Event Type"
 msgstr "Тип события"
@@ -10227,6 +10295,9 @@ msgstr "Все остальное включает сотрудников, им�
 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Всё, что производится в этом цикле, попадает в одну партию. Цех не может это менять."
+
+msgid "Evidence"
+msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
@@ -11125,6 +11196,9 @@ msgstr "Финансовые отчеты"
 
 msgid "Financing"
 msgstr "Финансирование"
+
+msgid "Financing Terms"
+msgstr ""
 
 msgid "Find an element"
 msgstr "Найти элемент"
@@ -12641,6 +12715,9 @@ msgstr "Унаследовано от родительской группы."
 msgid "inherits {inheritedName}"
 msgstr "от {inheritedName}"
 
+msgid "Initial award"
+msgstr ""
+
 msgid "Input"
 msgstr "Ввод"
 
@@ -13801,6 +13878,10 @@ msgstr "Строка"
 msgid "Line {0}"
 msgstr "Строка {0}"
 
+#. placeholder {0}: SF1443_LINE_LABELS[editing]
+msgid "Line {editing}: {0}"
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Строка {line} ({accountNumber}): кредит «{value}» содержит запятую. Введите суммы с точкой для десятичных знаков и без разделителя тысяч, например 1234.56."
 
@@ -13925,6 +14006,9 @@ msgstr "Связанный ПО"
 
 msgid "Links"
 msgstr "Ссылки"
+
+msgid "Liquidation rate"
+msgstr ""
 
 msgid "List"
 msgstr "Список"
@@ -14617,6 +14701,9 @@ msgstr "Максимальное количество заказа"
 
 msgid "Maximum Order:"
 msgstr "Максимальный заказ:"
+
+msgid "Maximum share of price (PBP)"
+msgstr ""
 
 msgid "MCP Command"
 msgstr "Команда MCP"
@@ -15398,6 +15485,9 @@ msgstr "Новый платеж"
 msgid "New Payment Term"
 msgstr "Новые условия оплаты"
 
+msgid "New PBP Request"
+msgstr ""
+
 msgid "New Picking List"
 msgstr "Новый лист отбора"
 
@@ -15418,6 +15508,9 @@ msgstr "Новая процедура"
 
 msgid "New Process"
 msgstr "Новый процесс"
+
+msgid "New Progress Payment Request"
+msgstr ""
 
 msgid "New Project"
 msgstr "Новый проект"
@@ -15448,6 +15541,9 @@ msgstr "Создана новая запись"
 
 msgid "New Rental Agreement"
 msgstr "Новое соглашение аренды"
+
+msgid "New Request"
+msgstr ""
 
 msgid "New Requirement"
 msgstr "Новое требование"
@@ -16264,6 +16360,9 @@ msgstr "Ключи доступа еще не зарегистрированы."
 msgid "No payables"
 msgstr "Нет кредиторской задолженности"
 
+msgid "No payment events yet."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "Платежей пока нет."
 
@@ -16383,6 +16482,9 @@ msgstr "Никакие отчеты не соответствуют вашему
 
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "Ни один представитель этой организации еще не принял Carbon GovCloud Rider. Администратор этой организации должен принять его перед тем, как кто-либо сможет получить доступ к Carbon — персонал Carbon не может принять его от вас."
+
+msgid "No requests yet."
+msgstr ""
 
 msgid "No resolution yet"
 msgstr "Решение еще не получено"
@@ -17654,6 +17756,9 @@ msgstr "Переопределение классификации"
 msgid "Override Coverage"
 msgstr "Переопределение покрытия"
 
+msgid "Override line {line}"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Для переопределения требуется право доступа inventory:update и причина."
 
@@ -17951,6 +18056,9 @@ msgstr "Дата платежа"
 
 msgid "Payment depends on success"
 msgstr "Платеж зависит от успеха"
+
+msgid "Payment Events"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "Платеж от Покупателя"
@@ -18905,6 +19013,12 @@ msgstr "Прогресс"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Прогресс — это стоимость этого элемента по сравнению с его расчетом при завершении"
+
+msgid "Progress payment rate"
+msgstr ""
+
+msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
+msgstr ""
 
 msgid "Project"
 msgstr "Проект"
@@ -19909,6 +20023,9 @@ msgstr "Учесть авансовый платеж"
 msgid "Record inspections tied to a part and a job"
 msgstr "Зарегистрировать контроль, связанный с деталью и производственным заказом"
 
+msgid "Record Payment"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Запишите выплату {displayId} сотруднику. Оплатите меньше итого к оплате, чтобы рассчитаться частично."
 
@@ -20453,17 +20570,33 @@ msgstr "Переоценка с сегодняшними правилами и �
 msgid "Reprint"
 msgstr "Перепечать"
 
+msgid "Request"
+msgstr ""
+
+#. placeholder {0}: request.requestNumber
+msgid "Request {0}"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "Запросить новое приглашение"
 
 msgid "Request Approval"
 msgstr "Запросить утверждение"
 
+msgid "Request date"
+msgstr ""
+
+msgid "Requested"
+msgstr ""
+
 msgid "Requested By"
 msgstr "Запрошено"
 
 msgid "Requested Date"
 msgstr "Запрошенная дата"
+
+msgid "Requests"
+msgstr ""
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
@@ -22897,6 +23030,9 @@ msgstr "Слайды"
 msgid "SLIN"
 msgstr "SLIN"
 
+msgid "Small business"
+msgstr ""
+
 msgid "Smallest child"
 msgstr "Самый маленький дочерний элемент"
 
@@ -24568,6 +24704,9 @@ msgstr "Техническая схема, к которой привязан д
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 msgstr "Окно ввода, проверка табеля, разведение и сертификация, которую сотрудник подписывает при отправке."
 
+msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "Вечерние часы, {name}."
 
@@ -25035,6 +25174,9 @@ msgstr "Ставка применяется с этого периода до к
 
 msgid "The rate the burden run applies to project cost"
 msgstr "Ставка, которую запуск нагрузки применяет к себестоимости проекта"
+
+msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Сырьё и материалы, которые вы покупаете и используете"
@@ -26142,6 +26284,9 @@ msgstr "Общая стоимость строительства:"
 msgid "Total Cost"
 msgstr "Общая стоимость"
 
+msgid "Total costs incurred to date"
+msgstr ""
+
 msgid "Total Direct Cost"
 msgstr "Итоговая прямая себестоимость"
 
@@ -26689,6 +26834,10 @@ msgstr "Отменить связь возврата с заказом пост�
 msgid "Unlink RMA from sales order?"
 msgstr "Отменить связь RMA с заказом покупателя?"
 
+#. placeholder {0}: formatMoney.format(financing.unliquidated)
+msgid "Unliquidated: {0}"
+msgstr ""
+
 msgid "Unlock"
 msgstr "Разблокировать"
 
@@ -27131,6 +27280,15 @@ msgstr "Проверка задания..."
 
 msgid "Value"
 msgstr "Значение"
+
+msgid "Value (blank uses the computed value)"
+msgstr ""
+
+msgid "Value of events completed earlier"
+msgstr ""
+
+msgid "Value of the events in this request"
+msgstr ""
 
 msgid "Value Snapshot"
 msgstr "Снимок стоимости"
@@ -28135,6 +28293,9 @@ msgstr "Кто вам поставляет."
 msgid "Who you sell to and at what price."
 msgstr "Кому вы продаёте и по какой цене."
 
+msgid "Whole contract"
+msgstr ""
+
 msgid "Why"
 msgstr "Почему"
 
@@ -28174,6 +28335,9 @@ msgstr "Незавершенное производство"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "с {0} резервом"
+
+msgid "Withdraw"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Без листа отбора операторы отбирают материал со вкладки Сканирование."

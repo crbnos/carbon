@@ -158,6 +158,11 @@ msgstr "{0, plural, one {Planlama motoru bu bileşeni tek bir rijit gövde olara
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: request.financingMethod
+#. placeholder {1}: formatDate(request.costsThroughDate)
+msgid "{0} · costs through {1}"
+msgstr ""
+
 #. placeholder {0}: project.name
 msgid "{0} (template)"
 msgstr "{0} (şablon)"
@@ -1032,6 +1037,9 @@ msgstr "Taşeron, belirli yetkinliklere ve kullanılabilir saatlere sahip bir te
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "Muhasebeleştirildi zamanı başka bir masraf numarasına taşıyan bir düzeltme. DCAA modunda her zaman onay bekler ve bunu talep eden kişi onaylayamaz."
+
+msgid "A Cumulative event bills only after every event before it."
+msgstr ""
 
 msgid "A custom solution to meet your needs"
 msgstr "Sizin ihtiyaçlarınızı karşılamak için özel bir çözüm"
@@ -2175,6 +2183,9 @@ msgstr "Çalışan Ekle"
 msgid "Add Entry"
 msgstr "Giri Ekle"
 
+msgid "Add Event"
+msgstr ""
+
 msgid "Add Expense"
 msgstr "Gider Ekle"
 
@@ -2388,6 +2399,9 @@ msgstr "Aynı sistem üzerinde bir sonraki özelliği ekleyin, başka bir araç 
 
 msgid "Add the operations that make this item."
 msgstr "Bu stok kartını üreten operasyonları ekleyin."
+
+msgid "Add the rates before the first request."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Bu TXT kaydını DNS sağlayıcınıza ekleyin, ardından Doğrula'ya tıklayın. DNS değişiklikleri yaygınlaştırılması birkaç dakika sürebilir."
@@ -2719,11 +2733,17 @@ msgstr "Düzeltmeler"
 msgid "Amount"
 msgstr "Tutar"
 
+msgid "Amount of this request"
+msgstr ""
+
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Bu satırda varlıkları/giderleri artıran veya yükümlülükleri/özkaynağı/hasılatı azaltan tutar."
 
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "Bu satırda yükümlülükleri/özkaynağı/hasılatı artıran veya varlıkları/giderleri azaltan tutar."
+
+msgid "Amount the contracting officer approved"
+msgstr ""
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -3139,6 +3159,9 @@ msgstr "Onayla"
 
 msgid "Approve all"
 msgstr "Tümünü onayla"
+
+msgid "Approve Request"
+msgstr ""
 
 msgid "Approved"
 msgstr "Onaylandı"
@@ -4448,6 +4471,9 @@ msgstr "İptal edilene kadar faturalandırır"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Boş = yetkinliğin yeniden sertifikasyon döneminden hesaplanır"
+
+msgid "Blank uses the estimate at completion of the contract's projects"
+msgstr ""
 
 msgid "Blind"
 msgstr "Kör"
@@ -5823,6 +5849,9 @@ msgstr "Tümünü Tamamla"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Kanban tamamlama taramasında tüm miktarları tamamla"
 
+msgid "Complete Event"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "İşi Tamamla"
 
@@ -5863,6 +5892,9 @@ msgstr "Bu eğitimi tamamlamak seçilen yetkinliği verir veya yeniler."
 msgid "Completion Barcode"
 msgstr "Tamamlama Barkodu"
 
+msgid "Completion criteria"
+msgstr ""
+
 msgid "Completion Date"
 msgstr "Tamamlama Tarihi"
 
@@ -5902,6 +5934,9 @@ msgstr "Çalışan yardımcı maliyetleri, Genel üretim giderleri ve Genel ve �
 
 msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr "Dönem için Gerçek oranları hesaplayın, yük telafi farkını muhasebeleştirin ve Maliyet Artı satırlarında yükü faturalayın."
+
+msgid "Computed"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6246,6 +6281,12 @@ msgstr "Sözleşme kapatma tarihi"
 msgid "Contract Close Date"
 msgstr "Sözleşme Kapatma Tarihi"
 
+msgid "Contract Financing"
+msgstr ""
+
+msgid "Contract financing needs a contract in the company's base currency."
+msgstr ""
+
 msgid "Contract Line"
 msgstr "Sözleşme Satırı"
 
@@ -6254,6 +6295,9 @@ msgstr "Sözleşme Satırları"
 
 msgid "Contract Loss Provision"
 msgstr "Sözleşme Kaybı Karşılığı"
+
+msgid "Contract price"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "Sözleşme kurulumu"
@@ -6785,6 +6829,9 @@ msgstr "Maliyetler"
 msgid "Costs posted"
 msgstr "Muhasebeleştirilen Maliyetler"
 
+msgid "Costs through"
+msgstr ""
+
 msgid "Costs, with children"
 msgstr "Maliyetler, alt öğeler dahil"
 
@@ -7312,6 +7359,9 @@ msgstr "Kümülatif %"
 msgid "Cumulative cost claimed and billed, by contract"
 msgstr "Sözleşmeye göre talep edilen ve faturalandırılan birikmiş maliyet"
 
+msgid "Cumulative value"
+msgstr ""
+
 msgid "Currencies"
 msgstr "Para birimleri"
 
@@ -7386,6 +7436,9 @@ msgstr "Özel SOW · biz yönetiriz"
 
 msgid "Custom…"
 msgstr "Özel…"
+
+msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
+msgstr ""
 
 msgid "customer"
 msgstr "müşteri"
@@ -8905,6 +8958,9 @@ msgstr "Taslak Muhasebe fişi girişleri"
 msgid "Draft only"
 msgstr "Yalnızca taslak"
 
+msgid "Draft Request"
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Bitiş Tarihinden Sonra Zaten Faturalandırılan Zaman İçin Bir Alacak Dekontu Taslağı Oluşturur."
 
@@ -9630,6 +9686,9 @@ msgstr "düzenlenmiş <0/>"
 msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "Düzenleme <0>{0}</0>: {1}. Değişiklikler bu değişiklik isteğine gider."
 
+msgid "Effective"
+msgstr ""
+
 msgid "Effective From"
 msgstr "Geçerlilik Tarihi"
 
@@ -10120,6 +10179,9 @@ msgstr "Tahmini — kapasite rezervasyonu yok"
 msgid "Estimated <0>{0}</0>"
 msgstr "Tahmini <0>{0}</0>"
 
+msgid "Estimated cost to complete"
+msgstr ""
+
 msgid "Estimated Duration"
 msgstr "Tahmini Süre"
 
@@ -10128,6 +10190,9 @@ msgstr "Tahmini Süre (dakika)"
 
 msgid "Estimated hours"
 msgstr "Tahmini Saatler"
+
+msgid "Estimated on"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "Tahmini Fire Miktarı"
@@ -10155,6 +10220,9 @@ msgstr "Akşam, {name}."
 
 msgid "Event"
 msgstr "Etkinlik"
+
+msgid "Event code"
+msgstr ""
 
 msgid "Event Type"
 msgstr "Olay Türü"
@@ -10227,6 +10295,9 @@ msgstr "Geri kalan her şey personel, içe aktarmalar, entegrasyonlar ve API'yi 
 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Bu çalışmanın ürettiği her şey bir Lota iniş yapar. Atölye bunu değiştiremez."
+
+msgid "Evidence"
+msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
@@ -11125,6 +11196,9 @@ msgstr "Mali Tablolar"
 
 msgid "Financing"
 msgstr "Finansman"
+
+msgid "Financing Terms"
+msgstr ""
 
 msgid "Find an element"
 msgstr "Bir öğe bul"
@@ -12641,6 +12715,9 @@ msgstr "Ana gruptan devralınan."
 msgid "inherits {inheritedName}"
 msgstr "devralınan {inheritedName}"
 
+msgid "Initial award"
+msgstr ""
+
 msgid "Input"
 msgstr "Giriş"
 
@@ -13801,6 +13878,10 @@ msgstr "Satır"
 msgid "Line {0}"
 msgstr "Satır {0}"
 
+#. placeholder {0}: SF1443_LINE_LABELS[editing]
+msgid "Line {editing}: {0}"
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Satır {line} ({accountNumber}): alacak \"{value}\" virgül içeriyor. Tutarları ondalık için nokta kullanarak ve binlik ayırıcı olmadan yazın, örneğin 1234,56."
 
@@ -13925,6 +14006,9 @@ msgstr "Bağlantılı Sipariş"
 
 msgid "Links"
 msgstr "Bağlantılar"
+
+msgid "Liquidation rate"
+msgstr ""
 
 msgid "List"
 msgstr "Liste"
@@ -14617,6 +14701,9 @@ msgstr "Maksimum Sipariş Miktarı"
 
 msgid "Maximum Order:"
 msgstr "Maksimum Sipariş:"
+
+msgid "Maximum share of price (PBP)"
+msgstr ""
 
 msgid "MCP Command"
 msgstr "MCP Komutu"
@@ -15398,6 +15485,9 @@ msgstr "Yeni Ödeme"
 msgid "New Payment Term"
 msgstr "Yeni ödeme koşulu"
 
+msgid "New PBP Request"
+msgstr ""
+
 msgid "New Picking List"
 msgstr "Yeni Toplama Listesi"
 
@@ -15418,6 +15508,9 @@ msgstr "Yeni Prosedür"
 
 msgid "New Process"
 msgstr "Yeni Süreç"
+
+msgid "New Progress Payment Request"
+msgstr ""
 
 msgid "New Project"
 msgstr "Yeni Proje"
@@ -15448,6 +15541,9 @@ msgstr "Yeni kayıt oluşturuldu"
 
 msgid "New Rental Agreement"
 msgstr "Yeni Kira Sözleşmesi"
+
+msgid "New Request"
+msgstr ""
 
 msgid "New Requirement"
 msgstr "Yeni Gereklilik"
@@ -16264,6 +16360,9 @@ msgstr "Henüz hiçbir geçiş anahtarı kaydedilmedi."
 msgid "No payables"
 msgstr "Borç yok"
 
+msgid "No payment events yet."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "Henüz ödeme yok."
 
@@ -16383,6 +16482,9 @@ msgstr "Aramanızla eşleşen rapor yok."
 
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "Bu Şirketin henüz hiç temsilcisi Carbon GovCloud Rider'ı Kabul etmemiştir. Carbon'a erişebilmek için bu Şirketin yöneticisi bunu Kabul etmelidir — Carbon personeli sizin adınıza bunu Kabul edemez."
+
+msgid "No requests yet."
+msgstr ""
 
 msgid "No resolution yet"
 msgstr "Henüz çözüm yok"
@@ -17654,6 +17756,9 @@ msgstr "Sınıflandırmayı Geçersiz Kıl"
 msgid "Override Coverage"
 msgstr "Geçersiz Kılma Kapsamı"
 
+msgid "Override line {line}"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Geçersiz kılma işlemi inventory:update İzni ve bir neden gerektirir"
 
@@ -17951,6 +18056,9 @@ msgstr "Ödeme Tarihi"
 
 msgid "Payment depends on success"
 msgstr "Ödeme başarıya bağlıdır"
+
+msgid "Payment Events"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "Müşteriden Ödeme"
@@ -18905,6 +19013,12 @@ msgstr "İlerleme"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "İlerleme, bu öğenin maliyetinin tamamlanma tahminindeki maliyete kıyasla"
+
+msgid "Progress payment rate"
+msgstr ""
+
+msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
+msgstr ""
 
 msgid "Project"
 msgstr "Proje"
@@ -19909,6 +20023,9 @@ msgstr "Depozitoyu Kaydet"
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
 
+msgid "Record Payment"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
@@ -20453,17 +20570,33 @@ msgstr "Bugünün kuralları ve maliyetleri ile yeniden fiyatlandırma <0>{0}</0
 msgid "Reprint"
 msgstr "Yeniden Yazdır"
 
+msgid "Request"
+msgstr ""
+
+#. placeholder {0}: request.requestNumber
+msgid "Request {0}"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "Yeni bir davet iste"
 
 msgid "Request Approval"
 msgstr "Onay iste"
 
+msgid "Request date"
+msgstr ""
+
+msgid "Requested"
+msgstr ""
+
 msgid "Requested By"
 msgstr "Talep Eden"
 
 msgid "Requested Date"
 msgstr "Talep Edilen Tarih"
+
+msgid "Requests"
+msgstr ""
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
@@ -22897,6 +23030,9 @@ msgstr "Slaytlar"
 msgid "SLIN"
 msgstr "SLIN"
 
+msgid "Small business"
+msgstr ""
+
 msgid "Smallest child"
 msgstr "En küçük alt öğe"
 
@@ -24568,6 +24704,9 @@ msgstr "Bu kontrol planının bağlı olduğu mühendislik çizimi; bu parçaya 
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 msgstr "Giriş penceresi, zaman kartı kontrolü, sulandırma ve çalışanın sunumda imzaladığı belgelendirme."
 
+msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "Akşam saatleri, {name}."
 
@@ -25035,6 +25174,9 @@ msgstr "Oran bu dönemden yıl sonuna kadar geçerlidir"
 
 msgid "The rate the burden run applies to project cost"
 msgstr "Yük çalıştırmasının proje maliyetine uyguladığı oran"
+
+msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
@@ -26142,6 +26284,9 @@ msgstr "Toplam İnşaat Maliyeti:"
 msgid "Total Cost"
 msgstr "Toplam Maliyet"
 
+msgid "Total costs incurred to date"
+msgstr ""
+
 msgid "Total Direct Cost"
 msgstr "Toplam Doğrudan Maliyet"
 
@@ -26689,6 +26834,10 @@ msgstr "İade satın alma siparişinden ayrılsın mı?"
 msgid "Unlink RMA from sales order?"
 msgstr "RMA satış siparişinden ayrılsın mı?"
 
+#. placeholder {0}: formatMoney.format(financing.unliquidated)
+msgid "Unliquidated: {0}"
+msgstr ""
+
 msgid "Unlock"
 msgstr "Kilidi Aç"
 
@@ -27131,6 +27280,15 @@ msgstr "İş doğrulanıyor..."
 
 msgid "Value"
 msgstr "Değer"
+
+msgid "Value (blank uses the computed value)"
+msgstr ""
+
+msgid "Value of events completed earlier"
+msgstr ""
+
+msgid "Value of the events in this request"
+msgstr ""
 
 msgid "Value Snapshot"
 msgstr "Değer Özeti"
@@ -28135,6 +28293,9 @@ msgstr "Kimden satın aldığınız."
 msgid "Who you sell to and at what price."
 msgstr "Kime sattığınız ve hangi fiyattan."
 
+msgid "Whole contract"
+msgstr ""
+
 msgid "Why"
 msgstr "Neden"
 
@@ -28174,6 +28335,9 @@ msgstr "Yarı Mamul"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "ile {0} acil durum"
+
+msgid "Withdraw"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Toplama listesi olmadan, operatörler Tara sekmesinden malzemeyi toplarlar."

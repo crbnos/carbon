@@ -1101,3 +1101,60 @@ export async function getExpectedLiquidation(
     ? { amount, customerContractId: financed.customerContractId }
     : null;
 }
+
+/** One request with the events it bills. A reader: no entitlement. */
+export async function getFinancingRequest(
+  db: Kysely<KyselyDatabase>,
+  input: { companyId: string; customerContractId: string; requestId: string }
+) {
+  const [request, events] = await Promise.all([
+    db
+      .selectFrom("contractFinancingRequest as r")
+      .leftJoin("payment as p", (join) =>
+        join
+          .onRef("p.id", "=", "r.paymentId")
+          .onRef("p.companyId", "=", "r.companyId")
+      )
+      .selectAll("r")
+      .select(["p.paymentId as paymentReadableId", "p.status as paymentStatus"])
+      .where("r.id", "=", input.requestId)
+      .where("r.customerContractId", "=", input.customerContractId)
+      .where("r.companyId", "=", input.companyId)
+      .executeTakeFirst(),
+    db
+      .selectFrom("contractFinancingRequestEvent as re")
+      .innerJoin("performanceBasedPaymentEvent as e", (join) =>
+        join
+          .onRef("e.id", "=", "re.performanceBasedPaymentEventId")
+          .onRef("e.companyId", "=", "re.companyId")
+      )
+      .leftJoin("customerContractLine as l", (join) =>
+        join
+          .onRef("l.id", "=", "e.customerContractLineId")
+          .onRef("l.companyId", "=", "e.companyId")
+      )
+      .select([
+        "e.id",
+        "e.eventCode",
+        "e.description",
+        "e.eventType",
+        "re.amount",
+        "l.lineItemNumber"
+      ])
+      .where("re.contractFinancingRequestId", "=", input.requestId)
+      .where("re.companyId", "=", input.companyId)
+      .orderBy("e.sequence")
+      .execute()
+  ]);
+  if (!request) return null;
+  return {
+    ...request,
+    paymentReadableId: request.paymentReadableId ?? null,
+    paymentStatus: request.paymentStatus ?? null,
+    events: events.map((event) => ({ ...event, amount: Number(event.amount) }))
+  };
+}
+
+export type FinancingRequestDetail = NonNullable<
+  Awaited<ReturnType<typeof getFinancingRequest>>
+>;

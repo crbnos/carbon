@@ -5,11 +5,15 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { markFinancingRequestsPaid } from "@carbon/ee/contract-financing.server";
+import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "payment-post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -36,6 +40,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.payment(paymentId),
       await flash(request, error(err, "Failed to post payment"))
     );
+  }
+
+  // A contract deposit can receive a financing request: it is now Paid.
+  try {
+    await markFinancingRequestsPaid(getDatabaseClient(), {
+      companyId,
+      paymentId,
+      userId
+    });
+  } catch (err) {
+    logger.error("Failed to mark the financing request paid", {
+      companyId,
+      paymentId,
+      error: err
+    });
   }
 
   throw redirect(

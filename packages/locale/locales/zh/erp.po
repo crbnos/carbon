@@ -158,6 +158,11 @@ msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
 
+#. placeholder {0}: request.financingMethod
+#. placeholder {1}: formatDate(request.costsThroughDate)
+msgid "{0} · costs through {1}"
+msgstr ""
+
 #. placeholder {0}: project.name
 msgid "{0} (template)"
 msgstr "{0}（模板）"
@@ -1032,6 +1037,9 @@ msgstr "外协人员是具有特定技能和可用工时的供应商联系人。
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "将已过账的工时移至另一个计费号的更正。在 DCAA 模式中，它总是需要审批，并且提出请求的人无法批准。"
+
+msgid "A Cumulative event bills only after every event before it."
+msgstr ""
 
 msgid "A custom solution to meet your needs"
 msgstr "满足您需求的定制解决方案"
@@ -2175,6 +2183,9 @@ msgstr "添加员工"
 msgid "Add Entry"
 msgstr "添加条目"
 
+msgid "Add Event"
+msgstr ""
+
 msgid "Add Expense"
 msgstr "添加费用"
 
@@ -2388,6 +2399,9 @@ msgstr "在同一系统上添加下一个功能，而不是购买另一个工具
 
 msgid "Add the operations that make this item."
 msgstr "添加制造该物料的工序。"
+
+msgid "Add the rates before the first request."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
@@ -2719,11 +2733,17 @@ msgstr "修订"
 msgid "Amount"
 msgstr "金额"
 
+msgid "Amount of this request"
+msgstr ""
+
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "增加此行资产/费用或减少此行负债/所有者权益/收入的金额"
 
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "增加此行负债/所有者权益/收入或减少此行资产/费用的金额"
+
+msgid "Amount the contracting officer approved"
+msgstr ""
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -3139,6 +3159,9 @@ msgstr "审批"
 
 msgid "Approve all"
 msgstr "全部审批"
+
+msgid "Approve Request"
+msgstr ""
 
 msgid "Approved"
 msgstr "已审批"
@@ -4448,6 +4471,9 @@ msgstr "持续开票直到被取消"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = 从能力的再认证期间计算"
+
+msgid "Blank uses the estimate at completion of the contract's projects"
+msgstr ""
 
 msgid "Blind"
 msgstr "盲法"
@@ -5823,6 +5849,9 @@ msgstr "全部完成"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "完成看板扫码时完成所有数量"
 
+msgid "Complete Event"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "完成工作"
 
@@ -5863,6 +5892,9 @@ msgstr "完成此培训将授予或更新所选能力。"
 msgid "Completion Barcode"
 msgstr "完成条码"
 
+msgid "Completion criteria"
+msgstr ""
+
 msgid "Completion Date"
 msgstr "完成日期"
 
@@ -5902,6 +5934,9 @@ msgstr "计算福利费、制造费用和一般及管理费率，对项目进行
 
 msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr "计算该期间的实际费率，过账负担追补金并在成本加成行上计费负担。"
+
+msgid "Computed"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6246,6 +6281,12 @@ msgstr "合同关闭日期"
 msgid "Contract Close Date"
 msgstr "合同关闭日期"
 
+msgid "Contract Financing"
+msgstr ""
+
+msgid "Contract financing needs a contract in the company's base currency."
+msgstr ""
+
 msgid "Contract Line"
 msgstr "合同行"
 
@@ -6254,6 +6295,9 @@ msgstr "合同行"
 
 msgid "Contract Loss Provision"
 msgstr "合同亏损准备"
+
+msgid "Contract price"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "合同配置"
@@ -6785,6 +6829,9 @@ msgstr "成本"
 msgid "Costs posted"
 msgstr "已过账成本"
 
+msgid "Costs through"
+msgstr ""
+
 msgid "Costs, with children"
 msgstr "成本，含下级"
 
@@ -7312,6 +7359,9 @@ msgstr "累积%"
 msgid "Cumulative cost claimed and billed, by contract"
 msgstr "按合同累计成本索赔和计费"
 
+msgid "Cumulative value"
+msgstr ""
+
 msgid "Currencies"
 msgstr "货币"
 
@@ -7386,6 +7436,9 @@ msgstr "自定义 SOW · 我们管理"
 
 msgid "Custom…"
 msgstr "自定义…"
+
+msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
+msgstr ""
 
 msgid "customer"
 msgstr "客户"
@@ -8905,6 +8958,9 @@ msgstr "草稿分录"
 msgid "Draft only"
 msgstr "仅限草稿"
 
+msgid "Draft Request"
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "为结束日期之后已开票的时间起草贷项凭证"
 
@@ -9630,6 +9686,9 @@ msgstr "编辑于<0/>"
 msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "编辑 <0>{0}</0>：{1}。更改将进入此变更请求。"
 
+msgid "Effective"
+msgstr ""
+
 msgid "Effective From"
 msgstr "有效期自"
 
@@ -10120,6 +10179,9 @@ msgstr "估计 — 无产能预留"
 msgid "Estimated <0>{0}</0>"
 msgstr "预估<0>{0}</0>"
 
+msgid "Estimated cost to complete"
+msgstr ""
+
 msgid "Estimated Duration"
 msgstr "预计时长"
 
@@ -10128,6 +10190,9 @@ msgstr "预计时长（分钟）"
 
 msgid "Estimated hours"
 msgstr "估计小时数"
+
+msgid "Estimated on"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "估计报废数量"
@@ -10155,6 +10220,9 @@ msgstr "傍晚，{name}。"
 
 msgid "Event"
 msgstr "事件"
+
+msgid "Event code"
+msgstr ""
 
 msgid "Event Type"
 msgstr "事件类型"
@@ -10227,6 +10295,9 @@ msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属
 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "这次运行生产的所有产品都进入一个批次。车间无法更改它。"
+
+msgid "Evidence"
+msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
@@ -11125,6 +11196,9 @@ msgstr "财务报表"
 
 msgid "Financing"
 msgstr "融资"
+
+msgid "Financing Terms"
+msgstr ""
 
 msgid "Find an element"
 msgstr "查找元素"
@@ -12641,6 +12715,9 @@ msgstr "从父组继承。"
 msgid "inherits {inheritedName}"
 msgstr "继承自 {inheritedName}"
 
+msgid "Initial award"
+msgstr ""
+
 msgid "Input"
 msgstr "输入"
 
@@ -13801,6 +13878,10 @@ msgstr "行"
 msgid "Line {0}"
 msgstr "行 {0}"
 
+#. placeholder {0}: SF1443_LINE_LABELS[editing]
+msgid "Line {editing}: {0}"
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "行 {line}（{accountNumber}）：贷方「{value}」包含逗号。使用小数点表示小数，不使用千位分隔符，例如 1234.56。"
 
@@ -13925,6 +14006,9 @@ msgstr "关联采购订单"
 
 msgid "Links"
 msgstr "链接"
+
+msgid "Liquidation rate"
+msgstr ""
 
 msgid "List"
 msgstr "列表"
@@ -14617,6 +14701,9 @@ msgstr "最大订单数量"
 
 msgid "Maximum Order:"
 msgstr "最大订单："
+
+msgid "Maximum share of price (PBP)"
+msgstr ""
 
 msgid "MCP Command"
 msgstr "MCP 命令"
@@ -15398,6 +15485,9 @@ msgstr "新付款"
 msgid "New Payment Term"
 msgstr "新建付款条件"
 
+msgid "New PBP Request"
+msgstr ""
+
 msgid "New Picking List"
 msgstr "新拣货单"
 
@@ -15418,6 +15508,9 @@ msgstr "新建程序文件"
 
 msgid "New Process"
 msgstr "新流程"
+
+msgid "New Progress Payment Request"
+msgstr ""
 
 msgid "New Project"
 msgstr "新项目"
@@ -15448,6 +15541,9 @@ msgstr "新记录已创建"
 
 msgid "New Rental Agreement"
 msgstr "新建租赁协议"
+
+msgid "New Request"
+msgstr ""
 
 msgid "New Requirement"
 msgstr "新要求"
@@ -16264,6 +16360,9 @@ msgstr "还没有已登记的通行密钥。"
 msgid "No payables"
 msgstr "没有应付款项"
 
+msgid "No payment events yet."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "还没有付款。"
 
@@ -16383,6 +16482,9 @@ msgstr "未找到与搜索条件匹配的报告。"
 
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "该公司还没有代表接受 Carbon GovCloud Rider。该公司的管理员必须先接受它，然后任何人才能访问 Carbon — Carbon 员工不能代表您接受。"
+
+msgid "No requests yet."
+msgstr ""
 
 msgid "No resolution yet"
 msgstr "还没有解决方案"
@@ -17654,6 +17756,9 @@ msgstr "覆盖分类"
 msgid "Override Coverage"
 msgstr "覆盖范围覆盖"
 
+msgid "Override line {line}"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "覆盖需要库存管理:更新权限和原因。"
 
@@ -17951,6 +18056,9 @@ msgstr "付款日期"
 
 msgid "Payment depends on success"
 msgstr "付款取决于成功"
+
+msgid "Payment Events"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "来自客户的付款"
@@ -18905,6 +19013,12 @@ msgstr "进度"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "进度是该元素成本与完工时预计成本的对比。"
+
+msgid "Progress payment rate"
+msgstr ""
+
+msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
+msgstr ""
 
 msgid "Project"
 msgstr "项目"
@@ -19909,6 +20023,9 @@ msgstr "记录押金"
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
+msgid "Record Payment"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
@@ -20453,17 +20570,33 @@ msgstr "使用今天的规则和成本重新定价得到<0>{0}</0>。"
 msgid "Reprint"
 msgstr "重新打印"
 
+msgid "Request"
+msgstr ""
+
+#. placeholder {0}: request.requestNumber
+msgid "Request {0}"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "请求新邀请"
 
 msgid "Request Approval"
 msgstr "请求审批"
 
+msgid "Request date"
+msgstr ""
+
+msgid "Requested"
+msgstr ""
+
 msgid "Requested By"
 msgstr "请求人"
 
 msgid "Requested Date"
 msgstr "要求日期"
+
+msgid "Requests"
+msgstr ""
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
@@ -22897,6 +23030,9 @@ msgstr "幻灯片"
 msgid "SLIN"
 msgstr "SLIN"
 
+msgid "Small business"
+msgstr ""
+
 msgid "Smallest child"
 msgstr "最小的子项"
 
@@ -24568,6 +24704,9 @@ msgstr "此检验计划关联的工程图纸；针对此零件记录的检验将
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 msgstr "进入窗口、时间卡检查、稀释和员工在提交时签署的认证。"
 
+msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "傍晚时段，{name}。"
 
@@ -25035,6 +25174,9 @@ msgstr "该费率从此期间适用到年末"
 
 msgid "The rate the burden run applies to project cost"
 msgstr "负担运行应用于项目成本的费率"
+
+msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "您购买和消耗的原材料库存及物料主档"
@@ -26142,6 +26284,9 @@ msgstr "总建设成本："
 msgid "Total Cost"
 msgstr "总成本"
 
+msgid "Total costs incurred to date"
+msgstr ""
+
 msgid "Total Direct Cost"
 msgstr "总直接成本"
 
@@ -26689,6 +26834,10 @@ msgstr "解除退货与采购订单的关联？"
 msgid "Unlink RMA from sales order?"
 msgstr "解除 RMA 与销售订单的关联？"
 
+#. placeholder {0}: formatMoney.format(financing.unliquidated)
+msgid "Unliquidated: {0}"
+msgstr ""
+
 msgid "Unlock"
 msgstr "解锁"
 
@@ -27131,6 +27280,15 @@ msgstr "正在验证工作..."
 
 msgid "Value"
 msgstr "值"
+
+msgid "Value (blank uses the computed value)"
+msgstr ""
+
+msgid "Value of events completed earlier"
+msgstr ""
+
+msgid "Value of the events in this request"
+msgstr ""
 
 msgid "Value Snapshot"
 msgstr "价值快照"
@@ -28135,6 +28293,9 @@ msgstr "你从哪里采购。"
 msgid "Who you sell to and at what price."
 msgstr "你销售给谁以及价格是多少。"
 
+msgid "Whole contract"
+msgstr ""
+
 msgid "Why"
 msgstr "原因"
 
@@ -28174,6 +28335,9 @@ msgstr "在制品"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "含{0}应急储备"
+
+msgid "Withdraw"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "没有拣货单的情况下,操作员从扫码选项卡中拣选原材料。"

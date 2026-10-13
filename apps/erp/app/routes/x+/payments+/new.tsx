@@ -6,7 +6,9 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { linkFinancingPayment } from "@carbon/ee/contract-financing.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import {
   Card,
   CardContent,
@@ -46,6 +48,8 @@ import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "payment-new");
 
 // Open invoices the apply table / seed logic can settle, keyed by id with the
 // fields needed to seed one application per invoice.
@@ -124,6 +128,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const salesOrderId = url.searchParams.get("salesOrderId");
   const rentalAgreementId = url.searchParams.get("rentalAgreementId");
   const customerContractId = url.searchParams.get("customerContractId");
+  // A contract financing request this payment receives.
+  const financingRequestId = url.searchParams.get("financingRequestId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
@@ -213,7 +219,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       customerContractId: customerContractId ?? ""
     },
     seedInvoiceIds: invoiceIds,
-    depositDocuments
+    depositDocuments,
+    financingRequestId
   };
 }
 
@@ -295,6 +302,26 @@ export async function action({ request }: ActionFunctionArgs) {
       path.to.payments,
       await flash(request, error(insert.error, "Failed to create payment"))
     );
+  }
+
+  // A payment made from a contract financing request receives that request.
+  const financingRequestId = String(formData.get("financingRequestId") ?? "");
+  if (financingRequestId && validation.data.customerContractId) {
+    try {
+      await linkFinancingPayment(client, getDatabaseClient(), {
+        companyId,
+        userId,
+        customerContractId: validation.data.customerContractId,
+        requestId: financingRequestId,
+        paymentId: insert.data.id
+      });
+    } catch (err) {
+      logger.error("Failed to link the payment to the financing request", {
+        companyId,
+        financingRequestId,
+        error: err
+      });
+    }
   }
 
   // Seed one application per selected invoice for its full open balance. Each
@@ -382,8 +409,12 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPaymentRoute() {
-  const { initialValues, seedInvoiceIds, depositDocuments } =
-    useLoaderData<typeof loader>();
+  const {
+    initialValues,
+    seedInvoiceIds,
+    depositDocuments,
+    financingRequestId
+  } = useLoaderData<typeof loader>();
   return (
     <NewRecordPage>
       <Card>
@@ -404,6 +435,7 @@ export default function NewPaymentRoute() {
             initialValues={initialValues}
             seedInvoiceIds={seedInvoiceIds}
             depositDocuments={depositDocuments}
+            financingRequestId={financingRequestId ?? undefined}
           />
         </CardContent>
       </Card>

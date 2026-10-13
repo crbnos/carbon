@@ -2939,6 +2939,7 @@ export async function upsertPayment(
           supplierId: payment.supplierId ?? null,
           salesOrderId: payment.salesOrderId ?? null,
           rentalAgreementId: payment.rentalAgreementId ?? null,
+          customerContractId: payment.customerContractId ?? null,
           employeeId: payment.employeeId ?? null
         }
       ])
@@ -2953,6 +2954,7 @@ export async function upsertPayment(
       supplierId: payment.supplierId ?? null,
       salesOrderId: payment.salesOrderId ?? null,
       rentalAgreementId: payment.rentalAgreementId ?? null,
+      customerContractId: payment.customerContractId ?? null,
       // Explicit null, like the two trade parties: switching a Draft payment's
       // payee must CLEAR the other two, or the widened one-of-three CHECK
       // rejects the update.

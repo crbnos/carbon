@@ -25,6 +25,7 @@ import {
   LuEllipsisVertical,
   LuFileText,
   LuHardHat,
+  LuLandmark,
   LuListChecks,
   LuPanelLeft,
   LuPencilLine,
@@ -36,6 +37,7 @@ import { usePanels } from "~/components/Layout";
 import DetailTopbar from "~/components/Layout/Navigation/DetailsTopbar";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
+import { useGovernmentContracting } from "~/modules/projects/ui/useGovernmentContracting";
 import { path } from "~/utils/path";
 import ContractAmendModal from "./ContractAmendModal";
 import ContractCancelModal from "./ContractCancelModal";
@@ -76,22 +78,31 @@ const ContractHeader = ({ contract, lines }: ContractHeaderProps) => {
   const canRevertCancellation =
     isActive && isCancelled && !!contract.endDate && contract.endDate >= today;
 
-  // The route tabs: the contract's Service Orders need service_view, and with
-  // only Details there is nothing to switch between.
-  const navigation = permissions.can("view", "service")
-    ? [
-        {
-          name: t`Details`,
-          to: path.to.contractDetails(id),
-          icon: LuFileText
-        },
-        {
-          name: t`Service Orders`,
-          to: path.to.contractServiceOrders(id),
-          icon: LuHardHat
-        }
-      ]
-    : [];
+  // The route tabs: the contract's Service Orders need service_view, its
+  // Financing the government contracting fields, and with only Details there
+  // is nothing to switch between.
+  const governmentContracting = useGovernmentContracting();
+  const navigation = [
+    { name: t`Details`, to: path.to.contractDetails(id), icon: LuFileText },
+    ...(permissions.can("view", "service")
+      ? [
+          {
+            name: t`Service Orders`,
+            to: path.to.contractServiceOrders(id),
+            icon: LuHardHat
+          }
+        ]
+      : []),
+    ...(governmentContracting
+      ? [
+          {
+            name: t`Financing`,
+            to: path.to.contractFinancing(id),
+            icon: LuLandmark
+          }
+        ]
+      : [])
+  ];
 
   const open = (next: PendingAction) => {
     setAction(next);

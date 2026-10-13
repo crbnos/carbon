@@ -23,8 +23,8 @@ Phase B — contract financing
 - [x] Task 11: Scope a customer deposit to a contract
 - [x] Task 12: Write the financing compute engine
 - [x] Task 13: Write the financing service and its package exports
-- [ ] Task 14: Add the contract Financing routes
-- [ ] Task 15: Build the Financing UI
+- [x] Task 14: Add the contract Financing routes
+- [x] Task 15: Build the Financing UI
 - [ ] Task 16: Print the financing request
 - [ ] Task 17: Show the expected liquidation on invoices and payments
 
@@ -859,3 +859,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 9: the 881F templates are Copy from options with value `wbs:<key>`; `ProjectForm` needed no change. Translations of the new Phase A and B strings are filled once, after Task 17, rather than per task.
 - Task 11: a contract's invoices are those with the contract on the header, on a line, or on a line of the contract's own sales order (`customerContract.salesOrderId`): a shipment converts to an invoice that carries the order, not the contract. `loadSalesInvoiceDocumentIds` and the ERP's open-invoice reader both apply it, and `loadContractInvoiceIds` (`deposit-scope.ts`) gives the same set to financing. The prior-source query of post-payment already used `selectAll`, so it needed no change. The contract deposit links to the contract with the Contracts module icon.
 - Task 13: a Draft request is deleted, not set Withdrawn: the CHECK ties the Draft status to a null number, and a Withdrawn request keeps the number Submit gave it. Paid is set by `markFinancingRequestsPaid`, which the payment post route calls after a successful post (no entitlement: it records a fact). `lines` holds the computed values and `overrides` the user's; `requestedAmount` is line 26 with the overrides applied. `getExpectedLiquidation` reads the invoice's contracts with `loadSalesInvoiceDocumentIds`, one read, not one per financed contract.
+- Tasks 14 and 15 shipped as one commit: the routes and their components import each other. The request is created through intent `request` of `$id.financing.tsx` (no `$id.financing.new.tsx`). Rates and events use read-only tables with add modals, not the inline-edit grid of `ContractFundingActions`: rates are append-only and an event changes rarely once billed. Record Payment redirects to New Payment with `customerContractId`, `financingRequestId` and the approved amount; the payment's create action links it (`linkFinancingPayment`) and its post action marks the request Paid (`markFinancingRequestsPaid`). `checkDepositDocument` now checks a contract deposit's customer and status, so the hidden field is never trusted.

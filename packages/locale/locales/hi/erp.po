@@ -158,6 +158,11 @@ msgstr "{0, plural, one {योजनाकार इस घटक को एक
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
+#. placeholder {0}: request.financingMethod
+#. placeholder {1}: formatDate(request.costsThroughDate)
+msgid "{0} · costs through {1}"
+msgstr ""
+
 #. placeholder {0}: project.name
 msgid "{0} (template)"
 msgstr "{0} (टेम्पलेट)"
@@ -1032,6 +1037,9 @@ msgstr "एक ठेकेदार एक आपूर्तिकर्ता
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "एक सुधार जो पोस्ट किए गए समय को एक अलग चार्ज संख्या पर स्थानांतरित करता है। DCAA मोड में यह हमेशा अनुमोदन की प्रतीक्षा करता है, और जिस व्यक्ति ने इसके लिए कहा वह इसे अनुमोदित नहीं कर सकता।"
+
+msgid "A Cumulative event bills only after every event before it."
+msgstr ""
 
 msgid "A custom solution to meet your needs"
 msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
@@ -2175,6 +2183,9 @@ msgstr "कर्मचारी जोड़ें"
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
 
+msgid "Add Event"
+msgstr ""
+
 msgid "Add Expense"
 msgstr "व्यय जोड़ें"
 
@@ -2388,6 +2399,9 @@ msgstr "अगली क्षमता को एक ही सिस्टम 
 
 msgid "Add the operations that make this item."
 msgstr "इस आइटम को निर्माण करने वाले ऑपरेशन जोड़ें।"
+
+msgid "Add the rates before the first request."
+msgstr ""
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "अपने DNS होस्ट में यह TXT रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें। DNS परिवर्तन प्रसारित होने में कुछ मिनट लग सकते हैं।"
@@ -2719,11 +2733,17 @@ msgstr "संशोधन"
 msgid "Amount"
 msgstr "रकम"
 
+msgid "Amount of this request"
+msgstr ""
+
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "राशि जो इस पंक्ति पर संपत्ति/व्यय बढ़ाती है या देयता/इक्विटी/राजस्व घटाती है।"
 
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "राशि जो इस पंक्ति पर देयता/इक्विटी/राजस्व बढ़ाती है या संपत्ति/व्यय घटाती है।"
+
+msgid "Amount the contracting officer approved"
+msgstr ""
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -3139,6 +3159,9 @@ msgstr "अनुमोदित करें"
 
 msgid "Approve all"
 msgstr "सभी को अनुमोदित करें"
+
+msgid "Approve Request"
+msgstr ""
 
 msgid "Approved"
 msgstr "अनुमोदित"
@@ -4448,6 +4471,9 @@ msgstr "जब तक यह रद्द न हो जाए तब तक ब
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "खाली = कौशल की पुनः प्रमाणन अवधि से गणना की गई।"
+
+msgid "Blank uses the estimate at completion of the contract's projects"
+msgstr ""
 
 msgid "Blind"
 msgstr "ब्लाइंड"
@@ -5823,6 +5849,9 @@ msgstr "सभी को पूर्ण करें"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "कानबान पूर्ण स्कैन पर सभी मात्रा पूर्ण करें"
 
+msgid "Complete Event"
+msgstr ""
+
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
 
@@ -5863,6 +5892,9 @@ msgstr "इस प्रशिक्षण को पूरा करने स�
 msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
 
+msgid "Completion criteria"
+msgstr ""
+
 msgid "Completion Date"
 msgstr "पूर्णता तारीख"
 
@@ -5902,6 +5934,9 @@ msgstr "Fringe, overhead और G&A दरों की गणना करे�
 
 msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr "अवधि के लिए वास्तविक दरों की गणना करें, बोझ बैकलॉग पोस्ट करें और Cost Plus पंक्तियों पर बोझ बिल करें।"
+
+msgid "Computed"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6246,6 +6281,12 @@ msgstr "अनुबंध समापन तिथि"
 msgid "Contract Close Date"
 msgstr "अनुबंध समापन तिथि"
 
+msgid "Contract Financing"
+msgstr ""
+
+msgid "Contract financing needs a contract in the company's base currency."
+msgstr ""
+
 msgid "Contract Line"
 msgstr "अनुबंध पंक्ति"
 
@@ -6254,6 +6295,9 @@ msgstr "अनुबंध पंक्तियाँ"
 
 msgid "Contract Loss Provision"
 msgstr "अनुबंध हानि प्रावधान"
+
+msgid "Contract price"
+msgstr ""
 
 msgid "Contract setup"
 msgstr "अनुबंध सेटअप"
@@ -6785,6 +6829,9 @@ msgstr "लागतें"
 msgid "Costs posted"
 msgstr "लागतें पोस्ट की गईं"
 
+msgid "Costs through"
+msgstr ""
+
 msgid "Costs, with children"
 msgstr "लागत, बच्चों के साथ"
 
@@ -7312,6 +7359,9 @@ msgstr "संचयी %"
 msgid "Cumulative cost claimed and billed, by contract"
 msgstr "संचयी लागत दावा की गई और बिल की गई, अनुबंध द्वारा"
 
+msgid "Cumulative value"
+msgstr ""
+
 msgid "Currencies"
 msgstr "मुद्राएँ"
 
@@ -7386,6 +7436,9 @@ msgstr "कस्टम SOW · हम प्रबंधित करते ह�
 
 msgid "Custom…"
 msgstr "कस्टम…"
+
+msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
+msgstr ""
 
 msgid "customer"
 msgstr "ग्राहक"
@@ -8905,6 +8958,9 @@ msgstr "ड्राफ्ट जर्नल प्रविष्टिया�
 msgid "Draft only"
 msgstr "केवल ड्राफ्ट"
 
+msgid "Draft Request"
+msgstr ""
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "अंतिम तिथि के बाद पहले से चालानित समय के लिए एक क्रेडिट नोट ड्राफ्ट करता है।"
 
@@ -9630,6 +9686,9 @@ msgstr "संपादित <0/>"
 msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "संपादित कर रहे हैं <0>{0}</0>: {1}। परिवर्तन इस परिवर्तन अनुरोध में जाते हैं।"
 
+msgid "Effective"
+msgstr ""
+
 msgid "Effective From"
 msgstr "से प्रभावी"
 
@@ -10120,6 +10179,9 @@ msgstr "अनुमानित — कोई क्षमता आरक्�
 msgid "Estimated <0>{0}</0>"
 msgstr "अनुमानित <0>{0}</0>"
 
+msgid "Estimated cost to complete"
+msgstr ""
+
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
 
@@ -10128,6 +10190,9 @@ msgstr "अनुमानित अवधि (मिनट)"
 
 msgid "Estimated hours"
 msgstr "अनुमानित घंटे"
+
+msgid "Estimated on"
+msgstr ""
 
 msgid "Estimated Scrap Quantity"
 msgstr "अनुमानित स्क्रैप मात्रा"
@@ -10155,6 +10220,9 @@ msgstr "शाम, {name}।"
 
 msgid "Event"
 msgstr "घटना"
+
+msgid "Event code"
+msgstr ""
 
 msgid "Event Type"
 msgstr "ईवेंट प्रकार"
@@ -10227,6 +10295,9 @@ msgstr "बाकी सब कुछ लोग, आयात, एकीकर�
 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "इस रन में निर्माण होने वाली सभी चीजें एक लॉट में जाती हैं। शॉप फ्लोर इसे नहीं बदल सकता।"
+
+msgid "Evidence"
+msgstr ""
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
@@ -11125,6 +11196,9 @@ msgstr "वित्तीय विवरण"
 
 msgid "Financing"
 msgstr "वित्तपोषण"
+
+msgid "Financing Terms"
+msgstr ""
 
 msgid "Find an element"
 msgstr "एक तत्व खोजें"
@@ -12641,6 +12715,9 @@ msgstr "मूल समूह से विरासत में मिला�
 msgid "inherits {inheritedName}"
 msgstr "{inheritedName} से विरासत"
 
+msgid "Initial award"
+msgstr ""
+
 msgid "Input"
 msgstr "इनपुट"
 
@@ -13801,6 +13878,10 @@ msgstr "लाइन"
 msgid "Line {0}"
 msgstr "लाइन {0}"
 
+#. placeholder {0}: SF1443_LINE_LABELS[editing]
+msgid "Line {editing}: {0}"
+msgstr ""
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "पंक्ति {line} ({accountNumber}): जमा \"{value}\" में अल्पविराम है। दशमलव के लिए बिंदु के साथ और कोई हजार विभाजक नहीं, जैसे 1234.56 के साथ राशि लिखें।"
 
@@ -13925,6 +14006,9 @@ msgstr "लिंक्ड PO"
 
 msgid "Links"
 msgstr "लिंक"
+
+msgid "Liquidation rate"
+msgstr ""
 
 msgid "List"
 msgstr "सूची"
@@ -14617,6 +14701,9 @@ msgstr "अधिकतम ऑर्डर मात्रा"
 
 msgid "Maximum Order:"
 msgstr "अधिकतम ऑर्डर:"
+
+msgid "Maximum share of price (PBP)"
+msgstr ""
 
 msgid "MCP Command"
 msgstr "MCP कमांड"
@@ -15398,6 +15485,9 @@ msgstr "नया भुगतान"
 msgid "New Payment Term"
 msgstr "नई भुगतान शर्तें"
 
+msgid "New PBP Request"
+msgstr ""
+
 msgid "New Picking List"
 msgstr "नई पिकिंग सूची"
 
@@ -15418,6 +15508,9 @@ msgstr "नई कार्यविधि"
 
 msgid "New Process"
 msgstr "नई प्रक्रिया"
+
+msgid "New Progress Payment Request"
+msgstr ""
 
 msgid "New Project"
 msgstr "नई परियोजना"
@@ -15448,6 +15541,9 @@ msgstr "नया रिकॉर्ड बनाया गया"
 
 msgid "New Rental Agreement"
 msgstr "नया किराये का समझौता"
+
+msgid "New Request"
+msgstr ""
 
 msgid "New Requirement"
 msgstr "नई आवश्यकता"
@@ -16264,6 +16360,9 @@ msgstr "अभी तक कोई पासकी पंजीकृत नह�
 msgid "No payables"
 msgstr "कोई देय राशि नहीं"
 
+msgid "No payment events yet."
+msgstr ""
+
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
 
@@ -16383,6 +16482,9 @@ msgstr "कोई रिपोर्ट आपकी खोज से मेल 
 
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "इस कंपनी के किसी भी प्रतिनिधि ने अभी तक Carbon GovCloud Rider को स्वीकार नहीं किया है। इस कंपनी के एक प्रशासक को इसे स्वीकार करना चाहिए ताकि कोई भी Carbon तक पहुंच सके — Carbon कर्मचारी आपकी ओर से इसे स्वीकार नहीं कर सकते।"
+
+msgid "No requests yet."
+msgstr ""
 
 msgid "No resolution yet"
 msgstr "अभी तक कोई समाधान नहीं"
@@ -17654,6 +17756,9 @@ msgstr "वर्गीकरण को ओवरराइड करें"
 msgid "Override Coverage"
 msgstr "ओवरराइड कवरेज"
 
+msgid "Override line {line}"
+msgstr ""
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
 
@@ -17951,6 +18056,9 @@ msgstr "भुगतान तारीख"
 
 msgid "Payment depends on success"
 msgstr "भुगतान सफलता पर निर्भर है"
+
+msgid "Payment Events"
+msgstr ""
 
 msgid "Payment from Customer"
 msgstr "ग्राहक से भुगतान"
@@ -18905,6 +19013,12 @@ msgstr "प्रगति"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "प्रगति इस तत्व की लागत है इसके पूर्ण होने पर अनुमान के विरुद्ध"
+
+msgid "Progress payment rate"
+msgstr ""
+
+msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
+msgstr ""
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
@@ -19909,6 +20023,9 @@ msgstr "जमा राशि रिकॉर्ड करें"
 msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
+msgid "Record Payment"
+msgstr ""
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "कर्मचारी को {displayId} का भुगतान रिकॉर्ड करें। इसे आंशिक रूप से निपटाने के लिए कुल देय राशि से कम का भुगतान करें।"
 
@@ -20453,17 +20570,33 @@ msgstr "आज के नियमों और लागतों के सा
 msgid "Reprint"
 msgstr "दोबारा प्रिंट करें"
 
+msgid "Request"
+msgstr ""
+
+#. placeholder {0}: request.requestNumber
+msgid "Request {0}"
+msgstr ""
+
 msgid "Request a new invite"
 msgstr "नया आमंत्रण का अनुरोध करें"
 
 msgid "Request Approval"
 msgstr "अनुमोदन का अनुरोध करें"
 
+msgid "Request date"
+msgstr ""
+
+msgid "Requested"
+msgstr ""
+
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
 
 msgid "Requested Date"
 msgstr "अनुरोधित तिथि"
+
+msgid "Requests"
+msgstr ""
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
@@ -22897,6 +23030,9 @@ msgstr "स्लाइड"
 msgid "SLIN"
 msgstr "SLIN"
 
+msgid "Small business"
+msgstr ""
+
 msgid "Smallest child"
 msgstr "सबसे छोटा बच्चा"
 
@@ -24568,6 +24704,9 @@ msgstr "इंजीनियरिंग ड्राइंग जिसे य
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 msgstr "प्रविष्टि विंडो, टाइमकार्ड जांच, पतन और प्रमाणपत्र जो एक कर्मचारी सबमिट पर हस्ताक्षर करता है।"
 
+msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+msgstr ""
+
 msgid "The evening hours, {name}."
 msgstr "शाम के घंटे, {name}।"
 
@@ -25035,6 +25174,9 @@ msgstr "दर इस अवधि से वर्ष के अंत तक �
 
 msgid "The rate the burden run applies to project cost"
 msgstr "बोझ रन जो दर परियोजना लागत पर लागू करता है"
+
+msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
+msgstr ""
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "कच्चा स्टॉक और सामग्री मास्टर जो आप खरीदते और उपभोग करते हैं"
@@ -26142,6 +26284,9 @@ msgstr "कुल निर्माण लागत:"
 msgid "Total Cost"
 msgstr "कुल लागत"
 
+msgid "Total costs incurred to date"
+msgstr ""
+
 msgid "Total Direct Cost"
 msgstr "कुल सीधी लागत"
 
@@ -26689,6 +26834,10 @@ msgstr "वापसी को क्रय आदेश से अनलिं�
 msgid "Unlink RMA from sales order?"
 msgstr "RMA को विक्रय आदेश से अनलिंक करें?"
 
+#. placeholder {0}: formatMoney.format(financing.unliquidated)
+msgid "Unliquidated: {0}"
+msgstr ""
+
 msgid "Unlock"
 msgstr "अनलॉक करें"
 
@@ -27131,6 +27280,15 @@ msgstr "नौकरी को मान्य कर रहे हैं..."
 
 msgid "Value"
 msgstr "मान"
+
+msgid "Value (blank uses the computed value)"
+msgstr ""
+
+msgid "Value of events completed earlier"
+msgstr ""
+
+msgid "Value of the events in this request"
+msgstr ""
 
 msgid "Value Snapshot"
 msgstr "मूल्य स्नैपशॉट"
@@ -28135,6 +28293,9 @@ msgstr "आप किससे खरीदते हैं।"
 msgid "Who you sell to and at what price."
 msgstr "आप किसे बेचते हैं और किस कीमत पर।"
 
+msgid "Whole contract"
+msgstr ""
+
 msgid "Why"
 msgstr "क्यों"
 
@@ -28174,6 +28335,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "के साथ {0} आकस्मिकता"
+
+msgid "Withdraw"
+msgstr ""
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"

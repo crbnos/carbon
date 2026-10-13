@@ -158,6 +158,11 @@ msgstr "{0, plural, one {The planner treats this component as one rigid body —
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
+#. placeholder {0}: request.financingMethod
+#. placeholder {1}: formatDate(request.costsThroughDate)
+msgid "{0} · costs through {1}"
+msgstr "{0} · costs through {1}"
+
 #. placeholder {0}: project.name
 msgid "{0} (template)"
 msgstr "{0} (template)"
@@ -1032,6 +1037,9 @@ msgstr "A contractor is a supplier contact with particular abilities and availab
 
 msgid "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
 msgstr "A correction that moves posted time to another charge number. In DCAA mode it always waits for approval, and the person who asked for it cannot approve it."
+
+msgid "A Cumulative event bills only after every event before it."
+msgstr "A Cumulative event bills only after every event before it."
 
 msgid "A custom solution to meet your needs"
 msgstr "A custom solution to meet your needs"
@@ -2175,6 +2183,9 @@ msgstr "Add Employee"
 msgid "Add Entry"
 msgstr "Add Entry"
 
+msgid "Add Event"
+msgstr "Add Event"
+
 msgid "Add Expense"
 msgstr "Add Expense"
 
@@ -2388,6 +2399,9 @@ msgstr "Add the next capability on the same system instead of buying another too
 
 msgid "Add the operations that make this item."
 msgstr "Add the operations that make this item."
+
+msgid "Add the rates before the first request."
+msgstr "Add the rates before the first request."
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
@@ -2719,11 +2733,17 @@ msgstr "Amendments"
 msgid "Amount"
 msgstr "Amount"
 
+msgid "Amount of this request"
+msgstr "Amount of this request"
+
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 
 msgid "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
 msgstr "Amount that increases liabilities/equity/revenue or decreases assets/expenses on this line."
+
+msgid "Amount the contracting officer approved"
+msgstr "Amount the contracting officer approved"
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -3139,6 +3159,9 @@ msgstr "Approve"
 
 msgid "Approve all"
 msgstr "Approve all"
+
+msgid "Approve Request"
+msgstr "Approve Request"
 
 msgid "Approved"
 msgstr "Approved"
@@ -4448,6 +4471,9 @@ msgstr "Bills until it is cancelled"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "Blank = computed from the ability's recertification period"
+
+msgid "Blank uses the estimate at completion of the contract's projects"
+msgstr "Blank uses the estimate at completion of the contract's projects"
 
 msgid "Blind"
 msgstr "Blind"
@@ -5823,6 +5849,9 @@ msgstr "Complete All"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Complete all quantities on kanban complete scan"
 
+msgid "Complete Event"
+msgstr "Complete Event"
+
 msgid "Complete Job"
 msgstr "Complete Job"
 
@@ -5863,6 +5892,9 @@ msgstr "Completing this training grants or renews the selected ability."
 msgid "Completion Barcode"
 msgstr "Completion Barcode"
 
+msgid "Completion criteria"
+msgstr "Completion criteria"
+
 msgid "Completion Date"
 msgstr "Completion Date"
 
@@ -5902,6 +5934,9 @@ msgstr "Compute fringe, overhead and G&A rates, burden your projects and bill at
 
 msgid "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
 msgstr "Compute the Actual rates for the period, post the burden catch-up and bill the burden on Cost Plus lines."
+
+msgid "Computed"
+msgstr "Computed"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6246,6 +6281,12 @@ msgstr "Contract close date"
 msgid "Contract Close Date"
 msgstr "Contract Close Date"
 
+msgid "Contract Financing"
+msgstr "Contract Financing"
+
+msgid "Contract financing needs a contract in the company's base currency."
+msgstr "Contract financing needs a contract in the company's base currency."
+
 msgid "Contract Line"
 msgstr "Contract Line"
 
@@ -6254,6 +6295,9 @@ msgstr "Contract lines"
 
 msgid "Contract Loss Provision"
 msgstr "Contract Loss Provision"
+
+msgid "Contract price"
+msgstr "Contract price"
 
 msgid "Contract setup"
 msgstr "Contract setup"
@@ -6785,6 +6829,9 @@ msgstr "Costs"
 msgid "Costs posted"
 msgstr "Costs posted"
 
+msgid "Costs through"
+msgstr "Costs through"
+
 msgid "Costs, with children"
 msgstr "Costs, with children"
 
@@ -7312,6 +7359,9 @@ msgstr "Cumulative %"
 msgid "Cumulative cost claimed and billed, by contract"
 msgstr "Cumulative cost claimed and billed, by contract"
 
+msgid "Cumulative value"
+msgstr "Cumulative value"
+
 msgid "Currencies"
 msgstr "Currencies"
 
@@ -7386,6 +7436,9 @@ msgstr "Custom SOW · we manage"
 
 msgid "Custom…"
 msgstr "Custom…"
+
+msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
+msgstr "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
 
 msgid "customer"
 msgstr "customer"
@@ -8905,6 +8958,9 @@ msgstr "Draft Journal Entries"
 msgid "Draft only"
 msgstr "Draft only"
 
+msgid "Draft Request"
+msgstr "Draft Request"
+
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Drafts a credit memo for the time already invoiced after the end date."
 
@@ -9630,6 +9686,9 @@ msgstr "edited <0/>"
 msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "Editing <0>{0}</0>: {1}. Changes go to this change request."
 
+msgid "Effective"
+msgstr "Effective"
+
 msgid "Effective From"
 msgstr "Effective From"
 
@@ -10120,6 +10179,9 @@ msgstr "Estimated — no capacity reservation"
 msgid "Estimated <0>{0}</0>"
 msgstr "Estimated <0>{0}</0>"
 
+msgid "Estimated cost to complete"
+msgstr "Estimated cost to complete"
+
 msgid "Estimated Duration"
 msgstr "Estimated Duration"
 
@@ -10128,6 +10190,9 @@ msgstr "Estimated Duration (minutes)"
 
 msgid "Estimated hours"
 msgstr "Estimated hours"
+
+msgid "Estimated on"
+msgstr "Estimated on"
 
 msgid "Estimated Scrap Quantity"
 msgstr "Estimated Scrap Quantity"
@@ -10155,6 +10220,9 @@ msgstr "Evening, {name}."
 
 msgid "Event"
 msgstr "Event"
+
+msgid "Event code"
+msgstr "Event code"
 
 msgid "Event Type"
 msgstr "Event Type"
@@ -10227,6 +10295,9 @@ msgstr "Everything else covers people, imports, integrations and the API — any
 
 msgid "Everything this run makes lands in one lot. The shop floor can't change it."
 msgstr "Everything this run makes lands in one lot. The shop floor can't change it."
+
+msgid "Evidence"
+msgstr "Evidence"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
@@ -11125,6 +11196,9 @@ msgstr "Financial Statements"
 
 msgid "Financing"
 msgstr "Financing"
+
+msgid "Financing Terms"
+msgstr "Financing Terms"
 
 msgid "Find an element"
 msgstr "Find an element"
@@ -12641,6 +12715,9 @@ msgstr "Inherited from the parent group."
 msgid "inherits {inheritedName}"
 msgstr "inherits {inheritedName}"
 
+msgid "Initial award"
+msgstr "Initial award"
+
 msgid "Input"
 msgstr "Input"
 
@@ -13801,6 +13878,10 @@ msgstr "Line"
 msgid "Line {0}"
 msgstr "Line {0}"
 
+#. placeholder {0}: SF1443_LINE_LABELS[editing]
+msgid "Line {editing}: {0}"
+msgstr "Line {editing}: {0}"
+
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 
@@ -13925,6 +14006,9 @@ msgstr "Linked PO"
 
 msgid "Links"
 msgstr "Links"
+
+msgid "Liquidation rate"
+msgstr "Liquidation rate"
 
 msgid "List"
 msgstr "List"
@@ -14617,6 +14701,9 @@ msgstr "Maximum Order Quantity"
 
 msgid "Maximum Order:"
 msgstr "Maximum Order:"
+
+msgid "Maximum share of price (PBP)"
+msgstr "Maximum share of price (PBP)"
 
 msgid "MCP Command"
 msgstr "MCP Command"
@@ -15398,6 +15485,9 @@ msgstr "New Payment"
 msgid "New Payment Term"
 msgstr "New Payment Term"
 
+msgid "New PBP Request"
+msgstr "New PBP Request"
+
 msgid "New Picking List"
 msgstr "New Picking List"
 
@@ -15418,6 +15508,9 @@ msgstr "New Procedure"
 
 msgid "New Process"
 msgstr "New Process"
+
+msgid "New Progress Payment Request"
+msgstr "New Progress Payment Request"
 
 msgid "New Project"
 msgstr "New Project"
@@ -15448,6 +15541,9 @@ msgstr "New record created"
 
 msgid "New Rental Agreement"
 msgstr "New Rental Agreement"
+
+msgid "New Request"
+msgstr "New Request"
 
 msgid "New Requirement"
 msgstr "New Requirement"
@@ -16264,6 +16360,9 @@ msgstr "No passkeys registered yet."
 msgid "No payables"
 msgstr "No payables"
 
+msgid "No payment events yet."
+msgstr "No payment events yet."
+
 msgid "No payments yet."
 msgstr "No payments yet."
 
@@ -16383,6 +16482,9 @@ msgstr "No reports match your search."
 
 msgid "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
 msgstr "No representative of this company has accepted the Carbon GovCloud Rider yet. An administrator at this company must accept it before anyone can access Carbon — Carbon staff cannot accept it on your behalf."
+
+msgid "No requests yet."
+msgstr "No requests yet."
 
 msgid "No resolution yet"
 msgstr "No resolution yet"
@@ -17654,6 +17756,9 @@ msgstr "Override Classification"
 msgid "Override Coverage"
 msgstr "Override Coverage"
 
+msgid "Override line {line}"
+msgstr "Override line {line}"
+
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Override needs the inventory:update permission and a reason."
 
@@ -17951,6 +18056,9 @@ msgstr "Payment Date"
 
 msgid "Payment depends on success"
 msgstr "Payment depends on success"
+
+msgid "Payment Events"
+msgstr "Payment Events"
 
 msgid "Payment from Customer"
 msgstr "Payment from Customer"
@@ -18905,6 +19013,12 @@ msgstr "Progress"
 
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Progress is this element's cost against its estimate at completion"
+
+msgid "Progress payment rate"
+msgstr "Progress payment rate"
+
+msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
+msgstr "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
 
 msgid "Project"
 msgstr "Project"
@@ -19909,6 +20023,9 @@ msgstr "Record Deposit"
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
 
+msgid "Record Payment"
+msgstr "Record Payment"
+
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 
@@ -20453,17 +20570,33 @@ msgstr "Repricing with today's rules and costs gives <0>{0}</0>."
 msgid "Reprint"
 msgstr "Reprint"
 
+msgid "Request"
+msgstr "Request"
+
+#. placeholder {0}: request.requestNumber
+msgid "Request {0}"
+msgstr "Request {0}"
+
 msgid "Request a new invite"
 msgstr "Request a new invite"
 
 msgid "Request Approval"
 msgstr "Request Approval"
 
+msgid "Request date"
+msgstr "Request date"
+
+msgid "Requested"
+msgstr "Requested"
+
 msgid "Requested By"
 msgstr "Requested By"
 
 msgid "Requested Date"
 msgstr "Requested Date"
+
+msgid "Requests"
+msgstr "Requests"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Require a 6-digit code from an authenticator app when signing in."
@@ -22897,6 +23030,9 @@ msgstr "Slides"
 msgid "SLIN"
 msgstr "SLIN"
 
+msgid "Small business"
+msgstr "Small business"
+
 msgid "Smallest child"
 msgstr "Smallest child"
 
@@ -24568,6 +24704,9 @@ msgstr "The engineering drawing this inspection plan is tied to; inspections rec
 msgid "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 msgstr "The entry window, the timecard check, dilution and the certification an employee signs at submit."
 
+msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+msgstr "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
+
 msgid "The evening hours, {name}."
 msgstr "The evening hours, {name}."
 
@@ -25035,6 +25174,9 @@ msgstr "The rate applies from this period to the end of the year"
 
 msgid "The rate the burden run applies to project cost"
 msgstr "The rate the burden run applies to project cost"
+
+msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
+msgstr "The rates the contract clause sets. A modification adds a rate from its effective date."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "The raw stock and material master you buy and consume"
@@ -26142,6 +26284,9 @@ msgstr "Total Construction Cost:"
 msgid "Total Cost"
 msgstr "Total Cost"
 
+msgid "Total costs incurred to date"
+msgstr "Total costs incurred to date"
+
 msgid "Total Direct Cost"
 msgstr "Total Direct Cost"
 
@@ -26689,6 +26834,10 @@ msgstr "Unlink return from purchase order?"
 msgid "Unlink RMA from sales order?"
 msgstr "Unlink RMA from sales order?"
 
+#. placeholder {0}: formatMoney.format(financing.unliquidated)
+msgid "Unliquidated: {0}"
+msgstr "Unliquidated: {0}"
+
 msgid "Unlock"
 msgstr "Unlock"
 
@@ -27131,6 +27280,15 @@ msgstr "Validating job..."
 
 msgid "Value"
 msgstr "Value"
+
+msgid "Value (blank uses the computed value)"
+msgstr "Value (blank uses the computed value)"
+
+msgid "Value of events completed earlier"
+msgstr "Value of events completed earlier"
+
+msgid "Value of the events in this request"
+msgstr "Value of the events in this request"
 
 msgid "Value Snapshot"
 msgstr "Value Snapshot"
@@ -28135,6 +28293,9 @@ msgstr "Who you buy from."
 msgid "Who you sell to and at what price."
 msgstr "Who you sell to and at what price."
 
+msgid "Whole contract"
+msgstr "Whole contract"
+
 msgid "Why"
 msgstr "Why"
 
@@ -28174,6 +28335,9 @@ msgstr "WIP"
 #. placeholder {0}: percentFormatter.format(contingency)
 msgid "with {0} contingency"
 msgstr "with {0} contingency"
+
+msgid "Withdraw"
+msgstr "Withdraw"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Without a picking list, operators pick material from the Scan tab."

@@ -126,14 +126,17 @@ export async function checkDepositDocument(
     customerId?: string | null;
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   },
   saved: {
     salesOrderId?: string | null;
     rentalAgreementId?: string | null;
+    customerContractId?: string | null;
   } = {}
 ): Promise<string | null> {
-  const { salesOrderId, rentalAgreementId, customerId } = payment;
-  if (!salesOrderId && !rentalAgreementId) return null;
+  const { salesOrderId, rentalAgreementId, customerContractId, customerId } =
+    payment;
+  if (!salesOrderId && !rentalAgreementId && !customerContractId) return null;
   // The validator already requires a customer for a deposit.
   if (!customerId) return "Only a customer payment can be a deposit";
 
@@ -144,12 +147,19 @@ export async function checkDepositDocument(
         .eq("id", salesOrderId)
         .eq("companyId", companyId)
         .maybeSingle()
-    : await client
-        .from("rentalAgreement")
-        .select("customerId, status")
-        .eq("id", rentalAgreementId!)
-        .eq("companyId", companyId)
-        .maybeSingle();
+    : rentalAgreementId
+      ? await client
+          .from("rentalAgreement")
+          .select("customerId, status")
+          .eq("id", rentalAgreementId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await client
+          .from("customerContract")
+          .select("customerId, status")
+          .eq("id", customerContractId!)
+          .eq("companyId", companyId)
+          .maybeSingle();
   if (document.error) throw new Error(document.error.message);
   if (!document.data) return "The deposit document was not found";
   if (document.data.customerId !== customerId) {
@@ -158,7 +168,9 @@ export async function checkDepositDocument(
 
   const unchanged = salesOrderId
     ? salesOrderId === saved.salesOrderId
-    : rentalAgreementId === saved.rentalAgreementId;
+    : rentalAgreementId
+      ? rentalAgreementId === saved.rentalAgreementId
+      : customerContractId === saved.customerContractId;
   if (payment.paymentType !== "Receipt" || unchanged) return null;
 
   const status = document.data.status as string;
@@ -168,5 +180,7 @@ export async function checkDepositDocument(
   if (open) return null;
   return salesOrderId
     ? `The sales order is ${status} and cannot take a new deposit`
-    : `The rental agreement is ${status} and cannot take a new deposit`;
+    : rentalAgreementId
+      ? `The rental agreement is ${status} and cannot take a new deposit`
+      : `The contract is ${status} and cannot take a new deposit`;
 }
