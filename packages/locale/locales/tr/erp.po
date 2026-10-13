@@ -5053,6 +5053,9 @@ msgstr "Satırı daralt"
 msgid "Collapse Machine"
 msgstr "Makineyi Daralt"
 
+msgid "Collapse navigation"
+msgstr "Gezinmeyi daralt"
+
 msgid "Collapse row"
 msgstr "Satırı Daralt"
 
@@ -12044,6 +12047,9 @@ msgstr "Mevcut fiyatlandırmayı koru, yalnızca yeni öğeler ekle"
 
 msgid "Keep Line"
 msgstr "Satırı koru"
+
+msgid "Keep navigation open"
+msgstr "Gezinmeyi açık tut"
 
 msgid "Keep only items where…"
 msgstr "Yalnızca öğeleri sakla…"

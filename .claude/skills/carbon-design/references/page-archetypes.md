@@ -29,15 +29,17 @@ unless they start with `apps/` or `packages/`.
 ```
 ┌──────┬──────────────────────────────────────────────────────────────────┐
 │ RAIL │ ╭ content panel: bg-card, md:inset + rounded-2xl + border ───────╮ │
-│ w-14 │ │ TOPBAR 49px  Company ▾ / Module / List / ID     ✎ 🔔 Avatar    │ │
-│ ⌕    │ ├────────────────────────────────────────────────────────────────┤ │
-│ mods │ │ <main>  module layout (sub-nav + Outlet) or document workspace │ │
+│ w-14 │ │ TOPBAR 49px  Module / List / ID                 ✎ 🔔 Avatar    │ │
+│ Co ▾ │ ├────────────────────────────────────────────────────────────────┤ │
+│ ⌕    │ │ <main>  module layout (sub-nav + Outlet) or document workspace │ │
+│ mods │ │                                                                │ │
 │ ⚙    │ ╰────────────────────────────────────────────────────────────────╯ │
 └──────┴──────────────────────────────────────────────────────────────────┘
 ```
 - Shell: `routes/x+/_layout.tsx`. Rail: `components/Layout/Navigation/PrimaryNavigation.tsx`,
   built on the shared `NavRail` from `@carbon/react` (the same rail MES uses): icon rail that
-  expands on mouse hover or when pinned with ⌘B, and pushes content. Modules are registered in `hooks/useModules.tsx`
+  expands on mouse hover or when pinned with the toggle beside the company switcher
+  (`Navigation/CompanySwitcher.tsx`, the rail's header), and pushes content. Modules are registered in `hooks/useModules.tsx`
   (`{ key, permission, name, to, icon }`, Lucide icons, Settings pinned bottom).
 - Topbar: breadcrumbs (from route `handle`), global ✎ Create menu
   (`components/Layout/Topbar/CreateMenu.tsx`), notifications, avatar.

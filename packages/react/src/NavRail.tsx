@@ -4,7 +4,7 @@
 
 "use client";
 
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { Slot, Slottable } from "@radix-ui/react-slot";
 import type { ButtonHTMLAttributes, MouseEvent, ReactNode } from "react";
 import {
@@ -16,13 +16,19 @@ import {
   useRef,
   useState
 } from "react";
-import { LuArrowUpRight } from "react-icons/lu";
+import { LuPanelLeft } from "react-icons/lu";
 import type { LinkProps } from "react-router";
 import { Link, useLocation } from "react-router";
+import { Avatar } from "./Avatar";
 import { Drawer, DrawerContent, DrawerTitle } from "./Drawer";
+import { useMode } from "./hooks/useMode";
+import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
+import { ShortcutKey } from "./ShortcutKey";
 import { useSidebar } from "./Sidebar";
+import { SHORTCUTS } from "./shortcuts";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
 import { VStack } from "./VStack";
 
@@ -46,8 +52,9 @@ export const navRailItemClasses = [
 
 /**
  * The primary left navigation shared by the ERP and MES app shells: a 56px
- * icon rail that grows to 208px while a mouse hovers it or while it is pinned
- * open (a `SidebarTrigger`, or ⌘B where the provider binds it), and a left drawer below `md`. Open state
+ * icon rail that grows to 240px while a mouse hovers it or while it is pinned
+ * open, and a left drawer below `md`. The toggle beside the `header` pins it,
+ * as do ⌘B and a `SidebarTrigger`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
  *
  * Expanding the rail, by hover or by pin, pushes the page right rather than
@@ -59,6 +66,19 @@ const HOVER_OPEN_DELAY_MS = 150;
 // Lets an item freeze the rail as it is (open or collapsed) while a menu or
 // popover it triggered is open, so a tap on a collapsed rail never opens it.
 const NavRailHoldContext = createContext<(() => () => void) | null>(null);
+
+/**
+ * Freeze the rail while the menu or popover an item triggers is open. Radix
+ * triggers pass their open state to the item as `data-state`.
+ */
+function useNavRailHold(triggerProps: object) {
+  const isOpen =
+    (triggerProps as Record<string, unknown>)["data-state"] === "open";
+  const hold = useContext(NavRailHoldContext);
+  useEffect(() => {
+    if (isOpen && hold) return hold();
+  }, [isOpen, hold]);
+}
 
 export function NavRail({
   children,
@@ -155,7 +175,15 @@ export function NavRail({
     <NavRailHoldContext.Provider value={hold}>
       <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
         <VStack spacing={1}>
-          {header ? <div className="w-full pb-2">{header}</div> : null}
+          {header ? (
+            // As tall as the app's top bar (ERP `--topbar-height`, MES
+            // `--header-height`) and as far down: the rail's padding plus the
+            // content panel's 1px border. The logo centres on the bar.
+            <div className="mt-px mb-2 flex h-[var(--topbar-height,var(--header-height,2.5rem))] w-full shrink-0 items-center gap-1">
+              {header}
+              <NavRailToggle />
+            </div>
+          ) : null}
           {children}
         </VStack>
         {footer ? <VStack spacing={1}>{footer}</VStack> : null}
@@ -220,7 +248,7 @@ export function NavRail({
       data-state={state}
       className={cn(
         "sticky top-0 h-svh z-50 hidden md:block shrink-0",
-        "w-14 data-[state=expanded]:w-[13rem]",
+        "w-14 data-[state=expanded]:w-[15rem]",
         "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none"
       )}
     >
@@ -230,7 +258,7 @@ export function NavRail({
         data-sliding-hover=""
         className={cn(
           "absolute inset-y-0 left-0 bg-background py-2 group",
-          "w-14 data-[state=expanded]:w-[13rem]",
+          "w-14 data-[state=expanded]:w-[15rem]",
           "transition-[width] duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] motion-reduce:transition-none",
           "flex flex-col justify-between",
           "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
@@ -324,13 +352,7 @@ export const NavRailItem = forwardRef<HTMLButtonElement, NavRailItemProps>(
   ) => {
     const Comp = asChild ? Slot : "button";
 
-    // Radix triggers (menus, popovers) pass their open state as `data-state`.
-    const isTriggerOpen =
-      (props as Record<string, unknown>)["data-state"] === "open";
-    const hold = useContext(NavRailHoldContext);
-    useEffect(() => {
-      if (isTriggerOpen && hold) return hold();
-    }, [isTriggerOpen, hold]);
+    useNavRailHold(props);
 
     return (
       <Comp
@@ -429,41 +451,122 @@ export function NavRailLink({
   );
 }
 
-/** For `header`: the logo sits in the icon column, the name has equal margins. */
-export function NavRailBrand({
-  href,
-  logo,
-  label
-}: {
-  href: string;
-  logo: ReactNode;
+type NavRailSwitcherProps = Omit<
+  ButtonHTMLAttributes<HTMLButtonElement>,
+  "children"
+> & {
+  /** The company's logo for each colour mode; its initials stand in for none. */
+  logoLight?: string | null;
+  logoDark?: string | null;
+  /** Also the accessible name unless `aria-label` is given. */
   label: string;
-}) {
-  return (
-    <a
-      href={href}
-      aria-label={label}
-      className={cn(
-        "relative flex h-10 w-full items-center gap-2 rounded-md px-2",
-        "text-sm font-medium text-foreground select-none",
-        "transition-[background-color] duration-100 ease-out hover:bg-active/60",
-        focusRingClasses
-      )}
-    >
-      <span className="flex size-6 shrink-0 items-center justify-center [&>svg]:size-4">
-        {logo}
-      </span>
-      <span
-        aria-hidden
-        className="min-w-0 flex-1 truncate md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+  /** After the name, e.g. chevrons for a menu or an arrow for a link out. */
+  trailing?: ReactNode;
+  asChild?: boolean;
+  children?: ReactNode;
+};
+
+/**
+ * For `header`: the company. The logo sits in the icon column, so it stays put
+ * as the rail grows, and the name fades in beside it. A menu trigger by
+ * default; with `asChild`, a link. On phones it is a full-width row.
+ */
+export const NavRailSwitcher = forwardRef<
+  HTMLButtonElement,
+  NavRailSwitcherProps
+>(
+  (
+    {
+      logoLight,
+      logoDark,
+      label,
+      trailing,
+      asChild = false,
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const Comp = asChild ? Slot : "button";
+    const logo = useMode() === "dark" ? logoDark : logoLight;
+    // Its menu is a portal: without the hold, the rail collapses under it.
+    useNavRailHold(props);
+
+    return (
+      <Comp
+        ref={ref}
+        type={asChild ? undefined : "button"}
+        aria-label={label}
+        {...props}
+        className={cn(
+          "relative flex h-10 shrink-0 items-center rounded-md select-none",
+          // Fills the header row beside the toggle. Not on phones: there it
+          // sits in a sheet's column, where flex-1 would collapse its height.
+          "max-md:w-full md:w-10 md:group-data-[state=expanded]:min-w-0 md:group-data-[state=expanded]:flex-1",
+          "text-sm font-medium text-foreground",
+          "transition-[background-color] duration-100 ease-out hover:bg-active/60 data-[state=open]:bg-active/60",
+          focusRingClasses,
+          className
+        )}
       >
-        {label}
-      </span>
-      <LuArrowUpRight
-        aria-hidden
-        className="hidden size-4 shrink-0 text-muted-foreground max-md:block"
-      />
-    </a>
+        <span className="absolute left-2 top-2 flex size-6 items-center justify-center [&>svg]:size-4">
+          {logo ? (
+            <img src={logo} alt="" className="size-6 rounded object-contain" />
+          ) : (
+            <Avatar size="xs" name={label} />
+          )}
+        </span>
+        <span
+          aria-hidden
+          className={cn(
+            "absolute left-12 right-2 flex min-w-0 items-center gap-1",
+            "md:opacity-0 transition-opacity duration-200 group-data-[state=expanded]:opacity-100"
+          )}
+        >
+          <span className="min-w-0 flex-1 truncate text-left">{label}</span>
+          {trailing ? (
+            <span className="flex shrink-0 text-muted-foreground [&>svg]:size-3.5">
+              {trailing}
+            </span>
+          ) : null}
+        </span>
+        <Slottable>{children}</Slottable>
+      </Comp>
+    );
+  }
+);
+NavRailSwitcher.displayName = "NavRailSwitcher";
+
+/**
+ * Keeps the rail open (pinned) or lets it collapse back to icons on mouse
+ * leave. Shown only while the rail is expanded: collapsed, it is only wide
+ * enough for the logo, and hovering it expands it.
+ */
+function NavRailToggle() {
+  const { t } = useLingui();
+  const { open, toggleSidebar } = useSidebar();
+  const label = open ? t`Collapse navigation` : t`Keep navigation open`;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <IconButton
+          aria-label={label}
+          aria-pressed={open}
+          icon={<LuPanelLeft />}
+          variant="ghost"
+          onClick={toggleSidebar}
+          className="hidden shrink-0 text-muted-foreground group-data-[state=expanded]:inline-flex"
+        />
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        <span className="flex items-center gap-2">
+          {label}
+          <ShortcutKey shortcut={SHORTCUTS.sidebarToggle} variant="small" />
+        </span>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 

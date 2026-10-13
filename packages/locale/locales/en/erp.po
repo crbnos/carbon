@@ -5053,6 +5053,9 @@ msgstr "Collapse line"
 msgid "Collapse Machine"
 msgstr "Collapse Machine"
 
+msgid "Collapse navigation"
+msgstr "Collapse navigation"
+
 msgid "Collapse row"
 msgstr "Collapse row"
 
@@ -12044,6 +12047,9 @@ msgstr "Keep existing pricing, only add new items"
 
 msgid "Keep Line"
 msgstr "Keep Line"
+
+msgid "Keep navigation open"
+msgstr "Keep navigation open"
 
 msgid "Keep only items where…"
 msgstr "Keep only items where…"

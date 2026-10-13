@@ -399,6 +399,9 @@ msgstr "닫기"
 msgid "Collapse characteristics table"
 msgstr "특성 표 축소"
 
+msgid "Collapse navigation"
+msgstr "탐색 접기"
+
 msgid "Collapse panel"
 msgstr "패널 축소"
 
@@ -421,6 +424,9 @@ msgstr "열: {0}"
 
 msgid "Columns"
 msgstr "열"
+
+msgid "Companies"
+msgstr "회사"
 
 msgid "Company"
 msgstr "회사"
@@ -905,6 +911,9 @@ msgstr "작업 이동표"
 msgid "Jobs"
 msgstr "작업 지시"
 
+msgid "Keep navigation open"
+msgstr "탐색 열어 두기"
+
 msgid "Keep picking"
 msgstr "피킹을 계속하세요"
 
@@ -1307,6 +1316,9 @@ msgstr "이 배치에서 작업 지시 열기"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
+
+msgid "Open ERP"
+msgstr "ERP 열기"
 
 msgid "Open Jobs"
 msgstr "미결 작업 지시"

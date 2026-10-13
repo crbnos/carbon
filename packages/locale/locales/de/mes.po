@@ -399,6 +399,9 @@ msgstr "Schließen"
 msgid "Collapse characteristics table"
 msgstr "Merkmalstabelle einklappen"
 
+msgid "Collapse navigation"
+msgstr "Navigation einklappen"
+
 msgid "Collapse panel"
 msgstr "Bereich reduzieren"
 
@@ -421,6 +424,9 @@ msgstr "Spalte: {0}"
 
 msgid "Columns"
 msgstr "Spalten"
+
+msgid "Companies"
+msgstr "Unternehmen"
 
 msgid "Company"
 msgstr "Unternehmen"
@@ -905,6 +911,9 @@ msgstr "Fertigungsauftrag-Laufkarte"
 msgid "Jobs"
 msgstr "Fertigungsaufträge"
 
+msgid "Keep navigation open"
+msgstr "Navigation geöffnet lassen"
+
 msgid "Keep picking"
 msgstr "Kommissionierung fortsetzen"
 
@@ -1307,6 +1316,9 @@ msgstr "Öffnen Sie einen Fertigungsauftrag in diesem Los"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Öffnen Sie einen NCR für MRB-Verwendungsentscheid"
+
+msgid "Open ERP"
+msgstr "ERP öffnen"
 
 msgid "Open Jobs"
 msgstr "Offene Fertigungsaufträge"

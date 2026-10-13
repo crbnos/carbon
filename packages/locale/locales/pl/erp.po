@@ -5053,6 +5053,9 @@ msgstr "Zwiń pozycję"
 msgid "Collapse Machine"
 msgstr "Zwiń maszynę"
 
+msgid "Collapse navigation"
+msgstr "Zwiń nawigację"
+
 msgid "Collapse row"
 msgstr "Zwiń wiersz"
 
@@ -12044,6 +12047,9 @@ msgstr "Zachowaj istniejące ceny, dodaj tylko nowe artykuły"
 
 msgid "Keep Line"
 msgstr "Zachowaj pozycję"
+
+msgid "Keep navigation open"
+msgstr "Pozostaw nawigację otwartą"
 
 msgid "Keep only items where…"
 msgstr "Zachowaj tylko przedmioty gdzie…"
