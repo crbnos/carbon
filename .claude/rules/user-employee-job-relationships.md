@@ -123,7 +123,11 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   employee-type `membership` the deactivation removed (the `sync_add_employee_to_type_group` trigger
   fires on INSERT only, so an UPDATE cannot rely on it), flips `active` back to true, and stamps
   `acceptedAt` in one Kysely transaction, so a failed restore leaves the invite unaccepted and
-  retryable rather than an active employee outside their type's group. The membership insert uses
+  retryable rather than an active employee outside their type's group. The `acceptedAt` update also
+  requires `revokedAt IS NULL`, so a revoke that commits after the invite was looked up still wins.
+  Before merging `userPermission`, the transaction locks the `user` row `FOR NO KEY UPDATE`
+  (`migrateUserToSso` does the same), so two first acceptances for one user in different companies
+  cannot drop each other's grants. The membership insert uses
   `ON CONFLICT ("groupId", "memberUserId") DO NOTHING` against `membership_groupId_memberUserId_key`
   (`20261013073945`), which is what makes it safe against the trigger racing the same insert.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved

@@ -12,15 +12,16 @@ import {
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // users.server pulls in auth, SSO, Redis and two module barrels at import
-// time. Everything createEmployeeAccount does not exercise is stubbed; the
-// parts it does are recorded so each test can assert on which writes ran and
-// through which client.
+// time. Everything createEmployeeAccount and acceptInvite do not exercise is
+// stubbed; the parts they do are recorded so each test can assert on which
+// writes ran and through which client.
 const mocks = vi.hoisted(() => ({
   deactivateEmployee: vi.fn(),
   deleteAuthAccount: vi.fn(),
   getDatabaseClient: vi.fn(),
   getPermissionsByEmployeeType: vi.fn(),
   insertEmployeeJob: vi.fn(),
+  mergeInvitePermissions: vi.fn(() => ({})),
   serviceRoleWrites: [] as { table: string; op: string; payload: unknown }[]
 }));
 
@@ -92,7 +93,7 @@ vi.mock("@carbon/ee/sso.server", () => ({
   getSsoConnection: vi.fn(),
   getSsoConnectionByDomain: vi.fn(),
   isSsoEnabled: () => false,
-  mergeInvitePermissions: vi.fn(),
+  mergeInvitePermissions: mocks.mergeInvitePermissions,
   seedSsoIdentityForUser: vi.fn(),
   uncoveredSsoDomainError: vi.fn()
 }));
@@ -119,7 +120,7 @@ vi.mock("../people/people.service", () => ({
   insertEmployeeJob: mocks.insertEmployeeJob
 }));
 
-const { createEmployeeAccount } = await import("./users.server");
+const { acceptInvite, createEmployeeAccount } = await import("./users.server");
 
 const USER = "usr_1";
 const COMPANY = "cmp_1";
@@ -185,7 +186,10 @@ function makeDb(respond: (statement: Statement) => unknown[]) {
 }
 
 /** The caller's RLS client: answers the pre-read and records inserts. */
-function makeClient(existingEmployee: { id: string; active: boolean } | null) {
+function makeClient(
+  existingEmployee: { id: string; active: boolean } | null,
+  readError: { message: string } | null = null
+) {
   const writes: { table: string; op: string; payload: unknown }[] = [];
   const client = {
     from: (table: string) => {
@@ -193,7 +197,11 @@ function makeClient(existingEmployee: { id: string; active: boolean } | null) {
         select: () => chain,
         eq: () => chain,
         maybeSingle: () =>
-          Promise.resolve({ data: existingEmployee, error: null }),
+          Promise.resolve(
+            readError
+              ? { data: null, error: readError }
+              : { data: existingEmployee, error: null }
+          ),
         single: () => Promise.resolve({ data: {}, error: null }),
         insert: (payload: unknown) => {
           writes.push({ table, op: "insert", payload });
@@ -359,6 +367,24 @@ describe("createEmployeeAccount — re-adding a deactivated employee", () => {
   });
 });
 
+describe("createEmployeeAccount — the existing-employee read fails", () => {
+  it("returns the error before any write path starts", async () => {
+    const { db, transactions } = makeDb(() => []);
+    mocks.getDatabaseClient.mockReturnValue(db);
+    const { client, writes } = makeClient(null, { message: "read failed" });
+
+    const result = await createEmployeeAccount(client, ACCOUNT);
+
+    expect(result).toEqual({ success: false, message: "read failed" });
+    // Neither the re-invite transaction nor the first-time writes ran, so no
+    // redeemable invite was written beside a failed employee insert.
+    expect(transactions.begin).toBe(0);
+    expect(writes).toEqual([]);
+    expect(mocks.serviceRoleWrites).toEqual([]);
+    expect(mocks.insertEmployeeJob).not.toHaveBeenCalled();
+  });
+});
+
 describe("createEmployeeAccount — first time in the company", () => {
   it("keeps writing through the caller's RLS client, outside any transaction", async () => {
     const { db, transactions } = makeDb(() => []);
@@ -391,5 +417,84 @@ describe("createEmployeeAccount — first time in the company", () => {
     expect(mocks.serviceRoleWrites).toMatchObject([
       { table: "invite", op: "upsert" }
     ]);
+  });
+});
+
+describe("acceptInvite", () => {
+  const INVITE = {
+    id: "inv_1",
+    code: "code_1",
+    email: EMAIL,
+    companyId: COMPANY,
+    role: "employee",
+    permissions: {},
+    createdAt: "2026-10-01T00:00:00Z",
+    acceptedAt: null,
+    revokedAt: null
+  };
+
+  /** The service-role client acceptInvite looks the invite up with. */
+  function makeInviteLookup() {
+    const chain: Record<string, unknown> = {
+      select: () => chain,
+      eq: () => chain,
+      is: () => chain,
+      single: () => Promise.resolve({ data: INVITE, error: null })
+    };
+    return { from: () => chain } as never;
+  }
+
+  /** `acceptedRow` is what the guarded invite update returns: none = lost. */
+  function answerAccept(acceptedRow: typeof INVITE | null) {
+    return ({ sql }: Statement) => {
+      if (sql.startsWith('select "id", "employeeTypeId" from "employee"')) {
+        return [{ id: USER, employeeTypeId: "et_1" }];
+      }
+      if (sql.startsWith('select "id" from "user"')) return [{ id: USER }];
+      if (sql.startsWith('update "invite"')) {
+        return acceptedRow ? [acceptedRow] : [];
+      }
+      return [];
+    };
+  }
+
+  it("locks the user row before reading the permissions it merges into", async () => {
+    const { db, statements, transactions } = makeDb(answerAccept(INVITE));
+    mocks.getDatabaseClient.mockReturnValue(db);
+
+    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+
+    expect(result.error).toBeNull();
+    expect(transactions).toEqual({ begin: 1, commit: 1, rollback: 0 });
+    const lock = statements.findIndex((s) =>
+      /^select "id" from "user" where "id" = \$1 for no key update$/.test(s.sql)
+    );
+    const read = statements.findIndex((s) =>
+      s.sql.startsWith('select "permissions" from "userPermission"')
+    );
+    expect(lock).toBeGreaterThanOrEqual(0);
+    expect(statements[lock].parameters).toEqual([USER]);
+    expect(lock).toBeLessThan(read);
+  });
+
+  it("does not accept an invite revoked after it was looked up", async () => {
+    const { db, statements, transactions } = makeDb(answerAccept(null));
+    mocks.getDatabaseClient.mockReturnValue(db);
+
+    const result = await acceptInvite(makeInviteLookup(), INVITE.code, EMAIL);
+
+    expect(result).toEqual({
+      data: null,
+      error: {
+        message: "This invite has already been accepted or was revoked."
+      }
+    });
+    // The activation, membership and permission writes before the guard are
+    // rolled back with it.
+    expect(transactions).toEqual({ begin: 1, commit: 0, rollback: 1 });
+    const update = statements.find((s) => s.sql.startsWith('update "invite"'));
+    expect(update?.sql).toMatch(
+      /"companyId" = \$\d+ and "acceptedAt" is null and "revokedAt" is null/
+    );
   });
 });

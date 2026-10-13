@@ -225,6 +225,19 @@ export async function acceptInvite(
         .onConflict((oc) => oc.columns(["userId", "companyId"]).doNothing())
         .execute();
 
+      // Serialize on the user row before the read-merge-write below. The
+      // userPermission lock alone holds nothing while that row is absent, so
+      // two first acceptances for this user in different companies could both
+      // merge from {} and the later upsert would drop the earlier grant.
+      // NO KEY UPDATE, not UPDATE: foreign-key checks from rows that reference
+      // the user (createdBy and the like) are not blocked.
+      await trx
+        .selectFrom("user")
+        .select("id")
+        .where("id", "=", userId)
+        .forNoKeyUpdate()
+        .executeTakeFirstOrThrow();
+
       // setUserPermissions semantics, but under a row lock so two concurrent
       // grants cannot lose one another's writes.
       const currentPermission = await trx
@@ -249,18 +262,22 @@ export async function acceptInvite(
         )
         .execute();
 
-      // Guarded so a concurrent acceptance can never apply twice.
+      // Guarded so a concurrent acceptance can never apply twice, and so a
+      // revoke that committed after the lookup above still wins.
       const accepted = await trx
         .updateTable("invite")
         .set({ acceptedAt: datetime.timestamp() })
         .where("code", "=", code)
         .where("companyId", "=", companyId)
         .where("acceptedAt", "is", null)
+        .where("revokedAt", "is", null)
         .returningAll()
         .executeTakeFirst();
 
       if (!accepted) {
-        throw new Error("This invite has already been accepted.");
+        throw new Error(
+          "This invite has already been accepted or was revoked."
+        );
       }
 
       return accepted;
@@ -558,6 +575,18 @@ export async function createEmployeeAccount(
       .eq("id", userId)
       .eq("companyId", companyId)
       .maybeSingle();
+
+    // A failed read must not fall through to the first-time path: there the
+    // invite upsert can succeed beside a failing employee insert and leave a
+    // redeemable invite behind.
+    if (existingEmployee.error) {
+      logger.error("Failed to read the existing employee row", {
+        companyId,
+        userId,
+        error: existingEmployee.error
+      });
+      return { success: false, message: existingEmployee.error.message };
+    }
 
     // Only an *active* employee is genuinely already a member. An inactive row
     // is the residue of a deactivation or a revoked invite: deactivation keeps

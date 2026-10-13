@@ -538,6 +538,16 @@ export async function migrateUserToSso(
         .onConflict((oc) => oc.columns(["userId", "companyId"]).doNothing())
         .execute();
 
+      // Serialize on the user row before the read-merge-write below, as
+      // acceptInvite does: the userPermission lock holds nothing while that
+      // row is absent. NO KEY UPDATE leaves foreign-key checks unblocked.
+      await trx
+        .selectFrom("user")
+        .select("id")
+        .where("id", "=", newUserId)
+        .forNoKeyUpdate()
+        .executeTakeFirstOrThrow();
+
       // Merge invite permissions into userPermission (setUserPermissions
       // semantics), under lock so concurrent grants don't lose writes.
       const currentPermission = await trx
