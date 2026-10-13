@@ -162,9 +162,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       ? data({ success: false, error: message }, { status: 400 })
       : data({ success: false }, await flash(request, error(err, message)));
   };
-  const done = async (message: string) =>
+  // `id` is the line saved: a grid draft keeps it, so its next edit updates.
+  const done = async (message: string, id?: string) =>
     quiet
-      ? data({ success: true, error: null })
+      ? data({ success: true, error: null, id: id ?? null })
       : data({ success: true }, await flash(request, success(message)));
   const invalid = (validation: {
     error: Parameters<typeof validationError>[0];
@@ -228,7 +229,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             createdBy: userId
           });
       if (result.error) return refuse(result.error, "Failed to save the part");
-      return done("Part saved");
+      return done("Part saved", result.data?.id);
     }
     case "upsertLabor": {
       const validation = await validator(projectElementLaborValidator).validate(
@@ -253,7 +254,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             createdBy: userId
           });
       if (result.error) return refuse(result.error, "Failed to save the labor");
-      return done("Labor saved");
+      return done("Labor saved", result.data?.id);
     }
     case "upsertCost": {
       const validation = await validator(projectElementCostValidator).validate(
@@ -278,7 +279,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             createdBy: userId
           });
       if (result.error) return refuse(result.error, "Failed to save the cost");
-      return done("Cost saved");
+      return done("Cost saved", result.data?.id);
     }
     case "deleteMaterial":
     case "deleteLabor":

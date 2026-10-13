@@ -86,25 +86,29 @@ import {
   useActiveChangeRequestId,
   withChangeRequest
 } from "../ChangeRequests/useActiveChangeRequest";
+import { orderPlanRows, type PlanLineType } from "./plan-rows";
 
 type PlanLines = ProjectElementPage["planLines"];
 type MaterialLine = PlanLines["materials"][number];
 type LaborLine = PlanLines["labor"][number];
 type CostLine = PlanLines["costs"][number];
 
-export type PlanLineType = "material" | "labor" | "cost";
+export type { PlanLineType };
 type MethodType = (typeof methodType)[number];
 
 /**
  * One row of the plan grid. `line` is the item (material), the labor
  * category (labor) or the description (cost); `quantity` is a material's
  * quantity or a labor line's hours; `date` is a material's required date or
- * a labor line's start. A row with no `id` is a draft: it saves once its
- * line is set.
+ * a labor line's start. A `draft` row comes from "Add line": it saves once
+ * its line is set, and keeps its place (with the new `id`) until the saved
+ * line is back from the server.
  */
 type PlanRow = {
   key: string;
   id: string | null;
+  draft: boolean;
+  createdAt: string | null;
   type: PlanLineType;
   line: string;
   methodType: MethodType | null;
@@ -136,6 +140,8 @@ function draftRow(type: PlanLineType, key: string): PlanRow {
   return {
     key,
     id: null,
+    draft: true,
+    createdAt: null,
     type,
     line: "",
     methodType: type === "material" ? "Pull from Inventory" : null,
@@ -146,6 +152,12 @@ function draftRow(type: PlanLineType, key: string): PlanRow {
     date: null,
     endDate: null
   };
+}
+
+/** The id the plan route answers for a line it created. */
+function savedLineId(body: unknown) {
+  const id = (body as { id?: unknown } | null)?.id;
+  return typeof id === "string" && id ? id : null;
 }
 
 /** The fields a row posts: the whole line, so a save never clears a column. */
@@ -257,54 +269,80 @@ export function ElementPlanLines({
   const [creatingJob, setCreatingJob] = useState<MaterialLine | null>(null);
   const [creatingLine, setCreatingLine] = useState<MaterialLine | null>(null);
 
+  // The ids of the saved lines: a saved draft leaves the drafts once its
+  // line is among them.
+  const savedIds = useMemo(
+    () =>
+      new Set([
+        ...planLines.materials.map((line) => line.id),
+        ...planLines.labor.map((line) => line.id),
+        ...planLines.costs.map((line) => line.id)
+      ]),
+    [planLines]
+  );
+  useEffect(() => {
+    if (drafts.some((d) => d.id !== null && savedIds.has(d.id))) {
+      setDrafts((previous) =>
+        previous.filter((d) => d.id === null || !savedIds.has(d.id))
+      );
+    }
+  }, [drafts, savedIds]);
+
   const rows = useMemo<PlanRow[]>(
-    () => [
-      ...planLines.materials.map<PlanRow>((line) => ({
-        key: line.id,
-        id: line.id,
-        type: "material",
-        line: line.itemId,
-        methodType: line.methodType,
-        quantity: Number(line.quantity),
-        unitOfMeasureCode: line.unitOfMeasureCode ?? null,
-        unitCost: line.unitCost === null ? null : Number(line.unitCost),
-        amount:
-          line.unitCost === null
-            ? null
-            : Number(line.quantity) * Number(line.unitCost),
-        date: line.requiredDate ?? null,
-        endDate: null,
-        material: line
-      })),
-      ...planLines.labor.map<PlanRow>((line: LaborLine) => ({
-        key: line.id,
-        id: line.id,
-        type: "labor",
-        line: line.laborCategoryId,
-        methodType: null,
-        quantity: Number(line.hours),
-        unitOfMeasureCode: null,
-        unitCost: null,
-        amount: null,
-        date: line.startDate ?? null,
-        endDate: line.endDate ?? null
-      })),
-      ...planLines.costs.map<PlanRow>((line: CostLine) => ({
-        key: line.id,
-        id: line.id,
-        type: "cost",
-        line: line.description,
-        methodType: null,
-        quantity: null,
-        unitOfMeasureCode: null,
-        unitCost: null,
-        amount: Number(line.amount),
-        date: null,
-        endDate: null
-      })),
-      ...drafts
-    ],
-    [planLines, drafts]
+    () =>
+      orderPlanRows([
+        ...planLines.materials.map<PlanRow>((line) => ({
+          key: line.id,
+          id: line.id,
+          draft: false,
+          createdAt: line.createdAt ?? null,
+          type: "material",
+          line: line.itemId,
+          methodType: line.methodType,
+          quantity: Number(line.quantity),
+          unitOfMeasureCode: line.unitOfMeasureCode ?? null,
+          unitCost: line.unitCost === null ? null : Number(line.unitCost),
+          amount:
+            line.unitCost === null
+              ? null
+              : Number(line.quantity) * Number(line.unitCost),
+          date: line.requiredDate ?? null,
+          endDate: null,
+          material: line
+        })),
+        ...planLines.labor.map<PlanRow>((line: LaborLine) => ({
+          key: line.id,
+          id: line.id,
+          draft: false,
+          createdAt: line.createdAt ?? null,
+          type: "labor",
+          line: line.laborCategoryId,
+          methodType: null,
+          quantity: Number(line.hours),
+          unitOfMeasureCode: null,
+          unitCost: null,
+          amount: null,
+          date: line.startDate ?? null,
+          endDate: line.endDate ?? null
+        })),
+        ...planLines.costs.map<PlanRow>((line: CostLine) => ({
+          key: line.id,
+          id: line.id,
+          draft: false,
+          createdAt: line.createdAt ?? null,
+          type: "cost",
+          line: line.description,
+          methodType: null,
+          quantity: null,
+          unitOfMeasureCode: null,
+          unitCost: null,
+          amount: Number(line.amount),
+          date: null,
+          endDate: null
+        })),
+        ...drafts.filter((d) => d.id === null || !savedIds.has(d.id))
+      ]),
+    [planLines, drafts, savedIds]
   );
 
   const itemsById = useMemo(
@@ -316,8 +354,10 @@ export function ElementPlanLines({
     [laborCategories]
   );
 
-  // A cell edit posts the whole row with the change. A draft only keeps the
-  // change until its line is set; then it posts and leaves the drafts.
+  // A cell edit posts the whole row with the change. A draft keeps each
+  // change; once its line is set it posts, takes the new line's id (so a
+  // second edit updates that line), and stays in its place until the saved
+  // line is back from the server.
   const onCellEdit = useCallback(
     async (accessorKey: string, value: unknown, row: PlanRow) => {
       const raw = value === null || value === undefined ? null : value;
@@ -332,22 +372,28 @@ export function ElementPlanLines({
         next.unitOfMeasureCode =
           itemsById.get(String(raw))?.unitOfMeasureCode ?? null;
       }
-      if (row.id === null) {
-        if (!next.line) {
-          setDrafts((previous) =>
-            previous.map((d) => (d.key === row.key ? next : d))
-          );
-          return { data: null, error: null } as Awaited<
-            ReturnType<typeof save>
-          >;
-        }
-        const result = await save(action, rowFields(next));
-        if (!result.error) {
+      if (!row.draft) return save(action, rowFields(next));
+
+      const putDraft = (draft: PlanRow) =>
+        setDrafts((previous) =>
+          previous.map((d) => (d.key === row.key ? draft : d))
+        );
+      putDraft(next);
+      if (!next.line) {
+        return { data: null, error: null } as Awaited<ReturnType<typeof save>>;
+      }
+      const result = await save(action, rowFields(next));
+      if (result.error) {
+        putDraft(row);
+      } else if (next.id === null) {
+        const savedId = savedLineId(result.data);
+        if (savedId) {
+          putDraft({ ...next, id: savedId });
+        } else {
           setDrafts((previous) => previous.filter((d) => d.key !== row.key));
         }
-        return result;
       }
-      return save(action, rowFields(next));
+      return result;
     },
     [action, save, itemsById]
   );
@@ -613,6 +659,7 @@ export function ElementPlanLines({
             columns={gridColumns}
             data={rows}
             count={rows.length}
+            getRowId={(row) => row.key}
             editableComponents={editableComponents}
             withInlineEditing={!isDisabled}
             forceEditMode={!isDisabled}
@@ -677,7 +724,13 @@ export function ElementPlanLines({
           text={t`Remove ${deletingName} from the plan?`}
           fields={{ intent: DELETE_INTENT[deleting.type], id: deleting.id }}
           onCancel={() => setDeleting(null)}
-          onSubmit={() => setDeleting(null)}
+          onSubmit={() => {
+            // A saved draft whose line is not back yet goes with it.
+            setDrafts((previous) =>
+              previous.filter((d) => d.key !== deleting.key)
+            );
+            setDeleting(null);
+          }}
         />
       )}
     </div>

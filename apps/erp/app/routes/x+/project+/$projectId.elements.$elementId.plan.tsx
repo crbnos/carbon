@@ -62,9 +62,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     quiet
       ? data({ success: false, error: message }, { status: 400 })
       : data({ success: false }, await flash(request, error(err, message)));
-  const done = async (message: string) =>
+  // `id` is the line saved: a grid draft keeps it, so its next edit updates.
+  const done = async (message: string, id?: string) =>
     quiet
-      ? data({ success: true, error: null })
+      ? data({ success: true, error: null, id: id ?? null })
       : data({ success: true }, await flash(request, success(message)));
   const invalid = (validation: {
     error: Parameters<typeof validationError>[0];
@@ -116,8 +117,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ) => {
     if (!changeRequestId) return null;
     const { id: lineId, projectElementId: _element, ...fields } = line;
+    let saved: { id: string };
     try {
-      await upsertPlanLineInChangeRequest(getDatabaseClient(), {
+      saved = await upsertPlanLineInChangeRequest(getDatabaseClient(), {
         companyId,
         userId,
         projectId,
@@ -130,7 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     } catch (err) {
       return failed(err, err instanceof Error ? err.message : message);
     }
-    return done(message);
+    return done(message, saved.id);
   };
 
   const failed = (err: unknown, message: string) => {
@@ -172,7 +174,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           });
       if (result.error)
         return failed(result.error, "Failed to save the material");
-      return done("Material saved");
+      return done("Material saved", result.data?.id);
     }
     case "upsertLabor": {
       const validation = await validator(projectElementLaborValidator).validate(
@@ -200,7 +202,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             createdBy: userId
           });
       if (result.error) return failed(result.error, "Failed to save the labor");
-      return done("Labor saved");
+      return done("Labor saved", result.data?.id);
     }
     case "upsertCost": {
       const validation = await validator(projectElementCostValidator).validate(
@@ -228,7 +230,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             createdBy: userId
           });
       if (result.error) return failed(result.error, "Failed to save the cost");
-      return done("Cost saved");
+      return done("Cost saved", result.data?.id);
     }
     case "deleteMaterial":
     case "deleteLabor":

@@ -47,7 +47,8 @@ export function rowMenuColumn<T>(
  * route answers `{ error }` instead of a redirect and a flash. A failure
  * toasts and the cell reverts (the editable cells read `error`); a success
  * revalidates the page so totals and footers follow, and toasts the route's
- * `warning` when it sends one.
+ * `warning` when it sends one. `data` is the route's answer (a created
+ * line's `id`, for example), or null.
  */
 export function useCellSave() {
   const { t } = useLingui();
@@ -90,7 +91,7 @@ export function useCellSave() {
       }
 
       return {
-        data: null,
+        data: message ? null : (body ?? null),
         error: message ? { message } : null
       } as unknown as PostgrestSingleResponse<unknown>;
     },
