@@ -56,10 +56,13 @@ export type PlanMachineTimeResult = {
   appliedThrough: string | null;
 };
 
-/** An open interval: `id` when it already exists, none when this run opened it. */
-type Slot = { id?: string; startTime: string };
-/** An existing event's operation is never read: it is closed by `id`. */
-type EventSlot = Slot & { jobOperationId: string };
+/** An open interval this run found (`existing`, closed by id) or opened (`new`). */
+type EventSlot =
+  | { kind: "existing"; id: string; startTime: string }
+  | { kind: "new"; jobOperationId: string; startTime: string };
+type UnattributedSlot =
+  | { kind: "existing"; id: string; startTime: string }
+  | { kind: "new"; startTime: string };
 
 const at = (iso: string) => Date.parse(iso);
 
@@ -75,10 +78,18 @@ export function planMachineTime(
   let stateAt = input.currentStateAt;
   let appliedThrough: string | null = null;
   let openEvent: EventSlot | null = input.openMachineEvent
-    ? { ...input.openMachineEvent, jobOperationId: "" }
+    ? {
+        kind: "existing",
+        id: input.openMachineEvent.id,
+        startTime: input.openMachineEvent.startTime
+      }
     : null;
-  let openUnattributed: Slot | null = input.openUnattributed
-    ? { ...input.openUnattributed }
+  let openUnattributed: UnattributedSlot | null = input.openUnattributed
+    ? {
+        kind: "existing",
+        id: input.openUnattributed.id,
+        startTime: input.openUnattributed.startTime
+      }
     : null;
   const blockedAt = input.blockedSince === null ? null : at(input.blockedSince);
 
@@ -93,54 +104,77 @@ export function planMachineTime(
       input.loadedAt &&
       at(input.loadedAt) <= at(start)
     ) {
-      openEvent = { startTime: start, jobOperationId: loaded };
+      openEvent = { kind: "new", jobOperationId: loaded, startTime: start };
     } else {
-      openUnattributed = { startTime: start };
+      openUnattributed = { kind: "new", startTime: start };
     }
   };
 
+  // A close always clears the slot. An end at or before the start drops a slot
+  // this run opened, and closes an existing one at its own start.
   const closeEvent = (end: string) => {
-    if (openEvent && at(end) > at(openEvent.startTime)) {
-      writes.push(
-        openEvent.id
-          ? {
-              kind: "closeMachineEvent",
-              productionEventId: openEvent.id,
-              endTime: end
-            }
-          : {
-              kind: "insertMachineEvent",
-              jobOperationId: openEvent.jobOperationId,
-              startTime: openEvent.startTime,
-              endTime: end
-            }
-      );
-      openEvent = null;
+    const slot = openEvent;
+    if (!slot) return;
+    openEvent = null;
+    const ends = at(end) > at(slot.startTime);
+    if (slot.kind === "existing") {
+      writes.push({
+        kind: "closeMachineEvent",
+        productionEventId: slot.id,
+        endTime: ends ? end : slot.startTime
+      });
+    } else if (ends) {
+      writes.push({
+        kind: "insertMachineEvent",
+        jobOperationId: slot.jobOperationId,
+        startTime: slot.startTime,
+        endTime: end
+      });
     }
   };
 
   const closeUnattributed = (end: string) => {
-    if (openUnattributed && at(end) > at(openUnattributed.startTime)) {
-      writes.push(
-        openUnattributed.id
-          ? {
-              kind: "closeUnattributed",
-              unattributedId: openUnattributed.id,
-              endTime: end
-            }
-          : {
-              kind: "insertUnattributed",
-              startTime: openUnattributed.startTime,
-              endTime: end
-            }
-      );
-      openUnattributed = null;
+    const slot = openUnattributed;
+    if (!slot) return;
+    openUnattributed = null;
+    const ends = at(end) > at(slot.startTime);
+    if (slot.kind === "existing") {
+      writes.push({
+        kind: "closeUnattributed",
+        unattributedId: slot.id,
+        endTime: ends ? end : slot.startTime
+      });
+    } else if (ends) {
+      writes.push({
+        kind: "insertUnattributed",
+        startTime: slot.startTime,
+        endTime: end
+      });
     }
   };
 
   const closeAll = (end: string) => {
     closeEvent(end);
     closeUnattributed(end);
+  };
+
+  // A slot this run opened and did not close is inserted open.
+  const insertStillOpen = () => {
+    if (openEvent?.kind === "new") {
+      writes.push({
+        kind: "insertMachineEvent",
+        jobOperationId: openEvent.jobOperationId,
+        startTime: openEvent.startTime,
+        endTime: null
+      });
+    }
+    if (openUnattributed?.kind === "new") {
+      writes.push({
+        kind: "insertUnattributed",
+        startTime: openUnattributed.startTime,
+        endTime: null
+      });
+    }
   };
 
   // Maintenance begins: an event that started before the block stops at it,
@@ -181,19 +215,28 @@ export function planMachineTime(
     }
   }
 
+  // Repeated reports of one state are one run: the first starts it, the last
+  // is how far it was read.
+  const runs: (StoredStateChange & { through: string })[] = [];
+  for (const change of changes) {
+    const last = runs.at(-1);
+    if (last && last.state === change.state) last.through = change.changedAt;
+    else runs.push({ ...change, through: change.changedAt });
+  }
+
   // Debounce: a state shorter than the minimum is dropped; the last change
   // stays pending until it has lasted the minimum.
-  for (const [i, change] of changes.entries()) {
-    if (blockedAt !== null && at(change.changedAt) >= blockedAt) enterBlock();
-    const next = changes[i + 1];
+  for (const [i, run] of runs.entries()) {
+    if (blockedAt !== null && at(run.changedAt) >= blockedAt) enterBlock();
+    const next = runs[i + 1];
     const end = next ? next.changedAt : input.now;
-    if (at(end) - at(change.changedAt) < minimumMs) {
+    if (at(end) - at(run.changedAt) < minimumMs) {
       if (!next) break;
-      appliedThrough = change.changedAt;
+      appliedThrough = run.through;
       continue;
     }
-    apply(change.state, change.changedAt);
-    appliedThrough = change.changedAt;
+    apply(run.state, run.changedAt);
+    appliedThrough = run.through;
   }
 
   if (blockedAt !== null && blockedAt <= at(input.now)) enterBlock();
@@ -211,23 +254,7 @@ export function planMachineTime(
     openRunning(lastEnd && at(lastEnd) > at(stateAt) ? lastEnd : stateAt);
   }
 
-  const event = openEvent as EventSlot | null;
-  if (event && !event.id) {
-    writes.push({
-      kind: "insertMachineEvent",
-      jobOperationId: event.jobOperationId,
-      startTime: event.startTime,
-      endTime: null
-    });
-  }
-  const unattributed = openUnattributed as Slot | null;
-  if (unattributed && !unattributed.id) {
-    writes.push({
-      kind: "insertUnattributed",
-      startTime: unattributed.startTime,
-      endTime: null
-    });
-  }
+  insertStillOpen();
 
   return {
     writes,

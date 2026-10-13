@@ -344,4 +344,56 @@ describe("planMachineTime", () => {
     expect(result.writes).toEqual([]);
     expect(result.currentState).toBe("Running");
   });
+
+  it("drops a new slot that would close at or before its start", () => {
+    const result = planMachineTime(
+      base({
+        minimumStateSeconds: 0,
+        changes: [
+          { state: "Running", changedAt: t("10:00:00") },
+          { state: "Idle", changedAt: t("10:00:00") }
+        ]
+      })
+    );
+    expect(result.writes).toEqual([]);
+    expect(result.currentState).toBe("Idle");
+  });
+
+  it("closes an existing slot at its start when the end is earlier", () => {
+    const result = planMachineTime(
+      base({
+        currentState: "Running",
+        openMachineEvent: { id: "pe1", startTime: t("10:30:00") },
+        changes: [{ state: "Idle", changedAt: t("10:20:00") }]
+      })
+    );
+    expect(result.writes).toEqual([
+      {
+        kind: "closeMachineEvent",
+        productionEventId: "pe1",
+        endTime: t("10:30:00")
+      }
+    ]);
+  });
+
+  it("treats repeated same-state changes as one run for the debounce", () => {
+    const result = planMachineTime(
+      base({
+        now: t("10:05:00"),
+        changes: [
+          { state: "Running", changedAt: t("10:00:00") },
+          { state: "Running", changedAt: t("10:00:30") },
+          { state: "Running", changedAt: t("10:00:50") }
+        ]
+      })
+    );
+    expect(result.writes).toEqual([
+      {
+        kind: "insertMachineEvent",
+        jobOperationId: "A",
+        startTime: t("10:00:00"),
+        endTime: null
+      }
+    ]);
+  });
 });
