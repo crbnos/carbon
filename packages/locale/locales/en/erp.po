@@ -565,6 +565,7 @@ msgstr "{name} ends {end} (was open-ended)"
 
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
+
 msgid "{name} path"
 msgstr "{name} path"
 

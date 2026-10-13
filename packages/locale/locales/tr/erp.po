@@ -565,6 +565,7 @@ msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
+
 msgid "{name} path"
 msgstr "{name} yolu"
 

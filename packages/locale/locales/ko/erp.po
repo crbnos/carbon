@@ -565,6 +565,7 @@ msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
+
 msgid "{name} path"
 msgstr "{name} 경로"
 

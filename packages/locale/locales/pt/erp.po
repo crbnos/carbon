@@ -565,6 +565,7 @@ msgstr "{name} termina {end} (era sem data de término)"
 
 msgid "{name} needs an account number."
 msgstr "{name} precisa de um número de conta."
+
 msgid "{name} path"
 msgstr "{name} trajetória"
 

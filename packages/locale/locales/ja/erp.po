@@ -565,6 +565,7 @@ msgstr "{name} は {end} に終了します（以前は期限なし）"
 
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
+
 msgid "{name} path"
 msgstr "{name}パス"
 

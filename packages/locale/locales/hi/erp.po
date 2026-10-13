@@ -565,6 +565,7 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 
 msgid "{name} needs an account number."
 msgstr "{name} को खाता संख्या की आवश्यकता है।"
+
 msgid "{name} path"
 msgstr "{name} मार्ग"
 

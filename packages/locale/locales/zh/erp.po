@@ -565,6 +565,7 @@ msgstr "{name} 在 {end} 结束（之前是开放式）"
 
 msgid "{name} needs an account number."
 msgstr "{name} 需要账户编号。"
+
 msgid "{name} path"
 msgstr "{name}路径"
 

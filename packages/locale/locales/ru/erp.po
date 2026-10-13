@@ -565,6 +565,7 @@ msgstr "{name} заканчивается {end} (было открыто)"
 
 msgid "{name} needs an account number."
 msgstr "{name} требует номера счета."
+
 msgid "{name} path"
 msgstr "{name} траектория"
 

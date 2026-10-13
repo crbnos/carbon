@@ -565,6 +565,7 @@ msgstr "{name} endet {end} (war unbegrenzt)"
 
 msgid "{name} needs an account number."
 msgstr "{name} benötigt eine Kontonummer."
+
 msgid "{name} path"
 msgstr "{name} Pfad"
 
