@@ -26105,12 +26105,6 @@ msgstr "Timecard Hours"
 msgid "Timecards"
 msgstr "Timecards"
 
-msgid "Timecards are disabled"
-msgstr "Timecards are disabled"
-
-msgid "Timecards are enabled"
-msgstr "Timecards are enabled"
-
 msgid "Timekeeping"
 msgstr "Timekeeping"
 
@@ -26418,6 +26412,9 @@ msgstr "Track transactions by segment (cost center, project, service line)"
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Track when batches or serials of this item expire."
+
+msgid "Track work shifts"
+msgstr "Track work shifts"
 
 msgid "Tracked Entities"
 msgstr "Tracked Entities"

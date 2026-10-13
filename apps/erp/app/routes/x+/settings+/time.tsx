@@ -7,7 +7,9 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { ValidatedForm, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { useAction } from "@carbon/query";
 import {
+  Badge,
   Card,
   CardContent,
   CardDescription,
@@ -23,13 +25,15 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useFetcher, useLoaderData } from "react-router";
-import { Number, Select, Submit, TextArea } from "~/components/Form";
+import { Boolean, Number, Select, Submit, TextArea } from "~/components/Form";
 import { SettingsPage, SettingsPageHeading } from "~/components/SettingsPage";
 import {
   getCompanySettings,
+  timeCardSettingsValidator,
   timekeepingControlsModes,
   timekeepingSettingsValidator,
   timesheetTimecardChecks,
+  updateTimeCardSetting,
   updateTimekeepingSettings
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -69,8 +73,25 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "settings"
   });
 
+  const formData = await request.formData();
+
+  // The Timecards switch saves on its own (it moved here from Settings →
+  // People with its intent).
+  if (formData.get("intent") === "timeCard") {
+    const enabled = formData.get("enabled") === "true";
+    const update = await updateTimeCardSetting(client, companyId, enabled);
+    if (update.error) {
+      logger.error("Failed to update the timecard setting", {
+        companyId,
+        error: update.error
+      });
+      return { success: false, message: update.error.message };
+    }
+    return { success: true, message: "Timecard settings updated" };
+  }
+
   const validation = await validator(timekeepingSettingsValidator).validate(
-    await request.formData()
+    formData
   );
   if (validation.error) {
     return { success: false, message: "Invalid form data" };
@@ -138,6 +159,16 @@ export default function TimeSettingsRoute() {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.state, fetcher.data]);
+
+  // The Timecards switch posts at once; a refused save puts it back.
+  const [timeCardReset, setTimeCardReset] = useState(0);
+  const timeCardFetcher = useAction<typeof action>({
+    onSuccess: (data) => toast.success(data.message),
+    onError: (data) => {
+      toast.error(data.message);
+      setTimeCardReset((count) => count + 1);
+    }
+  });
 
   // The DCAA card follows the picker as it changes, before a save. Only the
   // user's pick is state; until they pick, the saved setting decides.
@@ -288,6 +319,48 @@ export default function TimeSettingsRoute() {
             {isDcaa && save}
           </Card>
         </ValidatedForm>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Trans>Timecards</Trans>
+              <Badge variant="yellow">
+                <Trans>Beta</Trans>
+              </Badge>
+            </CardTitle>
+            <CardDescription>
+              <Trans>Enable timecard tracking for work shifts.</Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ValidatedForm
+              key={`${companySettings.timeCardEnabled}:${timeCardReset}`}
+              validator={timeCardSettingsValidator}
+              defaultValues={{
+                timeCardEnabled: companySettings.timeCardEnabled ?? false
+              }}
+              className="max-w-[400px]"
+            >
+              <Boolean
+                name="timeCardEnabled"
+                label={t`Track work shifts`}
+                description={
+                  companySettings.timeCardEnabled
+                    ? t`Work shift tracking is active.`
+                    : t`Enable to start tracking work shifts.`
+                }
+                bordered
+                isDisabled={timeCardFetcher.state !== "idle"}
+                onChange={(checked) =>
+                  timeCardFetcher.submit(
+                    { intent: "timeCard", enabled: String(checked) },
+                    { method: "POST" }
+                  )
+                }
+              />
+            </ValidatedForm>
+          </CardContent>
+        </Card>
       </SettingsPage>
     </ScrollArea>
   );

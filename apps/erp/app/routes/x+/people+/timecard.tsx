@@ -35,7 +35,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         request,
         error(
           null,
-          "Timecards are not enabled. To enable this feature, go to Settings → People to enable Timecards."
+          "Timecards are not enabled. To enable this feature, go to Settings → Time to enable Timecards."
         )
       )
     );

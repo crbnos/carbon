@@ -26105,12 +26105,6 @@ msgstr "Horas do Cartão de Ponto"
 msgid "Timecards"
 msgstr "Apontamentos"
 
-msgid "Timecards are disabled"
-msgstr "Apontamentos desativados"
-
-msgid "Timecards are enabled"
-msgstr "Apontamentos ativados"
-
 msgid "Timekeeping"
 msgstr "Registro de tempo"
 
@@ -26418,6 +26412,9 @@ msgstr "Rastrear transações por segmento (centro de custo, projeto, linha de s
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Rastreie quando os lotes ou números de série deste item expiram."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Entidades Rastreadas"

@@ -26105,12 +26105,6 @@ msgstr "타임카드 시간"
 msgid "Timecards"
 msgstr "타임카드"
 
-msgid "Timecards are disabled"
-msgstr "타임카드가 비활성화됨"
-
-msgid "Timecards are enabled"
-msgstr "타임카드가 활성화됨"
-
 msgid "Timekeeping"
 msgstr "시간 관리"
 
@@ -26418,6 +26412,9 @@ msgstr "부문별(원가 센터, 프로젝트, 서비스 라인) 거래를 추�
 
 msgid "Track when batches or serials of this item expire."
 msgstr "이 품목의 배치 또는 일련번호 유효기한을 추적합니다."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "추적 개체"

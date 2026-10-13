@@ -26105,12 +26105,6 @@ msgstr "タイムカード時間数"
 msgid "Timecards"
 msgstr "タイムカード"
 
-msgid "Timecards are disabled"
-msgstr "タイムカードは無効です"
-
-msgid "Timecards are enabled"
-msgstr "タイムカードが有効です"
-
 msgid "Timekeeping"
 msgstr "労務管理"
 
@@ -26418,6 +26412,9 @@ msgstr "トランザクションをセグメント（原価センター、プロ
 
 msgid "Track when batches or serials of this item expire."
 msgstr "このアイテムのバッチまたはシリアルの有効期限を追跡します。"
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "追跡対象エンティティ"

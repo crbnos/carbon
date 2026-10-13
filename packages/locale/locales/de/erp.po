@@ -26105,12 +26105,6 @@ msgstr "Stundenzettel-Stunden"
 msgid "Timecards"
 msgstr "Zeiterfassung"
 
-msgid "Timecards are disabled"
-msgstr "Zeiterfassungen sind deaktiviert"
-
-msgid "Timecards are enabled"
-msgstr "Zeiterfassung ist aktiviert"
-
 msgid "Timekeeping"
 msgstr "Zeiterfassung"
 
@@ -26418,6 +26412,9 @@ msgstr "Transaktionen nach Segment verfolgen (Kostenstelle, Projekt, Servicebere
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Verfolgen Sie, wann Chargen oder Seriennummern dieses Artikels ablaufen."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Nachverfolgter Entitäten"

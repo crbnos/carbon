@@ -26105,12 +26105,6 @@ msgstr "Ore della scheda oraria"
 msgid "Timecards"
 msgstr "Rilevazione tempi"
 
-msgid "Timecards are disabled"
-msgstr "Rilevazione tempi disabilitata"
-
-msgid "Timecards are enabled"
-msgstr "Rilevazione tempi abilitata"
-
 msgid "Timekeeping"
 msgstr "Gestione del tempo"
 
@@ -26418,6 +26412,9 @@ msgstr "Traccia le transazioni per segmento (centro di costo, progetto, linea di
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Traccia quando i lotti o i numeri seriali di questo articolo scadono."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Entità Tracciate"

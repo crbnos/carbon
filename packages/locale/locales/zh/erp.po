@@ -26105,12 +26105,6 @@ msgstr "工时卡小时数"
 msgid "Timecards"
 msgstr "工时记录"
 
-msgid "Timecards are disabled"
-msgstr "工时记录已禁用"
-
-msgid "Timecards are enabled"
-msgstr "工时记录已启用"
-
 msgid "Timekeeping"
 msgstr "工时记录"
 
@@ -26418,6 +26412,9 @@ msgstr "按部门（成本中心、项目、服务线）跟踪交易"
 
 msgid "Track when batches or serials of this item expire."
 msgstr "跟踪此项目的批次或序列号何时过期。"
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "追踪实体"

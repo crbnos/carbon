@@ -26105,12 +26105,6 @@ msgstr "Часы табеля учета"
 msgid "Timecards"
 msgstr "Табели учета рабочего времени"
 
-msgid "Timecards are disabled"
-msgstr "Табели учета отключены"
-
-msgid "Timecards are enabled"
-msgstr "Табели учета рабочего времени включены"
-
 msgid "Timekeeping"
 msgstr "Учет рабочего времени"
 
@@ -26418,6 +26412,9 @@ msgstr "Отслеживать транзакции по сегментам (ц�
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Отслеживайте, когда партии или серийные номера этого товара истекают."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Отслеживаемые сущности"

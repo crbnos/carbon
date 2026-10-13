@@ -90,7 +90,7 @@ Pick the data type when you create the attribute — it's fixed once the attribu
 
 ## Time cards
 
-A **time card** is a clock-in / clock-out record for an employee. Time tracking is off by default and turns on per company with a **`timeCardEnabled`** setting; once on, the **Timecards** tab appears on each person and a company-wide list shows up under **Manage**.
+A **time card** is a clock-in / clock-out record for an employee. Time tracking is off by default and turns on per company at **Settings → Time → Timecards** (`timeCardEnabled`); once on, the **Timecards** tab appears on each person and a company-wide list shows up under **Manage**.
 
 Each entry captures the employee, a clock-in time, an optional clock-out time, and a note. An entry with no clock-out is still open — Carbon derives its **Status** from that:
 
@@ -132,7 +132,7 @@ Saving a holiday without a date fails. The year is derived from the date, so the
 Department deletion is a **hard delete** — the row is removed outright. Reassign anyone whose job placement points at that department first, otherwise their placements are left with no department. This differs from shifts and attributes, which are soft-deleted (marked inactive) so historical assignments survive.
 
 ### The Timecards tab / time card list isn't showing
-Time tracking is off by default. It only appears once a company turns on the `timeCardEnabled` setting; until then there is no Timecards tab on a person and no company-wide list under Manage.
+Time tracking is off by default. It only appears once a company turns it on at **Settings → Time → Timecards** (`timeCardEnabled`); until then there is no Timecards tab on a person and no company-wide list under Manage.
 
 ### Looking for a time card approval / sign-off step
 There isn't one. A time card's status ("Active" while clocked in, "Complete" once clocked out) is computed, not stored, and a completed entry is final — there is no pending-approval workflow. Correct a mistake by editing or deleting the entry directly.

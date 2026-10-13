@@ -26105,12 +26105,6 @@ msgstr "Godziny Karty Czasu"
 msgid "Timecards"
 msgstr "Karty czasu pracy"
 
-msgid "Timecards are disabled"
-msgstr "Karty czasu pracy są wyłączone"
-
-msgid "Timecards are enabled"
-msgstr "Karty czasu pracy są włączone"
-
 msgid "Timekeeping"
 msgstr "Rejestracja czasu"
 
@@ -26418,6 +26412,9 @@ msgstr "Śledzenie transakcji wg segmentu (miejsce powstawania kosztów, projekt
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Śledź, kiedy partie lub numery seryjne tego artykułu wygasają."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Śledzone jednostki"

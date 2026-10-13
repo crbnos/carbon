@@ -26105,12 +26105,6 @@ msgstr "Zaman Kartı Saatleri"
 msgid "Timecards"
 msgstr "Puantaj"
 
-msgid "Timecards are disabled"
-msgstr "Puantaj devre dışı"
-
-msgid "Timecards are enabled"
-msgstr "Puantaj etkin"
-
 msgid "Timekeeping"
 msgstr "Zaman takibi"
 
@@ -26418,6 +26412,9 @@ msgstr "İşlemleri segmente göre izle (maliyet merkezi, proje, hizmet hattı)"
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Bu öğenin partileri veya seri numaraları ne zaman sona erdiğini izleyin."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Takip Edilen Varlıklar"

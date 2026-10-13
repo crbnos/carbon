@@ -26105,12 +26105,6 @@ msgstr "Heures de la feuille de temps"
 msgid "Timecards"
 msgstr "Feuilles de temps"
 
-msgid "Timecards are disabled"
-msgstr "Les feuilles de temps sont désactivées"
-
-msgid "Timecards are enabled"
-msgstr "Les feuilles de temps sont activées"
-
 msgid "Timekeeping"
 msgstr "Pointage"
 
@@ -26418,6 +26412,9 @@ msgstr "Suivre les transactions par segment (centre de coûts, projet, ligne de 
 
 msgid "Track when batches or serials of this item expire."
 msgstr "Suivez l'expiration des lots ou numéros de série de cet article."
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "Entités Tracées"

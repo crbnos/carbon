@@ -26105,12 +26105,6 @@ msgstr "टाइमकार्ड घंटे"
 msgid "Timecards"
 msgstr "टाइमकार्ड"
 
-msgid "Timecards are disabled"
-msgstr "टाइमकार्ड अक्षम हैं"
-
-msgid "Timecards are enabled"
-msgstr "टाइमकार्ड सक्षम हैं"
-
 msgid "Timekeeping"
 msgstr "समय रिकॉर्डिंग"
 
@@ -26418,6 +26412,9 @@ msgstr "सेगमेंट (लागत केंद्र, परियो�
 
 msgid "Track when batches or serials of this item expire."
 msgstr "इस आइटम के बैच या सीरीज़ कब समाप्त होते हैं, इसे ट्रैक करें।"
+
+msgid "Track work shifts"
+msgstr ""
 
 msgid "Tracked Entities"
 msgstr "ट्रैक किए गए इकाइयां"
