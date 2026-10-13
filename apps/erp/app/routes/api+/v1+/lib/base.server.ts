@@ -5,6 +5,7 @@
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
 import type { ManifestEntry, ToolPermission } from "@carbon/api";
+import type { Permission } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { ORPCError, os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -20,13 +21,16 @@ export interface AuthedContext {
   userId: string;
   companyId: string;
   companyGroupId: string;
-  /** `"api-key"` runs the per-operation scope gate. `"oauth"` (MCP connector) does
-   *  not — its RLS/role already bounds it, exactly as MCP behaves today. `"session"`
-   *  is an already-authorized in-process caller (the in-app agent behind the route's
-   *  requirePermissions, and the workflow engine acting as the workflow's owner) —
-   *  not "oauth" because that names a wire protocol, not a trust decision. */
+  /** `"api-key"` and `"oauth"` (MCP connector) both run the per-operation scope
+   *  gate. RLS alone does not bound an OAuth caller: a service handed `db` writes
+   *  through the direct connection, which bypasses it. `"session"` is an
+   *  already-authorized in-process caller (the workflow engine acting as the
+   *  workflow's owner) — not "oauth" because that names a wire protocol, not a
+   *  trust decision. */
   authKind: "api-key" | "oauth" | "session";
-  /** The API key's scopes: `{ "<module>_<action>": [companyId, …] }`. */
+  /** `{ "<module>_<action>": [companyId, …] }` — the API key's scopes, or for an
+   *  OAuth caller the user's own permissions in the token's company
+   *  (`scopesFromPermissions`). */
   scopes: Record<string, string[]>;
 }
 
@@ -41,28 +45,59 @@ export const base = os.$context<AuthedContext>();
 export function assertScopes(
   scopes: Record<string, string[]>,
   companyId: string,
-  permission: ToolPermission
+  permission: ToolPermission,
+  authKind: Exclude<AuthedContext["authKind"], "session">
 ): void {
   if (permission.module === null) return;
   for (const action of permission.actions) {
     const key = `${permission.module}_${action}`;
     if (!scopes[key]?.includes(companyId)) {
       throw new ORPCError("FORBIDDEN", {
-        message: `API key lacks the required scope: ${key}`
+        message:
+          authKind === "api-key"
+            ? `API key lacks the required scope: ${key}`
+            : `You do not have the required permission: ${key}`
       });
     }
   }
 }
 
-/** Per-operation gate middleware — runs the scope check for API-key callers.
+/**
+ * A user's permissions (`getUserClaims().permissions`: module → action → company
+ * ids) as the scope map the gate reads, holding only `companyId`. The OAuth
+ * caller's scopes, so a connector token can do exactly what its user can do in
+ * the token's company — no more.
+ */
+export function scopesFromPermissions(
+  permissions: Record<string, Permission>,
+  companyId: string
+): Record<string, string[]> {
+  const scopes: Record<string, string[]> = {};
+  for (const [module, actions] of Object.entries(permissions)) {
+    for (const [action, companyIds] of Object.entries(actions)) {
+      if (companyIds.includes(companyId)) {
+        scopes[`${module}_${action}`] = [companyId];
+      }
+    }
+  }
+  return scopes;
+}
+
+/** Per-operation gate middleware — runs the scope check for API-key and OAuth
+ *  callers.
  *  The blocked-name guard is belt-and-braces: blocked tools are already excluded
  *  from the manifest at generation time, so this only fires if that exclusion
  *  ever regresses — the surface stays closed instead of silently opening. */
 export const gate = (meta: ManifestEntry) =>
   base.middleware(async ({ context, next }) => {
     if (isMcpBlockedTool(meta.name)) throw new ORPCError("NOT_FOUND");
-    if (context.authKind === "api-key") {
-      assertScopes(context.scopes, context.companyId, meta.permission);
+    if (context.authKind !== "session") {
+      assertScopes(
+        context.scopes,
+        context.companyId,
+        meta.permission,
+        context.authKind
+      );
     }
     return next();
   });

@@ -417,6 +417,9 @@ msgstr "Close"
 msgid "Collapse characteristics table"
 msgstr "Collapse characteristics table"
 
+msgid "Collapse navigation"
+msgstr "Collapse navigation"
+
 msgid "Collapse panel"
 msgstr "Collapse panel"
 
@@ -439,6 +442,9 @@ msgstr "Column: {0}"
 
 msgid "Columns"
 msgstr "Columns"
+
+msgid "Companies"
+msgstr "Companies"
 
 msgid "Company"
 msgstr "Company"
@@ -947,6 +953,9 @@ msgstr "Job Traveler"
 msgid "Jobs"
 msgstr "Jobs"
 
+msgid "Keep navigation open"
+msgstr "Keep navigation open"
+
 msgid "Keep picking"
 msgstr "Keep picking"
 
@@ -1373,6 +1382,9 @@ msgstr "Open a job in this batch"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Open an NCR for MRB disposition"
+
+msgid "Open ERP"
+msgstr "Open ERP"
 
 msgid "Open Jobs"
 msgstr "Open Jobs"

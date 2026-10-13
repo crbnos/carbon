@@ -263,7 +263,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({}, await flash(request, success("Period unlocked")));
   }
 
-  if (intent === "create-revenue-run" || intent === "create-depreciation-run") {
+  if (
+    intent === "create-revenue-run" ||
+    intent === "create-lease-run" ||
+    intent === "create-depreciation-run"
+  ) {
     await requirePermissions(request, { create: "accounting" });
     const period = await client
       .from("accountingPeriod")
@@ -287,13 +291,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return data({}, await flash(request, error(null, futureError)));
     }
 
-    if (intent === "create-revenue-run") {
-      // One Draft per period: send the user to it rather than make another.
+    if (intent === "create-revenue-run" || intent === "create-lease-run") {
+      const type =
+        intent === "create-lease-run" ? "Lease" : "Revenue Recognition";
+      // One Draft per period and run type: send the user to it rather than
+      // make another.
       const existingDraft = await client
         .from("revenueRecognitionRun")
         .select("id, runId")
         .eq("periodEnd", periodEnd)
         .eq("companyId", companyId)
+        .eq("type", type)
         .eq("status", "Draft")
         .maybeSingle();
       if (existingDraft.data) {
@@ -319,28 +327,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
             userId,
             revenueRunSynthesizers: projectRevenueSynthesizers
           })
-          .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
+          .invokeOrThrow("propose-revenue-recognition-run", {
+            periodEnd,
+            type
+          });
       } catch (e) {
         return data(
           {},
-          await flash(
-            request,
-            error(e, "Failed to create revenue recognition run")
-          )
+          await flash(request, error(e, "Failed to create the run"))
         );
       }
       if (!proposal) {
         return data(
           {},
-          await flash(
-            request,
-            error(null, "Nothing to recognize for this period")
-          )
+          await flash(request, error(null, "Nothing to post for this period"))
         );
       }
       throw redirect(
         path.to.revenueRecognitionRun(proposal.id),
-        await flash(request, success("Revenue recognition run created"))
+        await flash(request, success("Run created"))
       );
     }
 
@@ -633,7 +638,9 @@ function PeriodCloseTaskRow({
       case "unmatched-ic":
         return t`Intercompany transactions involving this company that are still Unmatched should be matched and eliminated, so consolidated results don't double-count activity between entities.`;
       case "unposted-revenue-schedules":
-        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue, rent to accrue, and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+        return t`Asks revenue recognition what a new run for this period would recognize now — deferred invoice revenue and contract revenue — and checks for Draft runs holding revenue due by the period end. Create the run and post it so the revenue reaches the ledger. Skip with a reason if nothing should be recognized.`;
+      case "unposted-lease-schedules":
+        return t`Asks the lease run what a new run for this period would post now — lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest — and checks for Draft lease runs holding entries due by the period end. Create the run and post it so the entries reach the ledger. Skip with a reason if nothing should be posted.`;
       case "tb-balanced":
         return t`Confirms every posted journal entry in the period has equal debits and credits. If any entry is out of balance the trial balance won't tie out, so it must be corrected before the period can close.`;
       case "earned-value-closed":
@@ -672,9 +679,11 @@ function PeriodCloseTaskRow({
   const createRunIntent =
     task.autoCheckKey === "unposted-revenue-schedules"
       ? "create-revenue-run"
-      : task.autoCheckKey === "draft-depreciation"
-        ? "create-depreciation-run"
-        : null;
+      : task.autoCheckKey === "unposted-lease-schedules"
+        ? "create-lease-run"
+        : task.autoCheckKey === "draft-depreciation"
+          ? "create-depreciation-run"
+          : null;
   // The burden check offers to run the period's indirect rates, once the
   // period is locked (Government Contracting 5b).
   const canComputeBurden =
@@ -780,7 +789,9 @@ function PeriodCloseTaskRow({
                     runType={
                       task.autoCheckKey === "draft-depreciation"
                         ? "depreciation"
-                        : "revenue"
+                        : task.autoCheckKey === "unposted-lease-schedules"
+                          ? "lease"
+                          : "revenue"
                     }
                   />
                 )}
@@ -790,6 +801,14 @@ function PeriodCloseTaskRow({
                     className="w-fit text-xs font-normal text-primary hover:underline"
                   >
                     <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-lease-schedules" && (
+                  <Link
+                    to={path.to.leaseRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to lease runs</Trans>
                   </Link>
                 )}
                 {task.autoCheckKey === "unposted-revenue-schedules" && (
@@ -974,7 +993,7 @@ function PeriodRunDue({
 }: {
   due: { count: number; amount: number; error: string | null };
   draftRuns: { id: string; readableId: string; periodEnd: string }[];
-  runType: "revenue" | "depreciation";
+  runType: "revenue" | "lease" | "depreciation";
 }) {
   const { t } = useLingui();
   const currencyFormatter = useCurrencyFormatter();
@@ -989,9 +1008,13 @@ function PeriodRunDue({
             ? due.count === 1
               ? t`1 asset to depreciate · ${amount}`
               : t`${due.count} assets to depreciate · ${amount}`
-            : due.count === 1
-              ? t`1 entry to recognize · ${amount}`
-              : t`${due.count} entries to recognize · ${amount}`}
+            : runType === "lease"
+              ? due.count === 1
+                ? t`1 entry to post · ${amount}`
+                : t`${due.count} entries to post · ${amount}`
+              : due.count === 1
+                ? t`1 entry to recognize · ${amount}`
+                : t`${due.count} entries to recognize · ${amount}`}
         </span>
       )}
       {draftRuns.map((run) => (

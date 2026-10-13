@@ -273,11 +273,11 @@ import type { MultiSelectProps } from "./MultiSelect";
 import { MultiSelect } from "./MultiSelect";
 import {
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses
 } from "./NavRail";
 import type { NumberFieldProps } from "./Number";
@@ -404,7 +404,11 @@ import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
 import { isEditableTarget } from "./utils/keyboard";
-import { getValidChildren, reactNodeToString } from "./utils/react";
+import {
+  getValidChildren,
+  optionLabelText,
+  reactNodeToString
+} from "./utils/react";
 import { useViewport, ViewportProvider } from "./Viewport";
 import { VStack } from "./VStack";
 
@@ -624,11 +628,11 @@ export {
   NumberField,
   NumberIncrementStepper,
   NavRail,
-  NavRailBrand,
   NavRailDivider,
   NavRailGroup,
   NavRailItem,
   NavRailLink,
+  NavRailSwitcher,
   navRailItemClasses,
   NumberInput,
   NumberInputGroup,
@@ -745,6 +749,7 @@ export {
   isRichTextEmpty,
   getValidChildren,
   multiSelectTriggerVariants,
+  optionLabelText,
   reactNodeToString,
   shortcutKeyVariants,
   toast,

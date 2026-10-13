@@ -41,6 +41,7 @@ pnpm --filter @carbon/ee typecheck
 | `./ramp.server` | Ramp client, schemas, service operations, money/coding helpers, and key-owned state patches |
 | `./ramp/hooks.server` | `rampOnInstall`, `rampOnUpdate`, `rampOnUninstall`, `rampHealthcheck` |
 | `./hooks.server` | `getIntegrationServerHooks()` registry |
+| `./approvals/document.server` | The document-level approval lifecycle shared by every approval document type: `getDocumentApprovalState`, `openApprovalRequests` (bulk; caller sends the notification), `cancelPendingApprovals` (bulk, optional requester-or-approver guard), `decideApprovalRequest`. Form validator: `approvalDecisionValidator` in `./approvals`; modal: `~/components/Modals/ApprovalDecision` in the ERP. Used by change notices, quality documents and suppliers; purchase orders keep their own amount-tiered flow |
 | `./plan`, `./plan.server` | Client/server edition and feature-plan gates |
 | `./sso.server` | SAML connection, domain verification, session, and provisioning helpers |
 | `./storage-rules`, `./storage-rules.server` | Storage-rule schemas and server operations |

@@ -67,7 +67,10 @@ export type OpenItemType =
   | "Fixed Asset Cost"
   | "Accumulated Depreciation"
   | "Deferred Revenue"
-  | "Lease Net Investment";
+  | "Lease Net Investment"
+  | "Lease Liability"
+  | "Right-of-Use Asset"
+  | "Accumulated ROU Amortization";
 
 /**
  * One item open at the cutover, in base currency, positive on the natural

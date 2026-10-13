@@ -708,20 +708,34 @@ is dead config for Rillet only, left in place for the capped providers.
   disabled — enable it in the accounting sync settings to push these
   journals") unless the company's per-type config sets `enabled`. The
   default-off set (`POSTING_SYNC_DEFAULT_SOURCE_TYPES` excludes them) is the
-  three return types, `'Revenue Recognition'`, `'Asset Transfer'` and
-  `'Lease'`: a new journal type never starts pushing to a customer's external
-  ledger unasked (plan decision 1 of
-  `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I). **`'Lease'`**
-  (migration `20261006220301_fleet-rental-lease-enums.sql`, `packages/ee/src/accounting/core/models.ts`,
-  `individual` granularity) carries only a sales-type lease's commencement
-  (Dr Net Investment in Leases / Dr COGS / Dr accumulated depreciation, Cr
-  Lease Revenue / Cr fleet class asset) and its end-of-term residual return
-  (Dr Rental Fleet class asset or inventory / Cr Net Investment in Leases),
-  written by `post-rental-agreement` with `documentType 'Rental Agreement'`;
-  the lease's monthly interest posts inside the `'Revenue Recognition'`
-  journal, and its rent invoices go out through the invoice mappers (the
-  Rental-line spike above). <!-- UNVERIFIED: no provider has been exercised
-  with a Lease journal or a sales-type rental invoice -->
+  three return types, `'Revenue Recognition'`, `'Asset Transfer'`, `'Lease'`
+  and `'Lease Run'`: a new journal type never starts pushing to a customer's
+  external ledger unasked (plan decision 1 of
+  `.ai/plans/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part I).
+  **`'Lease'`** (migration `20261006220301_fleet-rental-lease-enums.sql`,
+  `packages/ee/src/accounting/core/models.ts`, `individual` granularity)
+  carries the one-off lease journals, never a monthly run:
+  - a sales-type lease's commencement (Dr Net Investment in Leases / Dr COGS /
+    Dr accumulated depreciation, Cr Lease Revenue / Cr fleet class asset) and
+    its end-of-term residual return (Dr Rental Fleet class asset or inventory /
+    Cr Net Investment in Leases), written by `post-rental-agreement` with
+    `documentType 'Rental Agreement'`;
+  - a lessee lease's commencement or opening balance, modification,
+    termination, purchase and the Cancel `VOID`, written by `post-lease` with
+    `documentType 'Lease'` and `documentLineReference` = the leased asset
+    (`leaseLine`).
+
+  **`'Lease Run'`** (`20261011163133_lessee-lease-enums.sql`, same models file and
+  granularity) carries the lease run's monthly journals: lessee interest and
+  ROU amortization, rental deferrals and accruals, and sales-type lease
+  interest. Before lease runs existed those rental rows posted inside
+  `'Revenue Recognition'`; `20261011192957_lease-run-sync-policy.sql` copied
+  each integration's `Revenue Recognition` setting
+  (`metadata.settings.postingSync.sourceTypes`) to `Lease Run` where none was
+  set, so they keep syncing exactly as before. Rent invoices go out through the
+  invoice mappers (the Rental-line spike above). <!-- UNVERIFIED: no provider
+  has been exercised with a Lease or Lease Run journal or a sales-type rental
+  invoice -->
 
 ## Credit memos and supplier credits as provider documents
 

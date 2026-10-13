@@ -18,7 +18,9 @@ import {
 
 export const previewRevenueRecognitionRunInput = z.object({
   /** `YYYY-MM-DD`, the last day of the period. */
-  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Which run to preview. */
+  type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
 export type RunPreview = { count: number; amount: number };
@@ -36,15 +38,18 @@ const previewRevenueRecognitionRun = defineServerFn({
   permissions: { view: "accounting" },
   async run(
     { db, companyId, userId, revenueRunSynthesizers },
-    { periodEnd }
+    { periodEnd, type }
   ): Promise<RunPreview> {
     try {
       await db.transaction().execute(async (trx) => {
         const ctx = { companyId, periodEnd, userId };
-        for (const synthesize of runRowSynthesizers(revenueRunSynthesizers)) {
+        for (const synthesize of runRowSynthesizers(
+          type,
+          revenueRunSynthesizers
+        )) {
           await synthesize(trx, ctx);
         }
-        const due = await selectDueScheduleRows(trx, ctx);
+        const due = await selectDueScheduleRows(trx, ctx, type);
         throw new RollbackPreview({
           count: due.length,
           amount: round(due.reduce((sum, row) => sum + Number(row.amount), 0))

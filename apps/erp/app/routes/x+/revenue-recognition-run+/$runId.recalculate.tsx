@@ -9,6 +9,7 @@ import { projectRevenueSynthesizers } from "@carbon/ee/project-revenue.server";
 import { serverFns } from "@carbon/server-functions";
 import { redirect } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
+import { RUN_PAGES } from "~/modules/accounting/ui/RevenueRecognition/runPages";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
@@ -25,6 +26,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(null, "Missing revenue recognition run ID"))
     );
   }
+
+  // A run left with nothing due is deleted; go back to its own type's list.
+  const run = await client
+    .from("revenueRecognitionRun")
+    .select("type")
+    .eq("id", runId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  const { listPath } = RUN_PAGES[run.data?.type ?? "Revenue Recognition"];
 
   const result = await serverFns
     .as({
@@ -53,7 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { data } = result;
   if (data.deleted) {
     throw redirect(
-      path.to.revenueRecognitionRuns,
+      listPath,
       await flash(
         request,
         success(

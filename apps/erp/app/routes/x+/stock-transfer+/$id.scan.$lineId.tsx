@@ -28,7 +28,6 @@ import {
   resolveStockTransferPickForward,
   stockTransferLineScanValidator
 } from "~/modules/inventory";
-import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
@@ -51,7 +50,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const line = await client
     .from("stockTransferLine")
     .select(
-      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, stockTransfer(locationId)"
+      "id, itemId, quantity, pickedQuantity, requiresSerialTracking, fromStorageUnitId, stockTransfer(locationId)"
     )
     .eq("id", lineId)
     .single();
@@ -86,7 +85,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           projectIds: [
             null,
             ...(stockedProjects.data ?? []).map((project) => project.id)
-          ]
+          ],
+          // Only lots in the line's source bin can be picked for it; an
+          // empty source is the unassigned bin, not "any bin".
+          inStorageUnit: { id: line.data.fromStorageUnitId }
         })
       : { data: [] };
 
@@ -141,40 +143,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const {
     id: lineId,
     stockTransferId,
-    itemId,
     locationId,
     trackedEntityId,
-    quantity,
-    storageUnitId
+    quantity
   } = validated.data;
 
-  const [stockTransferLine, itemStorageUnitQuantities] = await Promise.all([
-    client.from("stockTransferLines").select("*").eq("id", lineId!).single(),
-    getItemStorageUnitQuantities(client, itemId, companyId, locationId)
-  ]);
+  const stockTransferLine = await client
+    .from("stockTransferLines")
+    .select("*")
+    .eq("id", lineId!)
+    .single();
 
-  if (stockTransferLine.error || itemStorageUnitQuantities.error) {
+  if (stockTransferLine.error) {
     return data(
-      {
-        success: false,
-        message:
-          "Failed to load stock transfer line or item storage unit quantities"
-      },
+      { success: false, message: "Failed to load stock transfer line" },
       await flash(
         request,
-        error(
-          stockTransferLine.error || itemStorageUnitQuantities.error,
-          "Failed to load stock transfer line or item storage unit quantities"
-        )
+        error(stockTransferLine.error, "Failed to load stock transfer line")
       )
     );
   }
-
-  const currentStorageUnitId =
-    itemStorageUnitQuantities.data
-      ?.sort((a, b) => b.quantity - a.quantity)
-      .find((q) => q.trackedEntityId === trackedEntityId)?.storageUnitId ??
-    null;
 
   // Determine the type of transfer based on tracking requirements
   const transferType = stockTransferLine.data?.requiresBatchTracking
@@ -186,8 +174,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const forward = resolveStockTransferPickForward({
     transferType,
     quantity,
-    storageUnitId,
-    currentStorageUnitId,
     lineQuantity: Number(stockTransferLine.data?.quantity ?? 0),
     pickedQuantity: Number(stockTransferLine.data?.pickedQuantity ?? 0)
   });
@@ -205,7 +191,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     stockTransferLineId: lineId,
     trackedEntityId,
     quantity: forward.quantity,
-    fromStorageUnitId: forward.fromStorageUnitId,
     locationId: locationId,
     userId,
     companyId
@@ -329,10 +314,8 @@ export default function StockTransferScan() {
         trackedEntityId: selection.trackedEntityId,
         itemId: stockTransferLine.itemId!,
         locationId,
-        // Forward the picker's clamped quantity and chosen bin — the host
-        // picking-list scanner does the same.
-        quantity: selection.quantity,
-        storageUnitId: selection.storageUnitId ?? null
+        // Forward the picker's clamped quantity; the source bin is the line's.
+        quantity: selection.quantity
       },
       {
         method: "POST",

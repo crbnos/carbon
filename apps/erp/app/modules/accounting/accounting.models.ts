@@ -528,7 +528,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   deferredRevenueAccount: z.string().optional(),
   contractLossProvisionAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
-  netInvestmentInLeasesAccount: z.string().optional()
+  netInvestmentInLeasesAccount: z.string().optional(),
+  rightOfUseAssetAccount: z.string().optional(),
+  accumulatedRightOfUseAmortizationAccount: z.string().optional(),
+  leaseLiabilityAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -622,7 +625,11 @@ export const defaultIncomeAcountValidator = z.object({
   }),
   rentalIncomeAccount: z.string().optional(),
   leaseRevenueAccount: z.string().optional(),
-  leaseInterestIncomeAccount: z.string().optional()
+  leaseInterestIncomeAccount: z.string().optional(),
+  operatingLeaseExpenseAccount: z.string().optional(),
+  variableLeaseExpenseAccount: z.string().optional(),
+  rightOfUseAmortizationExpenseAccount: z.string().optional(),
+  leaseInterestExpenseAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =
@@ -768,7 +775,8 @@ export const journalEntrySourceTypes = [
   "Charge",
   "Reimbursement",
   "Revenue Recognition",
-  "Lease"
+  "Lease",
+  "Lease Run"
 ] as const;
 
 // Provisional: written before the accounting cutover, counts nowhere.
@@ -782,7 +790,8 @@ export const revenueScheduleTypes = [
   "Accrual",
   "Interest",
   "Cost Relief",
-  "Loss Provision"
+  "Loss Provision",
+  "Amortization"
 ] as const;
 
 export const revenueScheduleStatuses = ["Planned", "Posted"] as const;
@@ -1234,5 +1243,6 @@ export const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Revenue Recognition": "revenue recognition",
+  "Lease Run": "lease",
   "Asset Depreciation": "depreciation"
 };

@@ -47,7 +47,7 @@ const recalculateRevenueRecognitionRun = defineServerFn({
     return db.transaction().execute(async (trx) => {
       const run = await trx
         .selectFrom("revenueRecognitionRun")
-        .select(["id", "runId", "status", "periodEnd"])
+        .select(["id", "runId", "status", "periodEnd", "type"])
         .where("id", "=", runId)
         .where("companyId", "=", companyId)
         .forUpdate()
@@ -101,11 +101,14 @@ const recalculateRevenueRecognitionRun = defineServerFn({
           .execute();
       }
 
-      for (const synthesize of runRowSynthesizers(revenueRunSynthesizers)) {
+      for (const synthesize of runRowSynthesizers(
+        run.type,
+        revenueRunSynthesizers
+      )) {
         await synthesize(trx, ctx);
       }
 
-      const due = await selectDueScheduleRows(trx, ctx);
+      const due = await selectDueScheduleRows(trx, ctx, run.type);
       const held = new Map(
         before.map((line) => [line.scheduleId, Number(line.amount)])
       );

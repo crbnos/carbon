@@ -23,6 +23,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
 import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
@@ -38,7 +39,6 @@ import {
   serviceChargeCoverage,
   startElementsOnFirstCharge
 } from "../lib/project-posting";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import {
   type DilutionPostedEntry,
   planDilution,

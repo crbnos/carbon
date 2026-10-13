@@ -19,6 +19,7 @@ import {
   LuEuro,
   LuFileSpreadsheet,
   LuHandCoins,
+  LuKeyRound,
   LuLayers,
   LuPercent,
   LuScale,
@@ -87,12 +88,6 @@ export default function useAccountingSubmodules() {
             table: "accountingPeriod"
           },
           {
-            name: t`Revenue Recognition`,
-            to: path.to.revenueRecognitionRuns,
-            role: "employee",
-            icon: <LuCalendarClock />
-          },
-          {
             name: t`Depreciation`,
             to: path.to.depreciationRuns,
             role: "employee",
@@ -103,6 +98,18 @@ export default function useAccountingSubmodules() {
             to: path.to.indirectRates,
             role: "employee",
             icon: <LuPercent />
+          },
+          {
+            name: t`Leases`,
+            to: path.to.leaseRuns,
+            role: "employee",
+            icon: <LuKeyRound />
+          },
+          {
+            name: t`Revenue Recognition`,
+            to: path.to.revenueRecognitionRuns,
+            role: "employee",
+            icon: <LuCalendarClock />
           }
         ]
       },

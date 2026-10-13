@@ -678,6 +678,7 @@ export const JournalEntrySourceTypeIcon = ({
     case "Asset Transfer":
       return <LuArrowLeftRight className={className} />;
     case "Lease":
+    case "Lease Run":
       return <LuKeyRound className={className} />;
   }
 

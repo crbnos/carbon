@@ -111,6 +111,19 @@ const SERVICE_ORDER_TABLES = [
   "serviceOrder"
 ];
 
+// Other tables whose CHECK needs one of several nullable FKs to stay set, so
+// the FK-nulling pass would empty all of them and trip the CHECK. A new table
+// with a CHECK like that goes here (see .claude/rules/onboarding-company-templates.md).
+const PARENT_CHECK_TABLES = [
+  // customerContractInvoiceLine_parent_check: an invoice OR a credit memo
+  "customerContractInvoiceLine",
+  // projectStockTransfer_owner_check: fromProjectId IS DISTINCT FROM
+  // toProjectId, which nulling both project FKs breaks. Its lines cascade;
+  // projectBorrow references a line with no cascade, so it goes first.
+  "projectBorrow",
+  "projectStockTransfer"
+];
+
 type ForeignKey = {
   child: string;
   parent: string;
@@ -399,7 +412,8 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   for (const t of [
     ...TRANSIENT_MRP_TABLES,
     ...MODEL_SLIDE_TABLES,
-    ...SERVICE_ORDER_TABLES
+    ...SERVICE_ORDER_TABLES,
+    ...PARENT_CHECK_TABLES
   ]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [

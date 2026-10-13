@@ -6,21 +6,32 @@
 
 import type { Company } from "@carbon/auth";
 import {
+  Avatar,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  HStack,
   NavRail,
-  NavRailBrand,
   NavRailGroup,
   NavRailLink,
+  NavRailSwitcher,
   useMode,
   useShortcutKeyMap,
   useSidebar
 } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
-import { BsFillHexagonFill } from "react-icons/bs";
 import {
   LuActivity,
   LuArrowUpRight,
   LuCalendarDays,
+  LuChevronsUpDown,
   LuCirclePlay,
   LuClipboardList,
   LuHistory,
@@ -28,7 +39,7 @@ import {
   LuPackageCheck,
   LuWrench
 } from "react-icons/lu";
-import { Await, useLocation, useNavigate } from "react-router";
+import { Await, Link, useLocation, useNavigate } from "react-router";
 import type { Location } from "~/services/types";
 import { MES_NAV_SHORTCUTS } from "~/shortcuts";
 import type { PinnedInUser } from "~/types";
@@ -38,7 +49,7 @@ import { EndShift } from "./EndShift";
 import { MoreSheet } from "./MoreSheet";
 import Suggestion from "./Suggestion";
 import { TimeCardButton } from "./TimeCardButton";
-import { UserNav } from "./UserNav";
+import { UserNav, useSwitchCompany } from "./UserNav";
 
 export function AppSidebar({
   activeEvents,
@@ -141,13 +152,18 @@ export function AppSidebar({
 
   return (
     <NavRail
-      header={<CompanyLink company={company} />}
+      header={
+        <CompanySwitcher
+          company={company}
+          companies={companies}
+          // An operator pinned in at a console station cannot switch company.
+          canSwitch={!(consoleMode && pinnedInUser)}
+        />
+      }
       footer={
         <>
           {timeCard}
           <UserNav
-            company={company}
-            companies={companies}
             consoleEnabled={consoleEnabled}
             consoleMode={consoleMode}
             location={location}
@@ -163,23 +179,90 @@ export function AppSidebar({
   );
 }
 
-/** Leads back to the ERP. */
-function CompanyLink({ company }: { company: Company }) {
+/**
+ * The rail's header: the company's logo and name, which switch company and
+ * lead back to the ERP.
+ */
+function CompanySwitcher({
+  company,
+  companies,
+  canSwitch
+}: {
+  company: Company;
+  companies: Company[];
+  canSwitch: boolean;
+}) {
+  const { t } = useLingui();
   const mode = useMode();
-  const logo = mode === "dark" ? company.logoDarkIcon : company.logoLightIcon;
+  const switchCompany = useSwitchCompany();
+
+  // Nothing to switch to: the row is the link back to the ERP, as it was.
+  if (!canSwitch || companies.length < 2) {
+    return <CompanyLink company={company} />;
+  }
 
   return (
-    <NavRailBrand
-      href={ERP_URL}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <NavRailSwitcher
+          label={company.name ?? ""}
+          logoLight={company.logoLightIcon}
+          logoDark={company.logoDarkIcon}
+          trailing={<LuChevronsUpDown />}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="min-w-[240px]">
+        <DropdownMenuLabel>{t`Companies`}</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={company.companyId!}>
+          {companies.map((c) => {
+            const companyLogo =
+              mode === "dark" ? c.logoDarkIcon : c.logoLightIcon;
+            return (
+              <DropdownMenuRadioItem
+                key={c.companyId}
+                value={c.companyId!}
+                onSelect={() => {
+                  if (c.companyId !== company.companyId) {
+                    switchCompany(c.companyId!);
+                  }
+                }}
+              >
+                <HStack>
+                  <Avatar
+                    size="xs"
+                    name={c.name ?? undefined}
+                    src={companyLogo ?? undefined}
+                  />
+                  <span>{c.name}</span>
+                </HStack>
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link to={ERP_URL}>
+            <DropdownMenuIcon icon={<LuArrowUpRight />} />
+            {t`Open ERP`}
+          </Link>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+/** Leads back to the ERP; on phones, the More sheet's first row. */
+function CompanyLink({ company }: { company: Company }) {
+  return (
+    <NavRailSwitcher
+      asChild
       label={company.name ?? ""}
-      logo={
-        logo ? (
-          <img src={logo} alt="" className="size-6 rounded object-contain" />
-        ) : (
-          <BsFillHexagonFill />
-        )
-      }
-    />
+      logoLight={company.logoLightIcon}
+      logoDark={company.logoDarkIcon}
+      trailing={<LuArrowUpRight className="md:hidden" />}
+    >
+      <Link to={ERP_URL} />
+    </NavRailSwitcher>
   );
 }
 

@@ -23,8 +23,8 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError, ServerFnError } from "../errors";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { resolveInventoryAccount } from "../lib/get-posting-group";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import {
   loadRefurbishmentCompletion,
   type RefurbishmentCompletionContext

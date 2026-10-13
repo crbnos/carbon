@@ -9,9 +9,9 @@ import {
   refuseVoidBeforeCutover
 } from "../lib/cutover-void";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { reverseProjectCipRows } from "../lib/project-cip";
 import { reverseProjectLedgerRows } from "../lib/project-posting";
-import { allocateJournalLineIds } from "./journal-line-ids";
 import type { ChargeContext } from "./post-charge-post";
 
 export async function voidCharge(

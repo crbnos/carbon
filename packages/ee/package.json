@@ -8,6 +8,7 @@
     "./api-keys.server": "./src/api-keys.server.ts",
     "./approvals": "./src/approvals/index.ts",
     "./approvals.server": "./src/approvals/service.ts",
+    "./approvals/document.server": "./src/approvals/document.server.ts",
     "./audit.server": "./src/audit/audit.ts",
     "./backups.server": "./src/backups.server.ts",
     "./console.server": "./src/console.server.ts",

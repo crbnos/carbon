@@ -57,6 +57,7 @@ import {
   resolveInventoryAccount
 } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { assertPostable } from "../lib/postable";
 import {
   buildProjectCipRow,
@@ -69,7 +70,6 @@ import {
   reverseProjectLedgerRows
 } from "../lib/project-posting";
 import { loadProjectStock, withStripe } from "../lib/stock-stripes";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import {
   hardenPegsForSupply,
   linkPegsToItemLedger,

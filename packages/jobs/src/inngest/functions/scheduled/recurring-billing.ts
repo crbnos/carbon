@@ -7,6 +7,7 @@ import { getCompanyTimeZone } from "@carbon/database";
 import { generateCostPlusItems } from "@carbon/ee/project-revenue.server";
 import { NotificationEvent } from "@carbon/notifications";
 import { serverFns } from "@carbon/server-functions";
+import { ENDED_LEASE_STATUSES } from "@carbon/server-functions/post-purchase-invoice";
 import type { InvoiceAutomation } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
@@ -22,7 +23,13 @@ import {
   buildRecurringInvoicingDigests,
   type InvoiceRunResult
 } from "../../../invoicing/digest";
+import {
+  expireLeases,
+  loadLeaseReminders,
+  stampLeaseReminders
+} from "../../../invoicing/lease-reminders";
 import { inngest } from "../../client";
+import { formatDetailDate } from "../notifications/content";
 
 /** A drafted invoice from either source, keyed by its source document. */
 type DraftedInvoice = {
@@ -37,6 +44,9 @@ type DraftedInvoice = {
  * The one daily job for every recurring-invoice source — rental agreements
  * and AR contracts (`.ai/specs/implemented/2026-09-22-revenue-recognition-rentals-and-contracts.md` Part III): draft what is due,
  * run invoice automation over the drafts, and send each owner one digest.
+ * Lessee leases (`.ai/specs/2026-10-11-lessee-leases.md`) draft purchase
+ * invoices that stay Draft for the buyer, and the job also reminds lease
+ * owners of notice and end dates and expires leases that have run out.
  */
 export const recurringBillingFunction = inngest.createFunction(
   { id: "recurring-billing", retries: 2 },
@@ -48,6 +58,57 @@ export const recurringBillingFunction = inngest.createFunction(
   { cron: "0 5 * * *" },
   async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
+
+    /** Reminds each Active lease's owner (assignee, else creator) and the
+     *  company's "Also notify" group of a notice or end date within
+     *  `leaseReminderDays`, once per date. Sent before the dates are stamped,
+     *  so a failed stamp repeats a reminder rather than losing one. */
+    const remindLeaseDates = async (company: { id: string; name: string }) => {
+      const due = await step.run(`lease-reminders-${company.id}`, async () =>
+        loadLeaseReminders(
+          getJobDatabaseClient(),
+          company.id,
+          datetime
+            .today(await getCompanyTimeZone(serviceRole, company.id))
+            .toString()
+        )
+      );
+      if (due.reminders.length === 0) return;
+
+      // An owner who is in the group hears it once, through the group.
+      const owners = new Map(due.owners);
+      const listed = new Set(due.groupIds);
+      const events = due.reminders.flatMap((reminder) => {
+        const date = formatDetailDate(reminder.date) ?? reminder.date;
+        const data = {
+          event: NotificationEvent.LeaseCriticalDate,
+          companyId: company.id,
+          documentId: reminder.leaseId,
+          body:
+            reminder.kind === "notice"
+              ? `notice must be given by ${date}`
+              : `ends on ${date}`
+        };
+        const owner = owners.get(reminder.leaseId);
+        return [
+          ...(owner && !listed.has(owner)
+            ? [{ type: "user" as const, userId: owner }]
+            : []),
+          ...(due.groupIds.length > 0
+            ? [{ type: "group" as const, groupIds: due.groupIds }]
+            : [])
+        ].map((recipient) => ({
+          name: "carbon/notify" as const,
+          data: { ...data, recipient }
+        }));
+      });
+      if (events.length > 0) {
+        await step.sendEvent(`notify-lease-dates-${company.id}`, events);
+      }
+      await step.run(`lease-reminded-${company.id}`, () =>
+        stampLeaseReminders(getJobDatabaseClient(), company.id, due.reminders)
+      );
+    };
     const scheduled = await step.run("find-companies", async () => {
       logger.info(
         `Scheduled recurring billing started: ${datetime.timestamp()}`
@@ -58,37 +119,65 @@ export const recurringBillingFunction = inngest.createFunction(
       // Kysely is not subject to PostgREST's max_rows, so the list is never
       // truncated.
       const db = getJobDatabaseClient();
-      const [rentalCompanies, contractCompanies, projectBillingCompanies] =
-        await Promise.all([
-          db
-            .selectFrom("rentalAgreement as ra")
-            .innerJoin("company as c", "c.id", "ra.companyId")
-            .select(["c.id", "c.name"])
-            .where("ra.status", "=", "Active")
-            .distinct()
-            .execute(),
-          db
-            .selectFrom("customerContract as cc")
-            .innerJoin("company as c", "c.id", "cc.companyId")
-            .select(["c.id", "c.name"])
-            .where("cc.status", "=", "Active")
-            .distinct()
-            .execute(),
-          // Project billing: an Active contract with a billing line.
-          db
-            .selectFrom("customerContractLine as l")
-            .innerJoin("customerContract as cc", (join) =>
-              join
-                .onRef("cc.id", "=", "l.customerContractId")
-                .onRef("cc.companyId", "=", "l.companyId")
-            )
-            .select("l.companyId")
-            .where("cc.status", "=", "Active")
-            .where("l.billingMethod", "<>", "Fixed")
-            .where("l.projectElementId", "is not", null)
-            .distinct()
-            .execute()
-        ]);
+      const [
+        rentalCompanies,
+        contractCompanies,
+        projectBillingCompanies,
+        leaseCompanies
+      ] = await Promise.all([
+        db
+          .selectFrom("rentalAgreement as ra")
+          .innerJoin("company as c", "c.id", "ra.companyId")
+          .select(["c.id", "c.name"])
+          .where("ra.status", "=", "Active")
+          .distinct()
+          .execute(),
+        db
+          .selectFrom("customerContract as cc")
+          .innerJoin("company as c", "c.id", "cc.companyId")
+          .select(["c.id", "c.name"])
+          .where("cc.status", "=", "Active")
+          .distinct()
+          .execute(),
+        // Project billing: an Active contract with a billing line.
+        db
+          .selectFrom("customerContractLine as l")
+          .innerJoin("customerContract as cc", (join) =>
+            join
+              .onRef("cc.id", "=", "l.customerContractId")
+              .onRef("cc.companyId", "=", "l.companyId")
+          )
+          .select("l.companyId")
+          .where("cc.status", "=", "Active")
+          .where("l.billingMethod", "<>", "Fixed")
+          .where("l.projectElementId", "is not", null)
+          .distinct()
+          .execute(),
+        // An Active lease (to bill, remind or expire), or an ended one with a
+        // payment still to bill.
+        db
+          .selectFrom("lease as l")
+          .innerJoin("company as c", "c.id", "l.companyId")
+          .select(["c.id", "c.name"])
+          .where((eb) =>
+            eb.or([
+              eb("l.status", "=", "Active"),
+              eb.and([
+                eb("l.status", "in", ENDED_LEASE_STATUSES),
+                eb.exists(
+                  eb
+                    .selectFrom("leasePayment as p")
+                    .select("p.id")
+                    .whereRef("p.leaseId", "=", "l.id")
+                    .whereRef("p.companyId", "=", "l.companyId")
+                    .where("p.status", "=", "Pending")
+                )
+              ])
+            ])
+          )
+          .distinct()
+          .execute()
+      ]);
       const projectBillingIds = new Set(
         projectBillingCompanies.map((c) => c.companyId)
       );
@@ -102,37 +191,41 @@ export const recurringBillingFunction = inngest.createFunction(
           hasRentals: boolean;
           hasContracts: boolean;
           hasProjectBilling: boolean;
+          hasLeases: boolean;
         }
       >();
-      for (const c of rentalCompanies) {
-        byId.set(c.id, {
-          ...c,
-          hasRentals: true,
-          hasContracts: false,
-          hasProjectBilling: false
-        });
-      }
-      for (const c of contractCompanies) {
-        const hasProjectBilling = projectBillingIds.has(c.id);
-        const known = byId.get(c.id);
-        if (known) {
-          known.hasContracts = true;
-          known.hasProjectBilling = hasProjectBilling;
-        } else {
-          byId.set(c.id, {
+      const note = (
+        list: { id: string; name: string }[],
+        flag: "hasRentals" | "hasContracts" | "hasLeases"
+      ) => {
+        for (const c of list) {
+          const known = byId.get(c.id) ?? {
             ...c,
             hasRentals: false,
-            hasContracts: true,
-            hasProjectBilling
-          });
+            hasContracts: false,
+            hasProjectBilling: false,
+            hasLeases: false
+          };
+          known[flag] = true;
+          byId.set(c.id, known);
         }
+      };
+      note(rentalCompanies, "hasRentals");
+      note(contractCompanies, "hasContracts");
+      note(leaseCompanies, "hasLeases");
+      // Project billing: a contract company with a billing line.
+      for (const known of byId.values()) {
+        known.hasProjectBilling =
+          known.hasContracts && projectBillingIds.has(known.id);
       }
       const companies = [...byId.values()].sort((a, b) =>
         a.id < b.id ? -1 : a.id > b.id ? 1 : 0
       );
 
       if (companies.length === 0) {
-        logger.info("No companies with Active rental agreements or contracts");
+        logger.info(
+          "No companies with Active rental agreements, contracts or leases"
+        );
       }
 
       return companies;
@@ -425,17 +518,116 @@ export const recurringBillingFunction = inngest.createFunction(
         }
       }
 
+      // Lease invoices stay Draft: the buyer adds the supplier's invoice
+      // number and posts them, so they skip automation and are reported as
+      // drafted.
+      const leaseDrafts: InvoiceRunResult[] = [];
+      if (company.hasLeases) {
+        try {
+          const leases = await step.run(
+            `lease-billing-${company.id}`,
+            async () => {
+              const asOf =
+                billedAsOf ??
+                datetime
+                  .today(await getCompanyTimeZone(serviceRole, company.id))
+                  .toString();
+
+              const drafted = await serverFns
+                .system({
+                  db: getJobDatabaseClient(),
+                  companyId: company.id,
+                  userId: "system"
+                })
+                .invokeOrThrow("create-lease-invoices", { asOf });
+
+              for (const failure of drafted.failures) {
+                logger.error("Failed to bill lease {leaseId} for {company}", {
+                  leaseId: failure.leaseId,
+                  company: company.name,
+                  companyId: company.id,
+                  error: failure.error
+                });
+              }
+              logger.info(
+                drafted.invoices.length > 0
+                  ? `Drafted ${drafted.invoices.length} lease invoice(s) for ${company.name} as of ${asOf}: ${drafted.invoiceIds.join(", ")}`
+                  : `No lease payments due for ${company.name} as of ${asOf}`
+              );
+
+              return {
+                invoices: drafted.invoices,
+                failures: drafted.failures
+              };
+            }
+          );
+          for (const invoice of leases.invoices) {
+            leaseDrafts.push({
+              invoiceId: invoice.invoiceId,
+              documentType: "purchaseInvoice",
+              sourceId: invoice.leaseId,
+              outcome: "drafted"
+            });
+          }
+          // Leases that failed stay Pending until tomorrow's run.
+          if (leases.failures.length > 0) companyFailed = true;
+        } catch (error) {
+          logger.error("Failed to bill leases for company {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+
+        try {
+          await remindLeaseDates(company);
+        } catch (error) {
+          logger.error("Failed to send lease reminders for {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+
+        try {
+          await step.run(`lease-expiry-${company.id}`, async () => {
+            const today = datetime
+              .today(await getCompanyTimeZone(serviceRole, company.id))
+              .toString();
+            const expired = await expireLeases(
+              getJobDatabaseClient(),
+              company.id,
+              today
+            );
+            if (expired > 0) {
+              logger.info(`Expired ${expired} lease(s) for ${company.name}`);
+            }
+            return expired;
+          });
+        } catch (error) {
+          logger.error("Failed to expire leases for {company}", {
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          companyFailed = true;
+        }
+      }
+
       if (companyFailed) failed.push(company.id);
 
       // Posts and emails (or sends via Stripe) per the source's invoice
       // automation (spec 2026-10-02-rental-invoice-automation). Draft Only
       // drafts wait for a person and are not reported; a draft the planner
       // held this run is.
-      const results: InvoiceRunResult[] = [];
+      const results: InvoiceRunResult[] = [...leaseDrafts];
       for (const invoice of invoices) {
         if (invoice.mode === "Draft Only" || !invoice.holdReason) continue;
         results.push({
           invoiceId: invoice.invoiceId,
+          documentType: "salesInvoice",
           sourceId: invoice.sourceId,
           outcome: "held"
         });
@@ -464,6 +656,7 @@ export const recurringBillingFunction = inngest.createFunction(
         const result = (outcome: InvoiceRunResult["outcome"]) =>
           results.push({
             invoiceId: invoice.invoiceId,
+            documentType: "salesInvoice",
             sourceId: invoice.sourceId,
             outcome
           });
@@ -542,31 +735,46 @@ export const recurringBillingFunction = inngest.createFunction(
           async () => {
             const db = getJobDatabaseClient();
             const sourceIds = [...new Set(results.map((r) => r.sourceId))];
-            const [agreements, contracts, settings] = await Promise.all([
-              db
-                .selectFrom("rentalAgreement")
-                .select(["id", "salesPersonId", "createdBy"])
-                .where("companyId", "=", company.id)
-                .where("id", "in", sourceIds)
-                .execute(),
-              db
-                .selectFrom("customerContract")
-                .select(["id", "salesPersonId", "createdBy"])
-                .where("companyId", "=", company.id)
-                .where("id", "in", sourceIds)
-                .execute(),
-              db
-                .selectFrom("companySettings")
-                .select("invoiceNotificationGroup")
-                .where("id", "=", company.id)
-                .executeTakeFirst()
-            ]);
+            const [agreements, contracts, leases, settings] = await Promise.all(
+              [
+                db
+                  .selectFrom("rentalAgreement")
+                  .select(["id", "salesPersonId", "createdBy"])
+                  .where("companyId", "=", company.id)
+                  .where("id", "in", sourceIds)
+                  .execute(),
+                db
+                  .selectFrom("customerContract")
+                  .select(["id", "salesPersonId", "createdBy"])
+                  .where("companyId", "=", company.id)
+                  .where("id", "in", sourceIds)
+                  .execute(),
+                db
+                  .selectFrom("lease")
+                  .select(["id", "assignee", "createdBy"])
+                  .where("companyId", "=", company.id)
+                  .where("id", "in", sourceIds)
+                  .execute(),
+                db
+                  .selectFrom("companySettings")
+                  .select("invoiceNotificationGroup")
+                  .where("id", "=", company.id)
+                  .executeTakeFirst()
+              ]
+            );
 
-            // The owner is the salesperson, else the creator — when they can
-            // still be notified in this company.
-            const ownerOf = [...agreements, ...contracts]
-              .map((a) => ({ id: a.id, owner: a.salesPersonId ?? a.createdBy }))
-              .filter((a) => a.owner && a.owner !== "system");
+            // The owner is the salesperson (a lease's assignee), else the
+            // creator — when they can still be notified in this company.
+            const ownerOf = [
+              ...[...agreements, ...contracts].map((a) => ({
+                id: a.id,
+                owner: a.salesPersonId ?? a.createdBy
+              })),
+              ...leases.map((l) => ({
+                id: l.id,
+                owner: l.assignee ?? l.createdBy
+              }))
+            ].filter((a) => a.owner && a.owner !== "system");
             const ownerIds = [...new Set(ownerOf.map((a) => a.owner))];
             const members =
               ownerIds.length > 0
@@ -594,10 +802,15 @@ export const recurringBillingFunction = inngest.createFunction(
           recipients.groupIds
         );
         for (const digest of digests) {
-          const key =
+          const recipientKey =
             digest.recipient.type === "user"
               ? digest.recipient.userId
               : "group";
+          // A recipient can get two: the sales invoices and the lease drafts.
+          const key =
+            digest.documentType === "purchaseInvoice"
+              ? `${recipientKey}-lease`
+              : recipientKey;
           await step.sendEvent(
             `notify-recurring-invoicing-${company.id}-${key}`,
             {
@@ -606,6 +819,7 @@ export const recurringBillingFunction = inngest.createFunction(
                 event: NotificationEvent.RecurringInvoicing,
                 companyId: company.id,
                 documentIds: digest.documentIds,
+                documentType: digest.documentType,
                 recipient: digest.recipient,
                 body: digest.body
               }

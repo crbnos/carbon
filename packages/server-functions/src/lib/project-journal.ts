@@ -12,8 +12,8 @@ import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { journalPostingStatus } from "@carbon/database/journal-posting-status";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import { resolveAccountingPeriod } from "./get-accounting-period";
+import { allocateJournalLineIds } from "./journal-line-ids";
 import { createAdjustmentJournal } from "./post-adjustment";
 
 type DimensionEntityType = Database["public"]["Enums"]["dimensionEntityType"];

@@ -4,7 +4,9 @@
 
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getDocumentApprovalState } from "@carbon/ee/approvals/document.server";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { RecordOutlet } from "@carbon/react";
@@ -64,7 +66,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "parts"
   });
 
@@ -292,7 +294,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : []
   );
 
-  const linkedNonConformance = await linkedNonConformancePromise;
+  // Approval only gates Engineering Complete → Implementation.
+  const [linkedNonConformance, approval] = await Promise.all([
+    linkedNonConformancePromise,
+    changeNotice.data?.status === "Engineering Complete"
+      ? getDocumentApprovalState(getCarbonServiceRole(), {
+          documentType: "changeOrder",
+          documentId: id,
+          companyId,
+          userId
+        })
+      : null
+  ]);
 
   return {
     changeNotice: changeNotice.data,
@@ -303,6 +316,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     requiredActions,
     impactUsedIn,
     nonConformanceOptions,
+    approval,
     linkedNonConformance: linkedNonConformance
       ? {
           id: linkedNonConformance.id,

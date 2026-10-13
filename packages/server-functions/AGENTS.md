@@ -338,8 +338,29 @@ each company (`journalLegacyDocumentsForAllCompanies`,
   (`ci/src/one-off-scripts.ts`): the runner records nothing and runs it again on the
   next deploy.
 
-`seed-company` sets a new company's cutover to the first day of the current month, so
-a new company posts `Posted` journals from its first document.
+`seed-company` leaves a new company without a cutover, so it posts `Provisional`
+journals until the activation wizard sets one. A subsidiary copies its `accountDefault`
+ids and fixed asset class accounts from a company already in the group; the seeded
+account numbers are only the fallback for a group with none.
+
+### `apply-account-import`
+
+Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ chart,
+defaults, resolutions }`, trimmed and size-capped, permission `update: accounting`) in one
+transaction. It locks every company's `companySettings` FOR SHARE, then the group's
+accounts FOR UPDATE, re-plans with `planAccountImport`, and refuses a plan with errors or
+an open replacement — including any company of the group with an accounting cutover. It
+sets `app.account_import` (`set_config(…, true)`), which lets the charge and reimbursement
+guards accept an account-only change on a posted row (`20261013035046`). It frees the
+number and name of every updated, merged and deleted account (temporary values, so a swap
+works), creates groups and accounts, sets every company's defaults in one statement and
+every fixed asset class in one, re-points each merge source by `REFERENCE_POLICY` plus
+the references with no foreign key (`intercompanyEliminationLine`,
+`companyIntegration.metadata.paymentFeeAccount`) — posted documents included, since their
+journals are still Provisional — deletes the removed accounts and their
+`externalIntegrationMapping` rows, deletes empty groups, and checks a postcondition (every
+chart row written with its class, type and group; every required default and class
+account set). A failed postcondition is a 500: the plan and the apply disagree.
 
 ## Validation Commands
 
@@ -357,7 +378,7 @@ pnpm --filter @carbon/checks test
 | `./errors` | `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError` — the classes, for `instanceof` and `new` |
 | `./<name>` | one server function as the default export, plus its input schema and result types (`src/<name>/index.ts`) |
 
-Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs` (`calculateCOGS`: reads and locks the open layers, then writes what `relieveLayers` from `@carbon/database/cost-relief` returns), `storage-units`, `require-accounting-cutover` (`assertAccountingCutover`, see Journals and the accounting cutover), `cutover-void` (`refuseVoidBeforeCutover`, `assertNoMigrationClearing`, the void messages and `TIME_ENTRY_BEFORE_CUTOVER_ERROR`), `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`leavingTrackedEntityIds`, and `orderLayersForConsumption` re-exported from `@carbon/database/cost-relief` — a serial unit is costed from its own layer first), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), `party-dimensions` (`loadPartyDimensions`, `partyDimensionValues`, `partyDimensionValuesFrom` — the Customer / CustomerType or Supplier / SupplierType dimensions on every line of a payment or memo journal, used by `post-payment` and `post-memo` and their rebuilds), `cost-center-project-dimensions` (`costCenterAndProjectDimensions` — the oldest active Cost Center and Project dimensions, used by `post-charge`, `post-reimbursement` and their legacy builders), `document-journal-lines` (`documentJournalLines` — the lines one document's chain owns, read only from journals with a `DOCUMENT_JOURNAL_STATUSES` status; used by `post-receipt`, `post-shipment`, `post-sales-invoice` and `post-purchase-invoice`), `sales-invoice-stand-ins` (`salesInvoiceStandIns`, `STAND_IN_CLASS` — the stand-in lines of a sales invoice journal, used by `post-sales-invoice` and its legacy builder), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
+Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs` (`calculateCOGS`: reads and locks the open layers, then writes what `relieveLayers` from `@carbon/database/cost-relief` returns), `storage-units`, `require-accounting-cutover` (`assertAccountingCutover`, see Journals and the accounting cutover), `cutover-void` (`refuseVoidBeforeCutover`, `assertNoMigrationClearing`, the void messages and `TIME_ENTRY_BEFORE_CUTOVER_ERROR`), `postable` (`assertPostable` — only a Draft or Pending document is posted; called BEFORE the function's `try`, whose failure handler resets the document to Draft), `fixed-asset-writes` (`FixedAssetWrites` — asset changes decided while the journal is built are staged and applied inside the posting transaction, never written on `db` directly), `asset-transfer` (the capitalization / return-to-inventory journal line builders, used by `post-asset-transfer` and `post-rental-agreement`), `cost-layer-order` (`leavingTrackedEntityIds`, and `orderLayersForConsumption` re-exported from `@carbon/database/cost-relief` — a serial unit is costed from its own layer first), `contract-ledger` (`lockContractPositions`, `loadContractPositions` — the contract movement ledger's position lock and grouped read, shared by `post-sales-invoice`, `post-memo` and the recognition run's `synthesizeContractRevenue`; `samePosition`, the float-tolerant equality of two positions, used by `post-sales-invoice`; `signedCreditAmount`, a signed credit as an account's natural-balance journal amount, used by `post-sales-invoice` and `post-memo`), `party-dimensions` (`loadPartyDimensions`, `partyDimensionValues`, `partyDimensionValuesFrom` — the Customer / CustomerType or Supplier / SupplierType dimensions on every line of a payment or memo journal, used by `post-payment` and `post-memo` and their rebuilds), `cost-center-project-dimensions` (`costCenterAndProjectDimensions` — the oldest active Cost Center and Project dimensions, used by `post-charge`, `post-reimbursement` and their legacy builders), `document-journal-lines` (`documentJournalLines` — the lines one document's chain owns, read only from journals with a `DOCUMENT_JOURNAL_STATUSES` status; used by `post-receipt`, `post-shipment`, `post-sales-invoice` and `post-purchase-invoice`), `sales-invoice-stand-ins` (`salesInvoiceStandIns`, `STAND_IN_CLASS` — the stand-in lines of a sales invoice journal, used by `post-sales-invoice` and its legacy builder), `void-journal` (`insertNegatedJournal` — voids a journal with a negated copy dated the void date, each line negated with its documents, account default role and dimensions; used by the charge, reimbursement and lease voids), `journal-line-ids` (`allocateJournalLineIds` — the ids of a journal's lines drawn in one statement, used by `post-charge`, `post-reimbursement` and `post-lease`), `currency-decimals` (`currencyDecimals` — a currency's settlement precision, the group's `currency.decimalPlaces`; billed amounts such as rental billing periods and lease payment rows are rounded to it), `lease-payment-rows` (`cutLeasePaymentRows` — the ONE cutter of a lessee lease's payment rows, its Modify slice from `remainingLeasePayments` in `@carbon/utils`, used by `create-lease-invoices`' `rollOpenEndedLeasePayments` and `post-lease`'s Modify; the one helper here the ERP also calls, re-exported from `@carbon/server-functions/create-lease-invoices` for `regenerateLeasePayments` / `updateDraftLease` / `saveDraftLeaseLine`, which cut rows inside their own Kysely transaction), and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
 
 `src/post-receipt/posting-lines.ts` (pure) builds the journal lines of a purchase order
 receipt (`purchaseReceiptLineCosts`, `buildPurchaseReceiptJournalLines`) and of a sales
@@ -389,8 +410,10 @@ package cannot import) and `generateTimeAndMaterialsItems`, the T&M backfill tha
 
 Project revenue (Phase 4b): the 3 revenue recognition run functions
 (`propose-`, `recalculate-` and `preview-revenue-recognition-run`) run
-`runRowSynthesizers(ctx.revenueRunSynthesizers)`: rental accruals, the caller's
-synthesizers, `synthesizeProjectRevenue`, then `synthesizeContractRevenue`.
+`runRowSynthesizers(type, ctx.revenueRunSynthesizers)`. A Revenue Recognition run
+runs the caller's synthesizers, `synthesizeProjectRevenue`, then
+`synthesizeContractRevenue`; a Lease run runs only `synthesizeRentalAccruals` and
+ignores the caller's.
 `revenueRunSynthesizers` is a field of `ServerFnContext` and of the `serverFns`
 fields (default `[]`). It is how the commercial Percent Complete synthesizer
 (`@carbon/ee/project-revenue.server`, `projectRevenueSynthesizers`) runs inside the

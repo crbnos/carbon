@@ -46,3 +46,38 @@ export function resolveTrackedEntityBin(
     )?.storageUnitId ?? null
   );
 }
+
+export type TrackedEntityBin = {
+  storageUnitId: string | null;
+  quantity: number;
+};
+
+// The bin each tracked entity holds stock in, with its on-hand there. Unlike
+// `resolveTrackedEntityBin`, the unassigned bin (`null`) counts: a unit moved
+// into "no storage unit" must not resolve back to the named bin it left. An
+// entity with no positive bin is absent, so the caller decides what "no stock
+// anywhere" means.
+export function resolveTrackedEntityBins(
+  ledgers: BinLedgerRow[]
+): Map<string, TrackedEntityBin> {
+  const netByEntityBin = new Map<string, Map<string | null, number>>();
+  for (const l of ledgers) {
+    if (!l.trackedEntityId) continue;
+    const bins = netByEntityBin.get(l.trackedEntityId) ?? new Map();
+    bins.set(
+      l.storageUnitId,
+      (bins.get(l.storageUnitId) ?? 0) + Number(l.quantity ?? 0)
+    );
+    netByEntityBin.set(l.trackedEntityId, bins);
+  }
+
+  const result = new Map<string, TrackedEntityBin>();
+  for (const [trackedEntityId, bins] of netByEntityBin) {
+    for (const [storageUnitId, quantity] of bins) {
+      if (quantity > (result.get(trackedEntityId)?.quantity ?? 0)) {
+        result.set(trackedEntityId, { storageUnitId, quantity });
+      }
+    }
+  }
+  return result;
+}

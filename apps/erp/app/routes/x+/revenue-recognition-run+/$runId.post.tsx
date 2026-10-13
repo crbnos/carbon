@@ -115,7 +115,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     location: dimensions.find((d) => d.entityType === "Location")?.id,
     project: dimensions.find((d) => d.entityType === "Project")?.id,
     projectElement: dimensions.find((d) => d.entityType === "ProjectElement")
-      ?.id
+      ?.id,
+    supplier: dimensions.find((d) => d.entityType === "Supplier")?.id
   };
 
   try {

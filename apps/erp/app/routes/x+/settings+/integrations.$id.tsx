@@ -93,11 +93,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
+  Link,
   useLoaderData,
   useNavigate,
   useParams,
   useSearchParams
 } from "react-router";
+import { useSettings } from "~/hooks";
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
@@ -105,6 +107,7 @@ import {
   getAccountsList,
   getActiveDimensionsWithValues
 } from "~/modules/accounting/accounting.service";
+import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   getIntegration,
   IntegrationForm,
@@ -2143,6 +2146,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function IntegrationRoute() {
+  // Invoice and bill sync reads Posted journals, so a company that has not
+  // activated accounting (still Provisional) has nothing to send yet.
+  const accountingSetUp = hasAccountingCutover(useSettings());
   const {
     installed,
     metadata,
@@ -2267,10 +2273,22 @@ export default function IntegrationRoute() {
       defaultTab={defaultTab}
       headerExtra={
         accountingSync ? (
-          <AccountingSyncControl
-            enabled={accountingSync.enabled}
-            unmappedRequiredCount={accountingSync.unmappedRequiredCount}
-          />
+          <div className="flex items-center gap-3">
+            {!accountingSetUp && (
+              <Link
+                to={path.to.accountingActivation}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                <Trans>
+                  Invoices and bills sync after you activate accounting
+                </Trans>
+              </Link>
+            )}
+            <AccountingSyncControl
+              enabled={accountingSync.enabled}
+              unmappedRequiredCount={accountingSync.unmappedRequiredCount}
+            />
+          </div>
         ) : undefined
       }
       {...(integrationId === "mount" && installed

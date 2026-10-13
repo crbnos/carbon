@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20261012193140",
+  "schemaVersion": "20261013223143",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-10-12T22:49:25.404Z",
+  "exportedAt": "2026-10-13T22:49:20.708Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -107,7 +107,14 @@
         "projectExpenseAccount",
         "projectWorkInProgressAccount",
         "warrantyExpenseAccount",
-        "contractLossProvisionAccount"
+        "contractLossProvisionAccount",
+        "rightOfUseAssetAccount",
+        "accumulatedRightOfUseAmortizationAccount",
+        "leaseLiabilityAccount",
+        "operatingLeaseExpenseAccount",
+        "variableLeaseExpenseAccount",
+        "rightOfUseAmortizationExpenseAccount",
+        "leaseInterestExpenseAccount"
       ]
     },
     {
@@ -2158,7 +2165,8 @@
         "createdBy",
         "createdAt",
         "updatedBy",
-        "updatedAt"
+        "updatedAt",
+        "type"
       ]
     },
     {
@@ -2310,26 +2318,6 @@
         "createdBy",
         "updatedAt",
         "updatedBy"
-      ]
-    },
-    {
-      "name": "stockTransfer",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "locationId",
-        "status",
-        "completedAt",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy",
-        "notes",
-        "assignee",
-        "customFields",
-        "tags"
       ]
     },
     {
@@ -2701,7 +2689,8 @@
         "rootStepId",
         "hiddenComponentNodeIds",
         "usedInStepId",
-        "isSubAssembly"
+        "isSubAssembly",
+        "orientation"
       ]
     },
     {
@@ -2889,7 +2878,10 @@
         "certificationTextNonExempt",
         "standardWeeklyHours",
         "burdenRateType",
-        "postAppliedBurden"
+        "postAppliedBurden",
+        "leaseIncrementalBorrowingRate",
+        "leaseShortTermExpedient",
+        "leaseReminderDays"
       ]
     },
     {
@@ -4420,7 +4412,8 @@
         "createdAt",
         "updatedBy",
         "updatedAt",
-        "voidedSalesInvoiceId"
+        "voidedSalesInvoiceId",
+        "invoiceSeparately"
       ]
     },
     {
@@ -4802,6 +4795,42 @@
       ]
     },
     {
+      "name": "customerContractFinancing",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "contractPrice",
+        "initialAwardDate",
+        "isSmallBusiness",
+        "maximumPaymentShare",
+        "nextRequestNumber",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "customerContractFinancingRate",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "effectiveDate",
+        "progressPaymentRate",
+        "liquidationRate",
+        "modificationNumber",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
       "name": "customerContractInvoice",
       "rows": 0,
       "columns": [
@@ -4812,6 +4841,48 @@
         "status",
         "salesInvoiceId",
         "isEdited",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "contractFinancingRequest",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "financingMethod",
+        "requestNumber",
+        "status",
+        "requestDate",
+        "costsThroughDate",
+        "estimateToComplete",
+        "estimateDate",
+        "lines",
+        "overrides",
+        "requestedAmount",
+        "approvedAmount",
+        "paymentId",
+        "submittedAt",
+        "submittedBy",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "contractFinancingRequestEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "contractFinancingRequestId",
+        "performanceBasedPaymentEventId",
+        "amount",
         "createdBy",
         "createdAt",
         "updatedBy",
@@ -5464,6 +5535,112 @@
       "columns": ["jobOperationToolId", "jobOperationStepId"]
     },
     {
+      "name": "leaseLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "description",
+        "serialNumber",
+        "locationId",
+        "paymentAmount",
+        "fairValue",
+        "economicLifeMonths",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionAmount",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "lesseeClassification",
+        "classificationInputs",
+        "classificationOverride",
+        "classificationOverrideReason",
+        "initialLiability",
+        "initialRouAsset",
+        "rouAssetCost",
+        "fixedAssetId",
+        "sortOrder",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "leaseEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "eventType",
+        "effectiveDate",
+        "liabilityBefore",
+        "liabilityAfter",
+        "rouAssetBefore",
+        "rouAssetAfter",
+        "gainLoss",
+        "classificationBefore",
+        "classificationAfter",
+        "fixedAssetId",
+        "journalId",
+        "notes",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leasePayment",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "paymentType",
+        "periodStart",
+        "periodEnd",
+        "dueDate",
+        "amount",
+        "status",
+        "purchaseInvoiceLineId",
+        "voidedPurchaseInvoiceId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
+      "name": "leaseScheduleLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "periodDate",
+        "openingLiability",
+        "paymentAmount",
+        "interestAmount",
+        "principalAmount",
+        "closingLiability",
+        "leaseCost",
+        "rouAmortization",
+        "closingRouAsset",
+        "journalId",
+        "postedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "leaseLineId"
+      ]
+    },
+    {
       "name": "methodMaterial",
       "rows": 0,
       "columns": [
@@ -5771,7 +5948,32 @@
         "customFields",
         "employeeId",
         "salesOrderId",
-        "rentalAgreementId"
+        "rentalAgreementId",
+        "customerContractId"
+      ]
+    },
+    {
+      "name": "performanceBasedPaymentEvent",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "customerContractId",
+        "customerContractLineId",
+        "sequence",
+        "eventCode",
+        "description",
+        "completionCriteria",
+        "eventType",
+        "amount",
+        "plannedDate",
+        "completedDate",
+        "completedBy",
+        "evidence",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt"
       ]
     },
     {
@@ -5992,7 +6194,8 @@
         "apportionedFactor",
         "isBusinessComponent",
         "rdComponentType",
-        "rdSoftwareType"
+        "rdSoftwareType",
+        "wbsCode"
       ]
     },
     {
@@ -6500,29 +6703,6 @@
       ]
     },
     {
-      "name": "stockTransferLine",
-      "rows": 0,
-      "columns": [
-        "id",
-        "stockTransferId",
-        "jobId",
-        "jobMaterialId",
-        "itemId",
-        "fromStorageUnitId",
-        "toStorageUnitId",
-        "quantity",
-        "pickedQuantity",
-        "trackedEntityId",
-        "requiresBatchTracking",
-        "requiresSerialTracking",
-        "companyId",
-        "createdAt",
-        "createdBy",
-        "updatedAt",
-        "updatedBy"
-      ]
-    },
-    {
       "name": "jobOperation",
       "rows": 0,
       "columns": [
@@ -6669,7 +6849,52 @@
         "autoStartJob",
         "completedBarcodeOverride",
         "jobId",
-        "fromStorageUnitId"
+        "fromStorageUnitId",
+        "replenishmentLevel"
+      ]
+    },
+    {
+      "name": "stockTransfer",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "locationId",
+        "status",
+        "completedAt",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy",
+        "notes",
+        "assignee",
+        "customFields",
+        "tags",
+        "kanbanId"
+      ]
+    },
+    {
+      "name": "stockTransferLine",
+      "rows": 0,
+      "columns": [
+        "id",
+        "stockTransferId",
+        "jobId",
+        "jobMaterialId",
+        "itemId",
+        "fromStorageUnitId",
+        "toStorageUnitId",
+        "quantity",
+        "pickedQuantity",
+        "trackedEntityId",
+        "requiresBatchTracking",
+        "requiresSerialTracking",
+        "companyId",
+        "createdAt",
+        "createdBy",
+        "updatedAt",
+        "updatedBy"
       ]
     },
     {
@@ -7442,37 +7667,6 @@
       ]
     },
     {
-      "name": "revenueRecognitionSchedule",
-      "rows": 0,
-      "columns": [
-        "id",
-        "companyId",
-        "type",
-        "status",
-        "salesInvoiceLineId",
-        "rentalAgreementLineId",
-        "rentalLeaseScheduleLineId",
-        "periodStart",
-        "periodEnd",
-        "scheduledDate",
-        "accountingPeriodId",
-        "amount",
-        "debitAccountId",
-        "creditAccountId",
-        "runLineId",
-        "journalId",
-        "billedBySalesInvoiceLineId",
-        "createdBy",
-        "createdAt",
-        "updatedBy",
-        "updatedAt",
-        "customerContractLineId",
-        "customerContractRevenueId",
-        "contractAmount",
-        "memoId"
-      ]
-    },
-    {
       "name": "salesInvoiceFundingAllocation",
       "rows": 0,
       "columns": [
@@ -7993,6 +8187,42 @@
       ]
     },
     {
+      "name": "lease",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "leaseId",
+        "status",
+        "name",
+        "description",
+        "supplierId",
+        "supplierLocationId",
+        "supplierContactId",
+        "locationId",
+        "assignee",
+        "commencementDate",
+        "endDate",
+        "noticeDate",
+        "invoiceFromDate",
+        "paymentFrequency",
+        "paymentTiming",
+        "annualEscalationPercent",
+        "discountRate",
+        "currencyCode",
+        "commencementJournalId",
+        "noticeRemindedFor",
+        "endRemindedFor",
+        "activatedAt",
+        "closedAt",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customFields"
+      ]
+    },
+    {
       "name": "purchaseInvoice",
       "rows": 0,
       "columns": [
@@ -8104,7 +8334,9 @@
         "ownerId",
         "sortOrder",
         "projectId",
-        "projectElementId"
+        "projectElementId",
+        "leaseId",
+        "leasePaymentId"
       ]
     },
     {
@@ -8271,6 +8503,39 @@
         "createdAt",
         "updatedBy",
         "updatedAt"
+      ]
+    },
+    {
+      "name": "revenueRecognitionSchedule",
+      "rows": 0,
+      "columns": [
+        "id",
+        "companyId",
+        "type",
+        "status",
+        "salesInvoiceLineId",
+        "rentalAgreementLineId",
+        "rentalLeaseScheduleLineId",
+        "periodStart",
+        "periodEnd",
+        "scheduledDate",
+        "accountingPeriodId",
+        "amount",
+        "debitAccountId",
+        "creditAccountId",
+        "runLineId",
+        "journalId",
+        "billedBySalesInvoiceLineId",
+        "createdBy",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "customerContractLineId",
+        "customerContractRevenueId",
+        "contractAmount",
+        "memoId",
+        "leaseId",
+        "leaseScheduleLineId"
       ]
     },
     {

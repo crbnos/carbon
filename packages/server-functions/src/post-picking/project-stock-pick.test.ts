@@ -285,7 +285,6 @@ databaseTest(
         stockTransferId,
         stockTransferLineId,
         trackedEntityId: lotId,
-        fromStorageUnitId: fromId,
         quantity: 2,
         locationId
       });

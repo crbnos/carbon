@@ -19,6 +19,7 @@ import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError, ServerFnError } from "../errors";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { createAdjustmentJournal } from "../lib/post-adjustment";
 import {
   buildProjectLedgerRow,
@@ -29,7 +30,6 @@ import {
   resolveProjectPostingAccount,
   resolveProjectTreatment
 } from "../lib/project-posting";
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 
 export const postProjectBurdenInput = z.object({
   indirectRateRunId: z.string(),

@@ -2,25 +2,38 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type {
+  ApprovalDecision,
+  DocumentApprovalState
+} from "@carbon/ee/approvals";
 import {
   Button,
   cn,
   DropdownMenuIcon,
   DropdownMenuItem,
   MENU_ITEM_SHORTCUTS,
-  useDisclosure
+  Status,
+  useDisclosure,
+  VStack
 } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
+import { formatDateTime } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
+import { useState } from "react";
 import {
+  LuCheckCheck,
   LuCircleCheck,
   LuCircleStop,
+  LuClipboardCheck,
   LuLoaderCircle,
   LuStepForward,
-  LuTrash
+  LuTrash,
+  LuX
 } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { RecordAction, RecordHeader } from "~/components/Layout/RecordHeader";
+import ApprovalDecisionModal from "~/components/Modals/ApprovalDecision";
 import Confirm from "~/components/Modals/Confirm/Confirm";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
@@ -38,15 +51,20 @@ const ChangeNoticeHeader = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
 
-  const routeData = useRouteData<{ changeNotice: ChangeNotice }>(
-    path.to.changeNotice(id)
-  );
+  const routeData = useRouteData<{
+    changeNotice: ChangeNotice;
+    approval: DocumentApprovalState | null;
+  }>(path.to.changeNotice(id));
 
   const status = routeData?.changeNotice?.status ?? "Draft";
   const { t } = useLingui();
   const permissions = usePermissions();
   const { company } = useUser();
+  const { locale } = useLocale();
   const statusFetcher = useFetcher<{}>();
+  const approvalFetcher = useFetcher<unknown>();
+  const [approvalDecision, setApprovalDecision] =
+    useState<ApprovalDecision | null>(null);
   const deleteModal = useDisclosure();
   const cancelModal = useDisclosure();
 
@@ -54,9 +72,22 @@ const ChangeNoticeHeader = () => {
     entityType: "changeOrder",
     entityId: id,
     companyId: company.id,
-    variant: "dropdown"
+    variant: "dropdown",
+    downloadable: true,
+    downloadName: routeData?.changeNotice?.changeOrderId ?? undefined
   });
 
+  const approval = routeData?.approval;
+  const pendingRequestId = approval?.pendingRequestId ?? null;
+  // The loader only reads approval state at Engineering Complete, the gated
+  // step: with a rule on, advancing submits for approval instead.
+  const submitsForApproval = approval?.isRequired ?? false;
+  const lastRejection =
+    approval?.lastDecision?.status === "Rejected"
+      ? approval.lastDecision
+      : null;
+
+  const changeOrderId = routeData?.changeNotice?.changeOrderId ?? "";
   const isLocked = isChangeNoticeLocked(status);
   const nextStatus =
     changeNoticeStatusTransitions[
@@ -64,9 +95,33 @@ const ChangeNoticeHeader = () => {
     ]?.[0] ?? null;
 
   const statusBadge = (
-    <span className={cn(isLocked && "line-through")}>
-      <ChangeNoticeStatus status={routeData?.changeNotice?.status} />
-    </span>
+    <>
+      <span className={cn(isLocked && "line-through")}>
+        <ChangeNoticeStatus status={routeData?.changeNotice?.status} />
+      </span>
+      {pendingRequestId && (
+        <Status color="yellow">
+          <Trans>Pending Approval</Trans>
+        </Status>
+      )}
+      {lastRejection && (
+        <Status
+          color="red"
+          tooltip={
+            <VStack spacing={1} className="max-w-xs">
+              {lastRejection.decisionAt && (
+                <span className="text-xs text-muted-foreground">
+                  {formatDateTime(lastRejection.decisionAt, locale)}
+                </span>
+              )}
+              <span>{lastRejection.notes || t`No notes were given.`}</span>
+            </VStack>
+          }
+        >
+          <Trans>Approval Rejected</Trans>
+        </Status>
+      )}
+    </>
   );
   const menuItems = (
     <>
@@ -164,30 +219,68 @@ const ChangeNoticeHeader = () => {
             {/* Implementation → Done is a release: it opens the review + confirm
             dialog (which carries the merge resolution), not a one-click stage
             advance. The header only auto-advances the earlier stages. */}
-            {nextStatus && nextStatus !== "Done" && !isLocked && (
-              <RecordAction slot="primary">
-                <statusFetcher.Form
-                  method="post"
-                  action={path.to.changeNoticeStatus(id)}
-                >
-                  <input type="hidden" name="id" value={id} />
-                  <input type="hidden" name="fromStatus" value={status} />
-                  <input type="hidden" name="status" value={nextStatus} />
+            {pendingRequestId && approval?.canApprove && (
+              <>
+                <RecordAction slot="primary">
                   <Button
-                    type="submit"
-                    rightIcon={<LuStepForward />}
+                    leftIcon={<LuCheckCheck />}
                     variant="primary"
-                    isDisabled={
-                      statusFetcher.state !== "idle" ||
-                      !permissions.can("update", "parts")
-                    }
-                    isLoading={statusFetcher.state !== "idle"}
+                    isDisabled={approvalFetcher.state !== "idle"}
+                    onClick={() => setApprovalDecision("Approved")}
                   >
-                    {t`Advance to ${nextStatus}`}
+                    {t`Approve`}
                   </Button>
-                </statusFetcher.Form>
-              </RecordAction>
+                </RecordAction>
+                <RecordAction slot="secondary">
+                  <Button
+                    leftIcon={<LuX />}
+                    variant="destructive"
+                    isDisabled={approvalFetcher.state !== "idle"}
+                    onClick={() => setApprovalDecision("Rejected")}
+                  >
+                    {t`Reject`}
+                  </Button>
+                </RecordAction>
+              </>
             )}
+
+            {/* With no rule left, no one can decide a pending request; advancing
+            withdraws it. */}
+            {nextStatus &&
+              nextStatus !== "Done" &&
+              !isLocked &&
+              (!pendingRequestId || !submitsForApproval) && (
+                <RecordAction slot="primary">
+                  <statusFetcher.Form
+                    method="post"
+                    action={path.to.changeNoticeStatus(id)}
+                  >
+                    <input type="hidden" name="id" value={id} />
+                    <input type="hidden" name="fromStatus" value={status} />
+                    <input type="hidden" name="status" value={nextStatus} />
+                    <Button
+                      type="submit"
+                      rightIcon={
+                        submitsForApproval ? (
+                          <LuClipboardCheck />
+                        ) : (
+                          <LuStepForward />
+                        )
+                      }
+                      variant="primary"
+                      isDisabled={
+                        statusFetcher.state !== "idle" ||
+                        !permissions.can("update", "parts")
+                      }
+                      isLoading={statusFetcher.state !== "idle"}
+                    >
+                      {submitsForApproval
+                        ? t`Submit for Approval`
+                        : t`Advance to ${nextStatus}`}
+                    </Button>
+                  </statusFetcher.Form>
+                </RecordAction>
+              )}
 
             {status === "Implementation" && !isLocked && (
               <RecordAction slot="primary">
@@ -233,6 +326,25 @@ const ChangeNoticeHeader = () => {
           <input type="hidden" name="fromStatus" value={status} />
           <input type="hidden" name="status" value="Cancelled" />
         </Confirm>
+      )}
+      {approvalDecision && pendingRequestId && (
+        <ApprovalDecisionModal
+          action={path.to.changeNoticeApproval(id)}
+          approvalRequestId={pendingRequestId}
+          decision={approvalDecision}
+          title={
+            approvalDecision === "Approved"
+              ? t`Approve ${changeOrderId}`
+              : t`Reject ${changeOrderId}`
+          }
+          description={
+            approvalDecision === "Approved"
+              ? t`Are you sure you want to approve this change notice? This moves it to Implementation.`
+              : t`Are you sure you want to reject this change notice? It stays at Engineering Complete so it can be changed and submitted again.`
+          }
+          fetcher={approvalFetcher}
+          onClose={() => setApprovalDecision(null)}
+        />
       )}
       {auditLogDrawer}
     </>

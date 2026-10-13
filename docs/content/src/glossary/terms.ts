@@ -97,12 +97,22 @@ export const terms = {
   },
   "assembly-step-motion": {
     term: msg`Motion`,
-    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path.`,
+    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-sub-assembly-path": {
+    term: msg`Sub-assembly path`,
+    definition: msg`The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
   "assembly-step-camera": {
     term: msg`Camera`,
     definition: msg`The view a step plays from; without a saved view the step frames its own components.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-build-orientation": {
+    term: msg`Orientation`,
+    definition: msg`How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again.`,
     href: "/docs/reference/assembly-instructions#playback-settings"
   },
   "assembly-sub-assembly": {
@@ -571,6 +581,28 @@ export const terms = {
     term: msg`Purchase option`,
     definition: msg`A price on a rental agreement at which the customer can buy the unit, counted as a lease payment that makes the lease sales-type when its exercise is reasonably certain, and billed by Sell to Customer.`,
     href: "/docs/reference/rental-agreements#end-of-the-term"
+  },
+
+  // ── Leases (lessee) ─────────────────────────────────────────────────────
+  "lessee-lease": {
+    term: msg`Lease (lessee)`,
+    definition: msg`An asset the company rents from a supplier, accounted for under ASC 842: activation classifies it as Operating, Finance or Short-Term and books its right-of-use asset and lease liability, its payment rows are drafted as purchase invoices, and the lease run posts its monthly interest and amortization.`,
+    href: "/docs/reference/leases"
+  },
+  "right-of-use-asset": {
+    term: msg`Right-of-use asset`,
+    definition: msg`The lessee's asset for the right to use a leased asset, booked at the present value of the lease payments when an operating or finance lease is activated and amortized each month by the lease run.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-liability": {
+    term: msg`Lease liability`,
+    definition: msg`What the lessee owes on a lease: the present value of the payments not yet made, grown each month by interest at the lease's discount rate and reduced by each lease invoice that bills a payment.`,
+    href: "/docs/reference/leases#what-posts-to-the-ledger"
+  },
+  "lease-run": {
+    term: msg`Lease run`,
+    definition: msg`The monthly period run that posts lease entries: lessee lease interest and right-of-use amortization, rental rent to defer or accrue, and sales-type lease interest, as Lease Run journals.`,
+    href: "/docs/reference/accounting#revenue-recognition-and-lease-runs"
   },
   contract: {
     term: msg`Contract`,
@@ -1089,6 +1121,11 @@ export const terms = {
   "kanban-auto-release": {
     term: msg`Auto Release`,
     definition: msg`When the kanban card is scanned, the job is automatically moved out of draft and released to the floor.`
+  },
+  "kanban-replenishment-level": {
+    term: msg`Replenishment Level`,
+    definition: msg`On a transfer kanban, the minimum quantity for the To storage unit. When on-hand plus open inbound transfers drops below it, Carbon creates a Released stock transfer for the kanban quantity.`,
+    href: "/docs/reference/kanban"
   },
   "kanban-auto-start-job": {
     term: msg`Auto Start Job`,

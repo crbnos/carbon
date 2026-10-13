@@ -60,7 +60,7 @@ const postMemo = defineServerFn({
           .executeTakeFirst();
         if (recognized) {
           throw new ServerFnError(
-            "This rental credit is already part of a revenue recognition run; reverse or delete the run before voiding it",
+            "This rental credit is already part of a lease run; reverse or delete the run before voiding it",
             400
           );
         }

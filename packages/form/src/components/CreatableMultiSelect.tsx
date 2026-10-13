@@ -10,7 +10,8 @@ import {
   FormErrorMessage,
   FormHelperText,
   FormLabel,
-  LabelWithHelp
+  LabelWithHelp,
+  optionLabelText
 } from "@carbon/react";
 import type { ReactNode } from "react";
 import { forwardRef, useEffect, useMemo } from "react";
@@ -77,7 +78,7 @@ const CreatableMultiSelect = forwardRef<
 
       // Sort unselected options alphabetically by label
       const sortedUnselected = [...unselectedOptions].sort((a, b) =>
-        a.label.localeCompare(b.label)
+        optionLabelText(a).localeCompare(optionLabelText(b))
       );
 
       // Combine selected options first, followed by sorted unselected options

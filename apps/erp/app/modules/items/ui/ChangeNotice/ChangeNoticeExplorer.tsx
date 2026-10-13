@@ -22,7 +22,6 @@ import { LuCirclePlus, LuEllipsisVertical, LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
 import { Empty, ItemThumbnail, MethodItemTypeIcon } from "~/components";
 import { useRouteData } from "~/hooks";
-import { canEditChangeNoticeEngineering } from "~/modules/items";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -30,6 +29,7 @@ import { path } from "~/utils/path";
 import type { ChangeNotice } from "../../types";
 import AffectedItemForm from "./AffectedItemForm";
 import type { AffectedItemDraft } from "./affectedItem.types";
+import { useChangeNoticeEngineeringLock } from "./lock-ui";
 
 // Explorer (left panel) of the change-order workspace — deliberately the same
 // layout as the Purchase Order explorer (PurchaseOrderExplorer /
@@ -49,9 +49,7 @@ export default function ChangeNoticeExplorer() {
   }>(path.to.changeNotice(id));
 
   const affectedItems = routeData?.affectedItems ?? [];
-  const isDisabled = !canEditChangeNoticeEngineering(
-    routeData?.changeNotice?.status
-  );
+  const { isDisabled } = useChangeNoticeEngineeringLock(id);
 
   const disclosure = useDisclosure();
 

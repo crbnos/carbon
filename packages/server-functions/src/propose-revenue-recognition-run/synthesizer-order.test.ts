@@ -15,20 +15,25 @@ import proposeRevenueRecognitionRun, {
 } from "./index";
 import { dropRecognitionRuns } from "./run-test-fixture";
 
-test("a caller's synthesizers run after the rental accruals and before Right to Invoice and the contract revenue", () => {
+test("a Revenue Recognition run takes a caller's synthesizers before Right to Invoice and the contract revenue", () => {
   const extra: RunRowSynthesizer = async () => {
     // Writes nothing: only its place in the order matters.
   };
-  expect(runRowSynthesizers([extra])).toEqual([
-    synthesizeRentalAccruals,
+  expect(runRowSynthesizers("Revenue Recognition", [extra])).toEqual([
     extra,
     synthesizeProjectRevenue,
     synthesizeContractRevenue
   ]);
-  expect(runRowSynthesizers()).toEqual([
-    synthesizeRentalAccruals,
+  expect(runRowSynthesizers("Revenue Recognition")).toEqual([
     synthesizeProjectRevenue,
     synthesizeContractRevenue
+  ]);
+});
+
+test("a Lease run synthesizes only the rental accruals, whatever the caller passes", () => {
+  const extra: RunRowSynthesizer = async () => {};
+  expect(runRowSynthesizers("Lease", [extra])).toEqual([
+    synthesizeRentalAccruals
   ]);
 });
 

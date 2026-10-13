@@ -267,7 +267,8 @@ export const COVERAGE = {
     values: enumValues("approvalDocumentType", {
       qualityDocument: "the seed requests approval for orders and suppliers",
       projectChangeRequest:
-        "the demo datasets seed no project change request (Phase 1c)"
+        "the demo datasets seed no project change request (Phase 1c)",
+      changeOrder: "the seed does not create change notice approval requests"
     }),
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },

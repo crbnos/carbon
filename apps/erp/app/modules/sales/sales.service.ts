@@ -361,7 +361,10 @@ export async function deleteCustomer(
   return client.from("customer").delete().eq("id", customerId);
 }
 
-/** @mcp delete */
+/**
+ * @mcp delete
+ * @mcp permission accounting:delete
+ */
 export async function deleteCustomerBankAccount(
   client: SupabaseClient<Database>,
   id: string
@@ -369,7 +372,14 @@ export async function deleteCustomerBankAccount(
   return client.from("customerBankAccount").delete().eq("id", id);
 }
 
-/** @mcp read */
+/**
+ * Lists a customer's bank accounts.
+ *
+ * Gated on accounting, as the table's RLS and every bank-account screen are:
+ * a changed payee account is how payment fraud starts.
+ * @mcp read
+ * @mcp permission accounting:view
+ */
 export async function getCustomerBankAccounts(
   client: SupabaseClient<Database>,
   customerId: string
@@ -381,7 +391,10 @@ export async function getCustomerBankAccounts(
     .order("name");
 }
 
-/** @mcp upsert */
+/**
+ * @mcp upsert
+ * @mcp permission accounting:create+update
+ */
 export async function upsertCustomerBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -8048,6 +8061,7 @@ export async function getCreditableQuantities(
  * the currency's decimals (settlement boundary). A Repair line is refused:
  * its unit goes back to the customer. Returns the memo id.
  * @mcp create
+ * @mcp permission invoicing:create
  * @mcp audit companyGroupId, createdBy, updatedBy, userId
  */
 export async function createSalesReturnOrderCredit(
@@ -9277,7 +9291,8 @@ export async function upsertRentalAgreementCharge(
     chargeDate: charge.chargeDate,
     description: charge.description,
     amount: charge.amount,
-    taxPercent: charge.taxPercent
+    taxPercent: charge.taxPercent,
+    invoiceSeparately: charge.invoiceSeparately
   };
 
   // The agreement is the line's own, read under the caller's company.

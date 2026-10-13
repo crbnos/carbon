@@ -11,6 +11,7 @@ import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 import { costCenterAndProjectDimensions } from "../lib/cost-center-project-dimensions";
 import { resolveAccountingPeriod } from "../lib/get-accounting-period";
+import { allocateJournalLineIds } from "../lib/journal-line-ids";
 import { buildProjectCipRow, writeProjectCipRows } from "../lib/project-cip";
 import {
   buildProjectLedgerRow,
@@ -18,7 +19,6 @@ import {
   resolveProjectLineCharges
 } from "../lib/project-posting";
 import { buildChargeJournal } from "./build-charge-journal";
-import { allocateJournalLineIds } from "./journal-line-ids";
 
 export type ChargeContext = {
   trx: Transaction<KyselyDatabase>;

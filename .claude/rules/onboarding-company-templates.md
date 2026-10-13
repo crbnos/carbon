@@ -104,7 +104,12 @@ around its generic FK-null + topological delete, all inside the apply transactio
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
    `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. The service
    order tables (`SERVICE_ORDER_TABLES`) go first too: nulling `serviceOrder.customerId`
-   breaks `serviceOrder_customer_check`.
+   breaks `serviceOrder_customer_check`. Any other seeded table with a CHECK that needs
+   one of several nullable FKs set goes in `PARENT_CHECK_TABLES` (today
+   `customerContractInvoiceLine`: an invoice OR a credit memo; `projectStockTransfer`:
+   two different project owners, after `projectBorrow`, which references its lines). Missing one fails every
+   re-apply with "new row … violates check constraint", while a first apply onto an
+   empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -343,9 +348,9 @@ journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cuto
 
 It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
 no `WHERE`), even when the company already has a cutover.
-A company always has one by then: `seed-company` stamps the first day of the current month
-(onboarding runs it before the template job), and an app-created company applied through
-Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
+`seed-company` leaves a new company without one (it stays Provisional until activation), so
+tier 01 usually writes the first; an app-created company applied through Settings → Demo
+Data may already have its own. Kept, a later date would put up to eleven months of
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)
@@ -576,6 +581,14 @@ and `applyDatasetTiers` (out of `applyDataset`). Both extracted functions own no
 which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
+
+After the coverage check it applies the dataset AGAIN over the seeded scratch company with
+`wipeFirst: true` — the Settings → Demo Data path on a company that already has data. That
+is the only way to exercise the wipe against real rows: a new CHECK the FK-nulling pass
+cannot survive fails here as "re-applying over the seeded company failed (datasets/wipe.ts)".
+Before that pass it dates the seeded locations one second after the bootstrap one, because
+`buildCtx` keeps the OLDEST location and inside one transaction `NOW()` gives every row the
+same `createdAt`.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
 table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 273 tables, measured across all four
