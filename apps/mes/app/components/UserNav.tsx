@@ -41,7 +41,7 @@ import {
   LuUser,
   LuUsers
 } from "react-icons/lu";
-import { Form, useFetcher } from "react-router";
+import { Form, useFetcher, useSubmit } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/root";
 import type { Location } from "~/services/types";
@@ -56,13 +56,18 @@ type UserNavProps = {
   pinnedInUser: PinnedInUser | null;
 };
 
-/** Switches the session to another of the user's companies. */
+/**
+ * Switches the session to another of the user's companies. A navigation, not
+ * a fetcher: the shell's `shouldRevalidate` re-runs only after a mutation, and
+ * a fetcher's redirect reaches it as a plain GET, so the page kept showing the
+ * old company until a reload.
+ */
 export function useSwitchCompany() {
-  const fetcher = useFetcher();
+  const submit = useSubmit();
   return (companyId: string) => {
     const form = new FormData();
     form.append("companyId", companyId);
-    fetcher.submit(form, {
+    submit(form, {
       method: "post",
       action: path.to.switchCompany(companyId)
     });

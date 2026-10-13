@@ -46,13 +46,16 @@ export function useCompanyGroups() {
   const routeData = useRouteData<{ company: Company; companies: Company[] }>(
     path.to.authenticatedRoot
   );
+  // The ungrouped heading is a translated label, and the fold below must
+  // compare against that same label, not the English source.
+  const ungrouped = t`Companies`;
   return useMemo(() => {
     if (!routeData?.companies) return [];
 
     const groups = new Map<string, { name: string; companies: Company[] }>();
 
     for (const c of routeData.companies) {
-      const groupName = c.companyGroupName ?? t`Companies`;
+      const groupName = c.companyGroupName ?? ungrouped;
       const existing = groups.get(groupName);
       if (existing) {
         existing.companies.push(c);
@@ -61,31 +64,20 @@ export function useCompanyGroups() {
       }
     }
 
-    // If a group has only one company, move it to "Companies"
+    // A group of one company folds into the ungrouped heading.
     const result = new Map<string, { name: string; companies: Company[] }>();
     for (const [key, group] of groups) {
-      if (group.companies.length === 1 && key !== "Companies") {
-        const existing = result.get("Companies");
-        if (existing) {
-          existing.companies.push(...group.companies);
-        } else {
-          result.set("Companies", {
-            name: "Companies",
-            companies: [...group.companies]
-          });
-        }
+      const target = group.companies.length === 1 ? ungrouped : key;
+      const existing = result.get(target);
+      if (existing) {
+        existing.companies.push(...group.companies);
       } else {
-        const existing = result.get(key);
-        if (existing) {
-          existing.companies.push(...group.companies);
-        } else {
-          result.set(key, group);
-        }
+        result.set(target, { name: target, companies: [...group.companies] });
       }
     }
 
     return Array.from(result.values());
-  }, [routeData?.companies, t]);
+  }, [routeData?.companies, ungrouped]);
 }
 
 /**

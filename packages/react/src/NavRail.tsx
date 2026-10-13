@@ -25,7 +25,9 @@ import { useMode } from "./hooks/useMode";
 import { IconButton } from "./IconButton";
 import { PrefetchLink } from "./PrefetchLink";
 import { Separator } from "./Separator";
+import { ShortcutKey } from "./ShortcutKey";
 import { useSidebar } from "./Sidebar";
+import { SHORTCUTS } from "./shortcuts";
 import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { cn } from "./utils/cn";
 import { VStack } from "./VStack";
@@ -51,8 +53,8 @@ export const navRailItemClasses = [
 /**
  * The primary left navigation shared by the ERP and MES app shells: a 56px
  * icon rail that grows to 240px while a mouse hovers it or while it is pinned
- * open, and a left drawer below `md`. The toggle beside the `header` pins it
- * (as do a `SidebarTrigger` and ⌘B where the provider binds it). Open state
+ * open, and a left drawer below `md`. The toggle beside the `header` pins it,
+ * as do ⌘B and a `SidebarTrigger`. Open state
  * comes from `SidebarProvider`, so it must be rendered inside one.
  *
  * Expanding the rail, by hover or by pin, pushes the page right rather than
@@ -555,7 +557,12 @@ function NavRailToggle() {
           className="hidden shrink-0 text-muted-foreground group-data-[state=expanded]:inline-flex"
         />
       </TooltipTrigger>
-      <TooltipContent side="right">{label}</TooltipContent>
+      <TooltipContent side="right">
+        <span className="flex items-center gap-2">
+          {label}
+          <ShortcutKey shortcut={SHORTCUTS.sidebarToggle} variant="small" />
+        </span>
+      </TooltipContent>
     </Tooltip>
   );
 }
