@@ -21,7 +21,7 @@ Phase A — WBS interop
 Phase B — contract financing
 - [x] Task 10: Add the financing tables and the contract deposit scope
 - [x] Task 11: Scope a customer deposit to a contract
-- [ ] Task 12: Write the financing compute engine
+- [x] Task 12: Write the financing compute engine
 - [ ] Task 13: Write the financing service and its package exports
 - [ ] Task 14: Add the contract Financing routes
 - [ ] Task 15: Build the Financing UI
