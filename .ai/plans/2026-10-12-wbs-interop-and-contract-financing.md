@@ -16,7 +16,7 @@ Phase A — WBS interop
 - [x] Task 6: Write the MSPDI export
 - [x] Task 7: Show and edit the WBS code on the Plan and element pages
 - [x] Task 8: Add the Plan page menu and the import modal
-- [ ] Task 9: Offer the 881F templates in New Project
+- [x] Task 9: Offer the 881F templates in New Project
 
 Phase B — contract financing
 - [ ] Task 10: Add the financing tables and the contract deposit scope
@@ -856,3 +856,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 6: Text2 and Text3 field ids confirmed from MPXJ `MPPTaskField` (base `0x0B400000`, Text1 = 51, Text2 = 54, Text3 = 57): 188743734 and 188743737. `OutlineNumber` is the row's position, `WBS` the code. The golden file is a vitest file snapshot (`toMatchFileSnapshot`), reviewed by hand.
 - Task 7: the list and the sidebar tree show WBS codes only once the project has a pinned code (Layer 5: a feature shows when used). The element page's WBS code field shows for every type but Parameter, with the derived code as its placeholder. The board is not a layout here: the Plan page has list, tree (graph) and reader.
 - Task 8: the import modal uses a plain file input with `parseCsvFile` (`@carbon/files/csv`) rather than the `UploadCSV` drop zone, which uploads to storage for the generic wizard. The ⋯ menu sits in a `wbsMenu` slot of `ElementsHeader` before Filter.
+- Task 9: the 881F templates are Copy from options with value `wbs:<key>`; `ProjectForm` needed no change. Translations of the new Phase A and B strings are filled once, after Task 17, rather than per task.

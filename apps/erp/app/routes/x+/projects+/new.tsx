@@ -7,7 +7,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { redirect, WBS_TEMPLATES } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -19,6 +19,9 @@ import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+/** A Copy from value that names a MIL-STD-881F template, not a project. */
+const WBS_TEMPLATE_PREFIX = "wbs:";
 
 const logger = getLogger("erp", "projects");
 
@@ -84,10 +87,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id: _id, ...project } = validation.data;
   const copyFromProjectId = formData.get("copyFromProjectId");
 
+  // `wbs:<key>` starts the plan from a MIL-STD-881F template.
+  const wbsTemplateKey =
+    typeof copyFromProjectId === "string" &&
+    copyFromProjectId.startsWith(WBS_TEMPLATE_PREFIX)
+      ? copyFromProjectId.slice(WBS_TEMPLATE_PREFIX.length)
+      : undefined;
+
   let projectId: string;
   try {
     projectId =
-      typeof copyFromProjectId === "string" && copyFromProjectId
+      typeof copyFromProjectId === "string" &&
+      copyFromProjectId &&
+      !wbsTemplateKey
         ? await copyProject(getDatabaseClient(), {
             ...project,
             companyId,
@@ -97,7 +109,8 @@ export async function action({ request }: ActionFunctionArgs) {
         : await createProject(getDatabaseClient(), {
             ...project,
             companyId,
-            userId
+            userId,
+            wbsTemplateKey
           });
   } catch (err) {
     logger.error("Failed to create project", { companyId, error: err });
@@ -130,14 +143,20 @@ export default function NewProjectRoute() {
       initialValues={{ name: "", costTreatment: "Statistical" }}
       copyFrom={{
         defaultValue: copyFromProjectId ?? undefined,
-        options: copyFromProjects.map((project) => ({
-          value: project.id,
-          label: project.isTemplate
-            ? t`${project.name} (template)`
-            : project.identifier
-              ? `${project.name} (${project.identifier})`
-              : project.name
-        }))
+        options: [
+          ...copyFromProjects.map((project) => ({
+            value: project.id,
+            label: project.isTemplate
+              ? t`${project.name} (template)`
+              : project.identifier
+                ? `${project.name} (${project.identifier})`
+                : project.name
+          })),
+          ...WBS_TEMPLATES.map((template) => ({
+            value: `${WBS_TEMPLATE_PREFIX}${template.key}`,
+            label: template.name
+          }))
+        ]
       }}
       onClose={() => navigate(path.to.projects)}
     />
