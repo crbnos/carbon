@@ -220,7 +220,8 @@ pnpm --filter @carbon/server-functions test   # post-timesheet, post-project-iss
   (`projects+/approvals.tsx?tab=billing`; `billing.tsx` only redirects there, and
   `billing.update.tsx` still takes the actions) and the project's **Billing** page under
   Costs (`$projectId.billing.tsx`, a Contract project that a contract line bills), UI in
-  `ui/Billing/`.
+  `ui/Billing/`. Both, and `billing.update.tsx`, also need `view: sales`: without it the
+  project sidebar has no Billing link, Approvals has no tabs, and the routes refuse.
 - `updateProjectElementBilling` — the element page's **Billing element** switch
   (`isBilling`); refuses a second billing element in one branch, a Parameter, and turning
   the flag off while a contract line bills the element. The update route refuses a project

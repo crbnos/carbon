@@ -26,8 +26,9 @@ const logger = getLogger("erp", "project-billing");
 /** A project's contract billing: the lines that bill it with their funding,
  *  and its billable items. */
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Contract billing: the sales permission as well as the projects one.
   const { client, companyId } = await requirePermissions(request, {
-    view: "projects"
+    view: ["projects", "sales"]
   });
 
   const { projectId } = params;

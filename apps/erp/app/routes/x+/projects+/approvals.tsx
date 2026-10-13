@@ -15,6 +15,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData, useSearchParams } from "react-router";
 import Empty from "~/components/Empty";
+import { usePermissions } from "~/hooks";
 import {
   approveTimesheetEntries,
   assertCanApprove,
@@ -46,13 +47,17 @@ export type ApprovalsTab = "time" | "billing";
  * Billing). Only the open tab's rows are read.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
-    update: "projects"
-  });
-
   const searchParams = new URL(request.url).searchParams;
   const tab: ApprovalsTab =
     searchParams.get("tab") === "billing" ? "billing" : "time";
+
+  // Billing review is contract billing: it also needs the sales permission.
+  const { client, companyId } = await requirePermissions(
+    request,
+    tab === "billing"
+      ? { update: "projects", view: "sales" }
+      : { update: "projects" }
+  );
 
   if (tab === "billing") {
     // With no status filter the list shows Unbilled and On Hold items.
@@ -305,6 +310,8 @@ export default function ProjectTimesheetApprovalsRoute() {
   const { t } = useLingui();
   const { tab, groups, billing } = useLoaderData<typeof loader>();
   const [, setSearchParams] = useSearchParams();
+  const permissions = usePermissions();
+  const canReviewBilling = permissions.can("view", "sales");
 
   const projects = new Map<string, string>();
   for (const item of billing?.items ?? []) {
@@ -321,22 +328,26 @@ export default function ProjectTimesheetApprovalsRoute() {
         <h2 className="text-base font-medium">
           <Trans>Approvals</Trans>
         </h2>
-        <Tabs
-          value={tab}
-          onValueChange={(value) =>
-            // A tab starts with its own filters.
-            setSearchParams(value === "billing" ? { tab: "billing" } : {})
-          }
-        >
-          <TabsList>
-            <TabsTrigger value="time">
-              <Trans>Time</Trans>
-            </TabsTrigger>
-            <TabsTrigger value="billing">
-              <Trans>Billing</Trans>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Without the sales permission there is no Billing tab, and a
+            single Time tab is no choice: no tabs at all. */}
+        {canReviewBilling && (
+          <Tabs
+            value={tab}
+            onValueChange={(value) =>
+              // A tab starts with its own filters.
+              setSearchParams(value === "billing" ? { tab: "billing" } : {})
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="time">
+                <Trans>Time</Trans>
+              </TabsTrigger>
+              <TabsTrigger value="billing">
+                <Trans>Billing</Trans>
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
       </div>
       {billing ? (
         <ProjectBillableItemsTable

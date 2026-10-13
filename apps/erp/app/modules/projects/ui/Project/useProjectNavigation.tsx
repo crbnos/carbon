@@ -17,6 +17,7 @@ import {
   LuTimer
 } from "react-icons/lu";
 import { useParams } from "react-router";
+import { usePermissions } from "~/hooks";
 import { PROJECT_TAB_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
 
@@ -32,6 +33,7 @@ export type ProjectSidebarLink = {
 /**
  * The project sidebar's page links (Layer 2): Overview, Plan, Schedule,
  * Costs with Stock, Pegging and Billing under it when they apply, and Time.
+ * Billing also needs the sales permission (contract billing).
  * Settings is returned on its own: the sidebar pins it to the bottom.
  */
 export function useProjectSidebarLinks({
@@ -46,6 +48,7 @@ export function useProjectSidebarLinks({
   hasPegs: boolean;
 }): { links: ProjectSidebarLink[]; settings: ProjectSidebarLink } {
   const { t } = useLingui();
+  const permissions = usePermissions();
   const { projectId } = useParams();
   if (!projectId) throw new Error("projectId not found");
   const overview = path.to.project(projectId);
@@ -101,7 +104,7 @@ export function useProjectSidebarLinks({
           }
         ]
       : []),
-    ...(hasBillingLines
+    ...(hasBillingLines && permissions.can("view", "sales")
       ? [
           {
             name: t`Billing`,

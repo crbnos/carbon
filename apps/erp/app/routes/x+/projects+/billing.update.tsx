@@ -24,8 +24,10 @@ function failure(message: string) {
  *  reaches the audit log ("Billable Item"). */
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
+  // Billing review is contract billing: it also needs the sales permission.
   const { client, companyId, userId } = await requirePermissions(request, {
-    update: "projects"
+    update: "projects",
+    view: "sales"
   });
 
   const validation = await validator(billableItemActionValidator).validate(

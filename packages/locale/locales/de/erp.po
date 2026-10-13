@@ -27772,6 +27772,10 @@ msgstr "Video vollständig ansehen"
 msgid "WBS code"
 msgstr "WBS-Code"
 
+#. placeholder {0}: repeatedCodes.join(", ")
+msgid "WBS codes repeat: {0}. Change one of each pair to export."
+msgstr ""
+
 msgid "WBS options"
 msgstr "WBS-Optionen"
 
