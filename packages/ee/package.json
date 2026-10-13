@@ -34,6 +34,8 @@
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./pegging": "./src/pegging/index.ts",
     "./pegging.server": "./src/pegging/server.ts",
+    "./contract-financing": "./src/contract-financing/index.ts",
+    "./contract-financing.server": "./src/contract-financing/server.ts",
     "./indirect-rates": "./src/indirect-rates/index.ts",
     "./indirect-rates.server": "./src/indirect-rates/server.ts",
     "./project-control": "./src/project-control/index.ts",

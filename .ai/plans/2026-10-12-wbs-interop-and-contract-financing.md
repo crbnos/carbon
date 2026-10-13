@@ -22,7 +22,7 @@ Phase B — contract financing
 - [x] Task 10: Add the financing tables and the contract deposit scope
 - [x] Task 11: Scope a customer deposit to a contract
 - [x] Task 12: Write the financing compute engine
-- [ ] Task 13: Write the financing service and its package exports
+- [x] Task 13: Write the financing service and its package exports
 - [ ] Task 14: Add the contract Financing routes
 - [ ] Task 15: Build the Financing UI
 - [ ] Task 16: Print the financing request
@@ -858,3 +858,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 8: the import modal uses a plain file input with `parseCsvFile` (`@carbon/files/csv`) rather than the `UploadCSV` drop zone, which uploads to storage for the generic wizard. The ⋯ menu sits in a `wbsMenu` slot of `ElementsHeader` before Filter.
 - Task 9: the 881F templates are Copy from options with value `wbs:<key>`; `ProjectForm` needed no change. Translations of the new Phase A and B strings are filled once, after Task 17, rather than per task.
 - Task 11: a contract's invoices are those with the contract on the header, on a line, or on a line of the contract's own sales order (`customerContract.salesOrderId`): a shipment converts to an invoice that carries the order, not the contract. `loadSalesInvoiceDocumentIds` and the ERP's open-invoice reader both apply it, and `loadContractInvoiceIds` (`deposit-scope.ts`) gives the same set to financing. The prior-source query of post-payment already used `selectAll`, so it needed no change. The contract deposit links to the contract with the Contracts module icon.
+- Task 13: a Draft request is deleted, not set Withdrawn: the CHECK ties the Draft status to a null number, and a Withdrawn request keeps the number Submit gave it. Paid is set by `markFinancingRequestsPaid`, which the payment post route calls after a successful post (no entitlement: it records a fact). `lines` holds the computed values and `overrides` the user's; `requestedAmount` is line 26 with the overrides applied. `getExpectedLiquidation` reads the invoice's contracts with `loadSalesInvoiceDocumentIds`, one read, not one per financed contract.
