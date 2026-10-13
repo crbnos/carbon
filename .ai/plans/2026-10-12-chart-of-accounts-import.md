@@ -13,13 +13,13 @@
 
 ## Progress
 - [x] Task 1: Make account deletes refuse while lines refer to the account
-- [ ] Task 2: Regenerate the database types
+- [x] Task 2: Regenerate the database types
 - [x] Task 3: Add the import constants and types to `@carbon/database`
 - [x] Task 4: Write the planner tests (red)
 - [x] Task 5: Implement `planAccountImport` (green)
 - [x] Task 6: Implement `loadAccountImportContext`
 - [x] Task 7: Add the `apply-account-import` server function
-- [ ] Task 8: Add the live-database tests for the server function
+- [x] Task 8: Add the live-database tests for the server function
 - [x] Task 9: Stop stamping a cutover on new companies, and seed subsidiary defaults by id
 - [x] Task 10: Add `active` to the account form
 - [x] Task 11: Offer Deactivate when an account is in use
@@ -31,7 +31,7 @@
 - [x] Task 17: Show the Accounting module in the Implementation Hub before cutover
 - [x] Task 18: Add the sync callout to accounting integrations
 - [x] Task 19: Update the docs, rules and AGENTS.md files
-- [ ] Task 20: Verify in the browser
+- [x] Task 20: Verify in the browser
 - [x] Task 21: Plan from 2 files: `planAccountImport(chartRows, defaultRows, ctx, resolutions)`, refuse on any cutover, drop reclass and deactivate
 - [x] Task 22: Apply from 2 files: set every company's defaults and fixed asset class accounts, delete instead of deactivate
 - [x] Task 23: Copy a subsidiary's fixed asset class accounts from the group in `seed-company`
@@ -39,6 +39,8 @@
 - [x] Task 25: Add `parseChartCsv`, `parseDefaultsCsv`, `defaultAccountsTemplate` and the template route
 - [x] Task 26: Rewrite the import page for 2 uploads; no header rule on a setup page with no steps
 - [x] Task 27: Update the spec, docs and AGENTS.md files
+- [x] Task 28: Move posted documents with their journals (`20261013035046`)
+- [x] Task 29: Fix the self-review findings (spec changelog 2026-10-13)
 
 ## Dependencies
 

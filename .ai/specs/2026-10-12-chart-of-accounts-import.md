@@ -16,7 +16,7 @@ Research: `.ai/research/chart-of-accounts-remap.md` (Odoo, NetSuite, SAP). Refer
 flowchart LR
     A["Chart file<br/>(customer's export)"]:::new --> C["planAccountImport<br/>(pure, tested)"]:::new
     B["Default accounts file<br/>(Carbon template,<br/>customer's numbers)"]:::new --> C
-    C --> D{"Errors or<br/>exceptions?"}
+    C --> D{"Errors or open<br/>replacements?"}
     D -- yes --> E["Review page:<br/>fix a file or<br/>pick a replacement"]:::new
     E --> C
     D -- no --> F["apply-account-import<br/>(one transaction)"]:::new
@@ -72,7 +72,7 @@ The planner reads the importing company's defaults and fixed asset classes, in t
 2. **Match by number.** A Carbon account whose number matches a row that nothing claimed becomes that row.
 3. **The rest.** Every other leaf account goes:
    - If no document or journal uses it, the apply deletes it.
-   - Else the review shows **"These accounts need a replacement"**. The specialist picks a chart row. The account then merges into that row.
+   - Else the review shows **"These accounts need a replacement"**. The specialist picks a chart row. The account then merges into that row. The pick stays on the list (`plan.replacements`, with its `targetLine`), so the specialist can change it.
 4. **Update.** A claimed account takes the row's number, name, class, type and group. The apply skips an account that does not change.
 5. **Create.** A row that no account became is a new account.
 6. **Defaults.** Every company of the group gets the account the defaults file names for each role and each fixed asset class account. A blank optional role is cleared.
@@ -91,12 +91,13 @@ A required role is every `ACCOUNT_DEFAULT_COLUMNS` entry with no `DEFAULT_FALLBA
 | `accounting-activated` | – | A company of the group has a cutover. |
 | `duplicate-number`, `duplicate-name` | chart | 2 rows share a number or a name. |
 | `missing-class` | chart | A new row has no class, no type and no claimed account. |
-| `group-class-mismatch` | chart | A group holds accounts of another class. |
+| `group-class-mismatch` | chart | A group, existing or new, would hold accounts of 2 classes. |
 | `migration-clearing-not-equity` | chart | The row that takes `migrationClearingAccount` is not Equity. |
 | `unknown-default` | defaults | A key that is no role and no fixed asset class account. |
 | `duplicate-default` | defaults | One key on 2 lines. |
 | `default-not-in-chart` | defaults | An account number that is not in the chart file. |
 | `default-missing` | defaults | A required key that is absent or blank. |
+| `class-type-mismatch` | chart | The row's type belongs to another class. |
 | `account-has-history` | – | An account to delete has posted history: a period balance, a sync tie-out, a Posted journal line or a Posted recognition row. Before the cutover none exists; the error is a guard. |
 | `target-not-in-chart` | – | A picked replacement is no longer in the chart file. |
 
@@ -146,7 +147,7 @@ These things change with it:
 ### Delete safety and inactive accounts
 
 1. A migration changes these foreign keys from `ON DELETE SET NULL` to `ON DELETE RESTRICT`: `journalLine.accountId`, `purchaseOrderLine.accountId`, `salesOrderLine.accountId`, `salesInvoiceLine.accountId`, `purchaseInvoiceLine.accountId` and `supplierQuoteLine.accountId`. `shippingMethod.carrierAccountId` keeps `SET NULL`, because a shipping method only proposes an account.
-2. The delete route's loader checks for journal lines. If the account has any, the modal says "has journal lines, so it cannot be deleted" and the Delete button is disabled.
+2. The delete route's loader asks `isAccountInUse` (`@carbon/database/account-import-reads`). It checks every company of the group, against the same list the import reads, which covers every foreign key to `account`. If anything uses the account, the modal says so and the Delete button is disabled.
 3. The action maps a `23503` foreign key error to the same message.
 4. The Chart of Accounts page shows active accounts only. There is no Active switch and no "Show inactive" filter. The import never deactivates an account: before the cutover it can delete every account it removes.
 
@@ -171,7 +172,7 @@ These things change with it:
 
 ## Data Model Changes
 
-1. **Foreign keys.** One migration swaps `ON DELETE SET NULL` for `ON DELETE RESTRICT` on the 6 columns listed under Delete safety. It drops and re-adds each constraint and changes no data.
+1. **Foreign keys.** Migration `20261013005642` swaps `ON DELETE SET NULL` for `ON DELETE RESTRICT` on the 6 columns listed under Delete safety. It adds each constraint `NOT VALID`, under a 5 s `lock_timeout`, and changes no data. Migration `20261013005913` validates them in its own transaction, so the scan of existing rows does not block writes.
 2. **Charge and reimbursement guards.** Migration `20261013035046` adds the `app.account_import` branch to `check_charge_draft_mutation` and `check_reimbursement_draft_mutation`.
 3. **`seed-company`.** A code change only, with no migration. Existing companies keep their current cutover state.
 
@@ -181,32 +182,34 @@ No new table.
 
 | Piece | Location | What it does |
 |---|---|---|
-| `parseChartCsv`, `parseDefaultsCsv` | `apps/erp/app/modules/accounting/account-import-csv.ts` | Parse each file. Return error codes, as `trial-balance-csv.ts` does. |
+| `parseChartCsv`, `parseDefaultsCsv` | `apps/erp/app/modules/accounting/account-import-csv.ts` | Parse each file through `parseCsvLines` (`@carbon/files/csv`), which skips blank and comma-only rows and keeps each record's real line. Return error codes, as `trial-balance-csv.ts` does. |
 | `defaultAccountsTemplate(ctx)` | same file | The rows of the default accounts template. |
-| `planAccountImport(chartRows, defaultRows, ctx, resolutions)` | `packages/database/src/account-import.ts` | Pure. Returns `{ claims, updates, creates, merges, deletes, roleMoves, assetClassMoves, groupCreates, companies, errors, exceptions }`. Pinned by `account-import.test.ts`. |
-| `REFERENCE_POLICY`, `SOFT_REFERENCES` | same file | Declared constants. Both the planner and the apply read them. |
+| `planAccountImport(chartRows, defaultRows, ctx, resolutions)` | `packages/database/src/account-import.ts` | Pure. Returns `{ claims, updates, creates, merges, deletes, replacements, roleMoves, assetClassMoves, groupCreates, companies, errors }`. `deletes` holds only accounts nothing uses; merge sources are in `merges`. Pinned by `account-import.test.ts`. |
+| `REFERENCE_POLICY` | same file | Every foreign key to `account`, as a policy union. The reads and the apply also handle the references with no foreign key. |
 | `loadAccountImportContext(db, companyGroupId, companyId)` | `packages/database/src/account-import-reads.ts` | Loads the chart, the group's companies with their cutover, every company's defaults and fixed asset classes, and per account the records a merge moves and the Posted ones it cannot. One query per table, never one per account. |
 | `apply-account-import` | `packages/server-functions/src/apply-account-import/` | Input `{ chart, defaults, resolutions }`. Steps listed below. |
-| `getAccountInUse` | `accounting.service.ts` | True when a journal line uses the account. The delete route reads it. |
+| `isAccountInUse(db, companyGroupId, accountId)` | `packages/database/src/account-import-reads.ts` | True when anything in the group refers to the account. The delete route reads it. |
 | `seed-company` | existing | Stops setting the cutover. Copies a subsidiary's defaults and fixed asset class accounts from a company in the group. |
 
 `apply-account-import` runs these steps in one Kysely transaction:
 
-1. Lock the group's `account` rows `FOR UPDATE` and every company's `companySettings` `FOR SHARE`.
-2. Load the context. Run the planner again on the server. Refuse if any errors or unresolved exceptions remain.
-3. Create the new groups.
-4. Update in 2 passes: first give every updated and deleted account a temporary number and name, then the final ones. A swap such as 4010 ↔ 5010 would otherwise hit `account_number_key`.
-5. Create the new accounts.
-6. Set every company's `accountDefault` row and fixed asset class accounts.
-7. For each merge, re-point by `REFERENCE_POLICY` and `SOFT_REFERENCES`.
-8. Delete the merged and unused accounts.
-9. Delete the empty non-system groups.
-10. Check the postcondition. If it fails, throw, so the transaction rolls back:
-    1. The leaf accounts equal the chart file's rows by number and name.
-    2. Every required default in every company of the group points at an existing account.
-    3. `migrationClearingAccount` is Equity.
-    4. Every fixed asset class account exists.
-11. Return the counts: updated, created, merged, deleted.
+1. Lock every company's `companySettings` `FOR SHARE`, then the group's `account` rows `FOR UPDATE`.
+2. Load the context. Run the planner again on the server. Refuse if any error or open replacement remains.
+3. Create the new groups. A group's name is unique among groups only (`account_name_key` includes `isGroup`), so a new group never meets a leaf's name.
+4. Give every updated, merged and deleted account a temporary number and name. A swap such as 4010 ↔ 5010, or a created row that reuses a removed account's number, would otherwise hit `account_number_key`.
+5. Update the kept accounts.
+6. Create the new accounts.
+7. Set every company's defaults in one statement, and every fixed asset class in one.
+8. For each merge, re-point by `REFERENCE_POLICY`, then the references with no foreign key.
+9. Delete the merged and unused accounts and their `externalIntegrationMapping` rows.
+10. Delete the empty non-system groups.
+11. Check the postcondition. If it fails, log it and throw a 500, so the transaction rolls back:
+    1. Every chart row is a leaf with its number, name, class, type and group.
+    2. No empty non-system group is left.
+    3. Every required default in every company of the group points at a leaf.
+    4. `migrationClearingAccount` is Equity.
+    5. Every fixed asset class account is a leaf.
+12. Return the counts: updated, created, merged, deleted.
 
 ## UI Changes
 
@@ -214,8 +217,8 @@ No new table.
 |---|---|
 | Chart of Accounts page (`charts.tsx`) | An **Import** button, shown only while the company has no cutover and the user can update accounting. No download button, no "Show inactive" filter. |
 | New route `chart-import.tsx` (`/x/accounting/chart-import`) | A `SetupFrame` page with no steps, so no rule under its header. A **Chart of accounts** section with an upload button. A **Default accounts** section with **Download template** and an upload button. Each section shows the file name, its row count and its parse errors. |
-| Review | Shows once both files parse. Errors first, then each "needs a replacement" account with a chart-row picker, then the companies whose records move, then one read-only `Table` each for Updated, Merged, New and Deleted. The footer shows "N updated · N new · N merged · N deleted". Apply is disabled until both files are uploaded and no error or exception remains. |
-| Delete modal | The Delete button is disabled when the account has journal lines. |
+| Review | Shows once both files parse. Errors first, then each "needs a replacement" account with a chart-row picker, then the companies whose records move, then one read-only `Table` each for Updated, Merged, New and Deleted. The footer shows "N updated · N new · N merged · N deleted". Apply is disabled until both files are uploaded and no error or open replacement remains. Pickers are read-only while a plan loads. |
+| Delete modal | The Delete button is disabled when anything in the group uses the account. |
 | Activation wizard | A new first step, `chart`, in `activationSteps`. It links to the import; Next keeps Carbon's chart. |
 | Implementation Hub | Shows the Accounting module before cutover. The chart of accounts step opens the import. |
 | Integrations page | On an installed accounting provider, when the company has no cutover, a link: "Invoices and bills sync after you activate accounting." |
@@ -238,7 +241,8 @@ The UI copies existing screens: the activation wizard's `SetupFrame` and `SetupF
 - [ ] Any company of the group with a cutover refuses the import, on the review and in the apply.
 - [ ] After Apply, the leaf accounts match the chart file exactly.
 - [ ] The Import button is hidden after the cutover. No page shows inactive accounts.
-- [ ] Deleting an account with a journal line is refused with "has journal lines, so it cannot be deleted".
+- [ ] Deleting an account that a document, a journal or a default account uses is refused, in any company of the group.
+- [ ] A comma-only row in a file is skipped, and every error names its real line.
 - [ ] A subsidiary added to a group after an import gets valid defaults and fixed asset class accounts.
 - [ ] The reference test fails when a new foreign key to `account` has no `REFERENCE_POLICY` entry.
 - [ ] The activation wizard's first step is Chart of accounts. The trial balance step accepts the customer's numbers.
@@ -271,3 +275,4 @@ The UI copies existing screens: the activation wizard's `SetupFrame` and `SetupF
 - 2026-10-12: Implementation notes. The import page is `x+/accounting+/chart-import.tsx`, not `charts.import.tsx`: under `charts` it would render in the chart page's drawer outlet. The reads live in `@carbon/database/account-import-reads`, so the client-safe planner never imports Kysely. `account` joins `GROUP_SCOPED_TABLES` in the `no-unscoped-kysely-write` check, because it has no `companyId`.
 - 2026-10-12: Redesign after user review. One sheet with a `Carbon Account` column became 2 required files: the customer's chart and the default accounts template. The import refuses once any company of the group has a cutover, so the reclass journal, deactivation, control-account rules, `CONTROL_ROLES` and inactive-account handling are gone. The Active switch, the "Show inactive" filter, the deactivate intent and the chart download are removed. The delete modal disables Delete for an account with journal lines. A setup page with no steps draws no rule under its header. A subsidiary also copies its fixed asset class accounts from the group.
 - 2026-10-13: Posted documents move with a merge. Before the cutover their journals are Provisional, so `REFERENCE_POLICY` re-points invoice lines, payments, memos, charges and reimbursements whatever their status. Before, a posted document made its account history, and the import refused. Migration `20261013035046` lets the charge and reimbursement guards accept the account change while `app.account_import` is set.
+- 2026-10-13: Self-review fixes. `plan.replacements` replaces `exceptions` and keeps a pick, so the review can change it. `deletes` holds only accounts nothing uses. New error `class-type-mismatch`; a new group is checked for one class, as an existing one is. The references with no foreign key count as usage, and a deleted account's integration mappings go with it. The delete route checks every reference across the group (`isAccountInUse`). The parsers read through `parseCsvLines`. The RESTRICT migration is non-blocking (`20261013005913` validates). The postcondition checks class, type and group, and fails with a 500. The import returns to the activation wizard when opened from it, and redirects to the chart once accounting is set up.
