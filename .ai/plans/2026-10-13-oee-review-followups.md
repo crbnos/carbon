@@ -7,22 +7,22 @@
 **Branch:** find-oee-job-operation-transcript
 
 ## Progress
-- [ ] Task 1: Make the OEE work center foreign keys company-scoped and fix the indexes
+- [x] Task 1: Make the OEE work center foreign keys company-scoped and fix the indexes
 - [ ] Task 2: Unload an operation when it moves to another work center
 - [ ] Task 3: Ignore load-pointer changes in the event and broadcast filters
-- [ ] Task 4: Tidy the engine slots, always close a slot, and merge repeated states
-- [ ] Task 5: Stop a sync run when the provider is unavailable
+- [x] Task 4: Tidy the engine slots, always close a slot, and merge repeated states
+- [x] Task 5: Stop a sync run when the provider is unavailable
 - [ ] Task 6: Fix the sync cursor, log late events, and close Canceled operations
 - [ ] Task 7: Test `syncOeeDevice` against the local database
 - [ ] Task 8: Resolve an OEE provider in one place
 - [ ] Task 9: Make machine time one stream per work center
 - [ ] Task 10: End the MES event on its own work center
-- [ ] Task 11: Hide a stale device state on the work center display
+- [x] Task 11: Hide a stale device state on the work center display
 - [ ] Task 12: Fix the machine time service reads
 - [ ] Task 13: Add filters to the Unattributed Time list
 - [ ] Task 14: Make the review queue match the filtered list and skip running rows
 - [ ] Task 15: Polish the review drawer
-- [ ] Task 16: Move the Devices tab server code out of the route and fix its gaps
+- [x] Task 16: Move the Devices tab server code out of the route and fix its gaps
 - [ ] Task 17: Update the rule, AGENTS.md files and the guide
 - [ ] Task 18: Verify in the browser
 
