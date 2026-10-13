@@ -5,7 +5,7 @@
 import type { Database } from "@carbon/database";
 import { useLingui } from "@lingui/react/macro";
 import { Suspense } from "react";
-import { LuKeyRound } from "react-icons/lu";
+import { LuKeyRound, LuSection } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, useParams } from "react-router";
 import { Empty } from "~/components";
@@ -81,8 +81,11 @@ function PaymentDocumentList({
   const party = useCounterparty(payment);
   const settlementRows = useSettlementRows(related, payment.status === "Draft");
 
-  // The order or rental agreement this payment is a deposit for.
-  const depositId = payment.rentalAgreementId ?? payment.salesOrderId;
+  // The order, rental agreement or contract this payment is a deposit for.
+  const depositId =
+    payment.rentalAgreementId ??
+    payment.salesOrderId ??
+    payment.customerContractId;
   const deposit =
     depositId && permissions.can("view", "sales")
       ? depositDocuments.find((doc) => doc.id === depositId)
@@ -116,6 +119,13 @@ function PaymentDocumentList({
                 }
               />
             }
+          />
+        ) : deposit.kind === "customerContract" ? (
+          <RelatedDocument
+            to={path.to.contract(deposit.id)}
+            icon={<LuSection />}
+            title={deposit.readableId}
+            description={t`Contract`}
           />
         ) : (
           <RelatedDocument

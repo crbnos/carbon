@@ -123,6 +123,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const amount = url.searchParams.get("amount");
   const salesOrderId = url.searchParams.get("salesOrderId");
   const rentalAgreementId = url.searchParams.get("rentalAgreementId");
+  const customerContractId = url.searchParams.get("customerContractId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
@@ -208,7 +209,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       reference: "",
       memo: "",
       salesOrderId: salesOrderId ?? "",
-      rentalAgreementId: rentalAgreementId ?? ""
+      rentalAgreementId: rentalAgreementId ?? "",
+      customerContractId: customerContractId ?? ""
     },
     seedInvoiceIds: invoiceIds,
     depositDocuments

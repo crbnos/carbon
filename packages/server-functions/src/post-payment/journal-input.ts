@@ -54,6 +54,7 @@ export function paymentKind(
     | "paymentType"
     | "rentalAgreementId"
     | "salesOrderId"
+    | "customerContractId"
   >
 ) {
   // An employee payee is a reimbursement payout: always cash OUT against the
@@ -82,11 +83,16 @@ export function paymentKind(
     isAR,
     cashIn,
     isRefund,
-    // A payment that references a sales order or rental agreement is a
-    // customer deposit: its unapplied cash is a liability on the prepayment
-    // account rather than on-account receivable credit. The builder ignores
-    // the flag for supplier payments.
-    isDeposit: Boolean(payment.rentalAgreementId ?? payment.salesOrderId),
+    // A payment that references a sales order, rental agreement or customer
+    // contract is a customer deposit: its unapplied cash is a liability on
+    // the prepayment account rather than on-account receivable credit. A
+    // contract deposit is how a progress payment is received. The builder
+    // ignores the flag for supplier payments.
+    isDeposit: Boolean(
+      payment.rentalAgreementId ??
+        payment.salesOrderId ??
+        payment.customerContractId
+    ),
     partyId,
     targetColumn: isReimbursement
       ? ("targetReimbursementId" as const)

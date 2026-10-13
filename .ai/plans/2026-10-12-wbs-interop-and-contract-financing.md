@@ -20,7 +20,7 @@ Phase A — WBS interop
 
 Phase B — contract financing
 - [x] Task 10: Add the financing tables and the contract deposit scope
-- [ ] Task 11: Scope a customer deposit to a contract
+- [x] Task 11: Scope a customer deposit to a contract
 - [ ] Task 12: Write the financing compute engine
 - [ ] Task 13: Write the financing service and its package exports
 - [ ] Task 14: Add the contract Financing routes
@@ -857,3 +857,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 7: the list and the sidebar tree show WBS codes only once the project has a pinned code (Layer 5: a feature shows when used). The element page's WBS code field shows for every type but Parameter, with the derived code as its placeholder. The board is not a layout here: the Plan page has list, tree (graph) and reader.
 - Task 8: the import modal uses a plain file input with `parseCsvFile` (`@carbon/files/csv`) rather than the `UploadCSV` drop zone, which uploads to storage for the generic wizard. The ⋯ menu sits in a `wbsMenu` slot of `ElementsHeader` before Filter.
 - Task 9: the 881F templates are Copy from options with value `wbs:<key>`; `ProjectForm` needed no change. Translations of the new Phase A and B strings are filled once, after Task 17, rather than per task.
+- Task 11: a contract's invoices are those with the contract on the header, on a line, or on a line of the contract's own sales order (`customerContract.salesOrderId`): a shipment converts to an invoice that carries the order, not the contract. `loadSalesInvoiceDocumentIds` and the ERP's open-invoice reader both apply it, and `loadContractInvoiceIds` (`deposit-scope.ts`) gives the same set to financing. The prior-source query of post-payment already used `selectAll`, so it needed no change. The contract deposit links to the contract with the Contracts module icon.

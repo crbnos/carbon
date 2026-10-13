@@ -532,7 +532,10 @@ export const paymentValidator = z
     // (`payment_deposit_document_check`). post-payment books the unapplied cash
     // of a payment carrying either reference on the prepayment account.
     salesOrderId: zfd.text(z.string().optional()),
-    rentalAgreementId: zfd.text(z.string().optional())
+    rentalAgreementId: zfd.text(z.string().optional()),
+    // A contract deposit: how a progress or performance-based payment is
+    // received (contract financing).
+    customerContractId: zfd.text(z.string().optional())
   })
   .refine(
     (d) =>
@@ -543,13 +546,21 @@ export const paymentValidator = z
       path: ["customerId"]
     }
   )
-  .refine((d) => !(d.salesOrderId && d.rentalAgreementId), {
-    message:
-      "A deposit is held against a sales order or a rental agreement, not both",
-    path: ["rentalAgreementId"]
-  })
   .refine(
-    (d) => Boolean(d.customerId) || !(d.salesOrderId || d.rentalAgreementId),
+    (d) =>
+      [d.salesOrderId, d.rentalAgreementId, d.customerContractId].filter(
+        Boolean
+      ).length <= 1,
+    {
+      message:
+        "A deposit is held against one sales order, rental agreement or contract",
+      path: ["rentalAgreementId"]
+    }
+  )
+  .refine(
+    (d) =>
+      Boolean(d.customerId) ||
+      !(d.salesOrderId || d.rentalAgreementId || d.customerContractId),
     {
       message: "Only a customer payment can be a deposit",
       path: ["rentalAgreementId"]
@@ -567,7 +578,7 @@ export type DepositDocument = {
   id: string;
   readableId: string;
   customerId: string;
-  kind: "salesOrder" | "rentalAgreement";
+  kind: "salesOrder" | "rentalAgreement" | "customerContract";
   status: string;
   open: boolean;
 };
