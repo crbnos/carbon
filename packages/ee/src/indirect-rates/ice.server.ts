@@ -182,8 +182,13 @@ async function loadContractCost(
     quantity: number;
   }>`
     WITH lines AS (
+      -- A Draft contract is not awarded: its billing elements would count
+      -- the same cost a second time beside the confirmed contract's.
       SELECT l."id", l."customerContractId" FROM "customerContractLine" l
+      JOIN "customerContract" lc
+        ON lc."id" = l."customerContractId" AND lc."companyId" = l."companyId"
       WHERE l."companyId" = ${companyId}
+        AND lc."status" <> 'Draft'
         AND l."projectElementId" IS NOT NULL
         AND NOT EXISTS (
           SELECT 1 FROM "customerContractLine" n
