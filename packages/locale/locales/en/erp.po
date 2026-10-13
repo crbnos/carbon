@@ -12954,9 +12954,8 @@ msgstr "Map Extracted Lines"
 msgid "Map Lines Now"
 msgstr "Map Lines Now"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."

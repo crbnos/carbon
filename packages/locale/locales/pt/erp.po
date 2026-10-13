@@ -12954,9 +12954,8 @@ msgstr "Mapear Linhas Extraídas"
 msgid "Map Lines Now"
 msgstr "Mapear Linhas Agora"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Mapeie essas contas nas configurações de integração do {0} e extraia novamente, ou digite seus saldos abaixo."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Mapeie essas contas nas configurações de integração do {providerName} e extraia novamente, ou digite seus saldos abaixo."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Mapeie seu plano de contas para o do provedor. Contas padrão de lançamento e contas de despesas são marcadas como Obrigatórias; os diários lançados são enviados usando o código de conta do provedor mapeado."

@@ -8,7 +8,6 @@ import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AccountingProvider } from "../providers";
 import { QboProvider } from "../providers/quickbooks-online";
-import { RilletProvider } from "../providers/rillet";
 import { XeroProvider } from "../providers/xero";
 import { getAccountMappings, getCompanyGroupId } from "./account-mapping";
 import type { ProviderID } from "./models";
@@ -52,10 +51,6 @@ export async function fetchRemoteTrialBalance(
 
   if (provider instanceof QboProvider) {
     return { supported: true, rows: await provider.getTrialBalance(asOfDate) };
-  }
-
-  if (provider instanceof RilletProvider) {
-    return { supported: false };
   }
 
   return { supported: false };

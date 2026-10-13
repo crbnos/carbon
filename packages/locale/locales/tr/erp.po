@@ -12954,9 +12954,8 @@ msgstr "Çıkarılan Satırları Eşle"
 msgid "Map Lines Now"
 msgstr "Satırları Şimdi Eşle"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Bu hesapları {0} entegrasyon ayarlarında eşleyin ve tekrar çekin, ya da aşağıda bakiyelerini girin."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Bu hesapları {providerName} entegrasyon ayarlarında eşleyin ve tekrar çekin, ya da aşağıda bakiyelerini girin."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Hesap planınızı sağlayıcının hesap planına eşleyin. Muhasebeleştirme varsayılanı ve Gider hesapları Gerekli olarak işaretlenmiştir; Muhasebeleştirildi Muhasebe fişleri eşlenen sağlayıcı hesap kodunu kullanarak gönderilir."

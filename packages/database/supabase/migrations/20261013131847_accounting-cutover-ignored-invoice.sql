@@ -8,7 +8,7 @@
 -- longer open at the cutover does nothing. No foreign key on "invoiceId": it
 -- is a sales or a purchase invoice, and a stale row is harmless.
 
-CREATE TABLE "accountingCutoverIgnoredInvoice" (
+CREATE TABLE IF NOT EXISTS "accountingCutoverIgnoredInvoice" (
     "id" TEXT NOT NULL DEFAULT id('acii'),
     "companyId" TEXT NOT NULL,
     "invoiceId" TEXT NOT NULL,
@@ -18,19 +18,18 @@ CREATE TABLE "accountingCutoverIgnoredInvoice" (
     "updatedBy" TEXT REFERENCES "user"("id"),
     "updatedAt" TIMESTAMP WITH TIME ZONE,
 
-    PRIMARY KEY ("id", "companyId"),
-    FOREIGN KEY ("companyId") REFERENCES "company"("id") ON DELETE CASCADE
+    CONSTRAINT "accountingCutoverIgnoredInvoice_pkey" PRIMARY KEY ("id", "companyId"),
+    CONSTRAINT "accountingCutoverIgnoredInvoice_companyId_invoiceId_key"
+        UNIQUE ("companyId", "invoiceId"),
+    CONSTRAINT "accountingCutoverIgnoredInvoice_companyId_fkey" FOREIGN KEY ("companyId")
+        REFERENCES "company"("id") ON DELETE CASCADE
 );
 
-CREATE INDEX "accountingCutoverIgnoredInvoice_companyId_idx"
+CREATE INDEX IF NOT EXISTS "accountingCutoverIgnoredInvoice_companyId_idx"
     ON "accountingCutoverIgnoredInvoice" ("companyId");
-CREATE INDEX "accountingCutoverIgnoredInvoice_createdBy_idx"
+CREATE INDEX IF NOT EXISTS "accountingCutoverIgnoredInvoice_createdBy_idx"
     ON "accountingCutoverIgnoredInvoice" ("createdBy");
-CREATE INDEX "accountingCutoverIgnoredInvoice_updatedBy_idx"
+CREATE INDEX IF NOT EXISTS "accountingCutoverIgnoredInvoice_updatedBy_idx"
     ON "accountingCutoverIgnoredInvoice" ("updatedBy");
-
-ALTER TABLE "accountingCutoverIgnoredInvoice"
-    ADD CONSTRAINT "accountingCutoverIgnoredInvoice_companyId_invoiceId_key"
-    UNIQUE ("companyId", "invoiceId");
 
 ALTER TABLE "accountingCutoverIgnoredInvoice" ENABLE ROW LEVEL SECURITY;

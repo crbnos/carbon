@@ -345,12 +345,20 @@ export function migrationClearingByAccount(
  * invoice Paid as of the day before the cutover, which every receivables and
  * payables reader already treats as closed. Any other item has no such state:
  * leaving it out of the opening journal would misstate what reads it later.
+ *
+ * Not an invoice Carbon itself settles on or after the cutover
+ * (`settledFromCutoverIds`): that payment's journal credits the control
+ * account, which with no opening line would leave it short by the payment.
  */
-export function isIgnorableOpenItem(item: OpenItem): boolean {
+export function isIgnorableOpenItem(
+  item: OpenItem,
+  settledFromCutoverIds: ReadonlySet<string>
+): boolean {
   return (
     (item.openItemType === "Receivable" || item.openItemType === "Payable") &&
     item.documentType === "Invoice" &&
-    item.documentId !== null
+    item.documentId !== null &&
+    !settledFromCutoverIds.has(item.documentId)
   );
 }
 

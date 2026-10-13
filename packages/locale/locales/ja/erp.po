@@ -12954,9 +12954,8 @@ msgstr "抽出行をマップ"
 msgid "Map Lines Now"
 msgstr "今すぐラインをマップ"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "これらのアカウントを{0}の連携設定でマップしてからもう一度プルするか、以下に残高を入力してください。"
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "これらのアカウントを{providerName}の連携設定でマップしてからもう一度プルするか、以下に残高を入力してください。"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "勘定科目表をプロバイダーの表にマップしてください。転記用デフォルト科目と費用科目は「必須」とマークされています。転記済の仕訳はマップされたプロバイダー科目を使用して送信されます。"

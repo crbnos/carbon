@@ -12954,9 +12954,8 @@ msgstr "Сопоставить извлеченные строки"
 msgid "Map Lines Now"
 msgstr "Сопоставить строки сейчас"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Сопоставьте эти счета в параметрах интеграции {0} и получите их снова, или введите их остатки ниже."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Сопоставьте эти счета в параметрах интеграции {providerName} и получите их снова, или введите их остатки ниже."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Сопоставьте ваш план счетов с планом счетов провайдера. Счета проведения по умолчанию и счета расходов отмечены как требуемые; проведенные операции отправляются, используя сопоставленный код счета провайдера."

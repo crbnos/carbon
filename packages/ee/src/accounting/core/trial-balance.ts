@@ -33,12 +33,17 @@ export type RemoteTrialBalanceRow = {
 
 /**
  * The providers `fetchRemoteTrialBalance` can read a trial balance from. The
- * wizard offers the pull only for these.
+ * wizard offers the pull only for these; `remote-trial-balance.test.ts` pins
+ * the two together.
  */
-export const TRIAL_BALANCE_PROVIDERS: ReadonlySet<string> = new Set([
+const TRIAL_BALANCE_PROVIDERS: ReadonlySet<string> = new Set<ProviderID>([
   ProviderID.XERO,
   ProviderID.QUICKBOOKS
 ]);
+
+export function isTrialBalanceProvider(id: string): id is ProviderID {
+  return TRIAL_BALANCE_PROVIDERS.has(id);
+}
 
 export type RemoteTrialBalance =
   | { supported: false }
@@ -320,7 +325,7 @@ export type TrialBalanceCarbonAccount = {
 };
 
 /** A Carbon trial balance line: positive debit OR positive credit. */
-export type TrialBalanceLine = {
+export type PulledTrialBalanceLine = {
   accountId: string;
   debit: number;
   credit: number;
@@ -339,7 +344,7 @@ export type AmbiguousTrialBalanceRow = UnmappedTrialBalanceRow & {
 };
 
 export type MappedTrialBalance = {
-  lines: TrialBalanceLine[];
+  lines: PulledTrialBalanceLine[];
   unmapped: UnmappedTrialBalanceRow[];
   ambiguous: AmbiguousTrialBalanceRow[];
 };
@@ -436,7 +441,7 @@ export function mapRemoteTrialBalance(
     }
   }
 
-  const lines: TrialBalanceLine[] = [];
+  const lines: PulledTrialBalanceLine[] = [];
   for (const [accountId, total] of netByAccount) {
     const net = round(total);
     if (net === 0) continue;

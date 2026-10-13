@@ -4,6 +4,7 @@
 
 import {
   isMigrationClearingZero,
+  type JournalLineDocumentType,
   type MigrationClearingRow,
   type OpenItemType
 } from "@carbon/database/accounting-cutover";
@@ -37,13 +38,15 @@ export type MigrationClearingItem = {
   key: string;
   accountId: string;
   openItemType: OpenItemType;
+  documentType: JournalLineDocumentType | null;
   documentId: string | null;
   /** The document's readable number, or the item's description. */
   label: string;
   partyName: string | null;
   /** Debit-signed, as the table's amounts. */
   amount: number;
-  /** A sales or purchase invoice, which the user may ignore. */
+  /** A sales or purchase invoice Carbon does not settle after the cutover,
+   *  which the user may ignore. */
   ignorable: boolean;
 };
 
@@ -320,13 +323,14 @@ function itemHref(
     case "Receivable":
     case "Deferred Revenue":
       if (!id) return null;
-      // A receivable is an invoice or a memo; the label says which.
-      return item.ignorable || item.openItemType === "Deferred Revenue"
+      return item.documentType === "Invoice"
         ? path.to.salesInvoice(id)
         : path.to.memo(id);
     case "Payable":
       if (!id) return null;
-      return item.ignorable ? path.to.purchaseInvoice(id) : path.to.memo(id);
+      return item.documentType === "Invoice"
+        ? path.to.purchaseInvoice(id)
+        : path.to.memo(id);
     case "Unapplied Credit":
     case "Customer Deposit":
       return id ? path.to.payment(id) : null;

@@ -342,30 +342,41 @@ describe("buildOpeningJournalLines", () => {
 });
 
 describe("isIgnorableOpenItem", () => {
+  const none = new Set<string>();
+
   it("lets a receivable or payable invoice be ignored", () => {
-    expect(isIgnorableOpenItem(receivable("inv-1", 100))).toBe(true);
+    expect(isIgnorableOpenItem(receivable("inv-1", 100), none)).toBe(true);
     expect(
-      isIgnorableOpenItem({
-        ...receivable("pinv-1", 100),
-        openItemType: "Payable",
-        accountId: AP,
-        accountClass: "Liability"
-      })
+      isIgnorableOpenItem(
+        {
+          ...receivable("pinv-1", 100),
+          openItemType: "Payable",
+          accountId: AP,
+          accountClass: "Liability"
+        },
+        none
+      )
     ).toBe(true);
   });
 
   it("keeps a memo, and an invoice's deferred revenue, in the opening journal", () => {
     expect(
-      isIgnorableOpenItem({
-        ...receivable("memo-1", 100),
-        documentType: "Memo"
-      })
+      isIgnorableOpenItem(
+        { ...receivable("memo-1", 100), documentType: "Memo" },
+        none
+      )
     ).toBe(false);
     expect(
-      isIgnorableOpenItem({
-        ...receivable("inv-1", 100),
-        openItemType: "Deferred Revenue"
-      })
+      isIgnorableOpenItem(
+        { ...receivable("inv-1", 100), openItemType: "Deferred Revenue" },
+        none
+      )
+    ).toBe(false);
+  });
+
+  it("keeps an invoice Carbon settles on or after the cutover", () => {
+    expect(
+      isIgnorableOpenItem(receivable("inv-1", 100), new Set(["inv-1"]))
     ).toBe(false);
   });
 });

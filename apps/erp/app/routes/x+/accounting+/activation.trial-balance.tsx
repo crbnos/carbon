@@ -5,6 +5,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import type { Database } from "@carbon/database";
 import {
   isIgnorableOpenItem,
   isMigrationClearingZero,
@@ -18,29 +19,22 @@ import {
   setCutoverInvoiceIgnored
 } from "@carbon/database/accounting-cutover-reads";
 import { debitSigned } from "@carbon/database/ledger";
+import { getIntegrationIdsByRole, getIntegrationsByRole } from "@carbon/ee";
 import {
-  getIntegrationConfigById,
-  getIntegrationIdsByRole,
-  type IntegrationID
-} from "@carbon/ee";
-import {
+  isTrialBalanceProvider,
   isTrialBalancePullError,
   type ProviderID,
-  pullTrialBalanceFromProvider,
-  TRIAL_BALANCE_PROVIDERS
+  pullTrialBalanceFromProvider
 } from "@carbon/ee/accounting";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { useAction } from "@carbon/query";
-import { Button } from "@carbon/react";
 import { getErrorMessage, redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
-import { LuArrowLeftToLine } from "react-icons/lu";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useLoaderData } from "react-router";
 import { SetupBody, SetupSection } from "~/components/Setup";
-import { usePermissions } from "~/hooks";
 import {
   cutoverIgnoredInvoiceValidator,
   cutoverStepValidator,
@@ -54,7 +48,7 @@ import {
 } from "~/modules/accounting/trial-balance-csv";
 import {
   ActivationFooter,
-  activationStepPath,
+  ApplyCarbonButton,
   type MigrationClearingItem,
   MigrationClearingTable,
   TrialBalanceEditor,
@@ -72,7 +66,7 @@ const logger = getLogger("erp", "accounting/activation/trial-balance");
  * balance. One accounting integration is active at a time.
  */
 async function getTrialBalanceProvider(
-  client: Awaited<ReturnType<typeof requirePermissions>>["client"],
+  client: SupabaseClient<Database>,
   companyId: string
 ): Promise<{ id: ProviderID; name: string } | null> {
   const integrations = await client
@@ -88,14 +82,14 @@ async function getTrialBalanceProvider(
     });
     return null;
   }
-  const id = integrations.data?.find((row) =>
-    TRIAL_BALANCE_PROVIDERS.has(row.id)
-  )?.id;
+  const id = integrations.data
+    ?.map((row) => row.id)
+    .find(isTrialBalanceProvider);
   if (!id) return null;
-  return {
-    id: id as ProviderID,
-    name: getIntegrationConfigById(id as IntegrationID)?.name ?? id
-  };
+  const config = getIntegrationsByRole("accounting").find(
+    (integration) => integration.id === id
+  );
+  return { id, name: config?.name ?? id };
 }
 
 export const handle: Handle = {
@@ -124,14 +118,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
     clearing: {
       rows: clearing.rows,
       total: clearing.total,
-      items: clearing.items.map(toClearingItem),
-      ignoredItems: clearing.ignoredItems.map(toClearingItem)
+      items: clearing.items.map((item) =>
+        toClearingItem(item, clearing.settledFromCutoverIds)
+      ),
+      ignoredItems: clearing.ignoredItems.map((item) =>
+        toClearingItem(item, clearing.settledFromCutoverIds)
+      )
     }
   };
 }
 
 /** What Migration Clearing shows of an open item. */
-function toClearingItem(item: OpenItem): MigrationClearingItem {
+function toClearingItem(
+  item: OpenItem,
+  settledFromCutoverIds: ReadonlySet<string>
+): MigrationClearingItem {
   return {
     key: [
       item.openItemType,
@@ -142,11 +143,12 @@ function toClearingItem(item: OpenItem): MigrationClearingItem {
     ].join("|"),
     accountId: item.accountId,
     openItemType: item.openItemType,
+    documentType: item.documentType,
     documentId: item.documentId,
     label: item.reference ?? item.description,
     partyName: item.partyName ?? null,
     amount: debitSigned(item.accountClass, item.amount),
-    ignorable: isIgnorableOpenItem(item)
+    ignorable: isIgnorableOpenItem(item, settledFromCutoverIds)
   };
 }
 
@@ -254,7 +256,7 @@ export async function action({ request }: ActionFunctionArgs) {
         // Saved, but some of the provider's balances have no Carbon account
         // yet: stay on the page so the editor can list them.
         return data<TrialBalancePullResult>(
-          { unplaced, providerName: provider.name },
+          { unplaced },
           await flash(
             request,
             success(`Trial balance pulled from ${provider.name}`)
@@ -472,6 +474,9 @@ export default function AccountingActivationTrialBalanceRoute() {
           }
         >
           <TrialBalanceEditor
+            // A new saved trial balance (a save, import, pull or apply)
+            // drops what was typed over the old one.
+            key={trialBalanceKey(trialBalance)}
             cutoverDate={cutoverDate}
             providerName={provider?.name ?? null}
             lines={trialBalance}
@@ -512,36 +517,12 @@ export default function AccountingActivationTrialBalanceRoute() {
   );
 }
 
-/**
- * Sets every control account on the trial balance to Carbon's opening total.
- * What is left on Migration Clearing then shows as the trial balance being
- * out of balance, to put on a non-control account.
- */
-function ApplyCarbonButton({
-  cutoverDate,
-  hasDifference
-}: {
-  cutoverDate: string;
-  hasDifference: boolean;
-}) {
-  const permissions = usePermissions();
-  const apply = useAction();
-  return (
-    <apply.Form
-      method="post"
-      action={activationStepPath("trial-balance", cutoverDate)}
-    >
-      <input type="hidden" name="intent" value="apply-carbon" />
-      <input type="hidden" name="cutoverDate" value={cutoverDate} />
-      <Button
-        type="submit"
-        variant="secondary"
-        leftIcon={<LuArrowLeftToLine />}
-        isDisabled={!permissions.can("update", "accounting") || !hasDifference}
-        isLoading={apply.isPending}
-      >
-        <Trans>Apply to Trial Balance</Trans>
-      </Button>
-    </apply.Form>
-  );
+/** Identifies a saved trial balance, so the editor remounts when it changes. */
+function trialBalanceKey(
+  lines: { accountId: string; debit: number; credit: number }[]
+) {
+  return lines
+    .map((line) => `${line.accountId}:${line.debit}:${line.credit}`)
+    .sort()
+    .join("|");
 }

@@ -12954,9 +12954,8 @@ msgstr "추출된 라인 매핑"
 msgid "Map Lines Now"
 msgstr "지금 라인 매핑"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "이 계정들을 {0} 연동 설정에서 매핑한 후 다시 끌어오기하거나, 아래에 잔액을 입력하세요."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "이 계정들을 {providerName} 연동 설정에서 매핑한 후 다시 끌어오기하거나, 아래에 잔액을 입력하세요."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "계정과목표를 공급자와 매핑하세요. 전기 기본 및 비용 계정은 필수로 표시되며, 전기된 전표는 매핑된 공급자 계정 코드를 사용하여 전송됩니다."

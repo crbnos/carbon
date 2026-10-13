@@ -12954,9 +12954,8 @@ msgstr "Mappa Righe Estratte"
 msgid "Map Lines Now"
 msgstr "Mappa Righe Ora"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Associa questi account nelle impostazioni di integrazione {0} ed estrai di nuovo, oppure inserisci i loro saldi di seguito."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Associa questi account nelle impostazioni di integrazione {providerName} ed estrai di nuovo, oppure inserisci i loro saldi di seguito."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Associa il tuo piano dei conti a quello del provider. I conti di registrazione predefiniti e i conti spese sono contrassegnati come Obbligatori; la prima nota registrata viene inviata utilizzando il codice conto provider associato."

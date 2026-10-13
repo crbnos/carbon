@@ -8,6 +8,7 @@ import { RilletProvider } from "../providers/rillet";
 import { XeroProvider } from "../providers/xero";
 import { DEFAULT_SYNC_CONFIG } from "./models";
 import { fetchRemoteTrialBalance } from "./remote-trial-balance";
+import { isTrialBalanceProvider } from "./trial-balance";
 import { AccountingApiError } from "./utils";
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -170,5 +171,18 @@ describe("fetchRemoteTrialBalance", () => {
       supported: false
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("offers the pull for exactly the providers it reads", () => {
+    // The wizard shows the button by `isTrialBalanceProvider`; the tests
+    // above show which providers `fetchRemoteTrialBalance` reads.
+    const rillet = new RilletProvider({
+      companyId: "company-1",
+      credentials: { type: "apiKey", apiKey: "key", environment: "production" },
+      syncConfig: DEFAULT_SYNC_CONFIG
+    });
+    expect(isTrialBalanceProvider(makeXero().id)).toBe(true);
+    expect(isTrialBalanceProvider(makeQbo().id)).toBe(true);
+    expect(isTrialBalanceProvider(rillet.id)).toBe(false);
   });
 });

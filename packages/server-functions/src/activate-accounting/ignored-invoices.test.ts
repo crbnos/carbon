@@ -16,10 +16,12 @@ import {
 import { sql } from "kysely";
 import { expect } from "vitest";
 import { databaseTest } from "../local-database-test-fixture";
+import postPayment from "../post-payment";
 import activateAccounting from ".";
 import {
   activationFixture,
   moveBeforeCutover,
+  pay,
   postServiceInvoice,
   USER,
   unwrap
@@ -119,6 +121,41 @@ databaseTest(
       expect(clearing.rows.every((row) => row.difference === 0)).toBe(true);
       // The receivable is still not offset anywhere in the trial balance.
       expect(clearing.total).toBe(-100);
+    } finally {
+      await f.cleanup();
+    }
+  }
+);
+
+databaseTest(
+  "an invoice Carbon is paid on after the cutover cannot be ignored",
+  async () => {
+    const f = await activationFixture();
+    try {
+      const invoiceId = await postServiceInvoice(f);
+      await moveBeforeCutover(f);
+      // Paid in Carbon after the cutover: its journal credits receivables,
+      // so the invoice must open there.
+      unwrap(
+        await postPayment(f.ctx, {
+          type: "post",
+          paymentId: await pay(f, { id: "pay-1", invoiceId, amount: 100 })
+        })
+      );
+      const args = { companyId: f.companyId, cutoverDate: f.cutoverDate };
+      await setCutoverInvoiceIgnored(f.db, {
+        ...args,
+        userId: USER,
+        invoiceId,
+        ignored: true
+      });
+
+      const clearing = await getMigrationClearing(f.db, args);
+      expect(clearing.settledFromCutoverIds.has(invoiceId)).toBe(true);
+      expect(clearing.ignoredItems).toEqual([]);
+      expect(clearing.items.map((item) => item.documentId)).toContain(
+        invoiceId
+      );
     } finally {
       await f.cleanup();
     }

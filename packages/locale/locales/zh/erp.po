@@ -12954,9 +12954,8 @@ msgstr "映射提取的行"
 msgid "Map Lines Now"
 msgstr "立即映射行"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "在 {0} 集成设置中映射这些账户并重新拉取，或在下方输入它们的余额。"
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "在 {providerName} 集成设置中映射这些账户并重新拉取，或在下方输入它们的余额。"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "将您的会计科目表映射到提供商的。过账默认账户和费用账户标记为必需；已过账凭证使用映射的提供商账户代码进行推送。"

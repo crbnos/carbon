@@ -8,6 +8,7 @@ import ActivationSteps, {
   activationStepPath,
   activationSteps
 } from "./ActivationSteps";
+import ApplyCarbonButton from "./ApplyCarbonButton";
 import FixedAssetDepreciationTable from "./FixedAssetDepreciationTable";
 import InventoryCostTable from "./InventoryCostTable";
 import MigrationClearingTable, {
@@ -26,6 +27,7 @@ export {
   type TrialBalancePullResult,
   ActivationFooter,
   ActivationSteps,
+  ApplyCarbonButton,
   activationStepPath,
   activationSteps,
   FixedAssetDepreciationTable,

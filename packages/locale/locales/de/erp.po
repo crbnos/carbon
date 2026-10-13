@@ -12954,9 +12954,8 @@ msgstr "Extrahierte Zeilen zuordnen"
 msgid "Map Lines Now"
 msgstr "Zeilen jetzt zuordnen"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "Ordnen Sie diese Konten in den {0}-Integrationseinstellungen zu, rufen Sie erneut ab, oder geben Sie ihre Salden unten ein."
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "Ordnen Sie diese Konten in den {providerName}-Integrationseinstellungen zu, rufen Sie erneut ab, oder geben Sie ihre Salden unten ein."
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "Ordnen Sie Ihren Kontenplan dem des Anbieters zu. Buchungs-Standardkonten und Aufwandkonten sind als erforderlich gekennzeichnet. Gebuchte Buchungssätze werden mit dem zugeordneten Anbieterkontokode übertragen."

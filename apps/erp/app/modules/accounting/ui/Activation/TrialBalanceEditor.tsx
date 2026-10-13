@@ -56,7 +56,6 @@ export type TrialBalanceImportResult = { errors?: TrialBalanceCsvError[] };
  * `amount` is debit-signed.
  */
 export type TrialBalancePullResult = {
-  providerName?: string;
   unplaced?: {
     code: string | null;
     name: string;
@@ -301,14 +300,14 @@ export default function TrialBalanceEditor({
           <AlertDescription>
             <p>
               <Trans>
-                Map these accounts in the {puller.data?.providerName}{" "}
-                integration settings and pull again, or enter their balances
-                below.
+                Map these accounts in the {providerName} integration settings
+                and pull again, or enter their balances below.
               </Trans>
             </p>
             <ul className="list-disc pl-4">
-              {unplaced.map((row) => (
-                <li key={`${row.code ?? ""}:${row.name}`}>
+              {unplaced.map((row, index) => (
+                // Two computed provider lines can share a name and no code.
+                <li key={`${index}:${row.code ?? ""}:${row.name}`}>
                   {row.code ? `${row.code} ` : ""}
                   {row.name}: {formatter.format(row.amount)}
                   {row.ambiguous && (

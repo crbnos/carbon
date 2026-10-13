@@ -12954,9 +12954,8 @@ msgstr "निकाली गई लाइनों को मैप करे�
 msgid "Map Lines Now"
 msgstr "अभी लाइनें मैप करें"
 
-#. placeholder {0}: puller.data?.providerName
-msgid "Map these accounts in the {0} integration settings and pull again, or enter their balances below."
-msgstr "{0} एकीकरण सेटिंग्स में इन खातों को मैप करें और फिर से खींचें, या नीचे उनकी शेष राशि दर्ज करें।"
+msgid "Map these accounts in the {providerName} integration settings and pull again, or enter their balances below."
+msgstr "{providerName} एकीकरण सेटिंग्स में इन खातों को मैप करें और फिर से खींचें, या नीचे उनकी शेष राशि दर्ज करें।"
 
 msgid "Map your chart of accounts to the provider's. Posting-default and expense accounts are marked Required; posted journals push using the mapped provider account code."
 msgstr "अपने खातों का चार्ट को प्रदाता के साथ मैप करें। पोस्टिंग-डिफ़ॉल्ट और व्यय खाते आवश्यक के रूप में चिह्नित हैं; पोस्ट किए गए जर्नल मैप किए गए प्रदाता खाता कोड का उपयोग करके पुश किए जाते हैं।"
