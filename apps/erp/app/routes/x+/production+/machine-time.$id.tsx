@@ -162,6 +162,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     const job = await getJob(client, operation.data.jobId);
+    if (job.error || !job.data) {
+      return data(
+        {},
+        await flash(request, error(job.error, "Failed to get job"))
+      );
+    }
+    // A friendly redirect only: the service re-checks the lock under a row
+    // lock inside its transaction.
     await requireUnlocked({
       request,
       isLocked: isJobLocked(job.data?.status),

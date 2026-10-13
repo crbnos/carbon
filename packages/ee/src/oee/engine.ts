@@ -25,7 +25,11 @@ export type PlanMachineTimeInput = {
   lastManualChangeAt: string | null;
   loadedJobOperationId: string | null;
   loadedAt: string | null;
-  isBlocked: boolean;
+  /**
+   * When maintenance began blocking the work center, or null when nothing
+   * blocks it. Run time from then on is unattributed, never the job's.
+   */
+  blockedSince: string | null;
   openMachineEvent: { id: string; startTime: string } | null;
   openUnattributed: { id: string; startTime: string } | null;
   lastMachineEventEndTime: string | null;
@@ -76,14 +80,15 @@ export function planMachineTime(
   let openUnattributed: Slot | null = input.openUnattributed
     ? { ...input.openUnattributed }
     : null;
+  const blockedAt = input.blockedSince === null ? null : at(input.blockedSince);
 
-  // Running time goes to the loaded operation only when the work center is
-  // not blocked by maintenance and the operation was loaded by then.
+  // Running time goes to the loaded operation only when the work center was
+  // not blocked by maintenance at the start and the operation was loaded by then.
   const openRunning = (start: string) => {
     if (openEvent || openUnattributed) return;
     const loaded = input.loadedJobOperationId;
     if (
-      !input.isBlocked &&
+      (blockedAt === null || at(start) < blockedAt) &&
       loaded &&
       input.loadedAt &&
       at(input.loadedAt) <= at(start)
@@ -94,7 +99,7 @@ export function planMachineTime(
     }
   };
 
-  const closeAll = (end: string) => {
+  const closeEvent = (end: string) => {
     if (openEvent && at(end) > at(openEvent.startTime)) {
       writes.push(
         openEvent.id
@@ -112,6 +117,9 @@ export function planMachineTime(
       );
       openEvent = null;
     }
+  };
+
+  const closeUnattributed = (end: string) => {
     if (openUnattributed && at(end) > at(openUnattributed.startTime)) {
       writes.push(
         openUnattributed.id
@@ -128,6 +136,24 @@ export function planMachineTime(
       );
       openUnattributed = null;
     }
+  };
+
+  const closeAll = (end: string) => {
+    closeEvent(end);
+    closeUnattributed(end);
+  };
+
+  // Maintenance begins: an event that started before the block stops at it,
+  // and a running machine carries on as unattributed time. An operator press
+  // after the block already decided ("latest change wins").
+  let blockPending =
+    blockedAt !== null && (pressedAt === null || pressedAt < blockedAt);
+  const enterBlock = () => {
+    if (!blockPending || input.blockedSince === null) return;
+    blockPending = false;
+    if (!openEvent || at(openEvent.startTime) >= (blockedAt ?? 0)) return;
+    closeEvent(input.blockedSince);
+    if (state === "Running") openRunning(input.blockedSince);
   };
 
   const apply = (next: MachineState, changedAt: string) => {
@@ -158,6 +184,7 @@ export function planMachineTime(
   // Debounce: a state shorter than the minimum is dropped; the last change
   // stays pending until it has lasted the minimum.
   for (const [i, change] of changes.entries()) {
+    if (blockedAt !== null && at(change.changedAt) >= blockedAt) enterBlock();
     const next = changes[i + 1];
     const end = next ? next.changedAt : input.now;
     if (at(end) - at(change.changedAt) < minimumMs) {
@@ -168,6 +195,8 @@ export function planMachineTime(
     apply(change.state, change.changedAt);
     appliedThrough = change.changedAt;
   }
+
+  if (blockedAt !== null && blockedAt <= at(input.now)) enterBlock();
 
   // Steady state: the machine runs and nothing holds its time — an operation
   // went Done mid-run, or maintenance / End Shift closed the event.

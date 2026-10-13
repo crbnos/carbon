@@ -1,6 +1,8 @@
 -- An open production event loads its operation onto the work center
 -- (sync_load_work_center_operation); the operation going Done or Canceled
--- unloads it (sync_unload_work_center_operation). The oee provider role may
+-- unloads it (sync_unload_work_center_operation), and so does deleting it; a
+-- Pause does not. An event only loads its own company's operation onto its
+-- own company's work center. The oee provider role may
 -- have several active integrations; the other roles still allow one.
 -- Isolated fixture company; no existing business data is read or edited. Always rolls back.
 -- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -f packages/database/supabase/tests/work-center-loaded-operation.test.sql
@@ -57,7 +59,9 @@ DO $cases$
 DECLARE
   v_group_id text; v_company_id text; v_location_id text;
   v_item text; v_process text; v_work_center text;
-  v_job text; v_a text; v_b text; v_c text;
+  v_job text; v_a text; v_b text; v_c text; v_d text;
+  v_other_company text; v_other_location text; v_other_item text;
+  v_other_process text; v_other_work_center text; v_other_job text; v_other_op text;
   v_day date := '2026-10-12';
   v_state text;
 BEGIN
@@ -101,6 +105,11 @@ BEGIN
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = v_b || '@10:10', 'later open event loads B: ' || v_state;
 
+  -- A Pause keeps the load.
+  UPDATE "jobOperation" SET status = 'Paused', "updatedBy" = 'system' WHERE id = v_b;
+  v_state := pg_temp.loaded(v_work_center);
+  ASSERT v_state = v_b || '@10:10', 'Paused keeps B loaded: ' || v_state;
+
   -- 5. B going Done unloads it.
   UPDATE "jobOperation" SET status = 'Done', "updatedBy" = 'system' WHERE id = v_b;
   v_state := pg_temp.loaded(v_work_center);
@@ -112,6 +121,41 @@ BEGIN
   UPDATE "jobOperation" SET status = 'Canceled', "updatedBy" = 'system' WHERE id = v_c;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'Canceled unloads C: ' || v_state;
+
+  -- Deleting the loaded operation unloads it (the pointer has no FK).
+  v_d := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 4);
+  PERFORM pg_temp.add_event(v_d, v_work_center, 'Setup', v_day + time '12:00', NULL);
+  ASSERT pg_temp.loaded(v_work_center) = v_d || '@12:00', 'D loads';
+  DELETE FROM "productionEvent" WHERE "jobOperationId" = v_d;
+  DELETE FROM "jobOperation" WHERE id = v_d;
+  v_state := pg_temp.loaded(v_work_center);
+  ASSERT v_state = 'none@none', 'deleting D unloads it: ' || v_state;
+
+  -- Another company's event never loads onto this company's work center:
+  -- its own operation on our work center, or our operation under its company.
+  INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
+    VALUES ('Loaded op other', v_group_id, 'USD', 'UTC') RETURNING id INTO v_other_company;
+  INSERT INTO location (name, "addressLine1", city, "postalCode", "companyId", "createdBy", timezone)
+    VALUES ('Other plant', '2 Test Way', 'Testville', '00000', v_other_company, 'system', 'UTC') RETURNING id INTO v_other_location;
+  INSERT INTO "unitOfMeasure" (code, name, "companyId", "createdBy")
+    VALUES ('EA', 'Each', v_other_company, 'system') ON CONFLICT DO NOTHING;
+  INSERT INTO item ("readableId", name, type, "replenishmentSystem", "itemTrackingType", "unitOfMeasureCode", "companyId", "createdBy")
+    VALUES ('T-OTHER', 'Other part', 'Part', 'Make', 'Inventory', 'EA', v_other_company, 'system') RETURNING id INTO v_other_item;
+  INSERT INTO process (name, "processType", "defaultStandardFactor", "companyId", "createdBy")
+    VALUES ('Milling', 'Process', 'Hours/Piece', v_other_company, 'system') RETURNING id INTO v_other_process;
+  INSERT INTO "workCenter" (name, "locationId", "laborRate", "machineRate", "overheadRate", "defaultStandardFactor", "companyId", "createdBy")
+    VALUES ('Other Haas', v_other_location, 0, 0, 0, 'Hours/Piece', v_other_company, 'system') RETURNING id INTO v_other_work_center;
+  v_other_job := pg_temp.make_job(v_other_company, v_other_location, v_other_item, 'J-OTHER', 1);
+  v_other_op := pg_temp.add_operation(v_other_job, v_other_company, v_other_process, v_other_work_center, 1);
+
+  PERFORM pg_temp.add_event(v_other_op, v_work_center, 'Machine', v_day + time '13:00', NULL);
+  v_state := pg_temp.loaded(v_work_center);
+  ASSERT v_state = 'none@none', 'another company''s event does not load our work center: ' || v_state;
+
+  INSERT INTO "productionEvent" ("jobOperationId", "workCenterId", type, "startTime", "companyId", "createdBy")
+    VALUES (v_other_op, v_work_center, 'Machine', v_day + time '13:05', v_company_id, 'system');
+  v_state := pg_temp.loaded(v_work_center);
+  ASSERT v_state = 'none@none', 'another company''s operation does not load: ' || v_state;
 
   -- 6. Several active integrations of the oee role are allowed.
   INSERT INTO "integration" (id, jsonschema, "providerRole")

@@ -14,10 +14,18 @@ export async function senseHealthcheck(
   if (!apiKey) return { healthy: false, reason: "No API key" };
   const factory = OEE_PROVIDERS.sense;
   if (!factory) return { healthy: false, reason: "Sense is not registered" };
-  const provider = factory({
-    apiKey,
-    environment: String(metadata.environment ?? "production")
-  });
+  let provider: ReturnType<typeof factory>;
+  try {
+    provider = factory({
+      apiKey,
+      environment: String(metadata.environment ?? "production")
+    });
+  } catch (error) {
+    return {
+      healthy: false,
+      reason: error instanceof Error ? error.message : String(error)
+    };
+  }
   const { valid, error } = await provider.validate();
   return { healthy: valid, reason: error };
 }

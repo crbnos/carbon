@@ -49,7 +49,7 @@ You need the `settings` update permission and a company API key from Sense.
 
 <FieldTable>
   <Field name="API key" required>A company API key from Sense. It gives Carbon read access to your sites and stations. Stored as a secret.</Field>
-  <Field name="Environment" required>**Production** (`bifrost.sensemfg.com`) or **Staging**, which is for testing only.</Field>
+  <Field name="Environment" required>**Production** (`bifrost.sensemfg.com`) or **Staging**, which is for testing only. Staging uses plain HTTP, so Carbon refuses it in production.</Field>
   <Field name="Minimum state (seconds)" required>Carbon ignores a run or a stop shorter than this, so a brief blip does not split machine time. The default is 60.</Field>
 </FieldTable>
 
@@ -90,7 +90,7 @@ For example, the machine runs and the operator selects **"Pause"** at 10:03. Mac
 Carbon cannot charge run time to an operation in three cases. Then the time goes to **Production → Unattributed Time**, which appears once an OEE provider is installed:
 
 - No operation is loaded on the work center.
-- The work center is blocked by an In Progress [maintenance dispatch](/docs/reference/maintenance) with an OEE impact of **"Down"** or **"Planned"**.
+- The work center is blocked by [maintenance](/docs/reference/maintenance): a dispatch with an OEE impact of **"Down"** from the moment it is reported until it is completed or cancelled, or one with **"Planned"** while it is In Progress. A Machine event already running when maintenance starts stops there, and the rest of the run goes to unattributed time.
 - The run started before the operation was loaded.
 
 Time also goes there when an operation finishes while the machine keeps running.

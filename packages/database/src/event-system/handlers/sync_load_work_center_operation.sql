@@ -12,11 +12,21 @@ BEGIN
     RETURN;
   END IF;
 
+  -- This runs as the owner (the dispatchers are SECURITY DEFINER), and the
+  -- event's workCenterId and jobOperationId are single-column FKs: an event
+  -- may only load its OWN company's operation onto its own company's work
+  -- center, or another company's sensor time would land on it.
   UPDATE "workCenter"
   SET "loadedJobOperationId" = p_new->>'jobOperationId',
       "loadedAt" = (p_new->>'startTime')::timestamptz
   WHERE "id" = p_new->>'workCenterId'
+    AND "companyId" = p_new->>'companyId'
     AND ("loadedAt" IS NULL OR "loadedAt" <= (p_new->>'startTime')::timestamptz)
-    AND "loadedJobOperationId" IS DISTINCT FROM p_new->>'jobOperationId';
+    AND "loadedJobOperationId" IS DISTINCT FROM p_new->>'jobOperationId'
+    AND EXISTS (
+      SELECT 1 FROM "jobOperation"
+      WHERE "id" = p_new->>'jobOperationId'
+        AND "companyId" = p_new->>'companyId'
+    );
 END;
 $function$;

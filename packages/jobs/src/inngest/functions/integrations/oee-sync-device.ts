@@ -18,6 +18,7 @@ import {
 } from "@carbon/ee/oee";
 import { datetime } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
+import { sql } from "kysely";
 
 const INSERT_CHUNK = 500;
 
@@ -120,14 +121,35 @@ export async function syncOeeDevice({
           .where("id", "=", device.workCenterId)
           .where("companyId", "=", device.companyId)
           .executeTakeFirst(),
-        // The predicate of the view "workCentersWithBlockingStatus".
+        // When maintenance began blocking the work center. A Down dispatch
+        // blocks from the moment it is reported (the MES ends every event on
+        // the work center when one is created), until it is Completed or
+        // Cancelled; a Planned one blocks once it is In Progress, from its
+        // actual start. Broader than the view "workCentersWithBlockingStatus",
+        // which counts In Progress only.
         trx
           .selectFrom("maintenanceDispatch")
-          .select("id")
+          .select(
+            sql<
+              Date | string | null
+            >`min(CASE WHEN "oeeImpact" = 'Down' THEN "createdAt" ELSE COALESCE("actualStartTime", "updatedAt", "createdAt") END)`.as(
+              "blockedSince"
+            )
+          )
           .where("workCenterId", "=", device.workCenterId)
           .where("companyId", "=", device.companyId)
-          .where("status", "=", "In Progress")
-          .where("oeeImpact", "in", ["Down", "Planned"])
+          .where((eb) =>
+            eb.or([
+              eb.and([
+                eb("oeeImpact", "=", "Down"),
+                eb("status", "in", ["Open", "Assigned", "In Progress"])
+              ]),
+              eb.and([
+                eb("oeeImpact", "=", "Planned"),
+                eb("status", "=", "In Progress")
+              ])
+            ])
+          )
           .executeTakeFirst(),
         trx
           .selectFrom("productionEvent")
@@ -172,7 +194,7 @@ export async function syncOeeDevice({
       lastManualChangeAt: toInstant(locked.lastManualChangeAt),
       loadedJobOperationId: workCenter?.loadedJobOperationId ?? null,
       loadedAt: toInstant(workCenter?.loadedAt),
-      isBlocked: blocking !== undefined,
+      blockedSince: toInstant(blocking?.blockedSince),
       openMachineEvent: openEvent
         ? { id: openEvent.id, startTime: toInstant(openEvent.startTime) }
         : null,

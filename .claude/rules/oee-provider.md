@@ -42,8 +42,8 @@ checks it first ("Work center not found").
 | `packages/jobs/src/inngest/functions/integrations/oee-sync.ts` | `carbon/oee-sync`, concurrency 1 per company. Syncs every device of the integration in ONE `step.run` |
 | `packages/jobs/src/inngest/functions/integrations/oee-sync-device.ts` | `syncOeeDevice`: read, store, then plan and apply under the device lock |
 | `packages/database/src/machine-time.ts` | `lockWorkCenterDevice` (`FOR UPDATE` on the device row), `recordManualMachinePress` and `endSensorMachineTime`. Shared by the sync, the MES and the device mapping writes. Pinned by `machine-time.test.ts` (needs `SUPABASE_DB_URL`) |
-| `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: loads the operation onto the work center |
-| `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE: unloads the operation when it becomes Done or Canceled |
+| `packages/database/src/event-system/handlers/sync_load_work_center_operation.sql` | `productionEvent` AFTER INSERT: loads the operation onto the work center, only when the work center and the operation are the event's own company |
+| `packages/database/src/event-system/handlers/sync_unload_work_center_operation.sql` | `jobOperation` AFTER UPDATE / DELETE: unloads the operation when it becomes Done or Canceled, or is deleted |
 
 UI:
 
@@ -89,15 +89,24 @@ The engine reads the stored changes after `appliedThrough`, in time order.
    writes no machine time for it ("latest change wins").
 3. If the state is `Running` and an open Machine event or an open
    unattributed row exists, do nothing.
-4. If the state is `Running`, check the work center. If it is not blocked
-   and its operation loaded at or before `changedAt`, open a Machine event on
-   that operation. Set `employeeId` to null and `createdBy` to `system`.
+4. If the state is `Running`, check the work center. If it was not blocked
+   at `changedAt` and its operation loaded at or before `changedAt`, open a
+   Machine event on that operation. Set `employeeId` to null and `createdBy`
+   to `system`.
 5. Else, if the state is `Running`, open an `unattributedMachineTime` row.
 6. If the state is `Idle`, `Down` or `Offline`, end the open Machine event
    and the open unattributed row at `changedAt`.
 
-"Blocked" is the predicate of `workCentersWithBlockingStatus`: an
-`In Progress` maintenance dispatch with `oeeImpact` `Down` or `Planned`.
+**Blocked.** The sync passes `blockedSince`: when maintenance began blocking
+the work center. A `Down` dispatch blocks from its `createdAt` while it is
+`Open`, `Assigned` or `In Progress` (the MES ends every event on the work
+center when one is created, `dispatch.new.tsx`); a `Planned` one blocks once
+it is `In Progress`, from `actualStartTime` (else `updatedAt`). The earliest
+wins. This is broader than the view `workCentersWithBlockingStatus` (In
+Progress only), which the MES display still uses. When the block begins, an
+open Machine event that started before it ends at `blockedSince`, and a
+running machine continues as unattributed time; an operator press after the
+block wins ("latest change wins"). Pinned by `engine.test.ts`.
 
 **Debounce.** The engine drops a state shorter than `minimumStateSeconds`.
 The last change stays pending until it has lasted the minimum. The next sync
@@ -113,7 +122,7 @@ the mapping time and the applied state start again.
 has left. So `deleteWorkCenterDevice` and the remap path of
 `upsertWorkCenterDevice` first call `endSensorMachineTime` on the OLD work
 center, under the device row lock: it ends, at now, the open Machine events
-created by `system` and the `Open` unattributed rows with no `endTime`. An
+created by `system` and the unattributed rows with no `endTime`. An
 operator's own open Machine event stays open.
 
 **Steady state.** After the changes, if the device is `Running`,
@@ -121,7 +130,8 @@ operator's own open Machine event stays open.
 time again. The start is the latest Machine `endTime` on the work center, or
 `currentStateAt` when that is later. This covers 2 cases: an operation that
 went Done mid-run, and a Machine event that a maintenance dispatch or End
-Shift closed.
+Shift closed. Time that starts while the work center is blocked opens as
+unattributed time, never on the operation.
 
 **A load change mid-run.** The open event stays on the old operation. The
 next `Running` change goes to the new one.
@@ -181,8 +191,18 @@ does not post at assign time.
 interval and deletes the row; the event is the record.
 `dismissUnattributedMachineTime` deletes the row. Both refuse a row with no
 `endTime` ("The machine is still running"). Assign also refuses a `Done` or
-`Canceled` operation, and the route refuses a locked job. pg_cron
-`unattributed-machine-time-retention` (04:23 UTC) runs
+`Canceled` operation and a locked job, checked under row locks on the
+operation and the job inside its transaction (the route's own check is only
+the friendly redirect).
+
+The three tables the sync writes (`workCenterDevice`, `machineStateChange`,
+`unattributedMachineTime`) are SELECT-only through the API (authz manifest):
+every write goes through Kysely in the sync or an entitlement-gated
+`@carbon/ee/oee.server` function, under the device lock.
+`upsertWorkCenterDevice` maps devices only for an integration in
+`OEE_PROVIDERS` that is active for the company.
+
+pg_cron `unattributed-machine-time-retention` (04:23 UTC) runs
 `util.purge_unattributed_machine_time()`, which deletes rows whose `endTime`
 is more than 30 days old. A running row is never purged.
 
@@ -213,6 +233,9 @@ engine only reads rows after `appliedThrough`, so neither is ever read again.
 - Base URL: `https://bifrost.sensemfg.com` (production) or
   `http://bifrost-staging.sensemfg.com` (staging). Auth is
   `Authorization: Bearer <apiKey>`. The key is company-scoped.
+- Staging has no HTTPS endpoint, so the `sense` factory in `OEE_PROVIDERS`
+  refuses it when `APP_ENV` is `production` (`SENSE_STAGING_REFUSED`); the
+  sync skips with that error and the healthcheck reports it.
 - Status allowlist: `Active` → `Running`, `Idle` → `Idle`, `Alert` → `Down`,
   `Offline` → `Offline`. An unknown status throws, and the device records
   the error. Never guess a state.

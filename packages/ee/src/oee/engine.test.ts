@@ -18,7 +18,7 @@ const base = (
   lastManualChangeAt: null,
   loadedJobOperationId: "A",
   loadedAt: t("07:00:00"),
-  isBlocked: false,
+  blockedSince: null,
   openMachineEvent: null,
   openUnattributed: null,
   lastMachineEventEndTime: null,
@@ -97,13 +97,86 @@ describe("planMachineTime", () => {
   it("records unattributed time while maintenance blocks the work center", () => {
     const result = planMachineTime(
       base({
-        isBlocked: true,
+        blockedSince: t("09:00:00"),
         changes: [{ state: "Running", changedAt: t("10:00:00") }]
       })
     );
     expect(result.writes).toEqual([
       { kind: "insertUnattributed", startTime: t("10:00:00"), endTime: null }
     ]);
+  });
+
+  it("stops a running event when maintenance starts and keeps the rest unattributed", () => {
+    const result = planMachineTime(
+      base({
+        currentState: "Running",
+        currentStateAt: t("09:00:00"),
+        openMachineEvent: { id: "pe1", startTime: t("09:00:00") },
+        blockedSince: t("10:30:00")
+      })
+    );
+    expect(result.writes).toEqual([
+      {
+        kind: "closeMachineEvent",
+        productionEventId: "pe1",
+        endTime: t("10:30:00")
+      },
+      { kind: "insertUnattributed", startTime: t("10:30:00"), endTime: null }
+    ]);
+  });
+
+  it("splits a run that straddles the start of maintenance", () => {
+    const result = planMachineTime(
+      base({
+        blockedSince: t("10:30:00"),
+        changes: [
+          { state: "Running", changedAt: t("10:00:00") },
+          { state: "Idle", changedAt: t("11:00:00") }
+        ]
+      })
+    );
+    expect(result.writes).toEqual([
+      {
+        kind: "insertMachineEvent",
+        jobOperationId: "A",
+        startTime: t("10:00:00"),
+        endTime: t("10:30:00")
+      },
+      {
+        kind: "insertUnattributed",
+        startTime: t("10:30:00"),
+        endTime: t("11:00:00")
+      }
+    ]);
+  });
+
+  it("does not reopen job time after maintenance closed the event", () => {
+    // A Down dispatch ends the work center's events when it is created; the
+    // machine still runs, so the time after it is unattributed, not the job's.
+    const result = planMachineTime(
+      base({
+        currentState: "Running",
+        currentStateAt: t("09:00:00"),
+        lastMachineEventEndTime: t("10:30:00"),
+        blockedSince: t("10:30:00")
+      })
+    );
+    expect(result.writes).toEqual([
+      { kind: "insertUnattributed", startTime: t("10:30:00"), endTime: null }
+    ]);
+  });
+
+  it("leaves an event the operator started after maintenance began", () => {
+    const result = planMachineTime(
+      base({
+        currentState: "Running",
+        currentStateAt: t("09:00:00"),
+        lastManualChangeAt: t("10:45:00"),
+        openMachineEvent: { id: "pe2", startTime: t("10:45:00") },
+        blockedSince: t("10:30:00")
+      })
+    );
+    expect(result.writes).toEqual([]);
   });
 
   it("does not charge an operation for a run that started before it was loaded", () => {

@@ -56,7 +56,8 @@ export const Sense = defineIntegration({
         {
           value: "staging",
           label: "Staging",
-          description: "bifrost-staging.sensemfg.com — testing only, plain HTTP"
+          description:
+            "bifrost-staging.sensemfg.com — testing only, plain HTTP, refused in production"
         }
       ],
       required: true,

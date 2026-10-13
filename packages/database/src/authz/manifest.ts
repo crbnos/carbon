@@ -922,7 +922,9 @@ export const manifest = {
     insert: owner("userId")
   }),
   location: company("resources"),
-  machineStateChange: company("production"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  machineStateChange: policies({ select: inCompany("companyId", "employee") }),
   maintenanceDispatch: company("resources", {
     create: "employee",
     update: "employee"
@@ -1598,7 +1600,11 @@ export const manifest = {
     delete: inCompany("companyId", "resources_delete")
   }),
   trainingQuestion: company("people"),
-  unattributedMachineTime: company("production"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  unattributedMachineTime: policies({
+    select: inCompany("companyId", "employee")
+  }),
   unitOfMeasure: company("parts", { read: "member" }),
   user: custom(
     "bespoke: five overlapping policies — self, shared company membership, employee/customer/supplier accounts, users_update, and an API-key EXISTS on userToCompany",
@@ -1695,7 +1701,9 @@ export const manifest = {
   webhook: company("settings", { read: "settings_view" }),
   webhookTable: policies({ select: authenticated }),
   workCenter: company("resources"),
-  workCenterDevice: company("resources"),
+  // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
+  // functions, over Kysely and under the device lock: read-only through the API.
+  workCenterDevice: policies({ select: inCompany("companyId", "employee") }),
   workCenterProcess: company("resources"),
   workCenterReplacementPart: company("resources", { read: "resources_view" }),
   workCenterShift: company("resources"),

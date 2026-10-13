@@ -22,6 +22,14 @@ import type { OeeProvider } from "./types";
 
 type Result<T> = { data: T; error: null } | { data: null; error: string };
 
+// A job in one of these statuses takes no more time. Mirrors the ERP's
+// JOB_LOCKED_STATUSES (apps/erp production.models.ts), which ee cannot import.
+const LOCKED_JOB_STATUSES = new Set<string | null>([
+  "Completed",
+  "Closed",
+  "Cancelled"
+]);
+
 const fail = (error: unknown): { data: null; error: string } => {
   if (error instanceof EntitlementError) throw error;
   return {
@@ -100,7 +108,26 @@ export async function upsertWorkCenterDevice(
 ): Promise<Result<{ id: string }>> {
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
+    // Only an active OEE integration maps devices: a row for any other
+    // integration would hold the work center's one device slot, and nothing
+    // would ever sync it.
+    if (!OEE_PROVIDERS[args.integration]) {
+      return {
+        data: null,
+        error: `${args.integration} is not an OEE provider`
+      };
+    }
     return await db.transaction().execute(async (trx) => {
+      const integration = await trx
+        .selectFrom("companyIntegration")
+        .select("active")
+        .where("id", "=", args.integration)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!integration?.active) {
+        return { data: null, error: "Integration is not active" };
+      }
+
       // Kysely skips RLS, and the id comes from the form: the work center
       // must be this company's (the composite FK refuses it too).
       const workCenter = await trx
@@ -259,15 +286,29 @@ export async function assignUnattributedMachineTime(
         return { data: null, error: "The machine is still running" };
       }
 
+      // Checked under row locks, in this transaction: a job closed between
+      // the route's check and this insert must still refuse the time.
       const operation = await trx
         .selectFrom("jobOperation")
-        .select(["status"])
-        .where("id", "=", args.jobOperationId)
-        .where("companyId", "=", args.companyId)
+        .innerJoin("job", (join) =>
+          join
+            .onRef("job.id", "=", "jobOperation.jobId")
+            .onRef("job.companyId", "=", "jobOperation.companyId")
+        )
+        .select(["jobOperation.status", "job.status as jobStatus"])
+        .where("jobOperation.id", "=", args.jobOperationId)
+        .where("jobOperation.companyId", "=", args.companyId)
+        .forUpdate()
         .executeTakeFirst();
       if (!operation) return { data: null, error: "Operation not found" };
       if (operation.status === "Done" || operation.status === "Canceled") {
         return { data: null, error: `The operation is ${operation.status}` };
+      }
+      if (LOCKED_JOB_STATUSES.has(operation.jobStatus)) {
+        return {
+          data: null,
+          error: "Cannot modify a locked job. Reopen it first."
+        };
       }
 
       const event = await trx

@@ -1,8 +1,25 @@
 # OEE Provider integration (first provider: Sense)
 
-> Status: draft
+> Status: implemented (PR #1909)
 > Author: barbinbrad
 > Date: 2026-10-12
+
+> **Where the build differs from this spec (the code wins; `.claude/rules/oee-provider.md`):**
+> - Unattributed machine time is a review queue with no status: assigning (a
+>   Machine event) or dismissing deletes the row, and rows are purged 30 days
+>   after the machine stopped. The drawer walks the queue one row at a time
+>   with suggestion cards for what ran on the work center that day. There is
+>   no Assigned / Dismissed state, no dismiss reason and no Reopen.
+> - The MES operation page shows no device badge (the Machine toggle's dot
+>   already does); only the work center display shows the device state.
+> - Maintenance blocks from `blockedSince`: a Down dispatch from when it is
+>   reported, a Planned one once In Progress. An event running when the block
+>   begins stops there and the run continues as unattributed time.
+> - `workCenter."loadedJobOperationId"` has no foreign key; the unload
+>   interceptor also clears it when the operation is deleted.
+> - The OEE tables are read-only through the API, a device maps only to its
+>   own company's work center (composite FK), and Sense staging (plain HTTP)
+>   is refused in production.
 
 ## TLDR
 
