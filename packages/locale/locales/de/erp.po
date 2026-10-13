@@ -20980,6 +20980,9 @@ msgstr "Wird gestartet…"
 msgid "Starts"
 msgstr "Startet"
 
+msgid "State"
+msgstr ""
+
 msgid "State / Province"
 msgstr "Bundesland / Provinz"
 
@@ -21130,6 +21133,9 @@ msgstr "Versand stoppen"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Verwendung von {0} in diesem Schritt beenden"
+
+msgid "Stopped"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Beendet neue Kaufvorschläge nach diesem Datum."

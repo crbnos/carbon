@@ -20980,6 +20980,9 @@ msgstr "शुरू हो रहा है…"
 msgid "Starts"
 msgstr "शुरू होता है"
 
+msgid "State"
+msgstr ""
+
 msgid "State / Province"
 msgstr "राज्य / प्रांत"
 
@@ -21130,6 +21133,9 @@ msgstr "शिपिंग बंद करें"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "इस चरण में {0} का उपयोग बंद करें"
+
+msgid "Stopped"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"

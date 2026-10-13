@@ -20980,6 +20980,9 @@ msgstr "Başlanıyor…"
 msgid "Starts"
 msgstr "Başlar"
 
+msgid "State"
+msgstr ""
+
 msgid "State / Province"
 msgstr "Eyalet / İl"
 
@@ -21130,6 +21133,9 @@ msgstr "Gönderimi Durdur"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Bu adımda {0} kullanmayı durdur"
+
+msgid "Stopped"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Bu tarihten sonra yeni satın alma önerilerini durdurur."

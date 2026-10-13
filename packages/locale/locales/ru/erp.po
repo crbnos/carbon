@@ -20980,6 +20980,9 @@ msgstr "Начинаю…"
 msgid "Starts"
 msgstr "Начинается"
 
+msgid "State"
+msgstr ""
+
 msgid "State / Province"
 msgstr "Штат / Провинция"
 
@@ -21130,6 +21133,9 @@ msgstr "Остановить отправку"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Прекратить использование {0} на этом шаге"
+
+msgid "Stopped"
+msgstr ""
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Останавливает новые предложения по закупкам после этой даты."

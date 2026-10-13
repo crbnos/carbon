@@ -14,7 +14,7 @@
 - [x] Task 5: Stop a sync run when the provider is unavailable
 - [x] Task 6: Fix the sync cursor, log late events, and close Canceled operations
 - [ ] Task 7: Test `syncOeeDevice` against the local database
-- [ ] Task 8: Resolve an OEE provider in one place
+- [x] Task 8: Resolve an OEE provider in one place
 - [ ] Task 9: Make machine time one stream per work center
 - [ ] Task 10: End the MES event on its own work center
 - [x] Task 11: Hide a stale device state on the work center display

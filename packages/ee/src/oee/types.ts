@@ -7,6 +7,12 @@ export type MachineState = "Running" | "Idle" | "Down" | "Offline";
 
 export type OeeProviderId = "sense";
 
+/**
+ * A run or a stop shorter than this many seconds is ignored, unless the
+ * integration sets its own `minimumStateSeconds`.
+ */
+export const DEFAULT_MINIMUM_STATE_SECONDS = 60;
+
 /** A machine-monitoring device as its provider reports it. */
 export interface OeeDevice {
   externalDeviceId: string;

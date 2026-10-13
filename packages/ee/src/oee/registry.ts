@@ -4,7 +4,11 @@
 
 import { APP_ENV } from "@carbon/env";
 import { SenseProvider } from "../sense/provider";
-import type { OeeProvider } from "./types";
+import {
+  DEFAULT_MINIMUM_STATE_SECONDS,
+  type OeeProvider,
+  type OeeProviderId
+} from "./types";
 
 type OeeProviderFactory = (args: {
   apiKey: string;
@@ -15,7 +19,7 @@ type OeeProviderFactory = (args: {
  * Integration id → provider factory. The one place an OEE provider is named;
  * everything else finds OEE integrations through `getIntegrationIdsByRole("oee")`.
  */
-export const OEE_PROVIDERS: Record<string, OeeProviderFactory> = {
+export const OEE_PROVIDERS: Record<OeeProviderId, OeeProviderFactory> = {
   sense: (args) => {
     // Sense staging has no HTTPS endpoint, so its bearer key would travel in
     // plain text. Testing only: never in a production deployment.
@@ -31,3 +35,37 @@ export const OEE_PROVIDERS: Record<string, OeeProviderFactory> = {
 
 export const SENSE_STAGING_REFUSED =
   "Sense staging uses plain HTTP and is not available in production. Choose Production.";
+
+export function isOeeProviderId(id: string): id is OeeProviderId {
+  return Object.hasOwn(OEE_PROVIDERS, id);
+}
+
+/**
+ * Builds the provider for an integration from its metadata (with the vaulted
+ * `apiKey` already resolved). Throws when the id is not an OEE provider, when
+ * the API key is empty, or when the provider's factory refuses the settings.
+ */
+export function createOeeProvider(
+  integrationId: string,
+  metadata: Record<string, unknown>
+): { provider: OeeProvider; minimumStateSeconds: number } {
+  if (!isOeeProviderId(integrationId)) {
+    throw new Error(`${integrationId} is not an OEE provider`);
+  }
+  const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
+  if (!apiKey) throw new Error("No API key");
+
+  const provider = OEE_PROVIDERS[integrationId]({
+    apiKey,
+    environment: String(metadata.environment ?? "production")
+  });
+
+  const minimum = Number(metadata.minimumStateSeconds);
+  return {
+    provider,
+    minimumStateSeconds:
+      Number.isFinite(minimum) && minimum >= 0
+        ? minimum
+        : DEFAULT_MINIMUM_STATE_SECONDS
+  };
+}

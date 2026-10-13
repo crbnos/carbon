@@ -5,12 +5,17 @@
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { DEFAULT_MINIMUM_STATE_SECONDS } from "../oee/types";
 
 const SenseSettingsSchema = z.object({
   // Empty means "keep the existing vaulted secret"; presence enforced at install.
   apiKey: z.string(),
   environment: z.enum(["production", "staging"]).default("production"),
-  minimumStateSeconds: z.coerce.number().int().min(0).default(60)
+  minimumStateSeconds: z.coerce
+    .number()
+    .int()
+    .min(0)
+    .default(DEFAULT_MINIMUM_STATE_SECONDS)
 });
 
 export const Sense = defineIntegration({
@@ -71,7 +76,7 @@ export const Sense = defineIntegration({
       group: "Connection",
       type: "number" as const,
       required: true,
-      value: 60
+      value: DEFAULT_MINIMUM_STATE_SECONDS
     }
   ],
   schema: SenseSettingsSchema

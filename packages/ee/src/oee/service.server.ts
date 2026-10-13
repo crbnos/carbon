@@ -11,7 +11,7 @@ import { EntitlementError, requireEntitlement } from "../entitlements.server";
 import { integrations } from "../index";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import { companyHasFeature } from "../plan.server";
-import { OEE_PROVIDERS } from "./registry";
+import { createOeeProvider, isOeeProviderId } from "./registry";
 import type { OeeProvider } from "./types";
 
 /**
@@ -68,25 +68,7 @@ export async function getOeeProvider(
       integration.data.secretRef
     )) as Record<string, unknown>;
 
-    const factory = OEE_PROVIDERS[integrationId];
-    if (!factory) {
-      return { data: null, error: `${integrationId} is not an OEE provider` };
-    }
-    const apiKey = typeof metadata.apiKey === "string" ? metadata.apiKey : "";
-    if (!apiKey) return { data: null, error: "No API key" };
-
-    const minimum = Number(metadata.minimumStateSeconds);
-    return {
-      data: {
-        provider: factory({
-          apiKey,
-          environment: String(metadata.environment ?? "production")
-        }),
-        minimumStateSeconds:
-          Number.isFinite(minimum) && minimum >= 0 ? minimum : 60
-      },
-      error: null
-    };
+    return { data: createOeeProvider(integrationId, metadata), error: null };
   } catch (error) {
     return fail(error);
   }
@@ -111,7 +93,7 @@ export async function upsertWorkCenterDevice(
     // Only an active OEE integration maps devices: a row for any other
     // integration would hold the work center's one device slot, and nothing
     // would ever sync it.
-    if (!OEE_PROVIDERS[args.integration]) {
+    if (!isOeeProviderId(args.integration)) {
       return {
         data: null,
         error: `${args.integration} is not an OEE provider`

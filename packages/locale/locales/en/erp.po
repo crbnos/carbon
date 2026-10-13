@@ -20980,6 +20980,9 @@ msgstr "Starting…"
 msgid "Starts"
 msgstr "Starts"
 
+msgid "State"
+msgstr "State"
+
 msgid "State / Province"
 msgstr "State / Province"
 
@@ -21130,6 +21133,9 @@ msgstr "Stop Shipping"
 #. placeholder {0}: used.title
 msgid "Stop using {0} in this step"
 msgstr "Stop using {0} in this step"
+
+msgid "Stopped"
+msgstr "Stopped"
 
 msgid "Stops new purchase suggestions after this date."
 msgstr "Stops new purchase suggestions after this date."
