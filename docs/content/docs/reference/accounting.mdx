@@ -11,7 +11,7 @@ Every company posts journals for its receipts, shipments, invoices, payments, ad
 
 Cost layers, inventory valuation, fixed-asset cost, deferred revenue schedules and intercompany records do not wait for the cutover. Every company writes them from the first document.
 
-A new company starts with accounting set up: its cutover date is the first day of its current month, so it posts Posted journals from its first document and never sees the setup wizard.
+A new company starts without a cutover date. It posts Provisional journals on Carbon's default chart of accounts until you set up accounting, so you can [import your own chart](#importing-your-chart-of-accounts) before anything is Posted.
 
 ## The journal
 
@@ -70,6 +70,9 @@ Setting up accounting opens your books in Carbon at a **cutover date**. Carbon t
 
 <Steps>
 <Step>
+**Chart of Accounts.** Import your own chart of accounts, or continue to keep Carbon's. Do this first: the trial balance step matches accounts by number.
+</Step>
+<Step>
 **Readiness.** Choose the cutover date: the first day of the current month, or of one of the 3 months before it. The opening balances are as of the end of the day before. All 6 checks must pass:
 - **Every account default is set**: each default account is set to an active account. A default that falls back to another one, such as Employee Reimbursements Payable, can stay empty. **Migration Clearing** must be an active Equity account that is not a group. Each failing default links to **Accounting → Default Accounts**.
 - **Fiscal year and base currency are set.**
@@ -111,6 +114,34 @@ Labor and machine absorption of a job is not written again. Carbon does not send
 <Callout type="warn" title="Setting up accounting cannot be undone">
 The cutover date never changes after you enable. The base currency and the fiscal year start month lock too.
 </Callout>
+
+## Importing your chart of accounts
+
+Every company starts on Carbon's default chart of accounts. To use your own, open **Accounting → Chart of Accounts** and press **Import**. You need permission to update accounting.
+
+<Steps>
+<Step>
+**Download current chart.** The CSV has one row per account, with the columns `Number`, `Name`, `Class`, `Type`, `Group`, `Carbon Account` and `Used For`. `Carbon Account` names the account the row is, and `Used For` lists the default accounts that point at it.
+</Step>
+<Step>
+**Edit it to match your chart.** The file is the whole chart:
+- Change a row's number, name, type or group to rename that account. Its default-account roles, documents and history stay with it.
+- Delete a row to retire the account. Carbon deletes an account nothing uses, and deactivates one with posted history.
+- Add a row with an empty `Carbon Account` to create an account. A new row needs a `Class`.
+- Name two or more accounts in one row's `Carbon Account`, separated by `;`, to merge them into the row. `Carbon Account` also accepts a default account's name, such as `Receivables`.
+- A group that does not exist yet is created. A group left with no accounts is deleted.
+</Step>
+<Step>
+**Upload CSV.** The review lists what the import does, and every error with its line number. Fix errors in the file and upload it again. An account no row names, but that is still in use, appears under **These accounts need a target**: pick the row that takes over its documents, default-account roles and balance.
+</Step>
+<Step>
+**Apply.** Carbon applies the whole file in one step, or nothing. Afterwards the chart's active accounts are exactly the rows of the file.
+</Step>
+</Steps>
+
+The chart is shared by every company in the group, so the import changes it for all of them. The review lists each company whose documents, default accounts or balances move, and marks companies that have set up accounting as **Live**. When an account with Posted history merges into another, Carbon posts a journal in each affected company that moves its balance, and deactivates it. Carbon refuses to merge or retire an account with posted history that holds receivables, payables, inventory, cost of goods sold, goods received not invoiced, retained earnings, Migration Clearing, intercompany or bank: rename it instead.
+
+An account with journal lines cannot be deleted. **Delete** on such an account offers **Deactivate** instead: a deactivated account stays in reports and history, and leaves the account pickers. **Show inactive** on the chart lists deactivated accounts.
 
 Until accounting is set up, Carbon refuses manual journal entries, depreciation runs, revenue recognition runs, intercompany eliminations and period close.
 

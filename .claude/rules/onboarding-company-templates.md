@@ -341,9 +341,9 @@ journal (see `apps/erp/app/modules/accounting/AGENTS.md` → The accounting cuto
 
 It writes the three columns on every apply with an UPSERT (`ON CONFLICT ("id") DO UPDATE`,
 no `WHERE`), even when the company already has a cutover.
-A company always has one by then: `seed-company` stamps the first day of the current month
-(onboarding runs it before the template job), and an app-created company applied through
-Settings → Demo Data has its own. Kept, that later date would put up to eleven months of
+`seed-company` leaves a new company without one (it stays Provisional until activation), so
+tier 01 usually writes the first; an app-created company applied through Settings → Demo
+Data may already have its own. Kept, a later date would put up to eleven months of
 seeded Posted journals before the cutover, where a void is refused and the readers above
 assume none exist. The cutover is otherwise one-way: the `BEFORE UPDATE` trigger
 `companySettings_accounting_config_locked` (created in `20261009004448_accounting-cutover.sql`)

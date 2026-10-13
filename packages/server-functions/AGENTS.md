@@ -338,8 +338,21 @@ each company (`journalLegacyDocumentsForAllCompanies`,
   (`ci/src/one-off-scripts.ts`): the runner records nothing and runs it again on the
   next deploy.
 
-`seed-company` sets a new company's cutover to the first day of the current month, so
-a new company posts `Posted` journals from its first document.
+`seed-company` leaves a new company without a cutover, so it posts `Provisional`
+journals until the activation wizard sets one. A subsidiary copies its `accountDefault`
+ids and fixed asset class accounts from a company already in the group; the seeded
+account numbers are only the fallback for a group with none.
+
+### `apply-account-import`
+
+Applies a chart of accounts import (`src/apply-account-import/index.ts`, input `{ rows,
+resolutions }`, permission `update: accounting`) in one transaction: it locks the group's
+accounts, re-plans with `planAccountImport`, and refuses a plan with errors or
+exceptions. It renames in two passes (temporary numbers first, so a swap works),
+creates accounts, re-points each merge source by `REFERENCE_POLICY` and
+`SOFT_REFERENCES`, moves default roles, posts one `Manual` reclass journal per company
+for Posted balances, deletes or deactivates retired accounts, deletes empty groups, and
+checks that the active chart equals the sheet.
 
 ## Validation Commands
 
