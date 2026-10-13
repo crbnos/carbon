@@ -19,7 +19,7 @@ import {
   wbsTemplateParentCode,
   workCountryClass
 } from "@carbon/utils";
-import { parseDate, startOfWeek } from "@internationalized/date";
+import { getDayOfWeek, parseDate, startOfWeek } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { type DiffEntry, diffFields, diffRows } from "../shared/diff";
@@ -5021,4 +5021,261 @@ export function readWbsCsv(
 
   errors.sort((a, b) => a.row - b.row);
   return { creates, updates, links: newLinks, errors };
+}
+
+// --- MS Project XML (MSPDI) export ----------------------------------------------
+
+/** MSPDI writes currency in hundredths: $200.00 is 20000. */
+const MSPDI_COST_FACTOR = 100;
+const MSPDI_COST_SCALE = 0;
+const MSPDI_HOURS_PER_DAY = 8;
+/** MS Project field ids of the task Text1–Text3 fields (MPXJ `MPPTaskField`). */
+const MSPDI_TEXT1 = 188743731;
+const MSPDI_TEXT2 = 188743734;
+const MSPDI_TEXT3 = 188743737;
+
+export type MspdiInput = {
+  project: { name: string; identifier: string; currencyCode: string };
+  elements: readonly WbsElement[];
+  links: readonly WbsLink[];
+  /** Elements flagged `isControlAccount`. */
+  controlAccountIds: ReadonlySet<string>;
+  /** Elements with an earned value technique. */
+  workPackageIds: ReadonlySet<string>;
+  /** The latest baseline's dates and budgets by element id, if any. */
+  baseline: ReadonlyMap<
+    string,
+    {
+      startDate: string | null;
+      targetDate: string | null;
+      budget: number | null;
+    }
+  > | null;
+  /** The project start when no element has a date (`YYYY-MM-DD`). */
+  today: string;
+};
+
+const xmlEscape = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+
+/** Working days Monday to Friday from `start` to `end`, both included; at least 1. */
+function workingDays(start: string, end: string): number {
+  let day = parseDate(start);
+  const last = parseDate(end);
+  let count = 0;
+  while (day.compare(last) <= 0) {
+    const weekday = getDayOfWeek(day, "en-US");
+    if (weekday !== 0 && weekday !== 6) count += 1;
+    day = day.add({ days: 1 });
+  }
+  return Math.max(1, count);
+}
+
+const mspdiCost = (amount: number) =>
+  round(amount * MSPDI_COST_FACTOR, MSPDI_COST_SCALE);
+
+/**
+ * A project's WBS as a Microsoft Project XML (MSPDI) file. MS Project,
+ * Primavera P6 and Deltek Cobra import it. The children of each element are
+ * written in the order of the MSPDI schema (`xsd:sequence`). A leaf carries
+ * its budget as a fixed cost and a Start No Earlier Than constraint, so
+ * Project keeps Carbon's dates unless a link pushes them later. Text1 holds
+ * the readable id, Text2 the control account's code, Text3 "Y" on a work
+ * package. Throws while 2 elements share a code.
+ */
+export function buildMspdiXml(input: MspdiInput): string {
+  const tree = wbsTree(input.elements);
+  const codeById = new Map(tree.map((row) => [row.element.id, row.code]));
+  const parentById = new Map(
+    input.elements.map((element) => [element.id, element.parentId])
+  );
+  const controlAccountCode = (id: string) => {
+    let current: string | null = id;
+    while (current) {
+      if (input.controlAccountIds.has(current))
+        return codeById.get(current) ?? "";
+      current = parentById.get(current) ?? null;
+    }
+    return "";
+  };
+
+  const starts = tree
+    .map((row) => row.element.startDate)
+    .filter((date): date is string => Boolean(date))
+    .sort();
+  const projectStart = starts[0] ?? input.today;
+
+  const lines: string[] = [];
+  const add = (depth: number, text: string) =>
+    lines.push(`${"  ".repeat(depth)}${text}`);
+  const tag = (depth: number, name: string, value: string | number) =>
+    add(
+      depth,
+      `<${name}>${typeof value === "string" ? xmlEscape(value) : value}</${name}>`
+    );
+
+  lines.push('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>');
+  add(0, '<Project xmlns="http://schemas.microsoft.com/project">');
+  tag(1, "SaveVersion", 14);
+  tag(1, "Name", `${input.project.identifier} ${input.project.name}`);
+  tag(1, "ScheduleFromStart", 1);
+  tag(1, "StartDate", `${projectStart}T08:00:00`);
+  tag(1, "CurrencyCode", input.project.currencyCode);
+  tag(1, "CalendarUID", 1);
+  tag(1, "DefaultStartTime", "08:00:00");
+  tag(1, "DefaultFinishTime", "17:00:00");
+  tag(1, "MinutesPerDay", MSPDI_HOURS_PER_DAY * 60);
+  tag(1, "MinutesPerWeek", MSPDI_HOURS_PER_DAY * 60 * 5);
+  tag(1, "DaysPerMonth", 20);
+
+  add(1, "<ExtendedAttributes>");
+  for (const [fieldId, fieldName, alias] of [
+    [MSPDI_TEXT1, "Text1", "Carbon Element ID"],
+    [MSPDI_TEXT2, "Text2", "Control Account"],
+    [MSPDI_TEXT3, "Text3", "Work Package"]
+  ] as const) {
+    add(2, "<ExtendedAttribute>");
+    tag(3, "FieldID", fieldId);
+    tag(3, "FieldName", fieldName);
+    tag(3, "Alias", alias);
+    add(2, "</ExtendedAttribute>");
+  }
+  add(1, "</ExtendedAttributes>");
+
+  add(1, "<Calendars>");
+  add(2, "<Calendar>");
+  tag(3, "UID", 1);
+  tag(3, "Name", "Standard");
+  tag(3, "IsBaseCalendar", 1);
+  tag(3, "BaseCalendarUID", -1);
+  add(3, "<WeekDays>");
+  for (let dayType = 1; dayType <= 7; dayType++) {
+    const working = dayType !== 1 && dayType !== 7;
+    add(4, "<WeekDay>");
+    tag(5, "DayType", dayType);
+    tag(5, "DayWorking", working ? 1 : 0);
+    if (working) {
+      add(5, "<WorkingTimes>");
+      for (const [from, to] of [
+        ["08:00:00", "12:00:00"],
+        ["13:00:00", "17:00:00"]
+      ]) {
+        add(6, "<WorkingTime>");
+        tag(7, "FromTime", from);
+        tag(7, "ToTime", to);
+        add(6, "</WorkingTime>");
+      }
+      add(5, "</WorkingTimes>");
+    }
+    add(4, "</WeekDay>");
+  }
+  add(3, "</WeekDays>");
+  add(2, "</Calendar>");
+  add(1, "</Calendars>");
+
+  // The outline number is the row's position (1, 1.1, 1.2), whatever its
+  // pinned WBS code; Project rebuilds it from OutlineLevel and the row order.
+  const outlineById = new Map<string, string>();
+  const childCount = new Map<string | null, number>();
+  for (const row of tree) {
+    const parent =
+      row.element.parentId && codeById.has(row.element.parentId)
+        ? row.element.parentId
+        : null;
+    const position = (childCount.get(parent) ?? 0) + 1;
+    childCount.set(parent, position);
+    outlineById.set(
+      row.element.id,
+      parent ? `${outlineById.get(parent)}.${position}` : String(position)
+    );
+  }
+
+  add(1, "<Tasks>");
+  tree.forEach((row, index) => {
+    const { element } = row;
+    const start = element.startDate ?? projectStart;
+    const finish =
+      element.targetDate && element.targetDate >= start
+        ? element.targetDate
+        : start;
+    const hours = workingDays(start, finish) * MSPDI_HOURS_PER_DAY;
+    const isLeaf = !row.hasChildren;
+    add(2, "<Task>");
+    tag(3, "UID", element.sequence);
+    tag(3, "ID", index + 1);
+    tag(3, "Name", element.name);
+    tag(3, "Active", 1);
+    tag(3, "Manual", 0);
+    tag(3, "WBS", row.code);
+    tag(3, "OutlineNumber", outlineById.get(element.id) ?? row.code);
+    tag(3, "OutlineLevel", row.level);
+    tag(3, "Start", `${start}T08:00:00`);
+    tag(3, "Finish", `${finish}T17:00:00`);
+    tag(3, "Duration", `PT${hours}H0M0S`);
+    tag(3, "DurationFormat", 7);
+    tag(3, "Milestone", 0);
+    tag(3, "Summary", isLeaf ? 0 : 1);
+    if (isLeaf && element.budget !== null) {
+      tag(3, "FixedCost", mspdiCost(element.budget));
+      tag(3, "FixedCostAccrual", 2);
+    }
+    if (isLeaf && element.startDate) {
+      tag(3, "ConstraintType", 4);
+      tag(3, "ConstraintDate", `${element.startDate}T08:00:00`);
+    }
+    for (const link of input.links) {
+      if (link.toElementId !== element.id) continue;
+      const predecessor = input.elements.find(
+        (other) => other.id === link.fromElementId
+      );
+      if (!predecessor || !codeById.has(predecessor.id)) continue;
+      add(3, "<PredecessorLink>");
+      tag(4, "PredecessorUID", predecessor.sequence);
+      tag(4, "Type", 1);
+      tag(4, "LinkLag", 0);
+      tag(4, "LagFormat", 7);
+      add(3, "</PredecessorLink>");
+    }
+    for (const [fieldId, value] of [
+      [MSPDI_TEXT1, element.readableId],
+      [MSPDI_TEXT2, controlAccountCode(element.id)],
+      [MSPDI_TEXT3, input.workPackageIds.has(element.id) ? "Y" : ""]
+    ] as const) {
+      if (!value) continue;
+      add(3, "<ExtendedAttribute>");
+      tag(4, "FieldID", fieldId);
+      tag(4, "Value", value);
+      add(3, "</ExtendedAttribute>");
+    }
+    const planned = input.baseline?.get(element.id);
+    if (planned?.startDate) {
+      const plannedFinish =
+        planned.targetDate && planned.targetDate >= planned.startDate
+          ? planned.targetDate
+          : planned.startDate;
+      add(3, "<Baseline>");
+      tag(4, "Number", 0);
+      tag(4, "Start", `${planned.startDate}T08:00:00`);
+      tag(4, "Finish", `${plannedFinish}T17:00:00`);
+      tag(
+        4,
+        "Duration",
+        `PT${workingDays(planned.startDate, plannedFinish) * MSPDI_HOURS_PER_DAY}H0M0S`
+      );
+      tag(4, "DurationFormat", 7);
+      if (isLeaf && planned.budget !== null) {
+        tag(4, "Cost", mspdiCost(planned.budget));
+      }
+      add(3, "</Baseline>");
+    }
+    add(2, "</Task>");
+  });
+  add(1, "</Tasks>");
+  add(0, "</Project>");
+  return `${lines.join("\n")}\n`;
 }
