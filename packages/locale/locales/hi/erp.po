@@ -161,7 +161,7 @@ msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्�
 #. placeholder {0}: request.financingMethod
 #. placeholder {1}: formatDate(request.costsThroughDate)
 msgid "{0} · costs through {1}"
-msgstr ""
+msgstr "{0} · {1} तक लागत"
 
 #. placeholder {0}: project.name
 msgid "{0} (template)"
@@ -1039,7 +1039,7 @@ msgid "A correction that moves posted time to another charge number. In DCAA mod
 msgstr "एक सुधार जो पोस्ट किए गए समय को एक अलग चार्ज संख्या पर स्थानांतरित करता है। DCAA मोड में यह हमेशा अनुमोदन की प्रतीक्षा करता है, और जिस व्यक्ति ने इसके लिए कहा वह इसे अनुमोदित नहीं कर सकता।"
 
 msgid "A Cumulative event bills only after every event before it."
-msgstr ""
+msgstr "एक संचयी ईवेंट केवल इसके पहले के हर ईवेंट के बाद ही बिल करता है।"
 
 msgid "A custom solution to meet your needs"
 msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
@@ -2184,7 +2184,7 @@ msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
 
 msgid "Add Event"
-msgstr ""
+msgstr "ईवेंट जोड़ें"
 
 msgid "Add Expense"
 msgstr "व्यय जोड़ें"
@@ -2401,7 +2401,7 @@ msgid "Add the operations that make this item."
 msgstr "इस आइटम को निर्माण करने वाले ऑपरेशन जोड़ें।"
 
 msgid "Add the rates before the first request."
-msgstr ""
+msgstr "पहली अनुरोध से पहले दरें जोड़ें।"
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "अपने DNS होस्ट में यह TXT रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें। DNS परिवर्तन प्रसारित होने में कुछ मिनट लग सकते हैं।"
@@ -2734,7 +2734,7 @@ msgid "Amount"
 msgstr "रकम"
 
 msgid "Amount of this request"
-msgstr ""
+msgstr "इस अनुरोध की राशि"
 
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "राशि जो इस पंक्ति पर संपत्ति/व्यय बढ़ाती है या देयता/इक्विटी/राजस्व घटाती है।"
@@ -2743,7 +2743,7 @@ msgid "Amount that increases liabilities/equity/revenue or decreases assets/expe
 msgstr "राशि जो इस पंक्ति पर देयता/इक्विटी/राजस्व बढ़ाती है या संपत्ति/व्यय घटाती है।"
 
 msgid "Amount the contracting officer approved"
-msgstr ""
+msgstr "अनुबंध अधिकारी द्वारा अनुमोदित राशि"
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -2974,7 +2974,7 @@ msgid "Another cost center this one rolls up into, letting you nest a sub-depart
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
 
 msgid "Another element has this WBS code"
-msgstr ""
+msgstr "दूसरे तत्व के पास यह WBS कोड है"
 
 msgid "Another spend integration is already active"
 msgstr "एक अन्य व्यय एकीकरण पहले से सक्रिय है"
@@ -3161,7 +3161,7 @@ msgid "Approve all"
 msgstr "सभी को अनुमोदित करें"
 
 msgid "Approve Request"
-msgstr ""
+msgstr "अनुरोध अनुमोदित करें"
 
 msgid "Approved"
 msgstr "अनुमोदित"
@@ -4473,7 +4473,7 @@ msgid "Blank = computed from the ability's recertification period"
 msgstr "खाली = कौशल की पुनः प्रमाणन अवधि से गणना की गई।"
 
 msgid "Blank uses the estimate at completion of the contract's projects"
-msgstr ""
+msgstr "खाली अनुबंध की परियोजनाओं के पूर्ण होने पर अनुमान का उपयोग करता है"
 
 msgid "Blind"
 msgstr "ब्लाइंड"
@@ -5729,7 +5729,7 @@ msgid "Columns"
 msgstr "कॉलम"
 
 msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
-msgstr ""
+msgstr "स्तंभ: तत्व ID, WBS कोड, माता-पिता WBS कोड, प्रकार, नाम, प्रारंभ, लक्ष्य, बजट, पूर्ववर्तक। Element ID वाली पंक्ति उस तत्व को अपडेट करती है; एक खाली सेल अपना मान रखता है। कुछ भी हटाया नहीं जाता है।"
 
 msgid "Combine filters"
 msgstr "फ़िल्टर को संयोजित करें"
@@ -5850,7 +5850,7 @@ msgid "Complete all quantities on kanban complete scan"
 msgstr "कानबान पूर्ण स्कैन पर सभी मात्रा पूर्ण करें"
 
 msgid "Complete Event"
-msgstr ""
+msgstr "ईवेंट पूर्ण करें"
 
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
@@ -5893,7 +5893,7 @@ msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
 
 msgid "Completion criteria"
-msgstr ""
+msgstr "पूर्णता मानदंड"
 
 msgid "Completion Date"
 msgstr "पूर्णता तारीख"
@@ -5936,7 +5936,7 @@ msgid "Compute the Actual rates for the period, post the burden catch-up and bil
 msgstr "अवधि के लिए वास्तविक दरों की गणना करें, बोझ बैकलॉग पोस्ट करें और Cost Plus पंक्तियों पर बोझ बिल करें।"
 
 msgid "Computed"
-msgstr ""
+msgstr "गणना की गई"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6282,10 +6282,10 @@ msgid "Contract Close Date"
 msgstr "अनुबंध समापन तिथि"
 
 msgid "Contract Financing"
-msgstr ""
+msgstr "अनुबंध वित्तपोषण"
 
 msgid "Contract financing needs a contract in the company's base currency."
-msgstr ""
+msgstr "अनुबंध वित्तपोषण को कंपनी की आधार मुद्रा में एक अनुबंध की आवश्यकता है।"
 
 msgid "Contract Line"
 msgstr "अनुबंध पंक्ति"
@@ -6297,7 +6297,7 @@ msgid "Contract Loss Provision"
 msgstr "अनुबंध हानि प्रावधान"
 
 msgid "Contract price"
-msgstr ""
+msgstr "अनुबंध मूल्य"
 
 msgid "Contract setup"
 msgstr "अनुबंध सेटअप"
@@ -6830,7 +6830,7 @@ msgid "Costs posted"
 msgstr "लागतें पोस्ट की गईं"
 
 msgid "Costs through"
-msgstr ""
+msgstr "के माध्यम से लागत"
 
 msgid "Costs, with children"
 msgstr "लागत, बच्चों के साथ"
@@ -7345,7 +7345,7 @@ msgid "CSV column"
 msgstr "CSV कॉलम"
 
 msgid "CSV file"
-msgstr ""
+msgstr "CSV फ़ाइल"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV फ़ाइल में कम से कम 2 पंक्तियाँ होनी चाहिए।"
@@ -7360,7 +7360,7 @@ msgid "Cumulative cost claimed and billed, by contract"
 msgstr "संचयी लागत दावा की गई और बिल की गई, अनुबंध द्वारा"
 
 msgid "Cumulative value"
-msgstr ""
+msgstr "संचयी मूल्य"
 
 msgid "Currencies"
 msgstr "मुद्राएँ"
@@ -7438,7 +7438,7 @@ msgid "Custom…"
 msgstr "कस्टम…"
 
 msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
-msgstr ""
+msgstr "परंपरागत प्रगति भुगतान (SF 1443) या प्रदर्शन-आधारित भुगतान, जैसा कि अनुबंध खंड उन्हें सेट करता है।"
 
 msgid "customer"
 msgstr "ग्राहक"
@@ -8959,7 +8959,7 @@ msgid "Draft only"
 msgstr "केवल ड्राफ्ट"
 
 msgid "Draft Request"
-msgstr ""
+msgstr "ड्राफ्ट अनुरोध"
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "अंतिम तिथि के बाद पहले से चालानित समय के लिए एक क्रेडिट नोट ड्राफ्ट करता है।"
@@ -9687,7 +9687,7 @@ msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "संपादित कर रहे हैं <0>{0}</0>: {1}। परिवर्तन इस परिवर्तन अनुरोध में जाते हैं।"
 
 msgid "Effective"
-msgstr ""
+msgstr "प्रभावी"
 
 msgid "Effective From"
 msgstr "से प्रभावी"
@@ -10180,7 +10180,7 @@ msgid "Estimated <0>{0}</0>"
 msgstr "अनुमानित <0>{0}</0>"
 
 msgid "Estimated cost to complete"
-msgstr ""
+msgstr "पूर्ण करने के लिए अनुमानित लागत"
 
 msgid "Estimated Duration"
 msgstr "अनुमानित अवधि"
@@ -10192,7 +10192,7 @@ msgid "Estimated hours"
 msgstr "अनुमानित घंटे"
 
 msgid "Estimated on"
-msgstr ""
+msgstr "पर अनुमानित"
 
 msgid "Estimated Scrap Quantity"
 msgstr "अनुमानित स्क्रैप मात्रा"
@@ -10222,7 +10222,7 @@ msgid "Event"
 msgstr "घटना"
 
 msgid "Event code"
-msgstr ""
+msgstr "ईवेंट कोड"
 
 msgid "Event Type"
 msgstr "ईवेंट प्रकार"
@@ -10246,7 +10246,7 @@ msgid "Every condition must match"
 msgstr "हर शर्त मेल खानी चाहिए"
 
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
-msgstr ""
+msgstr "हर तत्व अपना वर्तमान WBS कोड रखता है, भले ही वह स्थानांतरित हो। जब कोड अनुबंध WBS से मेल खाते हों तो यह करें।"
 
 msgid "Every entry in the range and every change made to it"
 msgstr "सीमा में प्रत्येक प्रविष्टि और इसमें किए गए प्रत्येक परिवर्तन"
@@ -10297,7 +10297,7 @@ msgid "Everything this run makes lands in one lot. The shop floor can't change i
 msgstr "इस रन में निर्माण होने वाली सभी चीजें एक लॉट में जाती हैं। शॉप फ्लोर इसे नहीं बदल सकता।"
 
 msgid "Evidence"
-msgstr ""
+msgstr "साक्ष्य"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
@@ -10552,7 +10552,7 @@ msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
 
 msgid "Export MS Project XML"
-msgstr ""
+msgstr "MS Project XML निर्यात करें"
 
 msgid "Export PDF"
 msgstr "निर्यात करें PDF"
@@ -11198,7 +11198,7 @@ msgid "Financing"
 msgstr "वित्तपोषण"
 
 msgid "Financing Terms"
-msgstr ""
+msgstr "वित्तपोषण शर्तें"
 
 msgid "Find an element"
 msgstr "एक तत्व खोजें"
@@ -11297,7 +11297,7 @@ msgid "Fit view"
 msgstr "व्यू फिट करें"
 
 msgid "Fix {errorCount} errors to apply"
-msgstr ""
+msgstr "{errorCount} त्रुटियों को ठीक करें"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
@@ -12468,7 +12468,7 @@ msgid "Import results"
 msgstr "आयात परिणाम"
 
 msgid "Import WBS"
-msgstr ""
+msgstr "WBS आयात करें"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
@@ -12716,7 +12716,7 @@ msgid "inherits {inheritedName}"
 msgstr "{inheritedName} से विरासत"
 
 msgid "Initial award"
-msgstr ""
+msgstr "प्रारंभिक पुरस्कार"
 
 msgid "Input"
 msgstr "इनपुट"
@@ -13880,7 +13880,7 @@ msgstr "लाइन {0}"
 
 #. placeholder {0}: SF1443_LINE_LABELS[editing]
 msgid "Line {editing}: {0}"
-msgstr ""
+msgstr "पंक्ति {editing}: {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "पंक्ति {line} ({accountNumber}): जमा \"{value}\" में अल्पविराम है। दशमलव के लिए बिंदु के साथ और कोई हजार विभाजक नहीं, जैसे 1234.56 के साथ राशि लिखें।"
@@ -14008,7 +14008,7 @@ msgid "Links"
 msgstr "लिंक"
 
 msgid "Liquidation rate"
-msgstr ""
+msgstr "समाशोधन दर"
 
 msgid "List"
 msgstr "सूची"
@@ -14703,7 +14703,7 @@ msgid "Maximum Order:"
 msgstr "अधिकतम ऑर्डर:"
 
 msgid "Maximum share of price (PBP)"
-msgstr ""
+msgstr "कीमत का अधिकतम हिस्सा (PBP)"
 
 msgid "MCP Command"
 msgstr "MCP कमांड"
@@ -15486,7 +15486,7 @@ msgid "New Payment Term"
 msgstr "नई भुगतान शर्तें"
 
 msgid "New PBP Request"
-msgstr ""
+msgstr "नया PBP अनुरोध"
 
 msgid "New Picking List"
 msgstr "नई पिकिंग सूची"
@@ -15510,7 +15510,7 @@ msgid "New Process"
 msgstr "नई प्रक्रिया"
 
 msgid "New Progress Payment Request"
-msgstr ""
+msgstr "नया प्रगति भुगतान अनुरोध"
 
 msgid "New Project"
 msgstr "नई परियोजना"
@@ -15543,7 +15543,7 @@ msgid "New Rental Agreement"
 msgstr "नया किराये का समझौता"
 
 msgid "New Request"
-msgstr ""
+msgstr "नया अनुरोध"
 
 msgid "New Requirement"
 msgstr "नई आवश्यकता"
@@ -16361,7 +16361,7 @@ msgid "No payables"
 msgstr "कोई देय राशि नहीं"
 
 msgid "No payment events yet."
-msgstr ""
+msgstr "अभी तक कोई भुगतान ईवेंट नहीं है।"
 
 msgid "No payments yet."
 msgstr "अभी तक कोई भुगतान नहीं।"
@@ -16484,7 +16484,7 @@ msgid "No representative of this company has accepted the Carbon GovCloud Rider 
 msgstr "इस कंपनी के किसी भी प्रतिनिधि ने अभी तक Carbon GovCloud Rider को स्वीकार नहीं किया है। इस कंपनी के एक प्रशासक को इसे स्वीकार करना चाहिए ताकि कोई भी Carbon तक पहुंच सके — Carbon कर्मचारी आपकी ओर से इसे स्वीकार नहीं कर सकते।"
 
 msgid "No requests yet."
-msgstr ""
+msgstr "अभी तक कोई अनुरोध नहीं है।"
 
 msgid "No resolution yet"
 msgstr "अभी तक कोई समाधान नहीं"
@@ -17757,7 +17757,7 @@ msgid "Override Coverage"
 msgstr "ओवरराइड कवरेज"
 
 msgid "Override line {line}"
-msgstr ""
+msgstr "पंक्ति {line} को ओवरराइड करें"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "ओवरराइड के लिए inventory:update अनुमति और कारण की आवश्यकता है।"
@@ -18058,7 +18058,7 @@ msgid "Payment depends on success"
 msgstr "भुगतान सफलता पर निर्भर है"
 
 msgid "Payment Events"
-msgstr ""
+msgstr "भुगतान ईवेंट"
 
 msgid "Payment from Customer"
 msgstr "ग्राहक से भुगतान"
@@ -18392,7 +18392,7 @@ msgid "Pin or unpin"
 msgstr "पिन करें या अनपिन करें"
 
 msgid "Pin WBS codes"
-msgstr ""
+msgstr "WBS कोड पिन करें"
 
 msgid "Pinned"
 msgstr "पिन किया गया"
@@ -19015,13 +19015,13 @@ msgid "Progress is this element's cost against its estimate at completion"
 msgstr "प्रगति इस तत्व की लागत है इसके पूर्ण होने पर अनुमान के विरुद्ध"
 
 msgid "Progress payment liquidation expected"
-msgstr ""
+msgstr "प्रगति भुगतान समाशोधन अपेक्षित"
 
 msgid "Progress payment rate"
-msgstr ""
+msgstr "प्रगति भुगतान दर"
 
 msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
-msgstr ""
+msgstr "SF 1443 के साथ प्रगति भुगतान, प्रदर्शन-आधारित भुगतान, और डिलीवरी चालानों पर उनका समाशोधन।"
 
 msgid "Project"
 msgstr "प्रोजेक्ट"
@@ -20027,7 +20027,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
 
 msgid "Record Payment"
-msgstr ""
+msgstr "भुगतान रिकॉर्ड करें"
 
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "कर्मचारी को {displayId} का भुगतान रिकॉर्ड करें। इसे आंशिक रूप से निपटाने के लिए कुल देय राशि से कम का भुगतान करें।"
@@ -20468,7 +20468,7 @@ msgid "Rental Utilization"
 msgstr "किराया उपयोग"
 
 msgid "Renumber WBS"
-msgstr ""
+msgstr "WBS का पुनः नंबरिंग करें"
 
 msgid "Reopen"
 msgstr "फिर से खोलें"
@@ -20574,11 +20574,11 @@ msgid "Reprint"
 msgstr "दोबारा प्रिंट करें"
 
 msgid "Request"
-msgstr ""
+msgstr "अनुरोध"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
-msgstr ""
+msgstr "अनुरोध {0}"
 
 msgid "Request a new invite"
 msgstr "नया आमंत्रण का अनुरोध करें"
@@ -20587,10 +20587,10 @@ msgid "Request Approval"
 msgstr "अनुमोदन का अनुरोध करें"
 
 msgid "Request date"
-msgstr ""
+msgstr "अनुरोध तारीख"
 
 msgid "Requested"
-msgstr ""
+msgstr "अनुरोधित"
 
 msgid "Requested By"
 msgstr "द्वारा अनुरोधित"
@@ -20599,7 +20599,7 @@ msgid "Requested Date"
 msgstr "अनुरोधित तिथि"
 
 msgid "Requests"
-msgstr ""
+msgstr "अनुरोध"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
@@ -21266,7 +21266,7 @@ msgid "Routing Number (ABA)"
 msgstr "रूटिंग संख्या (ABA)"
 
 msgid "Row"
-msgstr ""
+msgstr "पंक्ति"
 
 msgid "rows"
 msgstr "पंक्तियाँ"
@@ -23034,7 +23034,7 @@ msgid "SLIN"
 msgstr "SLIN"
 
 msgid "Small business"
-msgstr ""
+msgstr "छोटा व्यवसाय"
 
 msgid "Smallest child"
 msgstr "सबसे छोटा बच्चा"
@@ -24708,7 +24708,7 @@ msgid "The entry window, the timecard check, dilution and the certification an e
 msgstr "प्रविष्टि विंडो, टाइमकार्ड जांच, पतन और प्रमाणपत्र जो एक कर्मचारी सबमिट पर हस्ताक्षर करता है।"
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
-msgstr ""
+msgstr "पूर्ण करने का अनुमान {ESTIMATE_MAX_AGE_MONTHS} महीने से अधिक पुराना है। इसे सबमिट करने से पहले अपडेट करें।"
 
 msgid "The evening hours, {name}."
 msgstr "शाम के घंटे, {name}।"
@@ -24723,7 +24723,7 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "व्यय खाता जिस पर यह अप्रत्यक्ष-खर्च लाइन पोस्ट करता है; आवश्यक है क्योंकि अप्रत्यक्ष लाइनों के पास खाता प्राप्त करने के लिए कोई वस्तु बही प्रविष्टि नहीं है।"
 
 msgid "The file could not be read as CSV"
-msgstr ""
+msgstr "फ़ाइल को CSV के रूप में नहीं पढ़ा जा सका"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "आपके द्वारा अपलोड की गई फ़ाइल और की गई मैपिंग खो जाएँगी।"
@@ -25179,7 +25179,7 @@ msgid "The rate the burden run applies to project cost"
 msgstr "बोझ रन जो दर परियोजना लागत पर लागू करता है"
 
 msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
-msgstr ""
+msgstr "अनुबंध खंड जो दरें सेट करता है। एक संशोधन अपनी प्रभावी तारीख से एक दर जोड़ता है।"
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "कच्चा स्टॉक और सामग्री मास्टर जो आप खरीदते और उपभोग करते हैं"
@@ -26288,7 +26288,7 @@ msgid "Total Cost"
 msgstr "कुल लागत"
 
 msgid "Total costs incurred to date"
-msgstr ""
+msgstr "आज तक की कुल लागत"
 
 msgid "Total Direct Cost"
 msgstr "कुल सीधी लागत"
@@ -26839,7 +26839,7 @@ msgstr "RMA को विक्रय आदेश से अनलिंक क
 
 #. placeholder {0}: formatMoney.format(financing.unliquidated)
 msgid "Unliquidated: {0}"
-msgstr ""
+msgstr "अनिपटा: {0}"
 
 msgid "Unlock"
 msgstr "अनलॉक करें"
@@ -27285,13 +27285,13 @@ msgid "Value"
 msgstr "मान"
 
 msgid "Value (blank uses the computed value)"
-msgstr ""
+msgstr "मूल्य (खाली गणना किए गए मूल्य का उपयोग करता है)"
 
 msgid "Value of events completed earlier"
-msgstr ""
+msgstr "पहले पूर्ण किए गए ईवेंट का मूल्य"
 
 msgid "Value of the events in this request"
-msgstr ""
+msgstr "इस अनुरोध में ईवेंट का मूल्य"
 
 msgid "Value Snapshot"
 msgstr "मूल्य स्नैपशॉट"
@@ -27749,10 +27749,10 @@ msgid "Watch full video"
 msgstr "पूरा वीडियो देखें"
 
 msgid "WBS code"
-msgstr ""
+msgstr "WBS कोड"
 
 msgid "WBS options"
-msgstr ""
+msgstr "WBS विकल्प"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "हमने प्रत्येक कॉलम को स्वचालित रूप से मेल खाया है। जारी रखने से पहले नीचे दिए गए मानों की समीक्षा करें।"
@@ -28297,7 +28297,7 @@ msgid "Who you sell to and at what price."
 msgstr "आप किसे बेचते हैं और किस कीमत पर।"
 
 msgid "Whole contract"
-msgstr ""
+msgstr "संपूर्ण अनुबंध"
 
 msgid "Why"
 msgstr "क्यों"
@@ -28340,7 +28340,7 @@ msgid "with {0} contingency"
 msgstr "के साथ {0} आकस्मिकता"
 
 msgid "Withdraw"
-msgstr ""
+msgstr "वापस लें"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"

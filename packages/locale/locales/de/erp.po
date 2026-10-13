@@ -161,7 +161,7 @@ msgstr "{0, plural, one {Dieser Artikel ist auf 1 offener Änderungsmitteilung} 
 #. placeholder {0}: request.financingMethod
 #. placeholder {1}: formatDate(request.costsThroughDate)
 msgid "{0} · costs through {1}"
-msgstr ""
+msgstr "{0} · Kosten bis {1}"
 
 #. placeholder {0}: project.name
 msgid "{0} (template)"
@@ -1039,7 +1039,7 @@ msgid "A correction that moves posted time to another charge number. In DCAA mod
 msgstr "Eine Korrektur, die gebuchte Zeit auf eine andere Kostenstelle verschiebt. Im DCAA-Modus wartet sie immer auf Genehmigung, und die Person, die darum gebeten hat, kann sie nicht genehmigen."
 
 msgid "A Cumulative event bills only after every event before it."
-msgstr ""
+msgstr "Ein kumulatives Ereignis wird nur nach jedem vorherigen Ereignis abgerechnet."
 
 msgid "A custom solution to meet your needs"
 msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen."
@@ -2184,7 +2184,7 @@ msgid "Add Entry"
 msgstr "Eintrag hinzufügen"
 
 msgid "Add Event"
-msgstr ""
+msgstr "Ereignis hinzufügen"
 
 msgid "Add Expense"
 msgstr "Aufwand hinzufügen"
@@ -2401,7 +2401,7 @@ msgid "Add the operations that make this item."
 msgstr "Die Arbeitsgänge hinzufügen, die diesen Artikel herstellen."
 
 msgid "Add the rates before the first request."
-msgstr ""
+msgstr "Tarife vor der ersten Anfrage hinzufügen"
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Fügen Sie diesen TXT-Eintrag bei Ihrem DNS-Host hinzu und klicken Sie dann auf „Überprüfen\". DNS-Änderungen können einige Minuten dauern, bis sie sich verbreitet haben."
@@ -2734,7 +2734,7 @@ msgid "Amount"
 msgstr "Betrag"
 
 msgid "Amount of this request"
-msgstr ""
+msgstr "Betrag dieser Anfrage"
 
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "Betrag, der Vermögenswerte/Aufwendungen erhöht oder Verbindlichkeiten/Eigenkapital/Umsatzerlöse auf dieser Position verringert."
@@ -2743,7 +2743,7 @@ msgid "Amount that increases liabilities/equity/revenue or decreases assets/expe
 msgstr "Betrag, der Verbindlichkeiten/Eigenkapital/Umsatzerlöse erhöht oder Vermögenswerte/Aufwendungen auf dieser Position verringert."
 
 msgid "Amount the contracting officer approved"
-msgstr ""
+msgstr "Betrag, den der Auftraggeber genehmigt hat"
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -2974,7 +2974,7 @@ msgid "Another cost center this one rolls up into, letting you nest a sub-depart
 msgstr "Ein anderes Kostenzentrum, dem dieses untergeordnet ist, was es ermöglicht, eine Unterkostenstelle unter ihrer Muttergesellschaft für hierarchische Kostenberichterstattung zu verschachteln."
 
 msgid "Another element has this WBS code"
-msgstr ""
+msgstr "Ein anderes Element hat diesen WBS-Code"
 
 msgid "Another spend integration is already active"
 msgstr "Eine andere Ausgabenintegration ist bereits aktiv"
@@ -3161,7 +3161,7 @@ msgid "Approve all"
 msgstr "Alle genehmigen"
 
 msgid "Approve Request"
-msgstr ""
+msgstr "Anfrage genehmigen"
 
 msgid "Approved"
 msgstr "Genehmigt"
@@ -4473,7 +4473,7 @@ msgid "Blank = computed from the ability's recertification period"
 msgstr "Leer = berechnet aus dem Rezertifizierungszeitraum der Qualifikation"
 
 msgid "Blank uses the estimate at completion of the contract's projects"
-msgstr ""
+msgstr "Leer verwendet die Schätzung bei Abschluss der Projekte des Vertrags"
 
 msgid "Blind"
 msgstr "Blind"
@@ -5729,7 +5729,7 @@ msgid "Columns"
 msgstr "Spalten"
 
 msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
-msgstr ""
+msgstr "Spalten: Element-ID, WBS-Code, übergeordneter WBS-Code, Typ, Name, Start, Ziel, Budget, Vorgänger. Eine Zeile mit einer Element-ID aktualisiert dieses Element; eine leere Zelle behält ihren Wert. Nichts wird gelöscht."
 
 msgid "Combine filters"
 msgstr "Filter kombinieren"
@@ -5850,7 +5850,7 @@ msgid "Complete all quantities on kanban complete scan"
 msgstr "Alle Mengen beim Kanban-Fertigstellungs-Scan abschließen"
 
 msgid "Complete Event"
-msgstr ""
+msgstr "Ereignis abschließen"
 
 msgid "Complete Job"
 msgstr "Auftrag abschließen"
@@ -5893,7 +5893,7 @@ msgid "Completion Barcode"
 msgstr "Fertigstellungs-Barcode"
 
 msgid "Completion criteria"
-msgstr ""
+msgstr "Abschlußkriterien"
 
 msgid "Completion Date"
 msgstr "Fertigstellungsdatum"
@@ -5936,7 +5936,7 @@ msgid "Compute the Actual rates for the period, post the burden catch-up and bil
 msgstr "Berechnen Sie die tatsächlichen Sätze für den Zeitraum, buchen Sie den Belastungsausgleich und verrechnen Sie die Belastung auf Cost-Plus-Positionen."
 
 msgid "Computed"
-msgstr ""
+msgstr "Berechnet"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6282,10 +6282,10 @@ msgid "Contract Close Date"
 msgstr "Vertragsabschlussdatum"
 
 msgid "Contract Financing"
-msgstr ""
+msgstr "Vertragsfinanzierung"
 
 msgid "Contract financing needs a contract in the company's base currency."
-msgstr ""
+msgstr "Vertragsfinanzierung benötigt einen Vertrag in der Basiswährung des Unternehmens."
 
 msgid "Contract Line"
 msgstr "Vertragsposition"
@@ -6297,7 +6297,7 @@ msgid "Contract Loss Provision"
 msgstr "Verlustausgleich für Vertrag"
 
 msgid "Contract price"
-msgstr ""
+msgstr "Vertragspreis"
 
 msgid "Contract setup"
 msgstr "Vertrag einrichten"
@@ -6830,7 +6830,7 @@ msgid "Costs posted"
 msgstr "Kosten gebucht"
 
 msgid "Costs through"
-msgstr ""
+msgstr "Kosten bis"
 
 msgid "Costs, with children"
 msgstr "Kosten mit untergeordneten Elementen"
@@ -7345,7 +7345,7 @@ msgid "CSV column"
 msgstr "CSV-Spalte"
 
 msgid "CSV file"
-msgstr ""
+msgstr "CSV-Datei"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV-Datei muss mindestens 2 Zeilen enthalten."
@@ -7360,7 +7360,7 @@ msgid "Cumulative cost claimed and billed, by contract"
 msgstr "Kumulierte Kosten beansprucht und verrechnet, nach Vertrag"
 
 msgid "Cumulative value"
-msgstr ""
+msgstr "Kumulativer Wert"
 
 msgid "Currencies"
 msgstr "Währungen"
@@ -7438,7 +7438,7 @@ msgid "Custom…"
 msgstr "Benutzerdefiniert…"
 
 msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
-msgstr ""
+msgstr "Übliche Fortschrittszahlungen (SF 1443) oder leistungsbasierte Zahlungen, wie die Vertragsklausel sie festlegt."
 
 msgid "customer"
 msgstr "Kunde"
@@ -8959,7 +8959,7 @@ msgid "Draft only"
 msgstr "Nur Entwurf"
 
 msgid "Draft Request"
-msgstr ""
+msgstr "Anfrage im Entwurf"
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "Entwirft eine Gutschrift für die bereits fakturierte Zeit nach dem Enddatum."
@@ -9687,7 +9687,7 @@ msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "Bearbeitung von <0>{0}</0>: {1}. Änderungen werden an diese Änderungsanforderung gesendet."
 
 msgid "Effective"
-msgstr ""
+msgstr "Wirksam"
 
 msgid "Effective From"
 msgstr "Gültig ab"
@@ -10180,7 +10180,7 @@ msgid "Estimated <0>{0}</0>"
 msgstr "Geschätzt <0>{0}</0>"
 
 msgid "Estimated cost to complete"
-msgstr ""
+msgstr "Geschätzte Kosten zum Abschluss"
 
 msgid "Estimated Duration"
 msgstr "Geschätzte Dauer"
@@ -10192,7 +10192,7 @@ msgid "Estimated hours"
 msgstr "Geschätzte Stunden"
 
 msgid "Estimated on"
-msgstr ""
+msgstr "Geschätzt am"
 
 msgid "Estimated Scrap Quantity"
 msgstr "Geschätzte Ausschussmenge"
@@ -10222,7 +10222,7 @@ msgid "Event"
 msgstr "Ereignis"
 
 msgid "Event code"
-msgstr ""
+msgstr "Ereigniscode"
 
 msgid "Event Type"
 msgstr "Ereignistyp"
@@ -10246,7 +10246,7 @@ msgid "Every condition must match"
 msgstr "Jede Bedingung muss erfüllt sein"
 
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
-msgstr ""
+msgstr "Jedes Element behält seinen aktuellen WBS-Code, auch wenn es sich bewegt. Tun Sie dies, wenn die Codes dem Vertrags-WBS entsprechen."
 
 msgid "Every entry in the range and every change made to it"
 msgstr "Jeden Eintrag im Bereich und jede daran vorgenommene Änderung"
@@ -10297,7 +10297,7 @@ msgid "Everything this run makes lands in one lot. The shop floor can't change i
 msgstr "Alles, was dieser Durchlauf herstellt, landet in einer Charge. Die Werkstatt kann das nicht ändern."
 
 msgid "Evidence"
-msgstr ""
+msgstr "Nachweis"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Überschreitet {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB insgesamt – entfernen Sie einige Anhänge zum Senden."
@@ -10552,7 +10552,7 @@ msgid "Export Lines to CSV"
 msgstr "Zeilen als CSV exportieren"
 
 msgid "Export MS Project XML"
-msgstr ""
+msgstr "MS Project XML exportieren"
 
 msgid "Export PDF"
 msgstr "PDF exportieren"
@@ -11198,7 +11198,7 @@ msgid "Financing"
 msgstr "Finanzierung"
 
 msgid "Financing Terms"
-msgstr ""
+msgstr "Finanzierungsbedingungen"
 
 msgid "Find an element"
 msgstr "Finden Sie ein Element"
@@ -11297,7 +11297,7 @@ msgid "Fit view"
 msgstr "Ansicht anpassen"
 
 msgid "Fix {errorCount} errors to apply"
-msgstr ""
+msgstr "Beheben Sie {errorCount} Fehler zum Anwenden"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Beheben Sie die Probleme mit diesem Workflow, bevor Sie ihn testen"
@@ -12468,7 +12468,7 @@ msgid "Import results"
 msgstr "Importergebnisse"
 
 msgid "Import WBS"
-msgstr ""
+msgstr "WBS importieren"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre BOM"
@@ -12716,7 +12716,7 @@ msgid "inherits {inheritedName}"
 msgstr "erbt {inheritedName}"
 
 msgid "Initial award"
-msgstr ""
+msgstr "Erstmalige Vergabe"
 
 msgid "Input"
 msgstr "Eingabe"
@@ -13880,7 +13880,7 @@ msgstr "Zeile {0}"
 
 #. placeholder {0}: SF1443_LINE_LABELS[editing]
 msgid "Line {editing}: {0}"
-msgstr ""
+msgstr "Position {editing}: {0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Position {line} ({accountNumber}): das Haben „{value}” enthält ein Komma. Schreiben Sie Beträge mit einem Punkt für Dezimalstellen und keinem Tausendertrennzeichen, z. B. 1234,56."
@@ -14008,7 +14008,7 @@ msgid "Links"
 msgstr "Links"
 
 msgid "Liquidation rate"
-msgstr ""
+msgstr "Liquidationssatz"
 
 msgid "List"
 msgstr "Liste"
@@ -14703,7 +14703,7 @@ msgid "Maximum Order:"
 msgstr "Maximale Bestellung:"
 
 msgid "Maximum share of price (PBP)"
-msgstr ""
+msgstr "Maximaler Preisanteil (PBP)"
 
 msgid "MCP Command"
 msgstr "MCP-Befehl"
@@ -15486,7 +15486,7 @@ msgid "New Payment Term"
 msgstr "Neue Zahlungsbedingung"
 
 msgid "New PBP Request"
-msgstr ""
+msgstr "Neue PBP-Anfrage"
 
 msgid "New Picking List"
 msgstr "Neue Kommissionierliste"
@@ -15510,7 +15510,7 @@ msgid "New Process"
 msgstr "Neuer Prozess"
 
 msgid "New Progress Payment Request"
-msgstr ""
+msgstr "Neue Fortschrittszahlungsanfrage"
 
 msgid "New Project"
 msgstr "Neues Projekt"
@@ -15543,7 +15543,7 @@ msgid "New Rental Agreement"
 msgstr "Neue Mietvereinbarung"
 
 msgid "New Request"
-msgstr ""
+msgstr "Neue Anfrage"
 
 msgid "New Requirement"
 msgstr "Neue Anforderung"
@@ -16361,7 +16361,7 @@ msgid "No payables"
 msgstr "Keine Verbindlichkeiten"
 
 msgid "No payment events yet."
-msgstr ""
+msgstr "Noch keine Zahlungsereignisse."
 
 msgid "No payments yet."
 msgstr "Noch keine Zahlungen."
@@ -16484,7 +16484,7 @@ msgid "No representative of this company has accepted the Carbon GovCloud Rider 
 msgstr "Kein Vertreter dieses Unternehmens hat die Carbon GovCloud Rider-Vereinbarung noch angenommen. Ein Administrator dieses Unternehmens muss sie annehmen, bevor jemand auf Carbon zugreifen kann — Carbon-Personal kann dies nicht in Ihrem Namen tun."
 
 msgid "No requests yet."
-msgstr ""
+msgstr "Noch keine Anfragen."
 
 msgid "No resolution yet"
 msgstr "Noch keine Auflösung"
@@ -17757,7 +17757,7 @@ msgid "Override Coverage"
 msgstr "Übersteuerungsabdeckung"
 
 msgid "Override line {line}"
-msgstr ""
+msgstr "Position {line} überschreiben"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "Die Übersteuerung benötigt die Berechtigung Inventar:Aktualisieren und einen Grund."
@@ -18058,7 +18058,7 @@ msgid "Payment depends on success"
 msgstr "Zahlung hängt vom Erfolg ab"
 
 msgid "Payment Events"
-msgstr ""
+msgstr "Zahlungsereignisse"
 
 msgid "Payment from Customer"
 msgstr "Zahlung vom Kunden"
@@ -18392,7 +18392,7 @@ msgid "Pin or unpin"
 msgstr "Anheften oder Abheften"
 
 msgid "Pin WBS codes"
-msgstr ""
+msgstr "WBS-Codes anheften"
 
 msgid "Pinned"
 msgstr "Angeheftet"
@@ -19015,13 +19015,13 @@ msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Fortschritt ist die Kosten dieses Elements gegen die Schätzung bei Fertigstellung"
 
 msgid "Progress payment liquidation expected"
-msgstr ""
+msgstr "Fortschrittszahlungsliquidation erwartet"
 
 msgid "Progress payment rate"
-msgstr ""
+msgstr "Fortschrittszahlungssatz"
 
 msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
-msgstr ""
+msgstr "Fortschrittszahlungen mit dem SF 1443, leistungsbasierte Zahlungen und deren Liquidation auf Lieferrechnungen."
 
 msgid "Project"
 msgstr "Projekt"
@@ -20027,7 +20027,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag gebunden sind"
 
 msgid "Record Payment"
-msgstr ""
+msgstr "Zahlung aufzeichnen"
 
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen Sie weniger als den fälligen Gesamtbetrag, um ihn teilweise auszugleichen."
@@ -20468,7 +20468,7 @@ msgid "Rental Utilization"
 msgstr "Leihauslastung"
 
 msgid "Renumber WBS"
-msgstr ""
+msgstr "WBS neu nummerieren"
 
 msgid "Reopen"
 msgstr "Wieder öffnen"
@@ -20574,11 +20574,11 @@ msgid "Reprint"
 msgstr "Erneut drucken"
 
 msgid "Request"
-msgstr ""
+msgstr "Anfrage"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
-msgstr ""
+msgstr "Anfrage {0}"
 
 msgid "Request a new invite"
 msgstr "Neue Einladung anfordern"
@@ -20587,10 +20587,10 @@ msgid "Request Approval"
 msgstr "Genehmigung anfordern"
 
 msgid "Request date"
-msgstr ""
+msgstr "Anfragedatum"
 
 msgid "Requested"
-msgstr ""
+msgstr "Angefordert"
 
 msgid "Requested By"
 msgstr "Angefordert von"
@@ -20599,7 +20599,7 @@ msgid "Requested Date"
 msgstr "Wunschtermin"
 
 msgid "Requests"
-msgstr ""
+msgstr "Anfragen"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
@@ -21266,7 +21266,7 @@ msgid "Routing Number (ABA)"
 msgstr "Routing-Nummer (ABA)"
 
 msgid "Row"
-msgstr ""
+msgstr "Zeile"
 
 msgid "rows"
 msgstr "Zeilen"
@@ -23034,7 +23034,7 @@ msgid "SLIN"
 msgstr "SLIN"
 
 msgid "Small business"
-msgstr ""
+msgstr "Kleinunternehmen"
 
 msgid "Smallest child"
 msgstr "Kleinster untergeordneter Eintrag"
@@ -24708,7 +24708,7 @@ msgid "The entry window, the timecard check, dilution and the certification an e
 msgstr "Das Eingebungsfenster, die Zeitkartenprüfung, Verdünnung und die Zertifizierung, die ein Mitarbeiter bei der Einreichung unterzeichnet."
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
-msgstr ""
+msgstr "Die Schätzung zum Abschluss ist älter als {ESTIMATE_MAX_AGE_MONTHS} Monate. Aktualisieren Sie sie, bevor Sie einreichen."
 
 msgid "The evening hours, {name}."
 msgstr "Die Abendstunden, {name}."
@@ -24723,7 +24723,7 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "Das Aufwandskonto, auf das diese indirekte Ausgabenzeile gebucht wird; erforderlich, da indirekte Zeilen keinen Bestandsposten haben, von dem das Konto abgeleitet werden kann."
 
 msgid "The file could not be read as CSV"
-msgstr ""
+msgstr "Die Datei konnte nicht als CSV gelesen werden"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Die hochgeladene Datei und die vorgenommenen Zuordnungen gehen verloren."
@@ -25179,7 +25179,7 @@ msgid "The rate the burden run applies to project cost"
 msgstr "Der Satz, den der Belastungslauf auf die Projektkosten anwendet"
 
 msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
-msgstr ""
+msgstr "Die Sätze, die die Vertragsklausel festlegt. Eine Änderung fügt einen Satz ab dessen Gültigkeitsdatum hinzu."
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "Der Rohstoff und das Materialmaterial, das Sie kaufen und verbrauchen"
@@ -26288,7 +26288,7 @@ msgid "Total Cost"
 msgstr "Gesamtkosten"
 
 msgid "Total costs incurred to date"
-msgstr ""
+msgstr "Bis heute angefallene Gesamtkosten"
 
 msgid "Total Direct Cost"
 msgstr "Gesamte direkte Kosten"
@@ -26839,7 +26839,7 @@ msgstr "RMA vom Kundenauftrag abkoppeln?"
 
 #. placeholder {0}: formatMoney.format(financing.unliquidated)
 msgid "Unliquidated: {0}"
-msgstr ""
+msgstr "Nicht liquidiert: {0}"
 
 msgid "Unlock"
 msgstr "Entsperren"
@@ -27285,13 +27285,13 @@ msgid "Value"
 msgstr "Wert"
 
 msgid "Value (blank uses the computed value)"
-msgstr ""
+msgstr "Wert (Leerzeichen verwendet den berechneten Wert)"
 
 msgid "Value of events completed earlier"
-msgstr ""
+msgstr "Wert der früher abgeschlossenen Ereignisse"
 
 msgid "Value of the events in this request"
-msgstr ""
+msgstr "Wert der Ereignisse in dieser Anfrage"
 
 msgid "Value Snapshot"
 msgstr "Wert-Snapshot"
@@ -27749,10 +27749,10 @@ msgid "Watch full video"
 msgstr "Video vollständig ansehen"
 
 msgid "WBS code"
-msgstr ""
+msgstr "WBS-Code"
 
 msgid "WBS options"
-msgstr ""
+msgstr "WBS-Optionen"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "Wir haben jede Spalte automatisch abgeglichen. Bitte überprüfen Sie die folgenden Werte, bevor Sie fortfahren."
@@ -28297,7 +28297,7 @@ msgid "Who you sell to and at what price."
 msgstr "Wer deine Kunden sind und zu welchen Preisen du verkaufst."
 
 msgid "Whole contract"
-msgstr ""
+msgstr "Gesamter Vertrag"
 
 msgid "Why"
 msgstr "Warum"
@@ -28340,7 +28340,7 @@ msgid "with {0} contingency"
 msgstr "mit {0} Rückstellung"
 
 msgid "Withdraw"
-msgstr ""
+msgstr "Zurückziehen"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Ohne eine Kommissionierliste kommissionieren Werker Werkstoff vom Scannen-Tab."

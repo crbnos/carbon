@@ -161,7 +161,7 @@ msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に
 #. placeholder {0}: request.financingMethod
 #. placeholder {1}: formatDate(request.costsThroughDate)
 msgid "{0} · costs through {1}"
-msgstr ""
+msgstr "{0}・{1}までの原価"
 
 #. placeholder {0}: project.name
 msgid "{0} (template)"
@@ -1039,7 +1039,7 @@ msgid "A correction that moves posted time to another charge number. In DCAA mod
 msgstr "転記済み時間を別のチャージ番号に移動する修正。DCAモードでは常に承認を待機し、それを要求した人は承認できません。"
 
 msgid "A Cumulative event bills only after every event before it."
-msgstr ""
+msgstr "累積イベントは、その前のすべてのイベントの完了後にのみ請求されます。"
 
 msgid "A custom solution to meet your needs"
 msgstr "お客様のニーズに合わせたカスタムソリューション"
@@ -2184,7 +2184,7 @@ msgid "Add Entry"
 msgstr "エントリを追加"
 
 msgid "Add Event"
-msgstr ""
+msgstr "イベント追加"
 
 msgid "Add Expense"
 msgstr "費用を追加"
@@ -2401,7 +2401,7 @@ msgid "Add the operations that make this item."
 msgstr "この品目の工程を追加。"
 
 msgid "Add the rates before the first request."
-msgstr ""
+msgstr "最初のリクエストの前にレートを追加してください。"
 
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
@@ -2734,7 +2734,7 @@ msgid "Amount"
 msgstr "金額"
 
 msgid "Amount of this request"
-msgstr ""
+msgstr "このリクエストの金額"
 
 msgid "Amount that increases assets/expenses or decreases liabilities/equity/revenue on this line."
 msgstr "この明細で資産/費用を増加させるか、負債/純資産/売上高を減少させる金額"
@@ -2743,7 +2743,7 @@ msgid "Amount that increases liabilities/equity/revenue or decreases assets/expe
 msgstr "この明細で負債/純資産/売上高を増加させるか、資産/費用を減少させる金額"
 
 msgid "Amount the contracting officer approved"
-msgstr ""
+msgstr "契約担当官が承認した金額"
 
 #. placeholder {0}: r.memoId
 msgid "Amount to apply for {0}"
@@ -2974,7 +2974,7 @@ msgid "Another cost center this one rolls up into, letting you nest a sub-depart
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
 
 msgid "Another element has this WBS code"
-msgstr ""
+msgstr "別の要素がこのWBSコードを持っています"
 
 msgid "Another spend integration is already active"
 msgstr "別の支出統合が既にアクティブです"
@@ -3161,7 +3161,7 @@ msgid "Approve all"
 msgstr "すべて承認"
 
 msgid "Approve Request"
-msgstr ""
+msgstr "リクエスト承認"
 
 msgid "Approved"
 msgstr "承認済"
@@ -4473,7 +4473,7 @@ msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = スキルの再認定期間から計算"
 
 msgid "Blank uses the estimate at completion of the contract's projects"
-msgstr ""
+msgstr "空白の場合は契約のプロジェクト完了時の推定値を使用します"
 
 msgid "Blind"
 msgstr "ブラインド"
@@ -5729,7 +5729,7 @@ msgid "Columns"
 msgstr "列"
 
 msgid "Columns: Element ID, WBS Code, Parent WBS Code, Type, Name, Start, Target, Budget, Predecessors. A row with an Element ID updates that element; a blank cell keeps its value. Nothing is deleted."
-msgstr ""
+msgstr "列：要素ID、WBSコード、親WBSコード、種類、名前、開始、対象、予算、先行者。要素IDのある行はその要素を更新します。空白のセルはその値を保持します。何も削除されません。"
 
 msgid "Combine filters"
 msgstr "絞り込みを組み合わせ"
@@ -5850,7 +5850,7 @@ msgid "Complete all quantities on kanban complete scan"
 msgstr "かんばんスキャン完了時にすべての数量を完了する"
 
 msgid "Complete Event"
-msgstr ""
+msgstr "イベント完了"
 
 msgid "Complete Job"
 msgstr "ジョブを完了"
@@ -5893,7 +5893,7 @@ msgid "Completion Barcode"
 msgstr "完了バーコード"
 
 msgid "Completion criteria"
-msgstr ""
+msgstr "完了基準"
 
 msgid "Completion Date"
 msgstr "完了日"
@@ -5936,7 +5936,7 @@ msgid "Compute the Actual rates for the period, post the burden catch-up and bil
 msgstr "期間の実績レートを計算し、負担の追い付きを転記し、原価プラス明細で負担を請求します。"
 
 msgid "Computed"
-msgstr ""
+msgstr "計算済み"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -6282,10 +6282,10 @@ msgid "Contract Close Date"
 msgstr "契約クローズ日"
 
 msgid "Contract Financing"
-msgstr ""
+msgstr "契約ファイナンス"
 
 msgid "Contract financing needs a contract in the company's base currency."
-msgstr ""
+msgstr "契約ファイナンスには、会社の基本通貨での契約が必要です。"
 
 msgid "Contract Line"
 msgstr "契約明細"
@@ -6297,7 +6297,7 @@ msgid "Contract Loss Provision"
 msgstr "契約損失引当金"
 
 msgid "Contract price"
-msgstr ""
+msgstr "契約価格"
 
 msgid "Contract setup"
 msgstr "コントラクト設定"
@@ -6830,7 +6830,7 @@ msgid "Costs posted"
 msgstr "転記済原価"
 
 msgid "Costs through"
-msgstr ""
+msgstr "～までの原価"
 
 msgid "Costs, with children"
 msgstr "原価（子を含む）"
@@ -7345,7 +7345,7 @@ msgid "CSV column"
 msgstr "CSVカラム"
 
 msgid "CSV file"
-msgstr ""
+msgstr "CSVファイル"
 
 msgid "CSV file must have at least 2 rows."
 msgstr "CSVファイルは最低2行必要です。"
@@ -7360,7 +7360,7 @@ msgid "Cumulative cost claimed and billed, by contract"
 msgstr "契約別に請求された累計原価"
 
 msgid "Cumulative value"
-msgstr ""
+msgstr "累積値"
 
 msgid "Currencies"
 msgstr "通貨"
@@ -7438,7 +7438,7 @@ msgid "Custom…"
 msgstr "カスタム…"
 
 msgid "Customary progress payments (SF 1443) or performance-based payments, as the contract clause sets them."
-msgstr ""
+msgstr "契約条項で設定されているとおりのカスタマリー進捗支払（SF 1443）またはパフォーマンスベースの支払。"
 
 msgid "customer"
 msgstr "得意先"
@@ -8959,7 +8959,7 @@ msgid "Draft only"
 msgstr "下書きのみ"
 
 msgid "Draft Request"
-msgstr ""
+msgstr "下書きリクエスト"
 
 msgid "Drafts a credit memo for the time already invoiced after the end date."
 msgstr "終了日後に既に請求された時間のクレジットメモを下書きします。"
@@ -9687,7 +9687,7 @@ msgid "Editing <0>{0}</0>: {1}. Changes go to this change request."
 msgstr "編集中 <0>{0}</0>: {1}。変更はこの変更要求に保存されます。"
 
 msgid "Effective"
-msgstr ""
+msgstr "有効"
 
 msgid "Effective From"
 msgstr "有効開始日"
@@ -10180,7 +10180,7 @@ msgid "Estimated <0>{0}</0>"
 msgstr "見積もり <0>{0}</0>"
 
 msgid "Estimated cost to complete"
-msgstr ""
+msgstr "完了までの推定原価"
 
 msgid "Estimated Duration"
 msgstr "推定期間"
@@ -10192,7 +10192,7 @@ msgid "Estimated hours"
 msgstr "予想時間"
 
 msgid "Estimated on"
-msgstr ""
+msgstr "推定日"
 
 msgid "Estimated Scrap Quantity"
 msgstr "推定スクラップ数量"
@@ -10222,7 +10222,7 @@ msgid "Event"
 msgstr "イベント"
 
 msgid "Event code"
-msgstr ""
+msgstr "イベントコード"
 
 msgid "Event Type"
 msgstr "イベントタイプ"
@@ -10246,7 +10246,7 @@ msgid "Every condition must match"
 msgstr "すべての条件が一致する必要があります"
 
 msgid "Every element keeps its current WBS code, even when it moves. Do this when the codes match the contract WBS."
-msgstr ""
+msgstr "すべての要素は、移動した場合でも現在のWBSコードを保持します。コードが契約WBSと一致する場合にこれを実行してください。"
 
 msgid "Every entry in the range and every change made to it"
 msgstr "範囲内のすべてのエントリーと、それに加えられたすべての変更"
@@ -10297,7 +10297,7 @@ msgid "Everything this run makes lands in one lot. The shop floor can't change i
 msgstr "このランで製造されるすべてが1つのロットに入ります。製造現場は変更できません。"
 
 msgid "Evidence"
-msgstr ""
+msgstr "証拠"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MBを超えています。送信するために一部の添付ファイルを除去してください。"
@@ -10552,7 +10552,7 @@ msgid "Export Lines to CSV"
 msgstr "CSVにラインをエクスポート"
 
 msgid "Export MS Project XML"
-msgstr ""
+msgstr "MS Project XMLをエクスポート"
 
 msgid "Export PDF"
 msgstr "PDFエクスポート"
@@ -11198,7 +11198,7 @@ msgid "Financing"
 msgstr "ファイナンシング"
 
 msgid "Financing Terms"
-msgstr ""
+msgstr "ファイナンス条件"
 
 msgid "Find an element"
 msgstr "要素を検索"
@@ -11297,7 +11297,7 @@ msgid "Fit view"
 msgstr "ビューに合わせる"
 
 msgid "Fix {errorCount} errors to apply"
-msgstr ""
+msgstr "{errorCount}個のエラーを修正して適用する"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "テストする前に、このワークフローの問題を修正してください"
@@ -12468,7 +12468,7 @@ msgid "Import results"
 msgstr "インポート結果"
 
 msgid "Import WBS"
-msgstr ""
+msgstr "WBSをインポート"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
@@ -12716,7 +12716,7 @@ msgid "inherits {inheritedName}"
 msgstr "継承 {inheritedName}"
 
 msgid "Initial award"
-msgstr ""
+msgstr "初期授与"
 
 msgid "Input"
 msgstr "入力"
@@ -13880,7 +13880,7 @@ msgstr "行 {0}"
 
 #. placeholder {0}: SF1443_LINE_LABELS[editing]
 msgid "Line {editing}: {0}"
-msgstr ""
+msgstr "明細{editing}：{0}"
 
 msgid "Line {line} ({accountNumber}): the credit \"{value}\" has a comma. Write amounts with a point for decimals and no thousands separator, such as 1234.56."
 msgstr "Line {line} ({accountNumber}): 貸方「{value}」にはコンマが含まれています。小数点を使用し、千位区切りなしで金額を記入してください（例：1234.56）。"
@@ -14008,7 +14008,7 @@ msgid "Links"
 msgstr "リンク"
 
 msgid "Liquidation rate"
-msgstr ""
+msgstr "清算率"
 
 msgid "List"
 msgstr "リスト"
@@ -14703,7 +14703,7 @@ msgid "Maximum Order:"
 msgstr "最大注文数:"
 
 msgid "Maximum share of price (PBP)"
-msgstr ""
+msgstr "価格の最大シェア（PBP）"
 
 msgid "MCP Command"
 msgstr "MCPコマンド"
@@ -15486,7 +15486,7 @@ msgid "New Payment Term"
 msgstr "新規支払条件"
 
 msgid "New PBP Request"
-msgstr ""
+msgstr "新規PBPリクエスト"
 
 msgid "New Picking List"
 msgstr "新しいピッキングリスト"
@@ -15510,7 +15510,7 @@ msgid "New Process"
 msgstr "新しいプロセス"
 
 msgid "New Progress Payment Request"
-msgstr ""
+msgstr "新規進捗支払リクエスト"
 
 msgid "New Project"
 msgstr "新規プロジェクト"
@@ -15543,7 +15543,7 @@ msgid "New Rental Agreement"
 msgstr "新規レンタル契約"
 
 msgid "New Request"
-msgstr ""
+msgstr "新規リクエスト"
 
 msgid "New Requirement"
 msgstr "新規要求事項"
@@ -16361,7 +16361,7 @@ msgid "No payables"
 msgstr "買掛金がありません"
 
 msgid "No payment events yet."
-msgstr ""
+msgstr "支払イベントはまだありません。"
 
 msgid "No payments yet."
 msgstr "まだ支払いはありません。"
@@ -16484,7 +16484,7 @@ msgid "No representative of this company has accepted the Carbon GovCloud Rider 
 msgstr "この会社の代表者はまだCarbon GovCloud Riderを承諾していません。この会社の管理者は、誰もがCarbonにアクセスできるようになる前に、それを承諾する必要があります。Carbonスタッフはあなたに代わって承諾することはできません。"
 
 msgid "No requests yet."
-msgstr ""
+msgstr "リクエストはまだありません。"
 
 msgid "No resolution yet"
 msgstr "まだ解決策がありません"
@@ -17757,7 +17757,7 @@ msgid "Override Coverage"
 msgstr "上書きカバレッジ"
 
 msgid "Override line {line}"
-msgstr ""
+msgstr "明細{line}を上書き"
 
 msgid "Override needs the inventory:update permission and a reason."
 msgstr "上書きにはinventory:update権限と理由が必要です。"
@@ -18058,7 +18058,7 @@ msgid "Payment depends on success"
 msgstr "支払は成功に依存します"
 
 msgid "Payment Events"
-msgstr ""
+msgstr "支払イベント"
 
 msgid "Payment from Customer"
 msgstr "得意先からの支払"
@@ -18392,7 +18392,7 @@ msgid "Pin or unpin"
 msgstr "ピン留めまたはピン留め解除"
 
 msgid "Pin WBS codes"
-msgstr ""
+msgstr "WBSコードをピン留め"
 
 msgid "Pinned"
 msgstr "ピン留め"
@@ -19015,13 +19015,13 @@ msgid "Progress is this element's cost against its estimate at completion"
 msgstr "進捗はこの要素の原価と完成時推定の対比です"
 
 msgid "Progress payment liquidation expected"
-msgstr ""
+msgstr "進捗支払清算予定"
 
 msgid "Progress payment rate"
-msgstr ""
+msgstr "進捗支払率"
 
 msgid "Progress payments with the SF 1443, performance-based payments, and their liquidation on delivery invoices."
-msgstr ""
+msgstr "SF 1443による進捗支払、パフォーマンスベースの支払、および配送請求書でのそれらの清算。"
 
 msgid "Project"
 msgstr "プロジェクト"
@@ -20027,7 +20027,7 @@ msgid "Record inspections tied to a part and a job"
 msgstr "部品とジョブに関連付けられた検査を記録する"
 
 msgid "Record Payment"
-msgstr ""
+msgstr "支払を記録"
 
 msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 msgstr "{displayId}の従業員への支払を記録します。支払うべき合計金額より少ない金額を支払うと、部分的に清算することができます。"
@@ -20468,7 +20468,7 @@ msgid "Rental Utilization"
 msgstr "レンタル資産利用率"
 
 msgid "Renumber WBS"
-msgstr ""
+msgstr "WBSを再番号付け"
 
 msgid "Reopen"
 msgstr "再オープン"
@@ -20574,11 +20574,11 @@ msgid "Reprint"
 msgstr "再印刷"
 
 msgid "Request"
-msgstr ""
+msgstr "リクエスト"
 
 #. placeholder {0}: request.requestNumber
 msgid "Request {0}"
-msgstr ""
+msgstr "リクエスト{0}"
 
 msgid "Request a new invite"
 msgstr "新しい招待をリクエストする"
@@ -20587,10 +20587,10 @@ msgid "Request Approval"
 msgstr "承認を依頼"
 
 msgid "Request date"
-msgstr ""
+msgstr "リクエスト日付"
 
 msgid "Requested"
-msgstr ""
+msgstr "リクエスト済み"
 
 msgid "Requested By"
 msgstr "要求者"
@@ -20599,7 +20599,7 @@ msgid "Requested Date"
 msgstr "希望納期"
 
 msgid "Requests"
-msgstr ""
+msgstr "リクエスト"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
@@ -21266,7 +21266,7 @@ msgid "Routing Number (ABA)"
 msgstr "ルーティング番号（ABA）"
 
 msgid "Row"
-msgstr ""
+msgstr "行"
 
 msgid "rows"
 msgstr "行"
@@ -23034,7 +23034,7 @@ msgid "SLIN"
 msgstr "SLIN"
 
 msgid "Small business"
-msgstr ""
+msgstr "小規模企業"
 
 msgid "Smallest child"
 msgstr "最小子要素"
@@ -24708,7 +24708,7 @@ msgid "The entry window, the timecard check, dilution and the certification an e
 msgstr "入力ウィンドウ、タイムカード確認、希釈および従業員が提出時に署名する認定。"
 
 msgid "The estimate to complete is more than {ESTIMATE_MAX_AGE_MONTHS} months old. Update it before you submit."
-msgstr ""
+msgstr "完了までの推定値は{ESTIMATE_MAX_AGE_MONTHS}ヶ月以上前です。提出する前に更新してください。"
 
 msgid "The evening hours, {name}."
 msgstr "夜間のようですね、{name}さん。"
@@ -24723,7 +24723,7 @@ msgid "The expense account this indirect-spend line posts to; required because i
 msgstr "この間接支出明細が転記される費用勘定。間接明細には品目台帳エントリがないため、勘定を導出できないため必須です。"
 
 msgid "The file could not be read as CSV"
-msgstr ""
+msgstr "ファイルをCSVとして読み込むことができませんでした"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
@@ -25179,7 +25179,7 @@ msgid "The rate the burden run applies to project cost"
 msgstr "バーデン実行がプロジェクト原価に適用するレート"
 
 msgid "The rates the contract clause sets. A modification adds a rate from its effective date."
-msgstr ""
+msgstr "契約条項が設定するレート。修正は有効日からレートを追加します。"
 
 msgid "The raw stock and material master you buy and consume"
 msgstr "購入して消費する原材料とマテリアルマスター"
@@ -26288,7 +26288,7 @@ msgid "Total Cost"
 msgstr "合計原価"
 
 msgid "Total costs incurred to date"
-msgstr ""
+msgstr "現在までの総原価"
 
 msgid "Total Direct Cost"
 msgstr "総直接原価"
@@ -26839,7 +26839,7 @@ msgstr "RMA と受注のリンクを解除しますか？"
 
 #. placeholder {0}: formatMoney.format(financing.unliquidated)
 msgid "Unliquidated: {0}"
-msgstr ""
+msgstr "未清算：{0}"
 
 msgid "Unlock"
 msgstr "ロック解除"
@@ -27285,13 +27285,13 @@ msgid "Value"
 msgstr "値"
 
 msgid "Value (blank uses the computed value)"
-msgstr ""
+msgstr "値（空白は計算値を使用）"
 
 msgid "Value of events completed earlier"
-msgstr ""
+msgstr "以前に完了したイベントの値"
 
 msgid "Value of the events in this request"
-msgstr ""
+msgstr "このリクエスト内のイベントの値"
 
 msgid "Value Snapshot"
 msgstr "バリュー スナップショット"
@@ -27749,10 +27749,10 @@ msgid "Watch full video"
 msgstr "フル動画を視聴"
 
 msgid "WBS code"
-msgstr ""
+msgstr "WBSコード"
 
 msgid "WBS options"
-msgstr ""
+msgstr "WBSオプション"
 
 msgid "We auto-matched each column. Review the values below before continuing."
 msgstr "各列を自動マッチングしました。続行する前に下の値を確認してください。"
@@ -28297,7 +28297,7 @@ msgid "Who you sell to and at what price."
 msgstr "あなたが販売する相手と価格。"
 
 msgid "Whole contract"
-msgstr ""
+msgstr "契約全体"
 
 msgid "Why"
 msgstr "理由"
@@ -28340,7 +28340,7 @@ msgid "with {0} contingency"
 msgstr "{0}の予備費付き"
 
 msgid "Withdraw"
-msgstr ""
+msgstr "取り下げ"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "ピッキングリストがない場合、作業者はスキャンタブから材料をピッキングします。"
