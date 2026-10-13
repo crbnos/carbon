@@ -1989,20 +1989,6 @@ export async function deleteAccount(
   return client.from("account").delete().eq("id", accountId);
 }
 
-/** @mcp read */
-export async function getAccountInUse(
-  client: SupabaseClient<Database>,
-  accountId: string
-) {
-  // Journal lines refuse the account's delete (ON DELETE RESTRICT).
-  const lines = await client
-    .from("journalLine")
-    .select("id")
-    .eq("accountId", accountId)
-    .limit(1);
-  return { data: (lines.data?.length ?? 0) > 0, error: lines.error };
-}
-
 /** @mcp delete */
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,

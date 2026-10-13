@@ -1,5 +1,5 @@
 {
-  "totalTools": 1543,
+  "totalTools": 1542,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -38,7 +38,6 @@
     {"name":"accounting_getAccountingPeriods","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"bd245bd0358c","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountingSyncTieOut","classification":"READ","paramCount":3,"schema":"4feda8437359","response":"5483e69d7515","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountingSyncTieOutCell","classification":"READ","paramCount":1,"schema":"1a84bfebf9e9","response":"a5febf12f4bd","injectAuth":"companyId","permission":"accounting:view","paginates":false},
-    {"name":"accounting_getAccountInUse","classification":"READ","paramCount":1,"schema":"ecb746f60913","response":"7cb541e84f22","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountLedger","classification":"READ","paramCount":6,"schema":"8ad7f551d78b","response":"e46d69484d62","injectAuth":"companyId","permission":"accounting:view","paginates":true},
     {"name":"accounting_getAccountLedgerSummary","classification":"READ","paramCount":3,"schema":"aad65f7c3f63","response":"0a28a92b28ff","injectAuth":"companyId","permission":"accounting:view","paginates":false},
     {"name":"accounting_getAccountPeriodSeries","classification":"READ","paramCount":2,"schema":"d5db2abee293","response":"2c75339d9fde","injectAuth":"companyId","permission":"accounting:view","paginates":false},

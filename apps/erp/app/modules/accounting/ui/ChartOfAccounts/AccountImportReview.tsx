@@ -3,22 +3,16 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import {
-  ACCOUNT_DEFAULT_COLUMNS,
-  type AccountDefaultColumn,
   type AccountImportCompany,
   type AccountImportError,
   type AccountImportPlan,
-  assetClassLabel,
   type ChartImportRow,
-  FIXED_ASSET_CLASS_COLUMNS,
-  type FixedAssetClassColumn,
-  ROLE_NAMES
+  defaultKeyLabel
 } from "@carbon/database/account-import";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-  Button,
   Combobox,
   Table,
   Tbody,
@@ -29,10 +23,8 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useRef } from "react";
-import { LuFileUp, LuTriangleAlert } from "react-icons/lu";
+import { LuTriangleAlert } from "react-icons/lu";
 import { SetupSection } from "~/components/Setup";
-import type { AccountImportCsvError } from "../../account-import-csv";
 
 export type AccountImportAccount = { number: string | null; name: string };
 
@@ -41,116 +33,13 @@ type AccountImportReviewProps = {
   rows: ChartImportRow[];
   accounts: Record<string, AccountImportAccount>;
   companies: AccountImportCompany[];
-  targets: Record<string, number>;
+  /** While a new plan loads: a pick then would name a line of the old file. */
+  isDisabled: boolean;
   onTarget: (accountId: string, line: number | null) => void;
 };
 
 const label = (account: AccountImportAccount | undefined) =>
   account ? [account.number, account.name].filter(Boolean).join(" ") : "";
-
-/** The name of a default accounts key: a role, or a fixed asset class account. */
-function defaultLabel(key: string) {
-  if ((ACCOUNT_DEFAULT_COLUMNS as readonly string[]).includes(key)) {
-    return ROLE_NAMES[key as AccountDefaultColumn];
-  }
-  const [prefix, className, column] = key.split(":");
-  if (
-    prefix === "asset-class" &&
-    className &&
-    (FIXED_ASSET_CLASS_COLUMNS as readonly string[]).includes(column ?? "")
-  ) {
-    return assetClassLabel(className, column as FixedAssetClassColumn);
-  }
-  return key;
-}
-
-/** Picks a CSV and hands over its name and text. */
-export function AccountImportFileButton({
-  label,
-  isLoading,
-  onFile
-}: {
-  label: string;
-  isLoading: boolean;
-  onFile: (file: { name: string; text: string }) => void;
-}) {
-  const input = useRef<HTMLInputElement>(null);
-  return (
-    <>
-      <input
-        ref={input}
-        type="file"
-        accept=".csv,text/csv"
-        className="hidden"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-          onFile({ name: file.name, text: await file.text() });
-          if (input.current) input.current.value = "";
-        }}
-      />
-      <Button
-        leftIcon={<LuFileUp />}
-        isLoading={isLoading}
-        onClick={() => input.current?.click()}
-      >
-        {label}
-      </Button>
-    </>
-  );
-}
-
-export function AccountImportCsvErrors({
-  errors
-}: {
-  errors: AccountImportCsvError[];
-}) {
-  return (
-    <Alert variant="destructive">
-      <LuTriangleAlert />
-      <AlertTitle>
-        <Trans>The file could not be read</Trans>
-      </AlertTitle>
-      <AlertDescription>
-        <ul className="list-disc pl-4">
-          {errors.map((error, i) => (
-            <li key={i}>
-              <CsvErrorMessage error={error} />
-            </li>
-          ))}
-        </ul>
-      </AlertDescription>
-    </Alert>
-  );
-}
-
-function CsvErrorMessage({ error }: { error: AccountImportCsvError }) {
-  switch (error.code) {
-    case "empty-file":
-      return <Trans>The file has no rows.</Trans>;
-    case "missing-columns": {
-      const columns = error.columns.join(", ");
-      return <Trans>The file has no {columns} column.</Trans>;
-    }
-    case "missing-number":
-      return <Trans>Line {error.line} has no account number.</Trans>;
-    case "missing-name":
-      return <Trans>Line {error.line} has no account name.</Trans>;
-    case "missing-group":
-      return <Trans>Line {error.line} has no group.</Trans>;
-    case "missing-key":
-      return <Trans>Line {error.line} has no key.</Trans>;
-    case "invalid-class": {
-      const value = error.value;
-      return (
-        <Trans>
-          Line {error.line}: "{value}" is not a class. Use Asset, Liability,
-          Equity, Revenue or Expense.
-        </Trans>
-      );
-    }
-  }
-}
 
 function PlanErrorMessage({
   error,
@@ -194,6 +83,16 @@ function PlanErrorMessage({
       return (
         <Trans>Chart line {error.line}: a new account needs a class.</Trans>
       );
+    case "class-type-mismatch": {
+      const { line, accountType } = error;
+      const accountClass = error.class;
+      return (
+        <Trans>
+          Chart line {line}: type "{accountType}" is not a type of class{" "}
+          {accountClass}.
+        </Trans>
+      );
+    }
     case "group-class-mismatch": {
       const { line, group } = error;
       return (
@@ -218,7 +117,7 @@ function PlanErrorMessage({
     }
     case "duplicate-default": {
       const { line, firstLine } = error;
-      const name = defaultLabel(error.key);
+      const name = defaultKeyLabel(error.key);
       return (
         <Trans>
           Default accounts line {line}: {name} is already on line {firstLine}.
@@ -234,7 +133,7 @@ function PlanErrorMessage({
       );
     }
     case "default-missing": {
-      const name = defaultLabel(error.key);
+      const name = defaultKeyLabel(error.key);
       return <Trans>{name} needs an account number.</Trans>;
     }
     case "account-has-history":
@@ -289,7 +188,7 @@ export default function AccountImportReview({
   rows,
   accounts,
   companies,
-  targets,
+  isDisabled,
   onTarget
 }: AccountImportReviewProps) {
   const { t } = useLingui();
@@ -303,7 +202,6 @@ export default function AccountImportReview({
     label: `${r.number} ${r.name}`,
     value: String(r.line)
   }));
-  const merged = new Set(plan.merges.map((m) => m.sourceId));
 
   return (
     <>
@@ -329,7 +227,7 @@ export default function AccountImportReview({
         </Alert>
       )}
 
-      {plan.exceptions.length > 0 && (
+      {plan.replacements.length > 0 && (
         <SetupSection
           title={<Trans>These accounts need a replacement</Trans>}
           description={
@@ -354,11 +252,11 @@ export default function AccountImportReview({
               </Tr>
             </Thead>
             <Tbody>
-              {plan.exceptions.map((exception) => (
-                <Tr key={exception.accountId}>
-                  <Td>{label(accounts[exception.accountId])}</Td>
+              {plan.replacements.map((replacement) => (
+                <Tr key={replacement.accountId}>
+                  <Td>{label(accounts[replacement.accountId])}</Td>
                   <Td>
-                    {exception.companyIds
+                    {replacement.companyIds
                       .map((id) => companyName.get(id) ?? id)
                       .join(", ")}
                   </Td>
@@ -367,14 +265,15 @@ export default function AccountImportReview({
                       size="sm"
                       options={rowOptions}
                       value={
-                        targets[exception.accountId] === undefined
+                        replacement.targetLine === null
                           ? undefined
-                          : String(targets[exception.accountId])
+                          : String(replacement.targetLine)
                       }
+                      isReadOnly={isDisabled}
                       placeholder={t`Pick an account`}
                       onChange={(value) =>
                         onTarget(
-                          exception.accountId,
+                          replacement.accountId,
                           value ? Number(value) : null
                         )
                       }
@@ -453,12 +352,10 @@ export default function AccountImportReview({
       <ActionTable
         title={<Trans>Deleted</Trans>}
         headers={[t`Carbon account`]}
-        rows={plan.deletes
-          .filter((accountId) => !merged.has(accountId))
-          .map((accountId) => ({
-            key: accountId,
-            cells: [label(accounts[accountId])]
-          }))}
+        rows={plan.deletes.map((accountId) => ({
+          key: accountId,
+          cells: [label(accounts[accountId])]
+        }))}
       />
     </>
   );

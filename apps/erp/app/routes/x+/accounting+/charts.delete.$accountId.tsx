@@ -5,29 +5,32 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { isAccountInUse } from "@carbon/database/account-import-reads";
+import { getLogger } from "@carbon/logger";
 import { getDatabaseErrorMessage, redirect } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import {
-  deleteAccount,
-  getAccount,
-  getAccountInUse
-} from "~/modules/accounting";
+import { deleteAccount, getAccount } from "~/modules/accounting";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "accounting/charts.delete");
+
+/** Shown when anything refers to the account; the database refuses it too. */
+const IN_USE_MESSAGE =
+  "This account is used by documents, journals or default accounts, so it cannot be deleted.";
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
-    view: "accounting"
-  });
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    { view: "accounting" }
+  );
   const { accountId } = params;
   if (!accountId) throw notFound("accountId not found");
 
-  const [account, inUse] = await Promise.all([
-    getAccount(client, accountId),
-    getAccountInUse(client, accountId)
-  ]);
+  const account = await getAccount(client, accountId);
   if (account.error) {
     throw redirect(
       path.to.chartOfAccounts,
@@ -35,7 +38,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { account: account.data, inUse: inUse.data ?? false };
+  // Across every company of the group: the chart is shared.
+  let inUse: boolean;
+  try {
+    inUse = await isAccountInUse(
+      getDatabaseClient(),
+      companyGroupId,
+      accountId
+    );
+  } catch (err) {
+    logger.error("Failed to check whether an account is in use", {
+      companyId,
+      accountId,
+      error: err
+    });
+    throw redirect(
+      path.to.chartOfAccounts,
+      await flash(request, error(err, "Failed to get account"))
+    );
+  }
+
+  return { account: account.data, inUse };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -69,8 +92,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         error(
           deleteError,
           getDatabaseErrorMessage(deleteError, "Failed to delete account", {
-            referenced:
-              "This account has journal lines, so it cannot be deleted."
+            referenced: IN_USE_MESSAGE
           })
         )
       )
@@ -100,7 +122,7 @@ export default function DeleteAccountRoute() {
       name={account.name}
       text={
         inUse
-          ? t`${label} has journal lines, so it cannot be deleted.`
+          ? t`${label} is used by documents, journals or default accounts, so it cannot be deleted.`
           : t`Are you sure you want to delete the account: ${label}? This cannot be undone.`
       }
       isDisabled={inUse}

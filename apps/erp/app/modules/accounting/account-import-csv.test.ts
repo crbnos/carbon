@@ -7,9 +7,14 @@ import type {
   AccountImportContext,
   ChartAccount
 } from "@carbon/database/account-import";
+import { encodeCsv } from "@carbon/files/csv";
 import { describe, expect, it } from "vitest";
 import {
+  CHART_CSV_COLUMNS,
+  chartTemplate,
   defaultAccountsTemplate,
+  normalizeAccountClass,
+  normalizeAccountType,
   parseChartCsv,
   parseDefaultsCsv
 } from "./account-import-csv";
@@ -77,6 +82,24 @@ describe("parseChartCsv", () => {
       "1020,Old Bank,Asset,Cash,Inactive"
     ].join("\n");
     expect(parseChartCsv(csv).rows?.map((row) => row.number)).toEqual(["1010"]);
+  });
+
+  it("skips blank and comma-only rows, and names the real line", () => {
+    const csv = [
+      "Number,Name,Class,Group",
+      "1010,Bank,Asset,Cash",
+      ",,,",
+      "",
+      "1020,,Asset,Cash"
+    ].join("\n");
+    expect(parseChartCsv(csv).errors).toEqual([
+      { code: "missing-name", line: 5 }
+    ]);
+  });
+
+  it("uses the first of two columns with the same header", () => {
+    const csv = ["Number,Name,Group,Group", "1010,Bank,Cash,Other"].join("\n");
+    expect(parseChartCsv(csv).rows?.[0]?.group).toBe("Cash");
   });
 
   it("refuses an empty file and a file with only a header", () => {
@@ -219,5 +242,90 @@ describe("defaultAccountsTemplate", () => {
       "Current Account": "1500 PP&E",
       "Account Number": ""
     });
+  });
+});
+
+describe("chartTemplate", () => {
+  const account = (
+    id: string,
+    number: string,
+    name: string,
+    extra: Partial<ChartAccount> = {}
+  ): ChartAccount => ({
+    id,
+    number,
+    name,
+    class: "Asset",
+    accountType: "Bank",
+    incomeBalance: "Balance Sheet",
+    parentId: "g1",
+    isGroup: false,
+    isSystem: false,
+    active: true,
+    ...extra
+  });
+  const ctx: AccountImportContext = {
+    chart: [
+      account("a2", "1110", "Receivables", {
+        accountType: "Accounts Receivable"
+      }),
+      account("g1", "1000", "Current Assets", {
+        isGroup: true,
+        parentId: null
+      }),
+      account("a1", "1020", "Checking"),
+      account("a3", "1030", "Old Bank", { active: false })
+    ],
+    companies: [{ id: "c1", name: "Parent", hasCutover: false }],
+    defaultsByCompany: {},
+    fixedAssetClasses: [],
+    usage: {},
+    importingCompanyId: "c1"
+  };
+
+  it("lists the active accounts by number, under their group", () => {
+    expect(chartTemplate(ctx)).toEqual([
+      {
+        "Account Number": "1020",
+        "Account Name": "Checking",
+        Class: "Asset",
+        Type: "Bank",
+        Group: "Current Assets"
+      },
+      {
+        "Account Number": "1110",
+        "Account Name": "Receivables",
+        Class: "Asset",
+        Type: "Accounts Receivable",
+        Group: "Current Assets"
+      }
+    ]);
+  });
+
+  it("reads back through the chart parser", () => {
+    const csv = encodeCsv(chartTemplate(ctx), {
+      fields: [...CHART_CSV_COLUMNS]
+    });
+    const parsed = parseChartCsv(csv);
+    expect(parsed.errors).toBeNull();
+    expect(parsed.rows?.map((r) => [r.number, r.class, r.accountType])).toEqual(
+      [
+        ["1020", "Asset", "Bank"],
+        ["1110", "Asset", "Accounts Receivable"]
+      ]
+    );
+  });
+});
+
+describe("normalizing a chart export", () => {
+  it("reads classes and types in the words exports use", () => {
+    expect(normalizeAccountClass("Income")).toBe("Revenue");
+    expect(normalizeAccountClass("Liabilities")).toBe("Liability");
+    expect(normalizeAccountClass("Bogus")).toBeNull();
+    expect(normalizeAccountType("accounts receivable (a/r)")).toBe(
+      "Accounts Receivable"
+    );
+    expect(normalizeAccountType("Bank")).toBe("Bank");
+    expect(normalizeAccountType("Bogus")).toBeNull();
   });
 });

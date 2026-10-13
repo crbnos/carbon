@@ -18,23 +18,23 @@ import {
 } from "@carbon/database/account-import";
 import { loadAccountImportContext } from "@carbon/database/account-import-reads";
 import { getLogger } from "@carbon/logger";
-import { Button } from "@carbon/react";
+import { Button, File } from "@carbon/react";
 import { serverFns } from "@carbon/server-functions";
 import { getErrorMessage, redirect } from "@carbon/utils";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuDownload } from "react-icons/lu";
+import { type ChangeEvent, useState } from "react";
+import { LuDownload, LuFileUp } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Link, useFetcher } from "react-router";
+import { data, Link, useFetcher, useSearchParams } from "react-router";
 import {
   SetupBody,
   SetupFooter,
   SetupFrame,
   SetupSection
 } from "~/components/Setup";
-import { useSettings } from "~/hooks";
 import {
+  type AccountImportCsvError,
   parseChartCsv,
   parseDefaultsCsv
 } from "~/modules/accounting/account-import-csv";
@@ -42,9 +42,9 @@ import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import {
   type AccountImportAccount,
   AccountImportCsvErrors,
-  AccountImportFileButton,
   AccountImportReview
 } from "~/modules/accounting/ui/ChartOfAccounts";
+import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -56,8 +56,32 @@ export const handle: Handle = {
   to: path.to.chartOfAccountsImport
 };
 
+/** A chart file is a few thousand rows; anything this long is not one. */
+const MAX_FILE_LENGTH = 2_000_000;
+
+/** Where Cancel and a finished import go: back to the activation wizard when
+ *  the import was opened from it. */
+function returnPath(params: URLSearchParams) {
+  return params.get("from") === "activation"
+    ? path.to.accountingActivationStep("chart")
+    : path.to.chartOfAccounts;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, { update: "accounting" });
+  const { client, companyId } = await requirePermissions(request, {
+    update: "accounting"
+  });
+  const settings = await getCompanySettings(client, companyId);
+  if (settings.error) {
+    logger.error("Failed to read the company settings", {
+      companyId,
+      error: settings.error
+    });
+  }
+  // The chart is imported only before accounting is set up.
+  if (hasAccountingCutover(settings.data)) {
+    throw redirect(path.to.chartOfAccounts);
+  }
   return null;
 }
 
@@ -74,21 +98,30 @@ function readResolutions(value: FormDataEntryValue | null) {
   }
 }
 
-const readFile = (value: FormDataEntryValue | null) => {
-  const text = typeof value === "string" ? value : "";
-  return text.trim() === "" ? null : text;
-};
+/** A file field's parse result, or null when no file was uploaded. */
+function readFile<Row>(
+  value: FormDataEntryValue | null,
+  parse: (
+    text: string
+  ) =>
+    | { rows: Row[]; errors: null }
+    | { rows: null; errors: AccountImportCsvError[] }
+) {
+  if (typeof value !== "string") return null;
+  if (value.length > MAX_FILE_LENGTH) {
+    const errors: AccountImportCsvError[] = [{ code: "too-large" }];
+    return { rows: null, errors };
+  }
+  return parse(value);
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, { update: "accounting" });
 
   const formData = await request.formData();
-  const intent = formData.get("intent");
-  const chartText = readFile(formData.get("chart"));
-  const defaultsText = readFile(formData.get("defaults"));
-  const chart = chartText ? parseChartCsv(chartText) : null;
-  const defaults = defaultsText ? parseDefaultsCsv(defaultsText) : null;
+  const chart = readFile(formData.get("chart"), parseChartCsv);
+  const defaults = readFile(formData.get("defaults"), parseDefaultsCsv);
   const files = {
     chart: chart && { errors: chart.errors, count: chart.rows?.length },
     defaults: defaults && {
@@ -98,10 +131,10 @@ export async function action({ request }: ActionFunctionArgs) {
   };
   // The plan needs both files: the chart says which accounts exist, the
   // defaults say which Carbon account each one is.
-  if (!chart?.rows || !defaults?.rows) return { files };
+  if (!chart?.rows || !defaults?.rows) return { files, review: null };
   const resolutions = readResolutions(formData.get("resolutions"));
 
-  if (intent === "apply") {
+  if (formData.get("intent") === "apply") {
     const result = await serverFns
       .as({ client, db: getDatabaseClient(), companyId, userId })
       .invoke("apply-account-import", {
@@ -114,8 +147,9 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         error: result.error
       });
+      // Stay on the page, files and picks kept, and say why.
       return data(
-        { files, applyFailed: true },
+        { files, review: null },
         await flash(
           request,
           error(
@@ -130,11 +164,11 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const { counts } = result.data;
     throw redirect(
-      path.to.chartOfAccounts,
+      returnPath(new URL(request.url).searchParams),
       await flash(
         request,
         success(
-          `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted - counts.merged} deleted`
+          `Chart imported: ${counts.updated} updated, ${counts.created} new, ${counts.merged} merged, ${counts.deleted} deleted`
         )
       )
     );
@@ -153,12 +187,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     return {
       files,
-      review: {
-        plan,
-        rows: chart.rows,
-        accounts,
-        companies: ctx.companies
-      }
+      review: { plan, rows: chart.rows, accounts, companies: ctx.companies }
     };
   } catch (err) {
     logger.error("Failed to plan the chart of accounts import", {
@@ -166,7 +195,7 @@ export async function action({ request }: ActionFunctionArgs) {
       error: err
     });
     return data(
-      { files, planFailed: true },
+      { files, review: null },
       await flash(request, error(err, "Failed to read the chart of accounts"))
     );
   }
@@ -174,14 +203,23 @@ export async function action({ request }: ActionFunctionArgs) {
 
 type UploadedFile = { name: string; text: string };
 
+/** Reads the picked file, and clears the input so the same file can be
+ *  picked again after it is edited. */
+async function readPicked(event: ChangeEvent<HTMLInputElement>) {
+  const file = event.target.files?.[0];
+  event.target.value = "";
+  return file ? { name: file.name, text: await file.text() } : null;
+}
+
 export default function ChartOfAccountsImportRoute() {
   const { t } = useLingui();
-  const settings = useSettings();
+  const [searchParams] = useSearchParams();
   const planner = useFetcher<typeof action>();
   const applier = useFetcher<typeof action>();
   const [chart, setChart] = useState<UploadedFile | null>(null);
   const [defaults, setDefaults] = useState<UploadedFile | null>(null);
   const [targets, setTargets] = useState<Record<string, number>>({});
+  const planning = planner.state !== "idle";
 
   const submitPlan = (
     nextChart: UploadedFile | null,
@@ -191,21 +229,26 @@ export default function ChartOfAccountsImportRoute() {
     planner.submit(
       {
         intent: "plan",
-        chart: nextChart?.text ?? "",
-        defaults: nextDefaults?.text ?? "",
+        ...(nextChart ? { chart: nextChart.text } : {}),
+        ...(nextDefaults ? { defaults: nextDefaults.text } : {}),
         resolutions: JSON.stringify({ targets: nextTargets })
       },
       { method: "post" }
     );
   };
 
-  const onChart = (file: UploadedFile) => {
+  // A new file starts the picks over: they name lines of the old one.
+  const onChart = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = await readPicked(event);
+    if (!file) return;
     setChart(file);
     setTargets({});
     submitPlan(file, defaults, {});
   };
 
-  const onDefaults = (file: UploadedFile) => {
+  const onDefaults = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = await readPicked(event);
+    if (!file) return;
     setDefaults(file);
     setTargets({});
     submitPlan(chart, file, {});
@@ -219,27 +262,18 @@ export default function ChartOfAccountsImportRoute() {
     submitPlan(chart, defaults, next);
   };
 
-  const result = planner.data;
-  const files = result?.files;
-  const review = result && "review" in result ? result.review : null;
+  const files = planner.data?.files;
+  const review = planner.data?.review ?? null;
   const plan = review?.plan;
-  const activated = hasAccountingCutover(settings);
   const canApply =
-    !activated &&
-    !!chart &&
-    !!defaults &&
-    !!plan &&
-    isApplicable(plan) &&
-    planner.state === "idle";
-  const merged = plan?.merges.length ?? 0;
-  const updated = plan?.updates.length ?? 0;
-  const created = plan?.creates.length ?? 0;
-  const deleted = (plan?.deletes.length ?? 0) - merged;
+    !!chart && !!defaults && !!plan && isApplicable(plan) && !planning;
 
   const fileSummary = (file: UploadedFile | null, count: number | undefined) =>
     file ? (
       <p className="text-sm text-muted-foreground">
-        {count === undefined ? file.name : t`${file.name} · ${count} rows`}
+        {count === undefined
+          ? file.name
+          : t`${file.name} · ${plural(count, { one: "# row", other: "# rows" })}`}
       </p>
     ) : null;
 
@@ -260,16 +294,28 @@ export default function ChartOfAccountsImportRoute() {
           description={
             <Trans>
               Export your chart from your current system as a CSV, one row per
-              account, with its number, name, class, type and group. Carbon
-              keeps only the accounts in this file.
+              account, with its number, name, class, type and group, or start
+              from the template of the current chart. Carbon keeps only the
+              accounts in this file.
             </Trans>
           }
           actions={
-            <AccountImportFileButton
-              label={chart ? t`Replace chart` : t`Upload chart`}
-              isLoading={planner.state !== "idle"}
-              onFile={onChart}
-            />
+            <>
+              <Button variant="secondary" leftIcon={<LuDownload />} asChild>
+                <Link to={path.to.api.chartOfAccountsCsv} reloadDocument>
+                  <Trans>Download template</Trans>
+                </Link>
+              </Button>
+              <File
+                accept=".csv,text/csv"
+                variant="primary"
+                leftIcon={<LuFileUp />}
+                isLoading={planning}
+                onChange={onChart}
+              >
+                {chart ? t`Replace chart` : t`Upload chart`}
+              </File>
+            </>
           }
         >
           {fileSummary(chart, files?.chart?.count)}
@@ -294,11 +340,15 @@ export default function ChartOfAccountsImportRoute() {
                   <Trans>Download template</Trans>
                 </Link>
               </Button>
-              <AccountImportFileButton
-                label={defaults ? t`Replace defaults` : t`Upload defaults`}
-                isLoading={planner.state !== "idle"}
-                onFile={onDefaults}
-              />
+              <File
+                accept=".csv,text/csv"
+                variant="primary"
+                leftIcon={<LuFileUp />}
+                isLoading={planning}
+                onChange={onDefaults}
+              >
+                {defaults ? t`Replace defaults` : t`Upload defaults`}
+              </File>
             </>
           }
         >
@@ -314,7 +364,7 @@ export default function ChartOfAccountsImportRoute() {
             rows={review.rows}
             accounts={review.accounts}
             companies={review.companies}
-            targets={targets}
+            isDisabled={planning}
             onTarget={onTarget}
           />
         )}
@@ -323,14 +373,14 @@ export default function ChartOfAccountsImportRoute() {
         summary={
           plan ? (
             <span className="text-muted-foreground">
-              {t`${updated} updated · ${created} new · ${merged} merged · ${deleted} deleted`}
+              {t`${plan.updates.length} updated · ${plan.creates.length} new · ${plan.merges.length} merged · ${plan.deletes.length} deleted`}
             </span>
           ) : null
         }
         actions={
           <>
             <Button variant="secondary" asChild>
-              <Link to={path.to.chartOfAccounts}>
+              <Link to={returnPath(searchParams)}>
                 <Trans>Cancel</Trans>
               </Link>
             </Button>

@@ -48,7 +48,7 @@ export default function AccountingActivationChartRoute() {
           }
           actions={
             <Button leftIcon={<LuFileUp />} asChild>
-              <Link to={path.to.chartOfAccountsImport}>
+              <Link to={`${path.to.chartOfAccountsImport}?from=activation`}>
                 <Trans>Import your chart</Trans>
               </Link>
             </Button>
