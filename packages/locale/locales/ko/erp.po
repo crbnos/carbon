@@ -565,6 +565,8 @@ msgstr "{name}은 {end}에 끝남 (이전: 제한 없음)"
 
 msgid "{name} needs an account number."
 msgstr "{name}은 계정 번호가 필요합니다."
+msgid "{name} path"
+msgstr "{name} 경로"
 
 msgid "{name} replaced"
 msgstr "{name} 대체됨"
@@ -6521,6 +6523,9 @@ msgstr "사용자 정의 필드"
 msgid "Custom fields are not available for items yet."
 msgstr "품목에 사용자 정의 필드를 아직 사용할 수 없습니다."
 
+msgid "Custom path"
+msgstr "사용자 정의 경로"
+
 msgid "Custom SOW · we manage"
 msgstr "맞춤 SOW · 저희가 관리"
 
@@ -10146,6 +10151,9 @@ msgstr "플릿 단위"
 msgid "Fleet Units"
 msgstr "플릿 단위"
 
+msgid "Flip over"
+msgstr "뒤집기"
+
 msgid "For <0/>"
 msgstr "대상 <0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검�
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "각 수량의 단가를 계산한 방법"
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "단계에서 전체 빌드를 돌리는 방향입니다(예: 아랫면에 부품을 끼우기 위해 뒤집기). 같은 빌드의 이후 단계는 다른 단계에서 빌드를 다시 돌릴 때까지 이 방향을 유지합니다."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 계측기의 사용 방식 — 보통 검사(정기 점검) 또는 표준기(다른 계측기 교정)."
@@ -12145,7 +12156,7 @@ msgstr "성"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr "마지막 푸시 {when} 실패: {0}"
+msgstr "마지막 전송 {when} 실패: {0}"
 
 msgid "Last push {when}:"
 msgstr "마지막 푸시 {when}:"
@@ -15133,6 +15144,12 @@ msgstr "보유수량: {before}에서 {after}(으)로"
 msgid "On Hold"
 msgstr "보류"
 
+msgid "On its side"
+msgstr "옆으로 눕힘"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "단계 {orientationSource}에서 옆으로 눕힘"
+
 msgid "On Jobs"
 msgstr "작업 지시에"
 
@@ -15673,6 +15690,9 @@ msgstr "주문"
 
 msgid "Orders submitted"
 msgstr "제출된 주문"
+
+msgid "Orientation"
+msgstr "방향"
 
 msgid "Origin"
 msgstr "출처"
@@ -18980,6 +19000,9 @@ msgstr "신규 직원의 기본 권한을 설정하는 역할"
 msgid "Room to grow without bolting on more tools"
 msgstr "추가 도구 없이도 성장할 수 있는 여유"
 
+msgid "Rotate"
+msgstr "회전"
+
 msgid "ROU Amortization"
 msgstr "ROU 상각"
 
@@ -20777,6 +20800,12 @@ msgstr "특정 품목"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "공급업체, 품목 또는 카테고리별 지출 — 주요 원가 요인"
 
+msgid "Spin left"
+msgstr "왼쪽으로 회전"
+
+msgid "Spin right"
+msgstr "오른쪽으로 회전"
+
 msgid "Split"
 msgstr "분할"
 
@@ -21155,6 +21184,9 @@ msgstr "소조립 {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "하위 조립품 유효기한만"
+
+msgid "Sub-assembly path"
+msgstr "소부조립품 경로"
 
 msgid "Sub-Departments"
 msgstr "하위 부서"
@@ -22409,6 +22441,9 @@ msgstr "재고를 분류하는 자재 유형"
 msgid "The model is still loading."
 msgstr "모델이 여전히 로드 중입니다."
 
+msgid "The model isn't ready yet"
+msgstr "모델이 아직 준비되지 않았습니다"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "귀사 회계연도가 시작되는 월입니다. 기간은 이 월부터 번호가 매겨집니다."
 
@@ -22511,8 +22546,11 @@ msgstr "상위 품목이 제작될 때 이 품목은 별도의 작업으로 제�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "이 단계의 구성 요소가 재생 중에 제자리로 이동하는 경로; 모델에서 계산되거나 편집 경로를 사용하여 손으로 그려짐."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "완성된 소부조립품이 조립에 참여할 때 하나의 부분으로 이동하는 경로입니다. 단계의 자체 부품이 도착하기 전에 도착하며, 경로 편집으로 직접 그릴 때까지 조립 옆에서 들어옵니다."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "이 단계의 부품이 재생 중에 제자리로 이동하는 경로입니다. 모델에서 계산되거나 경로 편집으로 직접 그릴 수 있으며, 모든 웨이포인트에서 부품을 회전시킬 수 있습니다."
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "발효일부터의 지불입니다. 개시일의 매년 기념일에 인상이 계속 증가합니다"
@@ -23491,6 +23529,12 @@ msgstr "타이머 실행 중"
 msgid "Timezone"
 msgstr "시간대"
 
+msgid "Tip away from you"
+msgstr "몸에서 멀어지는 방향으로 기울이기"
+
+msgid "Tip toward you"
+msgstr "몸 쪽으로 기울이기"
+
 msgid "Title"
 msgstr "제목"
 
@@ -24411,6 +24455,15 @@ msgstr "업로드 중…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "전환을 클릭하면 다음의 내부 부품 번호로 부품이 생성됩니다:"
+
+msgid "Upright"
+msgstr "똑바로 세움"
+
+msgid "Upside down"
+msgstr "거꾸로"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "단계 {orientationSource}에서 거꾸로"
 
 msgid "URL"
 msgstr "URL"

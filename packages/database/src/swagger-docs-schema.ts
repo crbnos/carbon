@@ -59770,6 +59770,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -59931,6 +59934,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -60044,6 +60050,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -145292,6 +145301,9 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        orientation: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -198120,6 +198132,12 @@ export default {
     },
     "rowFilter.assemblyInstructionStep.isSubAssembly": {
       name: "isSubAssembly",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.orientation": {
+      name: "orientation",
       required: false,
       in: "query",
       type: "string"

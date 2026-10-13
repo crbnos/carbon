@@ -102,7 +102,11 @@ around its generic FK-null + topological delete, all inside the apply transactio
    customer-XOR-supplier CHECK the FK-nulling pass would violate.
 3. The existing header-first deletes (invoices, orders, quotes, RFQs), MRP output, and
    the four model-only step-slide tables (`MODEL_SLIDE_TABLES`) — their
-   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass.
+   `imagePath OR modelUploadId` CHECK cannot survive the FK-nulling pass. Any other
+   seeded table with a CHECK that needs one of several nullable FKs set goes in
+   `PARENT_CHECK_TABLES` (today `customerContractInvoiceLine`: an invoice OR a credit
+   memo). Missing one fails every re-apply with "new row … violates check constraint",
+   while a first apply onto an empty company still works.
 4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
    type groups are removed** — the partner interceptors mint one `group` per partner and
    type, and `group` is preserved, so without this every re-apply left the previous
@@ -574,6 +578,14 @@ and `applyDatasetTiers` (out of `applyDataset`). Both extracted functions own no
 which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
+
+After the coverage check it applies the dataset AGAIN over the seeded scratch company with
+`wipeFirst: true` — the Settings → Demo Data path on a company that already has data. That
+is the only way to exercise the wipe against real rows: a new CHECK the FK-nulling pass
+cannot survive fails here as "re-applying over the seeded company failed (datasets/wipe.ts)".
+Before that pass it dates the seeded locations one second after the bootstrap one, because
+`buildCtx` keeps the OLDEST location and inside one transaction `NOW()` gives every row the
+same `createdAt`.
 
 After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
 table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 255 tables, measured across all four

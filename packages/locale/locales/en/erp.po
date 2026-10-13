@@ -565,6 +565,8 @@ msgstr "{name} ends {end} (was open-ended)"
 
 msgid "{name} needs an account number."
 msgstr "{name} needs an account number."
+msgid "{name} path"
+msgstr "{name} path"
 
 msgid "{name} replaced"
 msgstr "{name} replaced"
@@ -6521,6 +6523,9 @@ msgstr "Custom Fields"
 msgid "Custom fields are not available for items yet."
 msgstr "Custom fields are not available for items yet."
 
+msgid "Custom path"
+msgstr "Custom path"
+
 msgid "Custom SOW · we manage"
 msgstr "Custom SOW · we manage"
 
@@ -10146,6 +10151,9 @@ msgstr "Fleet Unit"
 msgid "Fleet Units"
 msgstr "Fleet Units"
 
+msgid "Flip over"
+msgstr "Flip over"
+
 msgid "For <0/>"
 msgstr "For <0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "How the sample size is decided — Inspect All, Inspect First N, Percent
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "How the unit price of each quantity was calculated."
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
@@ -15133,6 +15144,12 @@ msgstr "On hand {before} to {after}"
 msgid "On Hold"
 msgstr "On Hold"
 
+msgid "On its side"
+msgstr "On its side"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "On its side, from step {orientationSource}"
+
 msgid "On Jobs"
 msgstr "On Jobs"
 
@@ -15673,6 +15690,9 @@ msgstr "Orders"
 
 msgid "Orders submitted"
 msgstr "Orders submitted"
+
+msgid "Orientation"
+msgstr "Orientation"
 
 msgid "Origin"
 msgstr "Origin"
@@ -18980,6 +19000,9 @@ msgstr "Roles that set default permissions for new employees"
 msgid "Room to grow without bolting on more tools"
 msgstr "Room to grow without bolting on more tools"
 
+msgid "Rotate"
+msgstr "Rotate"
+
 msgid "ROU Amortization"
 msgstr "ROU Amortization"
 
@@ -20777,6 +20800,12 @@ msgstr "Specific Items"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Spend by supplier, item, or category — your biggest cost drivers"
 
+msgid "Spin left"
+msgstr "Spin left"
+
+msgid "Spin right"
+msgstr "Spin right"
+
 msgid "Split"
 msgstr "Split"
 
@@ -21155,6 +21184,9 @@ msgstr "Sub-Assembly {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "Sub-assembly expiries only"
+
+msgid "Sub-assembly path"
+msgstr "Sub-assembly path"
 
 msgid "Sub-Departments"
 msgstr "Sub-Departments"
@@ -22409,6 +22441,9 @@ msgstr "The material types you organize your stock by"
 msgid "The model is still loading."
 msgstr "The model is still loading."
 
+msgid "The model isn't ready yet"
+msgstr "The model isn't ready yet"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "The month your financial year begins; periods are numbered from this month."
 
@@ -22511,8 +22546,11 @@ msgstr "The part is manufactured as its own job when the parent that needs it is
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "The part is taken from existing stock when its parent is built — no new job or purchase order."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
@@ -23491,6 +23529,12 @@ msgstr "Timer running"
 msgid "Timezone"
 msgstr "Timezone"
 
+msgid "Tip away from you"
+msgstr "Tip away from you"
+
+msgid "Tip toward you"
+msgstr "Tip toward you"
+
 msgid "Title"
 msgstr "Title"
 
@@ -24411,6 +24455,15 @@ msgstr "Uploading…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Upon clicking Convert, parts will be created with the following internal part numbers:"
+
+msgid "Upright"
+msgstr "Upright"
+
+msgid "Upside down"
+msgstr "Upside down"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "Upside down, from step {orientationSource}"
 
 msgid "URL"
 msgstr "URL"

@@ -565,6 +565,8 @@ msgstr "{name} termina {end} (era sem data de término)"
 
 msgid "{name} needs an account number."
 msgstr "{name} precisa de um número de conta."
+msgid "{name} path"
+msgstr "{name} trajetória"
 
 msgid "{name} replaced"
 msgstr "{name} substituído"
@@ -6521,6 +6523,9 @@ msgstr "Campos Personalizados"
 msgid "Custom fields are not available for items yet."
 msgstr "Os campos personalizados ainda não estão disponíveis para itens."
 
+msgid "Custom path"
+msgstr "Trajetória personalizada"
+
 msgid "Custom SOW · we manage"
 msgstr "SOW personalizado · gerenciamos"
 
@@ -10146,6 +10151,9 @@ msgstr "Unidade de frota"
 msgid "Fleet Units"
 msgstr "Unidades da Frota"
 
+msgid "Flip over"
+msgstr "Virar"
+
 msgid "For <0/>"
 msgstr "Para <0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "Como o tamanho da amostra é decidido — Inspecionar Tudo, Inspecionar 
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "Como o preço unitário de cada quantidade foi calculado."
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "Como o conjunto inteiro fica posicionado em uma etapa, por exemplo virado para encaixar peças na parte de baixo. As etapas seguintes do mesmo conjunto mantêm essa posição até que uma etapa gire o conjunto novamente."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Como este instrumento de medição é usado — Normal (verificações regulares) ou Padrão (calibra outros instrumentos de medição)."
@@ -15133,6 +15144,12 @@ msgstr "Em mão: de {before} para {after}"
 msgid "On Hold"
 msgstr "Suspenso"
 
+msgid "On its side"
+msgstr "De lado"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "De lado, a partir da etapa {orientationSource}"
+
 msgid "On Jobs"
 msgstr "Em ordens de produção"
 
@@ -15673,6 +15690,9 @@ msgstr "Pedidos"
 
 msgid "Orders submitted"
 msgstr "Pedidos enviados"
+
+msgid "Orientation"
+msgstr "Orientação"
 
 msgid "Origin"
 msgstr "Origem"
@@ -18980,6 +19000,9 @@ msgstr "Funções que definem permissões padrão para novos funcionários"
 msgid "Room to grow without bolting on more tools"
 msgstr "Espaço para crescer sem adicionar mais ferramentas"
 
+msgid "Rotate"
+msgstr "Girar"
+
 msgid "ROU Amortization"
 msgstr "Amortização de ROU"
 
@@ -20777,6 +20800,12 @@ msgstr "Itens Específicos"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Gastos por fornecedor, item ou categoria — seus maiores impulsionadores de custo"
 
+msgid "Spin left"
+msgstr "Girar para a esquerda"
+
+msgid "Spin right"
+msgstr "Girar para a direita"
+
 msgid "Split"
 msgstr "Dividir"
 
@@ -21155,6 +21184,9 @@ msgstr "Sub-Montagem {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "Apenas expirações de subconjuntos"
+
+msgid "Sub-assembly path"
+msgstr "Trajetória de sub-montagem"
 
 msgid "Sub-Departments"
 msgstr "Sub-Departamentos"
@@ -22409,6 +22441,9 @@ msgstr "Os tipos de material pelos quais você organiza seu estoque"
 msgid "The model is still loading."
 msgstr "O modelo ainda está carregando."
 
+msgid "The model isn't ready yet"
+msgstr "O modelo ainda não está pronto"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "O mês em que seu ano fiscal começa; os períodos são numerados a partir deste mês."
 
@@ -22511,8 +22546,11 @@ msgstr "A peça é fabricada como seu próprio trabalho quando o pai que a neces
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "A peça é retirada do estoque existente quando seu pai é construído - nenhum novo trabalho ou pedido de compra."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "O caminho que os componentes desta etapa percorrem até sua posição durante a reprodução; calculado a partir do modelo ou desenhado manualmente com Editar Caminho."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "A trajetória que a sub-montagem acabada percorre como uma peça única quando se integra à montagem. Ela chega antes das próprias peças da etapa; até você desenhar uma com Editar Trajetória, ela desliza pela lateral da montagem."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "A trajetória que os componentes da etapa percorrem para se posicionarem durante a reprodução; calculada a partir do modelo ou desenhada manualmente com Editar Trajetória, onde uma peça também pode ser girada em qualquer ponto de passagem."
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "O pagamento a partir da data efetiva. A escalação ainda sobe a cada aniversário do início."
@@ -22576,7 +22614,7 @@ msgid "The purchase order"
 msgstr "O pedido de compra"
 
 msgid "The push to Mount did not start. Try again."
-msgstr "O envio para Mount não foi iniciado. Tente novamente."
+msgstr "O envio ao Mount não foi iniciado. Tente novamente."
 
 msgid "The push to Mount failed"
 msgstr "O envio para Mount falhou"
@@ -23490,6 +23528,12 @@ msgstr "Cronômetro em execução"
 
 msgid "Timezone"
 msgstr "Fuso Horário"
+
+msgid "Tip away from you"
+msgstr "Inclinar para longe de você"
+
+msgid "Tip toward you"
+msgstr "Inclinar em sua direção"
 
 msgid "Title"
 msgstr "Título"
@@ -24411,6 +24455,15 @@ msgstr "Enviando…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Ao clicar em Converter, as peças serão criadas com os seguintes números de peça internos:"
+
+msgid "Upright"
+msgstr "Em pé"
+
+msgid "Upside down"
+msgstr "De cabeça para baixo"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "De cabeça para baixo, a partir da etapa {orientationSource}"
 
 msgid "URL"
 msgstr "URL"

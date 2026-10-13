@@ -565,6 +565,8 @@ msgstr "{name} {end} tarihinde sona eriyor (daha önce açıktı)"
 
 msgid "{name} needs an account number."
 msgstr "{name} bir hesap numarasına ihtiyaç duyuyor."
+msgid "{name} path"
+msgstr "{name} yolu"
 
 msgid "{name} replaced"
 msgstr "{name} değiştirildi"
@@ -6521,6 +6523,9 @@ msgstr "Özel Alanlar"
 msgid "Custom fields are not available for items yet."
 msgstr "Özel alanlar henüz öğeler için kullanılabilir değildir."
 
+msgid "Custom path"
+msgstr "Özel yolu"
+
 msgid "Custom SOW · we manage"
 msgstr "Özel SOW · biz yönetiriz"
 
@@ -10146,6 +10151,9 @@ msgstr "Filo Birimi"
 msgid "Fleet Units"
 msgstr "Filo Adetleri"
 
+msgid "Flip over"
+msgstr "Ters çevir"
+
 msgid "For <0/>"
 msgstr "İçin <0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "Örneklem büyüklüğünün nasıl belirlendiği — Tümünü İncele,
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "Her miktarın birim fiyatı nasıl hesaplandığı."
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "Bir adımda tüm montajın nasıl çevrildiği; örneğin alt yüzeyine parça takmak için ters çevrilmesi. Aynı montajın sonraki adımları, bir adım montajı yeniden çevirene kadar bu konumu korur."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Bu ölçüm aletinin nasıl kullanıldığı — Normal (düzenli kontroller) veya Mastar (diğer ölçüm aletlerini kalibre eder)."
@@ -15133,6 +15144,12 @@ msgstr "Eldeki: {before} değerinden {after} değerine"
 msgid "On Hold"
 msgstr "Askıda"
 
+msgid "On its side"
+msgstr "Yana yatık"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "Yana yatık, {orientationSource} adımından"
+
 msgid "On Jobs"
 msgstr "İş emirlerinde"
 
@@ -15673,6 +15690,9 @@ msgstr "Siparişler"
 
 msgid "Orders submitted"
 msgstr "Siparişler gönderildi"
+
+msgid "Orientation"
+msgstr "Yönlendirme"
 
 msgid "Origin"
 msgstr "Kaynak"
@@ -18980,6 +19000,9 @@ msgstr "Yeni çalışanlar için varsayılan izinleri ayarlayan roller"
 msgid "Room to grow without bolting on more tools"
 msgstr "Daha fazla araç eklemeden büyüme için yer"
 
+msgid "Rotate"
+msgstr "Döndür"
+
 msgid "ROU Amortization"
 msgstr "KHV Amortismanı"
 
@@ -20777,6 +20800,12 @@ msgstr "Belirli Ürünler"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet sürücüleriniz"
 
+msgid "Spin left"
+msgstr "Sola döndür"
+
+msgid "Spin right"
+msgstr "Sağa döndür"
+
 msgid "Split"
 msgstr "Bölünmüş"
 
@@ -21155,6 +21184,9 @@ msgstr "Alt-Montaj {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "Yalnızca alt montaj son kullanma tarihleri"
+
+msgid "Sub-assembly path"
+msgstr "Alt-montaj yolu"
 
 msgid "Sub-Departments"
 msgstr "Alt Departmanlar"
@@ -22409,6 +22441,9 @@ msgstr "Stok organizasyonunuz için kullandığınız malzeme türleri"
 msgid "The model is still loading."
 msgstr "Model yükleniyor."
 
+msgid "The model isn't ready yet"
+msgstr "Model henüz hazır değil"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "Mali yılınızın başladığı ay; dönemler bu aydan itibaren numaralandırılır."
 
@@ -22511,8 +22546,11 @@ msgstr "Parça, ihtiyacı olan üst öğe inşa edildiğinde kendi işi olarak �
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "Parça, ebeveyninin inşa edildiğinde mevcut stoktan alınır - yeni iş veya satın alma siparişi yok."
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "Bu adımın bileşenlerinin oynatma sırasında hareket ettiği yol; modelden hesaplanmış veya Yolu Düzenle ile elle çizilmiş."
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "Bitmiş bir alt-montajın montajla birleştirildiğinde tek bir parça olarak izlediği yolu. Adımın kendi parçalarından önce gelir; Yolu Düzenle ile bir yol çizemeyene kadar, yapının yanından kaymaya devam eder."
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "Bu adımın bileşenlerinin oynatma sırasında yerlerine gitmesi için izlediği yolu; modelden çıkarılan ya da Yolu Düzenle ile el ile çizilen, burada bir parçanın herhangi bir nokta üzerinde döndürülebilir."
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "Yürürlüğe giriş tarihinden itibaren ödeme. Artış başlamanın her yıldönümünde hala adım adım artar"
@@ -23491,6 +23529,12 @@ msgstr "Zamanlayıcı çalışıyor"
 msgid "Timezone"
 msgstr "Saat Dilim"
 
+msgid "Tip away from you"
+msgstr "Sizden uzağa eğ"
+
+msgid "Tip toward you"
+msgstr "Size doğru eğ"
+
 msgid "Title"
 msgstr "Unvan"
 
@@ -24411,6 +24455,15 @@ msgstr "Yükleniyor…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "Dönüştür'e tıklanması durumunda parçalar aşağıdaki dahili parça numaralarıyla oluşturulacaktır:"
+
+msgid "Upright"
+msgstr "Dik"
+
+msgid "Upside down"
+msgstr "Baş aşağı"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "Baş aşağı, {orientationSource} adımından"
 
 msgid "URL"
 msgstr "URL"

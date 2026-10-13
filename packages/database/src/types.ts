@@ -3864,6 +3864,7 @@ export type Database = {
           minValue: number | null
           motion: Json
           notes: Json | null
+          orientation: Json | null
           parentStepId: string | null
           planConfidence: string
           required: boolean | null
@@ -3900,6 +3901,7 @@ export type Database = {
           minValue?: number | null
           motion?: Json
           notes?: Json | null
+          orientation?: Json | null
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null
@@ -3936,6 +3938,7 @@ export type Database = {
           minValue?: number | null
           motion?: Json
           notes?: Json | null
+          orientation?: Json | null
           parentStepId?: string | null
           planConfidence?: string
           required?: boolean | null

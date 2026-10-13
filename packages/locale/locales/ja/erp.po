@@ -565,6 +565,8 @@ msgstr "{name} は {end} に終了します（以前は期限なし）"
 
 msgid "{name} needs an account number."
 msgstr "{name} にはアカウント番号が必要です。"
+msgid "{name} path"
+msgstr "{name}パス"
 
 msgid "{name} replaced"
 msgstr "{name} は交換されました"
@@ -6521,6 +6523,9 @@ msgstr "カスタムフィールド"
 msgid "Custom fields are not available for items yet."
 msgstr "品目のカスタムフィールドはまだ利用可能ではありません。"
 
+msgid "Custom path"
+msgstr "カスタムパス"
+
 msgid "Custom SOW · we manage"
 msgstr "カスタムSOW · 当社が管理"
 
@@ -10146,6 +10151,9 @@ msgstr "フリートユニット"
 msgid "Fleet Units"
 msgstr "フリート個"
 
+msgid "Flip over"
+msgstr "裏返す"
+
 msgid "For <0/>"
 msgstr "用<0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "サンプルサイズがどのように決定されるか—すべてを
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "各数量の単価がどのように計算されたか。"
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "ステップ内でアセンブリ全体の向きを変えます。たとえば、底面に部品を取り付けるために裏返す場合などです。同じアセンブリの後続ステップは、別のステップで向きが変わるまでこの向きを維持します。"
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "この測定器の使用方法 — なみ検査(通常のチェック)または標準器(他の測定器を校正)"
@@ -12145,7 +12156,7 @@ msgstr "姓"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr "最後のプッシュ {when} が失敗しました: {0}"
+msgstr "前回の{when}の送信は失敗しました: {0}"
 
 msgid "Last push {when}:"
 msgstr "最後のプッシュ {when}:"
@@ -15133,6 +15144,12 @@ msgstr "手持在庫: {before} から {after}"
 msgid "On Hold"
 msgstr "保留中"
 
+msgid "On its side"
+msgstr "横向き"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "{orientationSource}のステップから横向き"
+
 msgid "On Jobs"
 msgstr "製造指図に対して"
 
@@ -15673,6 +15690,9 @@ msgstr "注文"
 
 msgid "Orders submitted"
 msgstr "注文が送信されました"
+
+msgid "Orientation"
+msgstr "向き"
 
 msgid "Origin"
 msgstr "オリジン"
@@ -18980,6 +19000,9 @@ msgstr "新しい従業員のデフォルト権限を設定するロール"
 msgid "Room to grow without bolting on more tools"
 msgstr "さらに多くのツールを追加することなく成長する余地"
 
+msgid "Rotate"
+msgstr "回転"
+
 msgid "ROU Amortization"
 msgstr "ROU償却"
 
@@ -20777,6 +20800,12 @@ msgstr "特定の品目"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "仕入先、品目、またはカテゴリ別の支出 — 最大の原価ドライバー"
 
+msgid "Spin left"
+msgstr "左に回転"
+
+msgid "Spin right"
+msgstr "右に回転"
+
 msgid "Split"
 msgstr "分割"
 
@@ -21155,6 +21184,9 @@ msgstr "サブアセンブリ {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "サブアセンブリの有効期限のみ"
+
+msgid "Sub-assembly path"
+msgstr "部分組立パス"
 
 msgid "Sub-Departments"
 msgstr "サブ部門"
@@ -22409,6 +22441,9 @@ msgstr "あなたが在庫を整理する材料タイプ"
 msgid "The model is still loading."
 msgstr "モデルはまだ読み込み中です。"
 
+msgid "The model isn't ready yet"
+msgstr "モデルはまだ準備できていません"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "財務年度が開始される月。期間はこの月から番号が付けられます。"
 
@@ -22511,8 +22546,11 @@ msgstr "必要な親が構築される場合、部品は独自のジョブとし
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "このステップのコンポーネントが再生中に所定の位置に移動するパス。モデルから計算されるか、パスの編集で手動で描画されます"
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "完成した部分組立がビルドに加わる際に1つのピースとして移動するパス。ステップの部品より前に到着します。編集パスで描くまでは、ビルドの脇からスライドして現れます。"
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "再生中にこのステップのコンポーネントが所定の位置に移動するパス。モデルから計算されるか、編集パスで手描きされます。各ウェイポイントで部品を回転させることもできます。"
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "支払は実効日からのものです。段階的上昇はcommencement日（開始日）の毎年記念日に上昇し続けます。"
@@ -22576,7 +22614,7 @@ msgid "The purchase order"
 msgstr "発注書"
 
 msgid "The push to Mount did not start. Try again."
-msgstr "Mount へのプッシュが開始されませんでした。もう一度試してください。"
+msgstr "Mountへの送信を開始できませんでした。もう一度お試しください。"
 
 msgid "The push to Mount failed"
 msgstr "Mount へのプッシュが失敗しました"
@@ -23490,6 +23528,12 @@ msgstr "タイマー実行中"
 
 msgid "Timezone"
 msgstr "タイムゾーン"
+
+msgid "Tip away from you"
+msgstr "奥に傾ける"
+
+msgid "Tip toward you"
+msgstr "手前に傾ける"
 
 msgid "Title"
 msgstr "タイトル"
@@ -24411,6 +24455,15 @@ msgstr "アップロード中…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "変換をクリックすると、以下の社内部品番号で部品が作成されます："
+
+msgid "Upright"
+msgstr "正立"
+
+msgid "Upside down"
+msgstr "逆さま"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "{orientationSource}のステップから逆さま"
 
 msgid "URL"
 msgstr "URL"

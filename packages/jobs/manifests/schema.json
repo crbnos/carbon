@@ -2610,7 +2610,8 @@
         "rootStepId",
         "hiddenComponentNodeIds",
         "usedInStepId",
-        "isSubAssembly"
+        "isSubAssembly",
+        "orientation"
       ]
     },
     {

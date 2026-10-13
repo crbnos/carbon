@@ -565,6 +565,8 @@ msgstr "{name} {end} को समाप्त होता है (पहले
 
 msgid "{name} needs an account number."
 msgstr "{name} को खाता संख्या की आवश्यकता है।"
+msgid "{name} path"
+msgstr "{name} मार्ग"
 
 msgid "{name} replaced"
 msgstr "{name} प्रतिस्थापित किया गया"
@@ -6521,6 +6523,9 @@ msgstr "कस्टम फील्ड्स"
 msgid "Custom fields are not available for items yet."
 msgstr "कस्टम फील्ड अभी आइटम के लिए उपलब्ध नहीं हैं।"
 
+msgid "Custom path"
+msgstr "कस्टम मार्ग"
+
 msgid "Custom SOW · we manage"
 msgstr "कस्टम SOW · हम प्रबंधित करते हैं"
 
@@ -10146,6 +10151,9 @@ msgstr "बेड़े की इकाई"
 msgid "Fleet Units"
 msgstr "फ्लीट इकाई"
 
+msgid "Flip over"
+msgstr "पलटें"
+
 msgid "For <0/>"
 msgstr "के लिए <0/>"
 
@@ -10911,6 +10919,9 @@ msgstr "नमूना आकार कैसे तय किया जात�
 
 msgid "How the unit price of each quantity was calculated."
 msgstr "प्रत्येक मात्रा की इकाई मूल्य की गणना कैसे की गई।"
+
+msgid "How the whole build is turned on a step, such as flipped to fit parts on its underside. Later steps of the same build keep it until a step turns the build again."
+msgstr "किसी चरण में पूरी असेंबली को किस तरह घुमाया गया है, जैसे नीचे की ओर लगे पार्ट्स के लिए उसे पलटना। उसी असेंबली के बाद के चरण तब तक यही स्थिति रखते हैं, जब तक कोई चरण असेंबली को फिर से न घुमाए."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "यह गेज कैसे उपयोग किया जाता है — मानक (नियमित जांच) या मास्टर (अन्य गेज को कैलिब्रेट करता है)।"
@@ -12145,7 +12156,7 @@ msgstr "अंतिम नाम"
 
 #. placeholder {0}: record.error
 msgid "Last push {when} failed: {0}"
-msgstr "अंतिम पुश {when} विफल: {0}"
+msgstr "अंतिम पुश ({when}) विफल हुआ: {0}"
 
 msgid "Last push {when}:"
 msgstr "अंतिम पुश {when}:"
@@ -15133,6 +15144,12 @@ msgstr "हाथ में: {before} से {after}"
 msgid "On Hold"
 msgstr "होल्ड पर"
 
+msgid "On its side"
+msgstr "करवट पर"
+
+msgid "On its side, from step {orientationSource}"
+msgstr "चरण {orientationSource} से करवट पर"
+
 msgid "On Jobs"
 msgstr "जॉब पर"
 
@@ -15673,6 +15690,9 @@ msgstr "आदेश"
 
 msgid "Orders submitted"
 msgstr "ऑर्डर जमा किए गए"
+
+msgid "Orientation"
+msgstr "दिशा"
 
 msgid "Origin"
 msgstr "मूल"
@@ -18980,6 +19000,9 @@ msgstr "नई कर्मचारियों के लिए डिफ़�
 msgid "Room to grow without bolting on more tools"
 msgstr "बिना अतिरिक्त उपकरण जोड़े बढ़ने की गुंजाइश"
 
+msgid "Rotate"
+msgstr "घुमाएँ"
+
 msgid "ROU Amortization"
 msgstr "ROU परिशोधन"
 
@@ -20777,6 +20800,12 @@ msgstr "विशिष्ट आइटम"
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "आपूर्तिकर्ता, आइटम, या श्रेणी द्वारा व्यय — आपके सबसे बड़े लागत ड्राइवर"
 
+msgid "Spin left"
+msgstr "बाईं ओर घुमाएँ"
+
+msgid "Spin right"
+msgstr "दाईं ओर घुमाएँ"
+
 msgid "Split"
 msgstr "विभाजित करें"
 
@@ -21155,6 +21184,9 @@ msgstr "उप-असेंबली {number}"
 
 msgid "Sub-assembly expiries only"
 msgstr "उप-विधानसभा समाप्ति केवल"
+
+msgid "Sub-assembly path"
+msgstr "सब-असेंबली मार्ग"
 
 msgid "Sub-Departments"
 msgstr "उप-विभाग"
@@ -22409,6 +22441,9 @@ msgstr "आप अपने स्टॉक को जिन सामग्र�
 msgid "The model is still loading."
 msgstr "मॉडल अभी भी लोड हो रहा है।"
 
+msgid "The model isn't ready yet"
+msgstr "मॉडल अभी तैयार नहीं है"
+
 msgid "The month your financial year begins; periods are numbered from this month."
 msgstr "वह महीना जब आपका वित्तीय वर्ष शुरू होता है; अवधियों को इस महीने से गिना जाता है।"
 
@@ -22511,8 +22546,11 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "पार्ट को मौजूदा स्टॉक से लिया जाता है जब इसका मूल आइटम बनाया जाता है — कोई नया जॉब या क्रय आदेश नहीं।"
 
-msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr "वह पथ जो इस चरण के घटक प्लेबैक के दौरान स्थान पर यात्रा करते हैं; मॉडल से प्राप्त, या पथ संपादित करें के साथ हाथ से खींचा गया।"
+msgid "The path a finished sub-assembly travels as one piece when it joins the build. It arrives before the step's own parts; until you draw one with Edit Path, it slides in from beside the build."
+msgstr "यह मार्ग है जो एक तैयार सब-असेंबली एक टुकड़े के रूप में तय करती है जब यह बिल्ड से जुड़ता है। यह चरण के अपने पार्ट्स से पहले आती है; जब तक आप “पथ संपादित करें” से कोई मार्ग नहीं खींचते, यह बिल्ड के बगल से आती है।"
+
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path, where a part can also be turned at any waypoint."
+msgstr "यह मार्ग है जो इस चरण के घटक चलाने के समय जगह में यात्रा करते हैं; यह मॉडल से प्राप्त है, या “पथ संपादित करें” से हाथ से खींचा जाता है, जहाँ एक पार्ट किसी भी वेपॉइंट पर घुमाया जा सकता है।"
 
 msgid "The payment from the effective date. Escalation still steps up on each anniversary of the commencement"
 msgstr "प्रभावी तिथि से भुगतान। बढ़ोतरी अभी भी शुरुआत की प्रत्येक वर्षगांठ पर बढ़ती है"
@@ -23491,6 +23529,12 @@ msgstr "टाइमर चल रहा है"
 msgid "Timezone"
 msgstr "समय क्षेत्र"
 
+msgid "Tip away from you"
+msgstr "अपनी ओर से दूर झुकाएँ"
+
+msgid "Tip toward you"
+msgstr "अपनी ओर झुकाएँ"
+
 msgid "Title"
 msgstr "शीर्षक"
 
@@ -24411,6 +24455,15 @@ msgstr "अपलोड हो रहा है…"
 
 msgid "Upon clicking Convert, parts will be created with the following internal part numbers:"
 msgstr "परिवर्तित करें क्लिक करने पर, पार्ट्स निम्नलिखित आंतरिक पार्ट संख्या के साथ बनाए जाएंगे:"
+
+msgid "Upright"
+msgstr "सीधा"
+
+msgid "Upside down"
+msgstr "उल्टा"
+
+msgid "Upside down, from step {orientationSource}"
+msgstr "चरण {orientationSource} से उल्टा"
 
 msgid "URL"
 msgstr "यूआरएल"
