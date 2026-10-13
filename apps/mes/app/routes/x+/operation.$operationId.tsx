@@ -33,6 +33,7 @@ import {
   getThumbnailPathByItemId,
   getTrackedEntitiesByMakeMethodId,
   getWorkCenter,
+  getWorkCenterDevice,
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import type { OperationWithDetails } from "~/services/types";
@@ -244,7 +245,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod,
     kanban,
     bomIdMap,
-    companySettings
+    companySettings,
+    workCenterDevice
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getTrackedEntitiesByMakeMethodId(
@@ -255,7 +257,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
     getKanbanByJobId(serviceRole, job.data.id),
     getJobMethodBomIdMap(serviceRole, job.data.id!),
-    getCompanySettings(serviceRole, companyId)
+    getCompanySettings(serviceRole, companyId),
+    // The OEE device mapped to this work center, if any — its live state shows
+    // on the Machine toggle.
+    op?.workCenterId
+      ? getWorkCenterDevice(serviceRole, {
+          workCenterId: op.workCenterId,
+          companyId
+        })
+      : null
   ]);
 
   const inventoryShelfLife = (companySettings.data?.inventoryShelfLife ??
@@ -367,6 +377,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
     procedure: getJobOperationProcedure(serviceRole, operation.data?.[0].id),
+    workCenterDevice: workCenterDevice?.data ?? null,
     workCenter: getWorkCenter(
       serviceRole,
       operation.data?.[0].workCenterId
@@ -405,6 +416,7 @@ export default function OperationRoute() {
     trackedEntities,
     isFirstOperation,
     workCenter,
+    workCenterDevice,
     nonConformanceActions
   } = useLoaderData<typeof loader>();
 
@@ -431,6 +443,7 @@ export default function OperationRoute() {
       job={job}
       thumbnailPath={thumbnailPath}
       workCenter={workCenter}
+      workCenterDevice={workCenterDevice}
     />
   );
 }

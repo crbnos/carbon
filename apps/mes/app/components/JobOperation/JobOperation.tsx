@@ -7,6 +7,7 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
+import { useChangedRows } from "@carbon/query";
 import type { JSONContent } from "@carbon/react";
 import {
   Alert,
@@ -123,7 +124,8 @@ import type { productionEventType } from "~/services/models";
 import type {
   BatchMaterialTotal,
   BatchWorkInstructions,
-  JobOperationBatch
+  JobOperationBatch,
+  WorkCenterDevice
 } from "~/services/operations.service";
 import { getFileType } from "~/services/operations.service";
 import type {
@@ -222,6 +224,8 @@ type JobOperationProps = {
       blockingDispatchReadableId: string | null;
     }>
   >;
+  // The OEE device mapped to the operation's work center; null when unmapped.
+  workCenterDevice?: WorkCenterDevice | null;
 };
 
 export const JobOperation = ({
@@ -242,7 +246,8 @@ export const JobOperation = ({
   thumbnailPath,
   trackedEntities,
   isFirstOperation,
-  workCenter
+  workCenter,
+  workCenterDevice = null
 }: JobOperationProps) => {
   const { t } = useLingui();
   const { isPhone } = useViewport();
@@ -331,6 +336,38 @@ export const JobOperation = ({
   } = useUser();
 
   const [items] = useItems();
+
+  // The device's live state, so the Machine toggle follows the machine without
+  // a reload. Only the broadcast's answer is kept, tagged with the loader value
+  // it overrode: a revalidation brings a new loader value and drops it.
+  const [liveDevice, setLiveDevice] = useState<{
+    base: WorkCenterDevice | null;
+    device: WorkCenterDevice | null;
+  } | null>(null);
+  const device =
+    liveDevice && liveDevice.base === workCenterDevice
+      ? liveDevice.device
+      : workCenterDevice;
+  const operationWorkCenterId = originalOperation.workCenterId;
+  useChangedRows<WorkCenterDevice>({
+    companyId,
+    table: "workCenterDevice",
+    columns: "id, workCenterId, deviceName, currentState, currentStateAt",
+    filter: `workCenterId=eq.${operationWorkCenterId}`,
+    enabled: !!operationWorkCenterId,
+    onChange: ({ op, ids, rows }) => {
+      if (op === "DELETE") {
+        if (device && ids.includes(device.id)) {
+          setLiveDevice({ base: workCenterDevice, device: null });
+        }
+        return;
+      }
+      const mine = rows.find(
+        (row) => row.workCenterId === operationWorkCenterId
+      );
+      if (mine) setLiveDevice({ base: workCenterDevice, device: mine });
+    }
+  });
   const { downloadFile, downloadModel, getFilePath } = useFiles(job);
 
   const attributeRecordModal = useDisclosure();
@@ -2594,6 +2631,7 @@ export const JobOperation = ({
               <WorkTypeToggle
                 active={active}
                 operation={displayOperation}
+                deviceState={device?.currentState ?? null}
                 value={eventType}
                 onChange={setEventType}
                 className="min-w-0 flex-1 lg:flex-none max-md:basis-full"

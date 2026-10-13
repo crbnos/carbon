@@ -13,11 +13,14 @@ import {
   DisplayFrame,
   QueueTable
 } from "~/components/Display";
+import { DeviceStateBadge } from "~/components/JobOperation/components/Controls";
 import { userContext } from "~/context";
 import {
+  getDisplayLoadedOperation,
   getDisplayWorkCenter,
   getWorkDisplayData
 } from "~/services/display.service";
+import { getWorkCenterDevice } from "~/services/operations.service";
 import type { WorkAlertReason } from "~/utils/display";
 import { getWorkDisplayState } from "~/utils/display";
 
@@ -43,18 +46,46 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
     workCenter.locationId ?? context.get(userContext)?.locationId;
   if (!locationId) throw notFound("Location not found");
 
-  const { activeWork, queue, lastEventEndedAt } = await getWorkDisplayData(
-    serviceRole,
-    { workCenterId, companyId, locationId }
-  );
+  const [{ activeWork, queue, lastEventEndedAt }, loadedOperation, device] =
+    await Promise.all([
+      getWorkDisplayData(serviceRole, { workCenterId, companyId, locationId }),
+      // What an OEE device press loaded onto the machine, and the device's live
+      // state. Both are absent on a work center with no device mapped.
+      workCenter.loadedJobOperationId
+        ? getDisplayLoadedOperation(serviceRole, {
+            jobOperationId: workCenter.loadedJobOperationId,
+            companyId
+          })
+        : null,
+      getWorkCenterDevice(serviceRole, { workCenterId, companyId })
+    ]);
 
-  return { workCenter, activeWork, queue, lastEventEndedAt };
+  return {
+    workCenter,
+    activeWork,
+    queue,
+    lastEventEndedAt,
+    loadedOperation,
+    deviceState: device.data?.currentState ?? null
+  };
 }
 
 export default function WorkDisplayRoute() {
   const { t } = useLingui();
-  const { workCenter, activeWork, queue, lastEventEndedAt } =
-    useLoaderData<typeof loader>();
+  const {
+    workCenter,
+    activeWork,
+    queue,
+    lastEventEndedAt,
+    loadedOperation,
+    deviceState
+  } = useLoaderData<typeof loader>();
+
+  const loadedLabel = loadedOperation
+    ? [loadedOperation.jobReadableId, loadedOperation.description]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   const state = getWorkDisplayState({
     activeEventCount: activeWork.length,
@@ -83,6 +114,19 @@ export default function WorkDisplayRoute() {
       }
       refreshInterval={15_000}
     >
+      {loadedLabel || deviceState ? (
+        <div
+          className="flex min-w-0 items-center gap-[1vw] px-[2vw] pt-[1.5vw] text-white/70"
+          style={{ fontSize: "clamp(0.8rem, 1.4vw, 1.6rem)" }}
+        >
+          {loadedLabel ? (
+            <span className="truncate">
+              <Trans>Loaded: {loadedLabel}</Trans>
+            </span>
+          ) : null}
+          {deviceState ? <DeviceStateBadge state={deviceState} /> : null}
+        </div>
+      ) : null}
       <ActiveWorkPanel
         activeWork={activeWork}
         lastEventEndedAt={lastEventEndedAt}

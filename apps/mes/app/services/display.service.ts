@@ -34,6 +34,8 @@ export type DisplayWorkCenter = {
   isBlocked: boolean;
   blockingDispatchId: string | null;
   blockingDispatchReadableId: string | null;
+  /** The operation an OEE device press loaded onto this work center, if any. */
+  loadedJobOperationId: string | null;
 };
 
 /**
@@ -48,7 +50,7 @@ export async function getDisplayWorkCenter(
   const { data, error } = await client
     .from("workCentersWithBlockingStatus")
     .select(
-      "id, name, locationId, locationName, isBlocked, blockingDispatchId, blockingDispatchReadableId"
+      "id, name, locationId, locationName, isBlocked, blockingDispatchId, blockingDispatchReadableId, loadedJobOperationId"
     )
     .eq("id", args.workCenterId)
     .eq("companyId", args.companyId)
@@ -63,7 +65,30 @@ export async function getDisplayWorkCenter(
     locationName: data.locationName ?? null,
     isBlocked: data.isBlocked ?? false,
     blockingDispatchId: data.blockingDispatchId ?? null,
-    blockingDispatchReadableId: data.blockingDispatchReadableId ?? null
+    blockingDispatchReadableId: data.blockingDispatchReadableId ?? null,
+    loadedJobOperationId: data.loadedJobOperationId ?? null
+  };
+}
+
+/** The operation loaded onto a work center: its job and description. */
+export async function getDisplayLoadedOperation(
+  client: SupabaseClient<Database>,
+  args: { jobOperationId: string; companyId: string }
+) {
+  const { data } = await client
+    .from("jobOperation")
+    .select("id, description, job:jobId(jobId)")
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  const job = data.job as { jobId: string | null } | null;
+  return {
+    id: data.id,
+    description: data.description ?? null,
+    jobReadableId: job?.jobId ?? null
   };
 }
 
