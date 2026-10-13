@@ -23,7 +23,6 @@ import {
   LuEllipsisVertical,
   LuLink,
   LuListOrdered,
-  LuListPlus,
   LuPackageMinus,
   LuTimer,
   LuTrash
@@ -36,6 +35,10 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { useResolved } from "~/hooks/useResolved";
 import { PROJECT_SHORTCUTS } from "~/shortcuts";
 import { path } from "~/utils/path";
+import {
+  isProjectPlanLocked,
+  projectPlanLockedMessage
+} from "../../projects.models";
 import type { ProjectElementPage } from "../../projects.server";
 import type {
   Project,
@@ -66,6 +69,8 @@ type ElementViewProps = ProjectElementPage & {
   states: ProjectState[];
   labels: ProjectLabel[];
   milestones: ProjectMilestone[];
+  /** The open change request (`?cr=`), when the page shows one. */
+  changeRequest?: { status: string } | null;
 };
 
 /**
@@ -94,7 +99,8 @@ export function ElementView({
   itemFields,
   states,
   labels,
-  milestones
+  milestones,
+  changeRequest
 }: ElementViewProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -104,7 +110,6 @@ export function ElementView({
   const childQuickAddRef = useRef<HTMLInputElement>(null);
   const [addingChild, setAddingChild] = useState(false);
   const [addingLink, setAddingLink] = useState(false);
-  const [planAddRequest, setPlanAddRequest] = useState(0);
   const [deleting, setDeleting] = useState(false);
   const [loggingTime, setLoggingTime] = useState(false);
   const [issuing, setIssuing] = useState(false);
@@ -122,6 +127,17 @@ export function ElementView({
     permissions.can("update", "inventory") &&
     permissions.can("update", "projects");
   const canAddChild = canCreate && element.type !== "Parameter";
+  // After the lock milestone completes, the plan changes only through a
+  // Draft change request: "Add line" is off, with the Plan page's reason.
+  const lockMilestone = milestones.find(
+    (milestone) => milestone.id === project?.lockPlanAfterMilestoneId
+  );
+  const planLockMessage =
+    lockMilestone &&
+    isProjectPlanLocked({ lockMilestone }) &&
+    changeRequest?.status !== "Draft"
+      ? projectPlanLockedMessage(lockMilestone.name)
+      : null;
 
   // t and i open Log time and Issue material. Never while typing or with a
   // dialog open.
@@ -176,7 +192,10 @@ export function ElementView({
     planLines.materials.length +
     planLines.labor.length +
     planLines.costs.length;
-  const showPlan = planLineCount > 0 || planAddRequest > 0;
+  // An element that can have plan lines (every type but a Parameter) shows
+  // Plan with its "Add line" to a user who can edit, even with no lines.
+  const showPlan =
+    planLineCount > 0 || (canUpdate && element.type !== "Parameter");
   const showLinks = elementLinkCount > 0 || addingLink;
   const showChildren = children.length > 0 || addingChild;
   const showTime = ledger.length > 0 || openTime.length > 0;
@@ -288,13 +307,6 @@ export function ElementView({
                 <DropdownMenuIcon icon={<LuLink />} />
                 <Trans>Add link</Trans>
               </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={!canUpdate}
-                onClick={() => setPlanAddRequest((n) => n + 1)}
-              >
-                <DropdownMenuIcon icon={<LuListPlus />} />
-                <Trans>Add plan line</Trans>
-              </DropdownMenuItem>
               {subtreeHasPinnedCode && (
                 <DropdownMenuItem
                   disabled={!canUpdate}
@@ -381,7 +393,7 @@ export function ElementView({
                     laborCategories={laborCategories}
                     defaultLocationId={project?.locationId}
                     isDisabled={!canUpdate}
-                    addRequest={planAddRequest}
+                    addDisabledReason={planLockMessage}
                   />
                 </Section>
               )}

@@ -5385,6 +5385,9 @@ msgstr "检查点"
 msgid "Children"
 msgstr "子项"
 
+msgid "Children done"
+msgstr "子项完成"
+
 msgid "Choose a backup"
 msgstr "选择备份"
 

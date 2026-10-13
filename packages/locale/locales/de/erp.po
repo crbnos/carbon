@@ -5385,6 +5385,9 @@ msgstr "Kontrollpunkte"
 msgid "Children"
 msgstr "Unterelemente"
 
+msgid "Children done"
+msgstr "Untergeordnete Elemente erledigt"
+
 msgid "Choose a backup"
 msgstr "Wählen Sie eine Sicherung"
 

@@ -5385,6 +5385,9 @@ msgstr "Контрольные точки"
 msgid "Children"
 msgstr "Подчинённые"
 
+msgid "Children done"
+msgstr "Дети готовы"
+
 msgid "Choose a backup"
 msgstr "Выберите резервную копию"
 

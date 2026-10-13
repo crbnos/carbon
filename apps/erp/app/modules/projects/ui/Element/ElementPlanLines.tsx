@@ -22,6 +22,9 @@ import {
   ModalTitle,
   Spinner,
   SplitButton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
@@ -213,7 +216,8 @@ export function ElementPlanLines({
   isDisabled,
   action: actionOverride,
   canSupply = true,
-  addRequest
+  addRequest,
+  addDisabledReason
 }: {
   projectId: string;
   elementId: string;
@@ -226,8 +230,11 @@ export function ElementPlanLines({
   action?: string;
   /** Offers Create Job and Create PO Line on a material (not on a template). */
   canSupply?: boolean;
-  /** Each new value adds a draft material row ("Add plan line" in a menu). */
+  /** Each new value adds a draft material row (a service template's
+   *  "Add plan line" menu item). */
   addRequest?: number;
+  /** Why "Add line" is off (a locked plan); shown as its tooltip. */
+  addDisabledReason?: string | null;
 }) {
   const { t } = useLingui();
   const save = useCellSave();
@@ -718,6 +725,23 @@ export function ElementPlanLines({
     [columns, renderMenu, t]
   );
 
+  const addLine = (
+    <SplitButton
+      variant="ghost"
+      size="sm"
+      leftIcon={<LuPlus />}
+      className="self-start"
+      isDisabled={Boolean(addDisabledReason)}
+      onClick={() => addDraft("material")}
+      dropdownItems={(["material", "labor", "cost"] as const).map((type) => ({
+        label: typeLabels[type],
+        onClick: () => addDraft(type)
+      }))}
+    >
+      <Trans>Add line</Trans>
+    </SplitButton>
+  );
+
   const deletingName =
     deleting === null
       ? ""
@@ -751,23 +775,22 @@ export function ElementPlanLines({
           />
         </div>
       )}
-      {!isDisabled && (
-        <SplitButton
-          variant="ghost"
-          size="sm"
-          leftIcon={<LuPlus />}
-          className="self-start"
-          onClick={() => addDraft("material")}
-          dropdownItems={(["material", "labor", "cost"] as const).map(
-            (type) => ({
-              label: typeLabels[type],
-              onClick: () => addDraft(type)
-            })
-          )}
-        >
-          <Trans>Add line</Trans>
-        </SplitButton>
-      )}
+      {!isDisabled &&
+        (addDisabledReason ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              {/* A disabled button fires no pointer events: the span does. */}
+              <span tabIndex={0} className="self-start">
+                {addLine}
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-72">
+              {addDisabledReason}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          addLine
+        ))}
 
       {editing && (
         <PlanLineModal
