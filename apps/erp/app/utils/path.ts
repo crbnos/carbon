@@ -278,8 +278,12 @@ export const path = {
       projectBillingElements: (projectId: string) =>
         `${api}/projects/billing-elements?projectId=${encodeURIComponent(projectId)}`,
       projectChargeNumbers: `${api}/projects/charge-numbers`,
+      projectMspdi: (projectId: string) =>
+        generatePath(`${api}/projects/${projectId}/mspdi.xml`),
       projectReport: (reportKey: string, params: Record<string, string>) =>
         `${generatePath(`${api}/projects/reports/${reportKey}.csv`)}?${new URLSearchParams(params)}`,
+      projectWbsCsv: (projectId: string) =>
+        generatePath(`${api}/projects/${projectId}/wbs.csv`),
       purchaseInvoice: (id: string) =>
         generatePath(`${api}/purchase-invoice/${id}`),
       purchaseOrderFinalize: (id: string) =>
@@ -2140,6 +2144,11 @@ export const path = {
       generatePath(`${x}/project/${id}/template`),
     projectTime: (id: string) => generatePath(`${x}/project/${id}/time`),
     projectTimesheetApprovals: `${x}/projects/approvals`,
+    projectWbsImport: (id: string) =>
+      generatePath(`${x}/project/${id}/wbs/import`),
+    projectWbsPin: (id: string) => generatePath(`${x}/project/${id}/wbs/pin`),
+    projectWbsRenumber: (id: string) =>
+      generatePath(`${x}/project/${id}/wbs/renumber`),
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>

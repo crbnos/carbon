@@ -96,11 +96,16 @@ import {
   planSnapshotKeys,
   projectCopyIdPrefixes,
   projectPlanLockedMessage,
+  readWbsCsv,
   rebaseChangeRequestItems,
   rollUpRequirementStatus,
   taxYearOf,
   toPlanSnapshot,
   typeSpecificElementFields,
+  type WbsCsvCreate,
+  type WbsCsvResult,
+  type WbsElement,
+  type WbsLink,
   wbsTemplateElementType
 } from "./projects.models";
 import {
@@ -260,6 +265,241 @@ export async function insertElementsFromWbsTemplate(
   });
 
   await trx.insertInto("projectElement").values(rows).execute();
+}
+
+/** A project's elements and `precedes` links as the WBS exports read them. */
+export async function loadWbsElements(
+  db: Kysely<KyselyDatabase> | KyselyTx,
+  args: { companyId: string; projectId: string }
+): Promise<{ elements: WbsElement[]; links: WbsLink[] }> {
+  const [elements, links] = await Promise.all([
+    db
+      .selectFrom("projectElement")
+      .select([
+        "id",
+        "readableId",
+        "parentId",
+        "type",
+        "name",
+        "sortOrder",
+        "sequence",
+        "wbsCode",
+        "startDate",
+        "targetDate",
+        "budget"
+      ])
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .execute(),
+    db
+      .selectFrom("projectElementLink")
+      .select(["fromElementId", "toElementId"])
+      .where("projectId", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .where("linkType", "=", "precedes")
+      .execute()
+  ]);
+  return {
+    elements: elements.map((element) => ({
+      ...element,
+      sortOrder: Number(element.sortOrder),
+      budget: element.budget === null ? null : Number(element.budget)
+    })),
+    links
+  };
+}
+
+export type WbsImportResult =
+  | { applied: false; result: WbsCsvResult }
+  | {
+      applied: true;
+      result: WbsCsvResult;
+      created: number;
+      updated: number;
+      linked: number;
+    };
+
+/**
+ * Applies a WBS CSV to a project in one transaction: creates (parents first,
+ * each after its last sibling), updates, then the new `precedes` links.
+ * Writes nothing when any row has an error. Never deletes.
+ */
+export async function importProjectWbs(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    userId: string;
+    projectId: string;
+    rows: Record<string, string | undefined>[];
+    apply: boolean;
+  }
+): Promise<WbsImportResult> {
+  return db.transaction().execute(async (trx) => {
+    const project = await trx
+      .selectFrom("project")
+      .select(["identifier"])
+      .where("id", "=", args.projectId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!project) throw new Error("The project does not exist");
+
+    const { elements, links } = await loadWbsElements(trx, args);
+    const result = readWbsCsv(args.rows, elements, links);
+    if (!args.apply || result.errors.length > 0) {
+      return { applied: false, result };
+    }
+
+    const state = await trx
+      .selectFrom("projectState")
+      .select("id")
+      .where("companyId", "=", args.companyId)
+      .where("group", "=", "Unstarted")
+      .orderBy("isDefault", "desc")
+      .orderBy("sortOrder", "asc")
+      .limit(1)
+      .executeTakeFirst();
+    if (!state) {
+      throw new Error(
+        "The company has no Unstarted state (Settings → Projects)"
+      );
+    }
+
+    // Keys of new rows become real ids up front, so a child can name a
+    // parent made in the same import.
+    const idOf = new Map<string, string>(
+      result.creates.map((create) => [create.key, makeCopyId("pje")])
+    );
+    const resolve = (key: string | null) =>
+      key === null ? null : (idOf.get(key) ?? key);
+
+    const lastSort = new Map<string | null, number>();
+    for (const element of elements) {
+      const current = lastSort.get(element.parentId) ?? 0;
+      lastSort.set(element.parentId, Math.max(current, element.sortOrder));
+    }
+    const nextSort = (parentId: string | null) => {
+      const value = (lastSort.get(parentId) ?? 0) + 1;
+      lastSort.set(parentId, value);
+      return value;
+    };
+
+    if (result.creates.length > 0) {
+      const sequence = await trx
+        .updateTable("project")
+        .set({
+          nextElementSequence: sql`"nextElementSequence" + ${result.creates.length}`
+        })
+        .where("id", "=", args.projectId)
+        .where("companyId", "=", args.companyId)
+        .returning([
+          sql<number>`"nextElementSequence" - ${result.creates.length}`.as(
+            "first"
+          ),
+          "identifier"
+        ])
+        .executeTakeFirstOrThrow();
+
+      // Parents before children: a create's parent may be another create.
+      const createByKey = new Map(result.creates.map((c) => [c.key, c]));
+      const depthOf = (create: WbsCsvCreate): number => {
+        let depth = 0;
+        let parent = create.parentKey
+          ? createByKey.get(create.parentKey)
+          : undefined;
+        while (parent) {
+          depth += 1;
+          parent = parent.parentKey
+            ? createByKey.get(parent.parentKey)
+            : undefined;
+        }
+        return depth;
+      };
+      const ordered = [...result.creates].sort(
+        (a, b) => depthOf(a) - depthOf(b) || a.row - b.row
+      );
+      const rows = ordered.map((create, index) => {
+        const parentId = resolve(create.parentKey);
+        const seq = Number(sequence.first) + index;
+        return {
+          id: idOf.get(create.key)!,
+          companyId: args.companyId,
+          projectId: args.projectId,
+          parentId,
+          sequence: seq,
+          readableId: `${sequence.identifier}-${seq}`,
+          type: create.type,
+          name: create.name,
+          wbsCode: create.wbsCode,
+          startDate: create.startDate,
+          targetDate: create.targetDate,
+          budget: create.budget,
+          stateId: state.id,
+          isChargeable: chargeableByDefault[create.type],
+          sortOrder: nextSort(parentId),
+          createdBy: args.userId
+        };
+      });
+      await trx.insertInto("projectElement").values(rows).execute();
+    }
+
+    if (result.updates.length > 0) {
+      const sortOrderOf = new Map(
+        elements.map((element) => [element.id, element.sortOrder])
+      );
+      const values = sql.join(
+        result.updates.map((update) => {
+          const parentId = resolve(update.parentKey);
+          const sortOrder = update.parentChanged
+            ? nextSort(parentId)
+            : (sortOrderOf.get(update.id) ?? 0);
+          return sql`(${update.id}, ${parentId}, ${update.type}, ${update.name}, ${update.wbsCode}, ${update.startDate}, ${update.targetDate}, ${update.budget}, ${sortOrder})`;
+        })
+      );
+      await sql`
+        UPDATE "projectElement" AS e
+        SET "parentId" = v."parentId",
+            "type" = v."type"::"projectElementType",
+            "name" = v."name",
+            "wbsCode" = v."wbsCode",
+            "startDate" = v."startDate"::date,
+            "targetDate" = v."targetDate"::date,
+            "budget" = v."budget"::numeric,
+            "sortOrder" = v."sortOrder"::numeric,
+            "updatedBy" = ${args.userId},
+            "updatedAt" = ${datetime.timestamp()}
+        FROM (VALUES ${values}) AS v("id", "parentId", "type", "name", "wbsCode", "startDate", "targetDate", "budget", "sortOrder")
+        WHERE e."id" = v."id"
+          AND e."projectId" = ${args.projectId}
+          AND e."companyId" = ${args.companyId}
+      `.execute(trx);
+    }
+
+    if (result.links.length > 0) {
+      await trx
+        .insertInto("projectElementLink")
+        .values(
+          result.links.map((link) => ({
+            id: makeCopyId("pjk"),
+            companyId: args.companyId,
+            projectId: args.projectId,
+            fromElementId: resolve(link.fromKey)!,
+            toElementId: resolve(link.toKey)!,
+            linkType: "precedes" as const,
+            createdBy: args.userId
+          }))
+        )
+        .execute();
+    }
+
+    return {
+      applied: true,
+      result,
+      created: result.creates.length,
+      updated: result.updates.length,
+      linked: result.links.length
+    };
+  });
 }
 
 /**

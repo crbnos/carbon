@@ -4,6 +4,7 @@
 
 import type { Database } from "@carbon/database";
 import {
+  computeWbsCodes,
   EPSILON,
   equals,
   estimateAtCompletion,
@@ -4572,4 +4573,452 @@ export function buildSection6765Input(
     estimatedEmployeeCount,
     unknownCountryHours: round(unknownCountryHours)
   };
+}
+
+// --- WBS CSV (Phase A of the WBS interop spec) ---------------------------------
+
+export const WBS_CSV_COLUMNS = [
+  "Element ID",
+  "WBS Code",
+  "Parent WBS Code",
+  "Level",
+  "Type",
+  "Name",
+  "Start",
+  "Target",
+  "Budget",
+  "Predecessors"
+] as const;
+
+/** An element as the WBS export, the import and the MSPDI export read it. */
+export type WbsElement = {
+  id: string;
+  readableId: string;
+  parentId: string | null;
+  type: ProjectElementType;
+  name: string;
+  sortOrder: number;
+  sequence: number;
+  wbsCode: string | null;
+  startDate: string | null;
+  targetDate: string | null;
+  budget: number | null;
+};
+
+/** A `precedes` link: `fromElementId` finishes before `toElementId` starts. */
+export type WbsLink = { fromElementId: string; toElementId: string };
+
+export type WbsTreeRow = {
+  element: WbsElement;
+  code: string;
+  level: number;
+  parentCode: string | null;
+  hasChildren: boolean;
+};
+
+/**
+ * The numbered elements in tree order (parents first, siblings by sort
+ * order), each with its code and depth. Throws while 2 elements share a
+ * code: an export with a repeated code cannot be read back.
+ */
+export function wbsTree(elements: readonly WbsElement[]): WbsTreeRow[] {
+  const { codes, duplicates } = computeWbsCodes(
+    elements.map((element) => ({
+      ...element,
+      sortOrder: Number(element.sortOrder)
+    }))
+  );
+  if (duplicates.size > 0) {
+    throw new Error(
+      `WBS codes repeat: ${[...duplicates].join(", ")}. Change one of each pair first.`
+    );
+  }
+  const children = new Map<string | null, WbsElement[]>();
+  for (const element of elements) {
+    if (!codes.has(element.id)) continue;
+    const key =
+      element.parentId && codes.has(element.parentId) ? element.parentId : null;
+    const list = children.get(key);
+    if (list) list.push(element);
+    else children.set(key, [element]);
+  }
+  for (const list of children.values()) {
+    list.sort(
+      (a, b) =>
+        Number(a.sortOrder) - Number(b.sortOrder) || a.sequence - b.sequence
+    );
+  }
+  const rows: WbsTreeRow[] = [];
+  const walk = (parentId: string | null, level: number) => {
+    for (const element of children.get(parentId) ?? []) {
+      rows.push({
+        element,
+        code: codes.get(element.id)!,
+        level,
+        parentCode: parentId ? (codes.get(parentId) ?? null) : null,
+        hasChildren: (children.get(element.id)?.length ?? 0) > 0
+      });
+      walk(element.id, level + 1);
+    }
+  };
+  walk(null, 1);
+  return rows;
+}
+
+/** The WBS export: one record per numbered element, keyed by `WBS_CSV_COLUMNS`. */
+export function toWbsCsvRows(
+  elements: readonly WbsElement[],
+  links: readonly WbsLink[]
+): Record<(typeof WBS_CSV_COLUMNS)[number], string | number | null>[] {
+  const tree = wbsTree(elements);
+  const codeById = new Map(tree.map((row) => [row.element.id, row.code]));
+  return tree.map((row) => ({
+    "Element ID": row.element.readableId,
+    "WBS Code": row.code,
+    "Parent WBS Code": row.parentCode,
+    Level: row.level,
+    Type: row.element.type,
+    Name: row.element.name,
+    Start: row.element.startDate,
+    Target: row.element.targetDate,
+    Budget: row.element.budget,
+    Predecessors:
+      links
+        .filter((link) => link.toElementId === row.element.id)
+        .map((link) => codeById.get(link.fromElementId))
+        .filter((code): code is string => Boolean(code))
+        .join("; ") || null
+  }));
+}
+
+/** A row of an import that creates an element. `key` is `new:<row>`. */
+export type WbsCsvCreate = {
+  key: string;
+  row: number;
+  parentKey: string | null;
+  type: ProjectElementType;
+  name: string;
+  wbsCode: string | null;
+  startDate: string | null;
+  targetDate: string | null;
+  budget: number | null;
+};
+
+/** A row of an import that updates an element: its values after the import. */
+export type WbsCsvUpdate = {
+  id: string;
+  row: number;
+  readableId: string;
+  parentKey: string | null;
+  parentChanged: boolean;
+  type: ProjectElementType;
+  name: string;
+  wbsCode: string | null;
+  startDate: string | null;
+  targetDate: string | null;
+  budget: number | null;
+};
+
+export type WbsCsvResult = {
+  creates: WbsCsvCreate[];
+  updates: WbsCsvUpdate[];
+  /** New `precedes` links, by element id or `new:<row>` key. */
+  links: { fromKey: string; toKey: string }[];
+  errors: { row: number; message: string }[];
+};
+
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+const wbsImportTypes = projectElementTypes.filter(
+  (type) => type !== "Parameter"
+);
+
+/**
+ * Reads an uploaded WBS CSV against a project's elements. A row with an
+ * `Element ID` updates that element; a row without one creates an element.
+ * On an update a blank cell keeps the current value, and a code is pinned
+ * only when it differs from the element's current code, so an export read
+ * back changes nothing. Nothing is deleted. Pure: the import action and the
+ * preview read the same result.
+ */
+export function readWbsCsv(
+  input: readonly Record<string, string | undefined>[],
+  elements: readonly WbsElement[],
+  links: readonly WbsLink[]
+): WbsCsvResult {
+  const errors: WbsCsvResult["errors"] = [];
+  const fail = (row: number, message: string) => errors.push({ row, message });
+  const cell = (record: Record<string, string | undefined>, column: string) => {
+    const value = record[column]?.trim();
+    return value ? value : null;
+  };
+
+  const { codes } = computeWbsCodes(
+    elements.map((element) => ({
+      ...element,
+      sortOrder: Number(element.sortOrder)
+    }))
+  );
+  const byReadableId = new Map(
+    elements.map((element) => [element.readableId, element])
+  );
+  const byId = new Map(elements.map((element) => [element.id, element]));
+
+  type Parsed = {
+    row: number;
+    key: string;
+    existing: WbsElement | null;
+    code: string | null;
+    parentCode: string | null;
+    record: Record<string, string | undefined>;
+  };
+  const parsed: Parsed[] = [];
+  const seenIds = new Set<string>();
+  input.forEach((record, index) => {
+    const row = index + 2; // the header is row 1
+    const readableId = cell(record, "Element ID");
+    const existing = readableId ? (byReadableId.get(readableId) ?? null) : null;
+    if (readableId && !existing) {
+      fail(row, `Element ID ${readableId} is not an element of this project`);
+      return;
+    }
+    if (existing?.type === "Parameter") {
+      fail(
+        row,
+        `${readableId} is a Parameter: Parameters are not part of the WBS`
+      );
+      return;
+    }
+    if (existing) {
+      if (seenIds.has(existing.id)) {
+        fail(row, `Element ID ${readableId} appears twice`);
+        return;
+      }
+      seenIds.add(existing.id);
+    }
+    const code = cell(record, "WBS Code");
+    if (code && !isValidWbsCode(code)) {
+      fail(
+        row,
+        `WBS code ${code} is not valid: use 1 to 40 letters, digits, dots and dashes`
+      );
+      return;
+    }
+    parsed.push({
+      row,
+      key: existing ? existing.id : `new:${row}`,
+      existing,
+      code,
+      parentCode: cell(record, "Parent WBS Code"),
+      record
+    });
+  });
+
+  // The code of every element after the import: the file's code where it
+  // gives one, else the element's current code.
+  const keyByCode = new Map<string, string>();
+  const fileCodeKeys = new Set(parsed.filter((p) => p.code).map((p) => p.key));
+  for (const element of elements) {
+    const code = codes.get(element.id);
+    if (code && !fileCodeKeys.has(element.id)) keyByCode.set(code, element.id);
+  }
+  for (const p of parsed) {
+    if (!p.code) continue;
+    const holder = keyByCode.get(p.code);
+    if (holder && holder !== p.key) {
+      const other = byId.get(holder);
+      fail(
+        p.row,
+        `WBS code ${p.code} repeats${other ? ` (${other.readableId} has it)` : ""}`
+      );
+      continue;
+    }
+    keyByCode.set(p.code, p.key);
+  }
+
+  const creates: WbsCsvCreate[] = [];
+  const updates: WbsCsvUpdate[] = [];
+  const parentOf = new Map<string, string | null>(
+    elements.map((element) => [element.id, element.parentId])
+  );
+  const typeOf = new Map<string, ProjectElementType>(
+    elements.map((element) => [element.id, element.type])
+  );
+
+  for (const p of parsed) {
+    const { record, row, existing } = p;
+    const name = cell(record, "Name") ?? existing?.name ?? null;
+    if (!name) {
+      fail(row, "Every row needs a Name");
+      continue;
+    }
+    const typeCell = cell(record, "Type");
+    const type = (typeCell ?? existing?.type ?? "Task") as ProjectElementType;
+    if (!(wbsImportTypes as readonly string[]).includes(type)) {
+      fail(row, `Type ${type} is not one of ${wbsImportTypes.join(", ")}`);
+      continue;
+    }
+    const date = (column: "Start" | "Target", current: string | null) => {
+      const value = cell(record, column);
+      if (value === null) return { value: existing ? current : null };
+      if (!ISO_DATE.test(value))
+        return { error: `${column} must be YYYY-MM-DD` };
+      try {
+        parseDate(value);
+      } catch {
+        return { error: `${column} ${value} is not a date` };
+      }
+      return { value };
+    };
+    const start = date("Start", existing?.startDate ?? null);
+    const target = date("Target", existing?.targetDate ?? null);
+    if ("error" in start || "error" in target) {
+      fail(
+        row,
+        ("error" in start ? start.error : undefined) ??
+          (target as { error: string }).error
+      );
+      continue;
+    }
+    if (start.value && target.value && target.value < start.value) {
+      fail(row, "Target is before Start");
+      continue;
+    }
+    const budgetCell = cell(record, "Budget");
+    let budget = existing ? (existing.budget ?? null) : null;
+    if (budgetCell !== null) {
+      const value = Number(budgetCell.replace(/[$,\s]/g, ""));
+      if (!Number.isFinite(value) || value < 0) {
+        fail(row, `Budget ${budgetCell} must be a number of 0 or more`);
+        continue;
+      }
+      budget = value;
+    }
+
+    let parentKey: string | null = existing ? existing.parentId : null;
+    if (p.parentCode) {
+      const key = keyByCode.get(p.parentCode);
+      if (!key) {
+        fail(
+          row,
+          `Parent WBS code ${p.parentCode} is not in the file or the project`
+        );
+        continue;
+      }
+      if (key === p.key) {
+        fail(row, "An element cannot be its own parent");
+        continue;
+      }
+      parentKey = key;
+    }
+
+    parentOf.set(p.key, parentKey);
+    typeOf.set(p.key, type);
+    if (existing) {
+      const currentCode = codes.get(existing.id) ?? null;
+      updates.push({
+        id: existing.id,
+        row,
+        readableId: existing.readableId,
+        parentKey,
+        parentChanged: parentKey !== existing.parentId,
+        type,
+        name,
+        // Pin only a code that differs from the current one.
+        wbsCode: p.code && p.code !== currentCode ? p.code : existing.wbsCode,
+        startDate: start.value,
+        targetDate: target.value,
+        budget
+      });
+    } else {
+      creates.push({
+        key: p.key,
+        row,
+        parentKey,
+        type,
+        name,
+        wbsCode: p.code,
+        startDate: start.value,
+        targetDate: target.value,
+        budget
+      });
+    }
+  }
+
+  // A move must not put an element under its own subtree.
+  for (const update of updates) {
+    if (!update.parentChanged) continue;
+    const seen = new Set<string>([update.id]);
+    let current = update.parentKey;
+    while (current) {
+      if (seen.has(current)) {
+        fail(
+          update.row,
+          `${update.readableId} cannot move under its own subtree`
+        );
+        break;
+      }
+      seen.add(current);
+      current = parentOf.get(current) ?? null;
+    }
+  }
+  for (const update of updates) {
+    const parentType = update.parentKey ? typeOf.get(update.parentKey) : null;
+    if (parentType === "Parameter") {
+      fail(update.row, "A Parameter can only have Parameters as children");
+    }
+  }
+
+  // Predecessors: new finish-to-start links into the row's element.
+  const existingLinks = new Set(
+    links.map((link) => `${link.fromElementId}>${link.toElementId}`)
+  );
+  const newLinks: WbsCsvResult["links"] = [];
+  for (const p of parsed) {
+    const value = cell(p.record, "Predecessors");
+    if (!value) continue;
+    for (const part of value.split(/[;,]/)) {
+      const code = part.trim().replace(/FS$/i, "").trim();
+      if (!code) continue;
+      const fromKey = keyByCode.get(code);
+      if (!fromKey) {
+        fail(p.row, `Predecessor ${code} is not in the file or the project`);
+        continue;
+      }
+      if (fromKey === p.key) {
+        fail(p.row, "An element cannot precede itself");
+        continue;
+      }
+      const id = `${fromKey}>${p.key}`;
+      if (existingLinks.has(id)) continue;
+      existingLinks.add(id);
+      newLinks.push({ fromKey, toKey: p.key });
+    }
+  }
+
+  // The precedes links must not form a loop.
+  const next = new Map<string, string[]>();
+  for (const id of existingLinks) {
+    const [from, to] = id.split(">") as [string, string];
+    next.set(from, [...(next.get(from) ?? []), to]);
+  }
+  for (const link of newLinks) {
+    const stack = [link.toKey];
+    const seen = new Set<string>();
+    let loops = false;
+    while (stack.length > 0 && !loops) {
+      const current = stack.pop()!;
+      if (current === link.fromKey) loops = true;
+      if (seen.has(current)) continue;
+      seen.add(current);
+      stack.push(...(next.get(current) ?? []));
+    }
+    if (loops) {
+      const row = parsed.find((p) => p.key === link.toKey)?.row ?? 0;
+      fail(row, "The predecessors make a loop");
+    }
+  }
+
+  errors.sort((a, b) => a.row - b.row);
+  return { creates, updates, links: newLinks, errors };
 }
