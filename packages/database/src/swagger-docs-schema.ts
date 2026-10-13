@@ -17352,6 +17352,222 @@ export default {
         tags: ["inventoryCountLine"]
       }
     },
+    "/unattributedMachineTime": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/unattributedMachineTime"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.unattributedMachineTime"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.productionEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.dismissReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.resolvedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.unattributedMachineTime"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      }
+    },
     "/gauges": {
       get: {
         parameters: [
@@ -30185,6 +30401,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.minimumBatchQuantity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.loadedJobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenters.loadedAt"
           },
           {
             $ref: "#/parameters/rowFilter.workCenters.locationName"
@@ -88576,6 +88798,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.minimumBatchQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedJobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedAt"
+          },
+          {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.locationName"
           },
           {
@@ -88903,6 +89131,168 @@ export default {
           }
         },
         tags: ["salesReturnOrderLine"]
+      }
+    },
+    "/machineStateChange": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/machineStateChange"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.machineStateChange"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.machineStateChange"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["machineStateChange"]
       }
     },
     "/purchaseOrderDelivery": {
@@ -95131,6 +95521,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -95253,6 +95649,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -95329,6 +95731,12 @@ export default {
             $ref: "#/parameters/rowFilter.workCenter.minimumBatchQuantity"
           },
           {
+            $ref: "#/parameters/rowFilter.workCenter.loadedJobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenter.loadedAt"
+          },
+          {
             $ref: "#/parameters/body.workCenter"
           },
           {
@@ -95341,6 +95749,267 @@ export default {
           }
         },
         tags: ["workCenter"]
+      }
+    },
+    "/workCenterDevice": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterDevice"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterDevice"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.workCenterDevice"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterDevice"]
       }
     },
     "/itemSupersession": {
@@ -115280,6 +115949,51 @@ export default {
         tags: ["(rpc) xid_counter"]
       }
     },
+    "/rpc/sync_load_work_center_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_load_work_center_operation"]
+      }
+    },
     "/rpc/storage_unit_enforce_no_cycle": {
       post: {
         parameters: [
@@ -115677,6 +116391,51 @@ export default {
           }
         },
         tags: ["(rpc) sync_update_stock_transfer_status"]
+      }
+    },
+    "/rpc/sync_unload_work_center_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_unload_work_center_operation"]
       }
     },
     "/rpc/get_purchasing_planning": {
@@ -124702,6 +125461,93 @@ export default {
       },
       type: "object"
     },
+    unattributedMachineTime: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "startTime",
+        "status",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('umt'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        startTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        status: {
+          default: "Open",
+          enum: ["Open", "Assigned", "Dismissed"],
+          format: 'public."unattributedMachineTimeStatus"',
+          type: "string"
+        },
+        productionEventId: {
+          description:
+            "Note:\nThis is a Foreign Key to `productionEvent.id`.<fk table='productionEvent' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        dismissReason: {
+          format: "text",
+          type: "string"
+        },
+        resolvedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        resolvedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     gauges: {
       properties: {
         id: {
@@ -131052,6 +131898,16 @@ export default {
         minimumBatchQuantity: {
           format: "numeric",
           type: "number"
+        },
+        loadedJobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        loadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         },
         locationName: {
           format: "text",
@@ -158683,6 +159539,16 @@ export default {
           format: "numeric",
           type: "number"
         },
+        loadedJobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        loadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
         locationName: {
           format: "text",
           type: "string"
@@ -158838,6 +159704,61 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    machineStateChange: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterDeviceId",
+        "workCenterId",
+        "externalEventId",
+        "state",
+        "changedAt",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('msc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterDeviceId: {
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        externalEventId: {
+          format: "text",
+          type: "string"
+        },
+        state: {
+          enum: ["Running", "Idle", "Down", "Offline"],
+          format: 'public."machineState"',
+          type: "string"
+        },
+        changedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -162341,6 +163262,123 @@ export default {
             "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
           format: "numeric",
           type: "number"
+        },
+        loadedJobOperationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `jobOperation.id`.<fk table='jobOperation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        loadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    workCenterDevice: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "integration",
+        "externalDeviceId",
+        "deviceName",
+        "lastEventAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('wcd'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          description:
+            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          description:
+            "Note:\nThis is a Foreign Key to `integration.id`.<fk table='integration' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        externalDeviceId: {
+          format: "text",
+          type: "string"
+        },
+        externalSiteId: {
+          format: "text",
+          type: "string"
+        },
+        siteTimezone: {
+          format: "text",
+          type: "string"
+        },
+        deviceName: {
+          format: "text",
+          type: "string"
+        },
+        currentState: {
+          enum: ["Running", "Idle", "Down", "Offline"],
+          format: 'public."machineState"',
+          type: "string"
+        },
+        currentStateAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        appliedThrough: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastEventAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastManualChangeAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSyncedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSyncError: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -175072,6 +176110,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.unattributedMachineTime": {
+      name: "unattributedMachineTime",
+      description: "unattributedMachineTime",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/unattributedMachineTime"
+      }
+    },
+    "rowFilter.unattributedMachineTime.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.startTime": {
+      name: "startTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.endTime": {
+      name: "endTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.productionEventId": {
+      name: "productionEventId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.dismissReason": {
+      name: "dismissReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.resolvedBy": {
+      name: "resolvedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.resolvedAt": {
+      name: "resolvedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.gauges": {
       name: "gauges",
       description: "gauges",
@@ -182272,6 +183403,18 @@ export default {
     },
     "rowFilter.workCenters.minimumBatchQuantity": {
       name: "minimumBatchQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.loadedJobOperationId": {
+      name: "loadedJobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenters.loadedAt": {
+      name: "loadedAt",
       required: false,
       in: "query",
       type: "string"
@@ -213070,6 +214213,18 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCentersWithBlockingStatus.loadedJobOperationId": {
+      name: "loadedJobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCentersWithBlockingStatus.loadedAt": {
+      name: "loadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.workCentersWithBlockingStatus.locationName": {
       name: "locationName",
       required: false,
@@ -213225,6 +214380,63 @@ export default {
     },
     "rowFilter.salesReturnOrderLine.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.machineStateChange": {
+      name: "machineStateChange",
+      description: "machineStateChange",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/machineStateChange"
+      }
+    },
+    "rowFilter.machineStateChange.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.workCenterDeviceId": {
+      name: "workCenterDeviceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.externalEventId": {
+      name: "externalEventId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.state": {
+      name: "state",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.changedAt": {
+      name: "changedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"
@@ -217177,6 +218389,141 @@ export default {
       name: "minimumBatchQuantity",
       description:
         "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.loadedJobOperationId": {
+      name: "loadedJobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenter.loadedAt": {
+      name: "loadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.workCenterDevice": {
+      name: "workCenterDevice",
+      description: "workCenterDevice",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterDevice"
+      }
+    },
+    "rowFilter.workCenterDevice.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.externalDeviceId": {
+      name: "externalDeviceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.externalSiteId": {
+      name: "externalSiteId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.siteTimezone": {
+      name: "siteTimezone",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.deviceName": {
+      name: "deviceName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.currentState": {
+      name: "currentState",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.currentStateAt": {
+      name: "currentStateAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.appliedThrough": {
+      name: "appliedThrough",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastEventAt": {
+      name: "lastEventAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastManualChangeAt": {
+      name: "lastManualChangeAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastSyncedAt": {
+      name: "lastSyncedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastSyncError": {
+      name: "lastSyncError",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
