@@ -176,7 +176,10 @@ export function NavRail({
       <VStack spacing={1} className="flex flex-col justify-between h-full px-2">
         <VStack spacing={1}>
           {header ? (
-            <div className="flex w-full items-center gap-1 pb-2">
+            // As tall as the app's top bar (ERP `--topbar-height`, MES
+            // `--header-height`) and as far down: the rail's padding plus the
+            // content panel's 1px border. The logo centres on the bar.
+            <div className="mt-px mb-2 flex h-[var(--topbar-height,var(--header-height,2.5rem))] w-full shrink-0 items-center gap-1">
               {header}
               <NavRailToggle />
             </div>
