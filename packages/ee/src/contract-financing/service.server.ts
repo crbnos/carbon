@@ -346,7 +346,7 @@ async function loadLiquidation(
             .onRef("p.id", "=", "s.paymentId")
             .onRef("p.companyId", "=", "s.companyId")
         )
-        .select(["s.appliedAmount"])
+        .select(["s.appliedAmount", "s.targetSalesInvoiceId"])
         .where("s.companyId", "=", actor.companyId)
         .where("p.status", "=", "Posted")
         .where((eb) =>
@@ -364,6 +364,15 @@ async function loadLiquidation(
     (total, row) => total + Number(row.appliedAmount),
     0
   );
+  const appliedByInvoice = new Map<string, number>();
+  for (const row of applications) {
+    if (!row.targetSalesInvoiceId) continue;
+    appliedByInvoice.set(
+      row.targetSalesInvoiceId,
+      (appliedByInvoice.get(row.targetSalesInvoiceId) ?? 0) +
+        Number(row.appliedAmount)
+    );
+  }
   const unliquidated = unliquidatedBalance(
     deposits.map((deposit) => Number(deposit.totalAmount)),
     applications.map((row) => Number(row.appliedAmount))
@@ -414,6 +423,7 @@ async function loadLiquidation(
       invoiceAmount: Number(invoice.subtotal ?? 0),
       unliquidated,
       earlierExpected: earlier,
+      alreadyLiquidated: appliedByInvoice.get(invoice.id) ?? 0,
       currencyDecimals: options.currencyDecimals
     });
     expectedByInvoice.set(invoice.id, expected);
@@ -1106,6 +1116,9 @@ export async function getExpectedLiquidation(
     .select("customerContractId")
     .where("companyId", "=", input.companyId)
     .where("customerContractId", "in", contractIds)
+    // An invoice for more than one financed contract shows the first by id,
+    // the same one every time.
+    .orderBy("customerContractId")
     .executeTakeFirst();
   if (!financed) return null;
   const currency = await currencyDecimalsOf(db, input.companyId);

@@ -238,11 +238,16 @@ export function expectedLiquidation(input: {
   unliquidated: number;
   /** The expected liquidation of the contract's earlier unpaid invoices. */
   earlierExpected: number;
+  /** Financing already applied to this invoice (a Partially Paid one). */
+  alreadyLiquidated?: number;
   currencyDecimals: number;
 }): number {
-  const byRate = applyRate(
-    input.invoiceAmount,
-    input.liquidationRate,
+  const byRate = round(
+    applyRate(
+      input.invoiceAmount,
+      input.liquidationRate,
+      input.currencyDecimals
+    ) - (input.alreadyLiquidated ?? 0),
     input.currencyDecimals
   );
   const available = round(

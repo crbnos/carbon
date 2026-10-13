@@ -159,6 +159,22 @@ describe("expectedLiquidation", () => {
     );
     expect(expectedLiquidation({ ...input, earlierExpected: 300_000 })).toBe(0);
   });
+
+  it("leaves out what is already applied to the invoice", () => {
+    const input = {
+      liquidationRate: 0.8,
+      invoiceAmount: 100_000,
+      unliquidated: 160_000,
+      earlierExpected: 0,
+      currencyDecimals: 2
+    };
+    expect(expectedLiquidation({ ...input, alreadyLiquidated: 80_000 })).toBe(
+      0
+    );
+    expect(expectedLiquidation({ ...input, alreadyLiquidated: 30_000 })).toBe(
+      50_000
+    );
+  });
 });
 
 describe("unliquidatedBalance", () => {
