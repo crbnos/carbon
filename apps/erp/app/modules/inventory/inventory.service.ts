@@ -430,7 +430,14 @@ export async function getInventoryValuationTieOut(
 // Posted on the tie-out's as-of date — the tie-out only counts journals with
 // postingDate <= asOfDate, so a today-dated journal could never resolve a
 // backdated variance. Posting may still be rejected if that period is Closed.
-/** @mcp create */
+/**
+ * Creates a draft GL journal that clears the inventory valuation variance.
+ *
+ * Gated on accounting, as the Reconcile screen is: it writes a journal, not
+ * inventory.
+ * @mcp create
+ * @mcp permission accounting:create
+ */
 export async function createInventoryReconciliationJournal(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
