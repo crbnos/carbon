@@ -412,12 +412,6 @@ function OeeDeviceTableRow({
           <div className="w-[200px] shrink-0">
             <Combobox
               size="sm"
-              // Quiet until used: 55 bordered pickers read as a form, not a list.
-              className={cn(
-                "min-w-[160px] border-transparent bg-transparent shadow-none hover:border-border focus-visible:border-border data-[state=open]:border-border",
-                !isSaving &&
-                  "[&>svg]:invisible hover:[&>svg]:visible data-[state=open]:[&>svg]:visible"
-              )}
               value={workCenterId}
               options={workCenterOptions}
               placeholder={t`Not mapped`}
