@@ -118,7 +118,7 @@ The Grok Bot marketplace plugin uses OAuth on purpose. It ships no key.
 - API keys: 60 requests per minute by default, counted on the key. **Settings → API Keys** shows the limit. There is no field to change it.
 - OAuth: the same 60 per minute, counted on the user, so extra tokens do not multiply it.
 - Over the limit the call returns `429` with `Retry-After` and `X-RateLimit-*`.
-- On Carbon Cloud, API and MCP access is a Business-plan feature. Starter returns `403`. Self-hosted, the Enterprise feature set requires a commercial license.
+- On Carbon Cloud, API and MCP access is a Business-plan feature. An OAuth request from a Starter company returns `402` from the MCP entitlement gate. API-key authentication rejects a Starter company with `403` before MCP handling. A missing API-key module scope is an MCP tool error, `API key lacks the required scope`, not HTTP `403`. Self-hosted, the Enterprise feature set requires a commercial license.
 
 ### Model vendor
 
@@ -271,7 +271,7 @@ installed for this origin:
 The Carbon MCP server is already configured. Its tools are search_tools, describe_tool, and call_tool.
 Discover an operation with search_tools, read its schema with describe_tool, then run it with call_tool.
 Show the classification. Ask before any WRITE or DESTRUCTIVE call.
-On 401, stop and ask for a new key. On 403, stop and name the missing scope. On 429, wait for Retry-After.
+On 401, stop and ask for a new key. On 403, stop: on Carbon Cloud the company is on the Starter plan. A missing module scope is a tool error, not HTTP 403. On 429, wait for Retry-After.
 ```
 
 ### Claude Code
@@ -351,10 +351,12 @@ listing the three meta-tools and running one read:
 
 If a request comes back `401`, the key is missing, malformed, expired, or
 deleted (recreate it in Settings → API Keys) — or a connector needs
-re-authorizing. A `403` means the identity is authenticated but lacks the module
-permission for that action, or, on Cloud, the company is on the Starter plan
-(API and MCP access is a Business-plan feature). A `429` means you've exceeded
-the key's rate limit — the `X-RateLimit-*` headers say when to retry.
+re-authorizing. An API-key request from a Starter company returns `403` during
+authentication, before MCP handling. A missing API-key module scope is an MCP
+tool error, `API key lacks the required scope`, not HTTP `403`. An OAuth
+request from a Starter company returns `402` from the MCP entitlement gate.
+A `429` means you've exceeded the key's rate limit — the `X-RateLimit-*`
+headers say when to retry.
 
 ---
 

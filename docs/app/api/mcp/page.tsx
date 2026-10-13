@@ -95,7 +95,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "Is the Carbon API available on my plan?",
-    a: "On Carbon Cloud, API and MCP access is a Business-plan feature — Starter keys are rejected with 403. Self-hosted, it's one of the Business features, which Enterprise Edition (EE) unlocks with a commercial license. See Licensing for the full picture."
+    a: "On Carbon Cloud, API and MCP access is a Business-plan feature. An API key from a Starter company is rejected with 403 during sign-in. An OAuth request from a Starter company reaches MCP and returns 402. Self-hosted, it's one of the Business features, which Enterprise Edition (EE) unlocks with a commercial license. See Licensing for the full picture."
   },
   {
     q: "Is there a rate limit?",
@@ -107,7 +107,7 @@ const FAQ: FaqEntry[] = [
   },
   {
     q: "I'm getting 403 Forbidden",
-    a: "The identity is authenticated but lacks the module permission for that action — or, on Cloud, the company is on the Starter plan. Grant the scope, or switch to a key that has it."
+    a: "An API key from a Starter company is rejected with 403 during sign-in, before MCP runs. A key that is signed in but missing a module scope does not get HTTP 403: the tool result says `API key lacks the required scope`. An OAuth request from a Starter company returns 402."
   },
   {
     q: "How do I manage or revoke a key?",
@@ -173,9 +173,10 @@ export default async function ConnectOverMcpPage() {
         read the schema with <Code>describe_tool</Code>, call with{" "}
         <Code>call_tool</Code>, and ask before any <Code>WRITE</Code> or{" "}
         <Code>DESTRUCTIVE</Code> operation. Stop on <Code>401</Code> (new key),{" "}
-        <Code>403</Code> (missing scope or Starter plan), and <Code>429</Code>{" "}
-        (wait for <Code>Retry-After</Code>). A Cursor Cloud Agent stays unused
-        for a private or controlled origin.
+        <Code>403</Code> (Starter plan, during sign-in), and <Code>429</Code>{" "}
+        (wait for <Code>Retry-After</Code>). A missing module scope is an MCP
+        tool error, not HTTP 403. A Cursor Cloud Agent stays unused for a
+        private or controlled origin.
       </P>
       <CodeBlock html={cursor} code={CURSOR} label="~/.cursor/mcp.json" />
 
@@ -249,8 +250,12 @@ export default async function ConnectOverMcpPage() {
       </P>
       <P>
         Each key, and each OAuth user, is limited to 60 requests a minute by
-        default. On Carbon Cloud this surface is a Business-plan feature.
-        Starter returns <Code>403</Code>.
+        default. On Carbon Cloud this surface is a Business-plan feature. An
+        OAuth request from a Starter company returns <Code>402</Code> from the
+        MCP entitlement gate. An API-key request from a Starter company is
+        rejected with <Code>403</Code> during authentication. A missing module
+        scope is an MCP tool error,{" "}
+        <Code>API key lacks the required scope</Code>, not HTTP 403.
       </P>
 
       <H2 id="discovery">Discovery</H2>

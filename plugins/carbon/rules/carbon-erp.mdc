@@ -7,6 +7,6 @@ The Carbon plugin is already installed. Its tools are `search_tools`, `describe_
 
 Discover an operation with `search_tools`, read its schema with `describe_tool`, then run it with `call_tool`. Do not send `companyId` or `userId`. Show the classification. Ask before any `WRITE` or `DESTRUCTIVE` call.
 
-On `401`, stop and ask the user to approve the Carbon sign-in again. On `403`, stop and name the missing permission. On `429`, wait for `Retry-After`.
+On `401`, stop and ask the user to approve the Carbon sign-in again. On `402`, stop: the company is on the Starter plan. A missing module scope is an MCP tool error, not HTTP `403`. On `429`, wait for `Retry-After`.
 
 This server is Carbon Cloud at `https://app.carbon.ms/api/mcp`. Do not point it at a private network, a self-hosted host, or an ITAR environment.

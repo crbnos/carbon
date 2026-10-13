@@ -30,6 +30,7 @@ function expectOperatorLoop(text: string) {
   expect(text).toContain("WRITE");
   expect(text).toContain("DESTRUCTIVE");
   expect(text).toContain("401");
+  expect(text).toContain("402");
   expect(text).toContain("403");
   expect(text).toContain("429");
   expect(text).toContain("Retry-After");
@@ -131,6 +132,8 @@ describe("Carbon marketplace plugin", () => {
     );
     expect(skill).toContain("Do not retarget this server");
     expect(skill).toContain(CLOUD_MCP);
+    expect(skill).toContain("API key lacks the required scope");
+    expect(skill).toContain("This plugin uses OAuth, so the plan gate is HTTP 402");
     expectOperatorLoop(skill);
   });
 
@@ -155,6 +158,15 @@ describe("Carbon marketplace plugin", () => {
     expect(cloud).toContain(
       "Use this only when `https://app.carbon.ms` is not `https://app.carbon.ms`"
     );
+    expect(cloud).toContain("If a request comes back `401`");
+    expect(cloud).toContain(
+      "An OAuth request from a Starter company returns `402` from the MCP entitlement gate"
+    );
+    expect(cloud).toContain(
+      "An API-key request from a Starter company returns `403` during"
+    );
+    expect(cloud).toContain("API key lacks the required scope");
+    expect(cloud).not.toContain("Starter returns `403`");
 
     expect(local).toContain(
       "Only when `https://erp.internal.example` is `https://app.carbon.ms`"
@@ -178,5 +190,10 @@ describe("Carbon marketplace plugin", () => {
     );
     expect(page).toContain("Leave a private origin unpublished.");
     expect(page).toContain("plugins/carbon");
+    expect(page).toContain("returns <Code>402</Code>");
+    expect(page).toContain(
+      "rejected with <Code>403</Code> during authentication."
+    );
+    expect(page).not.toContain("Starter returns <Code>403</Code>.");
   });
 });
