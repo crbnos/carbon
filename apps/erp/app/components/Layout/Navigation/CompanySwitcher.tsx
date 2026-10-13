@@ -23,7 +23,13 @@ import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { LuChevronsUpDown } from "react-icons/lu";
-import { Form, Link, useLocation, useParams } from "react-router";
+import {
+  Form,
+  Link,
+  useLocation,
+  useNavigation,
+  useParams
+} from "react-router";
 import { useRouteData, useUser } from "~/hooks";
 import type { Company } from "~/modules/settings";
 import { path } from "~/utils/path";
@@ -95,6 +101,8 @@ const CompanySwitcher = () => {
   const mode = useMode();
   const companyGroups = useCompanyGroups();
   const companyForm = useDisclosure();
+  // A switch is a full POST navigation: block a second one while it runs.
+  const navigation = useNavigation();
 
   const hasMultipleCompanies = (routeData?.companies?.length ?? 0) > 1;
   const canCreateCompany = user.admin === true;
@@ -149,7 +157,10 @@ const CompanySwitcher = () => {
                         asChild
                         disabled={isCurrent}
                       >
-                        <button type="submit">
+                        <button
+                          type="submit"
+                          disabled={navigation.state === "submitting"}
+                        >
                           <HStack>
                             <Avatar
                               size="xs"
