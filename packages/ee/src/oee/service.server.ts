@@ -101,6 +101,16 @@ export async function upsertWorkCenterDevice(
   await requireEntitlement(client, args.companyId, "INTEGRATIONS");
   try {
     return await db.transaction().execute(async (trx) => {
+      // Kysely skips RLS, and the id comes from the form: the work center
+      // must be this company's (the composite FK refuses it too).
+      const workCenter = await trx
+        .selectFrom("workCenter")
+        .select("id")
+        .where("id", "=", args.workCenterId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!workCenter) return { data: null, error: "Work center not found" };
+
       const current = await trx
         .selectFrom("workCenterDevice")
         .select(["id", "workCenterId"])

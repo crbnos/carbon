@@ -22,6 +22,10 @@ integrations may be active at once:
 (migration `20261013030022_oee-provider.sql`). The real rule is on
 `workCenterDevice`: `UNIQUE(workCenterId, companyId)`, so a work center has at
 most one device across every OEE provider.
+Its `workCenterId` FK is composite, `(workCenterId, companyId)` →
+`workCenter (id, companyId)` (migration `20261013191915`), so a device can
+only map to its own company's work center; `upsertWorkCenterDevice` also
+checks it first ("Work center not found").
 
 ## Files
 
@@ -198,6 +202,11 @@ operations on open jobs at the work center's location, this work center's
 first). Keys (`MACHINE_TIME_REVIEW_SHORTCUTS`): 1–9 assign a card, j/k move
 (the table behind binds the arrows); a repeated keydown is ignored and one
 answer per row is posted.
+
+**State change retention.** pg_cron `machine-state-change-retention` (04:29
+UTC) runs `util.purge_machine_state_changes()`: it deletes `machineStateChange`
+rows older than 30 days, and rows whose device was unmapped or remapped. The
+engine only reads rows after `appliedThrough`, so neither is ever read again.
 
 ## Sense adapter
 

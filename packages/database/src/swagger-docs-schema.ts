@@ -163381,8 +163381,6 @@ export default {
           type: "string"
         },
         workCenterId: {
-          description:
-            "Note:\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
           format: "text",
           type: "string"
         },

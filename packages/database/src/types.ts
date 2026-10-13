@@ -72069,31 +72069,24 @@ export type Database = {
           },
           {
             foreignKeyName: "workCenterDevice_workCenterId_fkey"
-            columns: ["workCenterId"]
-            isOneToOne: false
-            referencedRelation: "riskRegisters"
-            referencedColumns: ["workCenterId"]
-          },
-          {
-            foreignKeyName: "workCenterDevice_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenter"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "workCenterDevice_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCenters"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           },
           {
             foreignKeyName: "workCenterDevice_workCenterId_fkey"
-            columns: ["workCenterId"]
+            columns: ["workCenterId", "companyId"]
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
-            referencedColumns: ["id"]
+            referencedColumns: ["id", "companyId"]
           }
         ]
       }
