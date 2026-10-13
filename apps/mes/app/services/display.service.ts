@@ -92,6 +92,39 @@ export async function getDisplayLoadedOperation(
   };
 }
 
+/** A device state older than this is hidden: the sync may have stopped. */
+const DEVICE_STATE_MAX_AGE_MS = 10 * 60 * 1000;
+
+/**
+ * The live state of the OEE device mapped to a work center, or null when there
+ * is no device, its last sync failed, it has never synced, or it last synced
+ * more than 10 minutes before `now`. A wall display must not show "Running"
+ * from a sync that stopped hours ago.
+ */
+export async function getDisplayDeviceState(
+  client: SupabaseClient<Database>,
+  args: { workCenterId: string; companyId: string; now: string }
+): Promise<Database["public"]["Enums"]["machineState"] | null> {
+  const { data } = await client
+    .from("workCenterDevice")
+    .select("currentState, lastSyncedAt, lastSyncError")
+    .eq("workCenterId", args.workCenterId)
+    .eq("companyId", args.companyId)
+    .maybeSingle();
+
+  if (!data || data.lastSyncError || !data.lastSyncedAt) return null;
+
+  // Comparing two absolute instants: the date rule's narrow exception.
+  if (
+    Date.parse(args.now) - Date.parse(data.lastSyncedAt) >
+    DEVICE_STATE_MAX_AGE_MS
+  ) {
+    return null;
+  }
+
+  return data.currentState;
+}
+
 export async function getWorkCentersForDisplayPicker(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }

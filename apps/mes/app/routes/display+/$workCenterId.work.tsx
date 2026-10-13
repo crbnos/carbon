@@ -5,6 +5,7 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { datetime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
@@ -16,11 +17,11 @@ import {
 } from "~/components/Display";
 import { userContext } from "~/context";
 import {
+  getDisplayDeviceState,
   getDisplayLoadedOperation,
   getDisplayWorkCenter,
   getWorkDisplayData
 } from "~/services/display.service";
-import { getWorkCenterDevice } from "~/services/operations.service";
 import type { WorkAlertReason } from "~/utils/display";
 import { getWorkDisplayState } from "~/utils/display";
 
@@ -46,19 +47,27 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
     workCenter.locationId ?? context.get(userContext)?.locationId;
   if (!locationId) throw notFound("Location not found");
 
-  const [{ activeWork, queue, lastEventEndedAt }, loadedOperation, device] =
-    await Promise.all([
-      getWorkDisplayData(serviceRole, { workCenterId, companyId, locationId }),
-      // The operation loaded on the machine (the last timer started here), and
-      // the OEE device's live state when a device is mapped.
-      workCenter.loadedJobOperationId
-        ? getDisplayLoadedOperation(serviceRole, {
-            jobOperationId: workCenter.loadedJobOperationId,
-            companyId
-          })
-        : null,
-      getWorkCenterDevice(serviceRole, { workCenterId, companyId })
-    ]);
+  const [
+    { activeWork, queue, lastEventEndedAt },
+    loadedOperation,
+    deviceState
+  ] = await Promise.all([
+    getWorkDisplayData(serviceRole, { workCenterId, companyId, locationId }),
+    // The operation loaded on the machine (the last timer started here), and
+    // the OEE device's live state when a device is mapped and its sync is
+    // current.
+    workCenter.loadedJobOperationId
+      ? getDisplayLoadedOperation(serviceRole, {
+          jobOperationId: workCenter.loadedJobOperationId,
+          companyId
+        })
+      : null,
+    getDisplayDeviceState(serviceRole, {
+      workCenterId,
+      companyId,
+      now: datetime.timestamp()
+    })
+  ]);
 
   return {
     workCenter,
@@ -66,7 +75,7 @@ export async function loader({ context, params, request }: LoaderFunctionArgs) {
     queue,
     lastEventEndedAt,
     loadedOperation,
-    deviceState: device.data?.currentState ?? null
+    deviceState
   };
 }
 

@@ -2124,23 +2124,6 @@ export async function getWorkCenter(
     .single();
 }
 
-/** The OEE device mapped to a work center, if any (one per work center). */
-export async function getWorkCenterDevice(
-  client: SupabaseClient<Database>,
-  args: { workCenterId: string; companyId: string }
-) {
-  return client
-    .from("workCenterDevice")
-    .select("id, workCenterId, deviceName, currentState, currentStateAt")
-    .eq("workCenterId", args.workCenterId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-}
-
-export type WorkCenterDevice = NonNullable<
-  Awaited<ReturnType<typeof getWorkCenterDevice>>["data"]
->;
-
 export async function getWorkCentersByLocation(
   client: SupabaseClient<Database>,
   locationId: string
