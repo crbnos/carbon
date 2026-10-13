@@ -7,6 +7,11 @@ import { getQuoteDisplayId } from "../utils/quote";
 import type { BatchListMember } from "./BatchListPDF";
 import { BatchListPDF } from "./BatchListPDF";
 import type { JobTravelerMaterial } from "./blocks/jobTraveler";
+import type {
+  ContractFinancingEventRow,
+  ContractFinancingRow
+} from "./ContractFinancingRequestPDF";
+import ContractFinancingRequestPDF from "./ContractFinancingRequestPDF";
 import { Footer } from "./components";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
@@ -40,6 +45,8 @@ import { SAMPLE_SALES_INVOICE } from "./samples";
 import { SAMPLE_TRACKING_LABEL } from "./trackingLabel.samples";
 export type {
   BatchListMember,
+  ContractFinancingEventRow,
+  ContractFinancingRow,
   JobTravelerMaterial,
   ProjectReaderSection,
   ServiceEstimate,
@@ -52,6 +59,7 @@ export {
   ensureFont,
   Footer,
   getPurchaseOrderDisplayId,
+  ContractFinancingRequestPDF,
   getQuoteDisplayId,
   getSafeFontFamily,
   IssuePDF,
