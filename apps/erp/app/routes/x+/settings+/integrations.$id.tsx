@@ -55,7 +55,6 @@ import {
   XERO_MAX_JOURNAL_DIMENSION_SLOTS,
   type XeroProvider
 } from "@carbon/ee/accounting";
-import { EntitlementError } from "@carbon/ee/entitlements.server";
 import {
   ensureOnshapeReleaseWebhook,
   getIntegrationServerHooks,
@@ -67,12 +66,6 @@ import {
   SECRET_KEYS,
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
-import type { OeeDevice } from "@carbon/ee/oee";
-import {
-  deleteWorkCenterDevice,
-  getOeeProvider,
-  upsertWorkCenterDevice
-} from "@carbon/ee/oee.server";
 import {
   getConflictingOnshapeIntegration,
   isOnshapeIntegrationId,
@@ -122,6 +115,10 @@ import {
   syncOperationTransitionValidator
 } from "~/modules/settings";
 import {
+  getOeeDevicesTabData,
+  saveWorkCenterDeviceMapping
+} from "~/modules/settings/oee-devices.server";
+import {
   accountMappingAiSuggestValidator,
   accountMappingBulkUpsertValidator,
   accountMappingUpsertValidator,
@@ -129,8 +126,7 @@ import {
   dimensionValueMappingBulkUpsertValidator,
   dimensionValueMappingUpsertValidator,
   postingSyncSettingsValidator,
-  syncEnabledValidator,
-  workCenterDeviceUpsertValidator
+  syncEnabledValidator
 } from "~/modules/settings/settings.models";
 import {
   getSyncOperationReadableIds,
@@ -632,86 +628,6 @@ async function getDimensionSyncTabData(
     mappings,
     unmapped,
     proposals
-  };
-}
-
-/**
- * Device-mapping data for an OEE integration's Devices tab: the provider's
- * devices, this integration's saved mappings, the work centers another OEE
- * integration already holds, and the active work centers with their location
- * timezone. A provider failure renders the mappings with no devices and the
- * error above the list rather than failing the drawer.
- */
-async function getOeeDevicesTabData(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  integrationId: string
-) {
-  let devices: OeeDevice[] = [];
-  let providerError: string | null = null;
-  try {
-    const oee = await getOeeProvider(
-      getCarbonServiceRole(),
-      companyId,
-      integrationId
-    );
-    if (oee.error || !oee.data) {
-      providerError = oee.error ?? "Could not connect to the provider";
-    } else {
-      devices = await oee.data.provider.listDevices();
-    }
-  } catch (err) {
-    providerError = err instanceof Error ? err.message : String(err);
-  }
-  if (providerError) {
-    logger.error("Failed to list OEE devices", {
-      companyId,
-      integrationId,
-      error: providerError
-    });
-  }
-
-  const [mappings, takenWorkCenters, workCenters] = await Promise.all([
-    client
-      .from("workCenterDevice")
-      .select(
-        "externalDeviceId, deviceName, externalSiteId, siteTimezone, workCenterId, currentState, lastSyncedAt, lastSyncError"
-      )
-      .eq("companyId", companyId)
-      .eq("integration", integrationId),
-    client
-      .from("workCenterDevice")
-      .select("workCenterId, deviceName, integration")
-      .eq("companyId", companyId)
-      .neq("integration", integrationId),
-    client
-      .from("workCenter")
-      .select("id, name, location(timezone)")
-      .eq("companyId", companyId)
-      .eq("active", true)
-      .order("name")
-  ]);
-
-  for (const result of [mappings, takenWorkCenters, workCenters]) {
-    if (result.error) {
-      logger.error("Failed to load OEE device mapping data", {
-        companyId,
-        integrationId,
-        error: result.error
-      });
-    }
-  }
-
-  return {
-    devices,
-    mappings: mappings.data ?? [],
-    takenWorkCenters: takenWorkCenters.data ?? [],
-    workCenters: (workCenters.data ?? []).map((workCenter) => ({
-      id: workCenter.id,
-      name: workCenter.name,
-      locationTimezone: workCenter.location?.timezone ?? null
-    })),
-    error: providerError
   };
 }
 
@@ -1891,62 +1807,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Map or unmap one device (Devices tab of an OEE integration). An empty
   // work center unmaps. Stays on the page so the tab revalidates in place.
   if (formData.get("intent") === "upsert-work-center-device") {
-    const validation = await validator(
-      workCenterDeviceUpsertValidator
-    ).validate(formData);
-
-    if (validation.error) {
-      return validationError(validation.error);
-    }
-
-    const {
-      externalDeviceId,
-      deviceName,
-      externalSiteId,
-      siteTimezone,
-      workCenterId
-    } = validation.data;
-
-    let result: { error: string | null };
-    try {
-      result = workCenterId
-        ? await upsertWorkCenterDevice(client, getDatabaseClient(), {
-            companyId,
-            userId,
-            integration: integrationId,
-            externalDeviceId,
-            externalSiteId: externalSiteId ?? null,
-            siteTimezone: siteTimezone ?? null,
-            deviceName,
-            workCenterId
-          })
-        : await deleteWorkCenterDevice(client, getDatabaseClient(), {
-            companyId,
-            userId,
-            integration: integrationId,
-            externalDeviceId
-          });
-    } catch (err) {
-      if (!(err instanceof EntitlementError)) throw err;
-      logger.error("OEE device mapping refused: not entitled", {
-        companyId,
-        integrationId,
-        error: err
-      });
-      result = { error: err.message };
-    }
-
-    if (result.error) {
-      return data(
-        {},
-        await flash(
-          request,
-          error(result.error, `Failed to save device mapping: ${result.error}`)
-        )
-      );
-    }
-
-    return data({}, await flash(request, success("Saved device mapping")));
+    return saveWorkCenterDeviceMapping(request, formData, {
+      client,
+      companyId,
+      userId,
+      integrationId
+    });
   }
 
   if (!isIntegrationWhitelisted(integrationId)) {

@@ -446,33 +446,36 @@ function DeviceStatusDot({ mapping }: { mapping: OeeDeviceMappingRow | null }) {
   } as const;
 
   let dotClassName = "border border-muted-foreground/40";
-  let label: ReactNode = <Trans>Not mapped</Trans>;
+  // A plain string: it is both the tooltip and the trigger's aria-label.
+  let labelText = t`Not mapped`;
   if (mapping?.lastSyncError) {
     dotClassName = "bg-red-500";
-    label = mapping.lastSyncError;
+    labelText = mapping.lastSyncError;
   } else if (mapping?.currentState) {
     const state = stateLabels[mapping.currentState];
     dotClassName = stateDots[mapping.currentState];
-    label = mapping.lastSyncedAt ? (
-      <Trans>
-        {state} · synced {formatTimeAgo(mapping.lastSyncedAt)}
-      </Trans>
-    ) : (
-      state
-    );
+    labelText = mapping.lastSyncedAt
+      ? t`${state} · synced ${formatTimeAgo(mapping.lastSyncedAt)}`
+      : state;
   } else if (mapping) {
     dotClassName = "bg-muted-foreground/40";
-    label = <Trans>Waiting for the first sync</Trans>;
+    labelText = t`Waiting for the first sync`;
   }
 
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="flex size-4 shrink-0 items-center justify-center">
+        <span
+          // focusable: the tooltip is the only place the state is shown
+          tabIndex={0}
+          role="img"
+          aria-label={labelText}
+          className="flex size-4 shrink-0 items-center justify-center rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <span className={cn("size-2 rounded-full", dotClassName)} />
         </span>
       </TooltipTrigger>
-      <TooltipContent className="max-w-xs">{label}</TooltipContent>
+      <TooltipContent className="max-w-xs">{labelText}</TooltipContent>
     </Tooltip>
   );
 }
