@@ -476,10 +476,12 @@ const seedCompany = defineServerFn({
         for (const [key, number] of Object.entries(accountDefaults)) {
           resolvedDefaults[key] = accountIdByKey[number] ?? null;
         }
+        // A sibling's defaults are copied exactly, empty ones included: after
+        // a chart import the seeded numbers may name unrelated accounts.
         if (siblingDefaults) {
           for (const column of ACCOUNT_DEFAULT_COLUMNS) {
-            const accountId = siblingDefaults[column] as string | null;
-            if (accountId) resolvedDefaults[column] = accountId;
+            resolvedDefaults[column] =
+              (siblingDefaults[column] as string | null) ?? null;
           }
         }
 
@@ -529,43 +531,48 @@ const seedCompany = defineServerFn({
         // its cutover, so the chart can be imported before anything is
         // Posted (.ai/specs/2026-10-12-chart-of-accounts-import.md).
 
-        await trx
-          .insertInto("fixedAssetClass")
-          .values(
-            fixedAssetClasses.map((fac) => {
-              const copied = siblingAssetClasses.get(fac.name);
-              return {
+        // A subsidiary copies the group's fixed asset classes from a sibling;
+        // a new group seeds them by account number.
+        const classRows =
+          siblingAssetClasses.size > 0
+            ? [...siblingAssetClasses.values()].map((fac) => ({
                 name: fac.name,
                 depreciationMethod: fac.depreciationMethod,
                 usefulLifeMonths: fac.usefulLifeMonths,
                 residualValuePercent: fac.residualValuePercent,
-                assetAccountId:
-                  copied?.assetAccountId ?? accountIdByKey[fac.assetAccount]!,
+                assetAccountId: fac.assetAccountId,
                 accumulatedDepreciationAccountId:
-                  copied?.accumulatedDepreciationAccountId ??
+                  fac.accumulatedDepreciationAccountId,
+                depreciationExpenseAccountId: fac.depreciationExpenseAccountId,
+                writeOffAccountId: fac.writeOffAccountId,
+                writeDownAccountId: fac.writeDownAccountId,
+                gainOnDisposalAccountId: fac.gainOnDisposalAccountId,
+                lossOnDisposalAccountId: fac.lossOnDisposalAccountId,
+                isConstructionInProgress: fac.isConstructionInProgress,
+                companyId,
+                createdBy: userId
+              }))
+            : fixedAssetClasses.map((fac) => ({
+                name: fac.name,
+                depreciationMethod: fac.depreciationMethod,
+                usefulLifeMonths: fac.usefulLifeMonths,
+                residualValuePercent: fac.residualValuePercent,
+                assetAccountId: accountIdByKey[fac.assetAccount]!,
+                accumulatedDepreciationAccountId:
                   accountIdByKey[fac.accumulatedDepreciationAccount]!,
                 depreciationExpenseAccountId:
-                  copied?.depreciationExpenseAccountId ??
                   accountIdByKey[fac.depreciationExpenseAccount]!,
-                writeOffAccountId:
-                  copied?.writeOffAccountId ??
-                  accountIdByKey[fac.writeOffAccount]!,
-                writeDownAccountId:
-                  copied?.writeDownAccountId ??
-                  accountIdByKey[fac.writeDownAccount]!,
+                writeOffAccountId: accountIdByKey[fac.writeOffAccount]!,
+                writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
                 gainOnDisposalAccountId:
-                  copied?.gainOnDisposalAccountId ??
                   accountIdByKey[fac.gainOnDisposalAccount]!,
                 lossOnDisposalAccountId:
-                  copied?.lossOnDisposalAccountId ??
                   accountIdByKey[fac.lossOnDisposalAccount]!,
                 isConstructionInProgress: fac.isConstructionInProgress,
                 companyId,
                 createdBy: userId
-              };
-            })
-          )
-          .execute();
+              }));
+        await trx.insertInto("fixedAssetClass").values(classRows).execute();
       } // end if (!identityOnly)
 
       const user = await single(
