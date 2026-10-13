@@ -19014,6 +19014,9 @@ msgstr "İlerleme"
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "İlerleme, bu öğenin maliyetinin tamamlanma tahminindeki maliyete kıyasla"
 
+msgid "Progress payment liquidation expected"
+msgstr ""
+
 msgid "Progress payment rate"
 msgstr ""
 

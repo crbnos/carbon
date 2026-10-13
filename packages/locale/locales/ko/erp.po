@@ -19014,6 +19014,9 @@ msgstr "진행 상황"
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "진행률은 이 요소의 완료 시점 비용 추정을 기준으로 한 원가입니다"
 
+msgid "Progress payment liquidation expected"
+msgstr ""
+
 msgid "Progress payment rate"
 msgstr ""
 

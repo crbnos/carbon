@@ -26,7 +26,7 @@ Phase B — contract financing
 - [x] Task 14: Add the contract Financing routes
 - [x] Task 15: Build the Financing UI
 - [x] Task 16: Print the financing request
-- [ ] Task 17: Show the expected liquidation on invoices and payments
+- [x] Task 17: Show the expected liquidation on invoices and payments
 
 Phase C — demo and proof
 - [ ] Task 18: Move the plan snapshot builder to `@carbon/database`
@@ -861,3 +861,4 @@ grep -n "^> Status" .ai/specs/implemented/2026-10-12-wbs-interop-and-contract-fi
 - Task 13: a Draft request is deleted, not set Withdrawn: the CHECK ties the Draft status to a null number, and a Withdrawn request keeps the number Submit gave it. Paid is set by `markFinancingRequestsPaid`, which the payment post route calls after a successful post (no entitlement: it records a fact). `lines` holds the computed values and `overrides` the user's; `requestedAmount` is line 26 with the overrides applied. `getExpectedLiquidation` reads the invoice's contracts with `loadSalesInvoiceDocumentIds`, one read, not one per financed contract.
 - Tasks 14 and 15 shipped as one commit: the routes and their components import each other. The request is created through intent `request` of `$id.financing.tsx` (no `$id.financing.new.tsx`). Rates and events use read-only tables with add modals, not the inline-edit grid of `ContractFundingActions`: rates are append-only and an event changes rarely once billed. Record Payment redirects to New Payment with `customerContractId`, `financingRequestId` and the approved amount; the payment's create action links it (`linkFinancingPayment`) and its post action marks the request Paid (`markFinancingRequestsPaid`). `checkDepositDocument` now checks a contract deposit's customer and status, so the hidden field is never trusted.
 - Task 16: the PDF is hand-built like `ProjectReaderPDF` (no template engine): a government form, not a customer document. The route formats every value; amounts print in whole dollars through `formatMoney` with `SF1443_WHOLE_DOLLAR_SCALE`, and an overridden line prints its computed value and reason under it.
+- Task 17: DEFERRED, two parts. (1) The sales invoice PDF note: `SalesInvoicePDF` renders through the document template engine (blocks and sections), and a note there is a template change. (2) Prefilling the payment form's credit amount with the expected liquidation: it needs a per-invoice liquidation read in the payment loaders. The invoice prints the GROSS amount either way, which is what DFAS asks; the invoice page shows the expected liquidation, and the user types it on the payment's credit row. Both are follow-ups.

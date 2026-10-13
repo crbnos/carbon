@@ -19014,6 +19014,9 @@ msgstr "进度"
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "进度是该元素成本与完工时预计成本的对比。"
 
+msgid "Progress payment liquidation expected"
+msgstr ""
+
 msgid "Progress payment rate"
 msgstr ""
 

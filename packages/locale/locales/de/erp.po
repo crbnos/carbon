@@ -19014,6 +19014,9 @@ msgstr "Fortschritt"
 msgid "Progress is this element's cost against its estimate at completion"
 msgstr "Fortschritt ist die Kosten dieses Elements gegen die Schätzung bei Fertigstellung"
 
+msgid "Progress payment liquidation expected"
+msgstr ""
+
 msgid "Progress payment rate"
 msgstr ""
 
