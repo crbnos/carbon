@@ -15,14 +15,14 @@
 - [x] Task 6: Widen the provider role to `oee`
 - [x] Task 7: Write the OEE types and the attribution engine with tests
 - [x] Task 8: Write the Sense adapter with tests
-- [ ] Task 9: Register Sense and write the OEE server functions
-- [ ] Task 10: Write the sweep and sync Inngest functions
-- [ ] Task 11: Add the Devices tab to the integration drawer
-- [ ] Task 12: Add the Unattributed Machine Time list and drawer
-- [ ] Task 13: Apply the manual-press rules in MES
-- [ ] Task 14: Show the device state and the loaded operation in MES
-- [ ] Task 15: Write the docs, the rule and the AGENTS.md updates
-- [ ] Task 16: Run the gates and verify in the browser
+- [x] Task 9: Register Sense and write the OEE server functions
+- [x] Task 10: Write the sweep and sync Inngest functions
+- [x] Task 11: Add the Devices tab to the integration drawer
+- [x] Task 12: Add the Unattributed Machine Time list and drawer
+- [x] Task 13: Apply the manual-press rules in MES
+- [x] Task 14: Show the device state and the loaded operation in MES
+- [x] Task 15: Write the docs, the rule and the AGENTS.md updates
+- [x] Task 16: Run the gates and verify in the browser
 
 ## Dependencies
 
