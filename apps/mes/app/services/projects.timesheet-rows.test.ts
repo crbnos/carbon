@@ -20,7 +20,7 @@ function entry(
     status: "Draft",
     workLocation: null,
     project: { id: "proj", identifier: "P-1", name: "Project" },
-    element: { id: "el", readableId: "P-1.1", name: "Task" },
+    element: { id: "el", readableId: "P-1.1", name: "Task", isLeave: false },
     laborCategory: { id: "cat", name: "Engineer" },
     ...overrides
   } as TimesheetWeekEntry;
@@ -63,5 +63,17 @@ describe("groupTimesheetRows (R&D tax)", () => {
         rdActivityRole: "Direct Research"
       })
     ).toEqual(saved?.key);
+  });
+
+  it("carries the element's leave flag, which DCAA mode reads for future days", () => {
+    const [leave, project] = groupTimesheetRows([
+      entry({
+        id: "a",
+        element: { id: "el", readableId: "P-1.1", name: "PTO", isLeave: true }
+      }),
+      entry({ id: "b", projectElementId: null, element: null })
+    ]);
+    expect(leave?.isLeave).toBe(true);
+    expect(project?.isLeave).toBe(false);
   });
 });

@@ -29,6 +29,8 @@ export type ChargeNumber = {
   readableId: string;
   name: string;
   projectName: string;
+  /** A leave element (5a): DCAA mode takes time for a future date on it. */
+  isLeave: boolean;
 };
 
 /**
@@ -59,12 +61,13 @@ export async function getChargeNumbers(client: Client, companyId: string) {
       projectId: string;
       readableId: string;
       name: string;
+      isLeave: boolean;
       project: { name: string } | null;
     }>(() =>
       client
         .from("projectElement")
         .select(
-          "id, projectId, readableId, name, project:project!projectElement_project_fkey!inner(name), state:projectState!projectElement_state_fkey!inner(group)"
+          "id, projectId, readableId, name, isLeave, project:project!projectElement_project_fkey!inner(name), state:projectState!projectElement_state_fkey!inner(group)"
         )
         .eq("companyId", companyId)
         .eq("isChargeable", true)
@@ -91,7 +94,8 @@ export async function getChargeNumbers(client: Client, companyId: string) {
         projectElementId: null,
         readableId: project.identifier,
         name: project.name,
-        projectName: project.name
+        projectName: project.name,
+        isLeave: false
       }));
 
   const elementRows: ChargeNumber[] = (elements.data ?? []).map((element) => ({
@@ -100,20 +104,24 @@ export async function getChargeNumbers(client: Client, companyId: string) {
     projectElementId: element.id,
     readableId: element.readableId,
     name: element.name,
-    projectName: element.project?.name ?? ""
+    projectName: element.project?.name ?? "",
+    isLeave: element.isLeave ?? false
   }));
 
   return { data: [...projectRows, ...elementRows], error: null };
 }
 
-/** Whether the company requires approval before time posts. */
+/**
+ * The company's timesheet settings: whether time needs approval before it
+ * posts, and the timekeeping controls (DCAA keeps a future date read-only).
+ */
 export async function getTimesheetApprovalRequired(
   client: Client,
   companyId: string
 ) {
   return client
     .from("companySettings")
-    .select("timesheetApprovalRequired")
+    .select("timesheetApprovalRequired, timekeepingControls")
     .eq("id", companyId)
     .maybeSingle();
 }
@@ -132,7 +140,7 @@ export async function getLaborCategoriesList(
 }
 
 const TIMESHEET_ENTRY_COLUMNS =
-  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
+  "id, entryDate, projectId, projectElementId, laborCategoryId, workLocationId, rdActivityRole, hours, status, workLocation:location!timesheetEntry_workLocationId_fkey(id, name), project:project!timesheetEntry_project_fkey(id, identifier, name), element:projectElement!timesheetEntry_element_fkey(id, readableId, name, isLeave), laborCategory:laborCategory!timesheetEntry_category_fkey(id, name)" as const;
 
 function timesheetWeekQuery(client: Client) {
   return client.from("timesheetEntry").select(TIMESHEET_ENTRY_COLUMNS);
@@ -173,6 +181,8 @@ export type TimesheetRow = {
   name: string;
   laborCategory: string;
   workLocation: string;
+  /** A leave element (5a): DCAA mode takes time for a future date on it. */
+  isLeave: boolean;
   cells: Record<string, TimesheetCell>;
   total: number;
 };
@@ -223,6 +233,7 @@ export function groupTimesheetRows(
         name: entry.element?.name ?? entry.project?.name ?? "",
         laborCategory: entry.laborCategory?.name ?? "",
         workLocation: entry.workLocation?.name ?? "",
+        isLeave: entry.element?.isLeave ?? false,
         cells: {},
         total: 0
       };

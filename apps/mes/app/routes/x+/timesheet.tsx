@@ -21,6 +21,7 @@ import {
   toast
 } from "@carbon/react";
 import {
+  datetime,
   equals,
   formatDate,
   INPUT_FORMAT,
@@ -126,7 +127,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     defaultLaborCategoryId: employeeJob.data?.laborCategoryId ?? null,
     jobLocationId: employeeJob.data?.locationId ?? null,
     // The submit button says what submitting does, as in the ERP.
-    approvalRequired: approval.data?.timesheetApprovalRequired ?? true
+    approvalRequired: approval.data?.timesheetApprovalRequired ?? true,
+    // DCAA mode keeps a date after today (company calendar) read-only,
+    // except on a leave element, as the ERP grid and the server do.
+    dcaaToday:
+      approval.data?.timekeepingControls === "DCAA"
+        ? datetime.today(timeZone).toString()
+        : null
   };
 }
 
@@ -270,7 +277,8 @@ export default function MESTimesheetPage() {
     laborCategories,
     defaultLaborCategoryId,
     jobLocationId,
-    approvalRequired
+    approvalRequired,
+    dcaaToday
   } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const roleLabels = useMemo<Record<RdActivityRole, string>>(
@@ -312,6 +320,7 @@ export default function MESTimesheetPage() {
             "",
           // A new row is at the job location, so its name is not shown.
           workLocation: "",
+          isLeave: chargeNumber?.isLeave ?? false,
           cells: {},
           total: 0
         };
@@ -406,7 +415,9 @@ export default function MESTimesheetPage() {
           </p>
         </div>
       ) : (
-        <div className="min-h-0 flex-1 overflow-auto rounded-lg border border-border bg-card max-md:scroll-fade-x">
+        // No flex-1: the border ends under the totals; a long week scrolls
+        // inside it with the header and the totals sticky.
+        <div className="min-h-0 overflow-auto rounded-lg border border-border bg-card max-md:scroll-fade-x">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead className="sticky top-0 z-20">
               <tr>
@@ -452,7 +463,14 @@ export default function MESTimesheetPage() {
                       key={day}
                       className="border-b border-r border-border p-0"
                     >
-                      <DayCell row={row} day={day} label={dayLabel(day)} />
+                      <DayCell
+                        row={row}
+                        day={day}
+                        label={dayLabel(day)}
+                        isFuture={
+                          dcaaToday !== null && day > dcaaToday && !row.isLeave
+                        }
+                      />
                     </td>
                   ))}
                   <td className="border-b border-border px-3 text-right text-base font-semibold tabular-nums">
@@ -515,16 +533,19 @@ function parseHours(text: string) {
 /**
  * One day of a row: a borderless touch cell that saves on blur and on
  * Enter, or the locked hours with their status. A refused save puts the
- * stored hours back.
+ * stored hours back. A future day in DCAA mode (`isFuture`) is read-only,
+ * as in the ERP grid.
  */
 function DayCell({
   row,
   day,
-  label
+  label,
+  isFuture
 }: {
   row: TimesheetRow;
   day: string;
   label: string;
+  isFuture: boolean;
 }) {
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -548,6 +569,14 @@ function DayCell({
 
   const isLocked =
     cell !== undefined && cell.status !== "Draft" && cell.status !== "Rejected";
+
+  if (isFuture && !isLocked) {
+    return (
+      <div className="flex h-full min-h-12 w-full items-center justify-center text-base tabular-nums text-muted-foreground">
+        {shownHours}
+      </div>
+    );
+  }
 
   if (isLocked) {
     return (
@@ -596,6 +625,9 @@ function DayCell({
     <input
       type="text"
       inputMode="decimal"
+      // A text input is 20 characters wide by default, which widened its
+      // column in the table's auto layout; the cell sets the width.
+      size={1}
       aria-label={t`Hours on ${label}`}
       value={draft ?? shownHours}
       onChange={(event) => setDraft(event.target.value)}
