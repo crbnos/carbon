@@ -101,6 +101,10 @@ msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生�
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {过账或删除日期在截断前的 # 份文件。} other {过账或删除日期在截断前的 # 份文档。}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {该文件没有 {columns} 列。} other {该文件没有 {columns} 列。}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。} other {计划员将这 # 个组件视为一个刚体 — 说明中的一个步骤。重新运行计划以应用。}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} 行"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# 行} other {# 行}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} 个未映射的账户将与 {1} 个提供商账户相匹配。"
 msgid "{0} unposted documents"
 msgstr "{0}个未过账的文档"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} 已更新 · {1} 新增 · {2} 已合并 · {3} 已删除"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} 上传成功"
@@ -385,8 +396,8 @@ msgstr "{0}h 需要"
 msgid "{0}h staffed"
 msgstr "{0}小时配置人员"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} 有已过账凭证行，无法删除。"
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} 有已过账的历史记录，因此无法删除。"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}个零件已跳过——它们已有未结的工单"
@@ -480,8 +491,8 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} 有凭证行，无法删除。"
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} 被文档、凭证或默认账户使用，因此无法删除。"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#天}}"
@@ -625,9 +636,6 @@ msgstr "{unread} 条未读"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}无法排程"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} 已更新 · {created} 新增 · {merged} 已合并 · {deleted} 已删除"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
@@ -4576,6 +4584,9 @@ msgstr "科目表第 {line} 行：名称 \"{value}\" 已存在于第 {firstLine}
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "科目表第 {line} 行：编号 {value} 已存在于第 {firstLine} 行。"
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "会计科目表行 {line}：类型「{accountType}」不是类别 {accountClass} 的类型。"
 
 msgid "Chart of accounts"
 msgstr "会计科目表"
@@ -9125,8 +9136,8 @@ msgstr "导出 CSV"
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组。Carbon 仅保留此文件中的账户。"
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "从您的现有系统导出科目表为 CSV，每行一个账户，包括编号、名称、类别、类型和组，或从当前科目表的模板开始。Carbon 仅保留此文件中的账户。"
 
 msgid "Extended Price"
 msgstr "扩展价格"
@@ -21283,8 +21294,8 @@ msgstr "此客户所属的类别（OEM、分销商、最终用户、内部）；
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "此供应商所属的类别（原材料、服务、合同制造商）；确定默认GL账户和报告分组。"
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "科目表由组内所有公司共享。这些公司有草稿文档或未过账凭证，这些将转移到另一个账户。"
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "会计科目表由集团中的每个公司共享。这些公司的文档或凭证会转移到另一个账户。"
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "所选的服务行转移到新的草稿合同，该合同将按排程为其开票。订单将其记为已开票。"
@@ -21473,11 +21484,14 @@ msgstr "此间接支出行过账至的费用科目；因为间接行没有物料
 msgid "The file could not be read"
 msgstr "无法读取该文件"
 
-msgid "The file has no {columns} column."
-msgstr "该文件没有 {columns} 列。"
-
 msgid "The file has no rows."
 msgstr "该文件没有行。"
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "该文件不是有效的 CSV：带引号的值未关闭。"
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "该文件过大，无法作为会计科目表。"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "您上传的文件和已完成的映射将会丢失。"
@@ -22251,8 +22265,8 @@ msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "这些单位被视为销售。激活时注销每一个单位并过账其开始凭证："
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "它们不在您的科目表中，但草稿文档或未过账凭证使用了它们。为每个账户选择您的科目表中替代它的账户。"
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "这些账户不在你的会计科目表中，但文档或凭证使用了它们。从你的会计科目表中选择替代每一个的账户。"
 
 msgid "this ability"
 msgstr "此能力"

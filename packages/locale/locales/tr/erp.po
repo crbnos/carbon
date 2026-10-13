@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Carbon maliyetleri kaydetmeden önce maliyet oluşan # 
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Kesme tarihinden önce tarihlendirilmiş # belgeyi muhasebeleştir veya sil.} other {Kesme tarihinden önce tarihlendirilmiş # belgeleri muhasebeleştir veya sil.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {Dosyada {columns} sütunu yok.} other {Dosyada {columns} sütunları yok.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Planlama motoru bu bileşeni tek bir rijit gövde olarak görür — talimatların bir adımı. Uygulamak için planı yeniden çalıştırın.} other {Planlama motoru bu # bileşeni tek bir rijit gövde olarak görür — talimatların bir adımı. Uygulamak için planı yeniden çalıştırın.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} satır"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# satır} other {# satırlar}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} eşleştirilmemiş hesap, {1} sağlayıcı hesabı ile eşleştirile
 msgid "{0} unposted documents"
 msgstr "{0} deftere geçmemiş belge"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} güncellendi · {1} yeni · {2} birleştirildi · {3} silindi"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} başarıyla yüklendi"
@@ -385,8 +396,8 @@ msgstr "{0}s gerekli"
 msgid "{0}h staffed"
 msgstr "{0}s personel kaynaklandı"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} muhasebeleştirilmiş muhasebe fişi satırlarına sahip olduğundan kaldırılamaz."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} muhasebeleştirilmiş geçmişe sahip olduğundan kaldırılamaz."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parça atlandı — bunların zaten açık iş emirleri var"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} daha: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} muhasebe fişi satırlarına sahip olduğundan silinemez."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} belgeler, muhasebe fişleri veya varsayılan hesaplar tarafından kullanıldığından silinemez."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# gün} other {# gün}}"
@@ -625,9 +636,6 @@ msgstr "{unread} okunmamış"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} planlanmıyor"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} güncellendi · {created} yeni · {merged} birleştirildi · {deleted} silindi"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} yüklendi — alanlar belgeden dolduruldu."
@@ -4576,6 +4584,9 @@ msgstr "Hesap planı satırı {line}: ad «{value}» zaten {firstLine} satırın
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "Hesap planı satırı {line}: numara {value} zaten {firstLine} satırında."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Hesap planı satırı {line}: «{accountType}» türü {accountClass} sınıfının bir türü değildir."
 
 msgid "Chart of accounts"
 msgstr "Hesap planı"
@@ -9125,8 +9136,8 @@ msgstr "CSV'yi dışa aktar"
 msgid "Export Lines to CSV"
 msgstr "Satırları CSV'ye Dışa Aktar"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; hesap başına bir satır, numarası, adı, sınıfı, türü ve grubu ile. Carbon yalnızca bu dosyadaki hesapları tutar."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Hesap planınızı mevcut sisteminizden CSV olarak dışa aktarın; her hesap için numarası, adı, sınıfı, türü ve grubuyla bir satır olsun ya da mevcut hesap planının şablonuyla başlayın. Carbon yalnızca bu dosyadaki hesapları tutar."
 
 msgid "Extended Price"
 msgstr "Genelletilmiş Fiyat"
@@ -21283,8 +21294,8 @@ msgstr "Bu müşterinin ait olduğu kategori (OEM, distribütör, son kullanıc�
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Bu tedarikçinin ait olduğu kategori (hammadde, hizmetler, sözleşmeli üretici); varsayılan GL hesaplarını ve rapor gruplandırmalarını belirler."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "Hesap planı grubun her şirketi tarafından paylaşılır. Bu şirketlerde taslak belgeler veya muhasebeleştirilmemiş muhasebe fişileri vardır ve bunlar başka bir hesaba taşınabilir."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "Hesap planı gruptaki her şirket tarafından paylaşılır. Bu şirketlerin başka bir hesaba taşınan belgeleri veya muhasebe fişleri vardır."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Seçilen Hizmet Satırları, bunları kendi çizelgesine göre faturalandıran yeni bir Taslak sözleşmeye taşınır. Sipariş bunları Faturalandı olarak sayar."
@@ -21473,11 +21484,14 @@ msgstr "Bu dolaylı harcama satırının nakledildiği gider hesabı; dolaylı s
 msgid "The file could not be read"
 msgstr "Dosya okunamadı"
 
-msgid "The file has no {columns} column."
-msgstr "Dosyada {columns} sütunu yok."
-
 msgid "The file has no rows."
 msgstr "Dosyada satır yok."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "Dosya geçerli bir CSV değildir: tırnak içindeki bir değer hiçbir zaman kapatılmaz."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "Dosya bir hesap planı olması için çok büyüktür."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Yüklediğiniz dosya ve yaptığınız eşleştirmeler kaybolacak."
@@ -22251,8 +22265,8 @@ msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Bu birimler satış olarak ele alınır. Etkinleştirme her birini kayıttan çıkarır ve başlangıç muhasebe fişi'ni muhasebeleştirir:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "Hesap planınızda değillerse de taslak belgeler veya muhasebeleştirilmemiş muhasebe fişileri bunları kullanırlar. Her birinin yerine geçecek hesap planınızdaki hesabı seçin."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "Bunlar sizin hesap planınızda değil, ancak belgeler veya muhasebe fişleri tarafından kullanılıyorlar. Her birini değiştirecek hesap planınızdaki hesabı seçin."
 
 msgid "this ability"
 msgstr "bu yetkinlik"

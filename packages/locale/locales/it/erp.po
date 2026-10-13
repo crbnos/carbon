@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Completa o annulla l'# ordine di produzione che ha sost
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Registra o elimina il # documento datato prima della transizione contabile.} other {Registra o elimina i # documenti datati prima della transizione contabile.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {Il file non ha alcuna colonna {columns}.} other {Il file non ha {columns} colonne.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Il pianificatore tratta questo componente come un corpo rigido — un passo nelle istruzioni. Riesegui la pianificazione per applicare.} other {Il pianificatore tratta questi # componenti come un corpo rigido — un passo nelle istruzioni. Riesegui la pianificazione per applicare.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {Questo articolo è in 1 avviso di modifica aperto} other {Questo articolo è in # avvisi di modifica aperti}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} righe"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# riga} other {# righe}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} conti non mappati verranno associati a {1} conti provider."
 msgid "{0} unposted documents"
 msgstr "{0} documenti non registrati"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} aggiornati · {1} nuovi · {2} uniti · {3} eliminati"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} caricato con successo"
@@ -385,8 +396,8 @@ msgstr "{0}h richieste"
 msgid "{0}h staffed"
 msgstr "{0}h personale"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} ha righe di prima nota registrate, quindi non può essere rimosso."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} ha una cronologia registrata, quindi non può essere rimosso."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} componenti saltati — hanno già ordini di produzione aperti"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} altri: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1} saltati."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} ha righe di prima nota, quindi non può essere eliminato."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} è utilizzato da Documenti, Prima nota o conti predefiniti, quindi non può essere eliminato."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# giorno} other {# giorni}}"
@@ -625,9 +636,6 @@ msgstr "{unread} non letti"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} non può essere programmato"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} aggiornati · {created} nuovi · {merged} uniti · {deleted} eliminati"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} caricato — campi compilati dal documento."
@@ -4576,6 +4584,9 @@ msgstr "Riga del piano dei conti {line}: il nome « {value} » è già sulla rig
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "Riga del piano dei conti {line}: il numero {value} è già sulla riga {firstLine}."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Riga del Piano dei conti {line}: il tipo \"{accountType}\" non è un tipo di classe {accountClass}."
 
 msgid "Chart of accounts"
 msgstr "Piano dei conti"
@@ -9125,8 +9136,8 @@ msgstr "Esporta CSV"
 msgid "Export Lines to CSV"
 msgstr "Esporta Righe in CSV"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "Esporta il tuo piano dei conti dal tuo sistema attuale come CSV, una riga per conto, con il suo numero, nome, classe, tipo e gruppo. Carbon mantiene solo i conti in questo file."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Esporta il piano dei conti dal sistema attuale come CSV, una riga per conto, con numero, nome, classe, tipo e gruppo, oppure parti dal modello del piano attuale. Carbon conserva solo i conti presenti in questo file."
 
 msgid "Extended Price"
 msgstr "Prezzo Esteso"
@@ -21283,8 +21294,8 @@ msgstr "La categoria a cui appartiene questo cliente (OEM, distributore, utente 
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "La categoria a cui appartiene questo fornitore (materia prima, servizi, produttore contrattuale); determina i conti GL predefiniti e i raggruppamenti di report."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "Il piano dei conti è condiviso da ogni Azienda nel gruppo. Queste aziende hanno documenti in Bozza e prime note non registrate associate a conti che verranno spostati a un altro conto."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "Il Piano dei conti è condiviso da tutte le Aziende del gruppo. Queste Aziende hanno Documenti o Prima nota che si spostano verso un altro conto."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Le righe di servizio scelte si spostano in un nuovo contratto in Bozza, che le fattura secondo il suo programma. L'ordine le conta come fatturate."
@@ -21473,11 +21484,14 @@ msgstr "Il conto spese a cui questa riga di spesa indiretta viene contabilizzata
 msgid "The file could not be read"
 msgstr "Non è stato possibile leggere il file"
 
-msgid "The file has no {columns} column."
-msgstr "Il file non ha la colonna {columns}."
-
 msgid "The file has no rows."
 msgstr "Il file non ha righe."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "Il file non è un CSV valido: un valore tra virgolette non è mai chiuso."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "Il file è troppo grande per essere un Piano dei conti."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Il file caricato e le mappature effettuate andranno persi."
@@ -22251,8 +22265,8 @@ msgstr "Queste righe collegano i dati al di fuori di questa azienda, quindi non 
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Questi articoli sono trattati come vendite. L'attivazione cancella il riconoscimento di ognuno e registra la relativa prima nota di inizio:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "Non sono nel tuo piano dei conti, ma i documenti in Bozza e le prime note non registrate li utilizzano. Seleziona il conto del tuo piano dei conti che sostituisce ognuno."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "Non sono nel tuo Piano dei conti, ma Documenti o Prima nota li utilizzano. Seleziona il conto nel tuo Piano dei conti che sostituisce ciascuno."
 
 msgid "this ability"
 msgstr "questa competenza"

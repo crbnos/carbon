@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Carbon が原価を記録する前に原価が発生し
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {会計開始日前に日付した # ドキュメントを転記または削除してください。} other {会計開始日前に日付した # ドキュメントを転記または削除してください。}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {ファイルに {columns} 列がありません。} other {ファイルに {columns} 列がありません。}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {プランナーはこのコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。} other {プランナーはこれら # 個のコンポーネントを1つの剛体—指示書内の1つのステップとして扱います。プランを再実行して適用してください。}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} 行"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# 行} other {# 行}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0}個のマッピングされていないアカウントが{1}個のプ
 msgid "{0} unposted documents"
 msgstr "{0} 件の未転記ドキュメント"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} 件更新 · {1} 件新規 · {2} 件マージ · {3} 件削除"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0}が正常にアップロードされました"
@@ -385,8 +396,8 @@ msgstr "{0}時間が必要"
 msgid "{0}h staffed"
 msgstr "{0}時間配置"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} には転記済の仕訳があるため、削除できません。"
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} は転記済の履歴があるため、削除できません。"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}個の部品はスキップ済 — 既に進行中の製造指図があります"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} には仕訳があるため、削除できません。"
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} はドキュメント、仕訳、またはデフォルトアカウントで使用されているため、削除できません。"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#日}}"
@@ -625,9 +636,6 @@ msgstr "{unread}件未読"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}はスケジュール化できません"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} 件更新 · {created} 件新規 · {merged} 件マージ · {deleted} 件削除"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} がアップロードされました — フィールドは文書から入力されました。"
@@ -4576,6 +4584,9 @@ msgstr "チャート明細 {line}: 名前「{value}」は既に明細 {firstLine
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "勘定科目表の行 {line}: 番号 {value} は既に行 {firstLine} にあります。"
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "勘定科目表の行 {line}: タイプ \"{accountType}\" はクラス {accountClass} のタイプではありません。"
 
 msgid "Chart of accounts"
 msgstr "勘定科目表"
@@ -9125,8 +9136,8 @@ msgstr "CSVをエクスポート"
 msgid "Export Lines to CSV"
 msgstr "CSVにラインをエクスポート"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "現在のシステムから勘定科目表を CSV でエクスポートしてください。1 行につき 1 つの勘定で、その番号、名前、クラス、タイプ、グループを含みます。Carbon はこのファイルにある勘定のみを保持します。"
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "現在のシステムから勘定科目表を CSV でエクスポートしてください。1 行につき 1 つの勘定で、その番号、名前、クラス、タイプ、グループを含みます。または現在の勘定科目表のテンプレートから始めることもできます。Carbon はこのファイルにある勘定のみを保持します。"
 
 msgid "Extended Price"
 msgstr "拡張価格"
@@ -21283,8 +21294,8 @@ msgstr "この得意先が属するカテゴリ（OEM、ディストリビュー
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "この仕入先が属するカテゴリ（原材料、サービス、請負製造業者）。デフォルトの勘定科目とレポートのグループ化を決定します。"
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "勘定科目表はグループの全社で共有されています。これらの会社には、別の勘定に移動する下書きドキュメントまたは未転記の仕訳があります。"
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "勘定科目表はグループ内のすべての会社で共有されています。これらの会社には別のアカウントに移動するドキュメントまたは仕訳があります。"
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "選択された外注サービス明細は新しい下書き契約に移動され、そのスケジュール通りに請求されます。注文はそれらを請求済として計算します。"
@@ -21473,11 +21484,14 @@ msgstr "この間接支出明細が転記される費用勘定。間接明細に
 msgid "The file could not be read"
 msgstr "ファイルが読み込めませんでした。"
 
-msgid "The file has no {columns} column."
-msgstr "ファイルに{columns}列がありません。"
-
 msgid "The file has no rows."
 msgstr "ファイルに行がありません。"
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "ファイルは有効な CSV ではありません。引用された値が閉じられていません。"
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "ファイルは勘定科目表にしては大きすぎます。"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "アップロードしたファイルと設定したマッピングは失われます。"
@@ -22251,8 +22265,8 @@ msgstr "これらの行は会社外のデータにリンクしているため、
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "これらの単位は販売として扱われます。起動により各単位が認識を外され、その開始仕訳が転記されます："
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "それらは勘定科目表にありませんが、下書きドキュメントまたは未転記の仕訳で使用されています。各々を置き換える勘定科目表内の勘定を選択してください。"
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "これらは勘定科目表にありませんが、ドキュメントまたは仕訳で使用されています。各々を置き換える勘定科目表内のアカウントを選択してください。"
 
 msgid "this ability"
 msgstr "このスキル"

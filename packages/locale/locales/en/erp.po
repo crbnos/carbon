@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Complete or cancel the # job that took costs before Car
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} rows"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# row} other {# rows}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} unmapped accounts will be matched against {1} provider accounts."
 msgid "{0} unposted documents"
 msgstr "{0} unposted documents"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} updated · {1} new · {2} merged · {3} deleted"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} uploaded successfully"
@@ -385,8 +396,8 @@ msgstr "{0}h required"
 msgid "{0}h staffed"
 msgstr "{0}h staffed"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} has posted journal lines, so it cannot be removed."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} has posted history, so it cannot be removed."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} more: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} has journal lines, so it cannot be deleted."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} is used by documents, journals or default accounts, so it cannot be deleted."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# day} other {# days}}"
@@ -625,9 +636,6 @@ msgstr "{unread} unread"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} can't be scheduled"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} uploaded — fields filled from the document."
@@ -4576,6 +4584,9 @@ msgstr "Chart line {line}: name \"{value}\" is already on line {firstLine}."
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "Chart line {line}: number {value} is already on line {firstLine}."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
 
 msgid "Chart of accounts"
 msgstr "Chart of accounts"
@@ -9125,8 +9136,8 @@ msgstr "Export CSV"
 msgid "Export Lines to CSV"
 msgstr "Export Lines to CSV"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
 
 msgid "Extended Price"
 msgstr "Extended Price"
@@ -21283,8 +21294,8 @@ msgstr "The category this customer belongs to (OEM, distributor, end-user, inter
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
@@ -21473,11 +21484,14 @@ msgstr "The expense account this indirect-spend line posts to; required because 
 msgid "The file could not be read"
 msgstr "The file could not be read"
 
-msgid "The file has no {columns} column."
-msgstr "The file has no {columns} column."
-
 msgid "The file has no rows."
 msgstr "The file has no rows."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "The file is not a valid CSV: a quoted value is never closed."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "The file is too large to be a chart of accounts."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "The file you uploaded and the mappings you've made will be lost."
@@ -22251,8 +22265,8 @@ msgstr "These rows link to data outside this company, so they could never be res
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
 
 msgid "this ability"
 msgstr "this ability"

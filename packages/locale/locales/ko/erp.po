@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Carbon이 원가를 기록하기 전에 원가가 발�
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.} other {회계 전환 전에 작성된 # 문서를 전기하거나 삭제하세요.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {파일에 {columns} 열이 없습니다.} other {파일에 {columns} 열이 없습니다.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {플래너는 이 부품을 하나의 강체로 취급합니다 — 명령의 한 단계입니다. 적용하려면 계획을 다시 실행하세요.} other {플래너는 이 # 부품을 하나의 강체로 취급합니다 — 명령의 한 단계입니다. 적용하려면 계획을 다시 실행하세요.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} 행"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# 행} other {# 행}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0}개의 매핑되지 않은 계정이 {1}개의 공급자 계정과 �
 msgid "{0} unposted documents"
 msgstr "{0}건의 미전기 문서"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} 수정 · {1} 신규 · {2} 병합 · {3} 삭제"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0}이(가) 업로드되었습니다"
@@ -385,8 +396,8 @@ msgstr "{0}h 필요"
 msgid "{0}h staffed"
 msgstr "{0}시간 인원배치"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account}에는 전기된 전표 라인이 있어 제거할 수 없습니다."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account}은(는) 전기된 이력이 있으므로 제거할 수 없습니다."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount}개 부품 건너뜀 — 이미 미결 작업 지시가 있음"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label}에는 전표 라인이 있어 삭제할 수 없습니다."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label}은(는) 문서, 전표 또는 기본 계정에서 사용 중이므로 삭제할 수 없습니다."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, other {#일}}"
@@ -625,9 +636,6 @@ msgstr "{unread} 미읽음"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount}개는 일정을 짤 수 없습니다"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} 업데이트됨 · {created} 신규 · {merged} 병합됨 · {deleted} 삭제됨"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} 업로드됨 — 문서에서 필드가 채워졌습니다."
@@ -4576,6 +4584,9 @@ msgstr "계정과목표 라인 {line}: \"{value}\" 이름이 이미 라인 {firs
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "계정과목표 라인 {line}: {value} 번호가 이미 라인 {firstLine}에 있습니다."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "계정과목표 라인 {line}: 유형 「{accountType}」은(는) {accountClass} 클래스의 유형이 아닙니다."
 
 msgid "Chart of accounts"
 msgstr "계정과목표"
@@ -9125,8 +9136,8 @@ msgstr "CSV 내보내기"
 msgid "Export Lines to CSV"
 msgstr "라인을 CSV로 내보내기"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "현재 시스템에서 계정과목표를 CSV로 내보냅니다. 계정당 하나의 행으로 번호, 이름, 분류, 유형 및 그룹을 포함합니다. Carbon은 이 파일의 계정만 유지합니다."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "현재 시스템에서 계정과목표를 CSV로 내보내세요. 계정마다 한 행에 번호, 이름, 분류, 유형, 그룹을 담거나, 현재 계정과목표의 템플릿에서 시작하세요. Carbon은 이 파일에 있는 계정만 유지합니다."
 
 msgid "Extended Price"
 msgstr "확장 가격"
@@ -21283,8 +21294,8 @@ msgstr "이 고객이 속하는 카테고리(OEM, 유통업체, 최종 사용자
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "이 공급업체가 속하는 카테고리(원자재, 서비스, 위탁제조업체)로, 기본 총계정원장 계정과 보고 그룹을 결정합니다."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "계정과목표는 그룹의 모든 회사가 공유합니다. 이 회사들은 다른 계정으로 이동하는 초안 문서 또는 전기되지 않은 전표를 가지고 있습니다."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "계정과목표는 그룹의 모든 회사에서 공유됩니다. 이러한 회사들은 다른 계정으로 이동되는 문서 또는 전표를 가지고 있습니다."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "선택한 서비스 라인이 새 초안 계약으로 이동하며, 이 계약은 일정에 따라 송장을 발행합니다. 주문은 이들을 송장 발행됨으로 계산합니다."
@@ -21473,11 +21484,14 @@ msgstr "이 간접비 지출 라인이 계상되는 비용 계정입니다. 간�
 msgid "The file could not be read"
 msgstr "파일을 읽을 수 없습니다"
 
-msgid "The file has no {columns} column."
-msgstr "파일에 {columns} 열이 없습니다."
-
 msgid "The file has no rows."
 msgstr "파일에 행이 없습니다."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "파일이 유효한 CSV 형식이 아닙니다: 따옴표로 감싼 값이 닫혀있지 않습니다."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "파일이 너무 커서 계정과목표가 될 수 없습니다."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "업로드한 파일과 설정한 매핑이 손실됩니다."
@@ -22251,8 +22265,8 @@ msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원�
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "이 개들은 판매로 취급됩니다. 활성화하면 각각을 자산에서 제거하고 개시 전표를 전기합니다."
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "이 계정들은 자신의 계정과목표에 없지만 초안 문서 또는 전기되지 않은 전표가 사용합니다. 자신의 계정과목표에서 각각을 대체할 계정을 선택합니다."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "이들은 귀사의 계정과목표에 없지만 문서 또는 전표에서 사용 중입니다. 각 항목을 대체할 귀사 계정과목표의 계정을 선택하세요."
 
 msgid "this ability"
 msgstr "이 역량"

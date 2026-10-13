@@ -101,6 +101,10 @@ msgstr "{0, plural, one {# जॉब को पूर्ण करें या 
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {# दस्तावेज़ को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित है।} other {# दस्तावेज़ों को पोस्ट करें या हटाएँ जो संक्रमण तिथि से पहले दिनांकित हैं।}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {फ़ाइल में कोई {columns} कॉलम नहीं है।} other {फ़ाइल में कोई {columns} कॉलम नहीं हैं।}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {योजनाकार इस घटक को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।} other {योजनाकार इन # घटकों को एक कठोर शरीर मानता है — निर्देशों में एक चरण। योजना को पुनः चलाएं और लागू करें।}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} पंक्तियाँ"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# पंक्ति} other {# पंक्तियाँ}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} असंगत खातों को {1} प्रदाता ख
 msgid "{0} unposted documents"
 msgstr "{0} अपोस्ट किए गए दस्तावेज़"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} अद्यतन · {1} नई · {2} मर्ज · {3} हटाई"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} सफलतापूर्वक अपलोड हो गया"
@@ -385,8 +396,8 @@ msgstr "{0}घंटे आवश्यक"
 msgid "{0}h staffed"
 msgstr "{0}h स्टाफ किया गया"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} के पास पोस्ट किए गए जर्नल पंक्तियाँ हैं, इसलिए इसे हटाया नहीं जा सकता।"
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} का पोस्ट किया गया इतिहास है, इसलिए इसे हटाया नहीं जा सकता।"
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} पार्ट्स छोड़ा गया — उनके पास पहले से खुला जॉब हैं"
@@ -480,8 +491,8 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} के पास जर्नल पंक्तियाँ हैं, इसलिए इसे हटाया नहीं जा सकता।"
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} को दस्तावेज़, जर्नल या डिफ़ॉल्ट खातों द्वारा उपयोग किया जाता है, इसलिए इसे हटाया नहीं जा सकता।"
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# दिन} other {# दिन}}"
@@ -625,9 +636,6 @@ msgstr "{unread} अपठित"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} को शेड्यूल नहीं किया जा सकता"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} अपडेट किए गए · {created} नया · {merged} विलीन · {deleted} हटाया गया"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
@@ -4576,6 +4584,9 @@ msgstr "चार्ट पंक्ति {line}: नाम \"{value}\" पह�
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "चार्ट पंक्ति {line}: संख्या {value} पहले से पंक्ति {firstLine} पर है।"
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "चार्ट पंक्ति {line}: प्रकार \"{accountType}\" वर्ग {accountClass} का प्रकार नहीं है।"
 
 msgid "Chart of accounts"
 msgstr "खातों की चार्ट"
@@ -9125,8 +9136,8 @@ msgstr "CSV निर्यात करें"
 msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "अपने वर्तमान सिस्टम से अपना चार्ट CSV के रूप में निर्यात करें, एक पंक्ति प्रति खाता, इसकी संख्या, नाम, वर्ग, प्रकार और समूह के साथ। Carbon केवल इस फ़ाइल में खातों को रखता है।"
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "अपने मौजूदा सिस्टम से अपना खाता चार्ट CSV के रूप में निर्यात करें, प्रति खाता एक पंक्ति, उसकी संख्या, नाम, वर्ग, प्रकार और समूह के साथ, या मौजूदा चार्ट के टेम्पलेट से शुरू करें। Carbon केवल इस फ़ाइल के खाते रखता है।"
 
 msgid "Extended Price"
 msgstr "विस्तारित मूल्य"
@@ -21283,8 +21294,8 @@ msgstr "वह श्रेणी जिससे यह ग्राहक स�
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "वह श्रेणी जिससे यह आपूर्तिकर्ता संबंधित है (कच्चा माल, सेवाएं, अनुबंध निर्माता); डिफ़ॉल्ट GL खातों और रिपोर्टिंग समूहीकरण को निर्धारित करता है।"
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "चार्ट समूह की हर कंपनी द्वारा साझा किया जाता है। इन कंपनियों के पास ड्राफ्ट दस्तावेज़ या पोस्ट न किए गए जर्नल हैं जो दूसरे खाते में स्थानांतरित होते हैं।"
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "यह खातों का चार्ट समूह में सभी कंपनियों द्वारा साझा किया जाता है। इन कंपनियों के दस्तावेज़ या जर्नल हैं जो किसी अन्य खाते में स्थानांतरित होते हैं।"
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "चुनी गई सेवा पंक्तियां एक नए ड्राफ्ट अनुबंध में जाती हैं, जो उन्हें अपने शेड्यूल पर चालान करता है। आदेश उन्हें चालान किया गया के रूप में गिनता है।"
@@ -21473,11 +21484,14 @@ msgstr "व्यय खाता जिस पर यह अप्रत्य�
 msgid "The file could not be read"
 msgstr "फ़ाइल को पढ़ा नहीं जा सका"
 
-msgid "The file has no {columns} column."
-msgstr "फ़ाइल में {columns} कॉलम नहीं है।"
-
 msgid "The file has no rows."
 msgstr "फ़ाइल में कोई पंक्तियां नहीं हैं।"
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "फ़ाइल एक मान्य CSV नहीं है: एक उद्धृत मान कभी बंद नहीं होता है।"
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "फ़ाइल खातों का चार्ट होने के लिए बहुत बड़ी है।"
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "आपके द्वारा अपलोड की गई फ़ाइल और की गई मैपिंग खो जाएँगी।"
@@ -22251,8 +22265,8 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "इन इकाइयों को बिक्री के रूप में माना जाता है। सक्रिय करने से प्रत्येक को अस्वीकार किया जाता है और इसकी शुरुआती जर्नल पोस्ट की जाती है:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "वे आपके चार्ट में नहीं हैं, लेकिन ड्राफ्ट दस्तावेज़ या पोस्ट न किए गए जर्नल उनका उपयोग करते हैं। अपने चार्ट में वह खाता चुनें जो प्रत्येक को बदलता है।"
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "ये आपके चार्ट में नहीं हैं, लेकिन दस्तावेज़ या जर्नल उनका उपयोग करते हैं। अपने चार्ट में उस खाते को चुनें जो प्रत्येक को बदलता है।"
 
 msgid "this ability"
 msgstr "यह कौशल"

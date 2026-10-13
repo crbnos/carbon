@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Concluir ou cancelar a # ordem de produção que teve c
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Contabilizar ou excluir o # documento datado antes do corte.} other {Contabilizar ou excluir os # documentos datados antes do corte.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {O arquivo não tem a coluna {columns}.} other {O arquivo não tem as colunas {columns}.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {O planejador trata este componente como um corpo rígido — uma etapa nas instruções. Execute o planejamento novamente para aplicar.} other {O planejador trata estes # componentes como um corpo rígido — uma etapa nas instruções. Execute o planejamento novamente para aplicar.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {Este item está em 1 aviso de alteração aberto} other {Este item está em # avisos de alteração abertos}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} linhas"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# linha} other {# linhas}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} contas não mapeadas serão comparadas com {1} contas do provedor."
 msgid "{0} unposted documents"
 msgstr "{0} documentos não lançados"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} atualizado · {1} novo · {2} mesclado · {3} deletado"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} enviado com sucesso"
@@ -385,8 +396,8 @@ msgstr "{0}h obrigatório"
 msgid "{0}h staffed"
 msgstr "{0}h pessoal"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "{account} tem linhas de diário contabilizadas, portanto não pode ser removido."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} tem histórico contabilizado, portanto não pode ser removido."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} peças ignoradas — elas já têm ordens de produção abertas"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} mais: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseridos, {updated} atualizados, {0} precisam de correção, {1} ignorados."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} tem linhas de diário, portanto não pode ser excluído."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} é utilizado por documentos, diários ou contas padrão, portanto não pode ser excluído."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# dia} other {# dias}}"
@@ -625,9 +636,6 @@ msgstr "{unread} não lido"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} não podem ser programadas"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} atualizado · {created} novo · {merged} mesclado · {deleted} excluído"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} enviado — campos preenchidos a partir do documento."
@@ -4576,6 +4584,9 @@ msgstr "Linha do gráfico {line}: nome \"{value}\" já está na linha {firstLine
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "Linha do plano {line}: o número {value} já está na linha {firstLine}."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Linha do plano de contas {line}: tipo \"{accountType}\" não é um tipo da classe {accountClass}."
 
 msgid "Chart of accounts"
 msgstr "Plano de contas"
@@ -9125,8 +9136,8 @@ msgstr "Exportar CSV"
 msgid "Export Lines to CSV"
 msgstr "Exportar Linhas para CSV"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "Exporte seu plano de seu sistema atual como um CSV, uma linha por conta, com seu número, nome, classe, tipo e grupo. Carbon mantém apenas as contas neste arquivo."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Exporte seu plano de contas do sistema atual como CSV, uma linha por conta, com número, nome, classe, tipo e grupo, ou comece pelo modelo do plano atual. O Carbon mantém apenas as contas deste arquivo."
 
 msgid "Extended Price"
 msgstr "Preço Estendido"
@@ -21283,8 +21294,8 @@ msgstr "A categoria à qual este cliente pertence (OEM, distribuidor, usuário f
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "A categoria a que este fornecedor pertence (matéria-prima, serviços, fabricante por contrato); determina as contas GL padrão e os agrupamentos de relatórios."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "O plano é compartilhado por todas as empresas do grupo. Essas empresas têm documentos de rascunho ou diários não contabilizados que se movem para outra conta."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "O plano de contas é compartilhado por todas as empresas do grupo. Essas empresas têm documentos ou diários que mudam para outra conta."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "As linhas de Serviço escolhidas são movidas para um novo contrato de Rascunho, que as fatura conforme a sua programação. O pedido as conta como faturadas."
@@ -21473,11 +21484,14 @@ msgstr "A conta de despesas em que essa linha de despesa indireta é lançada; o
 msgid "The file could not be read"
 msgstr "O arquivo não pôde ser lido"
 
-msgid "The file has no {columns} column."
-msgstr "O arquivo não possui a coluna {columns}."
-
 msgid "The file has no rows."
 msgstr "O arquivo não tem linhas."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "O arquivo não é um CSV válido: um valor entre aspas nunca é fechado."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "O arquivo é muito grande para ser um plano de contas."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "O arquivo enviado e os mapeamentos feitos serão perdidos."
@@ -22251,8 +22265,8 @@ msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto nunc
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Essas unidades são tratadas como vendas. Ativar desreconhece cada uma e contabiliza seu diário de início:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "Eles não estão no seu plano, mas documentos de rascunho ou diários não contabilizados os usam. Selecione a conta no seu plano que substitui cada um."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "Elas não estão em seu plano de contas, mas documentos ou diários as usam. Escolha a conta em seu plano de contas que substitui cada uma."
 
 msgid "this ability"
 msgstr "esta habilidade"

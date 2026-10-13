@@ -101,6 +101,10 @@ msgstr "{0, plural, one {Завершить или отменить # произ
 msgid "{0, plural, one {Post or delete the # document dated before the cutover.} other {Post or delete the # documents dated before the cutover.}}"
 msgstr "{0, plural, one {Провести или удалить # документ, датированный до даты перехода.} other {Провести или удалить # документы, датированные до даты перехода.}}"
 
+#. placeholder {0}: error.columns.length
+msgid "{0, plural, one {The file has no {columns} column.} other {The file has no {columns} columns.}}"
+msgstr "{0, plural, one {Файл не содержит {columns} столбца.} other {Файл не содержит {columns} столбцов.}}"
+
 #. placeholder {0}: componentNodeIds.length
 msgid "{0, plural, one {The planner treats this component as one rigid body — one step in the instructions. Re-run the plan to apply.} other {The planner treats these # components as one rigid body — one step in the instructions. Re-run the plan to apply.}}"
 msgstr "{0, plural, one {Планировщик рассматривает этот компонент как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.} other {Планировщик рассматривает эти # компонентов как одно жесткое тело — один шаг в инструкциях. Повторно запустите план, чтобы применить.}}"
@@ -110,8 +114,8 @@ msgid "{0, plural, one {This item is on 1 open change notice} other {This item i
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
 
 #. placeholder {0}: file.name
-msgid "{0} · {count} rows"
-msgstr "{0} · {count} строк"
+msgid "{0} · {count, plural, one {# row} other {# rows}}"
+msgstr "{0} · {count, plural, one {# строка} other {# строк}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -329,6 +333,13 @@ msgstr "{0} неотображенных счетов будут сопоста�
 msgid "{0} unposted documents"
 msgstr "{0} неопубликованных документов"
 
+#. placeholder {0}: plan.updates.length
+#. placeholder {1}: plan.creates.length
+#. placeholder {2}: plan.merges.length
+#. placeholder {3}: plan.deletes.length
+msgid "{0} updated · {1} new · {2} merged · {3} deleted"
+msgstr "{0} обновлено · {1} новых · {2} объединено · {3} удалено"
+
 #. placeholder {0}: file.name
 msgid "{0} uploaded successfully"
 msgstr "{0} успешно загружен"
@@ -385,8 +396,8 @@ msgstr "{0}ч требуется"
 msgid "{0}h staffed"
 msgstr "{0}ч укомплектовано"
 
-msgid "{account} has posted journal lines, so it cannot be removed."
-msgstr "Счет {account} содержит проведенные записи, поэтому не может быть удален."
+msgid "{account} has posted history, so it cannot be removed."
+msgstr "{account} имеет проведенную историю, поэтому его нельзя удалить."
 
 msgid "{alreadyPlannedItemCount} parts skipped — they already have open jobs"
 msgstr "{alreadyPlannedItemCount} деталей пропущено — у них уже есть открытые производственные заказы"
@@ -480,8 +491,8 @@ msgstr "{hiddenCount} еще: {hiddenNames}"
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} вставлено, {updated} обновлено, {0} требуют исправления, {1} пропущено."
 
-msgid "{label} has journal lines, so it cannot be deleted."
-msgstr "{label} содержит записи, поэтому не может быть удалено."
+msgid "{label} is used by documents, journals or default accounts, so it cannot be deleted."
+msgstr "{label} используется документами, операциями или учетными записями по умолчанию, поэтому не может быть удалена."
 
 msgid "{leadTime, plural, one {# day} other {# days}}"
 msgstr "{leadTime, plural, one {# день} few {# дня} many {# дней} other {# дня}}"
@@ -625,9 +636,6 @@ msgstr "{unread} непрочитанных"
 
 msgid "{unschedulableCount} can't be scheduled"
 msgstr "{unschedulableCount} не может быть спланировано"
-
-msgid "{updated} updated · {created} new · {merged} merged · {deleted} deleted"
-msgstr "{updated} обновлено · {created} новых · {merged} объединено · {deleted} удалено"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
@@ -4576,6 +4584,9 @@ msgstr "Строка плана {line}: название «{value}» уже на
 
 msgid "Chart line {line}: number {value} is already on line {firstLine}."
 msgstr "Строка плана {line}: номер {value} уже находится на строке {firstLine}."
+
+msgid "Chart line {line}: type \"{accountType}\" is not a type of class {accountClass}."
+msgstr "Строка плана счетов {line}: тип «{accountType}» не является типом класса {accountClass}."
 
 msgid "Chart of accounts"
 msgstr "План счетов"
@@ -9125,8 +9136,8 @@ msgstr "Экспортировать CSV"
 msgid "Export Lines to CSV"
 msgstr "Экспортировать строки в CSV"
 
-msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group. Carbon keeps only the accounts in this file."
-msgstr "Экспортируйте ваш план счетов из вашей текущей системы как CSV, одна строка на счет, с его номером, названием, классом, типом и группой. Carbon сохраняет только счета из этого файла."
+msgid "Export your chart from your current system as a CSV, one row per account, with its number, name, class, type and group, or start from the template of the current chart. Carbon keeps only the accounts in this file."
+msgstr "Экспортируйте план счетов из текущей системы в CSV, по одной строке на счёт, с номером, названием, классом, типом и группой, или начните с шаблона текущего плана счетов. Carbon сохранит только счета из этого файла."
 
 msgid "Extended Price"
 msgstr "Расширенная цена"
@@ -21283,8 +21294,8 @@ msgstr "Категория, к которой принадлежит этот п
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Категория, к которой принадлежит этот поставщик (сырье, услуги, контрактный производитель); определяет счета GL по умолчанию и группировки отчетов."
 
-msgid "The chart is shared by every company in the group. These companies have draft documents or unposted journals that move to another account."
-msgstr "План счетов используется всеми организациями в группе. Эти организации имеют черновики документов или непроведенные операции, которые перемещаются на другой счет."
+msgid "The chart is shared by every company in the group. These companies have documents or journals that move to another account."
+msgstr "План счетов совместно используется всеми организациями в группе. Эти организации имеют документы или операции, которые будут перенесены на другой счет."
 
 msgid "The chosen Service lines move to a new Draft contract, which invoices them on its schedule. The order counts them as invoiced."
 msgstr "Выбранные строки услуг переходят в новый черновик контракта, который выставляет им счет-фактуры по своему графику. Заказ считает их как выставленные счет-фактуры."
@@ -21473,11 +21484,14 @@ msgstr "Счет расходов, на который относится эта
 msgid "The file could not be read"
 msgstr "Файл не удалось прочитать"
 
-msgid "The file has no {columns} column."
-msgstr "Файл не содержит столбца {columns}."
-
 msgid "The file has no rows."
 msgstr "Файл не содержит строк."
+
+msgid "The file is not a valid CSV: a quoted value is never closed."
+msgstr "Файл не является допустимым CSV: открытая кавычка в значении так и не закрывается."
+
+msgid "The file is too large to be a chart of accounts."
+msgstr "Файл слишком большой, чтобы быть планом счетов."
 
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "Загруженный файл и созданные сопоставления будут потеряны."
@@ -22251,8 +22265,8 @@ msgstr "Эти строки ссылаются на данные вне этой
 msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 msgstr "Эти единицы учитываются как продажи. Активация исключает каждую из них и проводит ее начальную операцию:"
 
-msgid "They are not in your chart, but draft documents or unposted journals use them. Pick the account in your chart that replaces each one."
-msgstr "Они отсутствуют в вашем плане счетов, но черновики документов или непроведенные операции их используют. Выберите счет из вашего плана счетов, который заменяет каждый из них."
+msgid "They are not in your chart, but documents or journals use them. Pick the account in your chart that replaces each one."
+msgstr "Их нет в вашем плане счетов, но документы и операции их используют. Выберите счет в вашем плане счетов, который заменит каждый из них."
 
 msgid "this ability"
 msgstr "этот навык"
