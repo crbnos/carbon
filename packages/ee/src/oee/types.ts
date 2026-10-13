@@ -28,6 +28,17 @@ export interface OeeStateChange {
 }
 
 /**
+ * The provider cannot be reached (network failure, timeout, 5xx). The sync
+ * stops the run: every other device would fail the same way.
+ */
+export class OeeProviderUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "OeeProviderUnavailableError";
+  }
+}
+
+/**
  * The contract every OEE provider implements. The sync job, the device
  * mapping screen and the attribution engine know only this interface.
  */

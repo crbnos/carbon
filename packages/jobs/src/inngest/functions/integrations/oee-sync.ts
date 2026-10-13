@@ -7,8 +7,11 @@
  * in ONE step: a step per device would multiply the Inngest cost by the device
  * count every 2 minutes. Each device is isolated — a failure is recorded on
  * that device (`lastSyncError`) and keeps its cursor; the others continue.
+ * An `OeeProviderUnavailableError` stops the run instead: every remaining
+ * device would fail the same way.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { OeeProviderUnavailableError } from "@carbon/ee/oee";
 import { getOeeProvider } from "@carbon/ee/oee.server";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -20,7 +23,11 @@ export const oeeSyncFunction = inngest.createFunction(
   {
     id: "oee-sync",
     retries: 2,
-    concurrency: { key: "event.data.companyId", limit: 1 }
+    concurrency: { key: "event.data.companyId", limit: 1 },
+    singleton: {
+      key: "event.data.companyId + '-' + event.data.integrationId",
+      mode: "skip"
+    }
   },
   { event: "carbon/oee-sync" },
   async ({ event, step }) => {
@@ -62,6 +69,7 @@ export const oeeSyncFunction = inngest.createFunction(
         .execute();
 
       const failed: string[] = [];
+      let stopped: string | undefined;
       for (const device of devices) {
         try {
           await syncOeeDevice({ db, provider, device, minimumStateSeconds });
@@ -85,6 +93,11 @@ export const oeeSyncFunction = inngest.createFunction(
                 writeError
               )
             );
+          // The provider is down: every other device would fail the same way.
+          if (error instanceof OeeProviderUnavailableError) {
+            stopped = message;
+            break;
+          }
         }
       }
 
@@ -92,7 +105,8 @@ export const oeeSyncFunction = inngest.createFunction(
         companyId,
         integrationId,
         devices: devices.length,
-        failed
+        failed,
+        ...(stopped ? { stopped } : {})
       };
     });
   }

@@ -3,6 +3,7 @@
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { OeeProviderUnavailableError } from "../oee/types";
 import { SenseApiError, SenseProvider } from "./provider";
 
 const device = { externalDeviceId: "st-1", externalSiteId: "site-1" };
@@ -67,6 +68,28 @@ describe("SenseProvider", () => {
     );
     await expect(provider().listStateChanges(device, window)).rejects.toThrow(
       SenseApiError
+    );
+  });
+
+  it("reports the provider unavailable when the request fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new TypeError("fetch failed");
+      })
+    );
+    await expect(provider().listDevices()).rejects.toThrow(
+      OeeProviderUnavailableError
+    );
+  });
+
+  it("reports the provider unavailable on a 5xx response", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("Service Unavailable", { status: 503 }))
+    );
+    await expect(provider().listDevices()).rejects.toThrow(
+      OeeProviderUnavailableError
     );
   });
 

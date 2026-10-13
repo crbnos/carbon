@@ -2,11 +2,12 @@
 // Carbon Enterprise file, licensed only under the Carbon Commercial License
 // (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
 
-import type {
-  MachineState,
-  OeeDevice,
-  OeeProvider,
-  OeeStateChange
+import {
+  type MachineState,
+  type OeeDevice,
+  type OeeProvider,
+  OeeProviderUnavailableError,
+  type OeeStateChange
 } from "../oee/types";
 
 /**
@@ -78,15 +79,26 @@ export class SenseProvider implements OeeProvider {
     for (const [key, value] of Object.entries(query)) {
       url.searchParams.set(key, value);
     }
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        Accept: "application/json"
-      },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
-    });
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          Accept: "application/json"
+        },
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw new OeeProviderUnavailableError(`Sense ${path} failed: ${message}`);
+    }
     if (!response.ok) {
       const body = await response.text().catch(() => "");
+      if (response.status >= 500) {
+        throw new OeeProviderUnavailableError(
+          `Sense ${path} failed with ${response.status}: ${body.slice(0, 300)}`
+        );
+      }
       throw new SenseApiError(
         response.status,
         `Sense ${path} failed with ${response.status}: ${body.slice(0, 300)}`
