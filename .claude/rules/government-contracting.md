@@ -286,7 +286,8 @@ supplier-level contract research rate and a PBA code field need a schema change.
 
 ## Known gaps
 
-- The browser verification of the plan (Task 35) is deferred, and so is 5d's (Task 16).
+- Browser-verified 2026-10-12 (playbooks `government-contracting-phase-5a.md`, `-5d.md`). Not
+  verified in the browser: the upgrade overlay on a Community company.
 - The `customerContracts` view predates the 3 research columns; the contract page
   reads them from the table.
 - The report reads load each report in one query and stream the encoded CSV in pages;

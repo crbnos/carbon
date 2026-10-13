@@ -1,6 +1,6 @@
 # WBS Interop, Contract Financing and the Earned Value Demo
 
-> Status: draft
+> Status: in-progress (built; 5 acceptance criteria lack browser evidence, see Acceptance Criteria)
 > Author: Claude (autonomous `/feature` run, `.ai/runs/2026-10-12-defense-manufacturer-pitch.md`)
 > Date: 2026-10-12
 
@@ -405,36 +405,36 @@ The UI copies existing screens (`ui-minimal-existing-patterns`). It adds no new 
 
 **Phase A**
 
-- [ ] A project with roots A and B, where A has children A1 and A2, shows codes 1, 1.1, 1.2 and 2. Moving A2 above A1 shows A2 = 1.1.
-- [ ] After **Pin WBS codes**, moving A2 under B keeps its code 1.2. A new child of B after A2 gets 2.2, because A2 is a numbered sibling (rule 3). When A2 is unpinned, it becomes 2.1 and the new child keeps 2.2.
-- [ ] A pinned root `1.0` gives its children 1.1 and 1.2.
-- [ ] Pin `1.2` while another element's derived code is `1.2`. Both elements show a duplicate warning. **Export CSV** refuses, with a message that names the code.
-- [ ] A Parameter element has no code and does not shift its siblings' codes.
-- [ ] New Project from "Appendix B — Electronics/Avionics/Generic" creates `1.0` with 13 level-2 elements, 1.1 to 1.13, and their level-3 children, all pinned.
-- [ ] Export CSV, then edit 2 names and add 1 row with a `Parent WBS Code`, then import. The preview shows 2 updates and 1 create. Apply changes exactly those 3 elements.
-- [ ] A CSV row with an unknown parent code shows an error for that row, and Apply writes nothing.
-- [ ] On a project with a locked plan, Carbon refuses the import with the plan-lock message.
-- [ ] Export MS Project XML opens in MS Project with the same tree, codes, dates and links. Leaves carry Start No Earlier Than, and the baseline shows in the Baseline table. Check this once by hand: no CI has MS Project.
+- [x] A project with roots A and B, where A has children A1 and A2, shows codes 1, 1.1, 1.2 and 2. Moving A2 above A1 shows A2 = 1.1. Browser and `wbs.test.ts`.
+- [x] After **Pin WBS codes**, moving A2 under B keeps its code 1.2. A new child of B after A2 gets 2.2, because A2 is a numbered sibling (rule 3). When A2 is unpinned, it becomes 2.1 and the new child keeps 2.2. Browser and `wbs.test.ts`.
+- [x] A pinned root `1.0` gives its children 1.1 and 1.2. Browser (881F template) and `wbs.test.ts`.
+- [x] Pin `1.2` while another element's derived code is `1.2`. Both elements show a duplicate warning. **Export CSV** refuses, with a message that names the code. Browser. The WBS menu now turns off both exports and names the code.
+- [x] A Parameter element has no code and does not shift its siblings' codes. Browser.
+- [x] New Project from "Appendix B — Electronics/Avionics/Generic" creates `1.0` with 13 level-2 elements, 1.1 to 1.13, and their level-3 children, all pinned. Browser: 52 elements.
+- [x] Export CSV, then edit 2 names and add 1 row with a `Parent WBS Code`, then import. The preview shows 2 updates and 1 create. Apply changes exactly those 3 elements. Fixed after the browser run, which showed 5 updates: an unchanged row is no longer an update. `projects.wbs-csv.test.ts`.
+- [x] A CSV row with an unknown parent code shows an error for that row, and Apply writes nothing. Browser.
+- [ ] On a project with a locked plan, Carbon refuses the import with the plan-lock message. Not run: the test plan had no reached lock milestone.
+- [ ] Export MS Project XML opens in MS Project with the same tree, codes, dates and links. Leaves carry Start No Earlier Than, and the baseline shows in the Baseline table. Check this once by hand: no CI has MS Project. Not run: `xmllint` passes on 2 exports; no MS Project was available.
 
 **Phase B**
 
-- [ ] A contract has Progress Payments terms at 0.80 / 0.80, a price of $1,000,000, $300,000 eligible cost to date and no delivery. Its request shows line 26 = $240,000.
-- [ ] An unallowable ledger row of $10,000 raises line 12a, not line 11.
-- [ ] With 12a + 12b = $1,200,000 and price $1,000,000, line 13 applies the loss ratio 0.8333.
-- [ ] Override line 20a with a reason. The drawer shows both the computed value and the override with the reason, user and time.
-- [ ] Submitting 2 requests numbers them 1 and 2. Withdrawing request 2 keeps its number, and the next request is 3.
-- [ ] Record payment on an Approved request creates a Draft deposit payment scoped to the contract. Posting it credits customer deposits and sets the request Paid.
-- [ ] A posted delivery invoice of $100,000 on the contract shows "liquidation expected: $80,000" and prints the gross $100,000.
-- [ ] A payment of $20,000 cash plus $80,000 contract credit settles the invoice. The unliquidated balance drops by $80,000.
-- [ ] The contract deposit cannot pay an invoice of another contract.
-- [ ] A PBP contract with 3 Cumulative events refuses to bill event 2 before event 1 is complete. Carbon refuses a request whose 1c exceeds 90 % of the price.
-- [ ] A company without `GOVERNMENT_CONTRACTING` sees the upgrade overlay in the Financing section. The authoring routes refuse.
+- [x] A contract has Progress Payments terms at 0.80 / 0.80, a price of $1,000,000, $300,000 eligible cost to date and no delivery. Its request shows line 26 = $240,000. `compute.test.ts`. In the browser line 11 was $0: the test project had no ledger cost.
+- [x] An unallowable ledger row of $10,000 raises line 12a, not line 11. `compute.test.ts`.
+- [x] With 12a + 12b = $1,200,000 and price $1,000,000, line 13 applies the loss ratio 0.8333. `compute.test.ts`.
+- [x] Override line 20a with a reason. The drawer shows both the computed value and the override with the reason, user and time. Browser showed the value and the reason. User and time added after the run.
+- [x] Submitting 2 requests numbers them 1 and 2. Withdrawing request 2 keeps its number, and the next request is 3. Browser.
+- [x] Record payment on an Approved request creates a Draft deposit payment scoped to the contract. Posting it credits customer deposits and sets the request Paid. Browser: PAY-2026-10-000009.
+- [x] A posted delivery invoice of $100,000 on the contract shows "liquidation expected: $80,000" and prints the gross $100,000. Browser: AR000010. The PDF prints the gross amount and no liquidation note (deferred).
+- [x] A payment of $20,000 cash plus $80,000 contract credit settles the invoice. The unliquidated balance drops by $80,000. Browser.
+- [x] The contract deposit cannot pay an invoice of another contract. `payment-funding.test.ts`.
+- [x] A PBP contract with 3 Cumulative events refuses to bill event 2 before event 1 is complete. Carbon refuses a request whose 1c exceeds 90 % of the price. Browser. The cap was bypassed through a second Draft request. Fixed: a contract holds one Draft request.
+- [ ] A company without `GOVERNMENT_CONTRACTING` sees the upgrade overlay in the Financing section. The authoring routes refuse. Not run: the dev stack runs `CARBON_EDITION=enterprise`.
 
 **Phase C**
 
-- [ ] `pnpm db:check:datasets` passes for all 4 datasets.
-- [ ] After `pnpm db:seed:dev --dataset satellite`, the ORBSEC Block 2 Costs page shows earned value rows for both control accounts, not "Take a baseline first".
-- [ ] `.ai/playbooks/` has 1 playbook for each of 5a, 5b, 5c, 5d, A and B. Each `/test` run reports every step passed. The run fixes a failed step and runs it again before the phase ends.
+- [x] `pnpm db:check:datasets` passes for all 4 datasets. Run before commit 7d79066e63.
+- [ ] After `pnpm db:seed:dev --dataset satellite`, the ORBSEC Block 2 Costs page shows earned value rows for both control accounts, not "Take a baseline first". Not run: `db:seed:dev` wipes the company. The dev database predates the seed change.
+- [ ] `.ai/playbooks/` has 1 playbook for each of 5a, 5b, 5c, 5d, A and B. Each `/test` run reports every step passed. The run fixes a failed step and runs it again before the phase ends. Partly: 6 playbooks exist. The run found 11 defects; 10 are fixed, with unit tests where the code has a seam. Open: a manual journal accepts a posting date in year 100. The browser steps were not run again after the fixes.
 
 ## Risks
 
@@ -473,3 +473,4 @@ The UI copies existing screens (`ui-minimal-existing-patterns`). It adds no new 
 ## Changelog
 
 - 2026-10-12: Created in an autonomous `/feature` run. Every Open Question above is an assumed decision.
+- 2026-10-12: Implemented (plan `.ai/plans/2026-10-12-wbs-interop-and-contract-financing.md`, Tasks 1–21). Browser runs of A, B and 5a–5d found 11 defects. Fixed (10): the PBP cap bypass (one Draft request per contract), unchanged CSV rows counted as updates, exports with repeated codes failing silently, the override user and time, SF 1443 line 27, new time on a project On Hold, a silent PO line block, Approve all, the cell history popover and Draft contracts in the ICE schedule. One estimated day for an undated MSPDI task replaces "no duration". The acceptance line for a new child of B now follows rule 3 (2.2). Open: a manual journal accepts a posting date in year 100. Deferred: the invoice PDF liquidation note, the payment form prefill and the financing demo rows. The spec stays in `.ai/specs/` until the skipped criteria have evidence.

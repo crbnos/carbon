@@ -31,9 +31,9 @@ Phase B — contract financing
 Phase C — demo and proof
 - [x] Task 18: Move the plan snapshot builder to `@carbon/database`
 - [x] Task 19: Seed the satellite baseline, element dates and financing
-- [ ] Task 20: Update the docs, rules and AGENTS.md
-- [ ] Task 21: Run the browser verification of 5a–5d, A and B
-- [ ] Task 22: Mark the spec implemented
+- [x] Task 20: Update the docs, rules and AGENTS.md
+- [x] Task 21: Run the browser verification of 5a–5d, A and B
+- [x] Task 22: Mark the spec implemented
 
 ## Dependencies
 
@@ -829,6 +829,8 @@ ls .ai/playbooks/government-contracting-phase-5a.md .ai/playbooks/wbs-interop.md
 ```
 
 **Out of scope:** fixing bugs outside these flows.
+
+**Execution notes (2026-10-12):** Three isolated browser sessions ran 5a+5b, 5c+5d and A+B. Playbooks: `government-contracting-phase-5a.md` to `-5d.md`, `wbs-interop.md`, `contract-financing.md`. 11 defects found, 10 fixed in commits `2329a49b5a`, `36f0abcc3c`, `ad39d8aea4`, `14b401cbae`, `ec9baad0d4`. Open: a manual journal accepts a posting date in year 100. Skipped: the Community overlays (enterprise edition), the 5c snapshot freeze, the import on a locked plan, `db:seed:dev`. The browser steps were not run again after the fixes.
 
 ## Task 22: Mark the spec implemented
 

@@ -153,9 +153,15 @@ refuses any other status while it is set (`stopWorkStatusRefusal`), so the statu
 menu and the MCP tool cannot bypass Resume. The header shows the order date, the
 90-day end (`stopWorkEnd`) and the days left (`stopWorkDaysLeft`).
 
+On Hold refuses new charges in two places: the charge-number picker lists only
+Released projects, and `save-timesheet-entry` (`assertProjectTakesTime`) refuses
+more hours on a row an On Hold project already has on a timesheet. Fewer hours
+is a correction and is allowed.
+
 ## Known gaps
 
-- The browser verification (plan Task 23) is deferred.
+- Browser-verified 2026-10-12 (playbook `government-contracting-phase-5c.md`). Not verified
+  in the browser: the snapshot freeze at period close and the Community upgrade overlay.
 - On an Issue project, a receipt Material row of an item that never goes through
   project stock is never recognized.
 - CPI and SPI show up to 5 decimals (`useQuantityFormatter`).
