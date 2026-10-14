@@ -12,25 +12,38 @@ on:
   workflow_dispatch:
 jobs:
   # The images come from build-images.yml, which runs on the same push. This
-  # waits for it rather than building them a second time.
+  # waits for that run rather than building them a second time. It watches the
+  # run, not the registry: polling public.ecr.aws anonymously from a shared
+  # runner IP can be refused for the life of the runner, which looked exactly
+  # like an image that never arrived, and a build that failed or was cancelled
+  # left this waiting out its whole timeout.
   images:
     name: Wait for images
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      actions: read
     steps:
-      - uses: docker/setup-buildx-action@v3
-
       - name: Wait for carbon/erp and carbon/mes
         env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
           REGISTRY: ${{ vars.IMAGE_REGISTRY }}
           SHA: ${{ github.sha }}
         run: |
           [ -n "$REGISTRY" ] || { echo "vars.IMAGE_REGISTRY is not set" >&2; exit 1; }
+          until run=$(gh run list --workflow build-images.yml --commit "$SHA" --limit 1 \
+              --json databaseId --jq '.[0].databaseId // empty') && [ -n "$run" ]; do
+            echo "waiting for Build images to start on $SHA"
+            sleep 15
+          done
+          echo "Build images run: $GITHUB_SERVER_URL/$GH_REPO/actions/runs/$run"
+          gh run watch "$run" --interval 15 > /dev/null
           for app in erp mes; do
-            until docker buildx imagetools inspect "$REGISTRY/carbon/$app:$SHA" >/dev/null 2>&1; do
-              echo "waiting for $REGISTRY/carbon/$app:$SHA"
-              sleep 15
-            done
+            conclusion=$(gh run view "$run" --json jobs \
+              --jq ".jobs[] | select(.name == \"carbon/$app\") | .conclusion")
+            echo "carbon/$app: ${conclusion:-missing}"
+            [ "$conclusion" = success ] || exit 1
           done
 
   deploy:
