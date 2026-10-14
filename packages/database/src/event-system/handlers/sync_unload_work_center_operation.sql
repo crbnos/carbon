@@ -11,6 +11,11 @@ BEGIN
     SET "loadedJobOperationId" = NULL,
         "loadedAt" = NULL
     WHERE "loadedJobOperationId" = p_old->>'id';
+    UPDATE "workCenterLoad"
+    SET "unloadedAt" = NOW()
+    WHERE "jobOperationId" = p_old->>'id'
+      AND "companyId" = p_old->>'companyId'
+      AND "unloadedAt" IS NULL;
     RETURN;
   END IF;
 
@@ -24,6 +29,12 @@ BEGIN
     WHERE "id" = p_old->>'workCenterId'
       AND "companyId" = p_old->>'companyId'
       AND "loadedJobOperationId" = p_new->>'id';
+    UPDATE "workCenterLoad"
+    SET "unloadedAt" = NOW()
+    WHERE "workCenterId" = p_old->>'workCenterId'
+      AND "companyId" = p_old->>'companyId'
+      AND "jobOperationId" = p_new->>'id'
+      AND "unloadedAt" IS NULL;
   END IF;
 
   IF p_operation != 'UPDATE' THEN RETURN; END IF;
@@ -34,5 +45,10 @@ BEGIN
   SET "loadedJobOperationId" = NULL,
       "loadedAt" = NULL
   WHERE "loadedJobOperationId" = p_new->>'id';
+  UPDATE "workCenterLoad"
+  SET "unloadedAt" = NOW()
+  WHERE "jobOperationId" = p_new->>'id'
+    AND "companyId" = p_new->>'companyId'
+    AND "unloadedAt" IS NULL;
 END;
 $function$;

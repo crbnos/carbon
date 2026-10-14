@@ -1704,6 +1704,8 @@ export const manifest = {
   // Written only by the OEE sync and the entitlement-gated @carbon/ee/oee.server
   // functions, over Kysely and under the device lock: read-only through the API.
   workCenterDevice: policies({ select: inCompany("companyId", "employee") }),
+  // Written only by the load and unload interceptors: read-only through the API.
+  workCenterLoad: policies({ select: inCompany("companyId", "employee") }),
   workCenterProcess: company("resources"),
   workCenterReplacementPart: company("resources", { read: "resources_view" }),
   workCenterShift: company("resources"),

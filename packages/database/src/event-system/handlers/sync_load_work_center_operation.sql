@@ -28,5 +28,22 @@ BEGIN
       WHERE "id" = p_new->>'jobOperationId'
         AND "companyId" = p_new->>'companyId'
     );
+  IF NOT FOUND THEN RETURN; END IF;
+
+  -- The history: the previous load ends where this one starts. The OEE sync
+  -- gives a run to the operation loaded when it started.
+  UPDATE "workCenterLoad"
+  SET "unloadedAt" = (p_new->>'startTime')::timestamptz
+  WHERE "workCenterId" = p_new->>'workCenterId'
+    AND "companyId" = p_new->>'companyId'
+    AND "unloadedAt" IS NULL;
+
+  INSERT INTO "workCenterLoad" ("companyId", "workCenterId", "jobOperationId", "loadedAt")
+  VALUES (
+    p_new->>'companyId',
+    p_new->>'workCenterId',
+    p_new->>'jobOperationId',
+    (p_new->>'startTime')::timestamptz
+  );
 END;
 $function$;

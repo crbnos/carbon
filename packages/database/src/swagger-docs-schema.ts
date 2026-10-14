@@ -30294,6 +30294,159 @@ export default {
         tags: ["purchasingRfq"]
       }
     },
+    "/workCenterLoad": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterLoad"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterLoad"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.workCenterLoad"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      }
+    },
     "/workCenters": {
       get: {
         parameters: [
@@ -131936,6 +132089,52 @@ export default {
       },
       type: "object"
     },
+    workCenterLoad: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "jobOperationId",
+        "loadedAt",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('wcl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          format: "text",
+          type: "string"
+        },
+        loadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        unloadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workCenters: {
       properties: {
         id: {
@@ -183454,6 +183653,57 @@ export default {
     },
     "rowFilter.purchasingRfq.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.workCenterLoad": {
+      name: "workCenterLoad",
+      description: "workCenterLoad",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterLoad"
+      }
+    },
+    "rowFilter.workCenterLoad.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.loadedAt": {
+      name: "loadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.unloadedAt": {
+      name: "unloadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"

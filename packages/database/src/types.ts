@@ -72076,6 +72076,86 @@ export type Database = {
           }
         ]
       }
+      workCenterLoad: {
+        Row: {
+          companyId: string
+          createdAt: string
+          id: string
+          jobOperationId: string
+          loadedAt: string
+          unloadedAt: string | null
+          workCenterId: string
+        }
+        Insert: {
+          companyId: string
+          createdAt?: string
+          id?: string
+          jobOperationId: string
+          loadedAt: string
+          unloadedAt?: string | null
+          workCenterId: string
+        }
+        Update: {
+          companyId?: string
+          createdAt?: string
+          id?: string
+          jobOperationId?: string
+          loadedAt?: string
+          unloadedAt?: string | null
+          workCenterId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workCenterLoad_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenter"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCenters"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "workCenterLoad_workCenterId_fkey"
+            columns: ["workCenterId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "workCentersWithBlockingStatus"
+            referencedColumns: ["id", "companyId"]
+          }
+        ]
+      }
       workCenterProcess: {
         Row: {
           companyId: string

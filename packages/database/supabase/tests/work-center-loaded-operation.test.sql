@@ -3,7 +3,8 @@
 -- unloads it (sync_unload_work_center_operation), and so does deleting it or
 -- moving it to another work center; a
 -- Pause does not. An event only loads its own company's operation onto its
--- own company's work center. The oee provider role may
+-- own company's work center. Each load and unload is kept in workCenterLoad,
+-- the history the OEE sync reads. The oee provider role may
 -- have several active integrations; the other roles still allow one.
 -- Isolated fixture company; no existing business data is read or edited. Always rolls back.
 -- Run: pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -f packages/database/supabase/tests/work-center-loaded-operation.test.sql
@@ -56,6 +57,20 @@ CREATE FUNCTION pg_temp.loaded(p_work_center_id text) RETURNS text LANGUAGE sql 
   FROM "workCenter" WHERE id = p_work_center_id;
 $fn$;
 
+-- The work center's load history: operation@loaded-unloaded, oldest first.
+-- An unload by status or delete happens at now(), shown as "now".
+CREATE FUNCTION pg_temp.history(p_work_center_id text) RETURNS text LANGUAGE sql AS $fn$
+  SELECT COALESCE(string_agg(
+    "jobOperationId" || '@' || to_char("loadedAt" AT TIME ZONE 'UTC', 'HH24:MI') || '-' ||
+      CASE
+        WHEN "unloadedAt" IS NULL THEN 'open'
+        WHEN "unloadedAt" = now() THEN 'now'
+        ELSE to_char("unloadedAt" AT TIME ZONE 'UTC', 'HH24:MI')
+      END,
+    ' ' ORDER BY "loadedAt"), 'none')
+  FROM "workCenterLoad" WHERE "workCenterId" = p_work_center_id;
+$fn$;
+
 DO $cases$
 DECLARE
   v_group_id text; v_company_id text; v_location_id text;
@@ -90,6 +105,8 @@ BEGIN
   PERFORM pg_temp.add_event(v_a, v_work_center, 'Setup', v_day + time '10:00', NULL);
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = v_a || '@10:00', 'open event loads A: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state = v_a || '@10:00-open', 'A opens a load: ' || v_state;
 
   -- 2. An event inserted with an endTime never loads.
   PERFORM pg_temp.add_event(v_b, v_work_center, 'Machine', v_day + time '09:00', v_day + time '09:30');
@@ -100,21 +117,32 @@ BEGIN
   PERFORM pg_temp.add_event(v_b, v_work_center, 'Labor', v_day + time '09:50', NULL);
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = v_a || '@10:00', 'older open event does not load: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state = v_a || '@10:00-open', 'no load for a closed or older event: ' || v_state;
 
   -- 4. A later open event loads B.
   PERFORM pg_temp.add_event(v_b, v_work_center, 'Labor', v_day + time '10:10', NULL);
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = v_b || '@10:10', 'later open event loads B: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state = v_a || '@10:00-10:10 ' || v_b || '@10:10-open',
+    'B''s load ends A''s where it starts: ' || v_state;
 
   -- A Pause keeps the load.
   UPDATE "jobOperation" SET status = 'Paused', "updatedBy" = 'system' WHERE id = v_b;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = v_b || '@10:10', 'Paused keeps B loaded: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state = v_a || '@10:00-10:10 ' || v_b || '@10:10-open',
+    'Paused keeps B''s load open: ' || v_state;
 
   -- 5. B going Done unloads it.
   UPDATE "jobOperation" SET status = 'Done', "updatedBy" = 'system' WHERE id = v_b;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'Done unloads B: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state = v_a || '@10:00-10:10 ' || v_b || '@10:10-now',
+    'Done ends B''s load: ' || v_state;
 
   -- Canceled unloads too.
   PERFORM pg_temp.add_event(v_c, v_work_center, 'Setup', v_day + time '11:00', NULL);
@@ -122,6 +150,8 @@ BEGIN
   UPDATE "jobOperation" SET status = 'Canceled', "updatedBy" = 'system' WHERE id = v_c;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'Canceled unloads C: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state LIKE '% ' || v_c || '@11:00-now', 'Canceled ends C''s load: ' || v_state;
 
   -- Deleting the loaded operation unloads it (the pointer has no FK).
   v_d := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 4);
@@ -131,6 +161,8 @@ BEGIN
   DELETE FROM "jobOperation" WHERE id = v_d;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'deleting D unloads it: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state LIKE '% ' || v_d || '@12:00-now', 'deleting D ends its load: ' || v_state;
 
   -- Moving the loaded operation to another work center unloads the old one.
   v_e := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 5);
@@ -141,6 +173,8 @@ BEGIN
   UPDATE "jobOperation" SET "workCenterId" = v_work_center_2, "updatedBy" = 'system' WHERE id = v_e;
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'moving E unloads the old work center: ' || v_state;
+  v_state := pg_temp.history(v_work_center);
+  ASSERT v_state LIKE '% ' || v_e || '@12:30-now', 'moving E ends its load there: ' || v_state;
 
   -- Another company's event never loads onto this company's work center:
   -- its own operation on our work center, or our operation under its company.
@@ -167,6 +201,8 @@ BEGIN
     VALUES (v_other_op, v_work_center, 'Machine', v_day + time '13:05', v_company_id, 'system');
   v_state := pg_temp.loaded(v_work_center);
   ASSERT v_state = 'none@none', 'another company''s operation does not load: ' || v_state;
+  ASSERT (SELECT count(*) FROM "workCenterLoad" WHERE "jobOperationId" = v_other_op) = 0,
+    'another company''s operation has no load';
 
   -- 6. Several active integrations of the oee role are allowed.
   INSERT INTO "integration" (id, jsonschema, "providerRole")
