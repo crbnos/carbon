@@ -8,58 +8,50 @@
  * list shows. Pure, so it is tested without a database
  * (`apps/erp/test/machine-time-filters.ee.test.ts`).
  *
- * `startTime` and `endTime` are instants, but their filters pick company
- * days. The generic `between` filter compares an instant with a bare date: it
- * drops the last day and uses UTC days. So each day range becomes instants at
- * the company's day bounds here.
+ * `startTime` and `endTime` are instants, but their filters pick days. The
+ * list shows each row in its location's timezone, so the date ranges filter
+ * the view's `startDate` / `endDate`: the row's dates in that same timezone.
  */
 
-import { parseDate, toZoned } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 
 export type MachineTimeListFilters = {
   search: string | null;
   workCenterIds: string[];
   locationIds: string[];
-  /** Instants: inclusive start, exclusive end, at the company's day bounds. */
-  start: { from: string | null; until: string | null };
-  end: { from: string | null; until: string | null };
+  /** `YYYY-MM-DD` days in the row's location timezone, both inclusive. */
+  start: { from: string | null; to: string | null };
+  end: { from: string | null; to: string | null };
   state: "Running" | "Stopped" | null;
 };
 
-/** The first instant of a `YYYY-MM-DD` company day, or null if it is not a date. */
-function dayStart(date: string, timeZone: string, addDays = 0) {
+/** The date itself, or null if it is not a `YYYY-MM-DD` date. */
+function validDate(date: string | undefined) {
+  if (!date) return null;
   try {
-    return toZoned(
-      parseDate(date).add({ days: addDays }),
-      timeZone
-    ).toAbsoluteString();
+    return parseDate(date).toString();
   } catch {
     return null;
   }
 }
 
-function dayRange(value: string, timeZone: string) {
+function dayRange(value: string) {
   // Same `from,to` split as `parseRangeFilter` (`~/utils/query`). That module
   // imports `@carbon/auth`, whose Lingui macros fail outside the Vite build,
   // so this pure file cannot import it.
   const [from, to] = value.split(",");
-  return {
-    from: from ? dayStart(from, timeZone) : null,
-    // Exclusive: the start of the day after `to`.
-    until: to ? dayStart(to, timeZone, 1) : null
-  };
+  return { from: validDate(from), to: validDate(to) };
 }
 
 export function parseMachineTimeListFilters(
-  searchParams: URLSearchParams,
-  timeZone: string
+  searchParams: URLSearchParams
 ): MachineTimeListFilters {
   const filters: MachineTimeListFilters = {
     search: searchParams.get("search") || null,
     workCenterIds: [],
     locationIds: [],
-    start: { from: null, until: null },
-    end: { from: null, until: null },
+    start: { from: null, to: null },
+    end: { from: null, to: null },
     state: null
   };
 
@@ -75,10 +67,10 @@ export function parseMachineTimeListFilters(
         filters.locationIds = value.split(",").filter(Boolean);
         break;
       case "startTime":
-        if (operator === "between") filters.start = dayRange(value, timeZone);
+        if (operator === "between") filters.start = dayRange(value);
         break;
       case "endTime":
-        if (operator === "between") filters.end = dayRange(value, timeZone);
+        if (operator === "between") filters.end = dayRange(value);
         break;
       case "state":
         if (value === "Running" || value === "Stopped") filters.state = value;

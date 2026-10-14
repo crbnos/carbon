@@ -86,8 +86,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // The queue walks the list's rows: the same search and filters, read from
   // the list's query string.
   const filters = parseMachineTimeListFilters(
-    new URL(request.url).searchParams,
-    companyTimeZone
+    new URL(request.url).searchParams
   );
 
   // The work center's calendar day the time started on.
@@ -162,8 +161,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // list. Read before the write, which deletes this row.
   const machineTime = await getUnattributedMachineTime(client, id, companyId);
   const filters = parseMachineTimeListFilters(
-    new URL(request.url).searchParams,
-    await getCompanyTimeZone(client, companyId)
+    new URL(request.url).searchParams
   );
   const neighbors = machineTime.data
     ? await getUnattributedMachineTimeNeighbors(client, {

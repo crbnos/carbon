@@ -6663,14 +6663,15 @@ export async function getJobOperationBatches(
 }
 
 // The filters the Unattributed Time list and its review queue share. The
-// query must embed `workCenter!inner(name, locationId)`: the search and the
-// location filter read the work center. `workCenterId` is NOT NULL, so the
+// query reads the view `unattributedMachineTimes` (for `startDate` and
+// `endDate`) and must embed `workCenter!inner(name, locationId)`: the search
+// and the location filter read the work center. `workCenterId` is NOT NULL, so the
 // inner join drops no row.
 type MachineTimeFilterableQuery<Q> = {
   ilike(column: string, pattern: string): Q;
   in(column: string, values: readonly string[]): Q;
   gte(column: string, value: string): Q;
-  lt(column: string, value: string): Q;
+  lte(column: string, value: string): Q;
   is(column: string, value: null): Q;
   not(column: string, operator: string, value: null): Q;
 };
@@ -6688,12 +6689,12 @@ export function applyMachineTimeListFilters<
   if (filters.locationIds.length > 0) {
     filtered = filtered.in("workCenter.locationId", filters.locationIds);
   }
+  // Days in the row's location timezone: the view's `startDate`/`endDate`.
   if (filters.start.from)
-    filtered = filtered.gte("startTime", filters.start.from);
-  if (filters.start.until)
-    filtered = filtered.lt("startTime", filters.start.until);
-  if (filters.end.from) filtered = filtered.gte("endTime", filters.end.from);
-  if (filters.end.until) filtered = filtered.lt("endTime", filters.end.until);
+    filtered = filtered.gte("startDate", filters.start.from);
+  if (filters.start.to) filtered = filtered.lte("startDate", filters.start.to);
+  if (filters.end.from) filtered = filtered.gte("endDate", filters.end.from);
+  if (filters.end.to) filtered = filtered.lte("endDate", filters.end.to);
   if (filters.state === "Running") filtered = filtered.is("endTime", null);
   if (filters.state === "Stopped") {
     filtered = filtered.not("endTime", "is", null);
@@ -6714,7 +6715,7 @@ export async function getUnattributedMachineTimes(
 ) {
   let query = applyMachineTimeListFilters(
     client
-      .from("unattributedMachineTime")
+      .from("unattributedMachineTimes")
       .select(
         "*, workCenter!inner(name, locationId, location(name, timezone))",
         {
@@ -6736,7 +6737,11 @@ export async function getUnattributedMachineTimes(
     ]
   );
 
-  return query;
+  // A view types every column nullable; these come from the table's own
+  // NOT NULL columns.
+  return query.overrideTypes<
+    Database["public"]["Tables"]["unattributedMachineTime"]["Row"][]
+  >();
 }
 
 export async function getUnattributedMachineTime(
@@ -6772,7 +6777,7 @@ export async function getUnattributedMachineTimeNeighbors(
   const queue = (options?: { count: "exact"; head: true }) =>
     applyMachineTimeListFilters(
       client
-        .from("unattributedMachineTime")
+        .from("unattributedMachineTimes")
         .select("id, workCenter!inner(name, locationId)", options)
         .eq("companyId", args.companyId)
         .not("endTime", "is", null),

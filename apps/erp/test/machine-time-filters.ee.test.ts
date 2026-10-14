@@ -5,28 +5,28 @@
 import { describe, expect, it } from "vitest";
 import { parseMachineTimeListFilters } from "../app/modules/production/ui/MachineTime/machine-time-filters.ee";
 
-function parse(query: string, timeZone = "America/Chicago") {
-  return parseMachineTimeListFilters(new URLSearchParams(query), timeZone);
+function parse(query: string) {
+  return parseMachineTimeListFilters(new URLSearchParams(query));
 }
 
 describe("parseMachineTimeListFilters", () => {
-  it("turns a startTime range into instants at the company's day bounds", () => {
+  it("reads a startTime range as two inclusive days", () => {
     const filters = parse("filter=startTime:between:2026-10-01,2026-10-05");
 
-    expect(filters.start).toEqual({
-      from: "2026-10-01T05:00:00.000Z",
-      until: "2026-10-06T05:00:00.000Z"
-    });
-    expect(filters.end).toEqual({ from: null, until: null });
+    expect(filters.start).toEqual({ from: "2026-10-01", to: "2026-10-05" });
+    expect(filters.end).toEqual({ from: null, to: null });
   });
 
   it("leaves an open-ended range open", () => {
     const filters = parse("filter=endTime:between:2026-10-01,");
 
-    expect(filters.end).toEqual({
-      from: "2026-10-01T05:00:00.000Z",
-      until: null
-    });
+    expect(filters.end).toEqual({ from: "2026-10-01", to: null });
+  });
+
+  it("drops a bound that is not a date", () => {
+    const filters = parse("filter=startTime:between:2026-13-40,yesterday");
+
+    expect(filters.start).toEqual({ from: null, to: null });
   });
 
   it("splits a work center filter into ids", () => {

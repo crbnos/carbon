@@ -37,7 +37,9 @@ const mockMachineTimes: UnattributedMachineTime[] = [
       location: { name: "Main Plant", timezone: "UTC" }
     },
     startTime: "2026-05-05T06:12:00Z",
-    endTime: "2026-05-05T07:47:00Z"
+    endTime: "2026-05-05T07:47:00Z",
+    startDate: "2026-05-05",
+    endDate: "2026-05-05"
   },
   {
     ...mockRow,
@@ -49,7 +51,9 @@ const mockMachineTimes: UnattributedMachineTime[] = [
       location: { name: "Main Plant", timezone: "UTC" }
     },
     startTime: "2026-05-05T09:30:00Z",
-    endTime: "2026-05-05T09:52:00Z"
+    endTime: "2026-05-05T09:52:00Z",
+    startDate: "2026-05-05",
+    endDate: "2026-05-05"
   },
   {
     ...mockRow,
@@ -61,7 +65,9 @@ const mockMachineTimes: UnattributedMachineTime[] = [
       location: { name: "Main Plant", timezone: "UTC" }
     },
     startTime: "2026-05-05T13:05:00Z",
-    endTime: null
+    endTime: null,
+    startDate: "2026-05-05",
+    endDate: null
   }
 ];
 
