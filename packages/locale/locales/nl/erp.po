@@ -1324,7 +1324,7 @@ msgid "Comments"
 msgstr ""
 
 msgid "Companies"
-msgstr ""
+msgstr "Bedrijven"
 
 msgid "Company"
 msgstr ""

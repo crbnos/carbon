@@ -2116,6 +2116,12 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -2250,6 +2256,12 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -2336,6 +2348,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.memoId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionSchedule.leaseScheduleLineId"
           },
           {
             $ref: "#/parameters/body.revenueRecognitionSchedule"
@@ -7678,6 +7696,339 @@ export default {
           }
         },
         tags: ["inventoryCount"]
+      }
+    },
+    "/leaseLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leaseLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.leaseLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.serialNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fairValue"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.economicLifeMonths"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.ownershipTransfers"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.specializedAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.purchaseOptionReasonablyCertain"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.lesseeClassification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationInputs"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverride"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.classificationOverrideReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.initialRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.rouAssetCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.sortOrder"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.leaseLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseLine"]
       }
     },
     "/eventSystemTrigger": {
@@ -15210,6 +15561,366 @@ export default {
         tags: ["receiptLines"]
       }
     },
+    "/lease": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lease.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentFrequency"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.annualEscalationPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.discountRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.activatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.closedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/lease"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["lease"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.lease"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["lease"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lease.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentFrequency"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.annualEscalationPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.discountRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.activatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.closedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["lease"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.lease.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.invoiceFromDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentFrequency"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.paymentTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.annualEscalationPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.discountRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.commencementJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.noticeRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.endRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.activatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.closedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.lease.customFields"
+          },
+          {
+            $ref: "#/parameters/body.lease"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["lease"]
+      }
+    },
     "/exchangeRate": {
       get: {
         parameters: [
@@ -16639,6 +17350,177 @@ export default {
           }
         },
         tags: ["inventoryCountLine"]
+      }
+    },
+    "/unattributedMachineTime": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/unattributedMachineTime"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.unattributedMachineTime"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTime.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.unattributedMachineTime"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["unattributedMachineTime"]
       }
     },
     "/gauges": {
@@ -23169,6 +24051,276 @@ export default {
         tags: ["jobs"]
       }
     },
+    "/leaseEvent": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.gainLoss"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leaseEvent"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leaseEvent"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.leaseEvent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["leaseEvent"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.gainLoss"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseEvent"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.effectiveDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.liabilityAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.rouAssetAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.gainLoss"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationBefore"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.classificationAfter"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.fixedAssetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseEvent.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/body.leaseEvent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseEvent"]
+      }
+    },
     "/enforcementRuleAcknowledgment": {
       get: {
         parameters: [
@@ -25824,6 +26976,159 @@ export default {
         tags: ["nonConformanceReceiptLine"]
       }
     },
+    "/accountingCutoverIgnoredInvoice": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/accountingCutoverIgnoredInvoice"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.accountingCutoverIgnoredInvoice"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.invoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountingCutoverIgnoredInvoice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.accountingCutoverIgnoredInvoice"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["accountingCutoverIgnoredInvoice"]
+      }
+    },
     "/webhookTable": {
       get: {
         parameters: [
@@ -27757,6 +29062,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanbans.fromStorageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanbans.replenishmentLevel"
+          },
+          {
             $ref: "#/parameters/rowFilter.kanbans.name"
           },
           {
@@ -29139,6 +30447,159 @@ export default {
         tags: ["purchasingRfq"]
       }
     },
+    "/workCenterLoad": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterLoad"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterLoad"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.jobOperationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.loadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.unloadedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterLoad.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.workCenterLoad"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterLoad"]
+      }
+    },
     "/workCenters": {
       get: {
         parameters: [
@@ -29395,6 +30856,81 @@ export default {
           }
         },
         tags: ["enforcementRuleWorkCenterAssignment"]
+      }
+    },
+    "/unattributedMachineTimes": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.startTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.endTime"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.startDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.unattributedMachineTimes.endDate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/unattributedMachineTimes"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["unattributedMachineTimes"]
       }
     },
     "/contractorAbility": {
@@ -31846,6 +33382,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionRun.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionRun.type"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -31941,6 +33480,9 @@ export default {
             $ref: "#/parameters/rowFilter.revenueRecognitionRun.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.revenueRecognitionRun.type"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -31988,6 +33530,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.revenueRecognitionRun.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.revenueRecognitionRun.type"
           },
           {
             $ref: "#/parameters/body.revenueRecognitionRun"
@@ -33310,6 +34855,15 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.totalAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.leasePaymentId"
+          },
+          {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.thumbnailPath"
           },
           {
@@ -33335,6 +34889,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLines.assetName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.leaseReadableId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLines.leaseName"
           },
           {
             $ref: "#/parameters/select"
@@ -43669,6 +45229,27 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAssetAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.accumulatedRightOfUseAmortizationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseLiabilityAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.operatingLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.variableLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAmortizationExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -43917,6 +45498,27 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAssetAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.accumulatedRightOfUseAmortizationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseLiabilityAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.operatingLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.variableLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAmortizationExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -44117,6 +45719,27 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.migrationClearingAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAssetAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.accumulatedRightOfUseAmortizationAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseLiabilityAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.operatingLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.variableLeaseExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.rightOfUseAmortizationExpenseAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.leaseInterestExpenseAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -46272,6 +47895,156 @@ export default {
         tags: ["supplierQuoteLines"]
       }
     },
+    "/leases": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leases.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.supplierLocationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.supplierContactId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.locationId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.assignee"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.commencementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.endDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.noticeDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.invoiceFromDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.paymentFrequency"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.paymentTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.annualEscalationPercent"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.discountRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.commencementJournalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.noticeRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.endRemindedFor"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.activatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.closedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.supplierName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.assetCount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.classification"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.nextDueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leases.currentLiability"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leases"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leases"]
+      }
+    },
     "/quoteFavorite": {
       get: {
         parameters: [
@@ -48034,6 +49807,267 @@ export default {
           }
         },
         tags: ["account"]
+      }
+    },
+    "/leaseScheduleLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.periodDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.openingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.interestAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.principalAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.rouAmortization"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leaseScheduleLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leaseScheduleLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.leaseScheduleLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["leaseScheduleLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.periodDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.openingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.interestAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.principalAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.rouAmortization"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseScheduleLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.periodDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.openingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.paymentAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.interestAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.principalAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingLiability"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.rouAmortization"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.closingRouAsset"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leaseScheduleLine.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/body.leaseScheduleLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leaseScheduleLine"]
       }
     },
     "/jobOperation": {
@@ -52273,6 +54307,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leasePaymentId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -52458,6 +54498,12 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leasePaymentId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -52595,6 +54641,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.leasePaymentId"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine"
@@ -58270,6 +60322,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -58431,6 +60486,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -58544,6 +60602,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.isSubAssembly"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.orientation"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -64744,6 +66805,240 @@ export default {
           }
         },
         tags: ["maintenanceDispatchComment"]
+      }
+    },
+    "/leasePayment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.paymentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodStart"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.voidedPurchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/leasePayment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["leasePayment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.leasePayment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["leasePayment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.paymentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodStart"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.voidedPurchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leasePayment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.paymentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodStart"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.periodEnd"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.purchaseInvoiceLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.voidedPurchaseInvoiceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.leasePayment.leaseLineId"
+          },
+          {
+            $ref: "#/parameters/body.leasePayment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["leasePayment"]
       }
     },
     "/salesOrderLines": {
@@ -86857,6 +89152,9 @@ export default {
             $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.blockingDispatchReadableId"
           },
           {
+            $ref: "#/parameters/rowFilter.workCentersWithBlockingStatus.loadedJobOperationId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -87172,6 +89470,168 @@ export default {
           }
         },
         tags: ["salesReturnOrderLine"]
+      }
+    },
+    "/machineStateChange": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/machineStateChange"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.machineStateChange"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["machineStateChange"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.externalEventId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.state"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.changedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.machineStateChange.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.machineStateChange"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["machineStateChange"]
       }
     },
     "/purchaseOrderDelivery": {
@@ -89851,6 +92311,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransfer.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -89952,6 +92415,9 @@ export default {
             $ref: "#/parameters/rowFilter.stockTransfer.tags"
           },
           {
+            $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -90005,6 +92471,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.stockTransfer.tags"
+          },
+          {
+            $ref: "#/parameters/rowFilter.stockTransfer.kanbanId"
           },
           {
             $ref: "#/parameters/body.stockTransfer"
@@ -93610,6 +96079,276 @@ export default {
           }
         },
         tags: ["workCenter"]
+      }
+    },
+    "/workCenterDevice": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/workCenterDevice"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.workCenterDevice"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterDevice"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalDeviceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.externalSiteId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.siteTimezone"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.deviceName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentState"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.currentStateAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.appliedThrough"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastEventAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastManualChangeAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.lastSyncError"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.workCenterDevice.unplannedPressAt"
+          },
+          {
+            $ref: "#/parameters/body.workCenterDevice"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["workCenterDevice"]
       }
     },
     "/itemSupersession": {
@@ -99619,6 +102358,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseShortTermExpedient"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -99882,6 +102630,15 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseShortTermExpedient"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -100097,6 +102854,15 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.accountingActivatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseIncrementalBorrowingRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseShortTermExpedient"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.leaseReminderDays"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -101407,6 +104173,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -101523,6 +104292,9 @@ export default {
             $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
           },
           {
+            $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -101591,6 +104363,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.kanban.fromStorageUnitId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.kanban.replenishmentLevel"
           },
           {
             $ref: "#/parameters/body.kanban"
@@ -104026,6 +106801,20 @@ export default {
             name: "p_sort_method",
             required: false,
             type: "string"
+          },
+          {
+            format: "boolean",
+            in: "query",
+            name: "p_filter_storage_unit",
+            required: false,
+            type: "boolean"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: false,
+            type: "string"
           }
         ],
         produces: [
@@ -104064,6 +106853,10 @@ export default {
                   format: "boolean",
                   type: "boolean"
                 },
+                p_filter_storage_unit: {
+                  format: "boolean",
+                  type: "boolean"
+                },
                 p_item_id: {
                   format: "text",
                   type: "string"
@@ -104073,6 +106866,10 @@ export default {
                   type: "string"
                 },
                 p_sort_method: {
+                  format: "text",
+                  type: "string"
+                },
+                p_storage_unit_id: {
                   format: "text",
                   type: "string"
                 }
@@ -104359,6 +107156,51 @@ export default {
           }
         },
         tags: ["(rpc) xid"]
+      }
+    },
+    "/rpc/sync_kanban_level_check": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_kanban_level_check"]
       }
     },
     "/rpc/get_method_tree": {
@@ -110831,6 +113673,77 @@ export default {
         tags: ["(rpc) get_my_claim"]
       }
     },
+    "/rpc/get_kanban_projected_quantities": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text[]",
+            in: "query",
+            name: "kanban_ids",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_kanban_projected_quantities"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                kanban_ids: {
+                  format: "text[]",
+                  items: {
+                    type: "string"
+                  },
+                  type: "array"
+                }
+              },
+              required: ["company_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_kanban_projected_quantities"]
+      }
+    },
     "/rpc/delete_old_audit_logs": {
       post: {
         parameters: [
@@ -113500,6 +116413,51 @@ export default {
         tags: ["(rpc) xid_counter"]
       }
     },
+    "/rpc/sync_load_work_center_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_load_work_center_operation"]
+      }
+    },
     "/rpc/storage_unit_enforce_no_cycle": {
       post: {
         parameters: [
@@ -113897,6 +116855,51 @@ export default {
           }
         },
         tags: ["(rpc) sync_update_stock_transfer_status"]
+      }
+    },
+    "/rpc/sync_unload_work_center_operation": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_new: {
+                  format: "jsonb"
+                },
+                p_old: {
+                  format: "jsonb"
+                },
+                p_operation: {
+                  format: "text",
+                  type: "string"
+                },
+                p_table: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_table", "p_operation", "p_new", "p_old"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) sync_unload_work_center_operation"]
       }
     },
     "/rpc/get_purchasing_planning": {
@@ -115887,7 +118890,7 @@ export default {
           type: "string"
         },
         type: {
-          enum: ["Deferral", "Accrual", "Interest"],
+          enum: ["Deferral", "Accrual", "Interest", "Amortization"],
           format: 'public."revenueScheduleType"',
           type: "string"
         },
@@ -115993,6 +118996,14 @@ export default {
         memoId: {
           description:
             "Note:\nThis is a Foreign Key to `memo.id`.<fk table='memo' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        leaseScheduleLineId: {
           format: "text",
           type: "string"
         }
@@ -118214,6 +121225,154 @@ export default {
       },
       type: "object"
     },
+    leaseLine: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "description",
+        "paymentAmount",
+        "ownershipTransfers",
+        "specializedAsset",
+        "purchaseOptionReasonablyCertain",
+        "status",
+        "sortOrder",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lsln'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        serialNumber: {
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        paymentAmount: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        fairValue: {
+          format: "numeric",
+          type: "number"
+        },
+        economicLifeMonths: {
+          format: "integer",
+          type: "integer"
+        },
+        ownershipTransfers: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        specializedAsset: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        purchaseOptionAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        purchaseOptionReasonablyCertain: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        status: {
+          default: "Active",
+          enum: ["Active", "Terminated", "Purchased", "Expired"],
+          format: 'public."leaseLineStatus"',
+          type: "string"
+        },
+        lesseeClassification: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        classificationInputs: {
+          format: "jsonb"
+        },
+        classificationOverride: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        classificationOverrideReason: {
+          format: "text",
+          type: "string"
+        },
+        initialLiability: {
+          format: "numeric",
+          type: "number"
+        },
+        initialRouAsset: {
+          format: "numeric",
+          type: "number"
+        },
+        rouAssetCost: {
+          format: "numeric",
+          type: "number"
+        },
+        fixedAssetId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        sortOrder: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     eventSystemTrigger: {
       properties: {
         tableName: {
@@ -119661,7 +122820,8 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Lease Run"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -121761,6 +124921,181 @@ export default {
       },
       type: "object"
     },
+    lease: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "status",
+        "supplierId",
+        "commencementDate",
+        "invoiceFromDate",
+        "paymentFrequency",
+        "paymentTiming",
+        "annualEscalationPercent",
+        "discountRate",
+        "currencyCode",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lse'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: [
+            "Draft",
+            "Active",
+            "Expired",
+            "Terminated",
+            "Purchased",
+            "Cancelled"
+          ],
+          format: 'public."leaseStatus"',
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierContact.id`.<fk table='supplierContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        commencementDate: {
+          format: "date",
+          type: "string"
+        },
+        endDate: {
+          format: "date",
+          type: "string"
+        },
+        noticeDate: {
+          format: "date",
+          type: "string"
+        },
+        invoiceFromDate: {
+          format: "date",
+          type: "string"
+        },
+        paymentFrequency: {
+          default: "Monthly",
+          enum: ["Monthly", "Quarterly", "Annual"],
+          format: 'public."leasePaymentFrequency"',
+          type: "string"
+        },
+        paymentTiming: {
+          default: "Advance",
+          enum: ["Advance", "Arrears"],
+          format: 'public."rentalBillingTiming"',
+          type: "string"
+        },
+        annualEscalationPercent: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        discountRate: {
+          format: "numeric",
+          type: "number"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        commencementJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        noticeRemindedFor: {
+          format: "date",
+          type: "string"
+        },
+        endRemindedFor: {
+          format: "date",
+          type: "string"
+        },
+        activatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        closedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     exchangeRate: {
       required: ["id", "currencyCode", "effectiveDate", "rate", "createdAt"],
       properties: {
@@ -122586,6 +125921,64 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    unattributedMachineTime: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "startTime",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('umt'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        startTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -125890,6 +129283,125 @@ export default {
       },
       type: "object"
     },
+    leaseEvent: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "eventType",
+        "effectiveDate",
+        "liabilityBefore",
+        "liabilityAfter",
+        "rouAssetBefore",
+        "rouAssetAfter",
+        "gainLoss",
+        "classificationBefore",
+        "classificationAfter",
+        "createdBy",
+        "createdAt",
+        "leaseLineId"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lev'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        eventType: {
+          enum: ["Modification", "Termination", "Purchase"],
+          format: 'public."leaseEventType"',
+          type: "string"
+        },
+        effectiveDate: {
+          format: "date",
+          type: "string"
+        },
+        liabilityBefore: {
+          format: "numeric",
+          type: "number"
+        },
+        liabilityAfter: {
+          format: "numeric",
+          type: "number"
+        },
+        rouAssetBefore: {
+          format: "numeric",
+          type: "number"
+        },
+        rouAssetAfter: {
+          format: "numeric",
+          type: "number"
+        },
+        gainLoss: {
+          default: 0,
+          format: "numeric",
+          type: "number"
+        },
+        classificationBefore: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        classificationAfter: {
+          enum: ["Operating", "Finance", "Short-Term"],
+          format: 'public."lesseeClassification"',
+          type: "string"
+        },
+        fixedAssetId: {
+          description:
+            "Note:\nThis is a Foreign Key to `fixedAsset.id`.<fk table='fixedAsset' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     enforcementRuleAcknowledgment: {
       required: [
         "id",
@@ -127168,6 +130680,49 @@ export default {
       },
       type: "object"
     },
+    accountingCutoverIgnoredInvoice: {
+      required: ["id", "companyId", "invoiceId", "createdBy", "createdAt"],
+      properties: {
+        id: {
+          default: "public.id('acii'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        invoiceId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     webhookTable: {
       required: ["table", "module", "name"],
       properties: {
@@ -128000,6 +131555,10 @@ export default {
           format: "text",
           type: "string"
         },
+        replenishmentLevel: {
+          format: "numeric",
+          type: "number"
+        },
         name: {
           format: "text",
           type: "string"
@@ -128708,6 +132267,52 @@ export default {
       },
       type: "object"
     },
+    workCenterLoad: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "jobOperationId",
+        "loadedAt",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('wcl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        jobOperationId: {
+          format: "text",
+          type: "string"
+        },
+        loadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        unloadedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     workCenters: {
       properties: {
         id: {
@@ -128881,6 +132486,62 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    unattributedMachineTimes: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        startTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endTime: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        startDate: {
+          format: "date",
+          type: "string"
+        },
+        endDate: {
+          format: "date",
           type: "string"
         }
       },
@@ -129955,7 +133616,8 @@ export default {
         "periodEnd",
         "status",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "type"
       ],
       properties: {
         id: {
@@ -130018,6 +133680,12 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        type: {
+          default: "Revenue Recognition",
+          enum: ["Revenue Recognition", "Lease"],
+          format: 'public."runType"',
           type: "string"
         }
       },
@@ -130613,7 +134281,8 @@ export default {
             "Tool",
             "Service",
             "Consumable",
-            "Fixture"
+            "Fixture",
+            "Lease"
           ],
           format: 'public."payableLineType"',
           type: "string"
@@ -130797,6 +134466,18 @@ export default {
           format: "numeric",
           type: "number"
         },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        leasePaymentId: {
+          format: "text",
+          type: "string"
+        },
         thumbnailPath: {
           format: "text",
           type: "string"
@@ -130830,6 +134511,14 @@ export default {
           type: "string"
         },
         assetName: {
+          format: "text",
+          type: "string"
+        },
+        leaseReadableId: {
+          format: "text",
+          type: "string"
+        },
+        leaseName: {
           format: "text",
           type: "string"
         }
@@ -132557,7 +136246,8 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Lease"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -133293,7 +136983,8 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Lease Run"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -135816,6 +139507,48 @@ export default {
         migrationClearingAccount: {
           format: "text",
           type: "string"
+        },
+        rightOfUseAssetAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        accumulatedRightOfUseAmortizationAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseLiabilityAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        operatingLeaseExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        variableLeaseExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        rightOfUseAmortizationExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseInterestExpenseAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -136851,6 +140584,183 @@ export default {
       },
       type: "object"
     },
+    leases: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          enum: [
+            "Draft",
+            "Active",
+            "Expired",
+            "Terminated",
+            "Purchased",
+            "Cancelled"
+          ],
+          format: 'public."leaseStatus"',
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplier.id`.<fk table='supplier' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierLocationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierContactId: {
+          description:
+            "Note:\nThis is a Foreign Key to `supplierContact.id`.<fk table='supplierContact' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        locationId: {
+          description:
+            "Note:\nThis is a Foreign Key to `location.id`.<fk table='location' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assignee: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        commencementDate: {
+          format: "date",
+          type: "string"
+        },
+        endDate: {
+          format: "date",
+          type: "string"
+        },
+        noticeDate: {
+          format: "date",
+          type: "string"
+        },
+        invoiceFromDate: {
+          format: "date",
+          type: "string"
+        },
+        paymentFrequency: {
+          enum: ["Monthly", "Quarterly", "Annual"],
+          format: 'public."leasePaymentFrequency"',
+          type: "string"
+        },
+        paymentTiming: {
+          enum: ["Advance", "Arrears"],
+          format: 'public."rentalBillingTiming"',
+          type: "string"
+        },
+        annualEscalationPercent: {
+          format: "numeric",
+          type: "number"
+        },
+        discountRate: {
+          format: "numeric",
+          type: "number"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        commencementJournalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        noticeRemindedFor: {
+          format: "date",
+          type: "string"
+        },
+        endRemindedFor: {
+          format: "date",
+          type: "string"
+        },
+        activatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        closedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        supplierName: {
+          format: "text",
+          type: "string"
+        },
+        assetCount: {
+          format: "integer",
+          type: "integer"
+        },
+        paymentAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        classification: {
+          format: "text",
+          type: "string"
+        },
+        nextDueDate: {
+          format: "date",
+          type: "string"
+        },
+        currentLiability: {
+          format: "numeric",
+          type: "number"
+        }
+      },
+      type: "object"
+    },
     quoteFavorite: {
       required: ["quoteId", "userId"],
       properties: {
@@ -137583,6 +141493,115 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        }
+      },
+      type: "object"
+    },
+    leaseScheduleLine: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "periodDate",
+        "openingLiability",
+        "paymentAmount",
+        "interestAmount",
+        "principalAmount",
+        "closingLiability",
+        "leaseCost",
+        "rouAmortization",
+        "closingRouAsset",
+        "createdBy",
+        "createdAt",
+        "leaseLineId"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lssl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        periodDate: {
+          format: "date",
+          type: "string"
+        },
+        openingLiability: {
+          format: "numeric",
+          type: "number"
+        },
+        paymentAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        interestAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        principalAmount: {
+          format: "numeric",
+          type: "number"
+        },
+        closingLiability: {
+          format: "numeric",
+          type: "number"
+        },
+        leaseCost: {
+          format: "numeric",
+          type: "number"
+        },
+        rouAmortization: {
+          format: "numeric",
+          type: "number"
+        },
+        closingRouAsset: {
+          format: "numeric",
+          type: "number"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -139539,7 +143558,8 @@ export default {
             "Tool",
             "Service",
             "Consumable",
-            "Fixture"
+            "Fixture",
+            "Lease"
           ],
           format: 'public."payableLineType"',
           type: "string"
@@ -139733,6 +143753,14 @@ export default {
           type: "number"
         },
         projectId: {
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        leasePaymentId: {
           format: "text",
           type: "string"
         }
@@ -142553,6 +146581,9 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        orientation: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -145095,6 +149126,102 @@ export default {
       },
       type: "object"
     },
+    leasePayment: {
+      required: [
+        "id",
+        "companyId",
+        "leaseId",
+        "paymentType",
+        "periodStart",
+        "periodEnd",
+        "dueDate",
+        "amount",
+        "status",
+        "createdBy",
+        "createdAt",
+        "leaseLineId"
+      ],
+      properties: {
+        id: {
+          default: "public.id('lpay'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        leaseId: {
+          format: "text",
+          type: "string"
+        },
+        paymentType: {
+          default: "Rent",
+          enum: ["Rent", "Purchase Option", "Termination Penalty"],
+          format: 'public."leasePaymentType"',
+          type: "string"
+        },
+        periodStart: {
+          format: "date",
+          type: "string"
+        },
+        periodEnd: {
+          format: "date",
+          type: "string"
+        },
+        dueDate: {
+          format: "date",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        status: {
+          default: "Pending",
+          enum: ["Pending", "Invoiced", "Skipped"],
+          format: 'public."leasePaymentStatus"',
+          type: "string"
+        },
+        purchaseInvoiceLineId: {
+          format: "text",
+          type: "string"
+        },
+        voidedPurchaseInvoiceId: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        leaseLineId: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     salesOrderLines: {
       properties: {
         id: {
@@ -147368,7 +151495,8 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Lease"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -147490,7 +151618,8 @@ export default {
             "Maintenance Event",
             "Revenue Recognition",
             "Asset Transfer",
-            "Lease"
+            "Lease",
+            "Lease Run"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -147569,7 +151698,8 @@ export default {
             "Maintenance Event",
             "Asset Transfer",
             "Rental Agreement",
-            "Contract"
+            "Contract",
+            "Lease"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -156001,6 +160131,10 @@ export default {
         blockingDispatchReadableId: {
           format: "text",
           type: "string"
+        },
+        loadedJobOperationId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -156141,6 +160275,59 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        }
+      },
+      type: "object"
+    },
+    machineStateChange: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterDeviceId",
+        "workCenterId",
+        "externalEventId",
+        "state",
+        "changedAt",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('msc'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterDeviceId: {
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        externalEventId: {
+          format: "text",
+          type: "string"
+        },
+        state: {
+          enum: ["Running", "Idle", "Down", "Offline"],
+          format: 'public."machineState"',
+          type: "string"
+        },
+        changedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -157627,6 +161814,10 @@ export default {
             type: "string"
           },
           type: "array"
+        },
+        kanbanId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -159644,6 +163835,115 @@ export default {
             "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
           format: "numeric",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    workCenterDevice: {
+      required: [
+        "id",
+        "companyId",
+        "workCenterId",
+        "integration",
+        "externalDeviceId",
+        "deviceName",
+        "lastEventAt",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('wcd'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        workCenterId: {
+          format: "text",
+          type: "string"
+        },
+        integration: {
+          description:
+            "Note:\nThis is a Foreign Key to `integration.id`.<fk table='integration' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        externalDeviceId: {
+          format: "text",
+          type: "string"
+        },
+        externalSiteId: {
+          format: "text",
+          type: "string"
+        },
+        siteTimezone: {
+          format: "text",
+          type: "string"
+        },
+        deviceName: {
+          format: "text",
+          type: "string"
+        },
+        currentState: {
+          enum: ["Running", "Idle", "Down", "Offline"],
+          format: 'public."machineState"',
+          type: "string"
+        },
+        currentStateAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        appliedThrough: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastEventAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastManualChangeAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSyncedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        lastSyncError: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        unplannedPressAt: {
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -162323,7 +166623,10 @@ export default {
         "leaseSubstantiallyAllThresholdPercent",
         "leaseDefaultDiscountRate",
         "invoiceAutomation",
-        "invoiceNotificationGroup"
+        "invoiceNotificationGroup",
+        "leaseIncrementalBorrowingRate",
+        "leaseShortTermExpedient",
+        "leaseReminderDays"
       ],
       properties: {
         id: {
@@ -162696,6 +166999,21 @@ export default {
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
+        },
+        leaseIncrementalBorrowingRate: {
+          default: 6,
+          format: "numeric",
+          type: "number"
+        },
+        leaseShortTermExpedient: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        leaseReminderDays: {
+          default: 90,
+          format: "integer",
+          type: "integer"
         }
       },
       type: "object"
@@ -163315,6 +167633,12 @@ export default {
             "Note:\nThis is a Foreign Key to `storageUnit.id`.<fk table='storageUnit' column='id'/>",
           format: "text",
           type: "string"
+        },
+        replenishmentLevel: {
+          description:
+            'Transfer kanbans only. When the projected quantity at the To storage unit is below this level, Carbon creates a Released stock transfer for "quantity". NULL = scan-only.',
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -164578,6 +168902,18 @@ export default {
     },
     "rowFilter.revenueRecognitionSchedule.memoId": {
       name: "memoId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.revenueRecognitionSchedule.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.revenueRecognitionSchedule.leaseScheduleLineId": {
+      name: "leaseScheduleLineId",
       required: false,
       in: "query",
       type: "string"
@@ -167143,6 +171479,177 @@ export default {
     },
     "rowFilter.inventoryCount.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.leaseLine": {
+      name: "leaseLine",
+      description: "leaseLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leaseLine"
+      }
+    },
+    "rowFilter.leaseLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.serialNumber": {
+      name: "serialNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.paymentAmount": {
+      name: "paymentAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.fairValue": {
+      name: "fairValue",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.economicLifeMonths": {
+      name: "economicLifeMonths",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.ownershipTransfers": {
+      name: "ownershipTransfers",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.specializedAsset": {
+      name: "specializedAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.purchaseOptionAmount": {
+      name: "purchaseOptionAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.purchaseOptionReasonablyCertain": {
+      name: "purchaseOptionReasonablyCertain",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.lesseeClassification": {
+      name: "lesseeClassification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationInputs": {
+      name: "classificationInputs",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationOverride": {
+      name: "classificationOverride",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.classificationOverrideReason": {
+      name: "classificationOverrideReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.initialLiability": {
+      name: "initialLiability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.initialRouAsset": {
+      name: "initialRouAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.rouAssetCost": {
+      name: "rouAssetCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.fixedAssetId": {
+      name: "fixedAssetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.sortOrder": {
+      name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseLine.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -170983,6 +175490,195 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.lease": {
+      name: "lease",
+      description: "lease",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/lease"
+      }
+    },
+    "rowFilter.lease.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.supplierLocationId": {
+      name: "supplierLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.supplierContactId": {
+      name: "supplierContactId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.commencementDate": {
+      name: "commencementDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.noticeDate": {
+      name: "noticeDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.invoiceFromDate": {
+      name: "invoiceFromDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.paymentFrequency": {
+      name: "paymentFrequency",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.paymentTiming": {
+      name: "paymentTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.annualEscalationPercent": {
+      name: "annualEscalationPercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.discountRate": {
+      name: "discountRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.commencementJournalId": {
+      name: "commencementJournalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.noticeRemindedFor": {
+      name: "noticeRemindedFor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.endRemindedFor": {
+      name: "endRemindedFor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.activatedAt": {
+      name: "activatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.closedAt": {
+      name: "closedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.lease.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.exchangeRate": {
       name: "exchangeRate",
       description: "exchangeRate",
@@ -171981,6 +176677,69 @@ export default {
     },
     "rowFilter.inventoryCountLine.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.unattributedMachineTime": {
+      name: "unattributedMachineTime",
+      description: "unattributedMachineTime",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/unattributedMachineTime"
+      }
+    },
+    "rowFilter.unattributedMachineTime.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.startTime": {
+      name: "startTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.endTime": {
+      name: "endTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTime.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -175749,6 +180508,135 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.leaseEvent": {
+      name: "leaseEvent",
+      description: "leaseEvent",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leaseEvent"
+      }
+    },
+    "rowFilter.leaseEvent.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.eventType": {
+      name: "eventType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.effectiveDate": {
+      name: "effectiveDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.liabilityBefore": {
+      name: "liabilityBefore",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.liabilityAfter": {
+      name: "liabilityAfter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.rouAssetBefore": {
+      name: "rouAssetBefore",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.rouAssetAfter": {
+      name: "rouAssetAfter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.gainLoss": {
+      name: "gainLoss",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.classificationBefore": {
+      name: "classificationBefore",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.classificationAfter": {
+      name: "classificationAfter",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.fixedAssetId": {
+      name: "fixedAssetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseEvent.leaseLineId": {
+      name: "leaseLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.enforcementRuleAcknowledgment": {
       name: "enforcementRuleAcknowledgment",
       description: "enforcementRuleAcknowledgment",
@@ -177189,6 +182077,57 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.accountingCutoverIgnoredInvoice": {
+      name: "accountingCutoverIgnoredInvoice",
+      description: "accountingCutoverIgnoredInvoice",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/accountingCutoverIgnoredInvoice"
+      }
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.invoiceId": {
+      name: "invoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountingCutoverIgnoredInvoice.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.webhookTable": {
       name: "webhookTable",
       description: "webhookTable",
@@ -178101,6 +183040,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.kanbans.replenishmentLevel": {
+      name: "replenishmentLevel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.kanbans.name": {
       name: "name",
       required: false,
@@ -178925,6 +183870,57 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.workCenterLoad": {
+      name: "workCenterLoad",
+      description: "workCenterLoad",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterLoad"
+      }
+    },
+    "rowFilter.workCenterLoad.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.jobOperationId": {
+      name: "jobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.loadedAt": {
+      name: "loadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.unloadedAt": {
+      name: "unloadedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterLoad.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.workCenters": {
       name: "workCenters",
       description: "workCenters",
@@ -179119,6 +184115,81 @@ export default {
     },
     "rowFilter.enforcementRuleWorkCenterAssignment.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.unattributedMachineTimes": {
+      name: "unattributedMachineTimes",
+      description: "unattributedMachineTimes",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/unattributedMachineTimes"
+      }
+    },
+    "rowFilter.unattributedMachineTimes.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.startTime": {
+      name: "startTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.endTime": {
+      name: "endTime",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.startDate": {
+      name: "startDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.unattributedMachineTimes.endDate": {
+      name: "endDate",
       required: false,
       in: "query",
       type: "string"
@@ -180404,6 +185475,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.revenueRecognitionRun.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.qualityDocumentStep": {
       name: "qualityDocumentStep",
       description: "qualityDocumentStep",
@@ -181285,6 +186362,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseInvoiceLines.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.leasePaymentId": {
+      name: "leasePaymentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.purchaseInvoiceLines.thumbnailPath": {
       name: "thumbnailPath",
       required: false,
@@ -181335,6 +186430,18 @@ export default {
     },
     "rowFilter.purchaseInvoiceLines.assetName": {
       name: "assetName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.leaseReadableId": {
+      name: "leaseReadableId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLines.leaseName": {
+      name: "leaseName",
       required: false,
       in: "query",
       type: "string"
@@ -186782,6 +191889,48 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.accountDefault.rightOfUseAssetAccount": {
+      name: "rightOfUseAssetAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.accumulatedRightOfUseAmortizationAccount": {
+      name: "accumulatedRightOfUseAmortizationAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.leaseLiabilityAccount": {
+      name: "leaseLiabilityAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.operatingLeaseExpenseAccount": {
+      name: "operatingLeaseExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.variableLeaseExpenseAccount": {
+      name: "variableLeaseExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.rightOfUseAmortizationExpenseAccount": {
+      name: "rightOfUseAmortizationExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.leaseInterestExpenseAccount": {
+      name: "leaseInterestExpenseAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.warehouse": {
       name: "warehouse",
       description: "warehouse",
@@ -187913,6 +193062,231 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.leases": {
+      name: "leases",
+      description: "leases",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leases"
+      }
+    },
+    "rowFilter.leases.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.supplierLocationId": {
+      name: "supplierLocationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.supplierContactId": {
+      name: "supplierContactId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.locationId": {
+      name: "locationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.assignee": {
+      name: "assignee",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.commencementDate": {
+      name: "commencementDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.endDate": {
+      name: "endDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.noticeDate": {
+      name: "noticeDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.invoiceFromDate": {
+      name: "invoiceFromDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.paymentFrequency": {
+      name: "paymentFrequency",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.paymentTiming": {
+      name: "paymentTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.annualEscalationPercent": {
+      name: "annualEscalationPercent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.discountRate": {
+      name: "discountRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.commencementJournalId": {
+      name: "commencementJournalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.noticeRemindedFor": {
+      name: "noticeRemindedFor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.endRemindedFor": {
+      name: "endRemindedFor",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.activatedAt": {
+      name: "activatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.closedAt": {
+      name: "closedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.supplierName": {
+      name: "supplierName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.assetCount": {
+      name: "assetCount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.paymentAmount": {
+      name: "paymentAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.classification": {
+      name: "classification",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.nextDueDate": {
+      name: "nextDueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leases.currentLiability": {
+      name: "currentLiability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.quoteFavorite": {
       name: "quoteFavorite",
       description: "quoteFavorite",
@@ -188677,6 +194051,129 @@ export default {
     },
     "rowFilter.account.isSystem": {
       name: "isSystem",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.leaseScheduleLine": {
+      name: "leaseScheduleLine",
+      description: "leaseScheduleLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leaseScheduleLine"
+      }
+    },
+    "rowFilter.leaseScheduleLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.periodDate": {
+      name: "periodDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.openingLiability": {
+      name: "openingLiability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.paymentAmount": {
+      name: "paymentAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.interestAmount": {
+      name: "interestAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.principalAmount": {
+      name: "principalAmount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.closingLiability": {
+      name: "closingLiability",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.leaseCost": {
+      name: "leaseCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.rouAmortization": {
+      name: "rouAmortization",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.closingRouAsset": {
+      name: "closingRouAsset",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leaseScheduleLine.leaseLineId": {
+      name: "leaseLineId",
       required: false,
       in: "query",
       type: "string"
@@ -191050,6 +196547,18 @@ export default {
     },
     "rowFilter.purchaseInvoiceLine.projectId": {
       name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.purchaseInvoiceLine.leasePaymentId": {
+      name: "leasePaymentId",
       required: false,
       in: "query",
       type: "string"
@@ -194313,6 +199822,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.assemblyInstructionStep.orientation": {
+      name: "orientation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.receiptLine": {
       name: "receiptLine",
       description: "receiptLine",
@@ -197064,6 +202579,111 @@ export default {
     },
     "rowFilter.maintenanceDispatchComment.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.leasePayment": {
+      name: "leasePayment",
+      description: "leasePayment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/leasePayment"
+      }
+    },
+    "rowFilter.leasePayment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.leaseId": {
+      name: "leaseId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.paymentType": {
+      name: "paymentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.periodStart": {
+      name: "periodStart",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.periodEnd": {
+      name: "periodEnd",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.dueDate": {
+      name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.purchaseInvoiceLineId": {
+      name: "purchaseInvoiceLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.voidedPurchaseInvoiceId": {
+      name: "voidedPurchaseInvoiceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.leasePayment.leaseLineId": {
+      name: "leaseLineId",
       required: false,
       in: "query",
       type: "string"
@@ -209335,6 +214955,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.workCentersWithBlockingStatus.loadedJobOperationId": {
+      name: "loadedJobOperationId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.salesReturnOrderLine": {
       name: "salesReturnOrderLine",
       description: "salesReturnOrderLine",
@@ -209466,6 +215092,63 @@ export default {
     },
     "rowFilter.salesReturnOrderLine.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.machineStateChange": {
+      name: "machineStateChange",
+      description: "machineStateChange",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/machineStateChange"
+      }
+    },
+    "rowFilter.machineStateChange.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.workCenterDeviceId": {
+      name: "workCenterDeviceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.externalEventId": {
+      name: "externalEventId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.state": {
+      name: "state",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.changedAt": {
+      name: "changedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.machineStateChange.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"
@@ -211137,6 +216820,12 @@ export default {
     },
     "rowFilter.stockTransfer.tags": {
       name: "tags",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.stockTransfer.kanbanId": {
+      name: "kanbanId",
       required: false,
       in: "query",
       type: "string"
@@ -213418,6 +219107,135 @@ export default {
       name: "minimumBatchQuantity",
       description:
         "Advisory minimum pieces to justify a batch run; NULL means no minimum.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.workCenterDevice": {
+      name: "workCenterDevice",
+      description: "workCenterDevice",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/workCenterDevice"
+      }
+    },
+    "rowFilter.workCenterDevice.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.externalDeviceId": {
+      name: "externalDeviceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.externalSiteId": {
+      name: "externalSiteId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.siteTimezone": {
+      name: "siteTimezone",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.deviceName": {
+      name: "deviceName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.currentState": {
+      name: "currentState",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.currentStateAt": {
+      name: "currentStateAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.appliedThrough": {
+      name: "appliedThrough",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastEventAt": {
+      name: "lastEventAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastManualChangeAt": {
+      name: "lastManualChangeAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastSyncedAt": {
+      name: "lastSyncedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.lastSyncError": {
+      name: "lastSyncError",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.workCenterDevice.unplannedPressAt": {
+      name: "unplannedPressAt",
       required: false,
       in: "query",
       type: "string"
@@ -216741,6 +222559,24 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.leaseIncrementalBorrowingRate": {
+      name: "leaseIncrementalBorrowingRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.leaseShortTermExpedient": {
+      name: "leaseShortTermExpedient",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.leaseReminderDays": {
+      name: "leaseReminderDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.part": {
       name: "part",
       description: "part",
@@ -217405,6 +223241,14 @@ export default {
     },
     "rowFilter.kanban.fromStorageUnitId": {
       name: "fromStorageUnitId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.kanban.replenishmentLevel": {
+      name: "replenishmentLevel",
+      description:
+        'Transfer kanbans only. When the projected quantity at the To storage unit is below this level, Carbon creates a Released stock transfer for "quantity". NULL = scan-only.',
       required: false,
       in: "query",
       type: "string"

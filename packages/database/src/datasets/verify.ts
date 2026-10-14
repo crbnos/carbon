@@ -115,10 +115,11 @@ export async function verifyDataset(
     // dispatch events (pg_net calls would not roll back).
     await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
 
-    const { companyId } = await seedCompanyReferenceData(client, {
-      userId,
-      companyName: SCRATCH_COMPANY_NAME
-    });
+    const { companyId, locationId: bootstrapLocationId } =
+      await seedCompanyReferenceData(client, {
+        userId,
+        companyName: SCRATCH_COMPANY_NAME
+      });
     const timeZone = await resolveCompanyTimeZone(client, companyId);
 
     await applyDatasetTiers(client, {
@@ -135,6 +136,40 @@ export async function verifyDataset(
         key,
         ok: false,
         error: `${shortfalls.length} table(s) below their row-count floor (datasets/coverage.ts):\n      ${shortfalls.join("\n      ")}`,
+        durationMs: performance.now() - startedAt
+      };
+    }
+
+    // Apply it again over itself, as Settings → Demo Data does on a company
+    // that already has data: the wipe nulls every nullable FK into a table it
+    // clears, which trips any CHECK that needs one of them. Only a seeded
+    // company has those rows, so a first apply never reaches that code.
+    //
+    // The wipe keeps the bootstrap location, which `buildCtx` finds as the
+    // oldest. In this one transaction NOW() gave every location the same
+    // `createdAt`; in real use the dataset runs after onboarding committed,
+    // so date the seeded ones after the bootstrap one as they would be.
+    await client.query(
+      `UPDATE location SET "createdAt" = "createdAt" + interval '1 second'
+       WHERE "companyId" = $1 AND id <> $2`,
+      [companyId, bootstrapLocationId]
+    );
+    try {
+      await applyDatasetTiers(client, {
+        companyId,
+        userId,
+        dataset,
+        timeZone,
+        log,
+        wipeFirst: true
+      });
+    } catch (err) {
+      return {
+        key,
+        ok: false,
+        error: `re-applying over the seeded company failed (datasets/wipe.ts): ${
+          err instanceof Error ? err.message : String(err)
+        }`,
         durationMs: performance.now() - startedAt
       };
     }

@@ -42,17 +42,17 @@ import {
   useSettingsModule
 } from "~/hooks/useModules";
 import { path } from "~/utils/path";
+import { AddCompanyModal } from "../Navigation/AddCompanyModal";
 import { useCompactModuleSidebar } from "../Navigation/CollapsibleSidebar";
+import {
+  useCompanyGroups,
+  useCompanySwitchRedirect
+} from "../Navigation/CompanySwitcher";
 import { getModule } from "../Navigation/PrimaryNavigation";
 import {
   SheetNavStyleProvider,
   SidebarPresentationProvider
 } from "../Navigation/SidebarPresentation";
-import { AddCompanyModal } from "../Topbar/AddCompanyModal";
-import {
-  useCompanyGroups,
-  useCompanySwitchRedirect
-} from "../Topbar/CompanySwitcher";
 
 /** The switcher whose finder covers the menu, if any. */
 type Finder = "companies" | "modules";
@@ -179,7 +179,7 @@ function ModuleRows({ currentKey }: { currentKey: string | null }) {
 /**
  * The company switcher's finder: every company the user belongs to, the
  * current one ticked, then Add Company for an admin (the desktop
- * breadcrumb's rule). Picking a company switches to it.
+ * rail switcher's rule). Picking a company switches to it.
  */
 function CompanyFinder({
   onClose,

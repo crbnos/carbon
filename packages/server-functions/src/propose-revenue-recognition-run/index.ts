@@ -35,6 +35,7 @@ import {
 } from "../lib/contract-ledger";
 import { syncDraftRecognitionRuns } from "../lib/draft-recognition-run";
 import { assertAccountingCutover } from "../lib/require-accounting-cutover";
+import { RUN_SEQUENCE, type RunType, runTypeFilter } from "../lib/run-type";
 
 export type RunProposalContext = {
   companyId: string;
@@ -494,22 +495,29 @@ export async function synthesizeContractRevenue(
     .execute();
 }
 
-export const RUN_ROW_SYNTHESIZERS: RunRowSynthesizer[] = [
-  synthesizeRentalAccruals,
-  synthesizeContractRevenue
-];
+/** The synthesizers a run of `type` runs before it selects its rows. A lease
+ *  run synthesizes rental accruals; a revenue recognition run synthesizes
+ *  contract revenue. Neither ever runs the other's. */
+export function runRowSynthesizers(type: RunType): RunRowSynthesizer[] {
+  return type === "Lease"
+    ? [synthesizeRentalAccruals]
+    : [synthesizeContractRevenue];
+}
 
 export type RunProposal = { id: string; runId: string; lineCount: number };
 
-/** Every Planned row dated on or before `periodEnd` that no run holds yet. */
+/** Every Planned row of the run type dated on or before `periodEnd` that no
+ *  run holds yet. */
 export async function selectDueScheduleRows(
   trx: KyselyTx,
-  { companyId, periodEnd }: RunProposalContext
+  { companyId, periodEnd }: RunProposalContext,
+  type: RunType
 ) {
   return trx
     .selectFrom("revenueRecognitionSchedule")
     .select(["id", "amount"])
     .where("companyId", "=", companyId)
+    .where(runTypeFilter(type))
     .where("status", "=", "Planned")
     .where("runLineId", "is", null)
     .where("scheduledDate", "<=", periodEnd)
@@ -562,25 +570,27 @@ export async function claimScheduleRows(
  */
 async function createRevenueRecognitionRunProposal(
   db: Kysely<KyselyDatabase>,
-  args: RunProposalContext
+  args: RunProposalContext,
+  type: RunType
 ): Promise<RunProposal | null> {
   const { companyId, periodEnd, userId } = args;
 
   return db.transaction().execute(async (trx) => {
-    for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+    for (const synthesize of runRowSynthesizers(type)) {
       await synthesize(trx, args);
     }
 
-    const due = await selectDueScheduleRows(trx, args);
+    const due = await selectDueScheduleRows(trx, args, type);
     if (due.length === 0) return null;
 
-    // One Draft per period (the partial unique index
+    // One Draft per period and run type (the partial unique index
     // revenueRecognitionRun_one_draft_per_period is the backstop): a period
     // that already has a Draft is recalculated, not proposed again.
     const draft = await trx
       .selectFrom("revenueRecognitionRun")
       .select("runId")
       .where("companyId", "=", companyId)
+      .where("type", "=", type)
       .where("periodEnd", "=", periodEnd)
       .where("status", "=", "Draft")
       .executeTakeFirst();
@@ -590,15 +600,12 @@ async function createRevenueRecognitionRunProposal(
       );
     }
 
-    const runId = await getNextSequence(
-      trx,
-      "revenueRecognitionRun",
-      companyId
-    );
+    const runId = await getNextSequence(trx, RUN_SEQUENCE[type], companyId);
     const run = await trx
       .insertInto("revenueRecognitionRun")
       .values({
         runId,
+        type,
         periodEnd,
         status: "Draft",
         companyId,
@@ -632,7 +639,10 @@ export const proposeRevenueRecognitionRunInput = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/)
     .refine(isMonthEnd, {
       message: "periodEnd must be the last day of a month"
-    })
+    }),
+  /** Which run: revenue recognition (service lines, contracts) or lease
+   *  (rental agreements, lessee leases). */
+  type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
 /** Proposes ONE Draft run for the period, or null when nothing is due (see
@@ -641,7 +651,7 @@ const proposeRevenueRecognitionRun = defineServerFn({
   name: "propose-revenue-recognition-run",
   input: proposeRevenueRecognitionRunInput,
   permissions: { create: "accounting" },
-  async run({ db, companyId, userId }, { periodEnd }) {
+  async run({ db, companyId, userId }, { periodEnd, type }) {
     await assertAccountingCutover(db, companyId);
     // A run may cover the current month or an earlier one, never a month that
     // has not started (the ERP's isFutureRunPeriod; this package cannot import
@@ -652,11 +662,11 @@ const proposeRevenueRecognitionRun = defineServerFn({
         `${formatDate(periodEnd, { month: "long", year: "numeric" })} has not started yet. A run can cover the current month or an earlier one.`
       );
     }
-    return createRevenueRecognitionRunProposal(db, {
-      companyId,
-      periodEnd,
-      userId
-    });
+    return createRevenueRecognitionRunProposal(
+      db,
+      { companyId, periodEnd, userId },
+      type
+    );
   }
 });
 

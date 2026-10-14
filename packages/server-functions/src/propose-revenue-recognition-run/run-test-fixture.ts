@@ -5,6 +5,7 @@
 // Draft revenue recognition runs for the live-database regressions, on top of
 // `paymentFixture`'s company.
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import type { RunType } from "../lib/run-type";
 import { claimScheduleRows } from ".";
 
 /** A Draft run for `periodEnd` holding exactly `scheduleIds`, claimed the way
@@ -13,15 +14,17 @@ export async function holdInDraftRun(
   db: Kysely<KyselyDatabase>,
   companyId: string,
   scheduleIds: string[],
-  periodEnd = "2026-09-30"
+  periodEnd = "2026-09-30",
+  type: RunType = "Revenue Recognition"
 ): Promise<string> {
-  const id = `${companyId}-rr-run`;
+  const id = `${companyId}-${type === "Lease" ? "lr" : "rr"}-run`;
   await db.transaction().execute(async (trx) => {
     await trx
       .insertInto("revenueRecognitionRun")
       .values({
         id,
-        runId: "RR-TEST",
+        runId: type === "Lease" ? "LR-TEST" : "RR-TEST",
+        type,
         periodEnd,
         status: "Draft",
         companyId,

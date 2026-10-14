@@ -81,17 +81,20 @@ const LineItems = ({
 
     const isGlAccount = line.invoiceLineType === "G/L Account";
     const isFixedAsset = line.invoiceLineType === "Fixed Asset";
-    const isIndirect = isGlAccount || isFixedAsset;
+    const isLease = line.invoiceLineType === "Lease";
+    const isIndirect = isGlAccount || isFixedAsset || isLease;
     const itemReadableId = isGlAccount
       ? line.description || "Indirect Expense"
       : isFixedAsset
         ? line.assetReadableId || "Fixed Asset"
-        : getItemReadableId(items, line.itemId);
+        : isLease
+          ? line.leaseReadableId || "Lease"
+          : getItemReadableId(items, line.itemId);
     const lineDescription = isGlAccount
       ? (accounts.find((a) => a.id === line.accountId)?.name ??
         "Indirect Expense")
-      : isFixedAsset
-        ? line.description || "Fixed Asset"
+      : isFixedAsset || isLease
+        ? line.description || itemReadableId
         : distinctItemText(itemReadableId, line.description);
     const lineTotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
     const supplierLineTotal =

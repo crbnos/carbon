@@ -12,13 +12,15 @@ import { round } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import {
-  RUN_ROW_SYNTHESIZERS,
+  runRowSynthesizers,
   selectDueScheduleRows
 } from "../propose-revenue-recognition-run";
 
 export const previewRevenueRecognitionRunInput = z.object({
   /** `YYYY-MM-DD`, the last day of the period. */
-  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  periodEnd: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  /** Which run to preview. */
+  type: z.enum(["Revenue Recognition", "Lease"]).default("Revenue Recognition")
 });
 
 export type RunPreview = { count: number; amount: number };
@@ -34,14 +36,17 @@ const previewRevenueRecognitionRun = defineServerFn({
   name: "preview-revenue-recognition-run",
   input: previewRevenueRecognitionRunInput,
   permissions: { view: "accounting" },
-  async run({ db, companyId, userId }, { periodEnd }): Promise<RunPreview> {
+  async run(
+    { db, companyId, userId },
+    { periodEnd, type }
+  ): Promise<RunPreview> {
     try {
       await db.transaction().execute(async (trx) => {
         const ctx = { companyId, periodEnd, userId };
-        for (const synthesize of RUN_ROW_SYNTHESIZERS) {
+        for (const synthesize of runRowSynthesizers(type)) {
           await synthesize(trx, ctx);
         }
-        const due = await selectDueScheduleRows(trx, ctx);
+        const due = await selectDueScheduleRows(trx, ctx, type);
         throw new RollbackPreview({
           count: due.length,
           amount: round(due.reduce((sum, row) => sum + Number(row.amount), 0))

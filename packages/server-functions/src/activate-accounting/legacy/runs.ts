@@ -61,6 +61,7 @@ import {
   type RunJournal,
   recognitionAccountWithoutClass
 } from "@carbon/database/run-journals";
+import type { RunType } from "@carbon/database/run-type";
 import { type AccountClass, chunkArray, isAccountClass } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { sql } from "kysely";
@@ -213,6 +214,8 @@ export type RecognitionRow = RecognitionScheduleRow & {
   runId: string;
   runReadableId: string;
   runPeriodEnd: string;
+  /** The run's type: a lease run's journals post as 'Lease Run'. */
+  runType: RunType;
 };
 
 /**
@@ -228,6 +231,7 @@ export function buildLegacyRecognitionJournals(
   runId: string;
   scheduleIds: string[];
   leaseScheduleLineIds: string[];
+  lesseeScheduleLineIds: string[];
   isRunJournal: boolean;
 }>[] {
   const unclassified = recognitionAccountWithoutClass(rows, classById);
@@ -239,6 +243,7 @@ export function buildLegacyRecognitionJournals(
   return [...Map.groupBy(rows, (row) => row.runId)].flatMap(
     ([runId, runRows]) => {
       const { journals, runJournal } = buildRecognitionJournals({
+        runType: runRows[0]!.runType,
         runReadableId: runRows[0]!.runReadableId,
         runPeriodEnd: runRows[0]!.runPeriodEnd,
         rows: runRows,
@@ -251,6 +256,7 @@ export function buildLegacyRecognitionJournals(
           runId,
           scheduleIds: journal.scheduleIds,
           leaseScheduleLineIds: journal.leaseScheduleLineIds,
+          lesseeScheduleLineIds: journal.lesseeScheduleLineIds,
           isRunJournal: journal === runJournal
         }
       }));
@@ -283,7 +289,9 @@ async function loadRecognitionRows(
       sources: {
         invoiceLines: new Map(),
         rentalLines: new Map(),
-        contractLines: new Map()
+        contractLines: new Map(),
+        leases: new Map(),
+        leaseAssets: new Map()
       },
       classById: new Map()
     };
@@ -358,6 +366,35 @@ async function loadRecognitionRows(
         .where("contractLine.id", "in", ids)
         .execute()
   );
+  const leases = await readByIds(
+    scheduled.map((row) => row.leaseId),
+    (ids) =>
+      trx
+        .selectFrom("lease")
+        .select(["id", "supplierId", "locationId"])
+        .where("companyId", "=", companyId)
+        .where("id", "in", ids)
+        .execute()
+  );
+  const leaseAssets = await readByIds(
+    scheduled.map((row) => row.leaseScheduleLineId),
+    (ids) =>
+      trx
+        .selectFrom("leaseScheduleLine as scheduleLine")
+        .innerJoin("leaseLine as line", (join) =>
+          join
+            .onRef("line.id", "=", "scheduleLine.leaseLineId")
+            .onRef("line.companyId", "=", "scheduleLine.companyId")
+        )
+        .select([
+          "scheduleLine.id",
+          "scheduleLine.leaseLineId",
+          "line.locationId"
+        ])
+        .where("scheduleLine.companyId", "=", companyId)
+        .where("scheduleLine.id", "in", ids)
+        .execute()
+  );
   const accounts = await readByIds(
     scheduled.flatMap((row) => [row.debitAccountId, row.creditAccountId]),
     (ids) =>
@@ -379,6 +416,7 @@ async function loadRecognitionRows(
       runId: row.runId,
       runReadableId: row.runReadableId,
       runPeriodEnd: row.runPeriodEnd,
+      runType: row.runType,
       // Every journal takes its own month: there is no period yet.
       postingDate: monthEndOf(row.scheduledDate),
       type: row.type,
@@ -388,7 +426,9 @@ async function loadRecognitionRows(
       salesInvoiceLineId: row.salesInvoiceLineId,
       rentalAgreementLineId: row.rentalAgreementLineId,
       customerContractLineId: row.customerContractLineId,
-      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId
+      rentalLeaseScheduleLineId: row.rentalLeaseScheduleLineId,
+      leaseId: row.leaseId,
+      leaseScheduleLineId: row.leaseScheduleLineId
     })
   );
   return {
@@ -396,7 +436,9 @@ async function loadRecognitionRows(
     sources: {
       invoiceLines: new Map(invoiceLines.map((row) => [row.id, row])),
       rentalLines: new Map(rentalLines.map((row) => [row.id, row])),
-      contractLines: new Map(contractLines.map((row) => [row.id, row]))
+      contractLines: new Map(contractLines.map((row) => [row.id, row])),
+      leases: new Map(leases.map((row) => [row.id, row])),
+      leaseAssets: new Map(leaseAssets.map((row) => [row.id, row]))
     },
     classById
   };
@@ -413,7 +455,8 @@ type JournalTable =
   | "revenueRecognitionSchedule"
   | "revenueRecognitionRun"
   | "customerContractLedgerEntry"
-  | "rentalLeaseScheduleLine";
+  | "rentalLeaseScheduleLine"
+  | "leaseScheduleLine";
 
 /**
  * Sets each row's journal column where it is still empty, one statement per
@@ -581,6 +624,13 @@ export async function journalLegacyRuns(
     table: "rentalLeaseScheduleLine",
     rows: recognitionIds.flatMap(({ item, journalId }) =>
       item.attach.leaseScheduleLineIds.map((id) => ({ id, journalId }))
+    )
+  });
+  await setJournalColumn(trx, {
+    companyId,
+    table: "leaseScheduleLine",
+    rows: recognitionIds.flatMap(({ item, journalId }) =>
+      item.attach.lesseeScheduleLineIds.map((id) => ({ id, journalId }))
     )
   });
   // The run names the journal of its own period, else its latest month's.

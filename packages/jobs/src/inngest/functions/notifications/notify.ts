@@ -219,6 +219,11 @@ const defaultDestinations: Partial<
     NotificationDestination.InApp,
     NotificationDestination.Email
   ],
+  // Once per lease date, ahead of a notice deadline or the end.
+  [NotificationEvent.LeaseCriticalDate]: [
+    NotificationDestination.InApp,
+    NotificationDestination.Email
+  ],
   // At most one per recipient per daily run.
   [NotificationEvent.RecurringInvoicing]: [
     NotificationDestination.InApp,

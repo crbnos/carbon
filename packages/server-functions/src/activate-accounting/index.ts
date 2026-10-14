@@ -13,7 +13,8 @@
 
 import {
   buildOpeningJournalLines,
-  isMigrationClearingZero
+  isMigrationClearingZero,
+  type OpenItem
 } from "@carbon/database/accounting-cutover";
 import {
   ACCOUNTING_ALREADY_SET_UP,
@@ -22,6 +23,7 @@ import {
   getCutoverInventory,
   getMigrationClearing
 } from "@carbon/database/accounting-cutover-reads";
+import type { KyselyTx } from "@carbon/database/client";
 import { missingDefaultMessage } from "@carbon/database/journal-posting-status";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
@@ -177,6 +179,21 @@ const activateAccounting = defineServerFn({
         // Step 7. The opening journal, the day before the cutover. It replaces
         // the Draft trial balance the wizard kept.
         const openingDate = dayBeforeCutover(cutoverDate);
+
+        // The invoices ignored on Migration Clearing were settled in the
+        // system that kept the books before the cutover. They are not in the
+        // opening journal, so they close as Paid on the day before it, as the
+        // Xero and QuickBooks pulls close them; every receivables and payables
+        // reader treats that as settled. A sync write: no workflow, webhook or
+        // provider push fires for it.
+        await markIgnoredInvoicesPaid(trx, {
+          companyId,
+          items: clearing.ignoredItems,
+          datePaid: openingDate,
+          userId,
+          now
+        });
+
         const draftTrialBalances = trx
           .selectFrom("journal")
           .select("id")
@@ -330,3 +347,64 @@ const activateAccounting = defineServerFn({
 });
 
 export default activateAccounting;
+
+/** Marks the ignored invoices Paid, with the sync flag on. */
+async function markIgnoredInvoicesPaid(
+  trx: KyselyTx,
+  {
+    companyId,
+    items,
+    datePaid,
+    userId,
+    now
+  }: {
+    companyId: string;
+    items: OpenItem[];
+    datePaid: string;
+    userId: string;
+    now: string;
+  }
+) {
+  const idsOf = (openItemType: OpenItem["openItemType"]) =>
+    items.flatMap((item) =>
+      item.openItemType === openItemType && item.documentId
+        ? [item.documentId]
+        : []
+    );
+  const salesInvoiceIds = idsOf("Receivable");
+  const purchaseInvoiceIds = idsOf("Payable");
+  if (salesInvoiceIds.length === 0 && purchaseInvoiceIds.length === 0) return;
+
+  const { rows } = await sql<{ previous: string | null }>`
+    SELECT current_setting('app.sync_in_progress', true) AS previous
+  `.execute(trx);
+  const previous = rows[0]?.previous ?? "";
+  await sql`SELECT set_config('app.sync_in_progress', 'true', true)`.execute(
+    trx
+  );
+  const set = {
+    status: "Paid" as const,
+    datePaid,
+    updatedBy: userId,
+    updatedAt: now
+  };
+  for (const ids of chunkArray(salesInvoiceIds, ROWS_PER_STATEMENT)) {
+    await trx
+      .updateTable("salesInvoice")
+      .set(set)
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute();
+  }
+  for (const ids of chunkArray(purchaseInvoiceIds, ROWS_PER_STATEMENT)) {
+    await trx
+      .updateTable("purchaseInvoice")
+      .set(set)
+      .where("companyId", "=", companyId)
+      .where("id", "in", ids)
+      .execute();
+  }
+  await sql`SELECT set_config('app.sync_in_progress', ${previous}, true)`.execute(
+    trx
+  );
+}

@@ -260,6 +260,8 @@ describe("buildRecognitionJournals", () => {
       rentalAgreementLineId: null,
       customerContractLineId: null,
       rentalLeaseScheduleLineId: null,
+      leaseId: null,
+      leaseScheduleLineId: null,
       ...overrides
     };
   }
@@ -296,15 +298,21 @@ describe("buildRecognitionJournals", () => {
           projectId: "proj-3"
         }
       ]
-    ])
+    ]),
+    leases: new Map(),
+    leaseAssets: new Map()
   };
   const classById = new Map([
     ["deferred", "Liability" as const],
     ["sales", "Revenue" as const],
-    ["unbilled", "Asset" as const]
+    ["unbilled", "Asset" as const],
+    ["lease-cost", "Expense" as const],
+    ["lease-liability", "Liability" as const],
+    ["accumulated-rou", "Asset" as const]
   ]);
   const build = (rows: RecognitionScheduleRow[], runPeriodEnd = "2026-10-31") =>
     buildRecognitionJournals({
+      runType: "Revenue Recognition",
       runReadableId: "RR-1",
       runPeriodEnd,
       rows,
@@ -464,5 +472,127 @@ describe("buildRecognitionJournals", () => {
         classById
       )
     ).toBe("a");
+  });
+});
+
+describe("buildRecognitionJournals for a lease run", () => {
+  const base = {
+    postingDate: "2027-01-31",
+    salesInvoiceLineId: null,
+    rentalAgreementLineId: null,
+    customerContractLineId: null,
+    rentalLeaseScheduleLineId: null,
+    leaseId: "lease-1",
+    leaseScheduleLineId: "lssl-1"
+  };
+  const rows: RecognitionScheduleRow[] = [
+    {
+      ...base,
+      scheduleId: "interest",
+      type: "Interest",
+      amount: 1643.55,
+      debitAccountId: "lease-cost",
+      creditAccountId: "lease-liability"
+    },
+    {
+      ...base,
+      scheduleId: "amortization",
+      type: "Amortization",
+      amount: 8356.45,
+      debitAccountId: "lease-cost",
+      creditAccountId: "accumulated-rou"
+    }
+  ];
+  const leases = new Map([
+    ["lease-1", { supplierId: "supplier-1", locationId: "loc-1" }]
+  ]);
+  // The asset has no location of its own: the lease's is used.
+  const leaseAssets = new Map([
+    ["lssl-1", { leaseLineId: "asset-1", locationId: null }]
+  ]);
+  const build = (sources: Pick<RecognitionSources, "leases" | "leaseAssets">) =>
+    buildRecognitionJournals({
+      runType: "Lease",
+      runReadableId: "LR-1",
+      runPeriodEnd: "2027-01-31",
+      rows,
+      sources: {
+        invoiceLines: new Map(),
+        rentalLines: new Map(),
+        contractLines: new Map(),
+        ...sources
+      },
+      classById: new Map([
+        ["lease-cost", "Expense" as const],
+        ["lease-liability", "Liability" as const],
+        ["accumulated-rou", "Asset" as const]
+      ])
+    });
+
+  it("refuses a lessee row whose lease was not loaded", () => {
+    expect(() => build({ leases: new Map(), leaseAssets })).toThrow(
+      "Lease lease-1 of schedule row interest was not loaded"
+    );
+  });
+
+  it("refuses a lessee row whose leased asset was not loaded", () => {
+    expect(() => build({ leases, leaseAssets: new Map() })).toThrow(
+      "The leased asset of schedule row interest was not loaded"
+    );
+  });
+
+  it("posts lessee rows as one Lease Run journal referencing the lease", () => {
+    const { journals, runJournal } = build({ leases, leaseAssets });
+    expect(journals).toHaveLength(1);
+    expect(
+      runJournal!.lines.every(
+        (line) => line.documentLineReference === "asset-1"
+      )
+    ).toBe(true);
+    const journal = runJournal!;
+    expect(journal.sourceType).toBe("Lease Run");
+    expect(journal.description).toBe("Lease Run LR-1");
+    expect(journal.lesseeScheduleLineIds).toEqual(["lssl-1"]);
+    expect(journal.leaseScheduleLineIds).toEqual([]);
+    expect(
+      journal.lines.map(
+        ({ accountId, amount, documentType, documentId, dimensions }) => ({
+          accountId,
+          amount,
+          documentType,
+          documentId,
+          dimensions
+        })
+      )
+    ).toEqual([
+      {
+        accountId: "lease-cost",
+        amount: 1643.55,
+        documentType: "Lease",
+        documentId: "lease-1",
+        dimensions: { Supplier: "supplier-1", Location: "loc-1" }
+      },
+      {
+        accountId: "lease-liability",
+        amount: 1643.55,
+        documentType: "Lease",
+        documentId: "lease-1",
+        dimensions: { Supplier: "supplier-1", Location: "loc-1" }
+      },
+      {
+        accountId: "lease-cost",
+        amount: 8356.45,
+        documentType: "Lease",
+        documentId: "lease-1",
+        dimensions: { Supplier: "supplier-1", Location: "loc-1" }
+      },
+      {
+        accountId: "accumulated-rou",
+        amount: -8356.45,
+        documentType: "Lease",
+        documentId: "lease-1",
+        dimensions: { Supplier: "supplier-1", Location: "loc-1" }
+      }
+    ]);
   });
 });

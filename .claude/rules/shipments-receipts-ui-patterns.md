@@ -148,7 +148,11 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
   quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
-  fulfillment, and **splits** batch tracked entities when shipped qty < entity qty.
+  fulfillment, and **splits** batch tracked entities when shipped qty < entity qty. A serial or
+  batch is taken from the bin it actually holds stock in (`getTrackedEntityBins`, null = no
+  storage unit), not `shipmentLine.storageUnitId`; the split is booked in that same bin, a unit
+  with no stock anywhere refuses the post, and the void restores each unit to the bin its posting
+  used.
   The shipment journal lines (SO pairs, fixed asset sale lines, return pairs) are built
   by the pure `post-shipment/posting-lines.ts` from facts the posting gathers; the
   accounting cutover's legacy backfill (`activate-accounting/legacy/shipment.ts`) calls

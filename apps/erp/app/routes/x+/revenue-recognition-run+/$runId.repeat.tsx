@@ -30,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Get the source run to find its period
   const sourceRun = await client
     .from("revenueRecognitionRun")
-    .select("periodEnd, status")
+    .select("periodEnd, status, type")
     .eq("id", runId)
     .eq("companyId", companyId)
     .single();
@@ -66,6 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .select("id, runId")
     .eq("periodEnd", periodEnd)
     .eq("companyId", companyId)
+    .eq("type", sourceRun.data.type)
     .eq("status", "Draft")
     .maybeSingle();
 
@@ -85,27 +86,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
   try {
     const proposal = await serverFns
       .system({ db: getDatabaseClient(), companyId, userId })
-      .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
+      .invokeOrThrow("propose-revenue-recognition-run", {
+        periodEnd,
+        type: sourceRun.data.type
+      });
 
     if (!proposal) {
       throw redirect(
         path.to.revenueRecognitionRun(runId),
-        await flash(
-          request,
-          error(null, "Nothing to recognize for this period")
-        )
+        await flash(request, error(null, "Nothing to post for this period"))
       );
     }
 
     throw redirect(
       path.to.revenueRecognitionRun(proposal.id),
-      await flash(request, success("Revenue recognition run created"))
+      await flash(request, success(`${proposal.runId} created`))
     );
   } catch (e) {
     if (e instanceof Response) throw e;
     throw redirect(
       path.to.revenueRecognitionRun(runId),
-      await flash(request, error(e, "Failed to create revenue recognition run"))
+      await flash(request, error(e, "Failed to create the run"))
     );
   }
 }

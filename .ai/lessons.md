@@ -289,6 +289,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
+## A tracked entity's bin is where it IS, never the document line's bin — and "no storage unit" is a bin
+
+**Context:** Sales order shipments booked every serial and batch against `shipmentLine.storageUnitId` (copied from the sales order line, which defaults to the item's default bin). A unit picked from any other bin drove the line's bin negative and left its real bin showing stock that had already shipped. The stock transfer picker had the matching gap: it listed every lot at the location, not the line's source bin, and an empty source (`fromStorageUnitId` null — the wizard's "No storage unit") meant "any bin".
+
+**Problem:** A document line's bin is a default for untracked stock. For a serial or batch the ledger already knows the bin, and ignoring it corrupts two bins at once. `resolveTrackedEntityBin` skips the unassigned bin (`null`), so a unit moved into "no storage unit" resolves back to the named bin it left. And `NULL` as a filter value cannot also mean "no filter".
+
+**Rule:** Book a tracked entity's outbound row against its actual bin: `resolveTrackedEntityBins` (`@carbon/utils`, null-aware) through `getTrackedEntityBins` (`server-functions/src/lib/storage-units.ts`). Refuse when it has no stock anywhere rather than falling back to the line's bin. A void reverses into the bin the posting used (read the posted `itemLedger` rows), not the line's. A bin filter that must express "no storage unit" takes an explicit switch (`p_filter_storage_unit` on `get_available_tracked_entities`) and compares with `IS NOT DISTINCT FROM`.
+
+**Applies to:** `post-shipment` (Sales Order post/void, serial + batch), `post-stock-transfer` (`assertInSourceBin`), the stock transfer picker. Return and outbound-transfer shipments still use the line's bin.
+
 ## Biome does not apply 3rd-level nested configs — enforce Deno via an override
 
 **Context:** Bringing Supabase edge functions (`packages/database/supabase/functions/**`, Deno) into Biome's lint surface for the new `noConsole` rule. These files sit outside the linted globs (`apps/*/app/**`, `packages/*/src/**`) and were never Biome-formatted.
@@ -3406,6 +3416,66 @@ of `salesInvoice`; backfilled by `20261006220901_sales-invoice-opportunity-backf
 
 **Applies to:** `packages/react/src/utils/generatedAvatar.ts`; any isomorphic code that imports JSON from a dependency.
 
+## The three.js rotate gizmo grabs whatever sits under its center
+
+**Context:** The assembly path editor shows drei `TransformControls` (`mode="rotate"`) on a selected waypoint, whose draggable sphere sits at the gizmo's center.
+
+**Problem:** In rotate mode the gizmo adds an invisible free-rotation picker — a sphere of radius 0.7 × gizmo size (`XYZE` in three-stdlib `controls/TransformControls.js`) — centred on its object. Dragging the waypoint sphere started that free rotation as well as the drag, so one gesture moved the part and spun it at once (2026-10-08).
+
+**Rule:** Never let a rotate gizmo and another drag handle share a position. Make it a mode: either the handles drag or the rings show, never both. The path editor's Move / Rotate tool is the precedent (`MotionPathEditor.tsx`, `tool`).
+
+**Applies to:** any `TransformControls` / `PivotControls` placed on top of an existing pointer handle in `packages/viewer`.
+
+## Browser-testing the 3D assembly page: one session, restart often
+
+**Context:** Driving `/x/assembly/:id` with `agent-browser` for screenshots and drags (2026-10-08).
+
+**Problem:** After roughly 40 screenshots of the WebGL page the renderer reached 3 GB+, snapshots hung for over a minute, and a later revalidation failed with "Failed to fetch" plus "WebGL Context Lost". On a fresh dev server the login's Continue button also stays disabled until hydration finishes, which looks like a broken bot check.
+
+**Rule:** Set `AGENT_BROWSER_SESSION` to the worktree's own name, `agent-browser close` and reopen after ~40 shots, and reload the login page once if Continue stays disabled. Drive the canvas with `mouse move/down/up`, not `click`. Radix menus ignore synthetic clicks there — move the mouse off the menu and use the arrow keys plus Enter.
+
+**Applies to:** browser verification of `packages/viewer` features in the ERP editor; `.ai/playbooks/assembly-sub-assembly-motion-path.md`.
+
+## drei GizmoHelper resets camera.up after a viewcube click
+
+**Context:** The assembly player shows a step's build orientation by rolling the camera (`camera.up` = the bench's up in the model frame, `packages/viewer/src/orientation.ts`).
+
+**Problem:** drei's `GizmoHelper` writes `camera.up` on every frame of a face-click tween and resets it to the value it saw at mount when the tween ends (`core/GizmoHelper.js`). After one viewcube click the build stood upright again, and every later turn started from the wrong up.
+
+**Rule:** Do not patch drei. Anything that owns `camera.up` must re-assert it in its own frame loop whenever it drifts outside its own animation.
+
+**Applies to:** `packages/viewer/src/useBuildFrame.ts` (its `useFrame`), any code that sets `camera.up` under `GizmoHelper` or `OrbitControls`.
+
+## Re-applying demo data runs code a first apply never reaches
+
+**Context:** A new table (`customerContractInvoiceLine`) got a CHECK that needs `customerContractInvoiceId` OR `memoId`. The demo datasets seed it with only the invoice.
+
+**Problem:** Settings → Demo Data on a company that already had data failed with "new row … violates check constraint". The wipe that runs first nulls every nullable FK pointing at a table it clears, which emptied both columns. `pnpm db:check:datasets` stayed green: it applied each dataset once, to an empty scratch company, so the wipe never met a seeded row.
+
+**Rule:** A seeded table whose CHECK needs one of several nullable FKs goes in `PARENT_CHECK_TABLES` (`packages/database/src/datasets/wipe.ts`). The dataset check now re-applies each dataset over itself, so this fails before commit. When a test only exercises the first run of an idempotent operation, also run it a second time.
+
+**Applies to:** `packages/database/src/datasets/` (wipe, verify), migrations that add CHECKs over nullable FK columns.
+
+## A migration on main can carry a timestamp ahead of UTC
+
+**Context:** `supabase migration new` stamps a migration with the current UTC time. A migration merged to `main` (`20261009141827_link-custom-field-type.sql`) carried a time about 2.5 hours ahead of UTC, likely from a local clock.
+
+**Problem:** Every migration created after the pull got an older timestamp than that file. Production's `supabase db push` refuses a migration that sorts before one it already applied, so the new migrations would have failed to deploy. The clobber check and every test passed; nothing local shows it.
+
+**Rule:** After you pull `main`, compare your migrations' timestamps with the newest one on `main` (`ls packages/database/supabase/migrations | tail`). If yours sort first, rename them to sort after it, keep their order and content, and use a non-`000000` HHMMSS. Re-generate a generated `authz migration` file first, then rename it with the rest.
+
+**Applies to:** `packages/database/supabase/migrations/`; every branch that adds a migration.
+
+## The license-header fixer only sees files git tracks
+
+**Context:** `pnpm --filter @carbon/checks license-headers -- <paths>` writes the SPDX header. It walks `git ls-files --cached`.
+
+**Problem:** A new, untracked file is not in that list, so the fixer reports "0 fixed" and the file keeps no header until the `spdx-license-header` check fails at commit.
+
+**Rule:** Run `git add -N <new files>` (intent to add; it records no content) before the fixer, then run the fixer with those paths.
+
+**Applies to:** every new source file outside generated output.
+
 ## A value two layers must agree on lives once, in the client-safe pure module
 
 **Context:** The accounting enable wizard (ERP) and the `activate-accounting` server function both decide whether Migration Clearing totals zero. The wizard uses the answer to offer "Enable accounting". The server function uses it to refuse the enable. The wizard steps also pass the cutover date to each other in a search param.
@@ -3497,6 +3567,26 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 
 **Applies to:** `scripts/restore-database.sh`, `packages/dev/src/commands/restore.ts`, and any tool that loads a plain-text dump through psql.
 
+## A new record type copies its sibling's UI, not the generic archetype
+
+**Context:** The lessee lease (2026-10-11) shipped a Card form on `new.tsx` that redirected to a 3-pane workspace, with Draft terms edited in the properties panel. Its siblings — the rental agreement and the AR contract — are set up in a full-page wizard (`~/components/Setup`). The user called it a big mistake, and the UI was rewritten.
+
+**Problem:** The plan named the sibling for the server side (post-lease mirrors the rental functions) but not for the UI, and the design skill's "where create opens" rule sent a record with a workspace to a Card form. The setup wizard was documented nowhere, so the subagent that built the UI followed the generic rule faithfully.
+
+**Rule:** Before designing a record type, name its closest sibling — the record users would call "the same kind of thing" (rental agreement ↔ lease ↔ contract; sales order ↔ purchase order; RMA ↔ supplier return) — and copy its routes and components file for file: `new`, `$id`, `$id._index`, the setup or detail routes, the module's `ui/` components. The spec and plan state the sibling and the files copied. A deviation from it is a design decision and is asked about first. When the sibling's pattern is missing from `carbon-design`, add it there in the same change (Archetype J was added for this one).
+
+**Applies to:** `/spec-writing`, `/plan`, `carbon-design`, and any subagent prompt that builds UI.
+
+## A dropped column breaks string selects that typecheck cannot see
+
+**Context:** The several-assets change for lessee leases (2026-10-11) moved twelve columns from `lease` to `leaseLine` and recreated the `leases` view.
+
+**Problem:** Typecheck passed, but the Lease Liabilities report still selected the moved columns from the view through `fetchAllFromTable(client, "leases", "id, …, lesseeClassification, …")`. The column list is a string, so the report would only have failed at runtime.
+
+**Rule:** After a migration drops or moves a column, grep every string select of the table and its views (`.select("…")`, `fetchAllFromTable` column lists, embeds) for the old name. Do not rely on typecheck for them.
+
+**Applies to:** any migration that drops, renames or moves a column.
+
 ## A caller-supplied document number used to leave the counter behind
 
 **Context:** Documents take their number from `get_next_sequence` unless the caller supplies one: a custom ID typed into `SequenceOrCustomId`, or an MCP / API upsert (`upsertSalesOrder`, `upsertQuote`, `upsertPurchaseOrder`, `upsertJob`, …) whose create path requires the number.
@@ -3516,6 +3606,89 @@ A ✓ that a script prints after a step that is allowed to fail is not evidence.
 **Rule:** When you add an entity to `audit.config.ts`, give each of its tables `events: true` in `attachments.ts` and ship it with `pnpm --filter @carbon/database authz migration <name>`. To debug an empty audit log, first check `pg_trigger` for `trg_event_async_*` on the table.
 
 **Applies to:** `packages/database/src/audit.config.ts`, `packages/database/src/event-system/attachments.ts`.
+
+## A foreign key to `account` must be RESTRICT, and a new one needs a merge policy
+
+**Context:** The chart of accounts import (2026-10-12) re-points references when it merges accounts and deletes an account nothing uses.
+
+**Problem:** `journalLine.accountId` and the order, invoice and supplier quote line FKs were `ON DELETE SET NULL`. Deleting an account with Draft or Provisional lines succeeded and silently emptied the lines' account; Posted lines only refused by accident, through the immutability trigger. The import also has to know, for every column that names an account, whether a merge may move it.
+
+**Rule:** Give a new foreign key to `account` `ON DELETE RESTRICT`, and classify it in `REFERENCE_POLICY` (`packages/database/src/account-import.ts`): `repoint`, `repoint-if-draft`, `repoint-if-unposted-journal` or `history`. The `apply-account-import` live-database test fails until it is listed. A soft reference (no FK) goes in `SOFT_REFERENCES` and the apply's `repointReferences`.
+
+**Applies to:** migrations that add a column referencing `account`; `packages/database/src/account-import.ts`; `packages/server-functions/src/apply-account-import/`.
+
+## Committing with the hook off skips Biome too
+
+**Context:** The chart of accounts import (2026-10-12) committed with `git -c core.hooksPath=/dev/null` so the Lingui catalogs, which the hook stages into any commit with `.ts` changes, could land in their own commit.
+
+**Problem:** The hook also runs lint-staged. Bypassing it skipped Biome's formatter, and a test file reached the branch unformatted. The self-review caught it, not the commit.
+
+**Rule:** Before a commit with the hook off, run `pnpm biome check --write` on the staged files and the checks the hook would run (`pnpm --silent check:manifest`, `pnpm --silent db:check:datasets` for `packages/database`, `pnpm --silent db:check:backups` for migrations). Prefer committing the catalogs last with the hook on.
+
+**Applies to:** any commit made with `--no-verify` or `core.hooksPath=/dev/null`.
+
+## RLS does not bound an MCP tool handed `db`; its declared permission is the only gate
+
+**Context:** A 2026-10 security disclosure: an OAuth (MCP connector) token for a user with no accounting permission could create draft GL journals through `inventory_createInventoryReconciliationJournal`.
+
+**Problem:** Two gaps stacked. The oRPC `gate()` skipped OAuth callers on the theory that RLS bounds them, but a service whose manifest asks for `db` gets `getDatabaseClient()`, the direct connection, which bypasses RLS. And a tool's default permission is its own module plus its verb's action, so the journal tool was gated on `inventory:create` while the Reconcile screen requires `accounting:create`. Supplier and customer bank accounts (`purchasing`/`sales` vs `accounting`) and return-order credits (`purchasing`/`sales` vs `invoicing`) had the same mismatch, for API keys as well.
+
+**Rule:** Every non-session caller (API key AND OAuth) is gated per operation, OAuth on the user's live permissions in the token's company (`scopesFromPermissions`). When a tool does what an ERP route does, its permission must equal that route's `requirePermissions`: add `@mcp permission` where the default differs, regenerate, and pin it in `OVERRIDES` in `mcp-tool-permissions.test.ts`. Never reason "RLS will catch it" for a tool whose `contextParams` include `db`.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/base.server.ts`, `apps/erp/app/routes/api+/mcp+/_index.ts`, every `@mcp`-tagged service taking `db: Kysely<KyselyDatabase>`.
+
+
+## A cookie that was only ever written is not a stored preference
+
+**Context:** The navigation rail's pin toggle (2026-10-13) first restored the pinned state from `SidebarProvider`'s `sidebar:state` cookie.
+
+**Problem:** `SidebarProvider` (`packages/react/src/Sidebar.tsx`) had written that cookie on every open/close for a long time, but no loader read it. Old sessions already held `sidebar:state=true` from a `SidebarTrigger` or ⌘B, so reading it opened the rail for users who had never pinned it.
+
+The write was then removed (nothing reads it), so the rail always starts collapsed.
+
+**Rule:** Do not start reading a cookie, local-storage key or column that code has only ever written. Its values were never a user's deliberate choice. Give the new preference a new name, or start every user from the default.
+
+**Applies to:** `SidebarProvider` and any other write-only client state (`document.cookie`, `localStorage`) that a loader or component begins to read.
+
+## The manifest-digest hook checks the working tree, not the staged copy
+
+**Context:** The trial balance PR (2026-10-13) left `tool-manifest.digest.json` out of a commit, thinking its diff was unrelated drift.
+
+**Problem:** `check:manifest` regenerates the digest and compares it with the file on disk. The disk copy was the regenerated one, so the hook passed while the commit carried the stale digest. Only running the check against the committed version showed "2 changed".
+
+**Rule:** Never leave a regenerated `tool-manifest.digest.json` unstaged on the assumption that it is drift. Run `pnpm --silent check:manifest` with the committed copy restored; when it fails, the regenerated digest belongs in the commit.
+
+**Applies to:** `apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json`, `scripts/git-hooks/pre-commit`.
+
+## An item left out at the accounting cutover must close in its own sub-ledger
+
+**Context:** Migration Clearing's Ignore (2026-10-13): an invoice another system already settled is left out of the opening journal.
+
+**Problem:** Dropping an item from the opening journal alone leaves its document open. The AR/AP readers fall back to the invoice total when no control line exists, so the invoice stays in aging, the tie-out shows a permanent variance, and a later payment is refused ("Target is missing its original control account"). And an invoice Carbon itself settles on or after the cutover posts a payment journal that credits the control account, which then has no opening line to credit.
+
+**Rule:** Leave an item out only when the sub-ledger can say it is closed: an invoice is marked Paid the day before the cutover by the enable. Refuse it when Carbon settles it on or after the cutover (`settledFromCutoverIds`). Any other item type (memo, payment, WIP, lease, inventory, fixed asset) has no such state and stays in the opening journal.
+
+**Applies to:** `packages/database/src/accounting-cutover/trial-balance.ts`, `packages/server-functions/src/activate-accounting/`.
+
+## A second foreign key between two tables breaks every PostgREST embed between them
+
+**Context:** The OEE provider work (2026-10-13) added `workCenter."loadedJobOperationId"` with a foreign key to `jobOperation`, which already had `"workCenterId"` → `workCenter`.
+
+**Problem:** With two relationships between the same pair of tables, PostgREST cannot pick one, and every existing embed of one from the other (`jobOperation` → `workCenter(name)`: batches, the batch PDF, notifications) failed at runtime with PGRST201. Typecheck passed, because the generated types still compiled; only a request to an affected screen showed it.
+
+**Rule:** Before adding a foreign key, grep for embeds between the two tables in both directions (`table(` inside `.select(…)` strings). If any exist, either leave the new column without a foreign key and keep it consistent another way (an interceptor that clears it on delete), or disambiguate every embed with `table!constraint_name(…)` in the same change. When replacing a foreign key (a composite one for tenancy), drop the old one in the same migration, never add beside it.
+
+**Applies to:** migrations that add a foreign key, especially to widely embedded tables (`workCenter`, `jobOperation`, `item`, `job`).
+
+## One fact, one source: a pointer beside its own history lost the order of loads
+
+**Context:** The OEE work (2026-10-13) kept the loaded operation twice: the pointer `workCenter."loadedJobOperationId"` + `"loadedAt"`, and the history table `workCenterLoad` that the same interceptors wrote.
+
+**Problem:** The unload cleared `loadedAt` with the pointer. That timestamp was the only watermark that ordered loads: the rule "an older start never replaces a newer load" compared against it. After an unload there was nothing to compare, so a late event (a start older than the unload) loaded the operation that had been replaced, and opened a history row that overlapped its neighbours. The pointer and the history then disagreed, and the sync gave run time to the wrong operation.
+
+**Rule:** Keep one source for a fact. When a history exists, the current value is a row of it (here the open `workCenterLoad` row), not a second column to keep in step. Order writes against the history itself: refuse a write that is older than the newest boundary (any `loadedAt` or `unloadedAt`), and back it with constraints (a CHECK that an interval does not end before it starts, a partial unique index for one open row).
+
+**Applies to:** `workCenterLoad` and its interceptors (`sync_load_work_center_operation`, `sync_unload_work_center_operation`), and any "current pointer + history" pair (statuses with a status log, assignments with an assignment history).
 
 ---
 

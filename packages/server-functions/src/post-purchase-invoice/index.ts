@@ -45,6 +45,7 @@ import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 import { getDefaultPostingGroup } from "../lib/get-posting-group";
 import { journalLineDimensionRows } from "../lib/journal-line-dimensions";
 import { assertPostable } from "../lib/postable";
+import { loadLeasePostingFacts, resolveLeasePostingLine } from "./lease-lines";
 import {
   buildPurchaseInvoicePostingLines,
   isItemLineType,
@@ -691,6 +692,26 @@ const postPurchaseInvoice = defineServerFn({
             }
           }
 
+          // The lease payment rows this invoice billed are owed again: the
+          // next run of the daily job drafts them anew.
+          const leaseLineIds = invoiceLinesVoid.data
+            .filter((line) => line.invoiceLineType === "Lease")
+            .map((line) => line.id);
+          if (leaseLineIds.length > 0) {
+            await trx
+              .updateTable("leasePayment")
+              .set({
+                status: "Pending",
+                purchaseInvoiceLineId: null,
+                voidedPurchaseInvoiceId: invoiceId,
+                updatedBy: userId,
+                updatedAt: datetime.timestamp()
+              })
+              .where("purchaseInvoiceLineId", "in", leaseLineIds)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+
           await trx
             .updateTable("purchaseInvoice")
             .set({
@@ -1238,6 +1259,16 @@ const postPurchaseInvoice = defineServerFn({
         fixedAssets.map((asset) => [asset.id, asset])
       );
 
+      // Lease lines: the leases, payment rows and lease accounts they name.
+      const leaseFacts = await loadLeasePostingFacts(db, {
+        companyId,
+        companyGroupId: companyGroupId!,
+        defaults: accountDefaults.data,
+        lines: purchaseInvoiceLines.data.filter(
+          (line) => line.invoiceLineType === "Lease"
+        )
+      });
+
       // The facts of each line, in order. A line the journal cannot be built
       // from is refused here.
       const postingLines: PurchaseInvoicePostingLine[] = [];
@@ -1346,6 +1377,14 @@ const postPurchaseInvoice = defineServerFn({
               account,
               costCenterId: invoiceLine.costCenterId ?? null,
               projectId: invoiceLine.projectId ?? null
+            });
+            break;
+          }
+          case "Lease": {
+            postingLines.push({
+              ...base,
+              kind: "lease",
+              ...resolveLeasePostingLine(invoiceLine, base.amounts, leaseFacts)
             });
             break;
           }
@@ -2053,3 +2092,6 @@ const postPurchaseInvoice = defineServerFn({
 });
 
 export default postPurchaseInvoice;
+
+// The statuses a lease is invoiced in, for drafting and the daily job.
+export { BILLABLE_LEASE_STATUSES, ENDED_LEASE_STATUSES } from "./lease-lines";

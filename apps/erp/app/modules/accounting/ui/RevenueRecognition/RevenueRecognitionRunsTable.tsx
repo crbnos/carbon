@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { RunType } from "@carbon/database/run-type";
 import { MenuIcon, MenuItem, useDisclosure } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -15,19 +16,22 @@ import { usePermissions } from "~/hooks";
 import type { getRevenueRecognitionRuns } from "~/modules/accounting";
 import { path } from "~/utils/path";
 import RevenueRecognitionRunStatus from "./RevenueRecognitionRunStatus";
+import { RUN_PAGES } from "./runPages";
 
 export type RevenueRecognitionRunListItem = NonNullable<
   Awaited<ReturnType<typeof getRevenueRecognitionRuns>>["data"]
 >[number];
 
 type RevenueRecognitionRunsTableProps = {
+  /** Which runs: a revenue recognition run or a lease run. */
+  type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
   primaryAction?: ReactNode;
 };
 
 const RevenueRecognitionRunsTable = memo(
-  ({ data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
+  ({ type, data, count, primaryAction }: RevenueRecognitionRunsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -122,7 +126,7 @@ const RevenueRecognitionRunsTable = memo(
           count={count}
           primaryAction={primaryAction}
           renderContextMenu={renderContextMenu}
-          title={t`Revenue Recognition`}
+          title={t(RUN_PAGES[type].title)}
         />
         {selectedRun && (
           <ConfirmDelete

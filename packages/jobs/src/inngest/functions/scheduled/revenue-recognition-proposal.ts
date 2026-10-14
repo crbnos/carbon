@@ -75,49 +75,64 @@ export const revenueRecognitionProposalFunction = inngest.createFunction(
     // and is memoized on replay, so a slow or failing tenant costs only
     // itself.
     const failed: string[] = [];
+    // Two runs per company, each its own step: a revenue recognition run and
+    // a lease run (rental agreements and lessee leases).
+    const runTypes = [
+      { type: "Revenue Recognition" as const, step: "rev-rec" },
+      { type: "Lease" as const, step: "lease-run" }
+    ];
     for (const company of scheduled) {
-      try {
-        await step.run(`rev-rec-${company.id}`, async () => {
-          // The cron is UTC; the period is the month that just ended on the
-          // company's own calendar.
-          const tz = await getCompanyTimeZone(serviceRole, company.id);
-          const periodEnd = priorMonthEnd(datetime.today(tz).toString());
-          const db = getJobDatabaseClient();
+      for (const { type, step: stepName } of runTypes) {
+        try {
+          await step.run(`${stepName}-${company.id}`, async () => {
+            // The cron is UTC; the period is the month that just ended on the
+            // company's own calendar.
+            const tz = await getCompanyTimeZone(serviceRole, company.id);
+            const periodEnd = priorMonthEnd(datetime.today(tz).toString());
+            const db = getJobDatabaseClient();
 
-          // A posted run for the period does not stop a second proposal:
-          // rows can fall due after it posted. Only a Draft does.
-          const existing = await db
-            .selectFrom("revenueRecognitionRun")
-            .select("id")
-            .where("companyId", "=", company.id)
-            .where("periodEnd", "=", periodEnd)
-            .where("status", "=", "Draft")
-            .executeTakeFirst();
+            // A posted run for the period does not stop a second proposal:
+            // rows can fall due after it posted. Only a Draft of the same
+            // type does.
+            const existing = await db
+              .selectFrom("revenueRecognitionRun")
+              .select("id")
+              .where("companyId", "=", company.id)
+              .where("type", "=", type)
+              .where("periodEnd", "=", periodEnd)
+              .where("status", "=", "Draft")
+              .executeTakeFirst();
 
-          if (existing) {
+            if (existing) {
+              logger.info(
+                `Skipped ${company.name}: a draft ${type} run for ${periodEnd} already exists (${existing.id})`
+              );
+              return;
+            }
+
+            // Posting stays a human action in the ERP; this only drafts the run.
+            const proposal = await serverFns
+              .system({ db, companyId: company.id, userId: "system" })
+              .invokeOrThrow("propose-revenue-recognition-run", {
+                periodEnd,
+                type
+              });
+
             logger.info(
-              `Skipped ${company.name}: a draft run for ${periodEnd} already exists (${existing.id})`
+              proposal
+                ? `Proposed ${proposal.runId} (${proposal.lineCount} lines) for ${company.name}`
+                : `Nothing to post in a ${type} run for ${company.name}`
             );
-            return;
-          }
-
-          // Posting stays a human action in the ERP; this only drafts the run.
-          const proposal = await serverFns
-            .system({ db, companyId: company.id, userId: "system" })
-            .invokeOrThrow("propose-revenue-recognition-run", { periodEnd });
-
-          logger.info(
-            proposal
-              ? `Proposed ${proposal.runId} (${proposal.lineCount} lines) for ${company.name}`
-              : `Nothing to recognize for ${company.name}`
-          );
-        });
-      } catch (error) {
-        logger.error(
-          "Failed to propose revenue recognition run for company {company}",
-          { company: company.name, companyId: company.id, error }
-        );
-        failed.push(company.id);
+          });
+        } catch (error) {
+          logger.error("Failed to propose a {type} run for company {company}", {
+            type,
+            company: company.name,
+            companyId: company.id,
+            error
+          });
+          failed.push(company.id);
+        }
       }
     }
 

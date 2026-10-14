@@ -501,7 +501,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   migrationClearingAccount: z.string().optional(),
   deferredRevenueAccount: z.string().optional(),
   contractAssetAccount: z.string().optional(),
-  netInvestmentInLeasesAccount: z.string().optional()
+  netInvestmentInLeasesAccount: z.string().optional(),
+  rightOfUseAssetAccount: z.string().optional(),
+  accumulatedRightOfUseAmortizationAccount: z.string().optional(),
+  leaseLiabilityAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -591,7 +594,11 @@ export const defaultIncomeAcountValidator = z.object({
   }),
   rentalIncomeAccount: z.string().optional(),
   leaseRevenueAccount: z.string().optional(),
-  leaseInterestIncomeAccount: z.string().optional()
+  leaseInterestIncomeAccount: z.string().optional(),
+  operatingLeaseExpenseAccount: z.string().optional(),
+  variableLeaseExpenseAccount: z.string().optional(),
+  rightOfUseAmortizationExpenseAccount: z.string().optional(),
+  leaseInterestExpenseAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =
@@ -737,7 +744,8 @@ export const journalEntrySourceTypes = [
   "Charge",
   "Reimbursement",
   "Revenue Recognition",
-  "Lease"
+  "Lease",
+  "Lease Run"
 ] as const;
 
 // Provisional: written before the accounting cutover, counts nowhere.
@@ -749,7 +757,8 @@ export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
 export const revenueScheduleTypes = [
   "Deferral",
   "Accrual",
-  "Interest"
+  "Interest",
+  "Amortization"
 ] as const;
 
 export const revenueScheduleStatuses = ["Planned", "Posted"] as const;
@@ -1170,6 +1179,19 @@ export const openingTrialBalanceImportValidator = z.object({
   csv: z.string().min(1, { message: "The CSV file is empty" })
 });
 
+/** Ignore an invoice on Migration Clearing, or stop ignoring it. */
+export const cutoverIgnoredInvoiceValidator = z.object({
+  cutoverDate: cutoverDateField,
+  invoiceId: z.string().min(1, { message: "Invoice is required" }),
+  ignored: z.enum(["true", "false"]).transform((value) => value === "true")
+});
+
+/** A trial balance step action that needs only the cutover date: apply
+ *  Carbon's totals, or pull the provider's trial balance. */
+export const cutoverStepValidator = z.object({
+  cutoverDate: cutoverDateField
+});
+
 /** The enable: the cutover date and the company name typed to confirm. */
 export const activateAccountingValidator = z.object({
   cutoverDate: cutoverDateField,
@@ -1200,5 +1222,6 @@ export const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 export const RUN_JOURNAL_SOURCES: Record<string, string> = {
   "Revenue Recognition": "revenue recognition",
+  "Lease Run": "lease",
   "Asset Depreciation": "depreciation"
 };

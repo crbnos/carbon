@@ -45,9 +45,14 @@ function build(lines: PurchaseInvoicePostingLine[]) {
   });
 }
 
-function amounts(inventoryQuantity: number, totalBaseCost: number) {
+function amounts(
+  inventoryQuantity: number,
+  totalBaseCost: number,
+  nominalBaseCost = totalBaseCost
+) {
   return {
     inventoryQuantity,
+    nominalBaseCost,
     totalBaseCost,
     inventoryUnitCost: totalBaseCost / inventoryQuantity
   };
@@ -234,6 +239,125 @@ describe("buildPurchaseInvoicePostingLines", () => {
         )
       ])
     ).toThrow("Item item-1 on a purchase invoice has no cost record");
+  });
+
+  it("posts a lease payment to the liability and a variable charge to expense", () => {
+    const base = { invoiceLineType: "Lease" as const, locationId: null };
+    const { lines } = build([
+      {
+        ...base,
+        id: "rent",
+        amounts: amounts(1, 10000),
+        kind: "lease",
+        leaseId: "lease-1",
+        account: {
+          id: "lease-liability",
+          name: "Lease Liabilities",
+          class: "Liability"
+        },
+        extrasAccount: {
+          id: "opex",
+          name: "Operating Lease Expense",
+          class: "Expense"
+        }
+      },
+      {
+        ...base,
+        id: "cam",
+        amounts: amounts(1, 250),
+        kind: "lease",
+        leaseId: "lease-1",
+        account: {
+          id: "variable",
+          name: "Variable Lease Expense",
+          class: "Expense"
+        },
+        extrasAccount: null
+      }
+    ]);
+
+    expect(
+      lines.map(({ accountId, amount }) => ({ accountId, amount }))
+    ).toEqual([
+      { accountId: "lease-liability", amount: debit("liability", 10000) },
+      { accountId: "ap", amount: credit("liability", 10000) },
+      { accountId: "variable", amount: debit("expense", 250) },
+      { accountId: "ap", amount: credit("liability", 250) }
+    ]);
+    // Liability debit stores negative, AP credit positive: the pair nets out.
+    expect(lines[0]!.amount + lines[1]!.amount).toBe(0);
+    expect(lines.every((line) => line.dimensions.CostCenter == null)).toBe(
+      true
+    );
+  });
+
+  it("debits the lease liability with the nominal payment only, and its tax and freight to lease expense", () => {
+    // A 10,000 payment with 825 tax and 50 shipping on the line, and 100 of
+    // header freight: the schedule took 10,000 out of the liability, so that
+    // is all the liability takes. AP owes the whole 10,975.
+    const [rent] = calculatePurchasePostingAmounts({
+      lines: [
+        {
+          id: "rent",
+          invoiceLineType: "Lease",
+          quantity: 1,
+          conversionFactor: 1,
+          unitPrice: 10000,
+          shippingCost: 50,
+          taxAmount: 825
+        }
+      ],
+      exchangeRate: 1,
+      supplierShippingCost: 100
+    });
+    const opex = {
+      id: "opex",
+      name: "Operating Lease Expense",
+      class: "Expense" as const
+    };
+    const { lines } = build([
+      {
+        id: "rent",
+        invoiceLineType: "Lease",
+        locationId: null,
+        amounts: rent!,
+        kind: "lease",
+        leaseId: "lease-1",
+        account: {
+          id: "lease-liability",
+          name: "Lease Liabilities",
+          class: "Liability"
+        },
+        extrasAccount: opex
+      },
+      {
+        // A short-term payment expenses its whole total, tax included.
+        id: "short",
+        invoiceLineType: "Lease",
+        locationId: null,
+        amounts: amounts(1, 1100, 1000),
+        kind: "lease",
+        leaseId: "lease-1",
+        account: opex,
+        extrasAccount: null
+      }
+    ]);
+
+    expect(
+      lines.map(({ accountId, amount }) => ({ accountId, amount }))
+    ).toEqual([
+      { accountId: "lease-liability", amount: debit("liability", 10000) },
+      { accountId: "opex", amount: debit("expense", 975) },
+      { accountId: "ap", amount: credit("liability", 10975) },
+      { accountId: "opex", amount: debit("expense", 1100) },
+      { accountId: "ap", amount: credit("liability", 1100) }
+    ]);
+    // The rent's three lines share one reference and balance: the liability
+    // debit stores negative, the expense debit and AP credit positive.
+    expect(
+      new Set(lines.slice(0, 3).map((l) => l.journalLineReference)).size
+    ).toBe(1);
+    expect(-lines[0]!.amount + lines[1]!.amount - lines[2]!.amount).toBe(0);
   });
 
   it("posts G/L and fixed asset lines", () => {

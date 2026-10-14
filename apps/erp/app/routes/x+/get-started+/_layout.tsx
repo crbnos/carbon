@@ -38,7 +38,7 @@ import {
   useNavigate
 } from "react-router";
 import { GroupedContentSidebar } from "~/components/Layout";
-import { useSettings, useUser } from "~/hooks";
+import { useUser } from "~/hooks";
 import {
   isCustomerPreview,
   setCustomerPreview,
@@ -47,7 +47,6 @@ import {
 import { useFlags } from "~/hooks/useFlags";
 import { useImplementationRealtime } from "~/hooks/useImplementationRealtime";
 import { useImplementationSubmodules } from "~/hooks/useImplementationSubmodules";
-import { hasAccountingCutover } from "~/modules/accounting/accounting.utils";
 import { getImplementationSignals } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -108,7 +107,7 @@ const SETUP_SCREEN_PATHS: Record<string, string> = {
   "storage-types": path.to.storageTypes,
   "storage-rules": path.to.storageRules,
   "shipping-methods": path.to.shippingMethods,
-  "chart-of-accounts": path.to.chartOfAccounts,
+  "chart-of-accounts": path.to.chartOfAccountsImport,
   "default-accounts": path.to.accountingDefaults,
   "cost-centers": path.to.costCenters,
   "payment-terms": path.to.paymentTerms,
@@ -172,8 +171,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function GetStartedLayout() {
   const { company } = useUser();
   const { isInternal } = useFlags();
-  const settings = useSettings();
-  const accountingSetUp = hasAccountingCutover(settings);
   const previewingAsCustomer = useCustomerPreview();
   useImplementationRealtime(company.id);
 
@@ -233,17 +230,13 @@ export default function GetStartedLayout() {
       exclusions:
         (loaderData.hub.exclusions as unknown as HubExclusions) ??
         EMPTY_EXCLUSIONS,
-      // The Accounting module only appears in the hub when the company has
-      // an accounting cutover; forced here so it never persists into the stored
-      // (staff-editable) exclusions.
-      forcedModules: accountingSetUp ? [] : ["acc"],
       contacts: (loaderData.hub.contacts as unknown as HubContacts) ?? {},
       checkStates: loaderData.checkStates,
       fieldValues: loaderData.fieldValues,
       rows: loaderData.rows as unknown as ImplementationRowData[],
       signals: loaderData.signals
     }),
-    [loaderData, accountingSetUp]
+    [loaderData]
   );
 
   const flags = useMemo<HubFlags>(

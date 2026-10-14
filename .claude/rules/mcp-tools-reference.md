@@ -256,8 +256,13 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 - `callOperation` resolves the manifest entry (`operationsByName`) and runs the
   real oRPC procedure via server-side `call()` — gate middleware included, so an
   **API-key** caller is scope-checked per operation (403 when the key lacks
-  `<module>_<action>` for the company). OAuth-connector and in-process
-  (`authKind: "session"`) callers skip the scope gate; RLS/role bounds them.
+  `<module>_<action>` for the company). An **OAuth-connector** caller is gated
+  the same way, on scopes built from its user's live permissions in the token's
+  company (`scopesFromPermissions`, `base.server.ts`). RLS cannot bound it: a
+  service handed `db` writes through the direct connection, which bypasses RLS,
+  so before this a connector token for a user with no accounting permission
+  could write GL journals. Only the in-process workflow engine
+  (`authKind: "session"`) skips the gate.
 - The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
   namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
 - **Input is validated** against the operation's own schema before dispatch.
@@ -458,7 +463,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   | Line | Meaning |
   |---|---|
   | `@mcp <verb> [destructive]` | Required, exactly once. No such line → not a tool, reads included. Text after it is a note. |
-  | `@mcp permission <module>:<action>[+<action>]` | Only when the gate is not the tool's own module + its verb's action (`getApiKeys` → `users:update`). |
+  | `@mcp permission <module>:<action>[+<action>]` | Only when the gate is not the tool's own module + its verb's action (`getApiKeys` → `users:update`). REQUIRED when the ERP route doing the same thing requires a different module: a supplier bank account is `accounting`, not `purchasing`; a return-order credit is `invoicing`. Pinned in `apps/erp/test/mcp-tool-permissions.test.ts` (`OVERRIDES`). |
   | `@mcp audit <field>[, <field>]` | Only when the verb's audit fields are wrong for intent the schema cannot express (a ledger insert takes `createdBy` alone). Stated in full; `companyId` is always added. |
   | `@mcp key <table> <column>[=<field>], …` | The row an upsert updates when it exists (below). Several lines are alternatives. |
 
