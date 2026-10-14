@@ -58,6 +58,7 @@ import { path } from "~/utils/path";
 type ProcessesTableProps = {
   data: Process[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -67,7 +68,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
+const ProcessesTable = memo((props: ProcessesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -391,6 +393,7 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
   return (
     <Table<Process>
       data={data}
+      infinite={{ dataKey: "processes", nextCursor, listKey: "processes" }}
       count={count}
       columns={columns}
       defaultColumnVisibility={defaultColumnVisibility}

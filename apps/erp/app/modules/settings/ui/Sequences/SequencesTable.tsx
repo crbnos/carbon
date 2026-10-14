@@ -24,9 +24,11 @@ import { path } from "~/utils/path";
 type SequencesTableProps = {
   data: Sequence[];
   count: number;
+  nextCursor: string | null;
 };
 
-const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
+const SequencesTable = memo((props: SequencesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -115,6 +117,7 @@ const SequencesTable = memo(({ data, count }: SequencesTableProps) => {
   return (
     <Table<(typeof data)[number]>
       data={data}
+      infinite={{ dataKey: "data", nextCursor, listKey: "sequences" }}
       columns={columns}
       count={count}
       renderContextMenu={renderContextMenu}

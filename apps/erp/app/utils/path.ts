@@ -159,6 +159,11 @@ export const path = {
         ),
       inspectionDocuments: (itemId: string) =>
         generatePath(`${api}/quality/inspection-documents/${itemId}`),
+      // The Sync Activity pages after the first; the tab adds `after`.
+      integrationSyncActivity: (id: string, status?: string | null) =>
+        `${generatePath(`${api}/integrations/${id}/sync-activity`)}${
+          status ? `?${new URLSearchParams({ status })}` : ""
+        }`,
       integrationSyncActivityCsv: (id: string, status?: string | null) =>
         `${generatePath(`${api}/integrations/${id}/sync-activity.csv`)}${
           status ? `?${new URLSearchParams({ status })}` : ""
@@ -371,6 +376,7 @@ export const path = {
       supplierProcesses: (id: string) =>
         generatePath(`${api}/purchasing/supplier-processes/${id}`),
       supplierTypes: `${api}/purchasing/supplier-types`,
+      tableExport: `${api}/table/export`,
       tags: (table?: string) =>
         generatePath(`${api}/shared/tags?table=${table}`),
       timecard: `${api}/people/timecard`,

@@ -4,7 +4,12 @@
 
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
+import {
+  Constants,
+  type Database,
+  getCompanyTimeZone,
+  type Json
+} from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { serverFns } from "@carbon/server-functions";
 import {
@@ -15,8 +20,13 @@ import { datetime, openEndedLeaseHorizon } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql, type Transaction } from "kysely";
 import type { z } from "zod";
+import {
+  type BulkDeleteResult,
+  bulkDeleteByStatus
+} from "~/utils/bulk-delete.server";
 import { path } from "~/utils/path";
 import {
+  isPurchaseOrderBulkDeletable,
   leaseLineColumns,
   leaseLinePaymentFields,
   type leaseLineValidator,
@@ -540,4 +550,38 @@ export async function draftLeaseSetupPath(
     return null;
   }
   return path.to.leaseSetup(id, "assets");
+}
+
+export type BulkDeletePurchaseOrdersResult = BulkDeleteResult;
+
+/** The statuses the bulk Delete deletes, from the table's own rule. */
+const BULK_DELETABLE_PURCHASE_ORDER_STATUSES =
+  Constants.public.Enums.purchaseOrderStatus.filter(
+    isPurchaseOrderBulkDeletable
+  );
+
+/**
+ * The purchase orders table's bulk Delete: deletes the Draft and Planned
+ * orders of the company, 100 ids per request. The status filter is part of
+ * the DELETE, so an order that moved on since it was selected stays. Called
+ * by `x+/purchase-order+/update.tsx` and by the background bulk-action job.
+ * The caller checks the `delete: purchasing` permission.
+ */
+export function bulkDeletePurchaseOrders(
+  client: SupabaseClient<Database>,
+  args: { purchaseOrderIds: string[]; companyId: string }
+): Promise<BulkDeletePurchaseOrdersResult> {
+  return bulkDeleteByStatus({
+    ids: args.purchaseOrderIds,
+    companyId: args.companyId,
+    label: "purchase orders",
+    deleteChunk: (ids) =>
+      client
+        .from("purchaseOrder")
+        .delete()
+        .in("id", ids)
+        .eq("companyId", args.companyId)
+        .in("status", BULK_DELETABLE_PURCHASE_ORDER_STATUSES)
+        .select("id")
+  });
 }

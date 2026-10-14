@@ -21,9 +21,12 @@ import type { Project } from "../../types";
 type ProjectsTableProps = {
   data: Project[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
+const ProjectsTable = memo((props: ProjectsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -88,6 +91,11 @@ const ProjectsTable = memo(({ data, count }: ProjectsTableProps) => {
 
   return (
     <Table<Project>
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "projects"
+      }}
       data={data}
       columns={columns}
       count={count}

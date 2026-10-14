@@ -14,12 +14,15 @@ vi.mock("@carbon/auth", () => ({
   parseNumberFromUrlParam: vi.fn()
 }));
 
+const { encodeCursor } = await import("./cursor");
 const {
   formatRangeFilter,
+  getEffectiveSorts,
   getGenericFilter,
   getGenericQueryFilters,
   getSearchTokens,
   parseRangeFilter,
+  setGenericQueryFilters,
   setSearchFilter
 } = await import("./query");
 
@@ -138,6 +141,131 @@ describe("between filter", () => {
   });
 });
 
+describe("cursor paging params", () => {
+  it("reads the cursor from ?after= and fixes the page size", () => {
+    const cursor = { values: ["Bolt"], id: "it_1", keys: ["name:asc"] };
+    const params = new URLSearchParams({ after: encodeCursor(cursor) });
+    // ?limit= and ?offset= from old bookmarks are ignored.
+    params.set("limit", "1000");
+    params.set("offset", "500");
+
+    expect(getGenericQueryFilters(params)).toMatchObject({
+      limit: 100,
+      cursor
+    });
+  });
+
+  it("starts from the first page without ?after= or with a bad token", () => {
+    expect(getGenericQueryFilters(new URLSearchParams()).cursor).toBeNull();
+    expect(
+      getGenericQueryFilters(new URLSearchParams({ after: "garbage" })).cursor
+    ).toBeNull();
+  });
+});
+
+describe("getEffectiveSorts", () => {
+  const defaults = [
+    { column: "createdAt", ascending: false },
+    { column: "name", ascending: true, foreignTable: "customer" }
+  ];
+
+  it("uses the defaults, minus foreign-table sorts, when the user has none", () => {
+    expect(getEffectiveSorts({ sorts: [] }, defaults)).toEqual([
+      { column: "createdAt", ascending: false }
+    ]);
+  });
+
+  it("uses the user's sorts and drops a sort on another table's column", () => {
+    expect(
+      getEffectiveSorts(
+        {
+          sorts: [
+            { sortBy: "customer.name", sortAsc: true },
+            { sortBy: "dueDate", sortAsc: true }
+          ]
+        },
+        defaults
+      )
+    ).toEqual([{ column: "dueDate", ascending: true }]);
+  });
+
+  it("falls back to the defaults when every user sort is dropped", () => {
+    expect(
+      getEffectiveSorts(
+        { sorts: [{ sortBy: "customer.name", sortAsc: true }] },
+        defaults
+      )
+    ).toEqual([{ column: "createdAt", ascending: false }]);
+  });
+});
+
+describe("setGenericQueryFilters paging", () => {
+  const sorts = [{ column: "createdAt", ascending: false }];
+
+  it("asks for one extra row in cursor mode (list loaders)", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 100, cursor: null }, sorts);
+    expect(query.limit).toHaveBeenCalledWith(101);
+    expect(query.range).not.toHaveBeenCalled();
+  });
+
+  it("keeps exact offset paging when no cursor is given (MCP, v1 API)", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, { limit: 50, offset: 100 }, sorts);
+    expect(query.range).toHaveBeenCalledWith(100, 149);
+    expect(query.limit).not.toHaveBeenCalled();
+  });
+
+  it("pages by offset when the cursor key is present but undefined", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(
+      query as never,
+      { limit: 50, offset: 100, cursor: undefined },
+      sorts
+    );
+    expect(query.range).toHaveBeenCalledWith(100, 149);
+    expect(query.limit).not.toHaveBeenCalled();
+  });
+
+  it("filters after a cursor cut for the same order", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(
+      query as never,
+      {
+        limit: 100,
+        cursor: { values: ["2026-10-13"], id: "so_1", keys: ["createdAt:desc"] }
+      },
+      { defaultSorts: sorts }
+    );
+    expect(query.or).toHaveBeenCalledWith(
+      'createdAt.lt."2026-10-13",and(createdAt.eq."2026-10-13",id.gt."so_1")'
+    );
+  });
+
+  it("returns no rows for a cursor cut for another order", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(
+      query as never,
+      {
+        limit: 100,
+        cursor: { values: ["Bolt"], id: "it_1", keys: ["name:asc"] }
+      },
+      { defaultSorts: sorts, idColumn: "itemId" }
+    );
+    expect(query.or).toHaveBeenCalledWith(
+      "and(itemId.is.null,itemId.not.is.null)"
+    );
+    expect(query.limit).toHaveBeenCalledWith(101);
+  });
+
+  it("does not page at all without a limit", () => {
+    const query = createQueryStub();
+    setGenericQueryFilters(query as never, {}, sorts);
+    expect(query.range).not.toHaveBeenCalled();
+    expect(query.limit).not.toHaveBeenCalled();
+  });
+});
+
 function createQueryStub() {
   const self = function (this: unknown) {
     return this;
@@ -145,6 +273,9 @@ function createQueryStub() {
   return {
     or: vi.fn(self),
     gte: vi.fn(self),
-    lte: vi.fn(self)
+    lte: vi.fn(self),
+    order: vi.fn(self),
+    limit: vi.fn(self),
+    range: vi.fn(self)
   };
 }

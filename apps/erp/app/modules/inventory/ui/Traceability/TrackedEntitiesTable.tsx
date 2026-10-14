@@ -41,19 +41,26 @@ type ShelfLifePolicy = {
   calculateFromBom?: boolean | null;
 };
 
+// A row of the list, with its item's shelf-life policy (from the loader), so
+// the Expiry trace popover can show the Policy step.
+type TrackedEntityRow = TrackedEntity & {
+  shelfLifePolicy: ShelfLifePolicy | null;
+};
+
 type TrackedEntitiesTableProps = {
-  data: TrackedEntity[];
+  data: TrackedEntityRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   nearExpiryWarningDays: number | null;
-  shelfLifePolicies?: Record<string, ShelfLifePolicy>;
 };
 
 const TrackedEntitiesTable = memo(
   ({
     data,
     count,
-    nearExpiryWarningDays,
-    shelfLifePolicies
+    nextCursor,
+    nearExpiryWarningDays
   }: TrackedEntitiesTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -66,6 +73,15 @@ const TrackedEntitiesTable = memo(
     // can pre-fill its form. Lives at table level so the row context-menu
     // action can open it.
     const [unscrapping, setUnscrapping] = useState<TrackedEntity | null>(null);
+
+    const infinite = useMemo(
+      () => ({
+        dataKey: "trackedEntities",
+        nextCursor,
+        listKey: "tracked-entities"
+      }),
+      [nextCursor]
+    );
     const [editingExpiry, setEditingExpiry] = useState<TrackedEntity | null>(
       null
     );
@@ -183,8 +199,7 @@ const TrackedEntitiesTable = memo(
                   {formatted}
                 </span>
               );
-            const itemId = (row.original as { itemId?: string | null }).itemId;
-            const policy = itemId ? shelfLifePolicies?.[itemId] : undefined;
+            const policy = row.original.shelfLifePolicy;
             return (
               <ExpiryTracePopover
                 entity={row.original}
@@ -223,14 +238,7 @@ const TrackedEntitiesTable = memo(
           }
         }
       ],
-      [
-        numberFormatter,
-        items,
-        t,
-        nearExpiryWarningDays,
-        shelfLifePolicies,
-        formatDate
-      ]
+      [numberFormatter, items, t, nearExpiryWarningDays, formatDate]
     );
 
     const renderContextMenu = useCallback(
@@ -281,6 +289,7 @@ const TrackedEntitiesTable = memo(
       <>
         <Table<(typeof data)[number]>
           data={data}
+          infinite={infinite}
           columns={columns}
           count={count}
           renderContextMenu={renderContextMenu}

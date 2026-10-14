@@ -5,19 +5,24 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { RecordOutlet, VStack } from "@carbon/react";
 import { redirect } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
-import { getKanbans } from "~/modules/inventory";
+import { getKanbans, KANBANS_PAGING } from "~/modules/inventory";
 import KanbansTable from "~/modules/inventory/ui/Kanbans/KanbansTable";
 import { getLocationsList } from "~/modules/resources";
 import { getKanbanOutputSetting } from "~/modules/settings";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { toPage } from "~/utils/cursor";
 import type { Handle } from "~/utils/handle";
+import { listErrorPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "kanbans");
 
 export const handle: Handle = {
   breadcrumb: msg`Kanbans`,
@@ -35,7 +40,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const searchParams = new URLSearchParams(url.search);
   const search = searchParams.get("search");
 
-  const { limit, offset, sorts, filters } =
+  const { limit, cursor, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
   let locationId = searchParams.get("location");
@@ -73,7 +78,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getKanbans(client, locationId, companyId, {
       search,
       limit,
-      offset,
+      cursor,
       sorts,
       filters
     }),
@@ -81,22 +86,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (kanbans.error) {
+    if (cursor) {
+      logger.error("Failed to load a later page of kanbans", {
+        companyId,
+        error: kanbans.error
+      });
+      return listErrorPage("kanbans");
+    }
     throw redirect(
       path.to.authenticatedRoot,
       await flash(request, error(kanbans.error, "Failed to fetch kanbans"))
     );
   }
 
+  const page = toPage(kanbans.data ?? [], { limit, sorts }, KANBANS_PAGING);
+
   return {
     count: kanbans.count ?? 0,
-    kanbans: kanbans.data ?? [],
+    kanbans: page.rows,
+    nextCursor: page.nextCursor,
     kanbanOutput: kanbanOutput.data?.kanbanOutput ?? "qrcode",
     locationId
   };
 }
 
 export default function KanbansRoute() {
-  const { count, kanbans, locationId, kanbanOutput } =
+  const { count, kanbans, nextCursor, locationId, kanbanOutput } =
     useLoaderData<typeof loader>();
 
   return (
@@ -104,6 +119,7 @@ export default function KanbansRoute() {
       <KanbansTable
         data={kanbans}
         count={count}
+        nextCursor={nextCursor}
         locationId={locationId}
         kanbanOutput={kanbanOutput}
       />

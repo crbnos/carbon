@@ -9,6 +9,27 @@ import { Edition } from "@carbon/utils";
 
 // Re-export the inngest client and helpers
 
+export type {
+  TableBulkAction,
+  TableBulkActionCarry,
+  TableBulkActionCounts,
+  TableBulkActionResult,
+  TableJobContext,
+  TableJobHandlers,
+  TableJobKind,
+  TableJobPage
+} from "../table-jobs/handlers.ts";
+export { setTableJobHandlers } from "../table-jobs/handlers.ts";
+export type { TableJobLock } from "../table-jobs/lock.ts";
+export {
+  releaseTableJobLock,
+  takeTableJobLock
+} from "../table-jobs/lock.ts";
+export { TABLE_JOB_PAGE_SIZE } from "../table-jobs/paging.ts";
+export {
+  tableExportStorageKey,
+  tempStagingStorage
+} from "../table-jobs/storage.ts";
 // Server-only on purpose: the app bundle imports `@carbon/jobs`, not this subpath.
 export type {
   DispatchContext,
@@ -103,6 +124,8 @@ import {
   printJobDeliverFunction,
   printJobFunction,
   recalculateFunction,
+  tableBulkActionFunction,
+  tableExportFunction,
   updatePermissionsFunction,
   userAdminFunction
 } from "./functions/tasks";
@@ -157,6 +180,8 @@ export const functions = [
   printJobFunction,
   printJobDeliverFunction,
   changelogDispatchFunction,
+  tableExportFunction,
+  tableBulkActionFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,

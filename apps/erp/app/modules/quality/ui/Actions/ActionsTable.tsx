@@ -40,10 +40,17 @@ type ActionsTableProps = {
   issueTypes: ListItem[];
   requiredActions: ListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
 const ActionsTable = memo(
-  ({ data, issueTypes, requiredActions, count }: ActionsTableProps) => {
+  ({
+    data,
+    issueTypes,
+    requiredActions,
+    count,
+    nextCursor
+  }: ActionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -257,6 +264,11 @@ const ActionsTable = memo(
     return (
       <Table<QualityAction>
         data={data}
+        infinite={{
+          dataKey: "actions",
+          nextCursor,
+          listKey: "quality-actions"
+        }}
         columns={columns}
         count={count}
         renderContextMenu={renderContextMenu}

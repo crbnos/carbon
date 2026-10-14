@@ -19,60 +19,41 @@ import { serverFns } from "@carbon/server-functions";
 import { datetime, redirect } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { getDatabaseClient } from "~/services/database.server";
+import { periodRunsLists } from "~/utils/list-registry/accounting.server";
+import { loadListPage } from "~/utils/list-registry/load.server";
 import { path } from "~/utils/path";
-import { getGenericQueryFilters } from "~/utils/query";
 import { getCompanyTimeZone } from "../shared/timezone.server";
 import { revenueRecognitionRunValidator } from "./accounting.models";
 import { futureRunPeriodError } from "./accounting.server";
-import { getRevenueRecognitionRuns } from "./accounting.service";
 import { getNextRevenueRecognitionPeriodEnd } from "./accounting.utils";
 import { RUN_PAGES } from "./ui/RevenueRecognition/runPages";
 
 export async function loadPeriodRuns(request: Request, type: RunType) {
-  const { client, companyId } = await requirePermissions(request, {
-    view: "accounting",
-    role: "employee"
+  return loadListPage(request, periodRunsLists[type], {
+    dataKey: "data",
+    firstPage: async ({ client, companyId }) => {
+      const lastRun = await client
+        .from("revenueRecognitionRun")
+        .select("periodEnd, status")
+        .eq("companyId", companyId)
+        .eq("type", type)
+        .order("periodEnd", { ascending: false })
+        .limit(1);
+
+      const lastRunData =
+        lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
+      // The proposed period: the month after the last run, or the month just
+      // closed in the company's calendar when there is no run yet.
+      const nextPeriodEnd = getNextRevenueRecognitionPeriodEnd(
+        lastRunData?.periodEnd ?? null,
+        datetime.today(await getCompanyTimeZone(client, companyId)).toString()
+      );
+      return {
+        nextPeriodEnd,
+        hasDraftBlocking: lastRunData?.status === "Draft"
+      };
+    }
   });
-
-  const url = new URL(request.url);
-  const searchParams = new URLSearchParams(url.search);
-  const search = searchParams.get("search");
-  const { limit, offset, sorts, filters } =
-    getGenericQueryFilters(searchParams);
-
-  const [runs, lastRun] = await Promise.all([
-    getRevenueRecognitionRuns(client, companyId, type, {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }),
-    client
-      .from("revenueRecognitionRun")
-      .select("periodEnd, status")
-      .eq("companyId", companyId)
-      .eq("type", type)
-      .order("periodEnd", { ascending: false })
-      .limit(1)
-  ]);
-
-  const lastRunData =
-    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0] : null;
-  // The proposed period: the month after the last run, or the month just
-  // closed in the company's calendar when there is no run yet.
-  const nextPeriodEnd = getNextRevenueRecognitionPeriodEnd(
-    lastRunData?.periodEnd ?? null,
-    datetime.today(await getCompanyTimeZone(client, companyId)).toString()
-  );
-  const hasDraftBlocking = lastRunData?.status === "Draft";
-
-  return {
-    data: runs.data ?? [],
-    count: runs.count ?? 0,
-    nextPeriodEnd,
-    hasDraftBlocking
-  };
 }
 
 export async function proposePeriodRun(

@@ -24,15 +24,46 @@ vi.mock("@carbon/logger", () => ({
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));
-vi.mock("~/modules/production", () => ({
+// The release logic lives in production/bulk-actions.server.ts; these stand in
+// for the modules it calls.
+vi.mock("~/modules/production/production.service", () => ({
   getJobReleaseReadiness: vi.fn()
 }));
 vi.mock("~/modules/production/production.server", () => ({
   releaseJobs: vi.fn()
 }));
+// A request with ids never reaches the background path.
+vi.mock("~/utils/table-jobs.server", () => ({
+  startAllMatchingBulkAction: vi.fn(async () => null),
+  startSelectedBulkAction: vi.fn(async () => ({
+    success: true,
+    background: true
+  }))
+}));
+// production.models reaches @carbon/content/glossary and Lingui `msg` macros
+// at module load, which plain vitest does not transform.
+vi.mock("@carbon/content/glossary", () => ({
+  terms: {},
+  getEntry: vi.fn(),
+  lookupEntry: vi.fn(),
+  hasEntry: vi.fn(),
+  termSlug: vi.fn(),
+  glossaryEntries: () => []
+}));
+vi.mock("@lingui/core/macro", () => ({
+  msg: (strings: TemplateStringsArray | string, ...values: unknown[]) =>
+    Array.isArray(strings)
+      ? strings.reduce(
+          (acc, s, i) => acc + s + (i < values.length ? String(values[i]) : ""),
+          ""
+        )
+      : String(strings)
+}));
 
-import { getJobReleaseReadiness } from "~/modules/production";
+import { bulkReleaseJobs } from "~/modules/production/bulk-actions.server";
 import { releaseJobs } from "~/modules/production/production.server";
+import { getJobReleaseReadiness } from "~/modules/production/production.service";
+import { startSelectedBulkAction } from "~/utils/table-jobs.server";
 import { action } from "./release";
 
 type JobRow = {
@@ -116,6 +147,33 @@ beforeEach(() => {
 });
 
 describe("bulk job release", () => {
+  it("sends more than 25 selected jobs to the background job", async () => {
+    const ids = Array.from({ length: 26 }, (_, i) => `j${i}`);
+    setup(ids.map((id) => job(id)));
+
+    const result = await run(ids);
+
+    expect(result).toEqual({ success: true, background: true });
+    expect(vi.mocked(startSelectedBulkAction).mock.calls[0]?.[0]).toMatchObject(
+      { actionKey: "jobs.release", listKey: "jobs", ids }
+    );
+    expect(releaseJobs).not.toHaveBeenCalled();
+  });
+
+  it("releases 25 selected jobs in the request itself", async () => {
+    const ids = Array.from({ length: 25 }, (_, i) => `j${i}`);
+    setup(ids.map((id) => job(id)));
+    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+      data: { jobs: ids.map((id) => ready(id)), suppliers: [] },
+      error: null
+    });
+
+    const result = await run(ids);
+
+    expect(startSelectedBulkAction).not.toHaveBeenCalled();
+    expect(result).toMatchObject({ success: true, released: 25 });
+  });
+
   it("releases Draft and Planned jobs and skips the rest of the selection", async () => {
     setup([
       job("j1", { status: "Draft" }),
@@ -141,7 +199,9 @@ describe("bulk job release", () => {
       released: 2,
       warnings: [],
       failed: [],
-      scheduled: true
+      skipped: 1,
+      scheduled: true,
+      purchaseOrdersBySupplierId: {}
     });
   });
 
@@ -314,7 +374,7 @@ describe("bulk job release", () => {
 
   it("loads a large selection in groups, and releases it in job order", async () => {
     const ids = Array.from({ length: 250 }, (_, index) => `j${index}`);
-    // Stored out of order, so the release order is the route's own doing.
+    // Stored out of order, so the release order is the function's own doing.
     const { inFilterSizes } = setup(
       [...ids].reverse().map((id) => job(id, { jobId: id.padStart(5, "0") }))
     );
@@ -322,8 +382,17 @@ describe("bulk job release", () => {
       data: { jobs: ids.map((id) => ready(id)), suppliers: [] },
       error: null
     });
+    // The route sends a selection this big to the background job, so call
+    // the release function itself, as the job does.
+    const { client } = await requirePermissions(request(ids), {});
 
-    const result = await run(ids);
+    const result = await bulkReleaseJobs({
+      client,
+      db: {} as any,
+      jobIds: ids,
+      companyId: "company-1",
+      userId: "user-1"
+    });
 
     expect(inFilterSizes).toEqual([100, 100, 50]);
     expect(result).toMatchObject({ released: 250, failed: [] });

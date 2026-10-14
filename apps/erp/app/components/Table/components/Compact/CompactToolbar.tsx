@@ -93,7 +93,7 @@ export function CompactToolbar({
   const { t } = useLingui();
   const { urlFiltersParams, hasFilters } = useFilters();
   const [sheetOpen, setSheetOpen] = useState(false);
-  const exportCsv = useCsvDownload(csvExport ?? NO_EXPORT);
+  const { onClick: exportCsv } = useCsvDownload(csvExport ?? NO_EXPORT);
   const [importTable, setImportTable] = useState<
     keyof typeof fieldMappings | null
   >(null);

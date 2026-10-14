@@ -22,7 +22,7 @@ import type {
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type {
   PriceBreak,
@@ -305,6 +305,10 @@ export async function upsertExternalLink(
     .single();
 }
 
+export const CUSTOMER_PORTALS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /** @mcp read */
 export async function getCustomerPortals(
   client: SupabaseClient<Database>,
@@ -313,7 +317,7 @@ export async function getCustomerPortals(
 ) {
   let query = client
     .from("externalLink")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
@@ -322,9 +326,7 @@ export async function getCustomerPortals(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, CUSTOMER_PORTALS_PAGING);
   }
 
   return query;

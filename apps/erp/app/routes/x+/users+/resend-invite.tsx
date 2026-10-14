@@ -9,7 +9,6 @@ import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
-import { batchTrigger } from "@carbon/jobs";
 import { sendEmail } from "@carbon/lib/email.server";
 import { datetime, getClientIp } from "@carbon/utils";
 import { render } from "@react-email/components";
@@ -17,15 +16,33 @@ import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { resendInviteValidator } from "~/modules/users";
+import { queueInviteResends } from "~/modules/users/users.server";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { companyId } = await requirePermissions(request, {
+  const { companyId, userId: actorId } = await requirePermissions(request, {
     create: "users"
   });
 
-  const validation = await validator(resendInviteValidator).validate(
-    await request.formData()
+  const formData = await request.formData();
+
+  // Every matching user of the Employees list: the background job picks the
+  // inactive users with an email and no unrevoked invite and queues a resend.
+  const started = await startAllMatchingBulkAction(
+    formData.get("allMatching"),
+    {
+      companyId,
+      userId: actorId,
+      actionKey: "users.invite",
+      params: {
+        location: request.headers.get("x-vercel-ip-city") ?? "Unknown",
+        ip: getClientIp(request) ?? "127.0.0.1"
+      }
+    }
   );
+  if (started) return started;
+
+  const validation = await validator(resendInviteValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
@@ -133,18 +150,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
     const ip = getClientIp(request) ?? "127.0.0.1";
     try {
-      await batchTrigger(
-        "user-admin",
-        users.map((id) => ({
-          payload: {
-            id,
-            type: "resend" as const,
-            companyId,
-            location,
-            ip
-          }
-        }))
-      );
+      await queueInviteResends({ userIds: users, companyId, location, ip });
       return data(
         {},
         await flash(request, success("Successfully added invites to queue"))

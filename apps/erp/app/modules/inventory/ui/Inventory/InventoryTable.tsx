@@ -74,6 +74,8 @@ import type { InventoryItem } from "../../types";
 type InventoryTableProps = {
   data: InventoryItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   forms: ListItem[];
   substances: ListItem[];
@@ -86,6 +88,7 @@ const InventoryTable = memo(
   ({
     data,
     count,
+    nextCursor,
     locationId,
     forms,
     substances,
@@ -656,6 +659,8 @@ const InventoryTable = memo(
         count={count}
         columns={columns}
         data={data}
+        // Location-scoped: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "inventoryItems", nextCursor }}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
         importCSV={[

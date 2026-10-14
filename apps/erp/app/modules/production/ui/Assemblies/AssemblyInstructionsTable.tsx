@@ -50,6 +50,8 @@ import AssemblyInstructionStatus from "./AssemblyInstructionStatus";
 type AssemblyInstructionsTableProps = {
   data: AssemblyInstructionListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const itemTypesWithDetails = ["Part", "Material", "Tool", "Consumable"];
@@ -71,7 +73,7 @@ function ProcessingStatus({ status }: { status?: string | null }) {
 }
 
 const AssemblyInstructionsTable = memo(
-  ({ data, count }: AssemblyInstructionsTableProps) => {
+  ({ data, count, nextCursor }: AssemblyInstructionsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -287,6 +289,11 @@ const AssemblyInstructionsTable = memo(
           data={data}
           columns={columns}
           count={count}
+          infinite={{
+            dataKey: "instructions",
+            nextCursor,
+            listKey: "assembly-instructions"
+          }}
           primaryAction={
             permissions.can("create", "production") && (
               <New

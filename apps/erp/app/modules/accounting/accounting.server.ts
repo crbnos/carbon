@@ -28,14 +28,19 @@ import {
   runTypeOfScheduleRow
 } from "@carbon/database/run-type";
 import { getNextSequence } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import { datetime, equals, formatDate, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
+import { decodeCursor, toPage } from "~/utils/cursor";
+import { listErrorPage } from "~/utils/list-registry/list-error";
+import { PAGE_SIZE } from "~/utils/pagination";
 import {
+  ACCOUNT_LEDGER_PAGING,
   ACCOUNTING_NOT_STARTED,
   applyCtaToReportPeriodSeries,
-  getAccountLedger,
+  getAccountLedgerLines,
   getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries,
@@ -51,6 +56,8 @@ import {
   monthEndOf,
   runPostingTargets
 } from "./accounting.utils";
+
+const logger = getLogger("erp", "accounting");
 
 /**
  * The cutover date the enable wizard works against, with the earliest and the
@@ -251,47 +258,88 @@ export function getConsolidatedBalancesForReport(
   );
 }
 
-// Consolidated account drill-down ("All Companies"). Reads via service role so
-// the synthetic elimination entities' journal lines (invisible to the user's
-// RLS session — no user is a member of them) appear in the ledger and the
-// summary ties to the consolidated report. Scoped to the group's own companies
-// so a service-role read cannot cross tenants.
-export async function getConsolidatedAccountLedger(
-  companyGroupId: string,
+/**
+ * One page of an account's ledger lines for the ledger drawers (the chart of
+ * accounts and the three statement reports), with the drawer's summary on
+ * the first page.
+ *
+ * "All Companies" (`consolidated`) reads via service role so the synthetic
+ * elimination entities' journal lines (invisible to the user's RLS session —
+ * no user is a member of them) appear in the ledger and the summary ties to
+ * the consolidated report. It is scoped to the group's own companies so a
+ * service-role read cannot cross tenants.
+ *
+ * A failed later page (`after`) returns `listError` for the drawer's list.
+ */
+export async function getAccountLedgerPage(
+  client: SupabaseClient<Database>,
   args: {
     accountId: string;
+    companyGroupId: string;
+    /** One company's lines; null reads every company the client can see. */
+    companyId: string | null;
+    consolidated?: boolean;
     startDate: string | null;
     endDate: string | null;
-    limit: number;
-    offset: number;
+    /** The `?after=` token; a later page reads its lines only. */
+    after: string | null;
   }
 ) {
-  const serviceRole = getCarbonServiceRole();
-  const { data: groupCompanies } = await serviceRole
-    .from("company")
-    .select("id")
-    .eq("companyGroupId", companyGroupId)
-    .eq("active", true);
-  const companyIds = (groupCompanies ?? []).map((c) => c.id);
+  const cursor = decodeCursor(args.after);
+  let readClient = client;
+  let companyIds: string[] | undefined;
+  if (args.consolidated) {
+    readClient = getCarbonServiceRole();
+    const { data: groupCompanies } = await readClient
+      .from("company")
+      .select("id")
+      .eq("companyGroupId", args.companyGroupId)
+      .eq("active", true);
+    companyIds = (groupCompanies ?? []).map((c) => c.id);
+  }
+  const companyId = args.consolidated ? null : args.companyId;
+  const { accountId, startDate, endDate } = args;
 
   const [ledger, summary] = await Promise.all([
-    getAccountLedger(serviceRole, {
-      accountId: args.accountId,
-      companyId: null,
+    getAccountLedgerLines(readClient, {
+      accountId,
+      companyId,
       companyIds,
-      startDate: args.startDate,
-      endDate: args.endDate,
-      limit: args.limit,
-      offset: args.offset
+      startDate,
+      endDate,
+      limit: PAGE_SIZE,
+      cursor
     }),
-    getAccountLedgerSummary(serviceRole, companyGroupId, null, {
-      accountId: args.accountId,
-      startDate: args.startDate,
-      endDate: args.endDate
-    })
+    cursor
+      ? null
+      : getAccountLedgerSummary(readClient, args.companyGroupId, companyId, {
+          accountId,
+          startDate,
+          endDate
+        })
   ]);
 
-  return { ledger, summary };
+  const emptySummary = { opening: 0, netChange: 0, closing: 0 };
+  if (ledger.error) {
+    logger.error("Failed to load an account ledger page", {
+      accountId,
+      companyGroupId: args.companyGroupId,
+      error: ledger.error
+    });
+    if (cursor) return listErrorPage("lines");
+  }
+
+  const page = toPage(
+    ledger.data ?? [],
+    { limit: PAGE_SIZE },
+    ACCOUNT_LEDGER_PAGING
+  );
+  return {
+    lines: page.rows,
+    count: ledger.count ?? 0,
+    nextCursor: page.nextCursor,
+    summary: summary?.data ?? emptySummary
+  };
 }
 
 /**

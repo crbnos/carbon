@@ -59,6 +59,7 @@ type GaugesTableProps = {
   data: Gauge[];
   types: ListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -67,7 +68,8 @@ const defaultColumnVisibility = {
   updatedBy: false
 };
 
-const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
+const GaugesTable = memo((props: GaugesTableProps) => {
+  const { data, types, count, nextCursor } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -396,6 +398,11 @@ const GaugesTable = memo(({ data, types, count }: GaugesTableProps) => {
     <>
       <Table<Gauge>
         data={data}
+        infinite={{
+          dataKey: "gauges",
+          nextCursor,
+          listKey: "gauges"
+        }}
         columns={columns}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}

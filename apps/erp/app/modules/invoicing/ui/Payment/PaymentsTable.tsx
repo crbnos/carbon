@@ -44,9 +44,12 @@ type PaymentRow = Database["public"]["Tables"]["payment"]["Row"];
 type PaymentsTableProps = {
   data: PaymentRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
+const PaymentsTable = memo((props: PaymentsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -211,6 +214,11 @@ const PaymentsTable = memo(({ data, count }: PaymentsTableProps) => {
   return (
     <>
       <Table<PaymentRow>
+        infinite={{
+          dataKey: "payments",
+          nextCursor,
+          listKey: "payments"
+        }}
         count={count}
         columns={columns}
         data={data}

@@ -29,22 +29,20 @@ import { path } from "~/utils/path";
 type LocationsTableProps = {
   data: ShiftLocation[];
   count: number;
+  nextCursor: string | null;
 };
 
-const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
+const LocationsTable = memo((props: LocationsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
   const [params] = useUrlParams();
   const [people] = usePeople();
 
-  const rows = data.map((row) => ({
-    ...row
-  }));
-
   const customColumns = useCustomColumns<ShiftLocation>("location");
-  const columns = useMemo<ColumnDef<(typeof rows)[number]>[]>(() => {
-    const defaultColumns: ColumnDef<(typeof rows)[number]>[] = [
+  const columns = useMemo<ColumnDef<(typeof data)[number]>[]>(() => {
+    const defaultColumns: ColumnDef<(typeof data)[number]>[] = [
       {
         accessorKey: "name",
         header: t`Location`,
@@ -176,8 +174,9 @@ const LocationsTable = memo(({ data, count }: LocationsTableProps) => {
   );
 
   return (
-    <Table<(typeof rows)[number]>
-      data={rows}
+    <Table<(typeof data)[number]>
+      data={data}
+      infinite={{ dataKey: "locations", nextCursor, listKey: "locations" }}
       count={count}
       columns={columns}
       primaryAction={

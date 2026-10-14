@@ -116,3 +116,38 @@ export function jobReleaseProblems(job: {
     )
   ];
 }
+
+/**
+ * The purchase order each supplier's outside operations start on in a bulk
+ * release, and the suppliers whose jobs must be refused because the user has
+ * to choose among their Draft POs.
+ *
+ * A background release runs in slices of 25 jobs. A slice reads the supplier's
+ * Draft POs after an earlier slice has created one. `carried` (the map the
+ * previous slice returned) names that PO, so the supplier keeps it instead of
+ * asking for a choice. A carried PO that is no longer a Draft of its supplier
+ * is ignored.
+ */
+export function bulkReleaseStartingPurchaseOrders(
+  suppliers: {
+    supplierId: string;
+    draftPurchaseOrders: { id: string }[];
+  }[],
+  carried: Record<string, string> = {}
+): {
+  purchaseOrders: Record<string, string>;
+  suppliersToChoose: Set<string>;
+} {
+  const purchaseOrders: Record<string, string> = {};
+  const suppliersToChoose = new Set<string>();
+  for (const { supplierId, draftPurchaseOrders } of suppliers) {
+    const carriedId = carried[supplierId];
+    if (carriedId && draftPurchaseOrders.some((po) => po.id === carriedId)) {
+      purchaseOrders[supplierId] = carriedId;
+      continue;
+    }
+    purchaseOrders[supplierId] = "new";
+    if (draftPurchaseOrders.length > 0) suppliersToChoose.add(supplierId);
+  }
+  return { purchaseOrders, suppliersToChoose };
+}

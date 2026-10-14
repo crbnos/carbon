@@ -43,10 +43,12 @@ import type { SalesReturnOrderListItem } from "./types";
 type SalesReturnOrdersTableProps = {
   data: SalesReturnOrderListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const SalesReturnOrdersTable = memo(
-  ({ data, count }: SalesReturnOrdersTableProps) => {
+  ({ data, count, nextCursor }: SalesReturnOrdersTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -228,6 +230,11 @@ const SalesReturnOrdersTable = memo(
       <>
         <Table<SalesReturnOrderListItem>
           count={count}
+          infinite={{
+            dataKey: "salesReturnOrders",
+            nextCursor,
+            listKey: "sales-return-orders"
+          }}
           columns={columns}
           data={data}
           defaultColumnPinning={{

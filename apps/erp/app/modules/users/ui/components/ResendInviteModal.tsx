@@ -16,22 +16,40 @@ import {
 import { Trans } from "@lingui/react/macro";
 import { useFetcher } from "react-router";
 import { UserSelect } from "~/components/Selectors";
-import { resendInviteValidator } from "~/modules/users";
+import {
+  type AllMatchingSelection,
+  allMatchingRequest
+} from "~/components/Table";
+import {
+  resendInviteAllMatchingValidator,
+  resendInviteValidator
+} from "~/modules/users";
 import { path } from "~/utils/path";
+import {
+  AllMatchingUsersNote,
+  type BulkUserActionFetcher
+} from "./AllMatchingUsers";
 
 type ResendInviteModalProps = {
   userIds: string[];
   isOpen: boolean;
+  /** Set when the action applies to every matching user of the list. */
+  allMatching?: AllMatchingSelection | null;
+  /** Posts the every-matching-user request. The table owns it, so its result
+   *  toast still shows after this modal closes. */
+  allMatchingFetcher?: BulkUserActionFetcher;
   onClose: () => void;
 };
 
 const ResendInviteModal = ({
   userIds,
   isOpen,
+  allMatching,
+  allMatchingFetcher,
   onClose
 }: ResendInviteModalProps) => {
   const fetcher = useFetcher<{}>();
-  const isSingleUser = userIds.length === 1;
+  const isSingleUser = !allMatching && userIds.length === 1;
 
   return (
     <Modal
@@ -63,7 +81,11 @@ const ResendInviteModal = ({
               </Trans>
             )}
           </p>
-          <UserSelect value={userIds} readOnly isMulti />
+          {allMatching ? (
+            <AllMatchingUsersNote />
+          ) : (
+            <UserSelect value={userIds} readOnly isMulti />
+          )}
         </ModalBody>
         <ModalFooter>
           <HStack>
@@ -73,11 +95,22 @@ const ResendInviteModal = ({
             <ValidatedForm
               method="post"
               action={path.to.resendInvite}
-              validator={resendInviteValidator}
+              validator={
+                allMatching
+                  ? resendInviteAllMatchingValidator
+                  : resendInviteValidator
+              }
               onSubmit={onClose}
-              fetcher={fetcher}
+              fetcher={allMatching ? allMatchingFetcher : fetcher}
             >
-              {userIds.map((id, index) => (
+              {allMatching && (
+                <input
+                  type="hidden"
+                  name="allMatching"
+                  value={JSON.stringify(allMatchingRequest(allMatching))}
+                />
+              )}
+              {(allMatching ? [] : userIds).map((id, index) => (
                 <input
                   key={id}
                   type="hidden"

@@ -716,8 +716,7 @@ type SyncOperationReference = {
 };
 
 /**
- * The lookup key, built identically here and in `SyncActivity`'s
- * `getEntityReference`.
+ * The key of an operation in `getSyncOperationReadableIds`' result.
  */
 function syncOperationReadableIdKey(operation: {
   entityType: string;
@@ -858,4 +857,26 @@ export async function getSyncOperationReadableIds(
   );
 
   return Object.fromEntries(results.flat());
+}
+
+/**
+ * Each operation with its `reference` (`getSyncOperationReadableIds`), or
+ * null when it has none. Every page of the Sync Activity tab carries its own.
+ */
+export async function withSyncOperationReferences<
+  T extends SyncOperationReference
+>(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: T[]
+): Promise<(T & { reference: { label: string; recordId: string } | null })[]> {
+  const readableIds = await getSyncOperationReadableIds(
+    client,
+    companyId,
+    operations
+  );
+  return operations.map((operation) => ({
+    ...operation,
+    reference: readableIds[syncOperationReadableIdKey(operation)] ?? null
+  }));
 }

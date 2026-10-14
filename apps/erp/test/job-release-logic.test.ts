@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  bulkReleaseStartingPurchaseOrders,
   jobReleaseProblems,
   makeMethodsMissingOperations,
   outsideOperationsNeedingPurchaseOrders,
@@ -134,5 +135,35 @@ describe("jobReleaseProblems", () => {
       "choose a supplier for Heat Treat on the job",
       "Paint has no supplier"
     ]);
+  });
+});
+
+describe("bulkReleaseStartingPurchaseOrders", () => {
+  it("starts every supplier on a new PO and asks for a choice when Drafts exist", () => {
+    const result = bulkReleaseStartingPurchaseOrders([
+      { supplierId: "s1", draftPurchaseOrders: [] },
+      { supplierId: "s2", draftPurchaseOrders: [{ id: "po-a" }] }
+    ]);
+    expect(result.purchaseOrders).toEqual({ s1: "new", s2: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s2"]);
+  });
+
+  it("keeps the PO an earlier slice created, with no choice to make", () => {
+    // Slice 1 created po-1 for s1; slice 2 now reads it as a Draft of s1.
+    const result = bulkReleaseStartingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-1" }] }],
+      { s1: "po-1" }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "po-1" });
+    expect(result.suppliersToChoose.size).toBe(0);
+  });
+
+  it("ignores a carried PO that is no longer a Draft of the supplier", () => {
+    const result = bulkReleaseStartingPurchaseOrders(
+      [{ supplierId: "s1", draftPurchaseOrders: [{ id: "po-other" }] }],
+      { s1: "po-1" }
+    );
+    expect(result.purchaseOrders).toEqual({ s1: "new" });
+    expect([...result.suppliersToChoose]).toEqual(["s1"]);
   });
 });

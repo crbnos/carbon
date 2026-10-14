@@ -58,6 +58,8 @@ import { type ScopeOption, ScopePicker } from "./ScopePicker";
 type PriceListTableProps = {
   data: PriceListRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   scopeOptions: ScopeOption[];
   hasScope: boolean;
 };
@@ -74,7 +76,13 @@ const sourceVariant: Record<
 };
 
 const PriceListTable = memo(
-  ({ data, count, scopeOptions, hasScope }: PriceListTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    scopeOptions,
+    hasScope
+  }: PriceListTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const currencyFormatter = useCurrencyFormatter();
@@ -137,6 +145,8 @@ const PriceListTable = memo(
         {
           accessorKey: "partId",
           header: t`Item`,
+          // The price list computes these values per item; the database cannot sort by them.
+          enableSorting: false,
           cell: ({ row }) => (
             <HStack className="min-w-[240px] items-center" spacing={2}>
               <ItemThumbnail
@@ -170,6 +180,7 @@ const PriceListTable = memo(
         {
           accessorKey: "itemPostingGroupId",
           header: t`Item Group`,
+          enableSorting: false,
           cell: ({ row }) => {
             const id = row.original.itemPostingGroupId;
             if (!id) return null;
@@ -191,6 +202,7 @@ const PriceListTable = memo(
         {
           accessorKey: "basePrice",
           header: t`Base Price`,
+          enableSorting: false,
           cell: ({ row }) => (
             <span className="text-muted-foreground">
               {currencyFormatter.format(row.original.basePrice)}
@@ -208,6 +220,7 @@ const PriceListTable = memo(
           {
             accessorKey: "resolvedPrice",
             header: t`Resolved Price`,
+            enableSorting: false,
             cell: ({ row }) => (
               <HStack spacing={2} className="items-center">
                 <span>
@@ -232,6 +245,7 @@ const PriceListTable = memo(
           {
             accessorKey: "source",
             header: t`Source`,
+            enableSorting: false,
             cell: ({ row }) => (
               <Badge variant={sourceVariant[row.original.source] ?? "outline"}>
                 {row.original.source}
@@ -372,6 +386,11 @@ const PriceListTable = memo(
           data={data}
           columns={columns}
           count={count}
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "price-list"
+          }}
           primaryAction={
             <div className="flex items-center gap-2">
               <ScopePicker

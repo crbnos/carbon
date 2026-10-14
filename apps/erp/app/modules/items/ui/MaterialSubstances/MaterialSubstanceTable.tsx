@@ -31,10 +31,11 @@ import type { Substance } from "../../types";
 type MaterialSubstancesTableProps = {
   data: Substance[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MaterialSubstancesTable = memo(
-  ({ data, count }: MaterialSubstancesTableProps) => {
+  ({ data, count, nextCursor }: MaterialSubstancesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -153,6 +154,11 @@ const MaterialSubstancesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={{
+          dataKey: "materialSubstances",
+          nextCursor,
+          listKey: "material-substances"
+        }}
         columns={columns}
         count={count}
         importCSV={[

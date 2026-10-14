@@ -28,13 +28,22 @@ import {
   seedSsoIdentityForUser,
   uncoveredSsoDomainError
 } from "@carbon/ee/sso.server";
+import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { redirect } from "@carbon/utils";
+import { chunkArray, redirect } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupplierContact } from "~/modules/purchasing";
 import { getCustomerContact } from "~/modules/sales";
-import type { EmployeeInsert, InviteInsert, User } from "~/modules/users";
-import { getPermissionsByEmployeeType } from "~/modules/users";
+import type {
+  BulkUserAction,
+  EmployeeInsert,
+  InviteInsert,
+  User
+} from "~/modules/users";
+import {
+  canBulkActOnUser,
+  getPermissionsByEmployeeType
+} from "~/modules/users";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { insertEmployeeJob } from "../people/people.service";
@@ -1374,4 +1383,145 @@ async function setUserPermissions(
   await redis.del(getPermissionCacheKey(userId));
 
   return result;
+}
+
+// --- Bulk actions of the Employees table --------------------------------
+// The action routes call the `queue*` functions with the selected users; the
+// background bulk-action job (`~/utils/table-jobs.server`) first narrows each
+// chunk of matching users with `selectUsersForBulkAction`, then calls them.
+
+/** Queues the `user-admin` deactivate job for each user. */
+export async function queueUserDeactivations(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "deactivate" as const,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `user-admin` resend-invite job for each user. */
+export async function queueInviteResends(args: {
+  userIds: string[];
+  companyId: string;
+  location: string;
+  ip: string;
+}) {
+  await batchTrigger(
+    "user-admin",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        type: "resend" as const,
+        companyId: args.companyId,
+        location: args.location,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/** Queues the `update-permissions` job for each user. */
+export async function queuePermissionUpdates(args: {
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+  permissions: Record<
+    string,
+    { view: boolean; create: boolean; update: boolean; delete: boolean }
+  >;
+  addOnly: boolean;
+  ip?: string;
+}) {
+  await batchTrigger(
+    "update-permissions",
+    args.userIds.map((id) => ({
+      payload: {
+        id,
+        permissions: args.permissions,
+        addOnly: args.addOnly,
+        companyId: args.companyId,
+        actorId: args.actorId,
+        ip: args.ip
+      }
+    }))
+  );
+}
+
+/**
+ * The users a bulk action on the Employees table may act on, from the ids
+ * the background job read from the list: employees of the company only, by
+ * the table's own rule (`canBulkActOnUser`). Reads with the service role, as
+ * the action routes and the jobs they queue do, always scoped to the company.
+ */
+export async function selectUsersForBulkAction(args: {
+  action: BulkUserAction;
+  userIds: string[];
+  companyId: string;
+  actorId: string;
+}): Promise<{ allowed: string[]; skipped: number }> {
+  const serviceRole = getCarbonServiceRole();
+  const ids = [...new Set(args.userIds)];
+  const rows: {
+    id: string | null;
+    active: boolean | null;
+    email: string | null;
+  }[] = [];
+  for (const chunk of chunkArray(ids, 100)) {
+    const employees = await serviceRole
+      .from("employees")
+      .select("id, active, email")
+      .in("id", chunk)
+      .eq("companyId", args.companyId);
+    if (employees.error) {
+      logger.error("Failed to load the users of a bulk action", {
+        companyId: args.companyId,
+        error: employees.error
+      });
+      throw new Error("Failed to load the users of a bulk action");
+    }
+    rows.push(...employees.data);
+  }
+
+  let unrevokedInviteEmails = new Set<string>();
+  if (args.action === "invite") {
+    const emails = rows.flatMap((row) => (row.email ? [row.email] : []));
+    for (const chunk of chunkArray(emails, 100)) {
+      const invites = await serviceRole
+        .from("invite")
+        .select("email")
+        .in("email", chunk)
+        .eq("companyId", args.companyId)
+        .is("acceptedAt", null)
+        .is("revokedAt", null);
+      if (invites.error) {
+        logger.error("Failed to load the invites of a bulk action", {
+          companyId: args.companyId,
+          error: invites.error
+        });
+        throw new Error("Failed to load the invites of a bulk action");
+      }
+      unrevokedInviteEmails = new Set([
+        ...unrevokedInviteEmails,
+        ...invites.data.map((invite) => invite.email)
+      ]);
+    }
+  }
+
+  const context = { actorId: args.actorId, unrevokedInviteEmails };
+  const allowed = rows
+    .filter((row) => canBulkActOnUser(args.action, row, context))
+    .flatMap((row) => (row.id ? [row.id] : []));
+  return { allowed, skipped: ids.length - allowed.length };
 }

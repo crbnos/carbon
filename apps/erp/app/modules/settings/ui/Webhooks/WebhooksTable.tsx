@@ -58,9 +58,11 @@ import { useWebhookTables } from "./WebhookForm";
 type WebhooksTableProps = {
   data: Webhook[];
   count: number;
+  nextCursor: string | null;
 };
 
-const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
+const WebhooksTable = memo((props: WebhooksTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -208,6 +210,7 @@ const WebhooksTable = memo(({ data, count }: WebhooksTableProps) => {
     <>
       <Table<Webhook>
         data={data}
+        infinite={{ dataKey: "webhooks", nextCursor, listKey: "webhooks" }}
         columns={columns}
         count={count ?? 0}
         defaultColumnVisibility={{

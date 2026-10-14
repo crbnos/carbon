@@ -36,9 +36,11 @@ import type { Lease } from "./types";
 type LeasesTableProps = {
   data: Lease[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
+const LeasesTable = memo(({ data, count, nextCursor }: LeasesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -245,6 +247,11 @@ const LeasesTable = memo(({ data, count }: LeasesTableProps) => {
         count={count}
         columns={columns}
         data={data}
+        infinite={{
+          dataKey: "leases",
+          nextCursor,
+          listKey: "leases"
+        }}
         defaultColumnPinning={{
           left: ["leaseId"]
         }}

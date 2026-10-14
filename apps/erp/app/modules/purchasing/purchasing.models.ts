@@ -749,6 +749,13 @@ export function isPurchaseOrderLocked(
   );
 }
 
+/** The statuses the purchase orders table's bulk Delete acts on. */
+export function isPurchaseOrderBulkDeletable(
+  status: string | null | undefined
+): boolean {
+  return status === "Draft" || status === "Planned";
+}
+
 /**
  * The PO statuses planning may change: Apply on a planning action, the order
  * drawer's inline edits, and Cancel's line delete. An allowlist on purpose —

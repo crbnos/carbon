@@ -36,7 +36,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
 import { NewAction } from "~/components/New";
-import { usePermissions, useRealtime, useUrlParams } from "~/hooks";
+import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { useCustomers, usePeople } from "~/stores";
 import { path } from "~/utils/path";
@@ -75,10 +75,14 @@ function NewShipment() {
 type ShipmentsTableProps = {
   data: Shipment[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
-  useRealtime("shipment", `id=in.(${data.map((d) => d.id).join(",")})`);
+const ShipmentsTable = memo((props: ShipmentsTableProps) => {
+  const { data, count, nextCursor } = props;
+  // The route's `handle.realtime` follows every shipment of the company, so
+  // the rows of a later page refresh too.
 
   const [params] = useUrlParams();
   const { t } = useLingui();
@@ -407,6 +411,7 @@ const ShipmentsTable = memo(({ data, count }: ShipmentsTableProps) => {
     <>
       <Table<(typeof data)[number]>
         data={data}
+        infinite={{ dataKey: "shipments", nextCursor, listKey: "shipments" }}
         columns={columns}
         count={count}
         defaultColumnPinning={{

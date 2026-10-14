@@ -93,6 +93,10 @@ msgstr "{0, plural, one {# row links to data outside this company, so it can't b
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, one {# week} other {# weeks}}"
 
+#. placeholder {0}: allMatching.count
+msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+msgstr "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
@@ -112,6 +116,10 @@ msgstr "{0, plural, one {The planner treats this component as one rigid body —
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
+msgstr "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -251,6 +259,10 @@ msgstr "{0} of {1}"
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} of {1} posting accounts mapped"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {count} operations"
+msgstr "{0} of {count} operations"
 
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
@@ -441,6 +453,12 @@ msgstr "{count, plural, one {# course} other {# courses}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# row} other {# rows}}"
+
+msgid "{count, plural, one {about # row} other {about # rows}}"
+msgstr "{count, plural, one {about # row} other {about # rows}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 
@@ -455,6 +473,12 @@ msgstr "{count, plural, one {Released # batch} other {Released # batches}}"
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {Released # job} other {Released # jobs}}"
+
+msgid "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+msgstr "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+
+msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
+msgstr "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
 
 msgid "{count} of {total} units"
 msgstr "{count} of {total} units"
@@ -486,12 +510,6 @@ msgstr "{done} of {total} phases complete"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 
-msgid "{from}–{to} of {count}"
-msgstr "{from}–{to} of {count}"
-
-msgid "{from}–{to} of {count} operations"
-msgstr "{from}–{to} of {count} operations"
-
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {And # more record.} other {And # more records.}}"
 
@@ -514,6 +532,12 @@ msgstr "{linesCount, plural, one {# line} other {# lines}}"
 
 msgid "{load} in queue"
 msgstr "{load} in queue"
+
+msgid "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+
+msgid "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName} (the lease's)"
@@ -607,6 +631,9 @@ msgstr "{scopeCount} permissions"
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} lines"
 
+msgid "{selectedCount, plural, one {# selected} other {# selected}}"
+msgstr "{selectedCount, plural, one {# selected} other {# selected}}"
+
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} selected"
 
@@ -621,6 +648,9 @@ msgstr "{total} phases to go live"
 
 msgid "{totalCount} results"
 msgstr "{totalCount} results"
+
+msgid "{totalLoaded} of {count}"
+msgstr "{totalLoaded} of {count}"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# unit} other {# units}}"
@@ -2315,6 +2345,9 @@ msgstr "All Locations"
 #. placeholder {0}: tracked[0]?.itemReadableId ?? ""
 msgid "all make {0}"
 msgstr "all make {0}"
+
+msgid "All matching rows selected"
+msgstr "All matching rows selected"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
@@ -5959,6 +5992,9 @@ msgstr "Couldn't complete the Onshape Government connection"
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
+msgid "Couldn't load more rows"
+msgstr "Couldn't load more rows"
+
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 
@@ -7766,6 +7802,9 @@ msgstr "Dissolve batch"
 msgid "Dissolve Batch"
 msgstr "Dissolve Batch"
 
+msgid "Dissolve batches"
+msgstr "Dissolve batches"
+
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
@@ -9087,6 +9126,9 @@ msgstr "Every row was imported successfully."
 msgid "Every unit has a rate."
 msgstr "Every unit has a rate."
 
+msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
+msgstr "Every user that matches the list's filters. Users this action does not apply to are skipped."
+
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "Everyone must set up an authenticator app before opening this company."
 
@@ -9327,6 +9369,9 @@ msgstr "Export CSV"
 
 msgid "Export Lines to CSV"
 msgstr "Export Lines to CSV"
+
+msgid "Exported the first {exportedCount} rows."
+msgstr "Exported the first {exportedCount} rows."
 
 msgid "Extended Price"
 msgstr "Extended Price"
@@ -9884,6 +9929,12 @@ msgstr "Filter and sort"
 
 msgid "Filter by…"
 msgstr "Filter by…"
+
+msgid "Filter the list to {limit} rows or fewer"
+msgstr "Filter the list to {limit} rows or fewer"
+
+msgid "Filter the list to {rows} rows or fewer"
+msgstr "Filter the list to {rows} rows or fewer"
 
 msgid "Filters"
 msgstr "Filters"
@@ -12438,9 +12489,6 @@ msgstr "Live reloading"
 msgid "Load"
 msgstr "Load"
 
-msgid "Load more"
-msgstr "Load more"
-
 msgid "Load newer"
 msgstr "Load newer"
 
@@ -12464,6 +12512,9 @@ msgstr "Loading current quantity…"
 
 msgid "Loading item details..."
 msgstr "Loading item details..."
+
+msgid "Loading more rows"
+msgstr "Loading more rows"
 
 msgid "Loading returnable lines..."
 msgstr "Loading returnable lines..."
@@ -17877,6 +17928,9 @@ msgstr "Release Batch"
 msgid "Release batch {0}"
 msgstr "Release batch {0}"
 
+msgid "Release batches"
+msgstr "Release batches"
+
 msgid "Release change notice"
 msgstr "Release change notice"
 
@@ -18451,9 +18505,6 @@ msgstr "Result"
 msgid "Results"
 msgstr "Results"
 
-msgid "Results per page"
-msgstr "Results per page"
-
 msgid "Resume"
 msgstr "Resume"
 
@@ -18852,9 +18903,6 @@ msgstr "Routing"
 msgid "Routing Number (ABA)"
 msgstr "Routing Number (ABA)"
 
-msgid "rows"
-msgstr "rows"
-
 msgid "Rows left out of this backup"
 msgstr "Rows left out of this backup"
 
@@ -18929,6 +18977,9 @@ msgstr "Run this workflow now?"
 
 msgid "Running"
 msgstr "Running"
+
+msgid "Running in the background. We'll notify you when it's done."
+msgstr "Running in the background. We'll notify you when it's done."
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "Running inventory after each week's supply and demand — the line."
@@ -19704,6 +19755,9 @@ msgstr "Select Supplier Type"
 msgid "Select surfaces"
 msgstr "Select surfaces"
 
+msgid "Select the first {limit} rows"
+msgstr "Select the first {limit} rows"
+
 msgid "Select the groups that should complete this training"
 msgstr "Select the groups that should complete this training"
 
@@ -20351,11 +20405,11 @@ msgstr "Showing {0} of {totalCount} — refine your search"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "Showing {0} of {totalFiltered} — refine your search"
 
-msgid "Showing {firstShown}–{lastShown} of {total}"
-msgstr "Showing {firstShown}–{lastShown} of {total}"
-
 msgid "Showing in {parentCurrency}"
 msgstr "Showing in {parentCurrency}"
+
+msgid "Showing the first {limit} rows. Search or filter to see the rest."
+msgstr "Showing the first {limit} rows. Search or filter to see the rest."
 
 msgid "Showing the first 500 lines"
 msgstr "Showing the first 500 lines"
@@ -22000,6 +22054,9 @@ msgstr "The expected percentage of this item's output lost during production; pl
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 
+msgid "The export could not start. Try again."
+msgstr "The export could not start. Try again."
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "The file you uploaded and the mappings you've made will be lost."
 
@@ -22181,6 +22238,9 @@ msgstr "The lifecycle state of this customer — Active, Prospect, Inactive, etc
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
+
+msgid "The list changed while the export loaded. Try again."
+msgstr "The list changed while the export loaded. Try again."
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
@@ -24140,6 +24200,9 @@ msgstr "Update the purchase order quantities"
 msgid "Updated"
 msgstr "Updated"
 
+msgid "Updated {done}. Could not update {failed}: {message}"
+msgstr "Updated {done}. Could not update {failed}: {message}"
+
 msgid "Updated account"
 msgstr "Updated account"
 
@@ -25631,6 +25694,9 @@ msgstr "Your DNS provider may auto-append your domain to the record name — if 
 
 msgid "Your Email"
 msgstr "Your Email"
+
+msgid "Your export is being prepared. We'll notify you when it's ready."
+msgstr "Your export is being prepared. We'll notify you when it's ready."
 
 msgid "Your general-ledger accounts and their structure"
 msgstr "Your general-ledger accounts and their structure"

@@ -49,9 +49,11 @@ import QuoteStatus from "./QuoteStatus";
 type QuotesTableProps = {
   data: QuotationListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
+const QuotesTable = memo(({ data, count, nextCursor }: QuotesTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -351,6 +353,11 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
     <>
       <Table<QuotationListItem>
         count={count}
+        infinite={{
+          dataKey: "quotes",
+          nextCursor,
+          listKey: "quotes"
+        }}
         columns={columns}
         data={data}
         defaultColumnPinning={{

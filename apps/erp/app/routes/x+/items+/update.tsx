@@ -7,19 +7,19 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
-import type { InventoryItemType } from "~/modules/items";
-import { deriveItemMethodUpdate } from "~/modules/items";
+import { isItemBulkUpdateField } from "~/modules/items";
+import { bulkUpdateItems } from "~/modules/items/bulk-actions.server";
 import {
   getUnreleasedChangeOrderItems,
   unreleasedChangeOrderItemsMessage
 } from "~/modules/items/items.server";
 import {
-  cascadeItemTrackingType,
-  updateItemMethodAndSourcing,
   updateMaterialProperties,
   updateServiceName
 } from "~/modules/items/items.service";
 import { getDatabaseClient } from "~/services/database.server";
+import { bulkStartFormResponse } from "~/utils/table-jobs";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 const logger = getLogger("erp", "update");
 
@@ -37,43 +37,35 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
+  // The item tables' bulk Update: every matching row runs in the background,
+  // a selection runs here. Both go through bulkUpdateItems.
+  if (isItemBulkUpdateField(field)) {
+    const started = await startAllMatchingBulkAction(
+      formData.get("allMatching"),
+      { companyId, userId, actionKey: "items.update", params: { field, value } }
+    );
+    if (started) return bulkStartFormResponse(started);
+
+    // Each chunk of 100 commits on its own, so a failure can follow applied
+    // chunks: the counts let the table say what was done.
+    const result = await bulkUpdateItems(client, getDatabaseClient(), {
+      itemIds: items as string[],
+      field,
+      value,
+      companyId,
+      userId
+    });
+    return result.error
+      ? {
+          error: { message: result.error },
+          data: null,
+          done: result.done,
+          failed: result.failed
+        }
+      : { data: null, error: null };
+  }
+
   switch (field) {
-    case "itemTrackingType": {
-      const newType = value as InventoryItemType;
-
-      const result = await client
-        .from("item")
-        .update({
-          itemTrackingType: newType,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", items as string[])
-        .eq("companyId", companyId);
-
-      if (result.error) return result;
-
-      try {
-        await cascadeItemTrackingType(getDatabaseClient(), {
-          itemIds: items as string[],
-          companyId,
-          newType,
-          userId
-        });
-      } catch (err) {
-        logger.error("Failed to cascade item tracking type", {
-          field,
-          itemIds: items,
-          error: err
-        });
-        return {
-          error: { message: "Failed to cascade tracking flags" },
-          data: null
-        };
-      }
-
-      return result;
-    }
     case "name":
     case "description":
     case "mpn":
@@ -89,32 +81,6 @@ export async function action({ request }: ActionFunctionArgs) {
         )
         .in("id", items as string[])
         .eq("companyId", companyId);
-    case "replenishmentSystem":
-    case "defaultMethodType":
-    case "sourcingType": {
-      // These three fields are interlocked and each mirror down to the item's
-      // method materials. updateItemMethodAndSourcing applies the item write
-      // and the cascade in one transaction, so they can't be left half-applied.
-      const { itemUpdate, cascade } = deriveItemMethodUpdate(field, value);
-      try {
-        await updateItemMethodAndSourcing(getDatabaseClient(), {
-          itemIds: items as string[],
-          companyId,
-          userId,
-          itemUpdate,
-          cascade
-        });
-      } catch (err) {
-        logger.error("Failed to update item method/sourcing", {
-          field,
-          value,
-          itemIds: items,
-          error: err
-        });
-        return { error: { message: "Failed to update item" }, data: null };
-      }
-      return { data: null, error: null };
-    }
     case "gradeId":
     case "dimensionId":
     case "finishId":
@@ -195,60 +161,6 @@ export async function action({ request }: ActionFunctionArgs) {
         .eq("companyId", companyId);
     }
 
-    case "itemPostingGroupId":
-      // Update itemCost table for all selected items
-      const itemCostUpdates = await Promise.all(
-        (items as string[]).map(async (itemId) => {
-          const existingCost = await client
-            .from("itemCost")
-            .select("itemId")
-            .eq("itemId", itemId)
-            .single();
-
-          if (existingCost.data) {
-            // Update existing record
-            return client
-              .from("itemCost")
-              .update({
-                itemPostingGroupId: value || null,
-                updatedBy: userId,
-                updatedAt: new Date().toISOString()
-              })
-              .eq("itemId", itemId);
-          } else {
-            // Create new record
-            return client.from("itemCost").insert({
-              itemId,
-              itemPostingGroupId: value || null,
-              costingMethod: "Standard",
-              standardCost: 0,
-              unitCost: 0,
-              costIsAdjusted: false,
-              companyId,
-              createdBy: userId,
-              updatedBy: userId,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
-            });
-          }
-        })
-      );
-
-      // Check for any errors
-      const errors = itemCostUpdates.filter((result) => result.error);
-      if (errors.length > 0) {
-        return {
-          error: {
-            message: errors[0].error?.message || "Failed to update item costs"
-          },
-          data: null
-        };
-      }
-
-      return {
-        data: null,
-        error: null
-      };
     case "partId":
       if (items.length > 1) {
         return {

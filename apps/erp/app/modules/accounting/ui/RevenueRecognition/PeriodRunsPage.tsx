@@ -32,6 +32,8 @@ type PeriodRunsPageProps = {
   type: RunType;
   data: RevenueRecognitionRunListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   nextPeriodEnd: string;
   hasDraftBlocking: boolean;
 };
@@ -41,6 +43,7 @@ export default function PeriodRunsPage({
   type,
   data,
   count,
+  nextCursor,
   nextPeriodEnd,
   hasDraftBlocking
 }: PeriodRunsPageProps) {
@@ -66,6 +69,7 @@ export default function PeriodRunsPage({
         type={type}
         data={data}
         count={count}
+        nextCursor={nextCursor}
         primaryAction={
           permissions.can("create", "accounting") && (
             <TooltipProvider>

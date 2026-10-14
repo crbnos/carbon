@@ -15,9 +15,12 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+import { bulkDeleteJobs } from "~/modules/production/bulk-actions.server";
 import { isSalesOrderClosed } from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { bulkStartFormResponse } from "~/utils/table-jobs";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 const logger = getLogger("erp", "update");
 
@@ -35,11 +38,36 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
+  // The jobs table's bulk Delete. It deletes Draft, Planned, Due Today and
+  // Overdue jobs only (bulkDeleteJobs skips the rest), and needs the delete
+  // permission as well as update.
+  if (field === "delete") {
+    await requirePermissions(request, {
+      update: "production",
+      delete: "production"
+    });
+    const started = await startAllMatchingBulkAction(
+      formData.get("allMatching"),
+      { companyId, userId, actionKey: "jobs.delete", params: {} }
+    );
+    if (started) return bulkStartFormResponse(started);
+
+    const result = await bulkDeleteJobs({
+      client,
+      jobIds: ids as string[],
+      companyId
+    });
+    return result.error
+      ? { error: { message: result.error }, data: null }
+      : { data: null, error: null };
+  }
+
   // Per-ID locked check
   const jobs = await client
     .from("job")
     .select("id, status, quantity, fixedAssetClassId, fixedAssetId")
-    .in("id", ids as string[]);
+    .in("id", ids as string[])
+    .eq("companyId", companyId);
 
   const lockedError = requireUnlockedBulk({
     statuses: (jobs.data ?? []).map((j) => j.status),
@@ -50,13 +78,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  if (field === "delete") {
-    return await client
-      .from("job")
-      .delete()
-      .in("id", ids as string[])
-      .eq("companyId", companyId);
-  }
   if (typeof value !== "string" && value !== null) {
     return { error: { message: "Invalid form data" }, data: null };
   }

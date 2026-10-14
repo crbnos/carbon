@@ -19,9 +19,12 @@ import type { CustomerType } from "../../types";
 type CustomerTypesTableProps = {
   data: CustomerType[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
+const CustomerTypesTable = memo((props: CustomerTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -96,6 +99,11 @@ const CustomerTypesTable = memo(({ data, count }: CustomerTypesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "customer-types"
+      }}
       primaryAction={
         permissions.can("create", "sales") && (
           <New

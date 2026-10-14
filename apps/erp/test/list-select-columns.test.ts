@@ -34,66 +34,78 @@ type Target = {
   constant: string;
   service: string;
   table: string;
+  /** The list's `X_PAGING` constant in the same service file. */
+  paging: string;
 };
 
 const TARGETS: Target[] = [
   {
     label: "parts",
     constant: "PARTS_LIST_COLUMNS",
+    paging: "PARTS_PAGING",
     service: "app/modules/items/items.service.ts",
     table: "app/modules/items/ui/Parts/PartsTable.tsx"
   },
   {
     label: "materials",
     constant: "MATERIALS_LIST_COLUMNS",
+    paging: "MATERIALS_PAGING",
     service: "app/modules/items/items.service.ts",
     table: "app/modules/items/ui/Materials/MaterialsTable.tsx"
   },
   {
     label: "tools",
     constant: "TOOLS_LIST_COLUMNS",
+    paging: "TOOLS_PAGING",
     service: "app/modules/items/items.service.ts",
     table: "app/modules/items/ui/Tools/ToolsTable.tsx"
   },
   {
     label: "consumables",
     constant: "CONSUMABLES_LIST_COLUMNS",
+    paging: "CONSUMABLES_PAGING",
     service: "app/modules/items/items.service.ts",
     table: "app/modules/items/ui/Consumables/ConsumablesTable.tsx"
   },
   {
     label: "services",
     constant: "SERVICES_LIST_COLUMNS",
+    paging: "SERVICES_PAGING",
     service: "app/modules/items/items.service.ts",
     table: "app/modules/items/ui/Services/ServicesTable.tsx"
   },
   {
     label: "purchaseOrders",
     constant: "PURCHASE_ORDERS_LIST_COLUMNS",
+    paging: "PURCHASE_ORDERS_PAGING",
     service: "app/modules/purchasing/purchasing.service.ts",
     table: "app/modules/purchasing/ui/PurchaseOrder/PurchaseOrdersTable.tsx"
   },
   {
     label: "quotes",
     constant: "QUOTES_LIST_COLUMNS",
+    paging: "QUOTES_PAGING",
     service: "app/modules/sales/sales.service.ts",
     table: "app/modules/sales/ui/Quotes/QuotesTable.tsx"
   },
   {
     label: "salesOrders",
     constant: "SALES_ORDERS_LIST_COLUMNS",
+    paging: "SALES_ORDERS_PAGING",
     service: "app/modules/sales/sales.service.ts",
     table: "app/modules/sales/ui/SalesOrder/SalesOrdersTable.tsx"
   },
   {
     label: "purchaseInvoices",
     constant: "PURCHASE_INVOICES_LIST_COLUMNS",
+    paging: "PURCHASE_INVOICES_PAGING",
     service: "app/modules/invoicing/invoicing.service.ts",
     table: "app/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicesTable.tsx"
   },
   {
     label: "salesInvoices",
     constant: "SALES_INVOICES_LIST_COLUMNS",
+    paging: "SALES_INVOICES_PAGING",
     service: "app/modules/invoicing/invoicing.service.ts",
     table: "app/modules/invoicing/ui/SalesInvoice/SalesInvoicesTable.tsx"
   }
@@ -106,6 +118,35 @@ function selectedColumns(service: string, constant: string): string[] {
   );
   if (!match) throw new Error(`${constant} not found in ${service}`);
   return match[1].split(",");
+}
+
+// A list whose explicit select is checked for its sort columns only: its
+// table reads embedded records (`location.name`), not flat accessors.
+const SORT_ONLY_TARGETS: Target[] = [
+  {
+    label: "fixedAssets",
+    constant: "FIXED_ASSETS_LIST_COLUMNS",
+    paging: "FIXED_ASSETS_PAGING",
+    service: "app/modules/accounting/accounting.service.ts",
+    table: "app/modules/accounting/ui/FixedAssets/FixedAssetsTable.tsx"
+  }
+];
+
+/** The list-order columns of an `X_PAGING` constant (embedded-table sorts
+ *  excluded), and its id column. */
+function pagingColumns(service: string, paging: string): string[] {
+  const src = readFileSync(join(ROOT, service), "utf8");
+  const match = src.match(
+    new RegExp(`export const ${paging}: Paging = \\{([\\s\\S]*?)\\};`)
+  );
+  if (!match) throw new Error(`${paging} not found in ${service}`);
+  const sorts = [...match[1].matchAll(/\{([^{}]*)\}/g)]
+    .map((m) => m[1])
+    .filter((sort) => !sort.includes("foreignTable"))
+    .map((sort) => sort.match(/column:\s*"([^"]+)"/)?.[1])
+    .filter((column): column is string => Boolean(column));
+  const idColumn = match[1].match(/idColumn:\s*"([^"]+)"/)?.[1] ?? "id";
+  return [...sorts, idColumn];
 }
 
 function declaredAccessorKeys(table: string): string[] {
@@ -142,5 +183,32 @@ describe("list endpoints select every column their table exports", () => {
         `${label} renders custom columns but ${constant} omits customFields`
       ).toContain("customFields");
     }
+  });
+});
+
+// `toPage` reads each sort column and the id from the last row of a page. A
+// column missing from the select ends the list after page 1.
+describe("list endpoints select the columns their cursor reads", () => {
+  it.each([...TARGETS, ...SORT_ONLY_TARGETS])(
+    "$label",
+    ({ constant, service, paging }) => {
+      const selected = new Set(selectedColumns(service, constant));
+      const missing = pagingColumns(service, paging).filter(
+        (column) => !selected.has(column)
+      );
+      expect(
+        missing,
+        `${constant} is missing the sort or id column(s) of ${paging}`
+      ).toEqual([]);
+    }
+  );
+
+  it("selects createdAt for fixed assets, a sort the URL can ask for", () => {
+    expect(
+      selectedColumns(
+        "app/modules/accounting/accounting.service.ts",
+        "FIXED_ASSETS_LIST_COLUMNS"
+      )
+    ).toContain("createdAt");
   });
 });

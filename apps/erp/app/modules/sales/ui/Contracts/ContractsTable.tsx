@@ -40,9 +40,12 @@ import type { ContractListItem } from "./types";
 type ContractsTableProps = {
   data: ContractListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
+const ContractsTable = memo((props: ContractsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -242,6 +245,11 @@ const ContractsTable = memo(({ data, count }: ContractsTableProps) => {
     <>
       <Table<ContractListItem>
         count={count}
+        infinite={{
+          dataKey: "contracts",
+          nextCursor,
+          listKey: "contracts"
+        }}
         columns={columns}
         data={data}
         defaultColumnPinning={{

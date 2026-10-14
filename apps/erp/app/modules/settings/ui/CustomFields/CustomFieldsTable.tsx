@@ -27,9 +27,11 @@ import { path } from "~/utils/path";
 type CustomFieldsTableProps = {
   data: CustomFieldsTableType[];
   count: number;
+  nextCursor: string | null;
 };
 
-const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
+const CustomFieldsTable = memo((props: CustomFieldsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const navigate = useNavigate();
   const [params] = useUrlParams();
@@ -139,6 +141,12 @@ const CustomFieldsTable = memo(({ data, count }: CustomFieldsTableProps) => {
         data={data}
         columns={columns}
         count={count ?? 0}
+        infinite={{
+          dataKey: "tables",
+          nextCursor,
+          listKey: "custom-field-tables"
+        }}
+        getRowId={(row) => String(row.table)}
         title={t`Custom Fields`}
         renderContextMenu={renderContextMenu}
       />

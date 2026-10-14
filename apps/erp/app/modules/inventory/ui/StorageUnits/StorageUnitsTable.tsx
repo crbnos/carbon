@@ -61,6 +61,8 @@ type StorageUnit = {
 type StorageUnitsTableProps = {
   data: StorageUnit[];
   count: number;
+  // The roots read SINGLE_LOAD_LIMIT rows: more may match.
+  isTruncated?: boolean;
   locations: { id: string; name: string }[];
   locationId: string;
   storageTypes: { id: string; name: string }[];
@@ -72,6 +74,7 @@ const StorageUnitsTable = memo(
   ({
     data,
     count,
+    isTruncated,
     locations: serverLocations,
     locationId,
     storageTypes: serverStorageTypes,
@@ -648,6 +651,7 @@ const StorageUnitsTable = memo(
       <>
         <Table<StorageUnit>
           count={count}
+          isTruncated={isTruncated}
           columns={columns}
           data={displayRows}
           defaultColumnVisibility={defaultColumnVisibility}

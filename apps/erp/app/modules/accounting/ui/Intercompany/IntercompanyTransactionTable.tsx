@@ -36,11 +36,18 @@ type IntercompanyTransaction = {
 type IntercompanyTransactionTableProps = {
   data: IntercompanyTransaction[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   primaryAction?: ReactNode;
 };
 
 const IntercompanyTransactionTable = memo(
-  ({ data, count, primaryAction }: IntercompanyTransactionTableProps) => {
+  ({
+    data,
+    count,
+    primaryAction,
+    nextCursor
+  }: IntercompanyTransactionTableProps) => {
     const { t } = useLingui();
     // Currency varies per row, so the formatter is built per cell from the
     // app locale rather than a single-currency hook instance.
@@ -52,6 +59,8 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "sourceCompany",
           header: t`Source`,
           cell: ({ row }) => row.original.sourceCompany?.name ?? "—",
+          // An embedded company, not a column of the list: no server sort.
+          enableSorting: false,
           meta: {
             icon: <LuBuilding2 />
           }
@@ -60,6 +69,7 @@ const IntercompanyTransactionTable = memo(
           accessorKey: "targetCompany",
           header: t`Target`,
           cell: ({ row }) => row.original.targetCompany?.name ?? "—",
+          enableSorting: false,
           meta: {
             mobile: "P3",
             icon: <LuBuilding2 />
@@ -133,6 +143,11 @@ const IntercompanyTransactionTable = memo(
 
     return (
       <Table<IntercompanyTransaction>
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "intercompany-transactions"
+        }}
         data={data}
         columns={columns}
         count={count}

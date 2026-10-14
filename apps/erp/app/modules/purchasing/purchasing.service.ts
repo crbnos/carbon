@@ -36,7 +36,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
@@ -487,6 +487,10 @@ export async function finalizePurchasingRfq(
     .invoke("finalize-purchasing-rfq", input);
 }
 
+export const PURCHASE_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "purchaseOrderId", ascending: false }]
+};
+
 /** @mcp read */
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
@@ -499,7 +503,10 @@ export async function getPurchaseOrders(
 ) {
   let query = client
     .from("purchaseOrders")
-    .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
+    // Later pages (`cursor`) skip the count: the first page already has it.
+    .select(PURCHASE_ORDERS_LIST_COLUMNS, {
+      count: args.cursor ? undefined : LIST_COUNT
+    })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -512,9 +519,7 @@ export async function getPurchaseOrders(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "purchaseOrderId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_ORDERS_PAGING);
 
   return query;
 }
@@ -634,6 +639,16 @@ export async function getPurchasingDocumentsAssignedToMe(
   return merged;
 }
 
+// What the row's Order / Make button offers (the grid RPC's orderQuantity,
+// from MRP's open new-supply actions), then the part number so a page is
+// stable when many rows have nothing to order.
+export const PURCHASING_PLANNING_PAGING: Paging = {
+  defaultSorts: [
+    { column: "orderQuantity", ascending: false },
+    { column: "readableIdWithRevision", ascending: true }
+  ]
+};
+
 /** @mcp read */
 export async function getPurchasingPlanning(
   client: SupabaseClient<Database>,
@@ -669,7 +684,8 @@ export async function getPurchasingPlanning(
       action_assignees: args.actionAssignees
     },
     {
-      count: LIST_COUNT
+      // Later pages (`cursor`) skip the count: the first page already has it.
+      count: args.cursor ? undefined : LIST_COUNT
     }
   );
 
@@ -679,13 +695,7 @@ export async function getPurchasingPlanning(
     );
   }
 
-  // What the row's Order / Make button offers (the grid RPC's orderQuantity,
-  // from MRP's open new-supply actions), then the part number so a page is
-  // stable when many rows have nothing to order.
-  query = setGenericQueryFilters(query, args, [
-    { column: "orderQuantity", ascending: false },
-    { column: "readableIdWithRevision", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_PLANNING_PAGING);
 
   return query;
 }
@@ -971,6 +981,10 @@ export async function getSupplierQuoteByExternalLinkId(
     .single();
 }
 
+export const SUPPLIER_QUOTES_PAGING: Paging = {
+  defaultSorts: [{ column: "supplierQuoteId", ascending: false }]
+};
+
 /** @mcp read */
 export async function getSupplierQuotes(
   client: SupabaseClient<Database>,
@@ -981,7 +995,7 @@ export async function getSupplierQuotes(
 ) {
   let query = client
     .from("supplierQuotes")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -990,9 +1004,7 @@ export async function getSupplierQuotes(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "supplierQuoteId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIER_QUOTES_PAGING);
   return query;
 }
 
@@ -1110,6 +1122,10 @@ export async function getSupplierReportContacts(
   ]);
 }
 
+export const SUPPLIERS_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 /** @mcp read */
 export async function getSuppliers(
   client: SupabaseClient<Database>,
@@ -1123,7 +1139,7 @@ export async function getSuppliers(
   let query = client
     .from("suppliers")
     .select("*", {
-      count: LIST_COUNT
+      count: args.cursor ? undefined : LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1142,9 +1158,7 @@ export async function getSuppliers(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "name", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SUPPLIERS_PAGING);
   return query;
 }
 
@@ -1173,6 +1187,10 @@ export async function getSupplierType(
     .single();
 }
 
+export const SUPPLIER_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 /** @mcp read */
 export async function getSupplierTypes(
   client: SupabaseClient<Database>,
@@ -1181,7 +1199,7 @@ export async function getSupplierTypes(
 ) {
   let query = client
     .from("supplierType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1189,9 +1207,7 @@ export async function getSupplierTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, SUPPLIER_TYPES_PAGING);
   }
 
   return query;
@@ -3144,6 +3160,10 @@ export async function getPurchasingRFQ(
   return client.from("purchasingRfqs").select("*").eq("id", id).single();
 }
 
+export const PURCHASING_RFQS_PAGING: Paging = {
+  defaultSorts: [{ column: "rfqId", ascending: false }]
+};
+
 /** @mcp read */
 export async function getPurchasingRFQs(
   client: SupabaseClient<Database>,
@@ -3154,16 +3174,14 @@ export async function getPurchasingRFQs(
 ) {
   let query = client
     .from("purchasingRfqs")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.ilike("rfqId", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "rfqId", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASING_RFQS_PAGING);
   return query;
 }
 
@@ -3847,6 +3865,10 @@ export async function updatePurchaseOrderLineSchedule(
 
 // ─── Purchase Return Orders (Supplier Returns) ───
 
+export const PURCHASE_RETURN_ORDERS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /** @mcp read */
 export async function getPurchaseReturnOrders(
   client: SupabaseClient<Database>,
@@ -3859,7 +3881,7 @@ export async function getPurchaseReturnOrders(
 ) {
   let query = client
     .from("purchaseReturnOrders")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3879,9 +3901,7 @@ export async function getPurchaseReturnOrders(
     query = query.eq("supplierId", args.supplierId);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, PURCHASE_RETURN_ORDERS_PAGING);
   return query;
 }
 
@@ -5280,6 +5300,10 @@ function leaseRefusal(code: string, message: string) {
   };
 }
 
+export const LEASES_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 /** @mcp read */
 export async function getLeases(
   client: SupabaseClient<Database>,
@@ -5288,7 +5312,7 @@ export async function getLeases(
 ) {
   let query = client
     .from("leases")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -5297,9 +5321,7 @@ export async function getLeases(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "createdAt", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, LEASES_PAGING);
   return query;
 }
 

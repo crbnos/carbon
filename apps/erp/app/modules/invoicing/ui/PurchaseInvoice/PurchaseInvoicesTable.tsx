@@ -36,7 +36,7 @@ import {
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions, useRealtime } from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import type { PurchaseInvoiceListItem } from "~/modules/invoicing";
 import {
@@ -49,15 +49,12 @@ import { path } from "~/utils/path";
 type PurchaseInvoicesTableProps = {
   data: PurchaseInvoiceListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const PurchaseInvoicesTable = memo(
-  ({ data, count }: PurchaseInvoicesTableProps) => {
-    useRealtime(
-      "purchaseInvoice",
-      `id=in.(${data.map((d) => d.id).join(",")})`
-    );
-
+  ({ data, count, nextCursor }: PurchaseInvoicesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -351,6 +348,11 @@ const PurchaseInvoicesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={{
+            dataKey: "purchaseInvoices",
+            nextCursor,
+            listKey: "purchase-invoices"
+          }}
           defaultColumnPinning={{
             left: ["invoiceId"]
           }}

@@ -26,10 +26,12 @@ import { path } from "~/utils/path";
 type ShippingMethodsTableProps = {
   data: ShippingMethod[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const ShippingMethodsTable = memo(
-  ({ data, count }: ShippingMethodsTableProps) => {
+  ({ data, count, nextCursor }: ShippingMethodsTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
     const navigate = useNavigate();
@@ -141,6 +143,11 @@ const ShippingMethodsTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={{
+          dataKey: "shippingMethods",
+          nextCursor,
+          listKey: "shipping-methods"
+        }}
         columns={columns}
         count={count}
         primaryAction={

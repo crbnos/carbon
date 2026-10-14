@@ -19,10 +19,11 @@ import type { UnitOfMeasure } from "../../types";
 type UnitOfMeasuresTableProps = {
   data: UnitOfMeasure[];
   count: number;
+  nextCursor: string | null;
 };
 
 const UnitOfMeasuresTable = memo(
-  ({ data, count }: UnitOfMeasuresTableProps) => {
+  ({ data, count, nextCursor }: UnitOfMeasuresTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -95,6 +96,7 @@ const UnitOfMeasuresTable = memo(
     return (
       <Table<(typeof data)[number]>
         data={data}
+        infinite={{ dataKey: "data", nextCursor, listKey: "units-of-measure" }}
         columns={columns}
         count={count}
         importCSV={[

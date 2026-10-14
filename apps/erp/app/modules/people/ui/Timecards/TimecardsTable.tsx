@@ -48,6 +48,7 @@ type TimeCardEntry = {
 type TimecardsTableProps = {
   data: TimeCardEntry[];
   count: number;
+  nextCursor: string | null;
 };
 
 function formatTime(dateStr: string, locale: string) {
@@ -65,7 +66,8 @@ function formatDuration(clockInStr: string, clockOutStr: string | null) {
   return `${hours}h ${minutes}m`;
 }
 
-const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
+const TimecardsTable = memo((props: TimecardsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -267,6 +269,7 @@ const TimecardsTable = memo(({ data, count }: TimecardsTableProps) => {
   return (
     <Table<TimeCardEntry>
       data={data}
+      infinite={{ dataKey: "entries", nextCursor, listKey: "timecards" }}
       count={count}
       columns={columns}
       primaryAction={

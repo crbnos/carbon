@@ -57,6 +57,16 @@ export enum NotificationEvent {
   SalesRuleViolation = "sales-rule-violation",
   StockTransferAssignment = "stock-transfer-assignment",
   SuggestionResponse = "suggestion-response",
+  // A background table export finished, failed, or was refused. Payload-carried
+  // like IntegrationSync: the text arrives as `title` / `body`. documentId is the
+  // export id (the file is `{companyId}/exports/{userId}/{exportId}.csv` in
+  // temp-staging, served to that user only by the ERP's export route), or
+  // `failed:{exportId}` when there is no file.
+  TableExport = "table-export",
+  // A background bulk action finished, failed, or was refused. Payload-carried
+  // like TableExport: the outcome and the counts arrive as `title` / `body`.
+  // documentId is the run id, or `failed:{runId}`; neither is a record.
+  TableBulkAction = "table-bulk-action",
   // Weekly digest reminder for outstanding trainings (documentIds-shaped).
   TrainingReminder = "training-reminder",
   SupplierQuoteAssignment = "supplier-quote-assignment",
@@ -230,6 +240,8 @@ export function getNotificationTopic(
     // exhaustive Record<NotificationTopic, string>.
     case NotificationEvent.Workflow:
     case NotificationEvent.IntegrationSync:
+    case NotificationEvent.TableExport:
+    case NotificationEvent.TableBulkAction:
       return NotificationTopic.General;
     default:
       return NotificationTopic.General;
@@ -316,6 +328,10 @@ export function getNotificationEmailHeading(event: NotificationEvent): string {
       return "Workflow";
     case NotificationEvent.IntegrationSync:
       return "Accounting sync needs attention";
+    case NotificationEvent.TableExport:
+      return "Your export";
+    case NotificationEvent.TableBulkAction:
+      return "Your bulk action";
     case NotificationEvent.RecurringInvoicing:
       return "Recurring invoicing summary";
     case NotificationEvent.LeaseCriticalDate:
@@ -358,6 +374,10 @@ export function getNotificationEmailCtaLabel(event: NotificationEvent): string {
       return "View details";
     case NotificationEvent.IntegrationSync:
       return "View sync activity";
+    case NotificationEvent.TableExport:
+      return "Download export";
+    case NotificationEvent.TableBulkAction:
+      return "View details";
     case NotificationEvent.RecurringInvoicing:
       return "Review invoices";
     case NotificationEvent.LeaseCriticalDate:

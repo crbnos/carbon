@@ -42,10 +42,12 @@ import type { PurchaseReturnOrderListItem } from "./types";
 type PurchaseReturnOrdersTableProps = {
   data: PurchaseReturnOrderListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const PurchaseReturnOrdersTable = memo(
-  ({ data, count }: PurchaseReturnOrdersTableProps) => {
+  ({ data, count, nextCursor }: PurchaseReturnOrdersTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -232,6 +234,11 @@ const PurchaseReturnOrdersTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={{
+            dataKey: "purchaseReturnOrders",
+            nextCursor,
+            listKey: "purchase-return-orders"
+          }}
           defaultColumnPinning={{
             left: ["purchaseReturnOrderId"]
           }}

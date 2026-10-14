@@ -25,10 +25,11 @@ import type { RequiredAction } from "../../types";
 type RequiredActionsTableProps = {
   data: RequiredAction[];
   count: number;
+  nextCursor: string | null;
 };
 
 const RequiredActionsTable = memo(
-  ({ data, count }: RequiredActionsTableProps) => {
+  ({ data, count, nextCursor }: RequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -103,6 +104,11 @@ const RequiredActionsTable = memo(
       <>
         <Table<RequiredAction>
           data={data}
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "required-actions"
+          }}
           columns={columns}
           count={count}
           primaryAction={

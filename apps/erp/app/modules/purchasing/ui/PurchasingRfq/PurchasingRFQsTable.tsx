@@ -37,10 +37,12 @@ import { PurchasingRFQStatus } from ".";
 type PurchasingRFQsTableProps = {
   data: PurchasingRFQ[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const PurchasingRFQsTable = memo(
-  ({ data, count }: PurchasingRFQsTableProps) => {
+  ({ data, count, nextCursor }: PurchasingRFQsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -280,6 +282,11 @@ const PurchasingRFQsTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={{
+            dataKey: "rfqs",
+            nextCursor,
+            listKey: "purchasing-rfqs"
+          }}
           defaultColumnPinning={{
             left: ["rfqId"]
           }}

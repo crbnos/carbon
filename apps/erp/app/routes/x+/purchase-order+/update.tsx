@@ -7,7 +7,10 @@ import { unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { getExchangeRate } from "~/modules/accounting";
 import { isPurchaseOrderLocked } from "~/modules/purchasing";
+import { bulkDeletePurchaseOrders } from "~/modules/purchasing/purchasing.server";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
+import { bulkStartFormResponse } from "~/utils/table-jobs";
+import { startAllMatchingBulkAction } from "~/utils/table-jobs.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -23,11 +26,27 @@ export async function action({ request }: ActionFunctionArgs) {
     return { error: { message: "Invalid form data" }, data: null };
   }
 
+  // The purchase orders table's bulk Delete. It deletes the company's Draft
+  // and Planned orders only (bulkDeletePurchaseOrders skips the rest), and
+  // needs the delete permission as well as update, as the table does.
   if (field === "delete") {
-    return await client
-      .from("purchaseOrder")
-      .delete()
-      .in("id", ids as string[]);
+    await requirePermissions(request, {
+      update: "purchasing",
+      delete: "purchasing"
+    });
+    const started = await startAllMatchingBulkAction(
+      formData.get("allMatching"),
+      { companyId, userId, actionKey: "purchase-orders.delete", params: {} }
+    );
+    if (started) return bulkStartFormResponse(started);
+
+    const result = await bulkDeletePurchaseOrders(client, {
+      purchaseOrderIds: ids as string[],
+      companyId
+    });
+    return result.error
+      ? { error: { message: result.error }, data: null }
+      : { data: null, error: null };
   }
 
   // Check if any of the POs are locked except for deliveryDate

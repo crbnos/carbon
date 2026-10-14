@@ -34,10 +34,12 @@ import type { Shift } from "../../types";
 type ShiftsTableProps = {
   data: Shift[];
   count: number;
+  nextCursor: string | null;
   locations: Partial<ShiftLocation>[];
 };
 
-const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
+const ShiftsTable = memo((props: ShiftsTableProps) => {
+  const { data, count, nextCursor, locations } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
@@ -224,6 +226,7 @@ const ShiftsTable = memo(({ data, count, locations }: ShiftsTableProps) => {
   return (
     <Table<Shift>
       data={data}
+      infinite={{ dataKey: "shifts", nextCursor, listKey: "shifts" }}
       count={count}
       columns={columns}
       primaryAction={

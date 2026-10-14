@@ -8,7 +8,7 @@ import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDocumentType } from "../shared/shared.service";
@@ -63,6 +63,19 @@ export async function getDocument(
   return client.from("documents").select("*").eq("id", documentId).single();
 }
 
+export const DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [{ column: "favorite", ascending: false }]
+};
+
+// The "Recent" view: the last activity first. It is a default sort, so the
+// cursor follows it and a sort the user picks replaces it.
+export const RECENT_DOCUMENTS_PAGING: Paging = {
+  defaultSorts: [
+    { column: "lastActivityAt", ascending: false },
+    ...DOCUMENTS_PAGING.defaultSorts
+  ]
+};
+
 /** @mcp read */
 export async function getDocuments(
   client: SupabaseClient<Database>,
@@ -78,7 +91,7 @@ export async function getDocuments(
   let query = client
     .from("documents")
     .select("*", {
-      count: LIST_COUNT
+      count: args.cursor ? undefined : LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", args.active);
@@ -93,13 +106,11 @@ export async function getDocuments(
     query = query.eq("favorite", true);
   }
 
-  if (args.recent) {
-    query = query.order("lastActivityAt", { ascending: false });
-  }
-
-  query = setGenericQueryFilters(query, args, [
-    { column: "favorite", ascending: false }
-  ]);
+  query = setGenericQueryFilters(
+    query,
+    args,
+    args.recent ? RECENT_DOCUMENTS_PAGING : DOCUMENTS_PAGING
+  );
 
   return query;
 }

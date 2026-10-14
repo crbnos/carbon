@@ -26,7 +26,7 @@ import {
   toast,
   useDisclosure
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type {
   Column,
   ColumnOrderState,
@@ -53,12 +53,11 @@ import { useSavedViews } from "~/hooks/useSavedViews";
 import type { fieldMappings } from "~/modules/shared/imports.models";
 import type { action as savedViewAction } from "~/routes/x+/shared+/views";
 import { path } from "~/utils/path";
+import { EXACT_COUNT_LIMIT } from "../infiniteRowsStore";
 import Columns from "./Columns";
-import Download from "./Download";
+import Download, { type InfiniteExport } from "./Download";
 import { ActiveFilters, Filter } from "./Filter";
 import type { ColumnFilter } from "./Filter/types";
-import type { PaginationProps } from "./Pagination";
-import { PaginationButtons } from "./Pagination";
 import Sort from "./Sort";
 
 type HeaderProps<T> = {
@@ -72,7 +71,11 @@ type HeaderProps<T> = {
   columnVisibility: Record<string, boolean>;
   columns: Column<T, unknown>[];
   compact?: boolean;
+  // The number of matching rows. Exact below 1,000; above, an estimate.
+  count: number;
   data: object[];
+  // Infinite lists: the export loads the rest first, or hands it to a job.
+  infiniteExport?: InfiniteExport;
   editMode: boolean;
   filters: ColumnFilter[];
   // True when the table has no rows and no active filter/sort/search — hides the
@@ -86,8 +89,10 @@ type HeaderProps<T> = {
   // Extra controls in the toolbar row next to search/filter (e.g. quick
   // filter toggles that write their own `filter` URL params).
   headerActions?: ReactNode;
-  pagination: PaginationProps;
   selectedRows: T[];
+  // The selection's size: the matching count when every matching row is
+  // selected, else `selectedRows.length`.
+  selectedCount?: number;
   setColumnOrder: (newOrder: ColumnOrderState) => void;
   setEditMode: (editMode: boolean) => void;
   table?: string;
@@ -119,15 +124,17 @@ const TableHeader = <T extends object>({
   columnPinning,
   columnVisibility,
   columns,
+  count,
   data,
+  infiniteExport,
   editMode,
   filters,
   isEmpty,
   importCSV,
   primaryAction,
   headerActions,
-  pagination,
   selectedRows,
+  selectedCount,
   renderActions,
   setColumnOrder,
   setEditMode,
@@ -335,7 +342,7 @@ const TableHeader = <T extends object>({
                       variant="secondary"
                     >
                       <Badge variant="secondary">
-                        <span>{selectedRows.length}</span>
+                        <span>{selectedCount ?? selectedRows.length}</span>
                       </Badge>
                     </Button>
                   </DropdownMenuTrigger>
@@ -391,6 +398,7 @@ const TableHeader = <T extends object>({
             {withCsvExport && (
               <Download
                 data={data}
+                infinite={infiniteExport}
                 columnAccessors={columnAccessors}
                 exportValues={exportValues}
                 exportOnlyColumns={exportOnlyColumns}
@@ -399,10 +407,7 @@ const TableHeader = <T extends object>({
               />
             )}
 
-            {withPagination &&
-              (pagination.canNextPage || pagination.canPreviousPage) && (
-                <PaginationButtons {...pagination} condensed />
-              )}
+            {withPagination && count > 0 && <RowCount count={count} />}
 
             {withInlineEditing &&
               !forceEditMode &&
@@ -451,5 +456,19 @@ const TableHeader = <T extends object>({
     </div>
   );
 };
+
+// The list's total in place of the pager. `LIST_COUNT` is an estimate from
+// 1,000 rows up, so the number says "about" there.
+function RowCount({ count }: { count: number }) {
+  return (
+    <span className="whitespace-nowrap px-2 text-sm text-muted-foreground tabular-nums">
+      {count < EXACT_COUNT_LIMIT ? (
+        <Plural value={count} one="# row" other="# rows" />
+      ) : (
+        <Plural value={count} one="about # row" other="about # rows" />
+      )}
+    </span>
+  );
+}
 
 export default TableHeader;

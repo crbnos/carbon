@@ -7,9 +7,13 @@ import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
-import type { Filter, GenericQueryFilters } from "~/utils/query";
+import type { Filter, GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { workflowValidator } from "./workflows.models";
+
+export const WORKFLOWS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
 
 export async function getWorkflows(
   client: SupabaseClient<Database>,
@@ -20,7 +24,7 @@ export async function getWorkflows(
     .from("workflow")
     .select(
       "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
-      { count: LIST_COUNT }
+      { count: args?.cursor ? undefined : LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -47,9 +51,11 @@ export async function getWorkflows(
       }
     }
 
-    query = setGenericQueryFilters(query, { ...args, filters: columnFilters }, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(
+      query,
+      { ...args, filters: columnFilters },
+      WORKFLOWS_PAGING
+    );
   }
 
   return query;
@@ -287,6 +293,10 @@ export async function deleteWorkflow(
     .eq("companyId", companyId);
 }
 
+export const WORKFLOW_RUNS_PAGING: Paging = {
+  defaultSorts: [{ column: "createdAt", ascending: false }]
+};
+
 export async function getWorkflowRuns(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -298,14 +308,12 @@ export async function getWorkflowRuns(
       "id, workflowId, workflowVersionId, eventId, sourceEventId, triggerTable, triggerRecordId, ownerId, status, statusReason, isTest, rootRunId, causedByRunId, depth, path, startedAt, completedAt, durationMs, error, createdAt, workflow(name)",
       // Estimated, not exact: this table grows with event volume, and `exact` is a
       // COUNT(*) over the company's whole retained history on every page load.
-      { count: LIST_COUNT }
+      { count: args?.cursor ? undefined : LIST_COUNT }
     )
     .eq("companyId", companyId);
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "createdAt", ascending: false }
-    ]);
+    query = setGenericQueryFilters(query, args, WORKFLOW_RUNS_PAGING);
   }
 
   return query;

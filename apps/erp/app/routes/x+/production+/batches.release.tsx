@@ -4,22 +4,26 @@
 
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { z } from "zod";
-import {
-  notifyScheduleInputsChanged,
-  releaseJobOperationBatch
-} from "~/modules/production";
-import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import { bulkReleaseBatches } from "~/modules/production/bulk-actions.server";
 import { getDatabaseClient } from "~/services/database.server";
+import { fitsOneRequest } from "~/utils/table-jobs";
+import {
+  startAllMatchingBulkAction,
+  startSelectedBulkAction
+} from "~/utils/table-jobs.server";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
 // a batch the server fn refuses (no members, already recorded production) is
 // reported in `failed` while the rest still release. Only Planned batches are
-// released — the caller filters, and any non-Planned id is refused here too so a
-// stale selection can't flip an Active/Completing batch. Fetcher-driven; the
-// table toasts the summary and the loader revalidates.
+// released — the caller filters, and bulkReleaseBatches skips any other status
+// too, so a stale selection can't flip an Active/Completing batch.
+// `{ allMatching: { listKey, search } }` in place of `batchIds` releases every
+// matching batch in the background job instead, up to 2,000 batches. More
+// than 10 selected batches also go to the background job: each releases its
+// member jobs with MRP, and one request must end before the 600 s cutoff.
+// Fetcher-driven; the table toasts the summary and the loader revalidates.
 const bodySchema = z.object({ batchIds: z.array(z.string()) });
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -30,7 +34,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // A body that is not JSON, or not the shape the table sends, is a plain
   // refusal rather than a 500.
-  const body = bodySchema.safeParse(await request.json().catch(() => null));
+  const json = await request.json().catch(() => null);
+  const started = await startAllMatchingBulkAction(json?.allMatching, {
+    companyId,
+    userId,
+    actionKey: "batches.release",
+    params: {}
+  });
+  if (started) return started;
+
+  const body = bodySchema.safeParse(json);
   if (!body.success) {
     return { success: false, message: "Invalid request" };
   }
@@ -38,82 +51,29 @@ export async function action({ request }: ActionFunctionArgs) {
   if (ids.length === 0) {
     return { success: false, message: "No batches selected" };
   }
-
-  // Resolve readable ids + status + work center up front: failures name the
-  // batch (not its nanoid), we only release Planned batches, and the notify
-  // needs the work center.
-  const rows = await client
-    .from("jobOperationBatch")
-    .select("id, readableId, status, workCenterId")
-    .in("id", ids)
-    .eq("companyId", companyId);
-  if (rows.error) {
-    return { success: false, message: "Failed to load the selected batches" };
-  }
-  const batchById = new Map((rows.data ?? []).map((r) => [r.id, r] as const));
-
-  let released = 0;
-  const failed: { readableId: string; message: string }[] = [];
-  for (const batchId of ids) {
-    const batch = batchById.get(batchId);
-    if (!batch || batch.status !== "Planned") {
-      // Silently skip a stale selection — nothing was released, nothing failed.
-      continue;
-    }
-
-    const members = await client
-      .from("jobOperation")
-      .select("jobId")
-      .eq("jobOperationBatchId", batchId)
-      .eq("companyId", companyId);
-    if (members.error) {
-      failed.push({
-        readableId: batch.readableId,
-        message: "Failed to load the batch members"
-      });
-      continue;
-    }
-
-    // Member jobs release first, through the job page's release path. With no
-    // dialog here, a batch with an invalid job or a PO choice to make is
-    // skipped and named — the planner releases it from its drawer.
-    const releasedJobs = await releaseBatchMemberJobs({
-      client,
-      db: getDatabaseClient(),
-      jobIds: (members.data ?? []).map((op) => op.jobId),
+  if (!fitsOneRequest("batches.release", ids.length)) {
+    return startSelectedBulkAction({
       companyId,
-      userId
+      userId,
+      actionKey: "batches.release",
+      params: {},
+      listKey: "operation-batches",
+      ids
     });
-    if (releasedJobs.error) {
-      failed.push({
-        readableId: batch.readableId,
-        message: releasedJobs.error
-      });
-      continue;
-    }
-
-    const result = await releaseJobOperationBatch(client, getDatabaseClient(), {
-      batchId,
-      companyId,
-      userId
-    });
-    if (result.error) {
-      failed.push({
-        readableId: batch.readableId,
-        message: getErrorMessage(result.error, "Failed to release")
-      });
-      continue;
-    }
-
-    // After the status flip is persisted — the wave must see the new state.
-    await notifyScheduleInputsChanged(
-      companyId,
-      "work-center",
-      "batch released",
-      batch.workCenterId ?? undefined
-    );
-    released += 1;
   }
 
-  return { success: true, released, failed };
+  const result = await bulkReleaseBatches({
+    client,
+    db: getDatabaseClient(),
+    batchIds: ids,
+    companyId,
+    userId
+  });
+  if (!result.success) return result;
+  return {
+    success: true,
+    released: result.done,
+    failed: result.failed,
+    skipped: result.skipped
+  };
 }

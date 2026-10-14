@@ -47,10 +47,12 @@ import {
 type SupplierQuotesTableProps = {
   data: SupplierQuote[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const SupplierQuotesTable = memo(
-  ({ data, count }: SupplierQuotesTableProps) => {
+  ({ data, count, nextCursor }: SupplierQuotesTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -272,6 +274,11 @@ const SupplierQuotesTable = memo(
           count={count}
           columns={columns}
           data={data}
+          infinite={{
+            dataKey: "quotes",
+            nextCursor,
+            listKey: "supplier-quotes"
+          }}
           defaultColumnPinning={{
             left: ["supplierQuoteId"]
           }}

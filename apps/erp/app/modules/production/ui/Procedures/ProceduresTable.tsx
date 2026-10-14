@@ -42,9 +42,12 @@ type ProceduresTableProps = {
   data: Procedures[];
   tags: { name: string }[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
+const ProceduresTable = memo((props: ProceduresTableProps) => {
+  const { data, tags, count, nextCursor } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -231,6 +234,11 @@ const ProceduresTable = memo(({ data, tags, count }: ProceduresTableProps) => {
         data={data}
         columns={columns}
         count={count}
+        infinite={{
+          dataKey: "procedures",
+          nextCursor,
+          listKey: "procedures"
+        }}
         primaryAction={
           permissions.can("create", "production") && (
             <New label={t`Procedure`} to={path.to.newProcedure} />

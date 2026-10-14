@@ -93,6 +93,10 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。�
 msgid "{0, plural, one {# week} other {# weeks}}"
 msgstr "{0, plural, other {#周}}"
 
+#. placeholder {0}: allMatching.count
+msgid "{0, plural, one {All matching rows selected (about #)} other {All matching rows selected (about #)}}"
+msgstr "{0, plural, one {已选择全部匹配行（约 #）} other {已选择全部匹配行（约 #）}}"
+
 #. placeholder {0}: check.count
 msgid "{0, plural, one {Complete or cancel the # job that took costs before Carbon recorded them.} other {Complete or cancel the # jobs that took costs before Carbon recorded them.}}"
 msgstr "{0, plural, one {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。} other {完成或取消在 Carbon 记录成本之前已产生成本的 # 个工单。}}"
@@ -112,6 +116,10 @@ msgstr "{0, plural, one {计划员将此组件视为一个刚体 — 说明中�
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
+
+#. placeholder {0}: rows.length
+msgid "{0, plural, one {Total of # loaded row} other {Total of # loaded rows}}"
+msgstr "{0, plural, one {共 # 行已加载} other {共 # 行已加载}}"
 
 #. placeholder {0}: rate.customerType.name
 msgid "{0} (type)"
@@ -251,6 +259,10 @@ msgstr "{0}/{1}"
 #. placeholder {1}: mappingReadiness.required
 msgid "{0} of {1} posting accounts mapped"
 msgstr "{0} / {1} 个过账科目已映射"
+
+#. placeholder {0}: rows.length
+msgid "{0} of {count} operations"
+msgstr "{0} / 共 {count} 道工序"
 
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
@@ -441,6 +453,12 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 msgid "{count, plural, one {# More After {fenceLabel}} other {# More After {fenceLabel}}}"
 msgstr "{count, plural, other {{fenceLabel}之后还有 # 个}}"
 
+msgid "{count, plural, one {# row} other {# rows}}"
+msgstr "{count, plural, one {# 行} other {# 行}}"
+
+msgid "{count, plural, one {about # row} other {about # rows}}"
+msgstr "{count, plural, one {约 # 行} other {约 # 行}}"
+
 msgid "{count, plural, one {Dissolve # batch} other {Dissolve # batches}}"
 msgstr "{count, plural, one {关闭 # 生产批次} other {关闭 # 生产批次}}"
 
@@ -455,6 +473,12 @@ msgstr "{count, plural, one {已发布 # 生产批次} other {已发布 # 生产
 
 msgid "{count, plural, one {Released # job} other {Released # jobs}}"
 msgstr "{count, plural, one {已下达 # 工单} other {已下达 # 工单}}"
+
+msgid "{count, plural, one {Select all # matching row} other {Select all # matching rows}}"
+msgstr "{count, plural, one {选择全部 # 行匹配项} other {选择全部 # 行匹配项}}"
+
+msgid "{count, plural, one {Select all matching rows (about #)} other {Select all matching rows (about #)}}"
+msgstr "{count, plural, one {选择全部匹配行（约 #）} other {选择全部匹配行（约 #）}}"
 
 msgid "{count} of {total} units"
 msgstr "{count} / {total} 件"
@@ -486,12 +510,6 @@ msgstr "{done}个/{total}个阶段已完成"
 msgid "{excluded, plural, one {# row excluded} other {# rows excluded}}"
 msgstr "{excluded, plural, one {# 行已排除} other {# 行已排除}}"
 
-msgid "{from}–{to} of {count}"
-msgstr "{from}–{to} 共 {count}"
-
-msgid "{from}–{to} of {count} operations"
-msgstr "第{from}–{to}个工序（共{count}个）"
-
 msgid "{hidden, plural, one {And # more record.} other {And # more records.}}"
 msgstr "{hidden, plural, one {还有 # 条记录。} other {还有 # 条记录。}}"
 
@@ -514,6 +532,12 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 
 msgid "{load} in queue"
 msgstr "{load} 在队列中"
+
+msgid "{loadedLabel} of {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} / {total, plural, one {# 行} other {# 行}}"
+
+msgid "{loadedLabel} of about {total, plural, one {# row} other {# rows}}"
+msgstr "{loadedLabel} / 约 {total, plural, one {# 行} other {# 行}}"
 
 msgid "{locationName} (the lease's)"
 msgstr "{locationName}（该租赁的地点）"
@@ -607,6 +631,9 @@ msgstr "{scopeCount} 个权限"
 msgid "{sectionLineCount} lines"
 msgstr "{sectionLineCount} 行"
 
+msgid "{selectedCount, plural, one {# selected} other {# selected}}"
+msgstr "{selectedCount, plural, one {已选择 #} other {已选择 #}}"
+
 msgid "{selectedCount} selected"
 msgstr "{selectedCount} 已选择"
 
@@ -621,6 +648,9 @@ msgstr "{total}个阶段即可正式运行"
 
 msgid "{totalCount} results"
 msgstr "{totalCount} 个结果"
+
+msgid "{totalLoaded} of {count}"
+msgstr "{totalLoaded} / {count}"
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
@@ -2315,6 +2345,9 @@ msgstr "所有位置"
 #. placeholder {0}: tracked[0]?.itemReadableId ?? ""
 msgid "all make {0}"
 msgstr "全部自制 {0}"
+
+msgid "All matching rows selected"
+msgstr "已选择全部匹配行"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
@@ -5959,6 +5992,9 @@ msgstr "无法完成 Onshape Government 连接"
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
+msgid "Couldn't load more rows"
+msgstr "无法加载更多行"
+
 msgid "Couldn't load related documents. Refresh before creating a new one to avoid duplicates."
 msgstr "无法加载相关文档。创建新文档前请刷新以避免重复。"
 
@@ -7766,6 +7802,9 @@ msgstr "解散批次"
 msgid "Dissolve Batch"
 msgstr "解散批次"
 
+msgid "Dissolve batches"
+msgstr "解散生产批次"
+
 #. placeholder {0}: batch.readableId
 msgid "Dissolving {0} returns its {memberCount} operations to the schedule un-run and deletes the batch. A batch with recorded production must be completed instead."
 msgstr "解散{0}会将其{memberCount}个操作返回到未运行的计划中，并删除该批次。包含已记录生产的批次必须改为完成。"
@@ -9087,6 +9126,9 @@ msgstr "每一行都已成功导入。"
 msgid "Every unit has a rate."
 msgstr "每件都有费率。"
 
+msgid "Every user that matches the list's filters. Users this action does not apply to are skipped."
+msgstr "符合列表筛选条件的每个用户。本操作不适用的用户将被跳过。"
+
 msgid "Everyone must set up an authenticator app before opening this company."
 msgstr "每个人在打开此公司之前都必须设置身份验证器应用程序。"
 
@@ -9327,6 +9369,9 @@ msgstr "导出 CSV"
 
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
+
+msgid "Exported the first {exportedCount} rows."
+msgstr "已导出前 {exportedCount} 行。"
 
 msgid "Extended Price"
 msgstr "扩展价格"
@@ -9884,6 +9929,12 @@ msgstr "筛选和排序"
 
 msgid "Filter by…"
 msgstr "按…筛选"
+
+msgid "Filter the list to {limit} rows or fewer"
+msgstr "将列表筛选为不超过 {limit} 行"
+
+msgid "Filter the list to {rows} rows or fewer"
+msgstr "将列表筛选为不超过 {rows} 行"
 
 msgid "Filters"
 msgstr "筛选"
@@ -11509,7 +11560,7 @@ msgid "Invoice schedule"
 msgstr "发票日程表"
 
 msgid "Invoice Separately"
-msgstr ""
+msgstr "单独开票"
 
 msgid "Invoice settlement"
 msgstr "发票结算"
@@ -11542,7 +11593,7 @@ msgid "Invoiced Amount:"
 msgstr "已开票金额："
 
 msgid "Invoiced separately"
-msgstr ""
+msgstr "已单独开票"
 
 msgid "Invoiced Statuses"
 msgstr "已开票状态"
@@ -12438,9 +12489,6 @@ msgstr "实时重新加载"
 msgid "Load"
 msgstr "负荷"
 
-msgid "Load more"
-msgstr "加载更多"
-
 msgid "Load newer"
 msgstr "加载更新"
 
@@ -12464,6 +12512,9 @@ msgstr "正在加载当前数量…"
 
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
+
+msgid "Loading more rows"
+msgstr "正在加载更多行"
 
 msgid "Loading returnable lines..."
 msgstr "正在加载可退货行..."
@@ -17123,7 +17174,7 @@ msgid "Push to accounting"
 msgstr "推送到会计系统"
 
 msgid "Put this charge on its own invoice, held for review before it is posted. Otherwise it goes on the agreement's next invoice."
-msgstr ""
+msgstr "将此费用单独开具发票，过账前需先评审。否则，该费用将计入协议的下一张发票。"
 
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
@@ -17877,6 +17928,9 @@ msgstr "下达生产批次"
 msgid "Release batch {0}"
 msgstr "下达生产批次{0}"
 
+msgid "Release batches"
+msgstr "下达生产批次"
+
 msgid "Release change notice"
 msgstr "下达变更通知"
 
@@ -18451,9 +18505,6 @@ msgstr "结果"
 msgid "Results"
 msgstr "结果"
 
-msgid "Results per page"
-msgstr "每页结果数"
-
 msgid "Resume"
 msgstr "恢复"
 
@@ -18852,9 +18903,6 @@ msgstr "工艺路线"
 msgid "Routing Number (ABA)"
 msgstr "ABA路由号码"
 
-msgid "rows"
-msgstr "行"
-
 msgid "Rows left out of this backup"
 msgstr "此备份中遗漏的行"
 
@@ -18929,6 +18977,9 @@ msgstr "立即运行此工作流？"
 
 msgid "Running"
 msgstr "运行中"
+
+msgid "Running in the background. We'll notify you when it's done."
+msgstr "正在后台运行。完成后我们将通知您。"
 
 msgid "Running inventory after each week's supply and demand — the line."
 msgstr "每周供应和需求后运行库存管理——这一行"
@@ -19704,6 +19755,9 @@ msgstr "选择供应商类型"
 msgid "Select surfaces"
 msgstr "选择表面"
 
+msgid "Select the first {limit} rows"
+msgstr "选择前 {limit} 行"
+
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
 
@@ -19967,7 +20021,7 @@ msgid "Set Up Accounting"
 msgstr "设置会计"
 
 msgid "Set up accounting to use reports, journal entries, accounting periods, depreciation runs and more."
-msgstr ""
+msgstr "设置会计后，即可使用报表、凭证、会计期间、折旧运行等功能。"
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
@@ -20351,11 +20405,11 @@ msgstr "显示 {0} 个，共 {totalCount} 个 — 优化搜索"
 msgid "Showing {0} of {totalFiltered} — refine your search"
 msgstr "显示 {0} / {totalFiltered} — 优化您的搜索"
 
-msgid "Showing {firstShown}–{lastShown} of {total}"
-msgstr "显示 {firstShown}–{lastShown}（共 {total} 条）"
-
 msgid "Showing in {parentCurrency}"
 msgstr "显示货币：{parentCurrency}"
+
+msgid "Showing the first {limit} rows. Search or filter to see the rest."
+msgstr "仅显示前 {limit} 行。请搜索或筛选以查看其余行。"
 
 msgid "Showing the first 500 lines"
 msgstr "显示前500行"
@@ -22000,6 +22054,9 @@ msgstr "此物料产出在生产期间预期丢失的百分比；计划将需求
 msgid "The expense account this indirect-spend line posts to; required because indirect lines don't have an item ledger entry to derive the account from."
 msgstr "此间接支出行过账至的费用科目；因为间接行没有物料分类账条目来推导科目，所以这是必需的。"
 
+msgid "The export could not start. Try again."
+msgstr "无法开始导出。请重试。"
+
 msgid "The file you uploaded and the mappings you've made will be lost."
 msgstr "您上传的文件和已完成的映射将会丢失。"
 
@@ -22181,6 +22238,9 @@ msgstr "此客户的生命周期状态——启用、潜在客户、已停用等
 
 msgid "The lifecycle state of this supplier — Active, Inactive, Pending Approval, etc.; only Active suppliers appear in PO / quote selectors."
 msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等；仅启用的供应商出现在采购订单/报价单选择器中。"
+
+msgid "The list changed while the export loaded. Try again."
+msgstr "导出加载期间列表已发生变化。请重试。"
 
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "此地点报告时间所在的本地时区；此地点的排程、工时记录和班次小时数在此时区中解释，无论用户的浏览器区域设置如何。"
@@ -24140,6 +24200,9 @@ msgstr "更新采购订单数量"
 msgid "Updated"
 msgstr "已更新"
 
+msgid "Updated {done}. Could not update {failed}: {message}"
+msgstr "已更新 {done}。无法更新 {failed}：{message}"
+
 msgid "Updated account"
 msgstr "已更新账户"
 
@@ -25631,6 +25694,9 @@ msgstr "您的 DNS 提供商可能会自动将您的域追加到记录名称中 
 
 msgid "Your Email"
 msgstr "你的电子邮件"
+
+msgid "Your export is being prepared. We'll notify you when it's ready."
+msgstr "正在准备您的导出文件。准备就绪后我们将通知您。"
 
 msgid "Your general-ledger accounts and their structure"
 msgstr "您的总账账户及其结构"

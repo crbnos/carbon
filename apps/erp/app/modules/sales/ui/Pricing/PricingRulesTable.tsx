@@ -50,6 +50,8 @@ import type { PricingRule } from "../../types";
 type PricingRulesTableProps = {
   data: PricingRule[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -59,7 +61,8 @@ const defaultColumnVisibility = {
   itemPostingGroupId: false
 };
 
-const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
+const PricingRulesTable = memo((props: PricingRulesTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -475,6 +478,11 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "pricing-rules"
+      }}
       defaultColumnVisibility={defaultColumnVisibility}
       primaryAction={
         canCreate && (

@@ -43,6 +43,8 @@ import JournalEntryStatus from "./JournalEntryStatus";
 type JournalEntriesTableProps = {
   data: JournalEntryListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   primaryAction?: ReactNode;
 };
 
@@ -55,7 +57,7 @@ const defaultColumnVisibility = {
 };
 
 const JournalEntriesTable = memo(
-  ({ data, count, primaryAction }: JournalEntriesTableProps) => {
+  ({ data, count, primaryAction, nextCursor }: JournalEntriesTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -279,6 +281,11 @@ const JournalEntriesTable = memo(
     return (
       <>
         <Table<JournalEntryListItem>
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "journal-entries"
+          }}
           data={data}
           columns={columns}
           count={count}

@@ -48,6 +48,8 @@ const VARIANCE_FILTER = "variance:neq:0";
 type InventoryCountLinesProps = {
   lines: InventoryCountLine[];
   count: number;
+  // The loader's cursor for the next page of lines (infinite scroll).
+  nextCursor: string | null;
   // Blind counting withholds System Qty + Variance until Posted; the caller
   // decides when — kept separate from the read-only (Draft) edit gate.
   hideSystemQuantity: boolean;
@@ -70,6 +72,7 @@ type InventoryCountLinesProps = {
 const InventoryCountLines = ({
   lines,
   count,
+  nextCursor,
   hideSystemQuantity,
   isReadOnly,
   locationId,
@@ -127,10 +130,7 @@ const InventoryCountLines = ({
     setParams({
       filter: filterParams.includes(filter)
         ? filterParams.filter((f) => f !== filter)
-        : filterParams.concat(filter),
-      // Changing the result set invalidates the current page — reset paging
-      // the same way SearchFilter does.
-      offset: null
+        : filterParams.concat(filter)
     });
   };
 
@@ -680,6 +680,8 @@ const InventoryCountLines = ({
         mobileLayout="table"
         columns={columns}
         data={lines}
+        // One count's lines: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "lines", nextCursor }}
         count={count}
         defaultColumnVisibility={defaultColumnVisibility}
         editableComponents={editableComponents}

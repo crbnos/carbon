@@ -18,9 +18,11 @@ import type { IssueType } from "../../types";
 type IssueTypesTableProps = {
   data: IssueType[];
   count: number;
+  nextCursor: string | null;
 };
 
-const IssueTypesTable = memo(({ data, count }: IssueTypesTableProps) => {
+const IssueTypesTable = memo((props: IssueTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const [params] = useUrlParams();
   const navigate = useNavigate();
   const { t } = useLingui();
@@ -82,6 +84,11 @@ const IssueTypesTable = memo(({ data, count }: IssueTypesTableProps) => {
   return (
     <Table<IssueType>
       data={data}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "issue-types"
+      }}
       columns={columns}
       count={count}
       primaryAction={

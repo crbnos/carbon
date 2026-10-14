@@ -25,9 +25,12 @@ type StorageType = {
 type StorageTypesTableProps = {
   data: StorageType[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
+const StorageTypesTable = memo((props: StorageTypesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -90,6 +93,11 @@ const StorageTypesTable = memo(({ data, count }: StorageTypesTableProps) => {
   return (
     <Table<(typeof rows)[number]>
       data={data}
+      infinite={{
+        dataKey: "storageTypes",
+        nextCursor,
+        listKey: "storage-types"
+      }}
       columns={columns}
       count={count}
       importCSV={[

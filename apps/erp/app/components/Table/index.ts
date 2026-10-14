@@ -4,6 +4,19 @@
 
 import Table from "./Table";
 
+export {
+  allMatchingRequest,
+  useAllMatchingUnsupportedLabel,
+  useBackgroundBulkActionMessage
+} from "./components/SelectAllMatching";
+export type {
+  AllMatchingSelection,
+  BulkActionScope,
+  InfiniteListError,
+  InfiniteOptions,
+  InfiniteRows
+} from "./types";
+export { useInfiniteRows } from "./useInfiniteRows";
 export { exportOnlyColumn } from "./utils";
 
 export default Table;

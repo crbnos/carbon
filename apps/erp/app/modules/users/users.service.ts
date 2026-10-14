@@ -7,7 +7,7 @@ import { fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { UserSelectGroupMembers } from "./types";
 
@@ -251,6 +251,10 @@ export async function getUsersWithVerifiedMfa(
   return client.rpc("users_with_verified_mfa", { company_id: companyId });
 }
 
+export const EMPLOYEES_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
+
 /** @mcp read */
 export async function getEmployees(
   client: SupabaseClient<Database>,
@@ -261,7 +265,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -277,11 +281,13 @@ export async function getEmployees(
     query = query.in("status", ["Active", "Invited"]);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, EMPLOYEES_PAGING);
   return query;
 }
+
+export const CONSOLE_OPERATORS_PAGING: Paging = {
+  defaultSorts: [{ column: "lastName", ascending: true }]
+};
 
 /**
  * Gets console operators — users with @console.internal emails.
@@ -302,7 +308,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -310,9 +316,7 @@ export async function getConsoleOperators(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "lastName", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, CONSOLE_OPERATORS_PAGING);
   return query;
 }
 
@@ -328,6 +332,10 @@ export async function getEmployeeType(
     .single();
 }
 
+export const EMPLOYEE_TYPES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 /** @mcp read */
 export async function getEmployeeTypes(
   client: SupabaseClient<Database>,
@@ -336,7 +344,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args?.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -344,9 +352,7 @@ export async function getEmployeeTypes(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, EMPLOYEE_TYPES_PAGING);
   }
 
   return query;

@@ -57,6 +57,7 @@ type GaugeCalibrationRecordsTableProps = {
   data: GaugeCalibrationRecord[];
   types: ListItem[];
   count: number;
+  nextCursor: string | null;
 };
 
 const defaultColumnVisibility = {
@@ -70,7 +71,7 @@ const defaultColumnVisibility = {
 };
 
 const GaugeCalibrationRecordsTable = memo(
-  ({ data, types, count }: GaugeCalibrationRecordsTableProps) => {
+  ({ data, types, count, nextCursor }: GaugeCalibrationRecordsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -398,6 +399,11 @@ const GaugeCalibrationRecordsTable = memo(
       <>
         <Table<GaugeCalibrationRecord>
           data={data}
+          infinite={{
+            dataKey: "gaugeCalibrationRecords",
+            nextCursor,
+            listKey: "gauge-calibration-records"
+          }}
           columns={columns}
           count={count}
           defaultColumnVisibility={defaultColumnVisibility}

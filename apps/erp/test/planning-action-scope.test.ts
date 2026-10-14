@@ -7,7 +7,8 @@ import {
   actionsOfTypes,
   PLANNING_ACTIONS_COLUMN,
   PLANNING_ASSIGNEE_COLUMN,
-  resolvePlanningActionScope
+  resolvePlanningActionScope,
+  withPlanningActions
 } from "../app/modules/production/ui/Planning/planning-action-scope";
 
 describe("resolvePlanningActionScope", () => {
@@ -141,5 +142,26 @@ describe("actionsOfTypes", () => {
 
   it("returns nothing when the row has no action of the filtered type", () => {
     expect(actionsOfTypes(actions, ["Order"])).toEqual([]);
+  });
+});
+
+describe("withPlanningActions", () => {
+  it("gives each row its own actions, and none to a row without any", () => {
+    const actions = [
+      { id: "a1", itemId: "item-1" },
+      { id: "a2", itemId: "item-2" },
+      { id: "a3", itemId: "item-1" },
+      { id: "a4", itemId: "item-off-page" }
+    ];
+    expect(
+      withPlanningActions(
+        [{ id: "item-1" }, { id: "item-2" }, { id: "item-3" }],
+        actions
+      )
+    ).toEqual([
+      { id: "item-1", planningActions: [actions[0], actions[2]] },
+      { id: "item-2", planningActions: [actions[1]] },
+      { id: "item-3", planningActions: [] }
+    ]);
   });
 });

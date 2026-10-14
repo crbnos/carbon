@@ -42,12 +42,19 @@ import MaintenancePriority from "../Maintenance/MaintenancePriority";
 type MaintenanceSchedulesTableProps = {
   data: MaintenanceSchedule[];
   count: number;
+  nextCursor: string | null;
   locations: { id: string; name: string }[];
   locationId: string | null;
 };
 
 const MaintenanceSchedulesTable = memo(
-  ({ data, count, locations, locationId }: MaintenanceSchedulesTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    locations,
+    locationId
+  }: MaintenanceSchedulesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -277,6 +284,11 @@ const MaintenanceSchedulesTable = memo(
     return (
       <Table<MaintenanceSchedule>
         data={data}
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "maintenance-schedules"
+        }}
         columns={columns}
         count={count}
         primaryAction={

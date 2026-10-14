@@ -32,10 +32,12 @@ import type { RentalAgreementListItem } from "./types";
 type RentalAgreementsTableProps = {
   data: RentalAgreementListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
 const RentalAgreementsTable = memo(
-  ({ data, count }: RentalAgreementsTableProps) => {
+  ({ data, count, nextCursor }: RentalAgreementsTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
     const navigate = useNavigate();
@@ -196,6 +198,11 @@ const RentalAgreementsTable = memo(
       <>
         <Table<RentalAgreementListItem>
           count={count}
+          infinite={{
+            dataKey: "rentalAgreements",
+            nextCursor,
+            listKey: "rental-agreements"
+          }}
           columns={columns}
           data={data}
           defaultColumnPinning={{

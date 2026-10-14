@@ -50,12 +50,20 @@ import type { Customer, CustomerStatus } from "../../types";
 type CustomersTableProps = {
   data: Customer[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   customerStatuses: CustomerStatus[];
   tags: { name: string }[];
 };
 
 const CustomersTable = memo(
-  ({ data, count, customerStatuses, tags }: CustomersTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    customerStatuses,
+    tags
+  }: CustomersTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -311,6 +319,11 @@ const CustomersTable = memo(
       <>
         <Table<Customer>
           count={count}
+          infinite={{
+            dataKey: "customers",
+            nextCursor,
+            listKey: "customers"
+          }}
           columns={columns}
           data={data}
           defaultColumnPinning={{

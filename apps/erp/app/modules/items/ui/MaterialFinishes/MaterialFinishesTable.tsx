@@ -31,10 +31,11 @@ import type { MaterialFinish } from "../../types";
 type MaterialFinishesTableProps = {
   data: MaterialFinish[];
   count: number;
+  nextCursor: string | null;
 };
 
 const MaterialFinishesTable = memo(
-  ({ data, count }: MaterialFinishesTableProps) => {
+  ({ data, count, nextCursor }: MaterialFinishesTableProps) => {
     const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
@@ -161,6 +162,11 @@ const MaterialFinishesTable = memo(
     return (
       <Table<(typeof rows)[number]>
         data={data}
+        infinite={{
+          dataKey: "materialFinishes",
+          nextCursor,
+          listKey: "material-finishes"
+        }}
         columns={columns}
         count={count}
         importCSV={[

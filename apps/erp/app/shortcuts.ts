@@ -58,12 +58,6 @@ export const ONBOARDING_SHORTCUTS = {
   continue: "enter"
 } as const satisfies Record<string, ShortcutInput>;
 
-/** Table pagination. */
-export const PAGINATION_SHORTCUTS = {
-  previous: "arrowleft",
-  next: "arrowright"
-} as const satisfies Record<string, ShortcutInput>;
-
 /**
  * g-then-letter module go-to, keyed by the stable module `key` from
  * useModules() — never by position, since module order and visibility are

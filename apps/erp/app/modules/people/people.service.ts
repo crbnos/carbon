@@ -12,7 +12,7 @@ import type { z } from "zod";
 import type { DataType } from "~/modules/shared";
 import type { Employee } from "~/modules/users";
 import { getEmployees } from "~/modules/users/users.service";
-import type { GenericQueryFilters } from "~/utils/query";
+import type { GenericQueryFilters, Paging } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -104,6 +104,10 @@ async function getAttributes(
     .order("sortOrder", { foreignTable: "userAttribute", ascending: true });
 }
 
+export const ATTRIBUTE_CATEGORIES_PAGING: Paging = {
+  defaultSorts: [{ column: "name", ascending: true }]
+};
+
 /** @mcp read */
 export async function getAttributeCategories(
   client: SupabaseClient<Database>,
@@ -113,7 +117,7 @@ export async function getAttributeCategories(
   let query = client
     .from("userAttributeCategory")
     .select("*, userAttribute(id, name, attributeDataType(id))", {
-      count: LIST_COUNT
+      count: args?.cursor ? undefined : LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true)
@@ -124,9 +128,7 @@ export async function getAttributeCategories(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "name", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, ATTRIBUTE_CATEGORIES_PAGING);
   }
 
   return query;
@@ -254,6 +256,10 @@ export async function getHoliday(
   return client.from("holiday").select("*").eq("id", holidayId).single();
 }
 
+export const HOLIDAYS_PAGING: Paging = {
+  defaultSorts: [{ column: "date", ascending: true }]
+};
+
 /** @mcp read */
 export async function getHolidays(
   client: SupabaseClient<Database>,
@@ -263,7 +269,7 @@ export async function getHolidays(
   let query = client
     .from("holiday")
     .select("*", {
-      count: LIST_COUNT
+      count: args?.cursor ? undefined : LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -272,9 +278,7 @@ export async function getHolidays(
   }
 
   if (args) {
-    query = setGenericQueryFilters(query, args, [
-      { column: "date", ascending: true }
-    ]);
+    query = setGenericQueryFilters(query, args, HOLIDAYS_PAGING);
   }
 
   return query;
@@ -428,6 +432,10 @@ export async function getShift(
     .single();
 }
 
+export const SHIFTS_PAGING: Paging = {
+  defaultSorts: [{ column: "locationId", ascending: true }]
+};
+
 /** @mcp read */
 export async function getShifts(
   client: SupabaseClient<Database>,
@@ -437,7 +445,7 @@ export async function getShifts(
   let query = client
     .from("shifts")
     .select("*", {
-      count: LIST_COUNT
+      count: args.cursor ? undefined : LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -446,9 +454,7 @@ export async function getShifts(
     query = query.ilike("name", `%${args.search}%`);
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "locationId", ascending: true }
-  ]);
+  query = setGenericQueryFilters(query, args, SHIFTS_PAGING);
   return query;
 }
 
@@ -1020,6 +1026,10 @@ export async function getTimeCardEntries(
   return query;
 }
 
+export const TIMECARD_ENTRIES_PAGING: Paging = {
+  defaultSorts: [{ column: "clockIn", ascending: false }]
+};
+
 /** @mcp read */
 export async function getTimecardEntries(
   client: SupabaseClient<Database>,
@@ -1028,7 +1038,7 @@ export async function getTimecardEntries(
 ) {
   let query = client
     .from("timeCardEntries")
-    .select("*", { count: LIST_COUNT })
+    .select("*", { count: args.cursor ? undefined : LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1037,9 +1047,7 @@ export async function getTimecardEntries(
     );
   }
 
-  query = setGenericQueryFilters(query, args, [
-    { column: "clockIn", ascending: false }
-  ]);
+  query = setGenericQueryFilters(query, args, TIMECARD_ENTRIES_PAGING);
 
   return query;
 }

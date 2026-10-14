@@ -41,12 +41,20 @@ import FixedAssetStatus from "./FixedAssetStatus";
 type FixedAssetsTableProps = {
   data: FixedAssetListItem[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   assetClasses: { id: string; name: string }[];
   primaryAction?: ReactNode;
 };
 
 const FixedAssetsTable = memo(
-  ({ data, count, assetClasses, primaryAction }: FixedAssetsTableProps) => {
+  ({
+    data,
+    count,
+    assetClasses,
+    primaryAction,
+    nextCursor
+  }: FixedAssetsTableProps) => {
     const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
@@ -218,6 +226,11 @@ const FixedAssetsTable = memo(
     return (
       <>
         <Table<FixedAssetListItem>
+          infinite={{
+            dataKey: "data",
+            nextCursor,
+            listKey: "fixed-assets"
+          }}
           data={data}
           columns={columns}
           count={count}

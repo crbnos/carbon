@@ -29,9 +29,12 @@ type ChargeRow = Database["public"]["Tables"]["charge"]["Row"];
 type ChargesTableProps = {
   data: ChargeRow[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
+const ChargesTable = memo((props: ChargesTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const { locale } = useLocale();
   // Each transaction carries its own currencyCode (a company can hold cards in
@@ -137,6 +140,11 @@ const ChargesTable = memo(({ data, count }: ChargesTableProps) => {
 
   return (
     <Table<ChargeRow>
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "charges"
+      }}
       count={count}
       columns={columns}
       data={data}

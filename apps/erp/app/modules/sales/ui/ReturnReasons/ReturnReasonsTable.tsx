@@ -25,9 +25,12 @@ type ReturnReason = Database["public"]["Tables"]["returnReason"]["Row"];
 type ReturnReasonsTableProps = {
   data: ReturnReason[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
 };
 
-const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
+const ReturnReasonsTable = memo((props: ReturnReasonsTableProps) => {
+  const { data, count, nextCursor } = props;
   const { t } = useLingui();
   const [params] = useUrlParams();
   const navigate = useNavigate();
@@ -111,6 +114,11 @@ const ReturnReasonsTable = memo(({ data, count }: ReturnReasonsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      infinite={{
+        dataKey: "data",
+        nextCursor,
+        listKey: "return-reasons"
+      }}
       primaryAction={
         permissions.can("create", "sales") && (
           <New

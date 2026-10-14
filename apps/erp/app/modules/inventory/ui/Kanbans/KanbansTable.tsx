@@ -73,6 +73,8 @@ import type { Kanban } from "../../types";
 type KanbansTableProps = {
   data: Kanban[];
   count: number;
+  // The loader's cursor for the next page (infinite scroll).
+  nextCursor: string | null;
   locationId: string;
   kanbanOutput: (typeof kanbanOutputTypes)[number];
 };
@@ -86,7 +88,13 @@ const defaultColumnVisibility = {
 };
 
 const KanbansTable = memo(
-  ({ data, count, locationId, kanbanOutput }: KanbansTableProps) => {
+  ({
+    data,
+    count,
+    nextCursor,
+    locationId,
+    kanbanOutput
+  }: KanbansTableProps) => {
     const [params] = useUrlParams();
     const { t } = useLingui();
 
@@ -696,6 +704,8 @@ const KanbansTable = memo(
         count={count}
         columns={columns}
         data={data}
+        // Location-scoped: no list registry entry, so no `listKey`.
+        infinite={{ dataKey: "kanbans", nextCursor }}
         defaultColumnVisibility={defaultColumnVisibility}
         primaryAction={
           <div className="flex items-center gap-2">

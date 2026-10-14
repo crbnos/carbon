@@ -22,10 +22,11 @@ import type { ChangeNoticeRequiredAction } from "../../types";
 type ChangeNoticeRequiredActionsTableProps = {
   data: ChangeNoticeRequiredAction[];
   count: number;
+  nextCursor: string | null;
 };
 
 const ChangeNoticeRequiredActionsTable = memo(
-  ({ data, count }: ChangeNoticeRequiredActionsTableProps) => {
+  ({ data, count, nextCursor }: ChangeNoticeRequiredActionsTableProps) => {
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const { t } = useLingui();
@@ -96,6 +97,11 @@ const ChangeNoticeRequiredActionsTable = memo(
     return (
       <Table<ChangeNoticeRequiredAction>
         data={data}
+        infinite={{
+          dataKey: "data",
+          nextCursor,
+          listKey: "change-notice-actions"
+        }}
         columns={columns}
         count={count}
         primaryAction={

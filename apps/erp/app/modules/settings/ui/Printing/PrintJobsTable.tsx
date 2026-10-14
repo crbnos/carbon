@@ -38,6 +38,7 @@ import { DateTime, Table } from "~/components";
 type PrintJobsTableProps = {
   jobs: PrintJob[];
   count: number;
+  nextCursor: string | null;
 };
 
 type ViewContent = {
@@ -235,7 +236,8 @@ function ZplPreview({ zpl }: { zpl: string }) {
   );
 }
 
-const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
+const PrintJobsTable = memo((props: PrintJobsTableProps) => {
+  const { jobs, count, nextCursor } = props;
   const { t } = useLingui();
   const fetcher = useFetcher<{
     success: boolean;
@@ -443,6 +445,7 @@ const PrintJobsTable = memo(({ jobs, count }: PrintJobsTableProps) => {
         table="printJob"
         withSearch
         withPagination
+        infinite={{ dataKey: "jobs", nextCursor }}
         renderExpandedRow={renderExpandedRow}
         renderContextMenu={renderContextMenu}
       />

@@ -25,7 +25,8 @@ export function useJobPlanningRelease(): {
   const { t } = useLingui();
   const releaseFetcher = useAction<typeof releaseAction>({
     onSuccess: (result) => {
-      if (!result.success) return;
+      // This hook posts job ids, so the route never answers `background`.
+      if (!result.success || "background" in result) return;
       if (result.released) toast.success(t`Job released`);
       for (const warning of result.warnings) {
         toast.error(

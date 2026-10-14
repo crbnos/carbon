@@ -41,11 +41,12 @@ import QualityDocumentStatus from "./QualityDocumentStatus";
 type QualityDocumentsTableProps = {
   data: QualityDocuments[];
   count: number;
+  nextCursor: string | null;
   tags: Array<{ name: string }>;
 };
 
 const QualityDocumentsTable = memo(
-  ({ data, count, tags }: QualityDocumentsTableProps) => {
+  ({ data, count, tags, nextCursor }: QualityDocumentsTableProps) => {
     const navigate = useNavigate();
     const { t } = useLingui();
     const permissions = usePermissions();
@@ -228,6 +229,11 @@ const QualityDocumentsTable = memo(
       <>
         <Table<QualityDocuments>
           data={data}
+          infinite={{
+            dataKey: "qualityDocuments",
+            nextCursor,
+            listKey: "quality-documents"
+          }}
           columns={columns}
           count={count}
           primaryAction={
